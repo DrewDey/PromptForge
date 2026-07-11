@@ -79,10 +79,14 @@ import {
 } from './featured-projects'
 import { getPreparedShowcaseProjectById } from './prepared-showcase-projects'
 import type { PreparedShowcaseProject, PreparedShowcaseStep } from './prepared-showcase-projects'
+import { getProjectRouteOverride } from './project-links'
+import { loadSourceRunPackage } from './source-run-package'
 import {
   PROJECT_FORK_MAX_WIDTH,
+  filterProjectForkNetworkBySourceRun,
   projectForkSourceFromSubmissionFields,
   projectForkSourceToSubmissionFields,
+  type ProjectForkContinuationStep,
   type ProjectForkNetworkItem,
   type ProjectForkSource,
 } from './project-forks'
@@ -446,22 +450,143 @@ export async function getProfileByUsername(username: string): Promise<Profile | 
   })
 }
 
-function getPublicMockProjectForks(projectId: string): ProjectForkNetworkItem[] {
-  return publicMockPrompts
+function publicForkArtifactPath(filePath?: string | null) {
+  return filePath?.startsWith('public/artifacts/')
+    ? `/${filePath.replace(/^public\//, '')}`
+    : null
+}
+
+function preparedForkContinuationSteps(
+  project: PreparedShowcaseProject,
+  forkSource: ProjectForkSource,
+): ProjectForkContinuationStep[] {
+  const forkPoint = forkSource.sourceStepNumber ?? 0
+
+  if (project.sourceRunPackageFile) {
+    const sourceRun = loadSourceRunPackage(project.sourceRunPackageFile)
+    return sourceRun.steps
+      .filter((step) => step.step_number > forkPoint)
+      .map((step) => {
+        const preparedStep = project.steps.find((candidate) => candidate.stepNumber === step.step_number)
+        const artifactFiles = new Set<string>()
+        if (step.artifact_version_path) artifactFiles.add(step.artifact_version_path)
+        for (const generatedFile of step.generated_files ?? []) artifactFiles.add(generatedFile)
+        if (step.step_number === sourceRun.steps.at(-1)?.step_number && sourceRun.final_artifact_path) {
+          artifactFiles.add(sourceRun.final_artifact_path)
+        }
+        const artifactVersions = [...artifactFiles].flatMap((filePath, index) => {
+          const artifactPath = publicForkArtifactPath(filePath)
+          if (!artifactPath) return []
+          return [{
+            id: `${project.id}:${project.sourceRunId}:step:${step.step_number}:artifact:${index + 1}`,
+            artifactPath,
+            artifactTitle: filePath === sourceRun.final_artifact_path
+              ? `${project.title} final`
+              : `${project.title} step ${step.step_number}`,
+            isDefault: filePath === sourceRun.final_artifact_path,
+          }]
+        })
+
+        return {
+          id: `${project.id}:${project.sourceRunId}:step:${step.step_number}`,
+          stepNumber: step.step_number,
+          promptTitle: preparedStep?.title ?? `Prompt ${step.step_number}`,
+          promptText: step.prompt_exact,
+          responseText: step.response_exact,
+          responsePackageId: `${project.id}:${project.sourceRunId}:response:${step.step_number}`,
+          artifactPath: artifactVersions.find((artifact) => artifact.isDefault)?.artifactPath
+            ?? artifactVersions.at(-1)?.artifactPath
+            ?? null,
+          artifactVersions,
+        }
+      })
+  }
+
+  return project.steps
+    .filter((step) => step.stepNumber > forkPoint)
+    .map((step) => ({
+      id: step.id,
+      stepNumber: step.stepNumber,
+      promptTitle: step.title,
+      promptText: step.content,
+      responseText: step.resultContent,
+      responsePackageId: step.id,
+      artifactPath: step.stepNumber === project.steps.at(-1)?.stepNumber ? project.artifactPath : null,
+      artifactVersions: step.stepNumber === project.steps.at(-1)?.stepNumber
+        ? [{
+          id: `${step.id}:artifact:1`,
+          artifactPath: project.artifactPath,
+          artifactTitle: `${project.title} final`,
+          isDefault: true,
+        }]
+        : [],
+    }))
+}
+
+function hydratePreparedForkItem(item: ProjectForkNetworkItem): ProjectForkNetworkItem {
+  const project = getPreparedShowcaseProjectById(item.id)
+  if (!project) return item
+
+  let childProviderName: string | null = null
+  let childSourceUrl = project.sourceUrl
+  if (project.sourceRunPackageFile) {
+    const sourceRun = loadSourceRunPackage(project.sourceRunPackageFile)
+    childProviderName = sourceRun.provider ?? null
+    childSourceUrl = sourceRun.source_url ?? childSourceUrl
+  }
+
+  return {
+    ...item,
+    childRoute: getProjectRouteOverride(project.id) ?? project.href,
+    childSourceUrl,
+    childProviderName,
+    continuationSteps: preparedForkContinuationSteps(project, item.forkSource),
+  }
+}
+
+function projectForkResponseSocketKey(item: ProjectForkNetworkItem) {
+  const source = item.forkSource
+  const runScope = source.sourceRunId
+    ? `run:${source.sourceRunId}`
+    : source.sourceModelVariantId
+      ? `variant:${source.sourceModelVariantId}`
+      : 'legacy'
+  const stepScope = source.sourceStepId
+    ? `id:${source.sourceStepId}`
+    : source.sourceStepNumber
+      ? `number:${source.sourceStepNumber}`
+      : 'project'
+  return `${source.sourceProjectId}|${runScope}|${stepScope}`
+}
+
+function limitProjectForksPerResponseSocket(forks: ProjectForkNetworkItem[]) {
+  const socketCounts = new Map<string, number>()
+  return forks.filter((fork) => {
+    const socket = projectForkResponseSocketKey(fork)
+    const count = socketCounts.get(socket) ?? 0
+    if (count >= PROJECT_FORK_MAX_WIDTH) return false
+    socketCounts.set(socket, count + 1)
+    return true
+  })
+}
+
+function getPublicMockProjectForks(
+  projectId: string,
+  sourceRunId?: string | null,
+): ProjectForkNetworkItem[] {
+  const forks = publicMockPrompts
     .filter((prompt) => prompt.status === 'approved')
     .filter((prompt) => (
       prompt.fork_source_project_id === projectId ||
       prompt.fork_parent_submission_id === projectId
     ))
     .filter(isPublicLibraryPrompt)
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, PROJECT_FORK_MAX_WIDTH)
     .reduce<ProjectForkNetworkItem[]>((forks, prompt) => {
       const forkSource = projectForkSourceFromSubmissionFields(prompt)
       if (!forkSource) return forks
       const author = mockProfiles.find((profile) => profile.id === prompt.author_id)
 
-      forks.push({
+      forks.push(hydratePreparedForkItem({
         id: prompt.id,
         title: prompt.title,
         description: prompt.description,
@@ -470,38 +595,54 @@ function getPublicMockProjectForks(projectId: string): ProjectForkNetworkItem[] 
         modelUsed: prompt.model_used,
         createdAt: prompt.created_at,
         forkSource,
-      })
+      }))
 
       return forks
     }, [])
+
+  return limitProjectForksPerResponseSocket(
+    filterProjectForkNetworkBySourceRun(forks, sourceRunId)
+      .sort((left, right) => (
+      left.forkSource.branchIndex - right.forkSource.branchIndex ||
+      Date.parse(left.createdAt) - Date.parse(right.createdAt)
+      )),
+  )
 }
 
-export async function getApprovedProjectForks(projectId: string): Promise<ProjectForkNetworkItem[]> {
+export async function getApprovedProjectForks(
+  projectId: string,
+  sourceRunId?: string | null,
+): Promise<ProjectForkNetworkItem[]> {
   if (!projectId) return []
-  const fallbackForks = getPublicMockProjectForks(projectId)
+  const fallbackForks = filterProjectForkNetworkBySourceRun(
+    getPublicMockProjectForks(projectId, sourceRunId),
+    sourceRunId,
+  )
 
   return readWithFallback(fallbackForks, async () => {
     const { createClient } = await import('./supabase/server')
     const supabase = await createClient()
-    const { data, error } = await supabase
+    let query = supabase
       .from('prompts')
-      .select('id,title,description,model_used,created_at,status,author:profiles(username,display_name),fork_source_project_id,fork_source_project_title,fork_source_step_id,fork_source_step_number,fork_parent_submission_id,prompt_family_id,fork_depth,fork_branch_index')
+      .select('id,title,description,model_used,created_at,status,author:profiles(username,display_name),steps:prompt_steps(id,step_number,title,content,result_content),fork_source_project_id,fork_source_project_title,fork_source_model_variant_id,fork_source_run_id,fork_source_step_id,fork_source_step_number,fork_source_artifact_path,fork_source_artifact_sha256,fork_parent_submission_id,prompt_family_id,fork_depth,fork_branch_index')
       .eq('status', 'approved')
       .or(`fork_source_project_id.eq.${projectId},fork_parent_submission_id.eq.${projectId}`)
-      .order('created_at', { ascending: false })
-      .limit(PROJECT_FORK_MAX_WIDTH)
+    if (sourceRunId) query = query.eq('fork_source_run_id', sourceRunId)
+    const { data, error } = await query
+      .order('fork_branch_index', { ascending: true })
+      .order('created_at', { ascending: true })
 
     if (forkColumnsMissing(error)) return fallbackForks
     if (error) throw error
 
-    const dbForks = (data ?? [])
+    const dbForks = filterProjectForkNetworkBySourceRun((data ?? [])
       .filter(isPublicLibraryPrompt)
       .reduce<ProjectForkNetworkItem[]>((forks, prompt) => {
         const forkSource = projectForkSourceFromSubmissionFields(prompt)
         if (!forkSource) return forks
         const author = Array.isArray(prompt.author) ? prompt.author[0] : prompt.author
 
-        forks.push({
+        const preparedItem = hydratePreparedForkItem({
           id: prompt.id,
           title: prompt.title,
           description: prompt.description,
@@ -510,15 +651,31 @@ export async function getApprovedProjectForks(projectId: string): Promise<Projec
           modelUsed: prompt.model_used,
           createdAt: prompt.created_at,
           forkSource,
+          continuationSteps: [...(prompt.steps ?? [])]
+            .filter((step) => step.step_number > (forkSource.sourceStepNumber ?? 0))
+            .sort((left, right) => left.step_number - right.step_number)
+            .map((step) => ({
+              id: step.id,
+              stepNumber: step.step_number,
+              promptTitle: step.title || `Prompt ${step.step_number}`,
+              promptText: step.content,
+              responseText: step.result_content,
+              responsePackageId: step.id,
+            })),
+          childRoute: getProjectRouteOverride(prompt.id) ?? `/prompt/${prompt.id}`,
         })
+        forks.push(preparedItem)
         return forks
-      }, [])
+      }, []), sourceRunId)
 
     const seen = new Set(dbForks.map((fork) => fork.id))
-    return [
+    return limitProjectForksPerResponseSocket([
       ...dbForks,
       ...fallbackForks.filter((fork) => !seen.has(fork.id)),
-    ].slice(0, PROJECT_FORK_MAX_WIDTH)
+    ].sort((left, right) => (
+        left.forkSource.branchIndex - right.forkSource.branchIndex ||
+        Date.parse(left.createdAt) - Date.parse(right.createdAt)
+      )))
   })
 }
 

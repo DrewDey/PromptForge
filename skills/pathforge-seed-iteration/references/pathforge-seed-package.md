@@ -10,6 +10,10 @@ Use this structure while collecting a seed before submitting to PathForge.
 - `model`
 - `model_settings`
 - `source_url`
+- `source_run_id`: optional checked UUID for developer-operated packages that
+  must retain one immutable identity across model history, queue intake, and
+  fork lineage. The importer validates it, reuses an exact matching intake,
+  and rejects collisions; omit it for ordinary user uploads.
 - `run_started_at`
 - `run_finished_at`
 - `chain_type`

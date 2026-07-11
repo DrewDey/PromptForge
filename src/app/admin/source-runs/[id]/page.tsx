@@ -156,6 +156,29 @@ export default async function AdminSourceRunDetailPage({
                   </div>
                 </div>
                 <div className="border border-green-200 bg-white px-3 py-2">
+                  <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-green-700">Source model run</div>
+                  <div className="mt-1 break-all font-semibold">
+                    {forkSource.sourceRunId || 'Legacy canonical run'}
+                  </div>
+                </div>
+                <div className="border border-green-200 bg-white px-3 py-2">
+                  <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-green-700">Source model variant</div>
+                  <div className="mt-1 break-all font-semibold">
+                    {forkSource.sourceModelVariantId || (forkSource.sourceRunId ? 'Resolved when published' : 'Not applicable')}
+                  </div>
+                </div>
+                <div className="border border-green-200 bg-white px-3 py-2 sm:col-span-2">
+                  <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-green-700">Inherited artifact</div>
+                  <div className="mt-1 break-all font-semibold">
+                    {forkSource.sourceArtifactPath || 'Not specified'}
+                  </div>
+                  {forkSource.sourceArtifactSha256 && (
+                    <div className="mt-1 break-all font-mono text-[10px] text-green-700">
+                      SHA-256 {forkSource.sourceArtifactSha256}
+                    </div>
+                  )}
+                </div>
+                <div className="border border-green-200 bg-white px-3 py-2">
                   <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-green-700">Prompt family</div>
                   <div className="mt-1 break-all font-semibold">{forkSource.promptFamilyId || 'Not specified'}</div>
                 </div>

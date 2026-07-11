@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Airlock Zero: Reactor Run</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #05050b;
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
+            color: #00ffcc;
+        }
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 960px;
+            max-height: 640px;
+            margin: auto;
+            aspect-ratio: 3 / 2;
+            box-shadow: 0 0 25px rgba(0, 255, 204, 0.15);
+            border: 2px solid #00ffcc;
+            background: #000;
+        }
+        @media (min-aspect-ratio: 3/2) {
+            #game-container { height: 100vh; width: auto; }
+        }
+        @media (max-aspect-ratio: 3/2) {
+            #game-container { width: 100vw; height: auto; }
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            image-rendering: pixelated;
+        }
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(4, 4, 12, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+            z-index: 10;
+            border: 1px solid #00ffcc;
+        }
+        .hidden { display: none !important; }
+        h1 {
+            font-size: 2.2rem;
+            margin: 0 0 5px 0;
+            text-shadow: 0 0 10px #00ffcc;
+            letter-spacing: 2px;
+        }
+        h3 { margin: 0 0 10px 0; color: #ffff00; font-size: 1.1rem; }
+        .briefing-box {
+            width: 100%;
+            max-width: 640px;
+            background: rgba(0, 15, 15, 0.75);
+            border: 1px dashed #00ffcc;
+            padding: 15px;
+            margin: 10px 0;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            text-align: left;
+        }
+        .highlight { color: #ff3366; font-weight: bold; }
+        .control-legend { color: #ffff00; font-weight: bold; }
+        button {
+            background: #00ffcc;
+            color: #000;
+            border: none;
+            padding: 10px 25px;
+            font-size: 1.1rem;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.2s;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.3);
+        }
+        button:hover {
+            background: #ffffff;
+            box-shadow: 0 0 25px #00ffcc;
+            transform: scale(1.03);
+        }
+        /* Mobile Controls Layout */
+        #touch-ui {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+        .touch-zone {
+            position: absolute;
+            pointer-events: auto;
+            background: rgba(0, 255, 204, 0.03);
+            border: 1px solid rgba(0, 255, 204, 0.12);
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: rgba(0, 255, 204, 0.35);
+            font-weight: bold;
+            font-size: 0.75rem;
+        }
+        #touch-move { bottom: 45px; left: 15px; width: 100px; height: 100px; }
+        #touch-look { bottom: 45px; right: 15px; width: 100px; height: 100px; }
+        #touch-fire { bottom: 45px; left: 50%; transform: translateX(-50%); width: 80px; height: 50px; background: rgba(255, 51, 102, 0.08); border-color: rgba(255, 51, 102, 0.25); color: #ff3366; font-size: 1rem;}
+        
+        #utility-bar {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 12;
+            display: flex;
+            gap: 8px;
+        }
+        .util-btn {
+            background: rgba(0, 0, 0, 0.75);
+            border: 1px solid #00ffcc;
+            color: #00ffcc;
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            margin: 0;
+            box-shadow: none;
+        }
+        .util-btn:hover { background: rgba(0, 255, 204, 0.2); }
+        
+        /* Tactical Audio Announcement Ticker */
+        #audio-warning {
+            position: absolute;
+            top: 12px;
+            left: 15px;
+            z-index: 8;
+            color: #ff3366;
+            font-weight: bold;
+            font-size: 0.85rem;
+            text-shadow: 0 0 8px #ff3366;
+            animation: pulse-warn 1s infinite alternate;
+            display: none;
+        }
+        @keyframes pulse-warn {
+            from { opacity: 0.4; } to { opacity: 1; }
+        }
+
+        /* Scorecard Tables */
+        .score-table {
+            width: 100%;
+            margin-top: 10px;
+            border-collapse: collapse;
+        }
+        .score-table td {
+            padding: 6px;
+            border-bottom: 1px solid rgba(0, 255, 204, 0.2);
+            font-size: 0.9rem;
+        }
+        .score-val { text-align: right; color: #ffff00; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="audio-warning">⚠️ LIFE SUPPORT WARNING</div>
+    <div id="utility-bar">
+        <button id="btn-mute" class="util-btn">MUTE</button>
+        <button id="btn-pause" class="util-btn hidden">PAUSE</button>
+    </div>
+
+    <!-- Gameplay Canvas -->
+    <canvas id="gameCanvas" width="480" height="320"></canvas>
+
+    <!-- Briefing Screen Overlay -->
+    <div id="screen-briefing" class="overlay">
+        <h1>AIRLOCK ZERO</h1>
+        <h3>REACTOR RUN — SECURE INBOUND</h3>
+        <div class="briefing-box">
+            <span class="highlight">TACTICAL MISSION OVERVIEW:</span><br>
+            A severe containment rupture has flooded Sector 4. Systems are failing.<br><br>
+            • Harvest <span class="highlight">3 Core Reactor Cells</span> (Green Radar Indicators)<br>
+            • Once all 3 are acquired, the <span class="highlight">Airlock Exit</span> unlocks (Orange Radar Indicator)<br>
+            • Neutralize rogue security tracking nodes before they sap your integrity.<br>
+            • Evacuate before your <span class="highlight">150-Second Oxygen Supply</span> fully depletes.<br><br>
+            <span class="control-legend">CONTROLS:</span><br>
+            • Move: <span class="highlight">W, A, S, D</span> (or Left Touch Zone)<br>
+            • Aim/Turn: <span class="highlight">Drag Mouse/Trackpad</span> or use <span class="highlight">Q / E / Arrow Keys</span> (Right Touch Zone)<br>
+            • Pulse Cannon: <span class="highlight">Left-Click / Spacebar</span> (or Center Pulse Button)
+        </div>
+        <button id="btn-start">START MISSION</button>
+    </div>
+
+    <!-- Game Over / Scorecard Screen Overlay -->
+    <div id="screen-gameover" class="overlay hidden">
+        <h1 id="gameover-title" class="highlight">STATION LOST</h1>
+        <p id="gameover-reason">Oxygen reserves fully expired.</p>
+        
+        <div class="briefing-box" style="max-width: 420px;">
+            <h4 style="margin: 0 0 5px 0; text-align: center; color: #00ffcc; letter-spacing: 1px;">MISSION EVALUATION PERFORMANCE</h4>
+            <table class="score-table">
+                <tr><td>Elapsed Mission Time</td><td id="score-time" class="score-val">0s</td></tr>
+                <tr><td>Remaining Vitality Health</td><td id="score-health" class="score-val">0%</td></tr>
+                <tr><td>Cores Recovered</td><td id="score-cells" class="score-val">0/3</td></tr>
+                <tr><td>Defense Drones Terminated</td><td id="score-drones" class="score-val">0</td></tr>
+            </table>
+        </div>
+        
+        <button id="btn-restart">RE-INITIALIZE RUN</button>
+    </div>
+
+    <!-- Accessible Mobile HUD Touch Interfaces -->
+    <div id="touch-ui">
+        <div id="touch-move" class="touch-zone">MOVE</div>
+        <div id="touch-fire" class="touch-zone">PULSE</div>
+        <div id="touch-look" class="touch-zone">TURN</div>
+    </div>
+</div>
+
+<script>
+/**
+ * AIRLOCK ZERO: ENGINE ENGINE CORE
+ */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// --- Simulation State Variables ---
+let gameState = 'BRIEFING'; 
+let oxygenTimer = 150; 
+let elapsedPlayTime = 0;
+let lastTime = 0;
+let accumulatedTime = 0;
+let isMuted = false;
+let dronesDisabledCount = 0;
+
+// Warning thresholds metrics track
+let warn60Triggered = false;
+let warn30Triggered = false;
+
+// Damage Indicator Variable
+let damageVignetteAlpha = 0;
+
+// Player Properties
+const player = {
+    x: 2.5, y: 2.5,
+    dirX: 1, dirY: 0, 
+    planeX: 0, planeY: 0.66, 
+    health: 100,
+    cellsCollected: 0,
+    isFiring: 0, 
+    fireCooldown: 0
+};
+
+// Map Configurations (1 = Structural Boundary, 2 = Airlock Access Vector)
+const MAP_WIDTH = 16;
+const MAP_HEIGHT = 16;
+const map = [
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1,
+    1,0,0,0,1,0,1,1,1,1,0,1,0,1,0,1,
+    1,0,0,0,0,0,1,0,0,1,0,0,0,1,0,1,
+    1,1,1,0,1,1,1,0,0,1,1,1,0,1,0,1,
+    1,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,
+    1,0,1,1,1,1,1,1,0,1,0,1,0,1,0,1,
+    1,0,1,0,0,0,0,1,0,1,0,0,0,1,0,1,
+    1,0,1,0,1,1,0,1,0,1,1,1,1,1,0,1,
+    1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,
+    1,1,1,0,1,1,1,1,1,1,0,1,1,1,1,1,
+    1,0,0,0,0,0,1,0,0,0,0,1,0,0,0,1,
+    1,0,1,1,1,0,1,0,1,1,0,1,0,1,0,1,
+    1,0,1,0,0,0,0,0,0,1,0,0,0,1,0,1,
+    1,0,0,0,1,1,1,2,2,1,1,1,0,1,0,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
+];
+const EXIT_TILE_X = 8;
+const EXIT_TILE_Y = 14;
+
+// Simulation Sprite Nodes
+let entities = [];
+
+function populateEntities() {
+    entities = [
+        { x: 13.5, y: 1.5, type: 'cell', active: true, phase: 0 },
+        { x: 1.5,  y: 13.5, type: 'cell', active: true, phase: 2 },
+        { x: 8.5,  y: 7.5, type: 'cell', active: true, phase: 4 },
+        { x: 5.5,  y: 3.5, type: 'drone', active: true, health: 100, speed: 0.6, phase: 1 },
+        { x: 13.5, y: 9.5, type: 'drone', active: true, health: 100, speed: 0.8, phase: 3 },
+        { x: 2.5,  y: 9.5, type: 'drone', active: true, health: 100, speed: 0.7, phase: 5 }
+    ];
+}
+
+// --- Basic Device Input Mapping Systems ---
+const keys = {};
+let mouseDeltaX = 0;
+let isDragging = false;
+
+window.addEventListener('keydown', (e) => { 
+    keys[e.key.toLowerCase()] = true; 
+    if(e.key === ' ' && gameState === 'PLAYING') { triggerWeaponPulse(); e.preventDefault(); }
+});
+window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+
+canvas.addEventListener('mousedown', () => { isDragging = true; });
+window.addEventListener('mouseup', () => { isDragging = false; });
+canvas.addEventListener('mousemove', (e) => {
+    if (gameState === 'PLAYING' && (isDragging || document.pointerLockElement === canvas)) {
+        mouseDeltaX += e.movementX || 0;
+    }
+});
+
+canvas.addEventListener('click', () => {
+    if (gameState === 'PLAYING') {
+        triggerWeaponPulse();
+        if(canvas.requestPointerLock) canvas.requestPointerLock();
+    }
+});
+
+// Mobile/Touch Virtual Interface Configurations
+setupTouchZone('touch-move', (dx, dy) => {
+    if(gameState !== 'PLAYING') return;
+    keys['w'] = dy < -12;
+    keys['s'] = dy > 12;
+    keys['a'] = dx < -12;
+    keys['d'] = dx > 12;
+}, () => { keys['w'] = keys['s'] = keys['a'] = keys['d'] = false; });
+
+setupTouchZone('touch-look', (dx) => {
+    if(gameState !== 'PLAYING') return;
+    mouseDeltaX += dx * 0.45;
+}, null);
+
+document.getElementById('touch-fire').addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    if(gameState === 'PLAYING') triggerWeaponPulse();
+});
+
+function setupTouchZone(id, onDrag, onEnd) {
+    const el = document.getElementById(id);
+    let startX = 0, startY = 0;
+    
+    el.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const t = e.touches[0];
+        startX = t.clientX;
+        startY = t.clientY;
+    });
+    el.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const t = e.touches[0];
+        onDrag(t.clientX - startX, t.clientY - startY);
+    });
+    el.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        if(onEnd) onEnd();
+    });
+}
+
+// --- Synthesizer Audio Subsystems ---
+let audioCtx = null;
+function initAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+function playSound(freq, type, duration, volume = 0.1) {
+    if (isMuted || !audioCtx) return;
+    try {
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    } catch(e) {}
+}
+
+function dispatchVocalWarning() {
+    // Master alarm chime system sound
+    playSound(180, 'sawtooth', 0.25, 0.25);
+    setTimeout(() => playSound(140, 'sawtooth', 0.3, 0.25), 150);
+    
+    const elements = document.getElementById('audio-warning');
+    elements.style.display = 'block';
+    setTimeout(() => { if(gameState === 'PLAYING') elements.style.display = 'none'; }, 2500);
+}
+
+function triggerWeaponPulse() {
+    if (player.fireCooldown > 0) return;
+    player.isFiring = 4;
+    player.fireCooldown = 0.25; 
+    playSound(780, 'sawtooth', 0.12, 0.12);
+    playSound(180, 'triangle', 0.18, 0.18);
+
+    let hitTarget = null;
+    let closestDist = 5.0; 
+
+    entities.forEach(ent => {
+        if (!ent.active || ent.type !== 'drone') return;
+        
+        let sprX = ent.x - player.x;
+        let sprY = ent.y - player.y;
+        let invDet = 1.0 / (player.planeX * player.dirY - player.dirX * player.planeY);
+        let transformY = invDet * (-player.planeY * sprX + player.planeX * sprY);
+        let transformX = invDet * (player.dirY * sprX - player.dirX * sprY);
+        
+        if (transformY > 0.2 && Math.abs(transformX / transformY) < 0.28) {
+            if (transformY < closestDist) {
+                closestDist = transformY;
+                hitTarget = ent;
+            }
+        }
+    });
+
+    if (hitTarget) {
+        hitTarget.health -= 50;
+        playSound(130, 'square', 0.08, 0.3);
+        if (hitTarget.health <= 0) {
+            hitTarget.active = false;
+            dronesDisabledCount++;
+            playSound(55, 'sawtooth', 0.6, 0.4);
+        }
+    }
+}
+
+// --- Menu Controls Routing ---
+document.getElementById('btn-start').addEventListener('click', () => {
+    initAudio();
+    gameState = 'PLAYING';
+    document.getElementById('screen-briefing').classList.add('hidden');
+    document.getElementById('btn-pause').classList.remove('hidden');
+    populateEntities();
+    lastTime = performance.now();
+    requestAnimationFrame(gameLoop);
+});
+
+document.getElementById('btn-restart').addEventListener('click', () => {
+    oxygenTimer = 150;
+    elapsedPlayTime = 0;
+    player.health = 100;
+    player.cellsCollected = 0;
+    dronesDisabledCount = 0;
+    warn60Triggered = false;
+    warn30Triggered = false;
+    damageVignetteAlpha = 0;
+    player.x = 2.5; player.y = 2.5;
+    player.dirX = 1; player.dirY = 0;
+    player.planeX = 0; player.planeY = 0.66;
+    
+    document.getElementById('audio-warning').style.display = 'none';
+    document.getElementById('screen-gameover').classList.add('hidden');
+    gameState = 'PLAYING';
+    populateEntities();
+    lastTime = performance.now();
+});
+
+document.getElementById('btn-pause').addEventListener('click', () => {
+    if(gameState === 'PLAYING') {
+        gameState = 'PAUSED';
+        document.getElementById('btn-pause').innerText = "RESUME";
+    } else if(gameState === 'PAUSED') {
+        gameState = 'PLAYING';
+        document.getElementById('btn-pause').innerText = "PAUSE";
+        lastTime = performance.now();
+    }
+});
+
+document.getElementById('btn-mute').addEventListener('click', () => {
+    isMuted = !isMuted;
+    document.getElementById('btn-mute').innerText = isMuted ? "UNMUTE" : "MUTE";
+});
+
+// --- Physics Framework & Updates ---
+function updateSimulation(dt) {
+    if (player.fireCooldown > 0) player.fireCooldown -= dt;
+    if (damageVignetteAlpha > 0) damageVignetteAlpha -= dt * 2.5; // Decays over frames quickly
+
+    // 1. Resolve Rotational Aim vectors
+    let turnSpeed = 0;
+    if (keys['q'] || keys['arrowleft']) turnSpeed -= 2.4 * dt;
+    if (keys['e'] || keys['arrowright']) turnSpeed += 2.4 * dt;
+    if (mouseDeltaX !== 0) {
+        turnSpeed += mouseDeltaX * 0.0045;
+        mouseDeltaX = 0; 
+    }
+
+    if (turnSpeed !== 0) {
+        let oldDirX = player.dirX;
+        player.dirX = player.dirX * Math.cos(turnSpeed) - player.dirY * Math.sin(turnSpeed);
+        player.dirY = oldDirX * Math.sin(turnSpeed) + player.dirY * Math.cos(turnSpeed);
+        let oldPlaneX = player.planeX;
+        player.planeX = player.planeX * Math.cos(turnSpeed) - player.planeY * Math.sin(turnSpeed);
+        player.planeY = oldPlaneX * Math.sin(turnSpeed) + player.planeY * Math.cos(turnSpeed);
+    }
+
+    // 2. Resolve Translation Matrices
+    let moveSpeed = 3.2 * dt;
+    let nextX = player.x;
+    let nextY = player.y;
+
+    if (keys['w']) { nextX += player.dirX * moveSpeed; nextY += player.dirY * moveSpeed; }
+    if (keys['s']) { nextX -= player.dirX * moveSpeed; nextY -= player.dirY * moveSpeed; }
+    if (keys['a']) { nextX -= player.planeX * moveSpeed; nextY -= player.planeY * moveSpeed; }
+    if (keys['d']) { nextX += player.planeX * moveSpeed; nextY += player.planeY * moveSpeed; }
+
+    if (map[Math.floor(player.y) * MAP_WIDTH + Math.floor(nextX + (nextX > player.x ? 0.25 : -0.25))] === 0) player.x = nextX;
+    if (map[Math.floor(nextY + (nextY > player.y ? 0.25 : -0.25)) * MAP_WIDTH + Math.floor(player.x)] === 0) player.y = nextY;
+
+    // Boundary Gate Check Execution Rules
+    if (Math.floor(player.x) === EXIT_TILE_X && Math.floor(player.y) === EXIT_TILE_Y) {
+        if (player.cellsCollected >= 3) {
+            triggerEndgame(true, "Airlock sealed successfully. Containment stabilized.");
+            return;
+        }
+    }
+
+    // 3. Entity Behavior Loop
+    entities.forEach(ent => {
+        if (!ent.active) return;
+        ent.phase += dt * 4.5;
+
+        let dist = Math.hypot(ent.x - player.x, ent.y - player.y);
+
+        if (ent.type === 'cell') {
+            if (dist < 0.45) {
+                ent.active = false;
+                player.cellsCollected++;
+                playSound(587.33, 'sine', 0.08, 0.25); 
+                setTimeout(() => playSound(783.99, 'sine', 0.15, 0.25), 70);
+            }
+        } else if (ent.type === 'drone') {
+            let vx = player.x - ent.x;
+            let vy = player.y - ent.y;
+            if (dist > 0.35) {
+                let step = ent.speed * dt;
+                let targetX = ent.x + (vx / dist) * step;
+                let targetY = ent.y + (vy / dist) * step;
+                
+                if (map[Math.floor(ent.y) * MAP_WIDTH + Math.floor(targetX)] === 0) ent.x = targetX;
+                if (map[Math.floor(targetY) * MAP_WIDTH + Math.floor(ent.x)] === 0) ent.y = targetY;
+            }
+
+            if (dist < 0.65) {
+                player.health -= 30 * dt;
+                damageVignetteAlpha = Math.min(0.7, damageVignetteAlpha + dt * 4.0);
+                if(Math.random() < 0.12) playSound(90, 'sawtooth', 0.06, 0.15);
+                if (player.health <= 0) {
+                    triggerEndgame(false, "System core failure. Vital signs terminated.");
+                }
+            }
+        }
+    });
+}
+
+function triggerEndgame(isVictory, narrativeText) {
+    gameState = 'GAMEOVER';
+    document.exitPointerLock?.();
+    
+    // Process Dashboard Elements
+    document.getElementById('gameover-title').innerText = isVictory ? "MISSION ACCOMPLISHED" : "STATION LOST";
+    document.getElementById('gameover-title').style.color = isVictory ? "#00ffcc" : "#ff3366";
+    document.getElementById('gameover-reason').innerText = narrativeText;
+    
+    // Performance Metrics Table Insertion
+    document.getElementById('score-time').innerText = `${Math.floor(elapsedPlayTime)} seconds`;
+    document.getElementById('score-health').innerText = `${Math.max(0, Math.ceil(player.health))}%`;
+    document.getElementById('score-cells').innerText = `${player.cellsCollected} / 3`;
+    document.getElementById('score-drones').innerText = dronesDisabledCount;
+    
+    document.getElementById('screen-gameover').classList.remove('hidden');
+
+    if(isVictory) {
+        playSound(523.25, 'square', 0.2, 0.2);
+        setTimeout(() => playSound(659.25, 'square', 0.2, 0.2), 150);
+        setTimeout(() => playSound(987.77, 'square', 0.5, 0.2), 300);
+    } else {
+        playSound(80, 'sawtooth', 0.9, 0.4);
+    }
+}
+
+// --- Raycaster Engine Framework & Rendering ---
+function renderFrame() {
+    const W = canvas.width;
+    const H = canvas.height;
+    
+    // Sky/Floor Horizon base split
+    let bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+    bgGrad.addColorStop(0, '#020208');
+    bgGrad.addColorStop(0.5, '#0b0a14');
+    bgGrad.addColorStop(0.51, '#100f14');
+    bgGrad.addColorStop(1, '#040406');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    let zBuffer = new Array(W);
+
+    // 1. Raycast Wall Traversal Engine Loop
+    for (let x = 0; x < W; x++) {
+        let cameraX = 2 * x / W - 1;
+        let rayDirX = player.dirX + player.planeX * cameraX;
+        let rayDirY = player.dirY + player.planeY * cameraX;
+
+        let mapX = Math.floor(player.x);
+        let mapY = Math.floor(player.y);
+
+        let sideDistX, sideDistY;
+        let deltaDistX = (rayDirX === 0) ? Infinity : Math.abs(1 / rayDirX);
+        let deltaDistY = (rayDirY === 0) ? Infinity : Math.abs(1 / rayDirY);
+        let perpWallDist;
+
+        let stepX, stepY;
+        let hit = 0;
+        let side; 
+        let wallType = 0;
+
+        if (rayDirX < 0) { stepX = -1; sideDistX = (player.x - mapX) * deltaDistX; } 
+        else           { stepX = 1; sideDistX = (mapX + 1.0 - player.x) * deltaDistX; }
+        if (rayDirY < 0) { stepY = -1; sideDistY = (player.y - mapY) * deltaDistY; } 
+        else           { stepY = 1; sideDistY = (mapY + 1.0 - player.y) * deltaDistY; }
+
+        while (hit === 0) {
+            if (sideDistX < sideDistY) { sideDistX += deltaDistX; mapX += stepX; side = 0; } 
+            else                       { sideDistY += deltaDistY; mapY += stepY; side = 1; }
+            if(mapX < 0 || mapX >= MAP_WIDTH || mapY < 0 || mapY >= MAP_HEIGHT) break;
+            let tile = map[mapY * MAP_WIDTH + mapX];
+            if (tile > 0) { hit = 1; wallType = tile; }
+        }
+
+        if (side === 0) perpWallDist = (mapX - player.x + (1 - stepX) / 2) / rayDirX;
+        else           perpWallDist = (mapY - player.y + (1 - stepY) / 2) / rayDirY;
+        
+        if(perpWallDist <= 0) perpWallDist = 0.01;
+        zBuffer[x] = perpWallDist;
+
+        let lineHeight = Math.floor(H / perpWallDist);
+        let drawStart = -lineHeight / 2 + H / 2;
+        let drawEnd = lineHeight / 2 + H / 2;
+
+        let wallColor = "#1452cc"; 
+        if (wallType === 2) wallColor = player.cellsCollected >= 3 ? "#00ff88" : "#ff9900";
+        
+        ctx.strokeStyle = wallColor;
+        if(side === 1) {
+            ctx.strokeStyle = (wallType === 2) ? (player.cellsCollected >= 3 ? "#00b35f" : "#cc7a00") : "#0f3da1";
+        }
+        
+        let fog = Math.min(1, 1.2 / (1 + perpWallDist * perpWallDist * 0.035));
+        ctx.globalAlpha = fog;
+
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x, drawStart);
+        ctx.lineTo(x, drawEnd);
+        ctx.stroke();
+        ctx.globalAlpha = 1.0;
+
+        // Structural detailing grid lines
+        ctx.fillStyle = player.cellsCollected >= 3 && wallType === 2 ? "#00ffcc" : "#00ffff";
+        ctx.fillRect(x, drawStart, 1, 2);
+        ctx.fillRect(x, drawEnd - 2, 1, 2);
+    }
+
+    // 2. Billboard Sprites Layer Mapping
+    let sprOrder = entities.map((e, idx) => ({ index: idx, dist: Math.hypot(e.x - player.x, e.y - player.y) }));
+    sprOrder.sort((a, b) => b.dist - a.dist);
+
+    sprOrder.forEach(item => {
+        let ent = entities[item.index];
+        if (!ent.active) return;
+
+        let sprX = ent.x - player.x;
+        let sprY = ent.y - player.y;
+        let invDet = 1.0 / (player.planeX * player.dirY - player.dirX * player.planeY);
+        let transformX = invDet * (player.dirY * sprX - player.dirX * sprY);
+        let transformY = invDet * (-player.planeY * sprX + player.planeX * sprY); 
+
+        if (transformY <= 0.1) return; 
+
+        let sprScreenX = Math.floor((W / 2) * (1 + transformX / transformY));
+        let sprHeight = Math.abs(Math.floor(H / transformY));
+        let sprWidth = sprHeight;
+
+        let drawStartV = -sprHeight / 2 + H / 2;
+        let drawEndX = Math.floor(sprWidth / 2 + sprScreenX);
+        let drawStartX = Math.floor(-sprWidth / 2 + sprScreenX);
+
+        let bobbing = Math.sin(ent.phase) * (sprHeight * 0.08);
+
+        for (let stripe = drawStartX; stripe < drawEndX; stripe++) {
+            if (stripe >= 0 && stripe < W && transformY < zBuffer[stripe]) {
+                let localX = (stripe - drawStartX) / sprWidth;
+                
+                if (ent.type === 'cell') {
+                    ctx.fillStyle = "#00ff88"; 
+                    if (Math.abs(localX - 0.5) < 0.16) {
+                        ctx.fillRect(stripe, drawStartV + bobbing + (sprHeight * 0.2), 1, sprHeight * 0.6);
+                    }
+                    if(Math.abs(localX - 0.5) < 0.35 && Math.abs(localX - 0.5) > 0.12) {
+                        ctx.fillRect(stripe, drawStartV + bobbing + (sprHeight * 0.4), 1, sprHeight * 0.2);
+                    }
+                } else if (ent.type === 'drone') {
+                    ctx.fillStyle = "#ff2255";
+                    if (Math.abs(localX - 0.5) < 0.28) {
+                        ctx.fillRect(stripe, drawStartV + bobbing + (sprHeight * 0.25), 1, sprHeight * 0.35);
+                        if(Math.abs(localX - 0.5) < 0.08) {
+                            ctx.fillStyle = "#ffffff";
+                            ctx.fillRect(stripe, drawStartV + bobbing + (sprHeight * 0.32), 1, sprHeight * 0.08);
+                        }
+                    }
+                    ctx.fillStyle = "#444455";
+                    if(Math.abs(localX - 0.32) < 0.03 || Math.abs(localX - 0.68) < 0.03) {
+                        ctx.fillRect(stripe, drawStartV + bobbing + (sprHeight * 0.45), 1, sprHeight * 0.25);
+                    }
+                }
+            }
+        }
+    });
+
+    // 3. Shock Pulse Weapon Render Pass
+    if (player.isFiring > 0) {
+        player.isFiring--;
+        let flash = ctx.createRadialGradient(W/2, H - 45, 10, W/2, H - 45, 90);
+        flash.addColorStop(0, 'rgba(255,255,255,1)');
+        flash.addColorStop(0.4, 'rgba(0,255,204,0.7)');
+        flash.addColorStop(1, 'rgba(0,255,204,0)');
+        ctx.fillStyle = flash;
+        ctx.fillRect(0, 0, W, H);
+        
+        ctx.strokeStyle = "rgba(0, 255, 204, 0.5)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(W/2, H/2 - 8); ctx.lineTo(W/2, H/2 + 8);
+        ctx.moveTo(W/2 - 8, H/2); ctx.lineTo(W/2 + 8, H/2);
+        ctx.stroke();
+    }
+
+    // Rifle Emitter Body Assembly Frame 
+    ctx.fillStyle = "#12121c";
+    ctx.strokeStyle = "#00ffcc";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(W/2 - 30, H);
+    ctx.lineTo(W/2 - 16, H - 65);
+    ctx.lineTo(W/2 + 16, H - 65);
+    ctx.lineTo(W/2 + 30, H);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = player.fireCooldown > 0 ? "#ff2255" : "#00ffcc";
+    ctx.fillRect(W/2 - 3, H - 58, 6, 12);
+
+    ctx.fillStyle = "rgba(0, 255, 204, 0.4)";
+    ctx.fillRect(W/2 - 1, H/2 - 1, 2, 2);
+
+    // 4. DAMAGE VIGNETTE RENDER LAYER
+    if (damageVignetteAlpha > 0) {
+        let dmgGrad = ctx.createRadialGradient(W/2, H/2, H/3, W/2, H/2, W/2);
+        dmgGrad.addColorStop(0, 'rgba(255, 0, 50, 0)');
+        dmgGrad.addColorStop(1, `rgba(255, 0, 50, ${damageVignetteAlpha})`);
+        ctx.fillStyle = dmgGrad;
+        ctx.fillRect(0, 0, W, H);
+    }
+
+    // 5. HUD Status Ribbon Layout
+    ctx.fillStyle = "#000000";
+    ctx.fillRect(0, H - 35, W, 35);
+    ctx.strokeStyle = "#00ffcc";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(0, H - 35, W, 35);
+
+    ctx.font = "bold 9px monospace";
+    ctx.fillStyle = oxygenTimer <= 30 ? "#ff3366" : "#00ffcc";
+    ctx.fillText(`O2 RESERVES: ${Math.ceil(oxygenTimer)}s`, 12, H - 14);
+    
+    ctx.fillStyle = player.health <= 35 ? "#ff3366" : "#00ffcc";
+    ctx.fillText(`SUIT VITALS: ${Math.max(0, Math.ceil(player.health))}%`, 140, H - 14);
+    
+    ctx.fillStyle = "#00ffcc";
+    ctx.fillText(`CORES: ${player.cellsCollected}/3`, 255, H - 14);
+
+    // 6. PROCEDURAL INTEGRATED RADAR ARCHITECTURE
+    const radarSize = 28;
+    const radarCenterX = W - 32;
+    const radarCenterY = H - 18;
+
+    // Outer Boundary Ring
+    ctx.strokeStyle = "rgba(0, 255, 204, 0.4)";
+    ctx.beginPath();
+    ctx.arc(radarCenterX, radarCenterY, radarSize, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Directional FOV Sweeper Guidelines
+    ctx.strokeStyle = "rgba(0, 255, 204, 0.12)";
+    ctx.beginPath();
+    ctx.moveTo(radarCenterX - radarSize, radarCenterY); ctx.lineTo(radarCenterX + radarSize, radarCenterY);
+    ctx.moveTo(radarCenterX, radarCenterY - radarSize); ctx.lineTo(radarCenterX, radarCenterY + radarSize);
+    ctx.stroke();
+
+    // Plot Objective Coordinates Inside Compass Range Space
+    entities.forEach(ent => {
+        if (!ent.active) return;
+        
+        let relX = ent.x - player.x;
+        let relY = ent.y - player.y;
+
+        // Project map components onto player orientation space coordinates
+        let rotX = relX * player.dirY - relY * player.dirX;
+        let rotY = relX * player.dirX + relY * player.dirY;
+
+        // Radar scaling compression parameter multiplier factor
+        let pX = radarCenterX + rotX * 3.5;
+        let pY = radarCenterY - rotY * 3.5;
+
+        // Frame bounding clip check limits before plotting dots on radar asset
+        if (Math.hypot(pX - radarCenterX, pY - radarCenterY) < radarSize - 1) {
+            ctx.fillStyle = ent.type === 'cell' ? "#00ff88" : "#ff2255"; // Green Cells vs Red Drones
+            ctx.fillRect(pX - 1.5, pY - 1.5, 3, 3);
+        }
+    });
+
+    // Plot Airlock Door Target Position once core harvest limits are matched
+    let gateRelX = (EXIT_TILE_X + 0.5) - player.x;
+    let gateRelY = (EXIT_TILE_Y + 0.5) - player.y;
+    let gateRotX = gateRelX * player.dirY - gateRelY * player.dirX;
+    let gateRotY = gateRelX * player.dirX + gateRelY * player.dirY;
+    let gX = radarCenterX + gateRotX * 3.5;
+    let gY = radarCenterY - gateRotY * 3.5;
+
+    if (Math.hypot(gX - radarCenterX, gY - radarCenterY) < radarSize - 1) {
+        ctx.fillStyle = player.cellsCollected >= 3 ? "#ffff00" : "rgba(255,153,0,0.3)"; // Glowing Unlock Orange vs Translucent Locked Yellow
+        ctx.fillRect(gX - 2, gY - 2, 4, 4);
+    }
+
+    // Center Reference Point Node (Player Location Vector Position)
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(radarCenterX - 1, radarCenterY - 1, 2, 2);
+}
+
+// --- Frame Pipeline Controller ---
+function gameLoop(timestamp) {
+    if (gameState !== 'PLAYING') return;
+
+    let dt = (timestamp - lastTime) / 1000.0;
+    lastTime = timestamp;
+
+    if(dt > 0.1) dt = 0.1;
+    elapsedPlayTime += dt;
+
+    accumulatedTime += dt;
+    if (accumulatedTime >= 1.0) {
+        oxygenTimer--;
+        accumulatedTime -= 1.0;
+        
+        // Automated Safety Check Evaluation Rules
+        if (oxygenTimer === 60 && !warn60Triggered) { warn60Triggered = true; dispatchVocalWarning(); }
+        if (oxygenTimer === 30 && !warn30Triggered) { warn30Triggered = true; dispatchVocalWarning(); }
+        
+        if (oxygenTimer <= 0) {
+            triggerEndgame(false, "Life support systems fully expired. Suffocation complete.");
+            return;
+        }
+    }
+
+    updateSimulation(dt);
+    renderFrame();
+
+    requestAnimationFrame(gameLoop);
+}
+</script>
+</body>
+</html>
+

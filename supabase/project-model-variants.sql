@@ -1085,3 +1085,316 @@ REVOKE ALL ON FUNCTION set_project_model_variant_default(UUID, UUID) FROM PUBLIC
 REVOKE ALL ON FUNCTION set_project_model_variant_default(UUID, UUID) FROM anon, authenticated;
 GRANT EXECUTE ON FUNCTION set_project_model_variant_default(UUID, UUID)
   TO authenticated, service_role;
+
+-- Immutable model-run artifact evidence
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS public.project_model_variant_artifacts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  model_variant_id UUID NOT NULL
+    REFERENCES public.project_model_variants(id) ON DELETE RESTRICT,
+  source_step_id TEXT NOT NULL CHECK (
+    BTRIM(source_step_id) <> ''
+    AND source_step_id = BTRIM(source_step_id)
+  ),
+  source_step_number INT NOT NULL CHECK (source_step_number > 0),
+  artifact_path TEXT NOT NULL CHECK (
+    artifact_path LIKE 'public/artifacts/%'
+    AND LENGTH(artifact_path) > LENGTH('public/artifacts/')
+    AND artifact_path = BTRIM(artifact_path)
+    AND artifact_path NOT LIKE '%..%'
+    AND STRPOS(artifact_path, CHR(92)) = 0
+  ),
+  artifact_sha256 TEXT NOT NULL CHECK (artifact_sha256 ~ '^[0-9a-f]{64}$'),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (model_variant_id, artifact_path),
+  UNIQUE (
+    model_variant_id,
+    source_step_id,
+    source_step_number,
+    artifact_path,
+    artifact_sha256
+  )
+);
+
+CREATE INDEX IF NOT EXISTS idx_project_model_variant_artifacts_step
+  ON public.project_model_variant_artifacts(
+    model_variant_id,
+    source_step_number,
+    source_step_id
+  );
+
+CREATE OR REPLACE FUNCTION public.validate_project_model_variant_artifact_step_identity()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM public.project_model_variant_artifacts AS existing
+    WHERE existing.model_variant_id = NEW.model_variant_id
+      AND (
+        (existing.source_step_id = NEW.source_step_id AND existing.source_step_number <> NEW.source_step_number)
+        OR (existing.source_step_number = NEW.source_step_number AND existing.source_step_id <> NEW.source_step_id)
+      )
+  ) THEN
+    RAISE EXCEPTION 'A model-run response ID and response number must map one-to-one.';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.validate_project_model_variant_artifact_step_identity()
+  FROM PUBLIC, anon, authenticated;
+DROP TRIGGER IF EXISTS validate_project_model_variant_artifact_step_identity_fields
+  ON public.project_model_variant_artifacts;
+CREATE TRIGGER validate_project_model_variant_artifact_step_identity_fields
+  BEFORE INSERT ON public.project_model_variant_artifacts
+  FOR EACH ROW EXECUTE FUNCTION public.validate_project_model_variant_artifact_step_identity();
+
+CREATE OR REPLACE FUNCTION public.prevent_project_model_variant_artifact_mutation()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+  RAISE EXCEPTION 'Published model-variant artifact evidence is immutable.';
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.prevent_project_model_variant_artifact_mutation() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.prevent_project_model_variant_artifact_mutation() FROM anon, authenticated;
+
+DROP TRIGGER IF EXISTS prevent_project_model_variant_artifact_mutation_fields
+  ON public.project_model_variant_artifacts;
+CREATE TRIGGER prevent_project_model_variant_artifact_mutation_fields
+  BEFORE UPDATE OR DELETE ON public.project_model_variant_artifacts
+  FOR EACH ROW EXECUTE FUNCTION public.prevent_project_model_variant_artifact_mutation();
+
+ALTER TABLE public.project_model_variant_artifacts ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.project_model_variant_artifacts
+  FROM PUBLIC, anon, authenticated, service_role;
+GRANT SELECT ON TABLE public.project_model_variant_artifacts TO service_role;
+
+CREATE OR REPLACE FUNCTION public.publish_project_model_variant_artifact_evidence(
+  target_project_id UUID,
+  evidence_rows JSONB
+)
+RETURNS SETOF public.project_model_variant_artifacts
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  evidence_row JSONB;
+BEGIN
+  IF COALESCE((SELECT auth.jwt() ->> 'role'), '') <> 'service_role'
+    AND NOT EXISTS (
+      SELECT 1
+      FROM public.profiles
+      WHERE profiles.id = (SELECT auth.uid())
+        AND profiles.role = 'admin'
+    ) THEN
+    RAISE EXCEPTION 'Admin access required.';
+  END IF;
+
+  IF jsonb_typeof(evidence_rows) IS DISTINCT FROM 'array'
+    OR jsonb_array_length(evidence_rows) < 1 THEN
+    RAISE EXCEPTION 'Artifact-evidence payload must be a nonempty JSON array.';
+  END IF;
+
+  PERFORM pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended(target_project_id::TEXT || '|artifact-evidence', 0)
+  );
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.prompts
+    WHERE prompts.id = target_project_id
+      AND prompts.status = 'approved'
+  ) THEN
+    RAISE EXCEPTION 'Artifact evidence requires an approved canonical project.';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.project_model_variants
+    WHERE project_model_variants.project_id = target_project_id
+      AND project_model_variants.status IN ('published', 'historical')
+  ) THEN
+    RAISE EXCEPTION 'Artifact evidence requires at least one public model variant.';
+  END IF;
+
+  FOR evidence_row IN SELECT value FROM jsonb_array_elements(evidence_rows)
+  LOOP
+    IF jsonb_typeof(evidence_row) IS DISTINCT FROM 'object'
+      OR NOT (evidence_row ?& ARRAY[
+        'model_variant_id',
+        'source_run_id',
+        'source_step_id',
+        'source_step_number',
+        'artifact_path',
+        'artifact_sha256'
+      ])
+      OR evidence_row - ARRAY[
+        'model_variant_id',
+        'source_run_id',
+        'source_step_id',
+        'source_step_number',
+        'artifact_path',
+        'artifact_sha256'
+      ] <> '{}'::JSONB
+      OR NULLIF(BTRIM(evidence_row->>'model_variant_id'), '') IS NULL
+      OR NULLIF(BTRIM(evidence_row->>'source_run_id'), '') IS NULL
+      OR NULLIF(BTRIM(evidence_row->>'source_step_id'), '') IS NULL
+      OR jsonb_typeof(evidence_row->'source_step_number') IS DISTINCT FROM 'number'
+      OR (evidence_row->>'source_step_number') !~ '^[1-9][0-9]*$'
+      OR NULLIF(BTRIM(evidence_row->>'artifact_path'), '') IS NULL
+      OR evidence_row->>'artifact_path' NOT LIKE 'public/artifacts/%'
+      OR LENGTH(evidence_row->>'artifact_path') <= LENGTH('public/artifacts/')
+      OR evidence_row->>'artifact_path' IS DISTINCT FROM BTRIM(evidence_row->>'artifact_path')
+      OR evidence_row->>'artifact_path' LIKE '%..%'
+      OR STRPOS(evidence_row->>'artifact_path', CHR(92)) > 0
+      OR COALESCE(evidence_row->>'artifact_sha256', '') !~ '^[0-9a-f]{64}$' THEN
+      RAISE EXCEPTION 'Artifact-evidence row is malformed or contains unsupported fields.';
+    END IF;
+
+    IF NOT EXISTS (
+      SELECT 1
+      FROM public.project_model_variants AS variant
+      WHERE variant.id = (evidence_row->>'model_variant_id')::UUID
+        AND variant.project_id = target_project_id
+        AND variant.source_run_id = evidence_row->>'source_run_id'
+        AND variant.status IN ('published', 'historical')
+        AND evidence_row->>'artifact_path' = ANY (variant.artifact_version_paths)
+    ) THEN
+      RAISE EXCEPTION 'Artifact evidence does not belong to a public run of the canonical project.';
+    END IF;
+  END LOOP;
+
+  IF EXISTS (
+    SELECT 1
+    FROM jsonb_array_elements(evidence_rows) AS rows(row_value)
+    GROUP BY row_value->>'model_variant_id', row_value->>'artifact_path'
+    HAVING COUNT(*) <> 1
+  ) THEN
+    RAISE EXCEPTION 'Artifact-evidence payload repeats a model-run artifact path.';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM jsonb_array_elements(evidence_rows) AS rows(row_value)
+    GROUP BY row_value->>'model_variant_id', row_value->>'source_step_id'
+    HAVING COUNT(DISTINCT (row_value->>'source_step_number')::INT) <> 1
+  ) OR EXISTS (
+    SELECT 1 FROM jsonb_array_elements(evidence_rows) AS rows(row_value)
+    GROUP BY row_value->>'model_variant_id', (row_value->>'source_step_number')::INT
+    HAVING COUNT(DISTINCT row_value->>'source_step_id') <> 1
+  ) THEN
+    RAISE EXCEPTION 'A model-run response ID and response number must map one-to-one.';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM public.project_model_variants AS variant
+    CROSS JOIN LATERAL UNNEST(variant.artifact_version_paths) AS paths(artifact_path)
+    WHERE variant.project_id = target_project_id
+      AND variant.status IN ('published', 'historical')
+      AND NOT EXISTS (
+        SELECT 1
+        FROM jsonb_array_elements(evidence_rows) AS rows(row_value)
+        WHERE (rows.row_value->>'model_variant_id')::UUID = variant.id
+          AND rows.row_value->>'source_run_id' = variant.source_run_id
+          AND rows.row_value->>'artifact_path' = paths.artifact_path
+      )
+  ) OR EXISTS (
+    SELECT 1
+    FROM jsonb_array_elements(evidence_rows) AS rows(row_value)
+    WHERE NOT EXISTS (
+      SELECT 1
+      FROM public.project_model_variants AS variant
+      WHERE variant.id = (rows.row_value->>'model_variant_id')::UUID
+        AND variant.project_id = target_project_id
+        AND variant.status IN ('published', 'historical')
+        AND rows.row_value->>'artifact_path' = ANY (variant.artifact_version_paths)
+    )
+  ) THEN
+    RAISE EXCEPTION 'Artifact evidence must cover every public model-run artifact exactly once.';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM jsonb_array_elements(evidence_rows) AS rows(row_value)
+    JOIN public.project_model_variant_artifacts AS stored
+      ON stored.model_variant_id = (rows.row_value->>'model_variant_id')::UUID
+      AND stored.artifact_path = rows.row_value->>'artifact_path'
+    WHERE stored.source_step_id IS DISTINCT FROM rows.row_value->>'source_step_id'
+      OR stored.source_step_number IS DISTINCT FROM (rows.row_value->>'source_step_number')::INT
+      OR stored.artifact_sha256 IS DISTINCT FROM rows.row_value->>'artifact_sha256'
+  ) THEN
+    RAISE EXCEPTION 'Immutable artifact evidence differs from the previously published tuple.';
+  END IF;
+
+  INSERT INTO public.project_model_variant_artifacts (
+    model_variant_id,
+    source_step_id,
+    source_step_number,
+    artifact_path,
+    artifact_sha256
+  )
+  SELECT
+    (rows.row_value->>'model_variant_id')::UUID,
+    rows.row_value->>'source_step_id',
+    (rows.row_value->>'source_step_number')::INT,
+    rows.row_value->>'artifact_path',
+    rows.row_value->>'artifact_sha256'
+  FROM jsonb_array_elements(evidence_rows) AS rows(row_value)
+  ON CONFLICT (model_variant_id, artifact_path) DO NOTHING;
+
+  RETURN QUERY
+  SELECT evidence.*
+  FROM public.project_model_variant_artifacts AS evidence
+  JOIN public.project_model_variants AS variant
+    ON variant.id = evidence.model_variant_id
+  WHERE variant.project_id = target_project_id
+    AND variant.status IN ('published', 'historical')
+  ORDER BY variant.source_run_id, evidence.source_step_number, evidence.artifact_path;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.publish_project_model_variant_artifact_evidence(UUID, JSONB)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.publish_project_model_variant_artifact_evidence(UUID, JSONB)
+  TO service_role;
+
+CREATE OR REPLACE FUNCTION public.prevent_referenced_model_variant_retirement()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+  IF OLD.status IN ('published', 'historical')
+    AND NEW.status NOT IN ('published', 'historical')
+    AND EXISTS (
+      SELECT 1
+      FROM public.prompts
+      WHERE prompts.status = 'approved'
+        AND prompts.fork_source_model_variant_id = OLD.id
+    ) THEN
+    RAISE EXCEPTION 'A model variant referenced by a public fork cannot be retired.';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.prevent_referenced_model_variant_retirement()
+  FROM PUBLIC, anon, authenticated;
+
+DROP TRIGGER IF EXISTS prevent_referenced_model_variant_retirement_fields
+  ON public.project_model_variants;
+CREATE TRIGGER prevent_referenced_model_variant_retirement_fields
+  BEFORE UPDATE OF status ON public.project_model_variants
+  FOR EACH ROW EXECUTE FUNCTION public.prevent_referenced_model_variant_retirement();

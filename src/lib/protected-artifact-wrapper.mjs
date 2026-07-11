@@ -105,7 +105,7 @@ export function buildProtectedArtifactWrapperDocument(artifactDocument) {
   <iframe
     id="pathforge-artifact-document"
     title="Generated artifact document"
-    sandbox="allow-scripts"
+    sandbox="allow-scripts allow-pointer-lock"
     allow="clipboard-write"
     referrerpolicy="no-referrer"
   ></iframe>

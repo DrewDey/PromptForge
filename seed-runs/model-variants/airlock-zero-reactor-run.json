@@ -1,0 +1,201 @@
+{
+  "schemaVersion": 1,
+  "originMode": "model-cohort",
+  "canonicalProjectId": "31faf192-93d1-41d0-a74c-4402d4223937",
+  "canonicalRoute": "/airlock-zero-reactor-run-demo",
+  "title": "Airlock Zero: Reactor Run",
+  "defaultSourceRunId": "2e526efa-191c-48ea-9ba0-5ff073403770",
+  "contract": {
+    "version": "airlock-zero-reactor-run-v1",
+    "openingPromptExact": "Build me a self-contained browser FPS called Airlock Zero: Reactor Run. I want a short ray-cast space-station mission where I move through corridors, pulse security drones, recover three reactor cells, and reach the airlock before oxygen runs out. Make it polished and playable with keyboard and mouse plus a touch-friendly fallback, and keep everything in one offline HTML file with no external assets.",
+    "acceptanceCriteria": [
+      "Render a genuine ray-cast first-person station with collision-aware movement and visible depth, not a flat dashboard or prompt-only mockup.",
+      "Provide a clear three-reactor-cell recovery mission that ends at an airlock and supports a roughly two-to-four-minute default run.",
+      "Include security drones that can threaten the player and a pulse weapon that can visibly disable them.",
+      "Make the start briefing, objectives, and controls understandable within about fifteen seconds.",
+      "Show oxygen, suit integrity or health, objective progress, damage feedback, win and loss states, and a useful final scorecard.",
+      "Support mouse or drag aiming plus a keyboard-only turning fallback that does not require pointer lock.",
+      "Provide visible touch-friendly movement, turning, firing, and essential utility controls.",
+      "Provide working pause or resume, mute, restart, and replay behavior.",
+      "Produce one complete self-contained HTML file that is immediately usable in a browser.",
+      "Operate offline with no external APIs, hosted runtimes, CDNs, remote fonts, scripts, stylesheets, network calls, or fragile remote dependencies.",
+      "Avoid unsafe HTML sinks, eval-like execution, page-level horizontal overflow at 390 by 844, and runtime console errors at mobile and desktop widths.",
+      "Preserve exact prompts, exact visible model responses, public source links, model settings, artifact versions, and verification evidence for every run and fork."
+    ],
+    "adaptiveRepairPolicy": "Preserve every real artifact. Repair only when verification proves a concrete defect or capture failure, name that defect in ordinary user language, and stay in the same selected model session. Purpose-specific refinements may continue a passing run when they create a meaningful shared branch point or final direction, but they must not be mislabeled as repairs.",
+    "sha256": "6fba370db6ce710e758d68608367f5a7fa28749e94a07c70c2bb3ffe2e727ac9",
+    "openingPromptSha256": "323fba88d4aa413836a68818ff7e8b788de5e6d277ae1fa8b461053ba0aedd58"
+  },
+  "variants": [
+    {
+      "sourceRunId": "562f5775-9739-4704-be3e-d85efbbd2a5c",
+      "providerKey": "anthropic",
+      "serviceLabel": "Claude",
+      "modelLabel": "Sonnet 5 Max",
+      "modelSettings": "Claude web; visible selected model: Sonnet 5 Max; Max effort.",
+      "operatorKind": "pathforge-labs-manual",
+      "operatorLabel": "PathForge Labs · Developer-operated",
+      "runRole": "comparison-run",
+      "qualityStatus": "verified",
+      "isCurrent": true,
+      "capturedAt": "2026-07-11T20:30:30.459Z",
+      "promptCount": 10,
+      "repairPromptCount": 3,
+      "packageFile": "model-variants/airlock-zero-reactor-run-claude-sonnet-5-max-source-run.json",
+      "packageSha256": "9655cb5822ced7a8cb0f28f515696e65900459adb053501984c47111e7de4d6b",
+      "firstArtifactPath": "public/artifacts/airlock-zero-claude-sonnet-5-max-step-5.html",
+      "finalArtifactPath": "public/artifacts/airlock-zero-claude-sonnet-5-max-step-10.html",
+      "artifactVersionPaths": [
+        "public/artifacts/airlock-zero-claude-sonnet-5-max-step-5.html",
+        "public/artifacts/airlock-zero-claude-sonnet-5-max-step-7.html",
+        "public/artifacts/airlock-zero-claude-sonnet-5-max-step-10.html"
+      ],
+      "firstPassMetrics": {
+        "qualityScore": 92,
+        "artifactReady": true,
+        "hardGatesPassed": false,
+        "functionalChecks": {
+          "passed": 24,
+          "total": 26
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "The first delivered artifact was a genuine offline ray-cast FPS with the full mission foundation.",
+          "Expanded release verification later proved the missing visible mute path and remaining release hardening work, so it was preserved but not accepted as final."
+        ]
+      },
+      "finalMetrics": {
+        "qualityScore": 99,
+        "artifactReady": true,
+        "hardGatesPassed": true,
+        "functionalChecks": {
+          "passed": 26,
+          "total": 26
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "The exact final artifact passed the full Airlock verifier twice in isolated runs at desktop and true 390x844 widths.",
+          "Runtime verification proved real mouse aim, keyboard fallback turning, touch controls, pause, mute, restart, offline operation, and zero page overflow."
+        ]
+      }
+    },
+    {
+      "sourceRunId": "2e526efa-191c-48ea-9ba0-5ff073403770",
+      "providerKey": "openai",
+      "serviceLabel": "ChatGPT",
+      "modelLabel": "5.6 Sol Max",
+      "modelSettings": "ChatGPT Work; visible model selector: 5.6 Sol Max; reasoning effort: Max.",
+      "operatorKind": "pathforge-labs-manual",
+      "operatorLabel": "PathForge Labs · Developer-operated",
+      "runRole": "comparison-run",
+      "qualityStatus": "verified",
+      "isCurrent": true,
+      "capturedAt": "2026-07-11T16:08:22.845Z",
+      "promptCount": 2,
+      "repairPromptCount": 0,
+      "packageFile": "model-variants/airlock-zero-reactor-run-chatgpt-56-sol-max-source-run.json",
+      "packageSha256": "26eb6f12328991311a4d8efbb747eadbbe9ffba7f91d2a3fd2cba23c5069768a",
+      "firstArtifactPath": "public/artifacts/airlock-zero-gpt-56-sol-max-step-1.html",
+      "finalArtifactPath": "public/artifacts/airlock-zero-gpt-56-sol-max-step-2.html",
+      "artifactVersionPaths": [
+        "public/artifacts/airlock-zero-gpt-56-sol-max-step-1.html",
+        "public/artifacts/airlock-zero-gpt-56-sol-max-step-2.html"
+      ],
+      "firstPassMetrics": {
+        "qualityScore": 98,
+        "artifactReady": true,
+        "hardGatesPassed": true,
+        "functionalChecks": {
+          "passed": 26,
+          "total": 26
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "The first response produced a complete playable ray-cast FPS and passed the automated hard gates.",
+          "Desktop and true 390px verification found zero overflow and zero console errors."
+        ]
+      },
+      "finalMetrics": {
+        "qualityScore": 99,
+        "artifactReady": true,
+        "hardGatesPassed": true,
+        "functionalChecks": {
+          "passed": 26,
+          "total": 26
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "The final response retained the passing core and added the briefing schematic, clamped radar objectives, short contextual hints, and a five-metric scorecard.",
+          "Response 2 passed the full automated Airlock guard and is the exact fork source."
+        ]
+      }
+    },
+    {
+      "sourceRunId": "248f4672-d557-4b01-8756-c1cec7290925",
+      "providerKey": "google",
+      "serviceLabel": "Gemini",
+      "modelLabel": "Gemini 3.5 Flash",
+      "modelSettings": "Gemini web app; selected model: 3.5 Flash; visible mode button: Flash.",
+      "operatorKind": "pathforge-labs-manual",
+      "operatorLabel": "PathForge Labs · Developer-operated",
+      "runRole": "comparison-run",
+      "qualityStatus": "verified",
+      "isCurrent": true,
+      "capturedAt": "2026-07-11T19:23:00.000Z",
+      "promptCount": 9,
+      "repairPromptCount": 7,
+      "packageFile": "model-variants/airlock-zero-reactor-run-gemini-35-flash-source-run.json",
+      "packageSha256": "283f98a29e406fdac5d9d870ffc03d0b61a7aa7d25f046d0eab86ef798cd7549",
+      "firstArtifactPath": "public/artifacts/airlock-zero-gemini-35-flash-step-2.html",
+      "finalArtifactPath": "public/artifacts/airlock-zero-gemini-35-flash-step-9.html",
+      "artifactVersionPaths": [
+        "public/artifacts/airlock-zero-gemini-35-flash-step-2.html",
+        "public/artifacts/airlock-zero-gemini-35-flash-step-3.html",
+        "public/artifacts/airlock-zero-gemini-35-flash-step-4.html",
+        "public/artifacts/airlock-zero-gemini-35-flash-step-5.html",
+        "public/artifacts/airlock-zero-gemini-35-flash-step-6.html",
+        "public/artifacts/airlock-zero-gemini-35-flash-step-7.html",
+        "public/artifacts/airlock-zero-gemini-35-flash-step-8.html",
+        "public/artifacts/airlock-zero-gemini-35-flash-step-9.html"
+      ],
+      "firstPassMetrics": {
+        "qualityScore": 55,
+        "artifactReady": false,
+        "hardGatesPassed": false,
+        "functionalChecks": {
+          "passed": 11,
+          "total": 26
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "The first real offline artifact was complete HTML, but static verification found a missing scorecard, unbounded sprite work, and an unreachable exit tile.",
+          "Desktop runtime verification timed out because the artifact starved the browser main thread; it is preserved as branch evidence but was never accepted as a final."
+        ]
+      },
+      "finalMetrics": {
+        "qualityScore": 99,
+        "artifactReady": true,
+        "hardGatesPassed": true,
+        "functionalChecks": {
+          "passed": 26,
+          "total": 26
+        },
+        "purposeChecks": {
+          "passed": 9,
+          "total": 9
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "Desktop and true 390x844 verification passed with a visible bounded ray-cast scene, responsive keyboard, genuine mouse drag aiming, touch input, and no external requests.",
+          "The explicit three-cell gate stays blocked beforehand, becomes reachable afterward, produces the real win transition, and reports elapsed completion time."
+        ]
+      }
+    }
+  ]
+}

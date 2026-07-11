@@ -1,5 +1,9 @@
 import type { Prompt, PromptWithRelations } from './types'
 import {
+  AIRLOCK_ZERO_CLAUDE_FORK_PROJECT_ID,
+  AIRLOCK_ZERO_GEMINI_FORK_PROJECT_ID,
+  AIRLOCK_ZERO_GPT_FORK_PROJECT_ID,
+  AIRLOCK_ZERO_PROJECT_ID,
   TINY_TRAIN_DISPATCHER_PROJECT_ID,
   BREAKROOM_SNACK_RESTOCK_PROJECT_ID,
   PORCH_LIGHT_MOTH_MAZE_PROJECT_ID,
@@ -68,6 +72,10 @@ import {
 } from './featured-projects'
 
 const PROJECT_ROUTE_OVERRIDES: Record<string, string> = {
+  [AIRLOCK_ZERO_PROJECT_ID]: '/airlock-zero-reactor-run-demo',
+  [AIRLOCK_ZERO_CLAUDE_FORK_PROJECT_ID]: '/airlock-zero-blackout-shift-fork-demo',
+  [AIRLOCK_ZERO_GPT_FORK_PROJECT_ID]: '/airlock-zero-swarm-shift-fork-demo',
+  [AIRLOCK_ZERO_GEMINI_FORK_PROJECT_ID]: '/airlock-zero-hull-breach-fork-demo',
   'dc5e67c3-42d0-4823-ae23-586b7d3985cb': '/calming-sleep-sound-mixer-demo',
   '0ddfc7cf-37bf-47ae-8fe0-d8d445ba1bee': '/booking-flow-handoff-simulator-demo',
   'e0e4e2b7-082e-4db1-9468-484fc3fd3a69': '/first-principles-claim-ladder-game-demo',

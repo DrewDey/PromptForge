@@ -23,9 +23,9 @@
   "fork_source": {
     "source_project_id": "81f2b617-2de5-404f-aa88-c94443f213bd",
     "source_project_title": "Weekend Plan Checklist",
-    "source_step_id": "81f2b617-2de5-404f-aa88-c94443f213bd-step-3",
+    "source_step_id": "81f2b617-2de5-404f-aa88-c94443f213bd:f4f0e2df-58c9-4def-bb1c-7785a3989ec9:step:3",
     "source_step_number": 3,
-    "prompt_family_id": "81f2b617-2de5-404f-aa88-c94443f213bd:81f2b617-2de5-404f-aa88-c94443f213bd-step-3",
+    "prompt_family_id": "81f2b617-2de5-404f-aa88-c94443f213bd:81f2b617-2de5-404f-aa88-c94443f213bd:f4f0e2df-58c9-4def-bb1c-7785a3989ec9:step:3",
     "fork_depth": 0,
     "fork_branch_index": 0
   },

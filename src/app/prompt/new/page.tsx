@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, LogIn, FileText, GitBranch, Check, AlertCircle, ArrowUp, ArrowDown, ChevronRight, Layers, Cpu, Eye, Keyboard, CheckCircle2, Link2 } from 'lucide-react'
 import { getModelsByProvider, getModelName } from '@/lib/models'
 import { submitProject, submitSourceRun } from '@/lib/actions'
@@ -360,6 +360,21 @@ function ForkSourcePanel({ forkSource }: { forkSource: ProjectForkSource }) {
                   Step id locked
                 </span>
               )}
+              {forkSource.sourceRunId && (
+                <span className="border border-surface-200 bg-surface-50 px-2 py-1">
+                  Model run locked
+                </span>
+              )}
+              {forkSource.sourceModelVariantId && (
+                <span className="border border-surface-200 bg-surface-50 px-2 py-1">
+                  Model variant locked
+                </span>
+              )}
+              {forkSource.sourceArtifactPath && (
+                <span className="border border-surface-200 bg-surface-50 px-2 py-1">
+                  Artifact version locked
+                </span>
+              )}
               {forkSource.promptFamilyId && (
                 <span className="border border-surface-200 bg-surface-50 px-2 py-1">
                   Prompt family attached
@@ -493,7 +508,6 @@ function BuildLoggedOutLanding({
 }
 
 export default function SubmitProjectPage() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null)
   const forkSource = useMemo(() => parseProjectForkSearchParams(searchParams), [searchParams])

@@ -269,6 +269,7 @@ function SourceRunIntakeRow({ sourceRun }: { sourceRun: SourceRunSubmissionWithR
               Fork: {forkSource.sourceStepNumber
                 ? `response ${String(forkSource.sourceStepNumber).padStart(2, '0')}`
                 : 'source attached'}
+              {forkSource.sourceRunId ? ' · exact model run' : ''}
             </span>
           )}
           <span className="border border-amber-100 bg-white px-2 py-1">

@@ -1,0 +1,1682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airlock Zero: Reactor Run</title>
+    <style>
+        /* Modern CSS Reset & Mechanical Design System Variables */
+        :root {
+            --primary: #00ffcc;
+            --primary-dim: rgba(0, 255, 204, 0.15);
+            --primary-glow: 0 0 10px rgba(0, 255, 204, 0.6), 0 0 20px rgba(0, 255, 204, 0.3);
+            --danger: #ff0055;
+            --danger-glow: 0 0 10px rgba(255, 0, 85, 0.6), 0 0 20px rgba(255, 0, 85, 0.3);
+            --bg-dark: #03070d;
+            --bg-panel: #070f1e;
+            --border-color: #0f213a;
+            --font-mono: 'Consolas', 'Courier New', Courier, monospace;
+            --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: #ffffff;
+            font-family: var(--font-mono);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Custom Grid/Flex Layout for Console Console Interface --- */
+        header {
+            flex: 0 0 auto;
+            background-color: var(--bg-panel);
+            border-b: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 16px;
+            z-index: 10;
+        }
+
+        .header-title-block {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-icon {
+            width: 18px;
+            height: 18px;
+            fill: var(--primary);
+            filter: drop-shadow(0 0 5px var(--primary));
+        }
+
+        .header-text h1 {
+            font-size: 14px;
+            letter-spacing: 2px;
+            font-weight: 900;
+            color: var(--primary);
+            text-shadow: var(--primary-glow);
+        }
+
+        .header-text p {
+            font-size: 9px;
+            color: #5c7a9c;
+            text-transform: uppercase;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* Tactical Button Styling */
+        .btn-tac {
+            background-color: #0f213a;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            border-radius: 4px;
+            font-size: 11px;
+            font-family: var(--font-mono);
+            padding: 6px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+            box-shadow: inset 0 0 5px rgba(0, 255, 204, 0.2);
+        }
+
+        .btn-tac:hover {
+            background-color: var(--primary-dim);
+            text-shadow: var(--primary-glow);
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.3);
+        }
+
+        .btn-tac.danger {
+            border-color: var(--danger);
+            color: var(--danger);
+            box-shadow: inset 0 0 5px rgba(255, 0, 85, 0.2);
+        }
+
+        .btn-tac.danger:hover {
+            background-color: rgba(255, 0, 85, 0.15);
+            text-shadow: var(--danger-glow);
+            box-shadow: 0 0 10px rgba(255, 0, 85, 0.3);
+        }
+
+        /* Main Screen Layout Assembly */
+        .main-workspace {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        @media (min-width: 768px) {
+            .main-workspace {
+                flex-direction: row;
+            }
+        }
+
+        /* --- Raycast Engine Viewport Container --- */
+        .viewport-container {
+            flex: 1 1 auto;
+            background-color: #000000;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        #game-canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            cursor: crosshair;
+            background-color: #010204;
+            image-rendering: pixelated;
+        }
+
+        /* --- Diagnostics Control Panel (Side Console) --- */
+        .side-console {
+            flex: 0 0 auto;
+            background-color: var(--bg-panel);
+            border-t: 2px solid var(--border-color);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        @media (min-width: 768px) {
+            .side-console {
+                width: 300px;
+                border-t: 0;
+                border-l: 2px solid var(--border-color);
+            }
+        }
+
+        .directive-card {
+            background-color: rgba(5, 11, 20, 0.9);
+            border: 1px solid var(--border-color);
+            padding: 8px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            line-height: 1.4;
+            color: #c4d1e6;
+        }
+
+        .directive-card strong {
+            color: #ffd700;
+        }
+
+        /* Dashboard Stat Widgets */
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .analytic-box {
+            background-color: rgba(5, 11, 20, 0.95);
+            border: 1px solid var(--border-color);
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        .analytic-box.span-2 {
+            grid-column: span 2;
+        }
+
+        .analytic-label {
+            font-size: 9px;
+            color: #5c7a9c;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .analytic-value {
+            font-size: 16px;
+            font-weight: bold;
+            letter-spacing: -0.5px;
+        }
+
+        .health-color {
+            color: var(--danger);
+            text-shadow: var(--danger-glow);
+        }
+
+        .cell-color {
+            color: #ffd700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+        }
+
+        .oxy-color {
+            color: var(--primary);
+            text-shadow: var(--primary-glow);
+        }
+
+        /* Stat Progression Bars */
+        .progress-track {
+            width: 100%;
+            height: 6px;
+            background-color: #111a2e;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-fill.red { background-color: var(--danger); }
+        .progress-fill.blue { background-color: var(--primary); }
+
+        .cell-slots {
+            display: flex;
+            gap: 4px;
+            margin-top: 6px;
+        }
+
+        .cell-slot {
+            flex: 1;
+            height: 6px;
+            background-color: #111a2e;
+            border-radius: 3px;
+            transition: background-color 0.3s ease;
+        }
+
+        /* Minimap Tactical Radar */
+        .radar-panel {
+            background-color: rgba(5, 11, 20, 0.95);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #radar-canvas {
+            background-color: #010408;
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+        }
+
+        /* Tactical Touch Controls Container */
+        .touch-interface-bay {
+            background-color: #03070d;
+            border-t: 2px solid var(--border-color);
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            z-index: 10;
+        }
+
+        .dpad-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+            width: 135px;
+            height: 105px;
+        }
+
+        .action-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+            width: 145px;
+            height: 105px;
+        }
+
+        .touch-btn {
+            background-color: #070f1e;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: #ffffff;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            touch-action: manipulation;
+            transition: background-color 0.1s, border-color 0.1s;
+        }
+
+        .touch-btn:active {
+            background-color: var(--primary-dim);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .touch-btn.fire {
+            background-color: rgba(255, 0, 85, 0.1);
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .touch-btn.fire:active {
+            background-color: rgba(255, 0, 85, 0.35);
+            border-color: #ff3377;
+            color: #ff3377;
+        }
+
+        /* Overlays Styles (Universal Screen states) */
+        .overlay-screen {
+            position: absolute;
+            inset: 0;
+            background-color: rgba(3, 7, 13, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .overlay-card {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--primary);
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.25);
+            border-radius: 8px;
+            padding: 24px;
+            max-width: 440px;
+            width: 100%;
+        }
+
+        .overlay-card.danger {
+            border-color: var(--danger);
+            box-shadow: 0 0 20px rgba(255, 0, 85, 0.25);
+        }
+
+        .overlay-card h2 {
+            font-size: 20px;
+            margin-bottom: 8px;
+            letter-spacing: 2px;
+            color: var(--primary);
+            text-shadow: var(--primary-glow);
+        }
+
+        .overlay-card.danger h2 {
+            color: var(--danger);
+            text-shadow: var(--danger-glow);
+        }
+
+        .overlay-subtitle {
+            font-size: 10px;
+            color: #ffd700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 16px;
+        }
+
+        .overlay-instructions {
+            text-align: left;
+            font-size: 11px;
+            line-height: 1.5;
+            color: #a4b3c6;
+            margin-bottom: 20px;
+            border-top: 1px dashed var(--border-color);
+            border-bottom: 1px dashed var(--border-color);
+            padding: 12px 0;
+        }
+
+        .overlay-instructions p {
+            margin-bottom: 6px;
+        }
+
+        /* 5-Part Scorecard Details list */
+        .scorecard-summary {
+            text-align: left;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .score-row {
+            background-color: rgba(5, 11, 20, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 8px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+        }
+
+        .score-label {
+            color: #8c9cb0;
+        }
+
+        .score-value {
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .score-grade-wrap {
+            border-top: 1px solid var(--border-color);
+            padding-top: 8px;
+            margin-top: 6px;
+        }
+
+        .score-value.grade {
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+
+        .btn-large {
+            width: 100%;
+            padding: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            background-color: var(--primary);
+            color: #000000;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            letter-spacing: 1px;
+            font-family: var(--font-mono);
+            transition: background-color 0.2s;
+        }
+
+        .btn-large:hover {
+            background-color: #33ffdd;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Warning banner visual alert */
+        .warning-overlay-banner {
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(255, 0, 85, 0.85);
+            border: 1px solid var(--danger);
+            color: #ffffff;
+            font-size: 10px;
+            font-weight: bold;
+            letter-spacing: 1.5px;
+            padding: 4px 12px;
+            border-radius: 3px;
+            pointer-events: none;
+            animation: pulse-alert 1s infinite alternate;
+            z-index: 20;
+        }
+
+        @keyframes pulse-alert {
+            0% { opacity: 0.6; box-shadow: 0 0 5px var(--danger); }
+            100% { opacity: 1.0; box-shadow: 0 0 15px var(--danger); }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-title-block">
+            <!-- Embedded SVG icon to guarantee complete self-contained visual -->
+            <svg class="header-icon" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.53c-.26-.81-1-1.4-1.9-1.4h-1v-3c0-.55-.45-1-1-1h-6v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.4z"/>
+            </svg>
+            <div class="header-text">
+                <h1>AIRLOCK ZERO</h1>
+                <p>Fusion Core Security Grid</p>
+            </div>
+        </div>
+        
+        <div class="header-controls">
+            <button id="btn-mute" class="btn-tac">
+                <span id="mute-icon">🔊</span>
+                <span id="mute-text">SOUND ON</span>
+            </button>
+            <button id="btn-pause" class="btn-tac">
+                <span id="pause-icon">⏸</span>
+                <span id="pause-text">ACTIVE</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="main-workspace">
+        
+        <!-- Viewport Workspace on Left -->
+        <div class="viewport-container">
+            <!-- Raycasting Engine Canvas Grid -->
+            <canvas id="game-canvas" width="480" height="320"></canvas>
+            
+            <!-- Warning Alert Box -->
+            <div id="warning-banner" class="warning-overlay-banner hidden">
+                CRITICAL LIFE SUPPORT FAILURE
+            </div>
+        </div>
+
+        <!-- Diagnostics Console Pane on Right -->
+        <div class="side-console">
+            <div class="directive-card">
+                REACTOR SYSTEM CORE FAILURE.<br>
+                Secure <strong>3 Energy Batteries</strong> to initialize the terminal grid. Secure exit path at <strong>Airlock Zero Escape Portal</strong>.
+            </div>
+
+            <!-- Dashboard Statistics HUD -->
+            <div class="analytics-grid">
+                <div class="analytic-box">
+                    <div class="analytic-label">CORE SECURITY</div>
+                    <div id="hud-health" class="analytic-value health-color">100%</div>
+                    <div class="progress-track">
+                        <div id="hud-health-bar" class="progress-fill red" style="width: 100%"></div>
+                    </div>
+                </div>
+                
+                <div class="analytic-box">
+                    <div class="analytic-label">CELL TERMINATION</div>
+                    <div id="hud-cells" class="analytic-value cell-color">0 / 3</div>
+                    <div class="cell-slots">
+                        <div id="cell-slot-0" class="cell-slot"></div>
+                        <div id="cell-slot-1" class="cell-slot"></div>
+                        <div id="cell-slot-2" class="cell-slot"></div>
+                    </div>
+                </div>
+
+                <div class="analytic-box span-2">
+                    <div class="analytic-label">
+                        <span>OXYGEN COMPONENT</span>
+                        <span id="hud-oxy-seconds">150s remaining</span>
+                    </div>
+                    <div class="progress-track">
+                        <div id="hud-oxygen-bar" class="progress-fill blue" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Minimap Sector Radar Display -->
+            <div class="radar-panel">
+                <div class="analytic-label" style="width: 100%;">
+                    <span>SECTOR DEPLOYMENT MAP</span>
+                    <span id="radar-sweep-indicator" style="color: var(--primary);">SWEEP ACTIVE</span>
+                </div>
+                <canvas id="radar-canvas" width="160" height="160"></canvas>
+            </div>
+
+            <!-- Desktop Key controls layout help -->
+            <div style="font-size: 9px; color: #5c7a9c; text-align: center; border-top: 1px solid var(--border-color); padding-top: 8px;">
+                MOVE: W/A/S/D or Arrows | AIM: Q/E or Mouse/Left-Right<br>
+                FIRE: Space / Canvas Click
+            </div>
+            
+            <button id="btn-reset" class="btn-tac danger" style="width: 100%; justify-content: center;">
+                EMERGENCY CORE RESET
+            </button>
+        </div>
+    </main>
+
+    <div class="touch-interface-bay">
+        <!-- Left Pad: Movement Engine -->
+        <div class="dpad-container">
+            <div class="touch-btn" id="ctrl-strafe-l">◀S</div>
+            <div class="touch-btn" id="ctrl-forward">▲W</div>
+            <div class="touch-btn" id="ctrl-strafe-r">S▶</div>
+            <div></div>
+            <div class="touch-btn" id="ctrl-backward">▼S</div>
+            <div></div>
+        </div>
+
+        <!-- Right Pad: Rotation Engine & Trigger -->
+        <div class="action-container">
+            <div class="touch-btn" id="ctrl-turn-l">Q ↺</div>
+            <div class="touch-btn fire" id="ctrl-fire" style="grid-row: span 2; height: 100%;">PULSE</div>
+            <div class="touch-btn" id="ctrl-turn-r">↻ E</div>
+            <div></div>
+            <div></div>
+        </div>
+    </div>
+
+    <div id="overlay-start" class="overlay-screen">
+        <div class="overlay-card">
+            <h2>REACTOR RUN</h2>
+            <div class="overlay-subtitle">CRITICAL BREACH INITIALIZED</div>
+            
+            <div class="overlay-instructions">
+                <p>1. Rogue <strong>Security Patrol Drones</strong> are sweeping sector pathways.</p>
+                <p>2. Locate and collect exactly <strong>3 Energy Batteries</strong> to unlock containment.</p>
+                <p>3. Escape through <strong>Airlock Zero Portal</strong> (top-left sector coordinates).</p>
+                <p>4. You have exactly <strong>150 seconds</strong> of oxygen before reactor collapse.</p>
+            </div>
+
+            <button id="btn-start-game" class="btn-large">INITIALIZE GRID MISSION</button>
+        </div>
+    </div>
+
+    <div id="overlay-scorecard" class="overlay-screen hidden">
+        <div class="overlay-card" id="scorecard-wrapper">
+            <h2 id="scorecard-title">REACTOR COMPROMISED</h2>
+            <div class="overlay-subtitle" id="scorecard-subtitle">GRID RUN STATISTICAL SYSTEM STATUS</div>
+
+            <!-- 5-Part Detailed Tactical Diagnostic Report -->
+            <div class="scorecard-summary">
+                <div class="score-row">
+                    <span class="score-label">1. Oxygen Safety Reserves</span>
+                    <span class="score-value" id="score-oxy">0s</span>
+                </div>
+                <div class="score-row">
+                    <span class="score-label">2. Energy Batteries Recovered</span>
+                    <span class="score-value" id="score-cells">0 / 3</span>
+                </div>
+                <div class="score-row">
+                    <span class="score-label">3. Patrol Drones Neutralized</span>
+                    <span class="score-value" id="score-drones">0</span>
+                </div>
+                <div class="score-row">
+                    <span class="score-label">4. Terminal Core Stability</span>
+                    <span class="score-value" id="score-health">0%</span>
+                </div>
+                <div class="score-row score-grade-wrap">
+                    <span class="score-label" style="font-weight: bold;">5. Core Security Rating</span>
+                    <span class="score-value grade" id="score-grade">F (CRITICAL CORRUPTION)</span>
+                </div>
+            </div>
+
+            <button id="btn-restart-game" class="btn-large">STABILIZE REACTOR CORRIDOR (RESTART)</button>
+        </div>
+    </div>
+
+    <script>
+        class SyntheticSoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+                this.masterGain = null;
+            }
+
+            init() {
+                if (this.ctx) return;
+                try {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    this.masterGain = this.ctx.createGain();
+                    this.masterGain.gain.setValueAtTime(this.muted ? 0 : 0.15, this.ctx.currentTime);
+                    this.masterGain.connect(this.ctx.destination);
+                } catch (e) {
+                    console.warn("Audio Context init blocked:", e);
+                }
+            }
+
+            setMute(state) {
+                this.muted = state;
+                if (this.masterGain && this.ctx) {
+                    this.masterGain.gain.setValueAtTime(this.muted ? 0 : 0.15, this.ctx.currentTime);
+                }
+            }
+
+            playPulse() {
+                if (!this.ctx || this.muted) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(400, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(80, this.ctx.currentTime + 0.12);
+
+                gain.gain.setValueAtTime(0.8, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.12);
+
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.13);
+            }
+
+            playExplode() {
+                if (!this.ctx || this.muted) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(120, this.ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(30, this.ctx.currentTime + 0.3);
+
+                gain.gain.setValueAtTime(1.2, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.32);
+            }
+
+            playCollect() {
+                if (!this.ctx || this.muted) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, this.ctx.currentTime); // C5
+                osc.frequency.setValueAtTime(659.25, this.ctx.currentTime + 0.08); // E5
+                osc.frequency.setValueAtTime(783.99, this.ctx.currentTime + 0.16); // G5
+                osc.frequency.setValueAtTime(1046.50, this.ctx.currentTime + 0.24); // C6
+
+                gain.gain.setValueAtTime(0.8, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.35);
+
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.36);
+            }
+
+            playAlert(freq = 600) {
+                if (!this.ctx || this.muted) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                osc.frequency.setValueAtTime(freq - 100, this.ctx.currentTime + 0.1);
+
+                gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.16);
+            }
+        }
+
+        const audio = new SyntheticSoundEngine();
+    </script>
+
+    <script>
+        // Fixed Map Coordinates & Game Parameters
+        const MAP_SIZE = 16;
+        const worldMap = [
+            1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+            1,3,0,0,0,0,0,1,0,0,0,0,0,0,0,1,
+            1,1,1,1,0,1,0,1,0,1,1,1,1,0,1,1,
+            1,0,0,0,0,1,0,0,0,1,0,0,0,0,0,1,
+            1,0,1,1,1,1,1,1,0,1,1,1,1,1,0,1,
+            1,0,1,0,0,0,0,1,0,0,0,0,0,1,0,1,
+            1,0,1,0,2,2,0,1,1,2,2,0,0,1,0,1,
+            1,0,0,0,2,0,0,0,0,0,2,0,0,0,0,1,
+            1,0,0,0,2,2,2,0,0,2,2,0,0,0,0,1,
+            1,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1,
+            1,0,1,1,1,1,0,1,1,0,1,1,1,1,0,1,
+            1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,
+            1,1,1,0,0,1,0,0,0,0,1,0,0,1,1,1,
+            1,0,0,0,0,1,1,1,1,1,1,0,0,0,0,1,
+            1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+            1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
+        ];
+
+        // Safe fixed buffer backbuffer sizes
+        const renderWidth = 480;
+        const renderHeight = 320;
+
+        // Player Math States
+        let playerX = 8.5;
+        let playerY = 14.2;
+        let dirX = 0;
+        let dirY = -1;
+        let planeX = 0.66;
+        let planeY = 0;
+
+        // Core Status Indicators
+        let oxygen = 150;
+        let health = 100;
+        let cellsCollected = 0;
+        let isPaused = false;
+        let activeMode = 'menu'; // 'menu', 'playing', 'ended'
+        let shotFired = 0;
+        let droneKills = 0;
+
+        let warning60Triggered = false;
+        let warning30Triggered = false;
+
+        let weaponCooldown = 0;
+        let recoilTimer = 0;
+
+        // Interactive Object positions
+        const batterySpots = [
+            { x: 2.5, y: 3.5, active: true },
+            { x: 13.5, y: 7.5, active: true },
+            { x: 8.5, y: 1.5, active: true }
+        ];
+
+        // Enemy Drone Coordinates and Simple Sweep Physics
+        const drones = [
+            { x: 3.5, y: 5.5, active: true, speed: 1.1, dir: 1, type: 'h' },
+            { x: 12.5, y: 11.5, active: true, speed: 1.4, dir: -1, type: 'v' },
+            { x: 8.5, y: 8.5, active: true, speed: 0.9, dir: 1, type: 'h' }
+        ];
+
+        // Control Inputs State Dictionary
+        const keys = {};
+        const touchInputs = {
+            forward: false,
+            backward: false,
+            strafeL: false,
+            strafeR: false,
+            turnL: false,
+            turnR: false,
+            fire: false
+        };
+
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Physical offscreen rendering canvas to guarantee precise 480x320 grid
+        const offscreenCanvas = document.createElement('canvas');
+        offscreenCanvas.width = renderWidth;
+        offscreenCanvas.height = renderHeight;
+        const oCtx = offscreenCanvas.getContext('2d');
+    </script>
+
+    <script>
+        // High performance sliding collision checks with bounding box wall buffer
+        function checkCollision(x, y) {
+            const buffer = 0.22;
+            const check = (px, py) => {
+                const ix = Math.floor(px);
+                const iy = Math.floor(py);
+                if (ix < 0 || ix >= MAP_SIZE || iy < 0 || iy >= MAP_SIZE) return true;
+                return worldMap[iy * MAP_SIZE + ix] > 0;
+            };
+            return check(x - buffer, y - buffer) ||
+                   check(x + buffer, y - buffer) ||
+                   check(x - buffer, y + buffer) ||
+                   check(x + buffer, y + buffer);
+        }
+
+        // Handle Player rotational coordinate transformation matrix
+        function rotatePlayer(angle) {
+            const oldDirX = dirX;
+            dirX = dirX * Math.cos(angle) - dirY * Math.sin(angle);
+            dirY = oldDirX * Math.sin(angle) + dirY * Math.cos(angle);
+            
+            const oldPlaneX = planeX;
+            planeX = planeX * Math.cos(angle) - planeY * Math.sin(angle);
+            planeY = oldPlaneX * Math.sin(angle) + planeY * Math.cos(angle);
+        }
+
+        // Raycast logic with safe DDA steps rendering directly to fixed 480x320 backbuffer
+        function renderRaycaster() {
+            // Draw Ceiling and Floor backdrops
+            oCtx.fillStyle = '#02060c';
+            oCtx.fillRect(0, 0, renderWidth, renderHeight / 2);
+            oCtx.fillStyle = '#040b15';
+            oCtx.fillRect(0, renderHeight / 2, renderWidth, renderHeight / 2);
+
+            // Distance Depth Buffer for vertical billboard sorting
+            const zBuffer = new Float32Array(renderWidth);
+
+            // Loop 480 times to process the safe backbuffer
+            for (let x = 0; x < renderWidth; x++) {
+                const cameraX = 2 * x / renderWidth - 1;
+                const rayDirX = dirX + planeX * cameraX;
+                const rayDirY = dirY + planeY * cameraX;
+
+                let mapX = Math.floor(playerX);
+                let mapY = Math.floor(playerY);
+
+                // Setup variables for DDA
+                let sideDistX, sideDistY;
+                const deltaDistX = (rayDirX === 0) ? 1e30 : Math.abs(1 / rayDirX);
+                const deltaDistY = (rayDirY === 0) ? 1e30 : Math.abs(1 / rayDirY);
+                let perpWallDist = 0;
+
+                let stepX, stepY;
+                let hit = 0;
+                let side = 0; // 0 = Horizontal, 1 = Vertical
+
+                if (rayDirX < 0) {
+                    stepX = -1;
+                    sideDistX = (playerX - mapX) * deltaDistX;
+                } else {
+                    stepX = 1;
+                    sideDistX = (mapX + 1.0 - playerX) * deltaDistX;
+                }
+
+                if (rayDirY < 0) {
+                    stepY = -1;
+                    sideDistY = (playerY - mapY) * deltaDistY;
+                } else {
+                    stepY = 1;
+                    sideDistY = (mapY + 1.0 - playerY) * deltaDistY;
+                }
+
+                // Strict 40 step DDA loop to guarantee no freezes
+                let ddaSteps = 0;
+                while (hit === 0 && ddaSteps < 40) {
+                    ddaSteps++;
+                    if (sideDistX < sideDistY) {
+                        sideDistX += deltaDistX;
+                        mapX += stepX;
+                        side = 0;
+                    } else {
+                        sideDistY += deltaDistY;
+                        mapY += stepY;
+                        side = 1;
+                    }
+
+                    // Bounds checking
+                    if (mapX < 0 || mapX >= MAP_SIZE || mapY < 0 || mapY >= MAP_SIZE) {
+                        hit = 1; // Fallback wall hit
+                        break;
+                    }
+
+                    if (worldMap[mapY * MAP_SIZE + mapX] > 0) {
+                        hit = worldMap[mapY * MAP_SIZE + mapX];
+                    }
+                }
+
+                // Calculate perpendicular distance to wall
+                if (side === 0) {
+                    perpWallDist = (mapX - playerX + (1 - stepX) / 2) / rayDirX;
+                } else {
+                    perpWallDist = (mapY - playerY + (1 - stepY) / 2) / rayDirY;
+                }
+
+                if (perpWallDist <= 0) perpWallDist = 0.05;
+                zBuffer[x] = perpWallDist;
+
+                // Strip heights calculations
+                const lineHeight = Math.floor(renderHeight / perpWallDist);
+                const drawStart = Math.max(0, -lineHeight / 2 + renderHeight / 2);
+                const drawEnd = Math.min(renderHeight - 1, lineHeight / 2 + renderHeight / 2);
+
+                // Style and shade assignments
+                let wallColor = '#005577';
+                let isGlow = false;
+
+                if (hit === 1) {
+                    // Steel plate bulkhead
+                    wallColor = (side === 1) ? '#071526' : '#0e243d';
+                } else if (hit === 2) {
+                    // Reactor core glowing array
+                    wallColor = (side === 1) ? '#3c0015' : '#77002b';
+                    isGlow = true;
+                } else if (hit === 3) {
+                    // Escape Hatch portal frame
+                    wallColor = (cellsCollected >= 3) ? '#00b386' : '#990033';
+                }
+
+                oCtx.fillStyle = wallColor;
+                oCtx.fillRect(x, drawStart, 1, drawEnd - drawStart + 1);
+
+                // Glow energy details
+                if (isGlow) {
+                    oCtx.fillStyle = '#ff0055';
+                    oCtx.fillRect(x, drawStart + Math.floor((drawEnd - drawStart) * 0.4), 1, Math.max(1, Math.floor(lineHeight * 0.1)));
+                    oCtx.fillStyle = '#00ffcc';
+                    oCtx.fillRect(x, drawStart + Math.floor((drawEnd - drawStart) * 0.55), 1, Math.max(1, Math.floor(lineHeight * 0.05)));
+                }
+
+                // Linear Depth Fog calculations
+                const fogRatio = Math.min(1.0, 3.8 / perpWallDist);
+                if (fogRatio < 1.0) {
+                    oCtx.fillStyle = `rgba(3, 7, 13, ${1.0 - fogRatio})`;
+                    oCtx.fillRect(x, drawStart, 1, drawEnd - drawStart + 1);
+                }
+            }
+
+            // --- BILLBOARD SPRITES PROCESSING LOOP ---
+            const spriteList = [];
+            
+            // Add Battery cells
+            batterySpots.forEach((b, i) => {
+                if (b.active) {
+                    spriteList.push({ x: b.x, y: b.y, type: 'cell', id: i });
+                }
+            });
+
+            // Add Enemy Drones
+            drones.forEach((d, i) => {
+                if (d.active) {
+                    spriteList.push({ x: d.x, y: d.y, type: 'drone', id: i });
+                }
+            });
+
+            // Add Escape Portal core glow
+            spriteList.push({ x: 1.5, y: 1.5, type: 'exit', id: 99 });
+
+            // Sort sprites based on player distance to handle overlaps
+            spriteList.forEach(s => {
+                s.dist = Math.pow(playerX - s.x, 2) + Math.pow(playerY - s.y, 2);
+            });
+            spriteList.sort((a, b) => b.dist - a.dist);
+
+            // Viewport clamped rendering loops for sorted sprites
+            spriteList.forEach(s => {
+                const sX = s.x - playerX;
+                const sY = s.y - playerY;
+
+                // Matrix transforms
+                const invDet = 1.0 / (planeX * dirY - dirX * planeY);
+                const transformX = invDet * (dirY * sX - dirX * sY);
+                const transformY = invDet * (-planeY * sX + planeX * sY);
+
+                if (transformY <= 0.15) return; // Clamped in front of camera
+
+                const spriteScreenX = Math.floor((renderWidth / 2) * (1 + transformX / transformY));
+                const spriteHeight = Math.abs(Math.floor(renderHeight / transformY));
+                const spriteWidth = spriteHeight;
+
+                const drawStartY = Math.max(0, -spriteHeight / 2 + renderHeight / 2);
+                const drawEndY = Math.min(renderHeight - 1, spriteHeight / 2 + renderHeight / 2);
+
+                const drawStartX = Math.max(0, Math.floor(spriteScreenX - spriteWidth / 2));
+                const drawEndX = Math.min(renderWidth - 1, Math.floor(spriteScreenX + spriteWidth / 2));
+
+                // Process stripe cuts through sprite screen width
+                for (let stripe = drawStartX; stripe <= drawEndX; stripe++) {
+                    if (transformY < zBuffer[stripe]) {
+                        const stripePct = (stripe - (spriteScreenX - spriteWidth / 2)) / spriteWidth;
+
+                        if (s.type === 'cell') {
+                            // Render Reactor Energy Cell battery (Golden flashing core cylinder)
+                            if (stripePct > 0.32 && stripePct < 0.68) {
+                                const coreGlow = Math.sin(Date.now() * 0.015 + s.id) * 0.25 + 0.75;
+                                oCtx.fillStyle = `rgba(255, 215, 0, ${coreGlow})`;
+                                oCtx.fillRect(stripe, drawStartY + (drawEndY - drawStartY) * 0.2, 1, (drawEndY - drawStartY) * 0.6);
+                                
+                                oCtx.fillStyle = '#ffffff';
+                                oCtx.fillRect(stripe, drawStartY + (drawEndY - drawStartY) * 0.35, 1, (drawEndY - drawStartY) * 0.3);
+                            }
+                        } else if (s.type === 'drone') {
+                            // Render Patrol Drone (Menacing floating red eye orb with rotating halo)
+                            if (stripePct > 0.25 && stripePct < 0.75) {
+                                const alarmFreq = Math.abs(Math.sin(Date.now() * 0.02 + s.id));
+                                oCtx.fillStyle = `rgba(255, 0, 85, ${0.4 + alarmFreq * 0.6})`;
+                                oCtx.fillRect(stripe, drawStartY + (drawEndY - drawStartY) * 0.3, 1, (drawEndY - drawStartY) * 0.4);
+
+                                // Outer core border glow
+                                if (stripePct > 0.45 && stripePct < 0.55) {
+                                    oCtx.fillStyle = '#ffffff';
+                                    oCtx.fillRect(stripe, drawStartY + (drawEndY - drawStartY) * 0.4, 1, (drawEndY - drawStartY) * 0.2);
+                                }
+                            }
+                        } else if (s.type === 'exit') {
+                            // Escaped Hatch core visual indicators
+                            if (stripePct > 0.45 && stripePct < 0.55) {
+                                oCtx.fillStyle = (cellsCollected >= 3) ? '#00ffcc' : '#ff0055';
+                                oCtx.fillRect(stripe, drawStartY, 1, drawEndY - drawStartY);
+                            }
+                        }
+                    }
+                }
+            });
+
+            // --- STATIC RADAR RETICLE & REC RECOIL ---
+            const hoverGlow = Math.sin(Date.now() * 0.004) * 3;
+            const actionYOffset = recoilTimer > 0 ? (recoilTimer * 4.5) : 0;
+
+            oCtx.fillStyle = '#060f1c';
+            oCtx.strokeStyle = '#00ffcc';
+            oCtx.lineWidth = 1.5;
+
+            // Render Weapon Frame Gun Structure Arms
+            const wBase = renderHeight - 68 + hoverGlow + actionYOffset;
+            oCtx.beginPath();
+            oCtx.moveTo(renderWidth / 2 - 30, renderHeight);
+            oCtx.lineTo(renderWidth / 2 - 16, wBase);
+            oCtx.lineTo(renderWidth / 2 - 10, wBase + 12);
+            oCtx.lineTo(renderWidth / 2 - 20, renderHeight);
+            oCtx.closePath();
+            oCtx.fill();
+            oCtx.stroke();
+
+            oCtx.beginPath();
+            oCtx.moveTo(renderWidth / 2 + 30, renderHeight);
+            oCtx.lineTo(renderWidth / 2 + 16, wBase);
+            oCtx.lineTo(renderWidth / 2 + 10, wBase + 12);
+            oCtx.lineTo(renderWidth / 2 + 20, renderHeight);
+            oCtx.closePath();
+            oCtx.fill();
+            oCtx.stroke();
+
+            // Energy weapon core chamber bulb
+            const chargeIntensity = recoilTimer > 0 ? 1.0 : (0.4 + Math.sin(Date.now() * 0.015) * 0.25);
+            oCtx.fillStyle = `rgba(0, 255, 204, ${chargeIntensity})`;
+            oCtx.fillRect(renderWidth / 2 - 6, wBase + 16, 12, 14);
+
+            // Vector HUD crosshair center
+            oCtx.strokeStyle = 'rgba(0, 255, 204, 0.45)';
+            oCtx.lineWidth = 1;
+            oCtx.beginPath();
+            oCtx.arc(renderWidth / 2, renderHeight / 2, 6, 0, Math.PI * 2);
+            oCtx.moveTo(renderWidth / 2 - 12, renderHeight / 2);
+            oCtx.lineTo(renderWidth / 2 + 12, renderHeight / 2);
+            oCtx.moveTo(renderWidth / 2, renderHeight / 2 - 12);
+            oCtx.lineTo(renderWidth / 2, renderHeight / 2 + 12);
+            oCtx.stroke();
+
+            // Fire pulse beam trace visualization
+            if (recoilTimer > 6) {
+                oCtx.fillStyle = '#ffffff';
+                oCtx.fillRect(renderWidth / 2 - 2, renderHeight / 2, 4, renderHeight / 2);
+                oCtx.strokeStyle = '#00ffcc';
+                oCtx.lineWidth = 3;
+                oCtx.beginPath();
+                oCtx.moveTo(renderWidth / 2, renderHeight / 2);
+                oCtx.lineTo(renderWidth / 2, renderHeight);
+                oCtx.stroke();
+            }
+
+            // Draw final safe buffer to visual scaled canvas view
+            ctx.drawImage(offscreenCanvas, 0, 0, canvas.width, canvas.height);
+        }
+    </script>
+
+    <script>
+        const radarCanvas = document.getElementById('radar-canvas');
+        const rCtx = radarCanvas.getContext('2d');
+
+        function renderRadar() {
+            const cx = radarCanvas.width / 2;
+            const cy = radarCanvas.height / 2;
+            const rad = radarCanvas.width / 2 - 4;
+
+            rCtx.fillStyle = '#010408';
+            rCtx.fillRect(0, 0, radarCanvas.width, radarCanvas.height);
+
+            // Grid Concentric radar sweeps lines
+            rCtx.strokeStyle = '#0a1d36';
+            rCtx.lineWidth = 1;
+            rCtx.beginPath();
+            rCtx.arc(cx, cy, rad, 0, Math.PI * 2);
+            rCtx.arc(cx, cy, rad * 0.66, 0, Math.PI * 2);
+            rCtx.arc(cx, cy, rad * 0.33, 0, Math.PI * 2);
+            rCtx.stroke();
+
+            rCtx.beginPath();
+            rCtx.moveTo(cx, cy - rad); rCtx.lineTo(cx, cy + rad);
+            rCtx.moveTo(cx - rad, cy); rCtx.lineTo(cx + rad, cy);
+            rCtx.stroke();
+
+            const radarScale = 7.5; // pixel density conversion ratio
+
+            // Draw static bulkheads
+            rCtx.fillStyle = 'rgba(15, 33, 58, 0.45)';
+            for (let y = 0; y < MAP_SIZE; y++) {
+                for (let x = 0; x < MAP_SIZE; x++) {
+                    if (worldMap[y * MAP_SIZE + x] > 0) {
+                        const mOffsetX = (x - playerX) * radarScale + cx;
+                        const mOffsetY = (y - playerY) * radarScale + cy;
+                        if (Math.hypot(mOffsetX - cx, mOffsetY - cy) < rad) {
+                            rCtx.fillRect(mOffsetX - radarScale / 2, mOffsetY - radarScale / 2, radarScale - 0.5, radarScale - 0.5);
+                        }
+                    }
+                }
+            }
+
+            // Draw target golden cells
+            batterySpots.forEach(b => {
+                if (!b.active) return;
+                const bx = (b.x - playerX) * radarScale + cx;
+                const by = (b.y - playerY) * radarScale + cy;
+                if (Math.hypot(bx - cx, by - cy) < rad) {
+                    rCtx.fillStyle = '#ffd700';
+                    rCtx.beginPath();
+                    rCtx.arc(bx, by, 3, 0, Math.PI * 2);
+                    rCtx.fill();
+                }
+            });
+
+            // Draw security Drones (menacing flashing dots)
+            drones.forEach(d => {
+                if (!d.active) return;
+                const dx = (d.x - playerX) * radarScale + cx;
+                const dy = (d.y - playerY) * radarScale + cy;
+                if (Math.hypot(dx - cx, dy - cy) < rad) {
+                    rCtx.fillStyle = '#ff0055';
+                    rCtx.beginPath();
+                    rCtx.arc(dx, dy, 2.5, 0, Math.PI * 2);
+                    rCtx.fill();
+                }
+            });
+
+            // Escape hatch portal dot
+            const ex = (1.5 - playerX) * radarScale + cx;
+            const ey = (1.5 - playerY) * radarScale + cy;
+            if (Math.hypot(ex - cx, ey - cy) < rad) {
+                rCtx.fillStyle = (cellsCollected >= 3) ? '#00ffcc' : '#ff0055';
+                rCtx.fillRect(ex - 3, ey - 3, 6, 6);
+            }
+
+            // Radar radial sweeping pulse sweep
+            const sweepLine = (Date.now() * 0.0025) % (Math.PI * 2);
+            rCtx.strokeStyle = 'rgba(0, 255, 204, 0.2)';
+            rCtx.lineWidth = 1.5;
+            rCtx.beginPath();
+            rCtx.moveTo(cx, cy);
+            rCtx.lineTo(cx + Math.cos(sweepLine) * rad, cy + Math.sin(sweepLine) * rad);
+            rCtx.stroke();
+
+            // Self pointer vector arrow
+            rCtx.fillStyle = '#00ffcc';
+            rCtx.beginPath();
+            rCtx.arc(cx, cy, 3.5, 0, Math.PI * 2);
+            rCtx.fill();
+
+            const faceAngle = Math.atan2(dirY, dirX);
+            rCtx.strokeStyle = '#00ffcc';
+            rCtx.lineWidth = 2;
+            rCtx.beginPath();
+            rCtx.moveTo(cx, cy);
+            rCtx.lineTo(cx + Math.cos(faceAngle) * 7, cy + Math.sin(faceAngle) * 7);
+            rCtx.stroke();
+        }
+    </script>
+
+    <script>
+        // Gun blast fire sweep mechanics to secure corridor target line
+        function triggerPulseWeapon() {
+            if (activeMode !== 'playing' || isPaused || weaponCooldown > 0) return;
+
+            audio.playPulse();
+            recoilTimer = 10;
+            weaponCooldown = 0.35; // Trigger firing cooldown
+            shotFired++;
+
+            // Secure and destroy any active drones lying closely directly on current view reticle vector
+            drones.forEach(d => {
+                if (!d.active) return;
+
+                const dx = d.x - playerX;
+                const dy = d.y - playerY;
+                const dist = Math.hypot(dx, dy);
+
+                if (dist > 5.5) return; // Beyond safe focal power
+
+                const normX = dx / dist;
+                const normY = dy / dist;
+
+                // Evaluate standard Dot Product check (close to target vector direction)
+                const dotProduct = normX * dirX + normY * dirY;
+                if (dotProduct > 0.965) {
+                    d.active = false;
+                    droneKills++;
+                    audio.playExplode();
+                }
+            });
+        }
+
+        // Live stats frame updating
+        function updateDashboardUI() {
+            document.getElementById('hud-health').textContent = `${Math.round(health)}%`;
+            document.getElementById('hud-health-bar').style.width = `${Math.round(health)}%`;
+
+            document.getElementById('hud-cells').textContent = `${cellsCollected} / 3`;
+            document.getElementById('hud-oxy-seconds').textContent = `${Math.max(0, Math.ceil(oxygen))}s remaining`;
+            document.getElementById('hud-oxygen-bar').style.width = `${(oxygen / 150) * 100}%`;
+
+            // Style cell container blocks
+            for (let i = 0; i < 3; i++) {
+                const cellSlot = document.getElementById(`cell-slot-${i}`);
+                if (i < cellsCollected) {
+                    cellSlot.style.backgroundColor = '#ffd700';
+                } else {
+                    cellSlot.style.backgroundColor = '#111a2e';
+                }
+            }
+
+            // Low oxygen warning banner toggles
+            const warningBanner = document.getElementById('warning-banner');
+            if (oxygen <= 30) {
+                warningBanner.classList.remove('hidden');
+                warningBanner.textContent = "OXYGEN LEVEL CRITICAL";
+            } else if (health <= 35) {
+                warningBanner.classList.remove('hidden');
+                warningBanner.textContent = "CORE STABILITY UNSTABLE";
+            } else {
+                warningBanner.classList.add('hidden');
+            }
+        }
+
+        // Main game physics processor loop
+        function processPhysics(dt) {
+            if (activeMode !== 'playing' || isPaused) return;
+
+            // Tick down life support elements
+            oxygen -= dt;
+            if (oxygen <= 0) {
+                oxygen = 0;
+                resolveMission(false);
+                return;
+            }
+
+            // Weapon cooldown ticks
+            if (weaponCooldown > 0) weaponCooldown -= dt;
+            if (recoilTimer > 0) recoilTimer -= dt * 11;
+
+            // Audio warning beep processors
+            if (oxygen <= 30 && !warning30Triggered) {
+                if (Math.floor(oxygen * 2.5) % 2 === 0) audio.playAlert(820);
+                if (oxygen <= 1) warning30Triggered = true;
+            } else if (oxygen <= 60 && !warning60Triggered) {
+                if (Math.floor(oxygen) % 2 === 0) audio.playAlert(520);
+                if (oxygen <= 31) warning60Triggered = true;
+            }
+
+            // Keyboard and Touch action state conversions
+            let forwardSpeed = 0;
+            let strafeSpeed = 0;
+            let rotateSpeed = 0;
+
+            const baseVelocity = 3.2;
+            const baseRotVelocity = 1.95;
+
+            // Keyboard conversions
+            if (keys['w'] || keys['arrowup'] || touchInputs.forward) {
+                forwardSpeed += baseVelocity * dt;
+            }
+            if (keys['s'] || keys['arrowdown'] || touchInputs.backward) {
+                forwardSpeed -= baseVelocity * dt;
+            }
+            if (keys['a'] || touchInputs.strafeL) {
+                strafeSpeed -= baseVelocity * dt;
+            }
+            if (keys['d'] || touchInputs.strafeR) {
+                strafeSpeed += baseVelocity * dt;
+            }
+            if (keys['q'] || keys['arrowleft'] || touchInputs.turnL) {
+                rotateSpeed -= baseRotVelocity * dt;
+            }
+            if (keys['e'] || keys['arrowright'] || touchInputs.turnR) {
+                rotateSpeed += baseRotVelocity * dt;
+            }
+
+            // Fire input logic
+            if (keys[' '] || touchInputs.fire) {
+                triggerPulseWeapon();
+            }
+
+            // Rotate players
+            if (rotateSpeed !== 0) {
+                rotatePlayer(rotateSpeed);
+            }
+
+            // Calculate exact sliding physics with static bulkhead maps
+            const nextX = playerX + (dirX * forwardSpeed) + (planeX * strafeSpeed);
+            const nextY = playerY + (dirY * forwardSpeed) + (planeY * strafeSpeed);
+
+            if (!checkCollision(nextX, playerY)) {
+                playerX = nextX;
+            }
+            if (!checkCollision(playerX, nextY)) {
+                playerY = nextY;
+            }
+
+            // Update Dynamic Security Drones Sweeps
+            drones.forEach(d => {
+                if (!d.active) return;
+
+                if (d.type === 'h') {
+                    const step = d.speed * dt * d.dir;
+                    // Test corridor walls using bounding buffers
+                    const futureX = d.x + step + (d.dir > 0 ? 0.35 : -0.35);
+                    const cellVal = worldMap[Math.floor(d.y) * MAP_SIZE + Math.floor(futureX)];
+                    if (cellVal === 0) {
+                        d.x += step;
+                    } else {
+                        d.dir *= -1; // Flip trajectory
+                    }
+                } else {
+                    const step = d.speed * dt * d.dir;
+                    const futureY = d.y + step + (d.dir > 0 ? 0.35 : -0.35);
+                    const cellVal = worldMap[Math.floor(futureY) * MAP_SIZE + Math.floor(d.x)];
+                    if (cellVal === 0) {
+                        d.y += step;
+                    } else {
+                        d.dir *= -1; // Flip trajectory
+                    }
+                }
+
+                // Check security proximity collision triggers to inflict tick damage
+                const distToPlayer = Math.hypot(playerX - d.x, playerY - d.y);
+                if (distToPlayer < 0.75) {
+                    health -= 24 * dt;
+                    if (Math.random() < 0.12) audio.playExplode(); // Distant crackle static
+                    if (health <= 0) {
+                        health = 0;
+                        resolveMission(false);
+                    }
+                }
+            });
+
+            // Check battery pickups
+            batterySpots.forEach(b => {
+                if (!b.active) return;
+                const dist = Math.hypot(playerX - b.x, playerY - b.y);
+                if (dist < 0.65) {
+                    b.active = false;
+                    cellsCollected++;
+                    audio.playCollect();
+                    updateDashboardUI();
+                }
+            });
+
+            // Airlock Zero Escaped Hatch Check
+            if (cellsCollected >= 3) {
+                const distToExit = Math.hypot(playerX - 1.5, playerY - 1.5);
+                if (distToExit < 0.75) {
+                    resolveMission(true);
+                }
+            }
+        }
+
+        // Standard Reset Mission loop resets map coordinates
+        function initializeMissionState() {
+            playerX = 8.5;
+            playerY = 14.2;
+            dirX = 0;
+            dirY = -1;
+            planeX = 0.66;
+            planeY = 0;
+
+            oxygen = 150;
+            health = 100;
+            cellsCollected = 0;
+            shotFired = 0;
+            droneKills = 0;
+            isPaused = false;
+
+            warning30Triggered = false;
+            warning60Triggered = false;
+
+            // Refresh objects
+            batterySpots.forEach(b => b.active = true);
+            drones.forEach((d, i) => {
+                d.active = true;
+                d.x = i === 0 ? 3.5 : (i === 1 ? 12.5 : 8.5);
+                d.y = i === 0 ? 5.5 : (i === 1 ? 11.5 : 8.5);
+            });
+
+            updateDashboardUI();
+        }
+
+        // Resolves the current scenario and displays the final tactical diagnostic
+        function resolveMission(hasWon) {
+            activeMode = 'ended';
+            
+            const overlay = document.getElementById('overlay-scorecard');
+            const card = document.getElementById('scorecard-wrapper');
+            const title = document.getElementById('scorecard-title');
+
+            overlay.classList.remove('hidden');
+
+            if (hasWon) {
+                audio.playCollect();
+                title.textContent = "CONTAINMENT ACTIVE: VICTORY";
+                title.className = "text-shadow: var(--primary-glow)";
+                card.style.borderColor = "var(--primary)";
+                card.style.boxShadow = "0 0 25px rgba(0, 255, 204, 0.4)";
+            } else {
+                audio.playExplode();
+                title.textContent = "REACTOR COMPROMISED: CRITICAL FAILURE";
+                title.className = "text-shadow: var(--danger-glow)";
+                card.style.borderColor = "var(--danger)";
+                card.style.boxShadow = "0 0 25px rgba(255, 0, 85, 0.4)";
+            }
+
+            // Fill scorecard records
+            document.getElementById('score-oxy').textContent = `${Math.max(0, Math.round(oxygen))}s remaining`;
+            document.getElementById('score-cells').textContent = `${cellsCollected} / 3secured`;
+            document.getElementById('score-drones').textContent = `${droneKills}`;
+            document.getElementById('score-health').textContent = `${Math.max(0, Math.round(health))}%`;
+
+            // Execute Rating calculation
+            let totalGradeScore = 0;
+            if (hasWon) totalGradeScore += 50;
+            totalGradeScore += cellsCollected * 10;
+            totalGradeScore += droneKills * 5;
+            totalGradeScore += Math.round(oxygen) * 0.2;
+            totalGradeScore += Math.round(health) * 0.15;
+
+            let rankingLetter = "F (REACTOR CORRUPTION)";
+            let rankingColor = "var(--danger)";
+
+            if (totalGradeScore >= 85) {
+                rankingLetter = "S (REACTOR OPERATOR ELITE)";
+                rankingColor = "var(--primary)";
+            } else if (totalGradeScore >= 68) {
+                rankingLetter = "A (SENIOR OFFICER)";
+                rankingColor = "#ffd700";
+            } else if (totalGradeScore >= 45) {
+                rankingLetter = "B (GRID TECHNICIAN)";
+                rankingColor = "#00ffaa";
+            } else if (totalGradeScore >= 25) {
+                rankingLetter = "C (ROOKIE CLEANUP)";
+                rankingColor = "#33ccff";
+            }
+
+            const gradeEl = document.getElementById('score-grade');
+            gradeEl.textContent = rankingLetter;
+            gradeEl.style.color = rankingColor;
+        }
+    </script>
+
+    <script>
+        // High fidelity animation loop calculations
+        let lastTimestamp = performance.now();
+
+        function mainLoop(currentTimestamp) {
+            let dt = (currentTimestamp - lastTimestamp) / 1000;
+            if (dt > 0.1) dt = 0.1; // Bound delta ticks to prevent phase jumps on frame stalls
+            lastTimestamp = currentTimestamp;
+
+            if (activeMode === 'playing' && !isPaused) {
+                processPhysics(dt);
+                renderRaycaster();
+                renderRadar();
+            }
+
+            requestAnimationFrame(mainLoop);
+        }
+
+        // Event binder triggers
+        window.addEventListener('keydown', e => {
+            keys[e.key.toLowerCase()] = true;
+            if (e.key === ' ') {
+                e.preventDefault();
+            }
+        });
+
+        window.addEventListener('keyup', e => {
+            keys[e.key.toLowerCase()] = false;
+        });
+
+        // Click / pointerdown on canvas trigger weapon fire directly
+        canvas.addEventListener('pointerdown', e => {
+            e.preventDefault();
+            audio.init();
+            triggerPulseWeapon();
+        });
+
+        // Set up touch pad interactive listeners
+        function linkTouchButton(elementId, touchParam) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+
+            const triggerOn = (e) => {
+                e.preventDefault();
+                audio.init();
+                touchInputs[touchParam] = true;
+            };
+
+            const triggerOff = (e) => {
+                e.preventDefault();
+                touchInputs[touchParam] = false;
+            };
+
+            el.addEventListener('mousedown', triggerOn);
+            el.addEventListener('mouseup', triggerOff);
+            el.addEventListener('mouseleave', triggerOff);
+
+            el.addEventListener('touchstart', triggerOn, { passive: false });
+            el.addEventListener('touchend', triggerOff, { passive: false });
+            el.addEventListener('touchcancel', triggerOff, { passive: false });
+        }
+
+        linkTouchButton('ctrl-strafe-l', 'strafeL');
+        linkTouchButton('ctrl-forward', 'forward');
+        linkTouchButton('ctrl-strafe-r', 'strafeR');
+        linkTouchButton('ctrl-backward', 'backward');
+        linkTouchButton('ctrl-turn-l', 'turnL');
+        linkTouchButton('ctrl-turn-r', 'turnR');
+        linkTouchButton('ctrl-fire', 'fire');
+
+        // Main overlay interfaces routing
+        document.getElementById('btn-start-game').addEventListener('click', () => {
+            audio.init();
+            activeMode = 'playing';
+            document.getElementById('overlay-start').classList.add('hidden');
+            initializeMissionState();
+        });
+
+        document.getElementById('btn-restart-game').addEventListener('click', () => {
+            document.getElementById('overlay-scorecard').classList.add('hidden');
+            activeMode = 'playing';
+            initializeMissionState();
+        });
+
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            audio.init();
+            initializeMissionState();
+        });
+
+        // Tactical interface buttons
+        document.getElementById('btn-pause').addEventListener('click', () => {
+            isPaused = !isPaused;
+            const icon = document.getElementById('pause-icon');
+            const text = document.getElementById('pause-text');
+            if (isPaused) {
+                icon.textContent = '▶';
+                text.textContent = 'PAUSED';
+                audio.playAlert(440);
+            } else {
+                icon.textContent = '⏸';
+                text.textContent = 'ACTIVE';
+                audio.playAlert(640);
+            }
+        });
+
+        document.getElementById('btn-mute').addEventListener('click', () => {
+            audio.init();
+            const state = !audio.muted;
+            audio.setMute(state);
+            document.getElementById('mute-icon').textContent = state ? '🔇' : '🔊';
+            document.getElementById('mute-text').textContent = state ? 'MUTED' : 'SOUND ON';
+        });
+
+        // Handle dynamic layout resizing to match 390x844 viewports cleanly
+        function adjustLayout() {
+            const container = canvas.parentNode;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            
+            // Re-render immediately on window changes to avoid blank flickering
+            if (activeMode === 'playing') {
+                renderRaycaster();
+                renderRadar();
+            }
+        }
+
+        window.addEventListener('resize', adjustLayout);
+        
+        // Final system initializer start
+        window.onload = function() {
+            adjustLayout();
+            requestAnimationFrame(mainLoop);
+        };
+    </script>
+</body>
+</html>

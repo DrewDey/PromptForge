@@ -57,6 +57,8 @@ For every source-run promotion, verify the whole chain in this order:
 
 ## Required Page Shape
 
+The shared fork implementation and release runbook lives in [PathForge forks](./PATHFORGE_FORKS.md). Keep this page-direction summary aligned with that contract.
+
 - Final artifact embedded at the top.
 - Prompt and response chain below the final artifact.
 - Custom showcase routes are renderer overrides, not exceptions. They still need the same public project shell as generic project pages.
@@ -69,8 +71,10 @@ For every source-run promotion, verify the whole chain in this order:
 - Summaries can exist, but verification notes and internal QA/audit text belong in admin/repo metadata, not in public product-page copy.
 - Multi-prompt source-run pages must use `SourceRunShowcase`. Do not reintroduce one-off source-run explorer components for HP, Weekend, Neon, Swish, Meeting Cost, or future pages with the same shape.
 - Run `npm run check:source-run-showcases` after adding or repairing a source-run public page. The guard exists to catch the recurring misses: summary text in `response_exact`, missing selectable response artifacts, public admin source-run IDs/record links, verification-note leakage, missing route overrides, missing public fallback wiring, and local-only artifact paths.
+- Model variants are one canonical project's developer-operated run history, not community forks. Keep the model selector alphabetical and stable; selecting a run must never reorder the choices. Shared engagement and discussion stay attached to the canonical project.
 - Forks should visually branch from the main chain.
-- Each response should be forkable into a new branch where the source chain compacts left and the fork prompt/response chain grows to the right.
+- Each response should be forkable into a new branch where the inherited prompt/response path compacts left, the exact source response forms the branch socket, and the child prompt/response continuation grows prominently to the right. Child pages must reconstruct the same inherited path and socket; narrow layouts stack the same relationship vertically.
+- A fork from a model variant must retain the canonical project, exact model-variant row, `source_run_id`, exact response/step ID and number, selected artifact path, and artifact SHA-256. Never fall back from an unresolved exact response ID to a same-numbered response from another run.
 - Every public project page should expose an obvious fork action that opens the build flow with the source project identified. A passive fork count by itself is not enough.
 - Project pages should include real community surfaces: upvotes, downvotes, saves/bookmarks, comments, and replies. Counts start at zero and should not be seeded with fake activity.
 - The current visual direction for chain connections is chunky green pipe/tube connectors, inspired by Flappy Bird pipes.
@@ -154,6 +158,7 @@ The preferred workflow is captured session first, not manual reconstruction:
 - User pastes a ChatGPT, Gemini, Claude, or OpenRouter run link into Build your project.
 - User adds a short title so the admin review queue has a clickable intake record.
 - The entry is saved to `source_run_submissions` with status `queued`.
+- A developer-operated package may supply a checked UUID `source_run_id` when the same immutable identity must survive queue import, model history, and fork lineage. An exact reimport reuses the matching author/profile and source URL; a conflicting reuse is rejected. Ordinary user uploads omit it.
 - The extraction agent opens the captured session using an authorized browser session or import file.
 - It extracts exact prompts, exact responses, code blocks, generated files, screenshots, model/provider details, and final artifact relationships.
 - It does not create a prompt/upvote page as part of submission.
@@ -194,6 +199,7 @@ The Vault is not a general bookmark shelf, request inbox, or activity feed. It s
 - Previous artifact paths
 - Verification status and notes
 - Fork and branch relationships
+- Exact fork source model variant, source run, response step, artifact path, and artifact SHA-256
 - Approval status
 - Privacy status
 - Public-delay status

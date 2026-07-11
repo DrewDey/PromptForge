@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Airlock Zero: Hull Breach</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #0c0808;
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
+            color: #ff5533;
+        }
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 960px;
+            max-height: 640px;
+            margin: auto;
+            aspect-ratio: 3 / 2;
+            box-shadow: 0 0 20px rgba(255, 85, 51, 0.2);
+            border: 2px solid #ff5533;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        @media (min-aspect-ratio: 3/2) {
+            #game-container { height: 100vh; width: auto; }
+        }
+        @media (max-aspect-ratio: 3/2) {
+            #game-container { width: 100vw; height: auto; }
+        }
+
+        /* --- Unified Responsive Mobile Portrait Layout (390x844 optimized) --- */
+        @media (max-width: 600px), (max-aspect-ratio: 1/1) {
+            #game-container {
+                width: 100% !important;
+                height: 100% !important;
+                height: 100dvh !important;
+                max-width: none !important;
+                max-height: none !important;
+                aspect-ratio: auto !important;
+                border: none !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: flex-start !important;
+                align-items: stretch !important;
+            }
+            #gameCanvas {
+                width: 100% !important;
+                height: auto !important;
+                aspect-ratio: 3 / 2 !important;
+                flex-shrink: 0 !important;
+            }
+            #touch-ui {
+                position: relative !important;
+                width: 100% !important;
+                height: auto !important;
+                flex-grow: 1 !important;
+                pointer-events: auto !important;
+                display: flex !important;
+                flex-direction: row !important;
+                justify-content: space-around !important;
+                align-items: center !important;
+                padding: 15px 10px !important;
+                background: #0a0505 !important;
+                border-top: 2px solid #ff5533 !important;
+            }
+            #touch-move, #touch-look, #touch-fire {
+                position: relative !important;
+                bottom: auto !important;
+                left: auto !important;
+                right: auto !important;
+                transform: none !important;
+                margin: 0 !important;
+            }
+            #touch-move, #touch-look {
+                width: 95px !important;
+                height: 95px !important;
+                font-size: 0.75rem !important;
+            }
+            #touch-fire {
+                width: 85px !important;
+                height: 85px !important;
+                font-size: 0.95rem !important;
+            }
+            .overlay {
+                border: none !important;
+                padding: 20px 15px !important;
+            }
+            .briefing-box {
+                max-height: 40vh !important; /* Cap height to ensure header and action buttons are fully viewable on short aspect ratio mobile */
+            }
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            image-rendering: pixelated;
+        }
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(12, 4, 4, 0.96);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+            text-align: center;
+            z-index: 20;
+            border: 1px solid #ff5533;
+            overflow: hidden;
+        }
+        .hidden { display: none !important; }
+        h1 {
+            font-size: 2rem;
+            margin: 0 0 4px 0;
+            text-shadow: 0 0 10px #ff5533;
+            letter-spacing: 2px;
+            flex-shrink: 0;
+        }
+        h3 {
+            margin: 0 0 12px 0;
+            letter-spacing: 1px;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        .briefing-box {
+            width: 100%;
+            max-width: 600px;
+            background: rgba(20, 0, 0, 0.65);
+            border: 1px dashed #ff5533;
+            padding: 16px;
+            margin: 10px 0;
+            font-size: 0.85rem;
+            line-height: 1.45;
+            text-align: left;
+            color: #ffaa88;
+            overflow-y: auto;
+            flex-grow: 1;
+            flex-shrink: 1;
+            max-height: 50%;
+            -webkit-overflow-scrolling: touch;
+        }
+        .scorecard-grid {
+            width: 100%;
+            margin-top: 5px;
+            border-top: 1px dashed rgba(255, 85, 51, 0.4);
+            padding-top: 10px;
+        }
+        .score-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+        }
+        .highlight { color: #ff3333; font-weight: bold; }
+        .accent { color: #ffff00; font-weight: bold; }
+        .control-legend { color: #00ffcc; }
+        
+        button {
+            background: #ff5533;
+            color: #000;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: all 0.2s;
+            box-shadow: 0 0 15px rgba(255, 85, 51, 0.4);
+            flex-shrink: 0;
+            border-radius: 4px;
+        }
+        button:hover {
+            background: #ffffff;
+            box-shadow: 0 0 25px #ff5533;
+            transform: scale(1.05);
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        #touch-ui {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+        .touch-zone {
+            position: absolute;
+            pointer-events: auto;
+            background: rgba(255, 85, 51, 0.05);
+            border: 2px solid rgba(255, 85, 51, 0.3);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: rgba(255, 85, 51, 0.85);
+            font-weight: bold;
+            font-size: 0.8rem;
+            text-align: center;
+            box-shadow: inset 0 0 12px rgba(255, 85, 51, 0.1);
+            transition: all 0.1s ease;
+        }
+        .touch-zone:active {
+            background: rgba(255, 85, 51, 0.2);
+            border-color: rgba(255, 85, 51, 0.8);
+            box-shadow: inset 0 0 20px rgba(255, 85, 51, 0.4), 0 0 10px rgba(255, 85, 51, 0.3);
+            transform: scale(0.94);
+        }
+        #touch-move { bottom: 20px; left: 20px; width: 110px; height: 110px; }
+        #touch-look { bottom: 20px; right: 20px; width: 110px; height: 110px; }
+        #touch-fire { 
+            bottom: 20px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            width: 85px; 
+            height: 85px; 
+            background: rgba(255, 51, 51, 0.15); 
+            border-color: rgba(255, 51, 51, 0.4); 
+            color: #ff3333; 
+            font-size: 1rem;
+            box-shadow: inset 0 0 12px rgba(255, 51, 51, 0.1);
+        }
+        #touch-fire:active {
+            background: rgba(255, 51, 51, 0.35);
+            border-color: rgba(255, 51, 51, 0.9);
+            box-shadow: inset 0 0 20px rgba(255, 51, 51, 0.5), 0 0 15px rgba(255, 51, 51, 0.4);
+        }
+        #utility-bar {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 12;
+            display: flex;
+            gap: 10px;
+        }
+        .util-btn {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #ff5533;
+            color: #ff5533;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            margin: 0;
+            box-shadow: none;
+            border-radius: 4px;
+        }
+        .util-btn:hover { background: rgba(255, 85, 51, 0.25); }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="utility-bar">
+        <button id="btn-mute" class="util-btn">MUTE</button>
+        <button id="btn-pause" class="util-btn hidden">PAUSE</button>
+    </div>
+
+    <!-- Canvas renders with static projection dimensions -->
+    <canvas id="gameCanvas" width="480" height="320"></canvas>
+
+    <!-- Briefing Screen -->
+    <div id="screen-briefing" class="overlay">
+        <h1>AIRLOCK ZERO</h1>
+        <h3>HULL BREACH</h3>
+        <div class="briefing-box">
+            <span class="highlight">HULL INTEGRITY COMPROMISED:</span> Asteroid impacts have punctured Sector 4. Active <span class="highlight">Decompression Zones</span> are venting atmosphere rapidly. <br><br>
+            1. Standing in flashing <span class="highlight">Breach Fields</span> drains oxygen at 4x speed.<br>
+            2. Pull nearby <span class="accent">Blast-Door Switches</span> to seal corresponding breaches.<br>
+            3. Track targets using your tactical <span class="accent">HUD Radar Array</span>.<br>
+            4. Secure <span class="accent">3 Reactor Cells</span> to unlock the <span class="accent">Emergency Airlock</span>.<br><br>
+            <span class="control-legend">CONTROLS:</span><br>
+            • Move: <span class="accent">W, A, S, D</span> | Turn: <span class="accent">Q / E / Arrow Keys</span> or Drag Mouse<br>
+            • Blaster / Flip Switch: <span class="accent">Left-Click / Spacebar</span>
+        </div>
+        <button id="btn-start">START ESCAPE</button>
+    </div>
+
+    <!-- Game Over/Victory Scorecard Screen -->
+    <div id="screen-gameover" class="overlay hidden">
+        <h1 id="gameover-title" class="highlight">HULL COLLAPSE</h1>
+        <p id="gameover-reason" style="margin: 5px 0 10px 0; font-size: 0.9rem; color: #ffaa88;">Oxygen supply critically exhausted.</p>
+        
+        <div class="briefing-box">
+            <div style="text-align: center; font-weight: bold; letter-spacing: 1px; color:#ff5533; font-size: 1rem; margin-bottom: 5px;">TACTICAL TELEMETRY</div>
+            <div class="scorecard-grid">
+                <div class="score-row">
+                    <span>MISSION STATUS:</span><span id="final-status" class="accent">TERMINATED</span>
+                </div>
+                <div class="score-row">
+                    <span>ELAPSED TIME:</span><span id="final-time" style="color:#fff;">00:00</span>
+                </div>
+                <div class="score-row">
+                    <span>OXYGEN RESERVES:</span><span id="final-oxygen" style="color:#fff;">0s</span>
+                </div>
+                <div class="score-row">
+                    <span>SUIT INTEGRITY:</span><span id="final-suit" style="color:#fff;">0%</span>
+                </div>
+                <div class="score-row">
+                    <span>REACTOR CELLS SECURED:</span><span id="final-cells" style="color:#00ffcc;">0/3</span>
+                </div>
+                <div class="score-row">
+                    <span>DRONES DISABLED:</span><span id="final-drones" style="color:#fff;">0</span>
+                </div>
+                <div class="score-row">
+                    <span>BREACHES SEALED:</span><span id="final-breaches" style="color:#fff;">0/2</span>
+                </div>
+            </div>
+        </div>
+        <button id="btn-restart">RE-INITIALIZE</button>
+    </div>
+
+    <!-- Touch Controls -->
+    <div id="touch-ui">
+        <div id="touch-move" class="touch-zone">▲<br>MOVE<br>▼</div>
+        <div id="touch-fire" class="touch-zone">PULSE</div>
+        <div id="touch-look" class="touch-zone">◀<br>TURN<br>▶</div>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+let gameState = 'BRIEFING';
+let oxygenTimer = 150;
+let lastTime = 0;
+let accumulatedTime = 0;
+let isMuted = false;
+let decompressionFlash = 0;
+
+// Tracked Diagnostic Metrics
+let elapsedTime = 0;
+let dronesDisabled = 0;
+let breachesSealed = 0;
+
+const player = {
+    x: 2.5, y: 2.5,
+    dirX: 1, dirY: 0,
+    planeX: 0, planeY: 0.66,
+    health: 100,
+    cellsCollected: 0,
+    isFiring: 0,
+    fireCooldown: 0
+};
+
+const MAP_WIDTH = 16;
+const MAP_HEIGHT = 16;
+
+// 1 = Normal Wall, 2 = Locked Emergency Airlock Frame, 3 = Unlocked Emergency Airlock
+const map = [
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1,
+    1,0,1,0,1,0,1,1,1,1,0,1,0,1,0,1,
+    1,0,1,0,0,0,1,0,0,1,0,0,0,1,0,1,
+    1,0,1,1,1,0,1,0,0,1,1,1,1,1,0,1,
+    1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1,
+    1,1,1,0,1,1,1,1,0,1,0,1,0,1,1,1,
+    1,0,0,0,0,0,0,1,0,1,0,0,0,0,0,1,
+    1,0,1,1,1,1,0,1,0,1,1,1,1,1,0,1,
+    1,0,1,0,0,1,0,0,0,0,0,0,0,1,0,1,
+    1,0,1,0,0,1,1,1,0,1,1,1,0,1,0,1,
+    1,0,0,0,0,0,0,1,0,1,0,0,0,0,0,1,
+    1,1,1,1,1,1,0,1,0,1,0,1,1,1,1,1,
+    1,0,0,0,0,1,0,0,0,1,0,1,0,0,0,1,
+    1,0,1,1,0,1,1,2,2,1,0,0,0,1,0,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
+];
+
+const EMERGENCY_EXIT_X = 8;
+const EMERGENCY_EXIT_Y = 14;
+
+// Hazards
+const breachZones = [
+    { xMin: 5, xMax: 10, yMin: 1, yMax: 3, active: true, switchId: 0 },
+    { xMin: 1, xMax: 3, yMin: 11, yMax: 13, active: true, switchId: 1 }
+];
+
+let entities = [
+    { x: 13.5, y: 1.5, type: 'cell', active: true, phase: 0 },
+    { x: 1.5,  y: 7.5, type: 'cell', active: true, phase: 2 },
+    { x: 12.5, y: 13.5, type: 'cell', active: true, phase: 4 },
+    { x: 9.5,  y: 3.5, type: 'switch', active: true, id: 0, targetBreach: 0, phase: 0 },
+    { x: 4.5,  y: 13.5, type: 'switch', active: true, id: 1, targetBreach: 1, phase: 0 },
+    { x: 7.5,  y: 5.5, type: 'drone', active: true, health: 100, speed: 0.6, phase: 1 },
+    { x: 13.5, y: 11.5, type: 'drone', active: true, health: 100, speed: 0.8, phase: 3 }
+];
+
+const keys = {};
+let mouseDeltaX = 0;
+let isDragging = false;
+
+window.addEventListener('keydown', (e) => { 
+    keys[e.key.toLowerCase()] = true; 
+    if(e.key === ' ' && gameState === 'PLAYING') { triggerActionPulse(); e.preventDefault(); }
+});
+window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+
+canvas.addEventListener('mousedown', () => { isDragging = true; });
+window.addEventListener('mouseup', () => { isDragging = false; });
+canvas.addEventListener('mousemove', (e) => {
+    if (gameState === 'PLAYING' && (isDragging || document.pointerLockElement === canvas)) {
+        mouseDeltaX += e.movementX || 0;
+    }
+});
+canvas.addEventListener('click', () => {
+    if (gameState === 'PLAYING') triggerActionPulse();
+});
+
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playSound(freq, type, vol, duration) {
+    if (isMuted) return;
+    try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    } catch(e) {}
+}
+
+const touchState = { move: false, look: false, lookX: 0 };
+setupTouchZone('touch-move', () => { touchState.move = true; }, () => { touchState.move = false; });
+setupTouchZone('touch-look', (e) => { 
+    touchState.look = true; 
+    touchState.lookX = e.touches[0].clientX;
+}, () => { touchState.look = false; }, (e) => {
+    if(touchState.look) {
+        let diff = e.touches[0].clientX - touchState.lookX;
+        mouseDeltaX += diff * 1.5;
+        touchState.lookX = e.touches[0].clientX;
+    }
+});
+
+// Pulse button maps reliably with click & touchstart to handle all devices instantly
+const pulseButton = document.getElementById('touch-fire');
+pulseButton.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    if(gameState === 'PLAYING') triggerActionPulse();
+});
+pulseButton.addEventListener('click', (e) => {
+    e.preventDefault();
+    if(gameState === 'PLAYING') triggerActionPulse();
+});
+
+function setupTouchZone(id, start, end, move) {
+    const el = document.getElementById(id);
+    el.addEventListener('touchstart', (e) => { e.preventDefault(); start(e); });
+    el.addEventListener('touchend', (e) => { e.preventDefault(); end(e); });
+    if(move) el.addEventListener('touchmove', (e) => { e.preventDefault(); move(e); });
+}
+
+document.getElementById('btn-mute').addEventListener('click', () => {
+    isMuted = !isMuted;
+    document.getElementById('btn-mute').textContent = isMuted ? 'UNMUTE' : 'MUTE';
+    if(!isMuted) audioCtx.resume();
+});
+document.getElementById('btn-pause').addEventListener('click', () => {
+    if(gameState === 'PLAYING') {
+        gameState = 'PAUSED';
+        document.getElementById('btn-pause').textContent = 'RESUME';
+    } else if(gameState === 'PAUSED') {
+        gameState = 'PLAYING';
+        document.getElementById('btn-pause').textContent = 'PAUSE';
+        lastTime = performance.now();
+        requestAnimationFrame(gameLoop);
+    }
+});
+
+// Reliable escape trigger mapping supporting both touch & desktop viewports
+const startBtn = document.getElementById('btn-start');
+function handleStartGame(e) {
+    if (e) e.preventDefault();
+    if (gameState !== 'BRIEFING') return;
+    audioCtx.resume();
+    document.getElementById('screen-briefing').classList.add('hidden');
+    document.getElementById('btn-pause').classList.remove('hidden');
+    gameState = 'PLAYING';
+    lastTime = performance.now();
+    requestAnimationFrame(gameLoop);
+}
+startBtn.addEventListener('click', handleStartGame);
+startBtn.addEventListener('touchstart', handleStartGame);
+
+const restartBtn = document.getElementById('btn-restart');
+function handleRestartGame(e) {
+    if (e) e.preventDefault();
+    document.getElementById('screen-gameover').classList.add('hidden');
+    resetGame();
+    gameState = 'PLAYING';
+    lastTime = performance.now();
+    requestAnimationFrame(gameLoop);
+}
+restartBtn.addEventListener('click', handleRestartGame);
+restartBtn.addEventListener('touchstart', handleRestartGame);
+
+function resetGame() {
+    oxygenTimer = 150;
+    elapsedTime = 0;
+    dronesDisabled = 0;
+    breachesSealed = 0;
+    player.x = 2.5;
+    player.y = 2.5;
+    player.dirX = 1;
+    player.dirY = 0;
+    player.planeX = 0;
+    player.planeY = 0.66;
+    player.health = 100;
+    player.cellsCollected = 0;
+    
+    // Lock both exit frame tiles back to solid walls (tile 2)
+    map[EMERGENCY_EXIT_Y * MAP_WIDTH + EMERGENCY_EXIT_X] = 2;
+    map[EMERGENCY_EXIT_Y * MAP_WIDTH + (EMERGENCY_EXIT_X - 1)] = 2;
+
+    // Restore entities
+    entities = [
+        { x: 13.5, y: 1.5, type: 'cell', active: true, phase: 0 },
+        { x: 1.5,  y: 7.5, type: 'cell', active: true, phase: 2 },
+        { x: 12.5, y: 13.5, type: 'cell', active: true, phase: 4 },
+        { x: 9.5,  y: 3.5, type: 'switch', active: true, id: 0, targetBreach: 0, phase: 0 },
+        { x: 4.5,  y: 13.5, type: 'switch', active: true, id: 1, targetBreach: 1, phase: 0 },
+        { x: 7.5,  y: 5.5, type: 'drone', active: true, health: 100, speed: 0.6, phase: 1 },
+        { x: 13.5, y: 11.5, type: 'drone', active: true, health: 100, speed: 0.8, phase: 3 }
+    ];
+    breachZones.forEach(z => z.active = true);
+    playSound(440, 'triangle', 0.1, 0.4);
+}
+
+function checkInsideBreach(px, py) {
+    for (let i = 0; i < breachZones.length; i++) {
+        const zone = breachZones[i];
+        if (zone.active && px >= zone.xMin && px <= zone.xMax && py >= zone.yMin && py <= zone.yMax) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Map Tile Walkability evaluation helper
+// 0 = Normal Walkway corridor, 3 = Opened Emergency Airlock exfiltration tile
+function isTileWalkable(tx, ty) {
+    if (tx < 0 || tx >= MAP_WIDTH || ty < 0 || ty >= MAP_HEIGHT) return false;
+    const tileVal = map[Math.floor(ty) * MAP_WIDTH + Math.floor(tx)];
+    return tileVal === 0 || tileVal === 3;
+}
+
+function updateSimulation(dt) {
+    // Process input turn
+    let rotSpeed = 2.5 * dt;
+    if (keys['a'] || keys['q']) {
+        turnPlayer(-rotSpeed);
+    }
+    if (keys['d'] || keys['e']) {
+        turnPlayer(rotSpeed);
+    }
+    if (mouseDeltaX !== 0) {
+        turnPlayer(mouseDeltaX * 0.005);
+        mouseDeltaX = 0;
+    }
+
+    // Process input move
+    let moveSpeed = 4.0 * dt;
+    let dx = 0;
+    let dy = 0;
+    if (keys['w'] || touchState.move) {
+        dx += player.dirX * moveSpeed;
+        dy += player.dirY * moveSpeed;
+    }
+    if (keys['s']) {
+        dx -= player.dirX * moveSpeed;
+        dy -= player.dirY * moveSpeed;
+    }
+
+    // Direct collision check using safe walkability mapping (0 and 3 are walkable)
+    const newX = player.x + dx;
+    const newY = player.y + dy;
+    if (isTileWalkable(newX, player.y)) player.x = newX;
+    if (isTileWalkable(player.x, newY)) player.y = newY;
+
+    // Check emergency exit win threshold
+    if (Math.floor(player.x) === EMERGENCY_EXIT_X && Math.floor(player.y) === EMERGENCY_EXIT_Y) {
+        if (player.cellsCollected >= 3) {
+            triggerEndgame(true);
+            return;
+        }
+    }
+
+    // Advance Elapsed Game Time
+    elapsedTime += dt;
+
+    // Hazard and Decompression Checks
+    decompressionFlash += dt * 4;
+    const inBreach = checkInsideBreach(player.x, player.y);
+    oxygenTimer -= (inBreach ? 4.0 : 1.0) * dt;
+
+    if (oxygenTimer <= 0) {
+        triggerEndgame(false, "Oxygen supply critically exhausted.");
+        return;
+    }
+
+    // Handle weapon cooldown animation frames
+    if (player.fireCooldown > 0) player.fireCooldown -= dt;
+    if (player.isFiring > 0) player.isFiring -= dt * 6;
+
+    // Entity simulation loop
+    entities.forEach(entity => {
+        if (!entity.active) return;
+        entity.phase += dt * 3;
+
+        // Player proximity action logic
+        const dist = Math.hypot(player.x - entity.x, player.y - entity.y);
+
+        // Safely evaluate cell collision, incrementing counter exactly once per distinct cell
+        if (entity.type === 'cell' && entity.active && dist < 0.6) {
+            entity.active = false;
+            player.cellsCollected++;
+            playSound(660, 'sine', 0.2, 0.3);
+            if (player.cellsCollected >= 3) {
+                // Open both airlock exit frames as walkable path tile 3
+                map[EMERGENCY_EXIT_Y * MAP_WIDTH + EMERGENCY_EXIT_X] = 3;
+                map[EMERGENCY_EXIT_Y * MAP_WIDTH + (EMERGENCY_EXIT_X - 1)] = 3;
+                playSound(880, 'sine', 0.15, 0.6);
+            }
+        }
+
+        // Drone combat intelligence
+        if (entity.type === 'drone') {
+            // Patrol/Move logic
+            const moveAmt = entity.speed * dt;
+            const targetX = player.x;
+            const targetY = player.y;
+            const angle = Math.atan2(targetY - entity.y, targetX - entity.x);
+            
+            const nextX = entity.x + Math.cos(angle) * moveAmt;
+            const nextY = entity.y + Math.sin(angle) * moveAmt;
+
+            if (map[Math.floor(entity.y) * MAP_WIDTH + Math.floor(nextX)] === 0) entity.x = nextX;
+            if (map[Math.floor(nextY) * MAP_WIDTH + Math.floor(entity.x)] === 0) entity.y = nextY;
+
+            if (dist < 0.8) {
+                player.health -= 15 * dt;
+                playSound(150, 'sawtooth', 0.3, 0.15);
+                if (player.health <= 0) {
+                    triggerEndgame(false, "Suit integrity catastrophically ruptured.");
+                }
+            }
+        }
+    });
+}
+
+function turnPlayer(angle) {
+    let oldDirX = player.dirX;
+    player.dirX = player.dirX * Math.cos(angle) - player.dirY * Math.sin(angle);
+    player.dirY = oldDirX * Math.sin(angle) + player.dirY * Math.cos(angle);
+    let oldPlaneX = player.planeX;
+    player.planeX = player.planeX * Math.cos(angle) - player.planeY * Math.sin(angle);
+    player.planeY = oldPlaneX * Math.sin(angle) + player.planeY * Math.cos(angle);
+}
+
+function triggerActionPulse() {
+    if (player.fireCooldown > 0) return;
+    player.fireCooldown = 0.3;
+    player.isFiring = 1.0;
+    playSound(220, 'square', 0.15, 0.1);
+
+    // Raycast hit target check (center column vector)
+    let hitTarget = null;
+    let hitDist = Infinity;
+
+    entities.forEach(entity => {
+        if (!entity.active) return;
+        if (entity.type !== 'drone' && entity.type !== 'switch') return;
+
+        // Calculate delta vector in camera coordinates
+        const sX = entity.x - player.x;
+        const sY = entity.y - player.y;
+        const invDet = 1.0 / (player.planeX * player.dirY - player.dirX * player.planeY);
+        const transformX = invDet * (player.dirY * sX - player.dirX * sY);
+        const transformY = invDet * (-player.planeY * sX + player.planeX * sY);
+
+        // Target lies in front of camera plane
+        if (transformY > 0) {
+            const screenX = Math.floor((canvas.width / 2) * (1 + transformX / transformY));
+            if (Math.abs(screenX - canvas.width / 2) < 30) {
+                if (transformY < hitDist) {
+                    hitDist = transformY;
+                    hitTarget = entity;
+                }
+            }
+        }
+    });
+
+    if (hitTarget) {
+        if (hitTarget.type === 'drone') {
+            hitTarget.health -= 50;
+            playSound(120, 'sawtooth', 0.4, 0.2);
+            if (hitTarget.health <= 0) {
+                hitTarget.active = false;
+                dronesDisabled++; // Track this state
+                playSound(80, 'noise', 0.5, 0.4);
+            }
+        } else if (hitTarget.type === 'switch' && hitTarget.active) {
+            if (hitDist < 1.8) {
+                hitTarget.active = false;
+                breachZones[hitTarget.targetBreach].active = false;
+                breachesSealed++; // Track this state
+                playSound(600, 'sine', 0.1, 0.3);
+            }
+        }
+    }
+}
+
+function triggerEndgame(victory, reason) {
+    gameState = 'GAMEOVER';
+    document.getElementById('btn-pause').classList.add('hidden');
+    
+    // Update structural scorecard telemetry elements
+    const title = document.getElementById('gameover-title');
+    const reasonText = document.getElementById('gameover-reason');
+    const statusText = document.getElementById('final-status');
+    const timeText = document.getElementById('final-time');
+    const oxygenText = document.getElementById('final-oxygen');
+    const suitText = document.getElementById('final-suit');
+    const cellsText = document.getElementById('final-cells');
+    const dronesText = document.getElementById('final-drones');
+    const breachesText = document.getElementById('final-breaches');
+
+    if (victory) {
+        title.textContent = "SECTOR SECURED";
+        title.style.color = "#00ffcc";
+        title.style.textShadow = "0 0 10px #00ffcc";
+        reasonText.textContent = "Airlock sealed behind you. Escape shuttle interface active.";
+        statusText.textContent = "SUCCESSFUL COLD VAC EXFIL";
+        statusText.style.color = "#00ffcc";
+    } else {
+        title.textContent = "HULL COLLAPSE";
+        title.style.color = "#ff3333";
+        title.style.textShadow = "0 0 10px #ff3333";
+        reasonText.textContent = reason || "Oxygen supply critically exhausted.";
+        statusText.textContent = "TERMINATED";
+        statusText.style.color = "#ff3333";
+    }
+
+    // Format Completion Time
+    const m = Math.floor(elapsedTime / 60);
+    const s = Math.floor(elapsedTime % 60);
+    timeText.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    
+    // Format other telemetry rows
+    oxygenText.textContent = `${Math.max(0, Math.ceil(oxygenTimer))}s`;
+    suitText.textContent = `${Math.max(0, Math.ceil(player.health))}%`;
+    cellsText.textContent = `${player.cellsCollected}/3`;
+    dronesText.textContent = dronesDisabled.toString();
+    breachesText.textContent = `${breachesSealed}/2`;
+
+    // Fire audio response
+    playSound(victory ? 520 : 100, victory ? 'sine' : 'sawtooth', 0.3, 0.8);
+
+    document.getElementById('screen-gameover').classList.remove('hidden');
+}
+
+const zBuffer = new Float32Array(480);
+
+function renderFrame() {
+    const w = canvas.width;
+    const h = canvas.height;
+
+    // 1. Draw solid pseudo-perspective ceiling & floor
+    ctx.fillStyle = '#0a0202';
+    ctx.fillRect(0, 0, w, h / 2);
+    ctx.fillStyle = '#110505';
+    ctx.fillRect(0, h / 2, w, h / 2);
+
+    // 2. Perform 1D raycaster sweep across viewport columns
+    for (let x = 0; x < w; x++) {
+        const cameraX = 2 * x / w - 1;
+        const rayDirX = player.dirX + player.planeX * cameraX;
+        const rayDirY = player.dirY + player.planeY * cameraX;
+
+        let mapX = Math.floor(player.x);
+        let mapY = Math.floor(player.y);
+
+        let sideDistX, sideDistY;
+        const deltaDistX = Math.abs(1 / rayDirX);
+        const deltaDistY = Math.abs(1 / rayDirY);
+        let perpWallDist;
+
+        let stepX, stepY;
+        let hit = 0;
+        let side = 0; // 0=NS, 1=EW
+
+        if (rayDirX < 0) {
+            stepX = -1;
+            sideDistX = (player.x - mapX) * deltaDistX;
+        } else {
+            stepX = 1;
+            sideDistX = (mapX + 1.0 - player.x) * deltaDistX;
+        }
+        if (rayDirY < 0) {
+            stepY = -1;
+            sideDistY = (player.y - mapY) * deltaDistY;
+        } else {
+            stepY = 1;
+            sideDistY = (mapY + 1.0 - player.y) * deltaDistY;
+        }
+
+        while (hit === 0) {
+            if (sideDistX < sideDistY) {
+                sideDistX += deltaDistX;
+                mapX += stepX;
+                side = 0;
+            } else {
+                sideDistY += deltaDistY;
+                mapY += stepY;
+                side = 1;
+            }
+            if (mapX < 0 || mapX >= MAP_WIDTH || mapY < 0 || mapY >= MAP_HEIGHT) break;
+            if (map[mapY * MAP_WIDTH + mapX] > 0) hit = 1;
+        }
+
+        if (side === 0) perpWallDist = (mapX - player.x + (1 - stepX) / 2) / rayDirX;
+        else perpWallDist = (mapY - player.y + (1 - stepY) / 2) / rayDirY;
+
+        zBuffer[x] = perpWallDist;
+
+        // Draw vertical column slices
+        const lineHeight = Math.floor(h / perpWallDist);
+        const drawStart = Math.max(0, -lineHeight / 2 + h / 2);
+        const drawEnd = Math.min(h - 1, lineHeight / 2 + h / 2);
+
+        // Compute shading intensity based on distance attenuation
+        let brightness = Math.min(1.0, 1.5 / perpWallDist);
+        let strokeColor = '';
+        const wallType = map[mapY * MAP_WIDTH + mapX];
+
+        if (wallType === 1) {
+            strokeColor = side === 1 ? `rgba(200,60,40,${brightness})` : `rgba(130,40,25,${brightness})`;
+        } else if (wallType === 2) {
+            // Locked emergency airlock visual
+            strokeColor = `rgba(255,20,20,${brightness * (Math.sin(performance.now() * 0.01) * 0.4 + 0.6)})`;
+        } else if (wallType === 3) {
+            // Unlocked active emergency exit
+            strokeColor = `rgba(0,255,200,${brightness * (Math.sin(performance.now() * 0.02) * 0.3 + 0.7)})`;
+        }
+
+        ctx.strokeStyle = strokeColor;
+        ctx.beginPath();
+        ctx.moveTo(x, drawStart);
+        ctx.lineTo(x, drawEnd);
+        ctx.stroke();
+
+        // 3. Render active flashing breach zones overlays inside raycast sweep
+        const isCurrentlyDecompressing = checkInsideBreach(player.x, player.y);
+        if (isCurrentlyDecompressing && Math.floor(decompressionFlash) % 2 === 0) {
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.0012)';
+            ctx.fillRect(0, 0, w, h);
+        }
+    }
+}
+
+function drawBillboards() {
+    const w = canvas.width;
+    const h = canvas.height;
+
+    // Filter, calculate, and sort objects back-to-front
+    const sortedEntities = entities
+        .filter(e => e.active)
+        .map(e => {
+            const dx = e.x - player.x;
+            const dy = e.y - player.y;
+            return {
+                entity: e,
+                dist: dx * dx + dy * dy
+            };
+        })
+        .sort((a, b) => b.dist - a.dist);
+
+    sortedEntities.forEach(item => {
+        const e = item.entity;
+        const sX = e.x - player.x;
+        const sY = e.y - player.y;
+
+        const invDet = 1.0 / (player.planeX * player.dirY - player.dirX * player.planeY);
+        const transformX = invDet * (player.dirY * sX - player.dirX * sY);
+        const transformY = invDet * (-player.planeY * sX + player.planeX * sY);
+
+        if (transformY <= 0.1) return; // Object lies behind the near clip plane
+
+        const spriteScreenX = Math.floor((w / 2) * (1 + transformX / transformY));
+        const spriteHeight = Math.abs(Math.floor(h / transformY));
+        const spriteWidth = spriteHeight;
+
+        const drawStartY = Math.max(0, -spriteHeight / 2 + h / 2);
+        const drawStartX = Math.max(0, spriteScreenX - spriteWidth / 2);
+        const drawEndX = Math.min(w - 1, spriteScreenX + spriteWidth / 2);
+
+        // Simple vector projection render of items
+        const brightness = Math.min(1.0, 1.5 / transformY);
+        
+        ctx.save();
+        ctx.globalAlpha = brightness;
+
+        for (let stripe = drawStartX; stripe < drawEndX; stripe++) {
+            if (transformY < zBuffer[stripe]) {
+                const innerY = Math.sin(e.phase) * 6; // Float motion
+
+                if (e.type === 'cell') {
+                    // Floating high-value fuel cells
+                    ctx.fillStyle = '#00ffcc';
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.fillRect(stripe, h/2 - spriteHeight/6 + innerY, 2, spriteHeight/3);
+                    ctx.strokeRect(stripe, h/2 - spriteHeight/6 + innerY, 2, spriteHeight/3);
+                } 
+                else if (e.type === 'switch') {
+                    // Safety switches
+                    ctx.fillStyle = '#ffff00';
+                    ctx.fillRect(stripe, h/2 + spriteHeight/8, 3, spriteHeight/4);
+                }
+                else if (e.type === 'drone') {
+                    // Attack security drones
+                    ctx.fillStyle = '#ff3333';
+                    ctx.fillRect(stripe - 1, h/2 - spriteHeight/5 + innerY, 3, spriteHeight/3.5);
+                    ctx.fillStyle = '#ff8800';
+                    ctx.fillRect(stripe, h/2 - spriteHeight/10 + innerY, 1, 2);
+                }
+            }
+        }
+        ctx.restore();
+    });
+}
+
+function drawHUD() {
+    const w = canvas.width;
+    const h = canvas.height;
+
+    // Draw active tactical weapon muzzle overlay
+    const scaleFactor = 1.0;
+    const baseGunX = w / 2;
+    const baseGunY = h;
+    const recoilOffset = player.isFiring * 12;
+
+    ctx.save();
+    ctx.translate(baseGunX, baseGunY + recoilOffset);
+    ctx.strokeStyle = '#ff5533';
+    ctx.fillStyle = '#000000';
+    ctx.lineWidth = 3;
+
+    // Vector render of gun barrel
+    ctx.beginPath();
+    ctx.moveTo(-15, 0);
+    ctx.lineTo(-10, -50);
+    ctx.lineTo(10, -50);
+    ctx.lineTo(15, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Secondary sight rail
+    ctx.fillStyle = '#ffaa88';
+    ctx.fillRect(-2, -60, 4, 15);
+
+    if (player.isFiring > 0.4) {
+        // Core impact muzzle flare flash
+        ctx.fillStyle = '#ffff33';
+        ctx.beginPath();
+        ctx.arc(0, -65, 15, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    ctx.restore();
+
+    // Critical HUD Bar
+    ctx.fillStyle = 'rgba(12,8,8,0.7)';
+    ctx.fillRect(0, 0, w, 24);
+    ctx.strokeStyle = '#ff5533';
+    ctx.beginPath();
+    ctx.moveTo(0, 24);
+    ctx.lineTo(w, 24);
+    ctx.stroke();
+
+    // Render diagnostic values
+    ctx.fillStyle = '#ffaa88';
+    ctx.font = '9px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(`SUIT HULL: ${Math.max(0, Math.ceil(player.health))}%`, 10, 15);
+    ctx.fillText(`O2 T-MIN: ${Math.max(0, Math.ceil(oxygenTimer))}S`, 110, 15);
+    ctx.fillText(`CELLS: ${player.cellsCollected}/3`, 210, 15);
+
+    // Format Running Exfil Expiry Time
+    const m = Math.floor(elapsedTime / 60);
+    const s = Math.floor(elapsedTime % 60);
+    ctx.fillText(`TIME: ${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`, 300, 15);
+
+    // Hazard Alert Glow Indicator
+    const decompressing = checkInsideBreach(player.x, player.y);
+    if (decompressing) {
+        ctx.fillStyle = Math.floor(decompressionFlash) % 2 === 0 ? '#ff3333' : '#330000';
+        ctx.fillRect(w - 70, 4, 60, 16);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 8px monospace';
+        ctx.fillText("VACUUM", w - 62, 15);
+    } else {
+        ctx.fillStyle = '#004422';
+        ctx.fillRect(w - 70, 4, 60, 16);
+        ctx.fillStyle = '#00ffcc';
+        ctx.font = 'bold 8px monospace';
+        ctx.fillText("STABLE", w - 62, 15);
+    }
+
+    // Mini tactical status HUD radar display
+    drawRadar(w - 60, h - 60);
+}
+
+function drawRadar(rx, ry) {
+    const radius = 35;
+    ctx.save();
+    ctx.translate(rx, ry);
+
+    // Background circle container
+    ctx.fillStyle = 'rgba(0,0,0,0.85)';
+    ctx.strokeStyle = '#ff5533';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(0, 0, radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Grid Sweeps
+    ctx.strokeStyle = 'rgba(255, 85, 51, 0.25)';
+    ctx.beginPath();
+    ctx.arc(0, 0, radius * 0.5, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Display entities within operational radar zone
+    entities.forEach(e => {
+        if (!e.active) return;
+        const dx = e.x - player.x;
+        const dy = e.y - player.y;
+
+        // Rotate relative delta by player's orientation direction
+        const rotX = dx * player.dirY - dy * player.dirX;
+        const rotY = dx * player.dirX + dy * player.dirY;
+
+        const scale = 5; // Pixels per game unit representation
+        const px = rotX * scale;
+        const py = -rotY * scale;
+
+        // Clip targets outside radar bounds
+        if (Math.hypot(px, py) < radius - 2) {
+            ctx.beginPath();
+            if (e.type === 'cell') {
+                ctx.fillStyle = '#00ffcc';
+                ctx.arc(px, py, 2.5, 0, Math.PI * 2);
+            } else if (e.type === 'switch') {
+                ctx.fillStyle = '#ffff00';
+                ctx.rect(px - 1.5, py - 1.5, 3, 3);
+            } else {
+                ctx.fillStyle = '#ff3333';
+                ctx.arc(px, py, 2, 0, Math.PI * 2);
+            }
+            ctx.fill();
+        }
+    });
+
+    // Player arrow (center of sweep)
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(0, -4);
+    ctx.lineTo(3, 3);
+    ctx.lineTo(-3, 3);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+}
+
+function gameLoop(time) {
+    if (gameState !== 'PLAYING') return;
+
+    if (!lastTime) lastTime = time;
+    let dt = (time - lastTime) / 1000;
+    lastTime = time;
+
+    // Cap dynamic delta step to avoid collision pass-throughs
+    if (dt > 0.1) dt = 0.1;
+
+    updateSimulation(dt);
+    renderFrame();
+    drawBillboards();
+    drawHUD();
+
+    requestAnimationFrame(gameLoop);
+}
+</script>
+
+</body>
+</html>

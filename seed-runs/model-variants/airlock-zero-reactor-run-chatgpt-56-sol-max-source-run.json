@@ -1,0 +1,151 @@
+{
+  "title": "Airlock Zero: Reactor Run — ChatGPT model variant",
+  "slug": "airlock-zero-reactor-run-chatgpt-56-sol-max",
+  "source_run_id": "2e526efa-191c-48ea-9ba0-5ff073403770",
+  "submitted_by_profile_registry_id": "pathforge-house-projects",
+  "submitted_by_account": "PathForge Projects",
+  "provider": "ChatGPT",
+  "model": "5.6 Sol Max",
+  "model_settings": "ChatGPT Work; visible model selector: 5.6 Sol Max; reasoning effort: Max.",
+  "source_url": "https://chatgpt.com/s/t_6a52674159308191a89bf09314bb30f1",
+  "run_finished_at": "2026-07-11T16:08:22.845Z",
+  "chain_type": "iterative",
+  "prompt_count": 2,
+  "repair_prompt_count": 0,
+  "status": "published_model_variant",
+  "description": "A developer-operated ChatGPT run of the Airlock Zero FPS contract, preserved as a PathForge Labs model variant rather than a community fork.",
+  "operator_provenance": {
+    "kind": "pathforge_labs_manual",
+    "label": "PathForge Labs · Developer-operated",
+    "canonical_project_id": "31faf192-93d1-41d0-a74c-4402d4223937",
+    "canonical_route": "/airlock-zero-reactor-run-demo",
+    "comparison_contract_version": "airlock-zero-reactor-run-v1",
+    "comparison_contract_sha256": "6fba370db6ce710e758d68608367f5a7fa28749e94a07c70c2bb3ffe2e727ac9",
+    "opening_prompt_sha256": "323fba88d4aa413836a68818ff7e8b788de5e6d277ae1fa8b461053ba0aedd58",
+    "ordinary_fork": false
+  },
+  "comparison_basis": {
+    "opening_prompt_exact": "Build me a self-contained browser FPS called Airlock Zero: Reactor Run. I want a short ray-cast space-station mission where I move through corridors, pulse security drones, recover three reactor cells, and reach the airlock before oxygen runs out. Make it polished and playable with keyboard and mouse plus a touch-friendly fallback, and keep everything in one offline HTML file with no external assets.",
+    "acceptance_criteria": [
+      "Render a genuine ray-cast first-person station with collision-aware movement and visible depth, not a flat dashboard or prompt-only mockup.",
+      "Provide a clear three-reactor-cell recovery mission that ends at an airlock and supports a roughly two-to-four-minute default run.",
+      "Include security drones that can threaten the player and a pulse weapon that can visibly disable them.",
+      "Make the start briefing, objectives, and controls understandable within about fifteen seconds.",
+      "Show oxygen, suit integrity or health, objective progress, damage feedback, win and loss states, and a useful final scorecard.",
+      "Support mouse or drag aiming plus a keyboard-only turning fallback that does not require pointer lock.",
+      "Provide visible touch-friendly movement, turning, firing, and essential utility controls.",
+      "Provide working pause or resume, mute, restart, and replay behavior.",
+      "Produce one complete self-contained HTML file that is immediately usable in a browser.",
+      "Operate offline with no external APIs, hosted runtimes, CDNs, remote fonts, scripts, stylesheets, network calls, or fragile remote dependencies.",
+      "Avoid unsafe HTML sinks, eval-like execution, page-level horizontal overflow at 390 by 844, and runtime console errors at mobile and desktop widths.",
+      "Preserve exact prompts, exact visible model responses, public source links, model settings, artifact versions, and verification evidence for every run and fork."
+    ],
+    "adaptive_repair_policy": "Preserve every real artifact. Repair only when verification proves a concrete defect or capture failure, name that defect in ordinary user language, and stay in the same selected model session. Purpose-specific refinements may continue a passing run when they create a meaningful shared branch point or final direction, but they must not be mislabeled as repairs.",
+    "independence_note": "ChatGPT received the invariant brief in a fresh session and was not shown another provider's output, source code, screenshots, or implementation."
+  },
+  "agent_notes": [
+    "Provider: ChatGPT.",
+    "Model used: 5.6 Sol Max.",
+    "Model settings: ChatGPT Work; visible model selector: 5.6 Sol Max; reasoning effort: Max.",
+    "PathForge Labs provenance: developer-operated comparison run; not a user, vote, bookmark, engagement event, or ordinary community fork.",
+    "Prompt count: 2. Prompt 2 was a purpose-specific mission-readability refinement, not a defect repair.",
+    "Both real artifacts are preserved under public/artifacts; response 2 is the exact fork point and final default."
+  ],
+  "final_artifact_path": "public/artifacts/airlock-zero-gpt-56-sol-max-step-2.html",
+  "artifact_type": "html",
+  "artifact_versions": [
+    "public/artifacts/airlock-zero-gpt-56-sol-max-step-1.html",
+    "public/artifacts/airlock-zero-gpt-56-sol-max-step-2.html"
+  ],
+  "generated_files": [
+    "public/artifacts/airlock-zero-gpt-56-sol-max-step-1.html",
+    "public/artifacts/airlock-zero-gpt-56-sol-max-step-2.html"
+  ],
+  "artifact_sha256": "810f7733cf41de09c553ee5e9b1005bdfd30f367ff0221b58ec0ef56dc93acd3",
+  "artifact_version_notes": [
+    {
+      "path": "public/artifacts/airlock-zero-gpt-56-sol-max-step-1.html",
+      "sha256": "0cddc5cf0865445b20836d1303355502e126b777517e7d1c9c8bfa04d9c8c59d",
+      "bytes": 94071,
+      "lines": 3078,
+      "disposition": "First real artifact; passed automated hard gates and remains selectable."
+    },
+    {
+      "path": "public/artifacts/airlock-zero-gpt-56-sol-max-step-2.html",
+      "sha256": "810f7733cf41de09c553ee5e9b1005bdfd30f367ff0221b58ec0ef56dc93acd3",
+      "bytes": 106405,
+      "lines": 3511,
+      "disposition": "Purpose-refined response 2, exact fork point, final verified artifact, and default ChatGPT version."
+    }
+  ],
+  "verification_notes": [
+    "Both artifacts are complete offline HTML documents with no remote assets, hosted runtime, API call, CDN, remote font, or network dependency.",
+    "Fresh desktop and 390x844 measurements reported zero page-level horizontal overflow and zero console errors for both artifacts.",
+    "The Airlock verifier passed start, keyboard movement and non-pointer-lock turning, fire, touch, pause, mute, restart, mission state, scorecard, ray-casting, collision, combat, and terminal-state gates.",
+    "Human inspection confirmed a clear briefing, mission schematic, objective radar, damage and oxygen feedback, three-cell route, drones, airlock return, and five-metric scorecard."
+  ],
+  "verification_evidence": {
+    "schema_version": 1,
+    "verified_at": "2026-07-11T16:08:22.845Z",
+    "first_pass_metrics": {
+      "qualityScore": 98,
+      "artifactReady": true,
+      "hardGatesPassed": true,
+      "functionalChecks": {
+        "passed": 26,
+        "total": 26
+      },
+      "consoleErrorCount": 0,
+      "horizontalOverflowPx": 0,
+      "notes": [
+        "The first response produced a complete playable ray-cast FPS and passed the automated hard gates.",
+        "Desktop and true 390px verification found zero overflow and zero console errors."
+      ]
+    },
+    "final_metrics": {
+      "qualityScore": 99,
+      "artifactReady": true,
+      "hardGatesPassed": true,
+      "functionalChecks": {
+        "passed": 26,
+        "total": 26
+      },
+      "consoleErrorCount": 0,
+      "horizontalOverflowPx": 0,
+      "notes": [
+        "The final response retained the passing core and added the briefing schematic, clamped radar objectives, short contextual hints, and a five-metric scorecard.",
+        "Response 2 passed the full automated Airlock guard and is the exact fork source."
+      ]
+    }
+  },
+  "steps": [
+    {
+      "step_number": 1,
+      "title": "Build Airlock Zero",
+      "prompt_exact": "Build me a self-contained browser FPS called Airlock Zero: Reactor Run. I want a short ray-cast space-station mission where I move through corridors, pulse security drones, recover three reactor cells, and reach the airlock before oxygen runs out. Make it polished and playable with keyboard and mouse plus a touch-friendly fallback, and keep everything in one offline HTML file with no external assets.",
+      "response_exact": "Done. [airlock-zero-reactor-run.html](sandbox:/workspace/scratch/78b4671a484f/airlock-zero-reactor-run.html)\n\nEverything is embedded and runs fully offline.\n",
+      "response_summary": "ChatGPT produced the complete offline Reactor Run artifact.",
+      "generated_files": [
+        "public/artifacts/airlock-zero-gpt-56-sol-max-step-1.html"
+      ],
+      "artifact_version_path": "public/artifacts/airlock-zero-gpt-56-sol-max-step-1.html",
+      "artifact_sha256": "0cddc5cf0865445b20836d1303355502e126b777517e7d1c9c8bfa04d9c8c59d",
+      "notes": "First complete artifact; automated hard gates passed."
+    },
+    {
+      "step_number": 2,
+      "title": "Strengthen mission readability",
+      "prompt_exact": "The core is already polished and verified at desktop and 390px. Before we branch it, strengthen the shared mission-readability layer: add a compact station schematic to the briefing that makes the three reactor sectors and return airlock understandable without revealing a perfect route; clamp off-radar objectives to the radar rim with recognizable cell and airlock colors plus a tiny legend; show contextual control hints only during the first 15 seconds; and expand the end scorecard to completion time, oxygen, suit integrity, cells recovered, and drones disabled. Preserve the genuine ray-cast gameplay, 2:20 mission, mouse and non-pointer-lock keyboard controls, touch controls, pause, mute, restart, and fully offline one-file design. Return the full updated self-contained HTML file.",
+      "response_exact": "Updated and verified at desktop and 390px.\n\n[airlock-zero-reactor-run.html](sandbox:/workspace/scratch/78b4671a484f/airlock-zero-reactor-run.html)\n",
+      "response_summary": "ChatGPT refined the briefing, radar, hints, and result scorecard.",
+      "generated_files": [
+        "public/artifacts/airlock-zero-gpt-56-sol-max-step-2.html"
+      ],
+      "artifact_version_path": "public/artifacts/airlock-zero-gpt-56-sol-max-step-2.html",
+      "artifact_sha256": "810f7733cf41de09c553ee5e9b1005bdfd30f367ff0221b58ec0ef56dc93acd3",
+      "notes": "Purpose-specific refinement; exact response-2 fork point and final default.",
+      "continuation_reason": "Purpose-specific refinement after the first artifact passed: make the briefing, radar objectives, early controls, and end scorecard easier to understand before branching."
+    }
+  ],
+  "submission": null
+}

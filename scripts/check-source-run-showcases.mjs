@@ -7,6 +7,59 @@ const failures = []
 
 const sourceRunProjects = [
   {
+    name: 'Airlock Zero: Reactor Run',
+    route: 'src/app/airlock-zero-reactor-run-demo/page.tsx',
+    projectId: 'AIRLOCK_ZERO_PROJECT_ID',
+    showcaseExport: 'AIRLOCK_ZERO_SHOWCASE_PROJECT',
+    href: '/airlock-zero-reactor-run-demo',
+    packagePath: 'seed-runs/model-variants/airlock-zero-reactor-run-chatgpt-56-sol-max-source-run.json',
+    artifactPaths: [
+      'public/artifacts/airlock-zero-gpt-56-sol-max-step-1.html',
+      'public/artifacts/airlock-zero-gpt-56-sol-max-step-2.html',
+    ],
+    expectPersistableAfterPublish: true,
+    releaseGate: 'preparedModelCohortIsPublic',
+  },
+  {
+    name: 'Airlock Zero: Blackout Shift',
+    route: 'src/app/airlock-zero-blackout-shift-fork-demo/page.tsx',
+    projectId: 'AIRLOCK_ZERO_CLAUDE_FORK_PROJECT_ID',
+    showcaseExport: 'AIRLOCK_ZERO_CLAUDE_FORK_SHOWCASE_PROJECT',
+    href: '/airlock-zero-blackout-shift-fork-demo',
+    packagePath: 'seed-runs/airlock-zero-blackout-shift-claude-sonnet-5-max-fork.json',
+    artifactPaths: [
+      'public/artifacts/airlock-zero-blackout-shift-claude-sonnet-5-max.html',
+    ],
+    expectPersistableAfterPublish: true,
+    releaseGate: 'preparedProjectIsPublic',
+  },
+  {
+    name: 'Airlock Zero: Swarm Shift',
+    route: 'src/app/airlock-zero-swarm-shift-fork-demo/page.tsx',
+    projectId: 'AIRLOCK_ZERO_GPT_FORK_PROJECT_ID',
+    showcaseExport: 'AIRLOCK_ZERO_GPT_FORK_SHOWCASE_PROJECT',
+    href: '/airlock-zero-swarm-shift-fork-demo',
+    packagePath: 'seed-runs/airlock-zero-swarm-shift-gpt-56-sol-max-fork.json',
+    artifactPaths: [
+      'public/artifacts/airlock-zero-swarm-shift-gpt-56-sol-max.html',
+    ],
+    expectPersistableAfterPublish: true,
+    releaseGate: 'preparedProjectIsPublic',
+  },
+  {
+    name: 'Airlock Zero: Hull Breach',
+    route: 'src/app/airlock-zero-hull-breach-fork-demo/page.tsx',
+    projectId: 'AIRLOCK_ZERO_GEMINI_FORK_PROJECT_ID',
+    showcaseExport: 'AIRLOCK_ZERO_GEMINI_FORK_SHOWCASE_PROJECT',
+    href: '/airlock-zero-hull-breach-fork-demo',
+    packagePath: 'seed-runs/airlock-zero-hull-breach-gemini-35-flash-fork.json',
+    artifactPaths: [
+      'public/artifacts/airlock-zero-hull-breach-gemini-35-flash-verified-final.html',
+    ],
+    expectPersistableAfterPublish: true,
+    releaseGate: 'preparedProjectIsPublic',
+  },
+  {
     name: "Tiny Train Platform Dispatcher",
     route: 'src/app/tiny-train-platform-dispatcher-demo/page.tsx',
     projectId: 'TINY_TRAIN_DISPATCHER_PROJECT_ID',
@@ -871,7 +924,7 @@ mustInclude(sharedComponent, sharedComponentContent, 'data-artifact-package-id={
 mustInclude(sharedComponent, sharedComponentContent, 'data-artifact-path={selectedPackage.artifactPath}', 'shared showcase must expose the mounted artifact path for switching verification')
 mustInclude(sharedComponent, sharedComponentContent, 'data-artifact-loading', 'shared showcase must show an explicit loading state between artifact selections')
 mustInclude(sharedComponent, sharedComponentContent, 'srcDoc={srcDoc ?? undefined}', 'shared showcase must mount checked artifact HTML through one srcDoc source')
-  mustInclude(sharedComponent, sharedComponentContent, 'sandbox="allow-scripts"', 'shared showcase must keep generated scripts in an opaque-origin sandbox without direct download permission')
+  mustInclude(sharedComponent, sharedComponentContent, 'sandbox="allow-scripts allow-pointer-lock"', 'shared showcase must keep generated scripts and pointer lock in an opaque-origin sandbox without direct download permission')
   mustInclude(sharedComponent, sharedComponentContent, 'buildProtectedArtifactWrapperDocument', 'shared showcase must put artifacts behind the persistent nested-frame navigation policy')
   mustInclude(sharedComponent, sharedComponentContent, 'pathforge-artifact-download', 'shared showcase must bridge bounded data-only downloads instead of granting direct network downloads')
 mustInclude(sharedComponent, sharedComponentContent, 'allow="clipboard-write"', 'shared showcase must preserve user-triggered copy controls')
@@ -891,7 +944,7 @@ mustInclude(sharedComponent, sharedComponentContent, 'Source run', 'shared showc
 mustNotInclude(sharedComponent, sharedComponentContent, '<ArtifactCodeBlock', 'shared showcase must not dump generated HTML into the public response path')
 mustNotInclude(sharedComponent, sharedComponentContent, '<SourceLink', 'shared showcase must not repeat provider links inside every response package')
 mustNotInclude(sharedComponent, sharedComponentContent, 'pathforgeSourceRunUrl', 'shared showcase must not expose admin source-run record links publicly')
-mustNotInclude(sharedComponent, sharedComponentContent, 'sourceRunId', 'shared showcase must not expose internal source-run ids publicly')
+mustNotInclude(sharedComponent, sharedComponentContent, 'Source run ID', 'shared showcase must not render internal source-run ids as public copy')
 mustNotInclude(sharedComponent, sharedComponentContent, 'verificationNotes', 'shared showcase must not expose internal verification notes publicly')
 mustNotInclude(sharedComponent, sharedComponentContent, 'Verbatim artifact', 'shared showcase must not label generated code as public page content')
 mustNotInclude(sharedComponent, sharedComponentContent, 'sourceFilePath', 'shared showcase must not serialize local artifact file paths into public page payloads')
@@ -907,7 +960,7 @@ mustComeBefore(sharedComponent, sharedComponentContent, 'variant="prompt"', 'var
 mustInclude(protectedWrapper, protectedWrapperContent, '"frame-src \'none\'"', 'trusted artifact wrapper must persistently block child-frame navigation')
 mustInclude(protectedWrapper, protectedWrapperContent, '"child-src \'none\'"', 'trusted artifact wrapper must block legacy child navigation paths')
 mustInclude(protectedWrapper, protectedWrapperContent, 'frame.srcdoc = artifactDocument', 'trusted wrapper must mount the artifact without a network-addressable child URL')
-mustInclude(protectedWrapper, protectedWrapperContent, 'sandbox="allow-scripts"', 'inner artifact document must remain script-capable but opaque-origin sandboxed')
+mustInclude(protectedWrapper, protectedWrapperContent, 'sandbox="allow-scripts allow-pointer-lock"', 'inner artifact document must remain script-capable and pointer-lock capable but opaque-origin sandboxed')
 mustInclude(protectedWrapper, protectedWrapperContent, "data.dataUrl.startsWith('data:')", 'download bridge must forward only data-backed content')
 mustInclude(protectedWrapper, protectedWrapperContent, 'navigator.userActivation?.isActive', 'download bridge must require real user activation in the trusted wrapper')
 mustNotInclude(protectedWrapper, protectedWrapperContent, 'allow-downloads', 'neither protected artifact layer may grant uncontrolled downloads')
@@ -939,7 +992,8 @@ const nextConfig = read('next.config.ts')
 const pendingSourceRunShowcases = read('src/lib/pending-source-run-showcases.ts')
 const curatedProjects = sourceRunProjects.filter((project) => project.curated)
 const curatedSourceRunShowcases = curatedProjects.length > 0 ? read(curatedRegistryPath) : ''
-const preparedShowcaseMetadata = `${preparedShowcase}\n${pendingSourceRunShowcases}\n${curatedSourceRunShowcases}`
+const airlockZeroShowcases = read('src/lib/airlock-zero-projects.ts')
+const preparedShowcaseMetadata = `${preparedShowcase}\n${airlockZeroShowcases}\n${pendingSourceRunShowcases}\n${curatedSourceRunShowcases}`
 const modelVariantRegistryDirectory = 'seed-runs/model-variants'
 const modelVariantManifestsByProjectId = new Map()
 if (existsSync(modelVariantRegistryDirectory)) {
@@ -1042,7 +1096,7 @@ for (const project of sourceRunProjects) {
     if (!curatedRegistryHasDescriptor(curatedSourceRunShowcases, project)) {
       failures.push(`${curatedRegistryPath}: ${project.name} descriptor must preserve sourceRunId ${project.sourceRunId} and href ${project.href}`)
     }
-  } else {
+  } else if (!project.releaseGate) {
     mustInclude('src/lib/featured-projects.ts', featuredProjects, project.projectId, `${project.name} must have a featured project id`)
   }
   if (!preparedShowcaseMetadata.includes(project.showcaseExport)) {
@@ -1053,7 +1107,10 @@ for (const project of sourceRunProjects) {
   }
   mustInclude('src/lib/project-links.ts', projectLinks, project.projectId, `${project.name} must have a route override`)
   mustInclude('src/lib/project-links.ts', projectLinks, project.href, `${project.name} route override must point to the special page`)
-  if (!project.curated) {
+  if (project.releaseGate) {
+    mustInclude(project.route, routeContent, project.releaseGate, `${project.name} must fail closed until persisted release evidence exists`)
+    mustNotInclude('src/lib/data.ts', data, project.projectId, `${project.name} must not appear through approved mock fallback data`)
+  } else if (!project.curated) {
     mustInclude('src/lib/data.ts', data, project.projectId, `${project.name} must be approved in public fallback data`)
   }
   if (!project.expectPersistableAfterPublish) {
@@ -1066,10 +1123,10 @@ for (const project of sourceRunProjects) {
   }
 
   if (project.name === 'Pomodoro Focus Timer') {
-    mustInclude(project.route, routeContent, 'artifactVersions: step.stepNumber === 4', 'Pomodoro must preserve the captured step 4 and public final artifacts as selectable versions')
+    mustInclude(project.route, routeContent, 'generated_files:', 'Pomodoro must preserve captured and final artifacts as selectable versions')
     mustInclude(project.route, routeContent, 'pomodoro-focus-timer-gpt55-instant.html', 'Pomodoro must keep the current public final artifact selectable')
-    mustInclude(project.route, routeContent, 'isDefault: true', 'Pomodoro must default to the current public final artifact')
-    mustInclude(project.route, routeContent, 'response: code', 'Pomodoro must use the captured HTML file as the exact response text')
+    mustInclude('src/components/PreparedSourceRunPage.tsx', preparedSourceRunPage, 'isDefault', 'Pomodoro must default to the current public final artifact')
+    mustInclude(project.route, routeContent, 'response_exact: readArtifact', 'Pomodoro must use the captured HTML file as the exact response text')
   }
 
   if (!project.packagePath) continue
@@ -1196,7 +1253,7 @@ for (const project of sourceRunProjects) {
   }
 
   mustNotInclude(project.route, routeShellContent, 'pathforgeSourceRunUrl=', `${project.name} must not expose the PathForge admin source-run record link publicly`)
-  mustNotInclude(project.route, routeShellContent, 'sourceRunId=', `${project.name} must not expose internal source-run ids publicly`)
+  mustNotInclude(project.route, routeShellContent, 'Source run ID', `${project.name} must not render internal source-run ids as public copy`)
   mustNotInclude(project.route, routeShellContent, 'verificationNotes=', `${project.name} must not expose internal verification notes publicly`)
   mustNotInclude(project.route, routeShellContent, 'sourceFilePath', `${project.name} must not serialize local artifact file paths into public page payloads`)
   mustNotInclude(project.route, routeShellContent, 'notes: step.notes', `${project.name} must not serialize internal step notes into public page payloads`)
@@ -1259,8 +1316,8 @@ for (const project of sourceRunProjects) {
   }
 
   if (project.name === 'HP 10Bii+') {
-    mustInclude(project.route, routeContent, 'artifactVersionsForStep', 'HP must map every generated artifact file into selectable showcase versions')
-    mustInclude(project.route, routeContent, 'isDefault: filePath === finalArtifactPath', 'HP must default to the verified public mounted artifact')
+    mustInclude('src/components/PreparedSourceRunPage.tsx', preparedSourceRunPage, 'artifactVersionsForStep', 'HP must map every generated artifact file into selectable showcase versions')
+    mustInclude('src/components/PreparedSourceRunPage.tsx', preparedSourceRunPage, 'isDefault', 'HP must default to the verified public mounted artifact')
     if (artifactVersions.length !== generatedArtifactPaths.size) {
       failures.push(`${project.packagePath}: HP artifact_versions must match generated public artifact files so every version can mount above`)
     }

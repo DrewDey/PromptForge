@@ -1,0 +1,135 @@
+{
+  "title": "Airlock Zero: Swarm Shift — ChatGPT fork",
+  "slug": "airlock-zero-swarm-shift-gpt-56-sol-max-fork",
+  "source_run_id": "19453950-e191-4f1c-9cdb-b58c46616167",
+  "provider": "ChatGPT",
+  "model": "5.6 Sol Max",
+  "model_settings": "ChatGPT Work; visible model selector: 5.6 Sol Max; reasoning effort: Max.",
+  "source_url": "https://chatgpt.com/s/t_6a52711d758481918aeedcca8e18c564",
+  "run_finished_at": "2026-07-11T16:31:00.000Z",
+  "chain_type": "fork",
+  "prompt_count": 3,
+  "repair_prompt_count": 0,
+  "status": "captured",
+  "description": "A developer-operated ChatGPT branch from the exact second Reactor Run response that turns the shared station into an escalating swarm mission with field upgrades and a final airlock lockdown.",
+  "operator_provenance": {
+    "kind": "pathforge_labs_manual",
+    "label": "PathForge Labs · Developer-operated",
+    "canonical_project_id": "31faf192-93d1-41d0-a74c-4402d4223937",
+    "canonical_route": "/airlock-zero-reactor-run-demo",
+    "comparison_contract_version": "airlock-zero-reactor-run-v1",
+    "comparison_contract_sha256": "6fba370db6ce710e758d68608367f5a7fa28749e94a07c70c2bb3ffe2e727ac9",
+    "ordinary_fork": false
+  },
+  "fork_source": {
+    "source_project_id": "31faf192-93d1-41d0-a74c-4402d4223937",
+    "source_project_title": "Airlock Zero: Reactor Run",
+    "source_model_variant_id": "c5d4c314-e286-46c6-8a3d-213bc62415cc",
+    "source_run_id": "2e526efa-191c-48ea-9ba0-5ff073403770",
+    "source_step_id": "31faf192-93d1-41d0-a74c-4402d4223937:2e526efa-191c-48ea-9ba0-5ff073403770:step:2",
+    "source_step_number": 2,
+    "source_artifact_path": "public/artifacts/airlock-zero-gpt-56-sol-max-step-2.html",
+    "source_artifact_sha256": "810f7733cf41de09c553ee5e9b1005bdfd30f367ff0221b58ec0ef56dc93acd3",
+    "prompt_family_id": "31faf192-93d1-41d0-a74c-4402d4223937:31faf192-93d1-41d0-a74c-4402d4223937:2e526efa-191c-48ea-9ba0-5ff073403770:step:2",
+    "fork_depth": 0,
+    "fork_branch_index": 0
+  },
+  "agent_notes": [
+    "Provider: ChatGPT.",
+    "Model used: 5.6 Sol Max.",
+    "Model settings: ChatGPT Work; visible model selector: 5.6 Sol Max; reasoning effort: Max.",
+    "Prompt count: 3 total evidence steps: two inherited parent steps and one genuine branch continuation.",
+    "Continuation reason: the third prompt intentionally creates a materially different swarm-and-lockdown child from the verified response-02 artifact; it is not a repair.",
+    "PathForge Labs provenance: developer-operated model branch; not a user, vote, bookmark, discussion, or engagement event."
+  ],
+  "final_artifact_path": "public/artifacts/airlock-zero-swarm-shift-gpt-56-sol-max.html",
+  "artifact_type": "html",
+  "artifact_versions": [
+    "public/artifacts/airlock-zero-gpt-56-sol-max-step-1.html",
+    "public/artifacts/airlock-zero-gpt-56-sol-max-step-2.html",
+    "public/artifacts/airlock-zero-swarm-shift-gpt-56-sol-max.html"
+  ],
+  "generated_files": [
+    "public/artifacts/airlock-zero-swarm-shift-gpt-56-sol-max.html"
+  ],
+  "artifact_sha256": "0fd90a9335621b0e37ff68e4017c2203f98824d6867c696b7dcf0100f8228e77",
+  "artifact_version_notes": [
+    {
+      "path": "public/artifacts/airlock-zero-swarm-shift-gpt-56-sol-max.html",
+      "sha256": "0fd90a9335621b0e37ff68e4017c2203f98824d6867c696b7dcf0100f8228e77",
+      "bytes": 129147,
+      "lines": 4194,
+      "disposition": "First and final child artifact; exact branch response 03 and default Swarm Shift version."
+    }
+  ],
+  "verification_notes": [
+    "The final branch is a complete offline HTML document with no remote assets, hosted runtime, API call, CDN, remote font, or network dependency.",
+    "The dedicated Airlock verifier hard-passed 26 of 26 checks: syntax/runtime, zero external requests, desktop and 390px overflow, start transitions, keyboard, mouse-aim, and touch controls, pause, mute, restart, rendered FPS output, scorecard and terminal states, bounded rendering loops, single objective increments, and full swarm/upgrade/lockdown state evidence.",
+    "The child visibly descends from the exact response-02 Reactor Run artifact while adding escalating drone waves, three field-upgrade choices, and a final 30-second airlock lockdown."
+  ],
+  "verification_evidence": {
+    "schema_version": 1,
+    "verified_at": "2026-07-11T16:34:00.000Z",
+    "final_metrics": {
+      "qualityScore": 99,
+      "artifactReady": true,
+      "hardGatesPassed": true,
+      "functionalChecks": {
+        "passed": 26,
+        "total": 26
+      },
+      "consoleErrorCount": 0,
+      "horizontalOverflowPx": 0,
+      "notes": [
+        "Desktop and 390x844 verification passed with the complete cell-to-wave-to-upgrade-to-lockdown loop.",
+        "The exact public source URL and immutable parent response-02 artifact identity are preserved."
+      ]
+    }
+  },
+  "steps": [
+    {
+      "step_number": 1,
+      "title": "Build Airlock Zero",
+      "prompt_exact": "Build me a self-contained browser FPS called Airlock Zero: Reactor Run. I want a short ray-cast space-station mission where I move through corridors, pulse security drones, recover three reactor cells, and reach the airlock before oxygen runs out. Make it polished and playable with keyboard and mouse plus a touch-friendly fallback, and keep everything in one offline HTML file with no external assets.",
+      "response_exact": "Done. [airlock-zero-reactor-run.html](sandbox:/workspace/scratch/78b4671a484f/airlock-zero-reactor-run.html)\n\nEverything is embedded and runs fully offline.\n",
+      "response_summary": "ChatGPT produced the complete offline Reactor Run artifact.",
+      "generated_files": [
+        "public/artifacts/airlock-zero-gpt-56-sol-max-step-1.html"
+      ],
+      "artifact_version_path": "public/artifacts/airlock-zero-gpt-56-sol-max-step-1.html",
+      "artifact_sha256": "0cddc5cf0865445b20836d1303355502e126b777517e7d1c9c8bfa04d9c8c59d",
+      "notes": "Inherited parent response 01."
+    },
+    {
+      "step_number": 2,
+      "title": "Strengthen mission readability",
+      "prompt_exact": "The core is already polished and verified at desktop and 390px. Before we branch it, strengthen the shared mission-readability layer: add a compact station schematic to the briefing that makes the three reactor sectors and return airlock understandable without revealing a perfect route; clamp off-radar objectives to the radar rim with recognizable cell and airlock colors plus a tiny legend; show contextual control hints only during the first 15 seconds; and expand the end scorecard to completion time, oxygen, suit integrity, cells recovered, and drones disabled. Preserve the genuine ray-cast gameplay, 2:20 mission, mouse and non-pointer-lock keyboard controls, touch controls, pause, mute, restart, and fully offline one-file design. Return the full updated self-contained HTML file.",
+      "response_exact": "Updated and verified at desktop and 390px.\n\n[airlock-zero-reactor-run.html](sandbox:/workspace/scratch/78b4671a484f/airlock-zero-reactor-run.html)\n",
+      "response_summary": "ChatGPT refined the briefing, radar, hints, and result scorecard.",
+      "generated_files": [
+        "public/artifacts/airlock-zero-gpt-56-sol-max-step-2.html"
+      ],
+      "artifact_version_path": "public/artifacts/airlock-zero-gpt-56-sol-max-step-2.html",
+      "artifact_sha256": "810f7733cf41de09c553ee5e9b1005bdfd30f367ff0221b58ec0ef56dc93acd3",
+      "notes": "Inherited parent response 02; exact branch socket and source artifact.",
+      "continuation_reason": "Purpose-specific parent refinement after the first artifact passed: make the briefing, radar objectives, early controls, and end scorecard easier to understand before branching."
+    },
+    {
+      "step_number": 3,
+      "title": "Branch into Swarm Shift",
+      "prompt_exact": "Fork this response into Airlock Zero: Swarm Shift. Keep the ray-cast station, briefing, readable radar, three reactor cells, airlock return, oxygen, suit integrity, pulse weapon, keyboard and mouse controls, touch controls, pause, mute, restart, and offline one-file design. Change the pressure into a compact escalating swarm run: each recovered cell should wake a tougher drone wave, disabled drones should drop one of three quick upgrades the player chooses in place, and the airlock should require surviving a final 30-second lockdown after the third cell. Make the branch clearly different but still visibly descended from this exact build, with a useful final scorecard for time, oxygen, integrity, cells, drones, and chosen upgrades. Return the full self-contained HTML file.",
+      "response_exact": "Done and verified at desktop and 390px.\n\n[airlock-zero-swarm-shift.html](sandbox:/workspace/scratch/34d5dab8195b/airlock-zero-swarm-shift.html)\n",
+      "response_summary": "ChatGPT produced the complete escalating Swarm Shift fork and verified the final lockdown loop.",
+      "generated_files": [
+        "public/artifacts/airlock-zero-swarm-shift-gpt-56-sol-max.html"
+      ],
+      "artifact_version_path": "public/artifacts/airlock-zero-swarm-shift-gpt-56-sol-max.html",
+      "artifact_sha256": "0fd90a9335621b0e37ff68e4017c2203f98824d6867c696b7dcf0100f8228e77",
+      "notes": "Genuine child continuation from the exact response-02 socket; final verified child artifact.",
+      "continuation_reason": "Purpose-specific fork: turn the verified Reactor Run response into an escalating swarm, upgrade, and final-lockdown variant while preserving the working offline FPS foundation."
+    }
+  ],
+  "submitted_by_account": "PathForge Projects",
+  "submitted_by_profile_registry_id": "pathforge-house-projects",
+  "submission": null
+}

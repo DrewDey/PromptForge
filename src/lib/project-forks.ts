@@ -6,8 +6,12 @@ export const PROJECT_FORK_MAX_WIDTH = 10
 export const PROJECT_FORK_QUERY_KEYS = {
   sourceProjectId: 'fork',
   sourceProjectTitle: 'forkTitle',
+  sourceModelVariantId: 'forkVariant',
+  sourceRunId: 'forkRun',
   sourceStepId: 'forkStep',
   sourceStepNumber: 'forkStepNumber',
+  sourceArtifactPath: 'forkArtifact',
+  sourceArtifactSha256: 'forkArtifactSha256',
   parentForkId: 'parentFork',
   depth: 'forkDepth',
   branchIndex: 'forkBranch',
@@ -27,8 +31,12 @@ export type ProjectForkSourceStep = {
 export type ProjectForkSource = {
   sourceProjectId: string
   sourceProjectTitle?: string
+  sourceModelVariantId?: string
+  sourceRunId?: string
   sourceStepId?: string
   sourceStepNumber?: number
+  sourceArtifactPath?: string
+  sourceArtifactSha256?: string
   parentForkId?: string
   depth: number
   branchIndex: number
@@ -62,8 +70,12 @@ export type CreateProjectForkDraftInput = {
 export type BuildProjectResponseForkHrefInput = {
   sourceProjectId: string
   sourceProjectTitle?: string
+  sourceModelVariantId?: string
+  sourceRunId?: string
   sourceStepId: string
   sourceStepNumber?: number
+  sourceArtifactPath?: string
+  sourceArtifactSha256?: string
   currentForkSource?: ProjectForkSource | null
   promptFamilyId?: string
   branchIndex?: number
@@ -72,8 +84,12 @@ export type BuildProjectResponseForkHrefInput = {
 export type ProjectForkSourceSubmissionFields = {
   fork_source_project_id?: string | null
   fork_source_project_title?: string | null
+  fork_source_model_variant_id?: string | null
+  fork_source_run_id?: string | null
   fork_source_step_id?: string | null
   fork_source_step_number?: number | null
+  fork_source_artifact_path?: string | null
+  fork_source_artifact_sha256?: string | null
   fork_parent_submission_id?: string | null
   prompt_family_id?: string | null
   fork_depth?: number | null
@@ -89,6 +105,23 @@ export type ProjectForkNetworkItem = {
   modelUsed?: string | null
   createdAt: string
   forkSource: ProjectForkSource
+  continuationSteps?: ProjectForkContinuationStep[]
+  childRoute?: string | null
+  childSourceUrl?: string | null
+  childProviderName?: string | null
+}
+
+export type ProjectForkArtifactVersion = {
+  id: string
+  artifactPath: string
+  artifactTitle: string
+  artifactSha256?: string
+  isDefault?: boolean
+}
+
+export type ProjectForkContinuationStep = ProjectForkSourceStep & {
+  artifactVersions?: ProjectForkArtifactVersion[]
+  forkHref?: string | null
 }
 
 export type ProjectForkNetworkRow = {
@@ -147,10 +180,14 @@ export function normalizeProjectForkSource(source: Partial<ProjectForkSource> & 
   return {
     sourceProjectId: source.sourceProjectId,
     sourceProjectTitle: normalizeOptional(source.sourceProjectTitle),
+    sourceModelVariantId: normalizeOptional(source.sourceModelVariantId),
+    sourceRunId: normalizeOptional(source.sourceRunId),
     sourceStepId: normalizeOptional(source.sourceStepId),
     sourceStepNumber: source.sourceStepNumber && source.sourceStepNumber > 0
       ? Math.trunc(source.sourceStepNumber)
       : undefined,
+    sourceArtifactPath: normalizeOptional(source.sourceArtifactPath),
+    sourceArtifactSha256: normalizeOptional(source.sourceArtifactSha256)?.toLowerCase(),
     parentForkId: normalizeOptional(source.parentForkId),
     depth: clampForkLimit(source.depth ?? 0, PROJECT_FORK_MAX_DEPTH - 1),
     branchIndex: clampForkLimit(source.branchIndex ?? 0, PROJECT_FORK_MAX_WIDTH - 1),
@@ -165,8 +202,12 @@ export function parseProjectForkSearchParams(params: Pick<URLSearchParams, 'get'
   return normalizeProjectForkSource({
     sourceProjectId,
     sourceProjectTitle: params.get(PROJECT_FORK_QUERY_KEYS.sourceProjectTitle) ?? undefined,
+    sourceModelVariantId: params.get(PROJECT_FORK_QUERY_KEYS.sourceModelVariantId) ?? undefined,
+    sourceRunId: params.get(PROJECT_FORK_QUERY_KEYS.sourceRunId) ?? undefined,
     sourceStepId: params.get(PROJECT_FORK_QUERY_KEYS.sourceStepId) ?? undefined,
     sourceStepNumber: parsePositiveInteger(params.get(PROJECT_FORK_QUERY_KEYS.sourceStepNumber), 0) || undefined,
+    sourceArtifactPath: params.get(PROJECT_FORK_QUERY_KEYS.sourceArtifactPath) ?? undefined,
+    sourceArtifactSha256: params.get(PROJECT_FORK_QUERY_KEYS.sourceArtifactSha256) ?? undefined,
     parentForkId: params.get(PROJECT_FORK_QUERY_KEYS.parentForkId) ?? undefined,
     depth: parsePositiveInteger(params.get(PROJECT_FORK_QUERY_KEYS.depth), 0),
     branchIndex: parsePositiveInteger(params.get(PROJECT_FORK_QUERY_KEYS.branchIndex), 0),
@@ -181,9 +222,19 @@ export function buildProjectForkHref(source: Partial<ProjectForkSource> & { sour
   if (normalized.sourceProjectTitle) {
     params.set(PROJECT_FORK_QUERY_KEYS.sourceProjectTitle, normalized.sourceProjectTitle)
   }
+  if (normalized.sourceModelVariantId) {
+    params.set(PROJECT_FORK_QUERY_KEYS.sourceModelVariantId, normalized.sourceModelVariantId)
+  }
+  if (normalized.sourceRunId) params.set(PROJECT_FORK_QUERY_KEYS.sourceRunId, normalized.sourceRunId)
   if (normalized.sourceStepId) params.set(PROJECT_FORK_QUERY_KEYS.sourceStepId, normalized.sourceStepId)
   if (normalized.sourceStepNumber) {
     params.set(PROJECT_FORK_QUERY_KEYS.sourceStepNumber, String(normalized.sourceStepNumber))
+  }
+  if (normalized.sourceArtifactPath) {
+    params.set(PROJECT_FORK_QUERY_KEYS.sourceArtifactPath, normalized.sourceArtifactPath)
+  }
+  if (normalized.sourceArtifactSha256) {
+    params.set(PROJECT_FORK_QUERY_KEYS.sourceArtifactSha256, normalized.sourceArtifactSha256)
   }
   if (normalized.parentForkId) params.set(PROJECT_FORK_QUERY_KEYS.parentForkId, normalized.parentForkId)
   if (normalized.depth > 0) params.set(PROJECT_FORK_QUERY_KEYS.depth, String(normalized.depth))
@@ -196,20 +247,38 @@ export function buildProjectForkHref(source: Partial<ProjectForkSource> & { sour
 export function buildProjectResponseForkHref({
   sourceProjectId,
   sourceProjectTitle,
+  sourceModelVariantId,
+  sourceRunId,
   sourceStepId,
   sourceStepNumber,
+  sourceArtifactPath,
+  sourceArtifactSha256,
   currentForkSource,
   promptFamilyId,
   branchIndex = 0,
 }: BuildProjectResponseForkHrefInput) {
   const nextDepth = currentForkSource ? currentForkSource.depth + 1 : 0
   if (nextDepth >= PROJECT_FORK_MAX_DEPTH) return null
+  if (
+    sourceRunId &&
+    (
+      !sourceArtifactPath?.startsWith('public/artifacts/') ||
+      !sourceArtifactSha256 ||
+      !/^[0-9a-f]{64}$/i.test(sourceArtifactSha256)
+    )
+  ) {
+    return null
+  }
 
   return buildProjectForkHref({
     sourceProjectId,
     sourceProjectTitle,
+    sourceModelVariantId,
+    sourceRunId,
     sourceStepId,
     sourceStepNumber,
+    sourceArtifactPath,
+    sourceArtifactSha256,
     parentForkId: currentForkSource ? sourceProjectId : undefined,
     depth: nextDepth,
     branchIndex,
@@ -226,8 +295,12 @@ export function projectForkSourceToSubmissionFields(
   return {
     fork_source_project_id: normalized.sourceProjectId,
     fork_source_project_title: normalized.sourceProjectTitle ?? null,
+    fork_source_model_variant_id: normalized.sourceModelVariantId ?? null,
+    fork_source_run_id: normalized.sourceRunId ?? null,
     fork_source_step_id: normalized.sourceStepId ?? null,
     fork_source_step_number: normalized.sourceStepNumber ?? null,
+    fork_source_artifact_path: normalized.sourceArtifactPath ?? null,
+    fork_source_artifact_sha256: normalized.sourceArtifactSha256 ?? null,
     fork_parent_submission_id: normalized.parentForkId ?? null,
     prompt_family_id: normalized.promptFamilyId ?? null,
     fork_depth: normalized.depth,
@@ -243,8 +316,12 @@ export function projectForkSourceFromSubmissionFields(
   return normalizeProjectForkSource({
     sourceProjectId: fields.fork_source_project_id,
     sourceProjectTitle: fields.fork_source_project_title ?? undefined,
+    sourceModelVariantId: fields.fork_source_model_variant_id ?? undefined,
+    sourceRunId: fields.fork_source_run_id ?? undefined,
     sourceStepId: fields.fork_source_step_id ?? undefined,
     sourceStepNumber: fields.fork_source_step_number ?? undefined,
+    sourceArtifactPath: fields.fork_source_artifact_path ?? undefined,
+    sourceArtifactSha256: fields.fork_source_artifact_sha256 ?? undefined,
     parentForkId: fields.fork_parent_submission_id ?? undefined,
     depth: fields.fork_depth ?? 0,
     branchIndex: fields.fork_branch_index ?? 0,
@@ -271,12 +348,12 @@ export function resolveProjectForkPoint(
 ) {
   if (source.sourceStepId) {
     const match = sourceSteps.find((step) => step.id === source.sourceStepId)
-    if (match) return match
+    return match ?? null
   }
 
   if (source.sourceStepNumber) {
     const match = sourceSteps.find((step) => step.stepNumber === source.sourceStepNumber)
-    if (match) return match
+    return match ?? null
   }
 
   return sourceSteps[sourceSteps.length - 1] ?? null
@@ -330,8 +407,9 @@ export function groupProjectForkNetworkBySourceStep(
   const matchedForkIds = new Set<string>()
   const rows = sourceSteps.map<ProjectForkNetworkRow>((step) => {
     const rowForks = forks.filter((fork) => {
-      const matches = fork.forkSource.sourceStepId === step.id ||
-        fork.forkSource.sourceStepNumber === step.stepNumber
+      const matches = fork.forkSource.sourceStepId
+        ? fork.forkSource.sourceStepId === step.id
+        : fork.forkSource.sourceStepNumber === step.stepNumber
       if (matches) matchedForkIds.add(fork.id)
       return matches
     })
@@ -340,6 +418,16 @@ export function groupProjectForkNetworkBySourceStep(
   const unmatchedForks = forks.filter((fork) => !matchedForkIds.has(fork.id))
 
   return { rows, unmatchedForks }
+}
+
+export function filterProjectForkNetworkBySourceRun(
+  forks: ProjectForkNetworkItem[],
+  sourceRunId?: string | null,
+) {
+  const normalizedSourceRunId = normalizeOptional(sourceRunId)
+  if (!normalizedSourceRunId) return forks
+
+  return forks.filter((fork) => fork.forkSource.sourceRunId === normalizedSourceRunId)
 }
 
 export async function resolveProjectForkTrail<TProject extends ProjectForkTrailProject>(
@@ -429,6 +517,10 @@ export function serializeProjectForkSourceForNotes(source: ProjectForkSource) {
   if (source.sourceStepNumber || source.sourceStepId) {
     lines.push(`Fork point response: ${source.sourceStepNumber ? `step ${source.sourceStepNumber}` : source.sourceStepId}`)
   }
+  if (source.sourceRunId) lines.push(`Fork source run: ${source.sourceRunId}`)
+  if (source.sourceModelVariantId) lines.push(`Fork source model variant: ${source.sourceModelVariantId}`)
+  if (source.sourceArtifactPath) lines.push(`Fork source artifact: ${source.sourceArtifactPath}`)
+  if (source.sourceArtifactSha256) lines.push(`Fork source artifact SHA-256: ${source.sourceArtifactSha256}`)
   if (source.parentForkId) lines.push(`Parent fork: ${source.parentForkId}`)
   if (source.promptFamilyId) lines.push(`Prompt family: ${source.promptFamilyId}`)
   if (source.depth > 0 || source.branchIndex > 0) {

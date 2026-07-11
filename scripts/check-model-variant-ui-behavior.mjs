@@ -49,6 +49,40 @@ for (const activeSourceRunId of variants.map((variant) => variant.sourceRunId)) 
   )
 }
 
+const simultaneousCohort = [
+  {
+    modelLabel: 'Sonnet 5 Max',
+    serviceLabel: 'Claude',
+    capturedAt: '2026-07-11T03:00:00.000Z',
+    sourceRunId: 'cohort-claude',
+  },
+  {
+    modelLabel: '5.6 Sol Max',
+    serviceLabel: 'ChatGPT',
+    capturedAt: '2026-07-11T04:00:00.000Z',
+    sourceRunId: 'cohort-chatgpt',
+  },
+  {
+    modelLabel: '3.5 Flash',
+    serviceLabel: 'Gemini',
+    capturedAt: '2026-07-11T05:00:00.000Z',
+    sourceRunId: 'cohort-gemini',
+  },
+]
+const simultaneousCohortOrder = simultaneousCohort
+  .toSorted(compareModelVariantRecords)
+  .map((variant) => variant.sourceRunId)
+assert.deepEqual(simultaneousCohortOrder, [
+  'cohort-gemini',
+  'cohort-chatgpt',
+  'cohort-claude',
+])
+assert.deepEqual(
+  simultaneousCohort.map((variant) => variant.sourceRunId),
+  ['cohort-claude', 'cohort-chatgpt', 'cohort-gemini'],
+  'sorting the selector must not mutate its manifest history',
+)
+
 const promptTwoLoad = { packageId: 'prompt-2', srcDoc: '<p>two</p>', error: null }
 const promptThreeLoad = { packageId: 'prompt-3', srcDoc: '<p>three</p>', error: null }
 assert.equal(currentArtifactLoad('prompt-3', promptTwoLoad), null)

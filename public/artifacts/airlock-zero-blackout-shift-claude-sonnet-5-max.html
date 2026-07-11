@@ -1,0 +1,2925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Airlock Zero: Blackout Shift</title>
+<style>
+  :root {
+    --hud-cyan: #5ad4d8;
+    --hud-cyan-dim: #2c6b6e;
+    --hud-amber: #e8a13a;
+    --hud-red: #d8483f;
+    --hud-green: #4fd67a;
+    --bg-void: #05070a;
+    --panel-navy: #0d1721;
+    --panel-navy-light: #16283a;
+    --text-dim: #7f97a3;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-void);
+    overflow: hidden;
+    overscroll-behavior: none;
+    font-family: 'Courier New', Consolas, monospace;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: none;
+  }
+
+  #gameCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    cursor: crosshair;
+  }
+
+  #spriteCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* ============ HUD LAYER ============ */
+  #hudLayer {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  .hud-corner-frame {
+    position: absolute;
+    color: var(--hud-cyan);
+    text-shadow: 0 0 4px rgba(90, 212, 216, 0.6);
+  }
+
+  /* O2 gauge — signature element, top-left */
+  #o2Gauge {
+    position: absolute;
+    top: 14px; left: 14px;
+    width: 108px; height: 108px;
+  }
+  #o2GaugeCanvas { width: 100%; height: 100%; }
+  #o2Label {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  #o2Percent {
+    font-size: 22px; font-weight: bold; color: var(--hud-cyan);
+    text-shadow: 0 0 6px rgba(90,212,216,0.7);
+    letter-spacing: 0;
+  }
+  #o2Sub {
+    font-size: 9px; color: var(--text-dim); margin-top: 2px; letter-spacing: 0;
+  }
+  #o2Gauge.warning #o2Percent { color: var(--hud-amber); text-shadow: 0 0 6px rgba(232,161,58,0.7); }
+  #o2Gauge.critical #o2Percent { color: var(--hud-red); text-shadow: 0 0 8px rgba(216,72,63,0.9); animation: o2flicker 0.5s infinite; }
+
+  @keyframes o2flicker {
+    0%, 100% { opacity: 1; }
+    45% { opacity: 1; }
+    50% { opacity: 0.3; }
+    55% { opacity: 1; }
+  }
+
+  /* Health bar, below O2 gauge */
+  #healthBar {
+    position: absolute;
+    top: 128px; left: 14px;
+    width: 108px;
+    padding: 4px 6px;
+    background: rgba(13, 23, 33, 0.7);
+    border: 1px solid var(--hud-cyan-dim);
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 0;
+  }
+  #healthBarTrack {
+    width: 100%; height: 6px; background: rgba(255,255,255,0.08);
+    margin-top: 3px; border: 1px solid var(--hud-cyan-dim);
+  }
+  #healthBarFill {
+    height: 100%; width: 100%; background: var(--hud-green);
+    transition: width 0.15s linear, background 0.2s linear;
+  }
+
+  /* Minimap, top-right */
+  #minimapWrap {
+    position: absolute;
+    top: 14px; right: 14px;
+    width: 120px; height: 120px;
+    background: rgba(13, 23, 33, 0.75);
+    border: 1px solid var(--hud-cyan-dim);
+  }
+  #minimapCanvas { width: 100%; height: 100%; }
+
+  #radarLegend {
+    position: absolute;
+    top: 137px; right: 14px;
+    width: 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: rgba(13, 23, 33, 0.65);
+    border: 1px solid var(--hud-cyan-dim);
+    padding: 4px 6px;
+    font-size: 8px;
+    letter-spacing: 0;
+    color: var(--text-dim);
+  }
+  .radar-legend-row { display: flex; align-items: center; gap: 5px; }
+  .radar-legend-dot {
+    width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+  }
+  .radar-legend-dot.rim-shape {
+    width: 0; height: 0;
+    border-top: 3.5px solid transparent;
+    border-bottom: 3.5px solid transparent;
+    border-left: 5px solid var(--hud-green);
+    border-radius: 0;
+    background: none;
+  }
+
+  /* Cell indicators, bottom-left */
+  #cellIndicators {
+    position: absolute;
+    bottom: 16px; left: 14px;
+    display: flex; gap: 6px;
+  }
+  .cell-icon {
+    width: 30px; height: 30px;
+    border: 1.5px solid var(--hud-cyan-dim);
+    background: rgba(13,23,33,0.7);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; color: var(--hud-cyan-dim);
+  }
+  .cell-icon.collected {
+    border-color: var(--hud-green);
+    color: var(--hud-green);
+    box-shadow: 0 0 8px rgba(79,214,122,0.5);
+  }
+
+  /* Pulse weapon indicator, bottom-center */
+  #pulseIndicator {
+    position: absolute;
+    bottom: 16px; left: 50%; transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center;
+    color: var(--text-dim); font-size: 9px; letter-spacing: 0;
+  }
+  #pulseTrack {
+    width: 80px; height: 5px; background: rgba(255,255,255,0.08);
+    border: 1px solid var(--hud-cyan-dim); margin-top: 3px;
+  }
+  #pulseFill { height: 100%; width: 100%; background: var(--hud-cyan); transition: width 0.05s linear; }
+  #pulseIndicator.charging #pulseTrack { box-shadow: 0 0 6px rgba(90,212,216,0.6); border-color: var(--hud-cyan); }
+
+  /* Flashlight power indicator, bottom-right — mirrors the cell indicators'
+     bottom-left placement so the HUD reads as a balanced frame. */
+  #flashlightIndicator {
+    position: absolute;
+    bottom: 16px; right: 14px;
+    display: flex; flex-direction: column; align-items: flex-end;
+    color: var(--text-dim); font-size: 9px; letter-spacing: 0;
+  }
+  #flashlightIndicator.on #flashlightLabel { color: var(--hud-cyan); }
+  #flashlightIndicator.warning #flashlightLabel { color: var(--hud-amber); }
+  #flashlightIndicator.critical #flashlightLabel { color: var(--hud-red); animation: o2flicker 0.5s infinite; }
+  #flashlightTrack {
+    width: 80px; height: 5px; background: rgba(255,255,255,0.08);
+    border: 1px solid var(--hud-cyan-dim); margin-top: 3px;
+  }
+  #flashlightFill { height: 100%; width: 100%; background: var(--hud-cyan); transition: width 0.1s linear, background 0.2s linear; }
+
+  /* Crosshair */
+  #crosshair {
+    position: absolute;
+    top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 18px; height: 18px;
+    pointer-events: none;
+  }
+  #crosshair::before, #crosshair::after {
+    content: '';
+    position: absolute;
+    background: rgba(90, 212, 216, 0.8);
+  }
+  #crosshair::before { top: 50%; left: 0; width: 100%; height: 1px; transform: translateY(-50%); }
+  #crosshair::after { left: 50%; top: 0; height: 100%; width: 1px; transform: translateX(-50%); }
+
+  /* Objective toast */
+  #objectiveToast {
+    position: absolute;
+    top: 22%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 15px;
+    color: var(--hud-cyan);
+    text-shadow: 0 0 6px rgba(90,212,216,0.8);
+    letter-spacing: 0;
+    text-align: center;
+    opacity: 0;
+    background: rgba(5,7,10,0.55);
+    padding: 8px 18px;
+    border-top: 1px solid var(--hud-cyan-dim);
+    border-bottom: 1px solid var(--hud-cyan-dim);
+    white-space: nowrap;
+  }
+  #objectiveToast.show {
+    animation: toastFade 2.6s ease-in-out;
+  }
+  @keyframes toastFade {
+    0% { opacity: 0; transform: translate(-50%, -60%); }
+    12% { opacity: 1; transform: translate(-50%, -50%); }
+    80% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  /* Damage / low-O2 vignette */
+  #vignette {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none;
+    box-shadow: inset 0 0 0px rgba(216,72,63,0);
+    transition: box-shadow 0.1s linear;
+  }
+
+  /* Drone alert banner */
+  #alertBanner {
+    position: absolute;
+    top: 14px; left: 50%; transform: translateX(-50%);
+    color: var(--hud-red);
+    font-size: 11px;
+    letter-spacing: 0;
+    text-shadow: 0 0 6px rgba(216,72,63,0.8);
+    opacity: 0;
+    transition: opacity 0.3s, color 0.2s;
+  }
+  #alertBanner.active { opacity: 1; color: var(--hud-red); text-shadow: 0 0 6px rgba(216,72,63,0.8); animation: alertPulse 1s infinite; }
+  #alertBanner.suspicious { opacity: 1; color: var(--hud-amber); text-shadow: 0 0 6px rgba(232,161,58,0.7); animation: alertPulseSlow 1.6s infinite; }
+  @keyframes alertPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  @keyframes alertPulseSlow { 0%,100% { opacity: 0.85; } 50% { opacity: 0.35; } }
+
+  /* Contextual control hints, shown only for the first ~15s of a mission */
+  #controlHintOverlay {
+    position: absolute;
+    bottom: 46px; left: 50%; transform: translateX(-50%);
+    display: flex;
+    gap: 10px 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: max-content;
+    max-width: min(90vw, 560px);
+    font-size: 10px;
+    letter-spacing: 0;
+    color: var(--text-dim);
+    background: rgba(5,7,10,0.5);
+    padding: 5px 12px;
+    border-top: 1px solid var(--hud-cyan-dim);
+    border-bottom: 1px solid var(--hud-cyan-dim);
+    opacity: 0;
+    transition: opacity 0.6s ease;
+    pointer-events: none;
+    box-sizing: border-box;
+  }
+  #controlHintOverlay.visible { opacity: 1; }
+  #controlHintOverlay span { white-space: nowrap; }
+  #controlHintOverlay kbd {
+    background: var(--panel-navy); border: 1px solid var(--hud-cyan-dim);
+    padding: 0px 5px; color: var(--hud-cyan); font-family: inherit;
+  }
+
+  /* ============ MENU / OVERLAY SCREENS ============ */
+  .screen {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at center, var(--panel-navy-light) 0%, var(--bg-void) 100%);
+    z-index: 100;
+    text-align: center;
+    padding: 20px;
+    overflow-y: auto;
+  }
+  .screen.hidden { display: none; }
+
+  .title-main {
+    font-size: clamp(28px, 6vw, 52px);
+    color: var(--hud-cyan);
+    letter-spacing: 0;
+    text-shadow: 0 0 14px rgba(90,212,216,0.6);
+    margin: 0;
+    font-weight: bold;
+  }
+  .title-sub {
+    font-size: clamp(13px, 2.2vw, 17px);
+    color: var(--hud-amber);
+    letter-spacing: 0;
+    margin: 6px 0 26px 0;
+  }
+
+  .panel-box {
+    background: rgba(13, 23, 33, 0.8);
+    border: 1px solid var(--hud-cyan-dim);
+    padding: 18px 24px;
+    max-width: 480px;
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.7;
+    letter-spacing: 0;
+    margin-bottom: 22px;
+  }
+  .panel-box strong { color: var(--hud-cyan); }
+  .panel-box .warn-text { color: var(--hud-amber); }
+
+  /* Station schematic on the briefing screen */
+  #schematicWrap {
+    background: rgba(13, 23, 33, 0.8);
+    border: 1px solid var(--hud-cyan-dim);
+    padding: 8px 14px 10px 14px;
+    max-width: 380px;
+    margin-bottom: 16px;
+  }
+  #schematicLabel {
+    font-size: 10px;
+    letter-spacing: 0;
+    color: var(--text-dim);
+    text-align: center;
+    margin-bottom: 4px;
+  }
+  #schematicSvg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  .sch-corridor {
+    stroke: var(--hud-cyan-dim);
+    stroke-width: 3;
+    stroke-linecap: round;
+  }
+  .sch-hub {
+    fill: rgba(90, 212, 216, 0.14);
+    stroke: var(--hud-cyan);
+    stroke-width: 1.5;
+  }
+  .sch-hub-label {
+    fill: var(--hud-cyan);
+    font-size: 11px;
+    font-family: inherit;
+    font-weight: bold;
+    letter-spacing: 0;
+  }
+  .sch-hub-sublabel {
+    fill: var(--text-dim);
+    font-size: 7px;
+    font-family: inherit;
+    letter-spacing: 0;
+  }
+  .sch-room {
+    stroke-width: 1.5;
+  }
+  .sch-room-cell {
+    fill: rgba(79, 214, 122, 0.12);
+    stroke: var(--hud-green);
+  }
+  .sch-room-airlock {
+    fill: rgba(232, 161, 58, 0.12);
+    stroke: var(--hud-amber);
+  }
+  .sch-room-label {
+    fill: var(--hud-green);
+    font-size: 9px;
+    font-family: inherit;
+    font-weight: bold;
+    letter-spacing: 0;
+  }
+  .sch-room-label-airlock {
+    fill: var(--hud-amber);
+  }
+  .sch-spawn-dot {
+    fill: #eafdff;
+    stroke: var(--hud-cyan);
+    stroke-width: 1;
+  }
+  .sch-spawn-label {
+    fill: var(--text-dim);
+    font-size: 7px;
+    font-family: inherit;
+    letter-spacing: 0;
+  }
+  #schematicLegend {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 0;
+  }
+  .sch-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .sch-legend-swatch {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 2px;
+  }
+  .sch-legend-cell { background: rgba(79,214,122,0.3); border: 1px solid var(--hud-green); }
+  .sch-legend-hub { background: rgba(90,212,216,0.3); border: 1px solid var(--hud-cyan); }
+  .sch-legend-airlock { background: rgba(232,161,58,0.3); border: 1px solid var(--hud-amber); }
+
+  #schematicBlackoutNote {
+    margin-top: 8px;
+    font-size: 9px;
+    letter-spacing: 0;
+    color: var(--text-dim);
+    text-align: center;
+    font-style: italic;
+    border-top: 1px solid rgba(90,212,216,0.15);
+    padding-top: 6px;
+  }
+
+  .btn-primary {
+    pointer-events: auto;
+    background: var(--hud-cyan-dim);
+    border: 1px solid var(--hud-cyan);
+    color: #eafdfe;
+    font-family: inherit;
+    font-size: 15px;
+    letter-spacing: 0;
+    padding: 12px 34px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .btn-primary:hover { background: var(--hud-cyan); color: #05171a; }
+  .btn-primary:active { transform: scale(0.97); }
+
+  .btn-secondary {
+    pointer-events: auto;
+    background: transparent;
+    border: 1px solid var(--text-dim);
+    color: var(--text-dim);
+    font-family: inherit;
+    font-size: 12px;
+    padding: 8px 20px;
+    cursor: pointer;
+    margin-top: 12px;
+    letter-spacing: 0;
+  }
+  .btn-secondary:hover { border-color: var(--hud-cyan); color: var(--hud-cyan); }
+
+  .control-hint-row {
+    display: flex; gap: 18px; justify-content: center; flex-wrap: wrap;
+    font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 0;
+  }
+  .control-hint-row kbd {
+    background: var(--panel-navy); border: 1px solid var(--hud-cyan-dim);
+    padding: 1px 6px; color: var(--hud-cyan); font-family: inherit;
+  }
+
+  .stat-line { display: flex; justify-content: space-between; width: 260px; margin: 4px auto; font-size: 13px; }
+  .stat-line span:last-child { color: var(--hud-cyan); }
+
+  /* ============ TOUCH CONTROLS ============ */
+  #touchControls {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 20; display: none;
+  }
+  #touchControls.enabled { display: block; }
+
+  #touchJoystickZone {
+    position: absolute;
+    left: 0; bottom: 0;
+    width: 45%; height: 55%;
+    pointer-events: auto;
+  }
+  #touchLookZone {
+    position: absolute;
+    right: 0; bottom: 0;
+    width: 55%; height: 100%;
+    pointer-events: auto;
+  }
+  #joystickBase {
+    position: absolute;
+    width: 92px; height: 92px;
+    border: 2px solid rgba(90,212,216,0.4);
+    border-radius: 50%;
+    background: rgba(13,23,33,0.35);
+    display: none;
+  }
+  #joystickNub {
+    position: absolute;
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: rgba(90,212,216,0.5);
+    border: 1px solid rgba(90,212,216,0.8);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  #touchFireBtn {
+    position: absolute;
+    right: 22px; bottom: 100px;
+    width: 76px; height: 76px;
+    border-radius: 50%;
+    background: rgba(232,161,58,0.25);
+    border: 2px solid rgba(232,161,58,0.7);
+    color: var(--hud-amber);
+    font-size: 10px;
+    letter-spacing: 0;
+    pointer-events: auto;
+    display: flex; align-items: center; justify-content: center;
+    text-align: center;
+  }
+  #touchFireBtn:active { background: rgba(232,161,58,0.5); }
+  #touchFlashlightBtn {
+    position: absolute;
+    right: 106px; bottom: 116px;
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: rgba(90,212,216,0.15);
+    border: 2px solid rgba(90,212,216,0.55);
+    color: var(--hud-cyan);
+    font-size: 9px;
+    letter-spacing: 0;
+    pointer-events: auto;
+    display: flex; align-items: center; justify-content: center;
+    text-align: center;
+    line-height: 1.15;
+  }
+  #touchFlashlightBtn:active { background: rgba(90,212,216,0.4); }
+  #touchFlashlightBtn.on { background: rgba(90,212,216,0.4); box-shadow: 0 0 10px rgba(90,212,216,0.5); }
+  #touchPauseBtn {
+    position: absolute;
+    top: 14px; right: 140px;
+    width: 34px; height: 34px;
+    border: 1px solid var(--hud-cyan-dim);
+    background: rgba(13,23,33,0.6);
+    color: var(--hud-cyan);
+    font-size: 14px;
+    pointer-events: auto;
+    z-index: 25;
+  }
+
+  #desktopPauseHint {
+    position: absolute;
+    top: 14px; right: 140px;
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0;
+    z-index: 25;
+    pointer-events: none;
+  }
+
+  #muteToggleBtn {
+    position: absolute;
+    top: 14px; right: 184px;
+    width: 34px; height: 34px;
+    border: 1px solid var(--hud-cyan-dim);
+    background: rgba(13,23,33,0.6);
+    color: var(--hud-cyan);
+    font-size: 14px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+    cursor: pointer;
+    z-index: 200;
+  }
+  #muteToggleBtn:hover { background: rgba(90,212,216,0.15); }
+  #muteToggleBtn.muted { color: var(--text-dim); border-color: var(--text-dim); }
+
+  ::-webkit-scrollbar { display: none; }
+</style>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+<canvas id="spriteCanvas"></canvas>
+
+<div id="hudLayer">
+  <div id="o2Gauge">
+    <canvas id="o2GaugeCanvas" width="108" height="108"></canvas>
+    <div id="o2Label">
+      <div id="o2Percent">100</div>
+      <div id="o2Sub">O2 SUPPLY</div>
+    </div>
+  </div>
+
+  <div id="healthBar">
+    HULL INTEGRITY
+    <div id="healthBarTrack"><div id="healthBarFill"></div></div>
+  </div>
+
+  <div id="minimapWrap"><canvas id="minimapCanvas" width="120" height="120"></canvas></div>
+  <div id="radarLegend">
+    <div class="radar-legend-row"><span class="radar-legend-dot" style="background:#4fd67a;"></span>Cell</div>
+    <div class="radar-legend-row"><span class="radar-legend-dot" style="background:#e8a13a; border-radius:2px;"></span>Airlock (locked)</div>
+    <div class="radar-legend-row"><span class="radar-legend-dot" style="background:transparent; border:1.5px solid #e8a13a;"></span>Drone suspicious</div>
+    <div class="radar-legend-row"><span class="radar-legend-dot" style="background:#d8483f;"></span>Drone alerted</div>
+    <div class="radar-legend-row"><span class="radar-legend-dot rim-shape"></span>Rim = off-radar</div>
+  </div>
+
+  <div id="cellIndicators">
+    <div class="cell-icon" id="cellIcon0">1</div>
+    <div class="cell-icon" id="cellIcon1">2</div>
+    <div class="cell-icon" id="cellIcon2">3</div>
+  </div>
+
+  <div id="pulseIndicator">
+    PULSE EMITTER
+    <div id="pulseTrack"><div id="pulseFill"></div></div>
+  </div>
+
+  <div id="flashlightIndicator">
+    <span id="flashlightLabel">FLASHLIGHT — OFF</span>
+    <div id="flashlightTrack"><div id="flashlightFill"></div></div>
+  </div>
+
+  <div id="crosshair"></div>
+  <div id="objectiveToast"></div>
+  <div id="alertBanner">⚠ SECURITY DRONE ALERTED</div>
+  <div id="controlHintOverlay"></div>
+  <div id="vignette"></div>
+</div>
+
+<div id="touchControls">
+  <div id="touchJoystickZone">
+    <div id="joystickBase"><div id="joystickNub"></div></div>
+  </div>
+  <div id="touchLookZone"></div>
+  <div id="touchFireBtn">HOLD<br>PULSE</div>
+  <div id="touchFlashlightBtn">LIGHT</div>
+  <div id="touchPauseBtn">II</div>
+</div>
+<div id="desktopPauseHint">ESC = PAUSE</div>
+<button id="muteToggleBtn" aria-label="Mute sound" title="Mute sound">♪</button>
+
+<!-- ===================== MENU SCREEN ===================== -->
+<div id="screenMenu" class="screen">
+  <div class="title-main">AIRLOCK ZERO</div>
+  <div class="title-sub">// BLACKOUT SHIFT //</div>
+  <div class="panel-box">
+    Station <strong>Kessler-9</strong> has gone dark deck-wide. Recover all
+    <strong>3 reactor cells</strong> and reach the airlock before your
+    <span class="warn-text">O2 supply</span> runs out — using as little
+    <strong>flashlight power</strong> as you can get away with.
+    Security drones patrol on vision cones; darkness is your cover, but your
+    own beam gives you away fast. Your <strong>pulse emitter</strong> now
+    rewards a held, timed charge over a reflex tap.
+  </div>
+  <button class="btn-primary" id="btnStart">BEGIN MISSION</button>
+  <div class="control-hint-row" id="desktopHints">
+    <span><kbd>W A S D</kbd> Move</span>
+    <span><kbd>Mouse</kbd> Look</span>
+    <span><kbd>Shift</kbd> Sprint</span>
+    <span><kbd>Hold Space</kbd> / <kbd>Click</kbd> Charge pulse</span>
+    <span><kbd>F</kbd> Flashlight</span>
+    <span><kbd>Esc</kbd> Pause</span>
+    <span><kbd>M</kbd> Mute</span>
+  </div>
+  <div class="control-hint-row" id="touchHints" style="display:none;">
+    <span>Left side: move</span>
+    <span>Right side: drag to look</span>
+    <span>Hold PULSE to charge, release to fire</span>
+    <span>Flashlight button toggles beam</span>
+  </div>
+  <button class="btn-secondary" id="btnToggleInputMode">Switch to touch controls</button>
+</div>
+
+<!-- ===================== BRIEFING SCREEN ===================== -->
+<div id="screenBriefing" class="screen hidden">
+  <div class="title-sub" style="margin-bottom:14px;">MISSION BRIEFING</div>
+  <div class="panel-box" id="briefingText" style="text-align:left;">
+    Loading...
+  </div>
+  <div id="schematicWrap">
+    <div id="schematicLabel">STATION SCHEMATIC — NOT TO SCALE</div>
+    <svg id="schematicSvg" viewBox="0 0 320 220" xmlns="http://www.w3.org/2000/svg">
+      <!-- corridor lines (drawn first so room boxes sit on top) -->
+      <line x1="160" y1="110" x2="70" y2="40"  class="sch-corridor" />
+      <line x1="160" y1="110" x2="250" y2="40" class="sch-corridor" />
+      <line x1="160" y1="110" x2="70" y2="180" class="sch-corridor" />
+      <line x1="160" y1="110" x2="250" y2="180" class="sch-corridor" />
+
+      <!-- spawn marker, near cell A corner along the corridor -->
+      <circle cx="95" cy="58" r="4" class="sch-spawn-dot" />
+      <text x="95" y="46" class="sch-spawn-label" text-anchor="middle">START</text>
+
+      <!-- central hub -->
+      <polygon points="160,86 184,98 184,122 160,134 136,122 136,98" class="sch-hub" />
+      <text x="160" y="113" class="sch-hub-label" text-anchor="middle">HUB</text>
+      <text x="160" y="124" class="sch-hub-sublabel" text-anchor="middle">dark — drones scan by cone</text>
+
+      <!-- reactor cell room A, top-left -->
+      <rect x="40" y="18" width="60" height="40" rx="3" class="sch-room sch-room-cell" />
+      <text x="70" y="34" class="sch-room-label" text-anchor="middle">REACTOR</text>
+      <text x="70" y="46" class="sch-room-label" text-anchor="middle">CELL A</text>
+
+      <!-- reactor cell room B, top-right -->
+      <rect x="220" y="18" width="60" height="40" rx="3" class="sch-room sch-room-cell" />
+      <text x="250" y="34" class="sch-room-label" text-anchor="middle">REACTOR</text>
+      <text x="250" y="46" class="sch-room-label" text-anchor="middle">CELL B</text>
+
+      <!-- reactor cell room C, bottom-left -->
+      <rect x="40" y="160" width="60" height="40" rx="3" class="sch-room sch-room-cell" />
+      <text x="70" y="176" class="sch-room-label" text-anchor="middle">REACTOR</text>
+      <text x="70" y="188" class="sch-room-label" text-anchor="middle">CELL C</text>
+
+      <!-- airlock, bottom-right -->
+      <rect x="220" y="160" width="60" height="40" rx="3" class="sch-room sch-room-airlock" />
+      <text x="250" y="176" class="sch-room-label sch-room-label-airlock" text-anchor="middle">RETURN</text>
+      <text x="250" y="188" class="sch-room-label sch-room-label-airlock" text-anchor="middle">AIRLOCK</text>
+    </svg>
+    <div id="schematicLegend">
+      <span class="sch-legend-item"><span class="sch-legend-swatch sch-legend-cell"></span>Reactor cell room</span>
+      <span class="sch-legend-item"><span class="sch-legend-swatch sch-legend-hub"></span>Drone hub</span>
+      <span class="sch-legend-item"><span class="sch-legend-swatch sch-legend-airlock"></span>Airlock</span>
+    </div>
+    <div id="schematicBlackoutNote">Emergency power only — corridors are unlit except where your beam falls.</div>
+  </div>
+  <button class="btn-primary" id="btnLaunch">LAUNCH</button>
+</div>
+
+<!-- ===================== PAUSE SCREEN ===================== -->
+<div id="screenPause" class="screen hidden">
+  <div class="title-sub">MISSION PAUSED</div>
+  <button class="btn-primary" id="btnResume">RESUME</button>
+  <button class="btn-secondary" id="btnQuitToMenu">Abort to menu</button>
+</div>
+
+<!-- ===================== WIN SCREEN ===================== -->
+<div id="screenWin" class="screen hidden">
+  <div class="title-main" style="font-size:clamp(24px,5vw,40px);">EXTRACTION SUCCESSFUL</div>
+  <div class="title-sub">Blackout Shift Complete</div>
+  <div class="panel-box">
+    <div class="stat-line"><span>O2 remaining</span><span id="statO2">--%</span></div>
+    <div class="stat-line"><span>Time elapsed</span><span id="statTime">--:--</span></div>
+    <div class="stat-line"><span>Hull integrity</span><span id="statHealth">--%</span></div>
+    <div class="stat-line"><span>Drones stunned</span><span id="statDrones">--</span></div>
+    <div class="stat-line"><span>Cells recovered</span><span id="statCells">--</span></div>
+    <div class="stat-line"><span>Detections triggered</span><span id="statDetections">--</span></div>
+    <div class="stat-line"><span>Flashlight efficiency</span><span id="statFlashlightEff">--%</span></div>
+  </div>
+  <button class="btn-primary" id="btnPlayAgainWin">RUN AGAIN</button>
+</div>
+
+<!-- ===================== LOSE SCREEN ===================== -->
+<div id="screenLose" class="screen hidden">
+  <div class="title-main" style="font-size:clamp(24px,5vw,40px); color:var(--hud-red); text-shadow:0 0 14px rgba(216,72,63,0.7);" id="loseTitle">MISSION FAILED</div>
+  <div class="title-sub" id="loseSub" style="color:var(--hud-red);">O2 SUPPLY DEPLETED</div>
+  <div class="panel-box">
+    <div class="stat-line"><span>Time elapsed</span><span id="loseStatTime">--:--</span></div>
+    <div class="stat-line"><span>Cells recovered</span><span id="loseStatCells">--/3</span></div>
+    <div class="stat-line"><span>Detections triggered</span><span id="loseStatDetections">--</span></div>
+    <div class="stat-line"><span>Flashlight efficiency</span><span id="loseStatFlashlightEff">--%</span></div>
+  </div>
+  <button class="btn-primary" id="btnPlayAgainLose">RETRY MISSION</button>
+</div>
+
+<script>
+// ============================================================================
+// AIRLOCK ZERO: BLACKOUT SHIFT — game logic follows
+// Forked from the verified Airlock Zero: Reactor Run parent. Same three-cell
+// route, airlock return, oxygen economy, drone stun combat, briefing/HUD/
+// radar/scorecard structure, and input handling (keyboard/mouse, touch
+// fallback, pause, mute, restart) plus the parent's mobile viewport and
+// pointer-lock fixes. What's different: most of the station is dark, the
+// player carries a limited rechargeable flashlight (F), drones sense via a
+// readable vision-cone detection meter that fills faster when lit and slower
+// in the dark, and the pulse emitter is now hold-to-charge, rewarding timed
+// commitment over reflex spam.
+// ============================================================================
+(function () {
+'use strict';
+
+// ---------------------------------------------------------------------------
+// TUNABLE CONSTANTS
+// ---------------------------------------------------------------------------
+const CFG = {
+  FOV: Math.PI / 2.6,              // ~69 degrees
+  MOVE_SPEED: 2.6,                 // tiles per second
+  SPRINT_MULT: 1.65,
+  ROT_SPEED_KB: 2.4,               // rad/sec for keyboard turn fallback (Q/E or arrow keys)
+  MOUSE_SENS: 0.0022,
+  TOUCH_LOOK_SENS: 0.0044,
+  PLAYER_RADIUS: 0.22,
+
+  O2_MAX: 100,
+  O2_DRAIN_PER_SEC: 100 / 54,      // base tank alone covers ~75% of a full efficient run — cells matter
+  O2_SPRINT_EXTRA_DRAIN: 100 / 240,// extra drain while sprinting (meaningful but not crippling tradeoff)
+  O2_CELL_REFILL: 20,              // relief-valve refill per cell, NOT a full reset
+  O2_WARN_THRESH: 40,
+  O2_CRIT_THRESH: 18,
+
+  HEALTH_MAX: 150,
+
+  DRONE_COUNT: 5, // informational; actual count is driven by DRONE_SPAWNS.length
+  DRONE_DETECT_RADIUS: 5.5,        // hard cutoff — beyond this, no detection accrues regardless of light/cone
+  DRONE_FOV: Math.PI / 2.1,        // vision cone half-spread driving the detection meter below
+  DRONE_FIRE_RANGE: 4.2,
+  DRONE_FIRE_COOLDOWN: 2.2,
+  DRONE_FIRE_DAMAGE: 5,
+  DRONE_PATROL_SPEED: 1.1,
+  DRONE_ALERT_SPEED: 1.85,
+  DRONE_SIZE: 0.34,
+
+  PULSE_RANGE: 3.1,
+  PULSE_ARC: Math.PI / 2.35,       // frontal cone
+
+  RENDER_WIDTH: 340,               // internal raycast columns (perf + retro look)
+  MAX_RENDER_DIST: 20,
+
+  // -------------------------------------------------------------------------
+  // BLACKOUT SHIFT additions — flashlight, detection meter, charged pulse.
+  // Everything above this divider keeps its Reactor Run value unchanged
+  // (base movement, O2 economy, drone stats, pulse range/arc), with one
+  // exception: the parent's single flat PULSE_COOLDOWN is gone, replaced by
+  // the PULSE_COOLDOWN_TAP/_FULL pair below — cooldown now depends on charge.
+  // -------------------------------------------------------------------------
+  FLASHLIGHT_RANGE_ON: 6.4,             // tiles the beam visibly brightens out to
+  FLASHLIGHT_RANGE_OFF: 2.1,            // ambient "eyes adjusted" sight radius with the light off
+  FLASHLIGHT_ARC: Math.PI / 3.4,        // beam half-spread — narrower than the drone's own cone; a beam, not a floodlight
+  FLASHLIGHT_POWER_MAX: 100,
+  FLASHLIGHT_DRAIN_PER_SEC: 100 / 16,   // ~16s of continuous beam on a full charge
+  FLASHLIGHT_RECHARGE_PER_SEC: 100 / 9, // recharges faster than it drains, rewarding disciplined toggling over holding it on
+  FLASHLIGHT_MIN_TO_TOGGLE_ON: 4,       // can't flick a nearly-dead light back on; must recharge past this floor first
+
+  DETECT_MAX: 100,
+  DETECT_ALERT_THRESH: 100,             // meter fills to this -> ALERT
+  DETECT_DECAY_PER_SEC: 26,             // drains when the drone can't currently sense the player at all
+  DETECT_BASE_GAIN_PER_SEC: 34,         // baseline fill rate: player in cone + LOS, flashlight off
+  DETECT_LIT_GAIN_MULT: 2.0,           // player lit by their own beam while in the drone's cone — much faster to spot
+  DETECT_DARK_GAIN_MULT: 0.45,          // flashlight off and player beyond FLASHLIGHT_RANGE_OFF — darkness helps you slip past
+  DETECT_PERIPHERAL_GAIN_MULT: 0.3,     // in range + LOS but outside the drone's forward cone — peripheral awareness, not blind
+  DETECT_SUSPICION_THRESH: 45,          // meter level where the drone visibly perks up before full ALERT
+
+  PULSE_CHARGE_MAX: 1.1,                // seconds of holding fire to reach full charge
+  PULSE_MIN_HOLD_FOR_STUN: 0.16,        // a pure reflex tap below this holds no charge — reflex still works, it's just weak
+  PULSE_STUN_MIN: 2.2,                  // stun duration at minimal/reflex charge — weaker than parent's flat 5.5s
+  PULSE_STUN_MAX: 7.5,                  // stun duration at full deliberate charge — stronger than parent's flat 5.5s
+  PULSE_COOLDOWN_TAP: 1.5,              // cheaper recovery for a quick reflex tap...
+  PULSE_COOLDOWN_FULL: 3.2,             // ...but a full charge costs more recovery, so spamming full charges isn't free either
+};
+
+// ---------------------------------------------------------------------------
+// MAP DATA
+// Programmatically built + verified for full reachability (see build notes).
+// 1 = wall (with a material id via WALL_MAT for shading variety), 0 = floor
+// ---------------------------------------------------------------------------
+const MAP_W = 41, MAP_H = 33;
+
+function buildMap() {
+  const grid = new Array(MAP_W * MAP_H).fill(1);
+  const idx = (x, y) => y * MAP_W + x;
+  const carve = (x0, y0, x1, y1) => {
+    for (let y = y0; y <= y1; y++)
+      for (let x = x0; x <= x1; x++)
+        if (x >= 0 && x < MAP_W && y >= 0 && y < MAP_H) grid[idx(x, y)] = 0;
+  };
+
+  // Outer ring corridor — 2 tiles wide throughout (verified collision-safe for
+  // both player and drone radii at every tile center; a 1-wide version was
+  // found during testing to trap entities against both walls simultaneously).
+  carve(1, 1, MAP_W - 2, 2);
+  carve(1, MAP_H - 3, MAP_W - 2, MAP_H - 2);
+  carve(1, 1, 2, MAP_H - 2);
+  carve(MAP_W - 3, 1, MAP_W - 2, MAP_H - 2);
+
+  // Central hub (drone patrol zone), generously sized
+  carve(16, 14, 24, 18);
+
+  // Spokes hub <-> ring — 2-3 tiles wide throughout
+  carve(19, 2, 21, 14);
+  carve(19, 18, 21, MAP_H - 2);
+  carve(2, 15, 16, 17);
+  carve(24, 15, MAP_W - 2, 17);
+
+  // Reactor cell room A (top-left), 2-tile doorway
+  carve(3, 3, 9, 8);
+  carve(5, 2, 6, 2);
+
+  // Reactor cell room B (top-right)
+  carve(MAP_W - 10, 3, MAP_W - 4, 8);
+  carve(MAP_W - 7, 2, MAP_W - 6, 2);
+
+  // Reactor cell room C (bottom-left)
+  carve(3, MAP_H - 9, 9, MAP_H - 4);
+  carve(5, MAP_H - 3, 6, MAP_H - 3);
+
+  // Airlock room (bottom-right)
+  carve(MAP_W - 10, MAP_H - 9, MAP_W - 4, MAP_H - 4);
+  carve(MAP_W - 7, MAP_H - 3, MAP_W - 6, MAP_H - 3);
+
+  return grid;
+}
+
+const MAP = buildMap();
+
+// Material id grid (purely cosmetic wall shading variety) — default hull plating(0),
+// reinforced bulkhead(1) near airlock room, reactor-room trim(2) near cell rooms
+const MAT = new Array(MAP_W * MAP_H).fill(0);
+(function paintMaterials() {
+  const idx = (x, y) => y * MAP_W + x;
+  for (let y = 0; y < MAP_H; y++) {
+    for (let x = 0; x < MAP_W; x++) {
+      if (MAP[idx(x, y)] !== 1) continue;
+      // near airlock room -> bulkhead material
+      if (x >= MAP_W - 15 && y >= MAP_H - 14) MAT[idx(x, y)] = 1;
+      // near any cell room -> trim material
+      else if ((x <= 13 && y <= 12) || (x >= MAP_W - 15 && y <= 12) || (x <= 13 && y >= MAP_H - 14)) MAT[idx(x, y)] = 2;
+    }
+  }
+})();
+
+function isWall(x, y) {
+  const ix = Math.floor(x), iy = Math.floor(y);
+  if (ix < 0 || iy < 0 || ix >= MAP_W || iy >= MAP_H) return true;
+  return MAP[iy * MAP_W + ix] === 1;
+}
+function mapAt(x, y) {
+  const ix = Math.floor(x), iy = Math.floor(y);
+  if (ix < 0 || iy < 0 || ix >= MAP_W || iy >= MAP_H) return 1;
+  return MAP[iy * MAP_W + ix];
+}
+function matAt(x, y) {
+  const ix = Math.floor(x), iy = Math.floor(y);
+  if (ix < 0 || iy < 0 || ix >= MAP_W || iy >= MAP_H) return 0;
+  return MAT[iy * MAP_W + ix];
+}
+
+// ---------------------------------------------------------------------------
+// KEY WORLD POSITIONS
+// ---------------------------------------------------------------------------
+const SPAWN = { x: 2.5, y: 2.0, angle: 0 };
+const CELL_POSITIONS = [
+  { x: 6.0, y: 5.5, room: 'A' },
+  { x: MAP_W - 7.0, y: 5.5, room: 'B' },
+  { x: 6.0, y: MAP_H - 6.5, room: 'C' },
+];
+const AIRLOCK_POS = { x: MAP_W - 7.0, y: MAP_H - 6.5 };
+
+// Drone patrol waypoints — spread across the spokes and hub so the player is
+// very likely to encounter at least one en route to any cell room, with the
+// hub hosting the densest concentration (true patrol zone). All waypoints
+// verified collision-safe within the widened 2+ tile corridors.
+const DRONE_SPAWNS = [
+  { x: 20, y: 16, waypoints: [{x:17.5,y:16},{x:22.5,y:16},{x:20,y:15},{x:20,y:17}] },
+  { x: 20, y: 6,  waypoints: [{x:20,y:2.6},{x:20,y:10}] },
+  { x: 20, y: 26, waypoints: [{x:20,y:22},{x:20,y:29.4}] },
+  { x: 8, y: 16, waypoints: [{x:2.6,y:16},{x:13,y:16}] },
+  { x: 32, y: 16, waypoints: [{x:28,y:16},{x:38.4,y:16}] },
+];
+
+console.log('Constants + map loaded. Map size:', MAP_W, 'x', MAP_H);
+
+// ---------------------------------------------------------------------------
+// GAME STATE
+// ---------------------------------------------------------------------------
+const player = {
+  x: SPAWN.x, y: SPAWN.y, angle: SPAWN.angle,
+  health: CFG.HEALTH_MAX,
+  oxygen: CFG.O2_MAX,
+  cellsCollected: 0,
+  cellsFlags: [false, false, false],
+  pulseCooldownT: 0,
+  sprinting: false,
+  dead: false,
+  won: false,
+  // --- Blackout Shift additions ---
+  flashlightOn: false,
+  flashlightPower: CFG.FLASHLIGHT_POWER_MAX,
+  pulseCharging: false,
+  pulseChargeT: 0,
+};
+
+const world = {
+  drones: [],
+  cells: [],
+  elapsedTime: 0,
+  dronesStunnedCount: 0,
+  // --- Blackout Shift additions ---
+  detectionEventCount: 0,   // number of times ANY drone reached full ALERT this run
+  flashlightOnTime: 0,      // seconds the beam has been held on, for the efficiency stat
+};
+
+function initEntities() {
+  world.drones = DRONE_SPAWNS.map((spec, i) => ({
+    id: i,
+    x: spec.x, y: spec.y,
+    angle: Math.random() * Math.PI * 2,
+    waypoints: spec.waypoints,
+    wpIndex: 0,
+    state: 'PATROL',      // PATROL | ALERT | STUNNED
+    fireCooldownT: 0,
+    stunT: 0,
+    hitFlashT: 0,
+    // --- Blackout Shift: detection meter replaces the parent's binary canSeePlayer->ALERT snap ---
+    detection: 0,          // 0..CFG.DETECT_MAX, fills toward ALERT rather than snapping to it
+    suspicious: false,     // true once detection crosses DETECT_SUSPICION_THRESH — a readable "getting warm" cue
+  }));
+  world.cells = CELL_POSITIONS.map((c, i) => ({
+    id: i, x: c.x, y: c.y, room: c.room, collected: false, bobT: Math.random() * Math.PI * 2,
+  }));
+  world.elapsedTime = 0;
+  world.dronesStunnedCount = 0;
+  world.detectionEventCount = 0;
+  world.flashlightOnTime = 0;
+}
+initEntities();
+
+// ---------------------------------------------------------------------------
+// CANVAS SETUP
+// ---------------------------------------------------------------------------
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const spriteCanvas = document.getElementById('spriteCanvas');
+const sctx = spriteCanvas.getContext('2d');
+
+let renderW = CFG.RENDER_WIDTH;
+let renderH = Math.round(renderW * (9 / 16));
+let displayW = window.innerWidth;
+let displayH = window.innerHeight;
+let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+function resizeCanvas() {
+  displayW = window.innerWidth;
+  displayH = window.innerHeight;
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  // low-res wall buffer: internal resolution decoupled from display size
+  renderH = Math.round(renderW * (displayH / displayW));
+  canvas.width = renderW;
+  canvas.height = renderH;
+  canvas.style.width = displayW + 'px';
+  canvas.style.height = displayH + 'px';
+
+  // full-res sprite/overlay canvas, scaled for device pixel ratio for crisp shapes
+  spriteCanvas.width = Math.round(displayW * dpr);
+  spriteCanvas.height = Math.round(displayH * dpr);
+  spriteCanvas.style.width = displayW + 'px';
+  spriteCanvas.style.height = displayH + 'px';
+  sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+// offscreen ImageData buffer for the raycast columns (faster than fillRect-per-pixel-row at this res)
+let frameBuffer = ctx.createImageData(renderW, renderH);
+
+function rebuildFrameBufferIfNeeded() {
+  if (frameBuffer.width !== renderW || frameBuffer.height !== renderH) {
+    frameBuffer = ctx.createImageData(renderW, renderH);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// RAYCASTER CORE
+// DDA algorithm (verified standalone prior to integration). Casts renderW rays
+// across the FOV, fills frameBuffer per-column with floor/ceiling/wall shading,
+// and returns the zBuffer (per-column distance) for sprite occlusion.
+// ---------------------------------------------------------------------------
+let zBuffer = new Float32Array(renderW);
+
+function setPixel(data, w, x, y, r, g, b, a) {
+  if (x < 0 || x >= w || y < 0 || y >= frameBuffer.height) return;
+  const i = (y * w + x) * 4;
+  data[i] = r; data[i+1] = g; data[i+2] = b; data[i+3] = a;
+}
+
+function castSingleRay(px, py, dirX, dirY) {
+  let mapX = Math.floor(px), mapY = Math.floor(py);
+  const deltaDistX = dirX === 0 ? 1e30 : Math.abs(1 / dirX);
+  const deltaDistY = dirY === 0 ? 1e30 : Math.abs(1 / dirY);
+  let stepX, stepY, sideDistX, sideDistY;
+
+  if (dirX < 0) { stepX = -1; sideDistX = (px - mapX) * deltaDistX; }
+  else { stepX = 1; sideDistX = (mapX + 1 - px) * deltaDistX; }
+  if (dirY < 0) { stepY = -1; sideDistY = (py - mapY) * deltaDistY; }
+  else { stepY = 1; sideDistY = (mapY + 1 - py) * deltaDistY; }
+
+  let hit = false, side = 0, safety = 0;
+  while (!hit && safety < 200) {
+    safety++;
+    if (sideDistX < sideDistY) { sideDistX += deltaDistX; mapX += stepX; side = 0; }
+    else { sideDistY += deltaDistY; mapY += stepY; side = 1; }
+    if (isWall(mapX, mapY)) hit = true;
+  }
+
+  const perpDist = side === 0 ? (mapX - px + (1 - stepX) / 2) / dirX
+                              : (mapY - py + (1 - stepY) / 2) / dirY;
+  // wall X coordinate (0..1 across the face) for potential texture striping
+  let wallX = side === 0 ? py + perpDist * dirY : px + perpDist * dirX;
+  wallX -= Math.floor(wallX);
+
+  return { dist: Math.max(perpDist, 0.0001), side, mapX, mapY, wallX };
+}
+
+function renderFrame() {
+  rebuildFrameBufferIfNeeded();
+  const data = frameBuffer.data;
+  const w = renderW, h = renderH;
+  zBuffer = zBuffer.length === w ? zBuffer : new Float32Array(w);
+
+  const dirX0 = Math.cos(player.angle), dirY0 = Math.sin(player.angle);
+  const planeLen = Math.tan(CFG.FOV / 2);
+  const planeX = -dirY0 * planeLen, planeY = dirX0 * planeLen;
+
+  // Low O2 causes a subtle color-drain / red-shift, handled via post-tint below.
+  const o2Frac = player.oxygen / CFG.O2_MAX;
+  const critical = player.oxygen <= CFG.O2_CRIT_THRESH;
+
+  // -------------------------------------------------------------------------
+  // BLACKOUT SHIFT — darkness/flashlight lighting pass.
+  // The station is mostly unlit: rather than fog-to-void being the only thing
+  // that darkens distant walls (as in Reactor Run), a per-column brightness
+  // factor now also dims everything outside a small always-on "eyes adjusted"
+  // ambient radius (matching CFG.FLASHLIGHT_RANGE_OFF, the same constant the
+  // drone detection math treats as unaided sight range) plus, if the beam is
+  // on, a forward cone out to CFG.FLASHLIGHT_RANGE_ON (matching
+  // CFG.FLASHLIGHT_ARC). This is deliberately a brightness multiplier applied
+  // BEFORE the existing fog-toward-void blend below, not a replacement for
+  // it — distance fog still wins at MAX_RENDER_DIST regardless of light, so
+  // the beam brightens what's near without punching a hole through the void
+  // at the far end of a corridor.
+  // -------------------------------------------------------------------------
+  const beamOn = player.flashlightOn;
+  const halfFOV = CFG.FOV / 2;
+
+  for (let x = 0; x < w; x++) {
+    const cameraX = (2 * x) / w - 1;
+    const dirX = dirX0 + planeX * cameraX;
+    const dirY = dirY0 + planeY * cameraX;
+
+    const ray = castSingleRay(player.x, player.y, dirX, dirY);
+    const perpDist = ray.dist;
+    zBuffer[x] = perpDist;
+
+    const lineHeight = Math.floor(h / perpDist);
+    let drawStart = Math.floor(-lineHeight / 2 + h / 2);
+    let drawEnd = Math.floor(lineHeight / 2 + h / 2);
+    const clampedStart = Math.max(0, drawStart);
+    const clampedEnd = Math.min(h - 1, drawEnd);
+
+    // --- shading: side darkening + distance fog toward navy void ---
+    const material = matAt(ray.mapX, ray.mapY);
+    let baseR, baseG, baseB;
+    if (material === 1) { baseR = 70; baseG = 58; baseB = 46; }       // bulkhead: warm dark bronze
+    else if (material === 2) { baseR = 40; baseG = 66; baseB = 68; }  // trim: teal-tinted
+    else { baseR = 54; baseG = 62; baseB = 72; }                       // default hull plating: cool grey-blue
+
+    // side 1 (y-side hit) slightly darker than side 0, simulating directional light
+    const sideMult = ray.side === 1 ? 0.72 : 1.0;
+    // subtle panel striping using wallX for visual texture without image assets
+    const stripe = (Math.floor(ray.wallX * 8) % 2 === 0) ? 1.0 : 0.88;
+
+    // --- blackout lighting: ambient floor + optional forward beam cone ---
+    // rayOffset is this column's angular distance from dead-center (0 at the
+    // middle of the FOV, 1 at the screen edge) — used to taper the beam cone
+    // so it's brightest down the crosshair and falls off toward the edges of
+    // the flashlight's own arc, independent of the camera's full FOV width.
+    const rayOffsetFrac = Math.abs(cameraX); // 0 (center) .. 1 (edge of FOV)
+    const rayAngleFromCenter = rayOffsetFrac * halfFOV;
+
+    const ambientFalloff = Math.max(0, 1 - perpDist / CFG.FLASHLIGHT_RANGE_OFF);
+    let beamFalloff = 0;
+    if (beamOn && rayAngleFromCenter <= CFG.FLASHLIGHT_ARC / 2) {
+      const distFalloff = Math.max(0, 1 - perpDist / CFG.FLASHLIGHT_RANGE_ON);
+      const coneFalloff = 1 - (rayAngleFromCenter / (CFG.FLASHLIGHT_ARC / 2)) * 0.55; // soft-edged, not a hard cutoff
+      beamFalloff = distFalloff * coneFalloff;
+    }
+    // Combine ambient + beam (brightest wins, they don't stack additively —
+    // standing in your own beam at close range isn't literally brighter than
+    // daylight, it's just "as lit as it gets"). Floor so nothing renders as
+    // pure unreadable black even in deep dark — a faint hull silhouette
+    // always remains, matching the parent's minimum-navy void floor tone.
+    const dim = Math.max(0.16, Math.max(ambientFalloff, beamFalloff));
+
+    const fogFactor = Math.min(1, perpDist / CFG.MAX_RENDER_DIST);
+    const fogR = 5, fogG = 7, fogB = 10; // matches --bg-void
+
+    let r = (baseR * sideMult * stripe * dim) * (1 - fogFactor) + fogR * fogFactor;
+    let g = (baseG * sideMult * stripe * dim) * (1 - fogFactor) + fogG * fogFactor;
+    let b = (baseB * sideMult * stripe * dim) * (1 - fogFactor) + fogB * fogFactor;
+
+    // Warm the beam's own light slightly so it reads as an actual torch cast
+    // against the station's cool default palette, not just "less dark".
+    if (beamOn && beamFalloff > ambientFalloff && beamFalloff > 0.02) {
+      const warm = beamFalloff * (1 - fogFactor) * 0.5;
+      r += warm * 14;
+      g += warm * 8;
+    }
+
+    // Low-O2 desaturation + red shift (diegetic distress cue)
+    if (critical) {
+      const gray = (r + g + b) / 3;
+      const flick = 0.85 + Math.sin(world.elapsedTime * 14) * 0.15;
+      r = (r * 0.4 + gray * 0.6) * flick + 18;
+      g = (g * 0.4 + gray * 0.6) * flick * 0.8;
+      b = (b * 0.4 + gray * 0.6) * flick * 0.75;
+    }
+
+    for (let y = clampedStart; y <= clampedEnd; y++) {
+      setPixel(data, w, x, y, r, g, b, 255);
+    }
+
+    // --- ceiling --- (kept dim/void-toned regardless of beam — the beam is a
+    // forward torch, not an overhead floodlight, so ceiling/floor stay a
+    // slightly darker read than a directly-lit wall would)
+    const envDim = Math.max(0.3, dim * 0.85);
+    for (let y = 0; y < clampedStart; y++) {
+      const t = 1 - (y / Math.max(1, clampedStart));
+      const cr = (10 + 4 * t) * envDim, cg = (14 + 5 * t) * envDim, cb = (20 + 8 * t) * envDim;
+      setPixel(data, w, x, y, cr, cg, cb, 255);
+    }
+    // --- floor ---
+    for (let y = clampedEnd + 1; y < h; y++) {
+      const t = (y - clampedEnd) / Math.max(1, h - clampedEnd);
+      const fr = (16 + 10 * t) * envDim, fg = (20 + 12 * t) * envDim, fb = (26 + 14 * t) * envDim;
+      setPixel(data, w, x, y, fr, fg, fb, 255);
+    }
+  }
+
+  ctx.putImageData(frameBuffer, 0, 0);
+}
+
+console.log('Raycaster core defined.');
+
+// ---------------------------------------------------------------------------
+// SPRITE RENDERING (drones, cell pickups, airlock glow) — billboard technique
+// Sorted back-to-front, drawn as canvas primitives onto the SEPARATE full-display-
+// resolution sprite overlay canvas (sctx), layered above the low-res wall canvas
+// (ctx). This keeps walls at a deliberately retro internal resolution while
+// entities stay crisp and readable regardless of screen size or DPR.
+// ---------------------------------------------------------------------------
+function worldToScreen(wx, wy) {
+  const dx = wx - player.x, dy = wy - player.y;
+  const dirX = Math.cos(player.angle), dirY = Math.sin(player.angle);
+  const planeLen = Math.tan(CFG.FOV / 2);
+  const planeX = -dirY * planeLen, planeY = dirX * planeLen;
+
+  // inverse camera matrix
+  const invDet = 1.0 / (planeX * dirY - dirX * planeY);
+  const transformX = invDet * (dirY * dx - dirX * dy);
+  const transformY = invDet * (-planeY * dx + planeX * dy); // depth
+
+  return { transformX, transformY };
+}
+
+// Mirrors the wall-shading light model in renderFrame (ambient "eyes adjusted"
+// radius + optional forward beam cone) so a drone sitting in the dark is
+// genuinely faint/hard to pick out, not just tinted — darkness has to help
+// the player slip past drones visually, not only in the detection math.
+// Cells and the airlock glow are diegetically self-illuminated (established
+// in the parent as pulsing reactor components), so this is only applied to
+// drone sprites; the player still needs *some* way to navigate toward
+// objectives in the dark, and that's what the radar/toast system is for.
+function computeSpriteVisibility(worldX, worldY) {
+  const dx = worldX - player.x, dy = worldY - player.y;
+  const dist = Math.hypot(dx, dy);
+  const ambientFalloff = Math.max(0, 1 - dist / CFG.FLASHLIGHT_RANGE_OFF);
+  let beamFalloff = 0;
+  if (player.flashlightOn) {
+    const angleToSprite = Math.atan2(dy, dx);
+    let diff = angleToSprite - player.angle;
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    if (Math.abs(diff) <= CFG.FLASHLIGHT_ARC / 2) {
+      const distFalloff = Math.max(0, 1 - dist / CFG.FLASHLIGHT_RANGE_ON);
+      const coneFalloff = 1 - (Math.abs(diff) / (CFG.FLASHLIGHT_ARC / 2)) * 0.55;
+      beamFalloff = distFalloff * coneFalloff;
+    }
+  }
+  return Math.max(0.14, Math.max(ambientFalloff, beamFalloff));
+}
+
+function drawDrone(drone) {
+  const { transformX, transformY } = worldToScreen(drone.x, drone.y);
+  if (transformY <= 0.15) return; // behind camera / too close to render sanely
+
+  const screenX = Math.floor((displayW / 2) * (1 + transformX / transformY));
+  const spriteScreenSize = Math.abs(Math.floor(displayH / transformY)) * CFG.DRONE_SIZE;
+  const screenYCenter = displayH / 2;
+
+  // occlusion check against zBuffer (sampled at nearest render column)
+  const renderCol = Math.floor((screenX / displayW) * renderW);
+  if (renderCol < 0 || renderCol >= renderW) return;
+  if (transformY > zBuffer[renderCol]) return; // wall is closer than drone at this column
+
+  if (screenX < -spriteScreenSize || screenX > displayW + spriteScreenSize) return;
+
+  const visibility = computeSpriteVisibility(drone.x, drone.y);
+
+  sctx.save();
+  sctx.translate(screenX, screenYCenter);
+  sctx.globalAlpha = visibility;
+
+  let bodyColor = '#c94a3f';       // patrol = dull red
+  let coreColor = '#e8756a';
+  if (drone.state === 'ALERT') { bodyColor = '#e8483a'; coreColor = '#ff8a6b'; }
+  if (drone.state === 'STUNNED') { bodyColor = '#4a5560'; coreColor = drone.hitFlashT > 0 ? '#eaf6ff' : '#7a8a95'; }
+
+  const s = spriteScreenSize;
+
+  // hit flash flicker
+  if (drone.hitFlashT > 0 && Math.floor(drone.hitFlashT * 30) % 2 === 0) {
+    bodyColor = '#eafdff';
+  }
+
+  // simple geometric "security drone": hexagonal body + glowing core + sensor ring
+  sctx.beginPath();
+  const sides = 6;
+  for (let i = 0; i <= sides; i++) {
+    const a = (i / sides) * Math.PI * 2;
+    const px2 = Math.cos(a) * s * 0.42;
+    const py2 = Math.sin(a) * s * 0.42;
+    if (i === 0) sctx.moveTo(px2, py2); else sctx.lineTo(px2, py2);
+  }
+  sctx.closePath();
+  sctx.fillStyle = bodyColor;
+  sctx.fill();
+  sctx.strokeStyle = 'rgba(0,0,0,0.5)';
+  sctx.lineWidth = Math.max(1, s * 0.02);
+  sctx.stroke();
+
+  // core glow — the sensor core stays a touch brighter than the rest of the
+  // hull even in the dark (a small always-visible "eyes" glow of its own),
+  // since a drone's status core is a plausible faint light source in-fiction
+  // and gives the player a minimal readable anchor even when nearly blind.
+  sctx.globalAlpha = Math.max(visibility, 0.4);
+  sctx.beginPath();
+  sctx.arc(0, 0, s * 0.16, 0, Math.PI * 2);
+  sctx.fillStyle = coreColor;
+  sctx.fill();
+  sctx.globalAlpha = visibility;
+
+  // sensor ring (rotates for a bit of life)
+  sctx.beginPath();
+  sctx.strokeStyle = coreColor;
+  sctx.lineWidth = Math.max(1, s * 0.025);
+  sctx.arc(0, 0, s * 0.3, world.elapsedTime * 2, world.elapsedTime * 2 + Math.PI * 1.2);
+  sctx.stroke();
+
+  // small under-thrusters
+  sctx.fillStyle = 'rgba(90,212,216,0.5)';
+  sctx.beginPath();
+  sctx.ellipse(-s * 0.18, s * 0.38, s * 0.06, s * 0.03, 0, 0, Math.PI * 2);
+  sctx.fill();
+  sctx.beginPath();
+  sctx.ellipse(s * 0.18, s * 0.38, s * 0.06, s * 0.03, 0, 0, Math.PI * 2);
+  sctx.fill();
+
+  sctx.restore();
+
+  drawDroneVisionCone(drone, visibility);
+  drawDroneDetectionMeter(drone, screenX, screenYCenter, spriteScreenSize);
+}
+
+// ---------------------------------------------------------------------------
+// BLACKOUT SHIFT — readable drone vision cone + detection meter.
+// The cone is drawn as a wall-occluded, ground-projected fan: a handful of
+// rays cast from the drone's own position out to CFG.DRONE_DETECT_RADIUS,
+// each independently stopped by the first wall it hits (via castSingleRay,
+// the same DDA core the main renderer uses), then the resulting arc of hit
+// points is projected to screen space and filled as a translucent polygon.
+// This reads correctly against the 3D scene — the cone visibly stops at
+// corners and doorways rather than painting through geometry — and its color
+// communicates the drone's current awareness at a glance: dim cyan while
+// idly patrolling, amber once suspicion crosses CFG.DETECT_SUSPICION_THRESH,
+// and red once fully ALERT (mirroring the sprite's own body-color states).
+// ---------------------------------------------------------------------------
+function drawDroneVisionCone(drone, droneVisibility) {
+  if (drone.state === 'STUNNED') return; // a stunned drone isn't watching anything
+
+  const halfArc = CFG.DRONE_FOV / 2;
+  const segments = 10;
+  const points = [];
+  for (let i = 0; i <= segments; i++) {
+    const a = drone.angle - halfArc + (i / segments) * (halfArc * 2);
+    const dirX = Math.cos(a), dirY = Math.sin(a);
+    const ray = castSingleRay(drone.x, drone.y, dirX, dirY);
+    const dist = Math.min(ray.dist, CFG.DRONE_DETECT_RADIUS);
+    const hitX = drone.x + dirX * dist;
+    const hitY = drone.y + dirY * dist;
+    points.push(worldToScreen(hitX, hitY));
+  }
+  const origin = worldToScreen(drone.x, drone.y);
+
+  // Skip entirely if the whole cone is behind the camera — cheap reject
+  // before spending time on a polygon nobody would see this frame.
+  if (origin.transformY <= 0.1 && points.every(p => p.transformY <= 0.1)) return;
+
+  let color = '90,212,216';   // patrol: dim cyan, consistent with the HUD's own cyan idiom
+  if (drone.suspicious) color = '232,161,58';   // suspicious: amber, matches the O2-warning amber elsewhere
+  if (drone.state === 'ALERT') color = '216,72,63'; // alert: red, matches the alert banner + O2-critical red
+
+  const alertPulse = drone.state === 'ALERT' ? (0.6 + Math.sin(world.elapsedTime * 5) * 0.4) : 1;
+  const baseAlpha = drone.state === 'ALERT' ? 0.16 : (drone.suspicious ? 0.13 : 0.07);
+
+  sctx.save();
+  sctx.globalAlpha = Math.max(0.03, baseAlpha * alertPulse * Math.max(0.3, droneVisibility));
+  sctx.fillStyle = `rgb(${color})`;
+  sctx.beginPath();
+  let started = false;
+  const toXY = (t) => {
+    if (t.transformY <= 0.05) return null;
+    const sx = (displayW / 2) * (1 + t.transformX / t.transformY);
+    return { sx, sy: displayH / 2 };
+  };
+  const o = toXY(origin);
+  if (o) { sctx.moveTo(o.sx, o.sy); started = true; }
+  points.forEach(p => {
+    const xy = toXY(p);
+    if (!xy) return;
+    if (!started) { sctx.moveTo(xy.sx, xy.sy); started = true; }
+    else sctx.lineTo(xy.sx, xy.sy);
+  });
+  sctx.closePath();
+  if (started) sctx.fill();
+
+  // Faint edge lines along the two outer rays of the cone, a touch brighter
+  // than the fill, so the cone's boundary reads clearly even at low alpha.
+  sctx.globalAlpha = Math.min(0.5, baseAlpha * 2.4 * alertPulse * Math.max(0.35, droneVisibility));
+  sctx.strokeStyle = `rgb(${color})`;
+  sctx.lineWidth = 1.4;
+  [points[0], points[points.length - 1]].forEach(p => {
+    const xy = toXY(p);
+    if (!o || !xy) return;
+    sctx.beginPath();
+    sctx.moveTo(o.sx, o.sy);
+    sctx.lineTo(xy.sx, xy.sy);
+    sctx.stroke();
+  });
+  sctx.restore();
+}
+
+// Small arc meter hovering just above the drone sprite, filling 0->100%
+// toward CFG.DETECT_ALERT_THRESH. This is the player's direct, readable
+// feedback for "how close is this specific drone to spotting me" — distinct
+// from the world-state alert banner, which only fires once a drone is
+// already fully ALERT and says nothing about drones still climbing toward it.
+function drawDroneDetectionMeter(drone, screenX, screenYCenter, spriteScreenSize) {
+  if (drone.state === 'STUNNED' || drone.detection <= 0.5) return;
+  if (screenX < -40 || screenX > displayW + 40) return; // off-screen, don't bother
+
+  const frac = Math.min(1, drone.detection / CFG.DETECT_ALERT_THRESH);
+  const meterW = Math.max(20, Math.min(46, spriteScreenSize * 0.9));
+  const meterH = 4;
+  const meterY = screenYCenter - spriteScreenSize * 0.62 - 10;
+  const meterX = screenX - meterW / 2;
+
+  let color = '#5ad4d8';
+  if (drone.state === 'ALERT') color = '#d8483f';
+  else if (drone.suspicious) color = '#e8a13a';
+
+  sctx.save();
+  sctx.globalAlpha = 0.85;
+  sctx.fillStyle = 'rgba(5,7,10,0.6)';
+  sctx.fillRect(meterX - 1, meterY - 1, meterW + 2, meterH + 2);
+  sctx.fillStyle = 'rgba(255,255,255,0.08)';
+  sctx.fillRect(meterX, meterY, meterW, meterH);
+  sctx.fillStyle = color;
+  sctx.fillRect(meterX, meterY, meterW * frac, meterH);
+  sctx.restore();
+}
+
+function drawCell(cell) {
+  if (cell.collected) return;
+  const bobY = Math.sin(world.elapsedTime * 2.4 + cell.bobT) * 0.06;
+  const { transformX, transformY } = worldToScreen(cell.x, cell.y + bobY);
+  if (transformY <= 0.15) return;
+
+  const screenX = Math.floor((displayW / 2) * (1 + transformX / transformY));
+  const spriteScreenSize = Math.abs(Math.floor(displayH / transformY)) * 0.26;
+  const screenYCenter = displayH / 2;
+
+  const renderCol = Math.floor((screenX / displayW) * renderW);
+  if (renderCol < 0 || renderCol >= renderW) return;
+  if (transformY > zBuffer[renderCol]) return;
+  if (screenX < -spriteScreenSize || screenX > displayW + spriteScreenSize) return;
+
+  sctx.save();
+  sctx.translate(screenX, screenYCenter);
+  const s = spriteScreenSize;
+  const pulse = 0.75 + Math.sin(world.elapsedTime * 5) * 0.25;
+
+  // outer glow
+  const grad = sctx.createRadialGradient(0, 0, 0, 0, 0, s * 0.9);
+  grad.addColorStop(0, `rgba(79,214,122,${0.45 * pulse})`);
+  grad.addColorStop(1, 'rgba(79,214,122,0)');
+  sctx.fillStyle = grad;
+  sctx.beginPath();
+  sctx.arc(0, 0, s * 0.9, 0, Math.PI * 2);
+  sctx.fill();
+
+  // reactor cell capsule shape
+  sctx.fillStyle = '#2d5a3f';
+  sctx.strokeStyle = '#4fd67a';
+  sctx.lineWidth = Math.max(1, s * 0.05);
+  const capW = s * 0.34, capH = s * 0.62;
+  roundRectPath(sctx, -capW / 2, -capH / 2, capW, capH, capW * 0.4);
+  sctx.fill();
+  sctx.stroke();
+
+  // inner glow core
+  sctx.fillStyle = `rgba(79,214,122,${0.8 * pulse})`;
+  sctx.beginPath();
+  sctx.arc(0, 0, capW * 0.22, 0, Math.PI * 2);
+  sctx.fill();
+
+  sctx.restore();
+}
+
+function roundRectPath(c, x, y, w, h, r) {
+  c.beginPath();
+  c.moveTo(x + r, y);
+  c.arcTo(x + w, y, x + w, y + h, r);
+  c.arcTo(x + w, y + h, x, y + h, r);
+  c.arcTo(x, y + h, x, y, r);
+  c.arcTo(x, y, x + w, y, r);
+  c.closePath();
+}
+
+function drawAirlockGlow() {
+  const allCollected = player.cellsCollected >= 3;
+  const { transformX, transformY } = worldToScreen(AIRLOCK_POS.x, AIRLOCK_POS.y);
+  if (transformY <= 0.15) return;
+  const screenX = Math.floor((displayW / 2) * (1 + transformX / transformY));
+  const spriteScreenSize = Math.abs(Math.floor(displayH / transformY)) * 0.9;
+  const screenYCenter = displayH / 2;
+
+  const renderCol = Math.floor((screenX / displayW) * renderW);
+  if (renderCol < 0 || renderCol >= renderW) return;
+  if (transformY > zBuffer[renderCol] + 0.3) return;
+  if (screenX < -spriteScreenSize || screenX > displayW + spriteScreenSize) return;
+
+  const s = spriteScreenSize;
+  const color = allCollected ? '90,212,216' : '232,161,58';
+  const pulse = 0.5 + Math.sin(world.elapsedTime * (allCollected ? 4 : 1.5)) * 0.5;
+
+  sctx.save();
+  sctx.translate(screenX, screenYCenter);
+  const grad = sctx.createRadialGradient(0, 0, 0, 0, 0, s * 0.5);
+  grad.addColorStop(0, `rgba(${color},${0.5 * pulse})`);
+  grad.addColorStop(1, `rgba(${color},0)`);
+  sctx.fillStyle = grad;
+  sctx.beginPath();
+  sctx.arc(0, 0, s * 0.5, 0, Math.PI * 2);
+  sctx.fill();
+  sctx.restore();
+}
+
+function renderSprites() {
+  sctx.clearRect(0, 0, displayW, displayH);
+
+  // depth sort: farthest first (painter's algorithm)
+  const drawables = [];
+  world.drones.forEach(d => {
+    const t = worldToScreen(d.x, d.y);
+    drawables.push({ type: 'drone', ref: d, depth: t.transformY });
+  });
+  world.cells.forEach(c => {
+    if (c.collected) return;
+    const t = worldToScreen(c.x, c.y);
+    drawables.push({ type: 'cell', ref: c, depth: t.transformY });
+  });
+  {
+    const t = worldToScreen(AIRLOCK_POS.x, AIRLOCK_POS.y);
+    drawables.push({ type: 'airlock', ref: null, depth: t.transformY });
+  }
+  drawables.sort((a, b) => b.depth - a.depth);
+  drawables.forEach(d => {
+    if (d.type === 'drone') drawDrone(d.ref);
+    else if (d.type === 'cell') drawCell(d.ref);
+    else if (d.type === 'airlock') drawAirlockGlow();
+  });
+
+  drawFlashlightBeamOverlay();
+}
+
+// Diegetic screen-space wash from the crosshair outward when the flashlight
+// is on — layered on top of every entity, like a torch's visible beam cast
+// across the scene rather than only a lighting-math brightness change. Purely
+// cosmetic (the actual visibility math lives in renderFrame/computeSprite-
+// Visibility); this just makes the beam feel like an object in the world.
+function drawFlashlightBeamOverlay() {
+  if (!player.flashlightOn) return;
+  const cx = displayW / 2, cy = displayH / 2;
+  const reach = Math.min(displayW, displayH) * 0.62;
+  const flicker = 0.94 + Math.sin(world.elapsedTime * 11) * 0.03 + Math.sin(world.elapsedTime * 31) * 0.015;
+  const powerFrac = player.flashlightPower / CFG.FLASHLIGHT_POWER_MAX;
+  // beam visibly weakens as the power cell nears empty, giving a readable
+  // last-few-seconds warning beyond just the HUD gauge dropping
+  const strength = Math.max(0.25, Math.min(1, powerFrac / 0.3)) * flicker;
+
+  sctx.save();
+  const grad = sctx.createRadialGradient(cx, cy * 0.94, 0, cx, cy * 0.94, reach);
+  grad.addColorStop(0, `rgba(255,244,214,${0.16 * strength})`);
+  grad.addColorStop(0.45, `rgba(255,238,196,${0.07 * strength})`);
+  grad.addColorStop(1, 'rgba(255,238,196,0)');
+  sctx.fillStyle = grad;
+  sctx.beginPath();
+  sctx.arc(cx, cy * 0.94, reach, 0, Math.PI * 2);
+  sctx.fill();
+  sctx.restore();
+}
+
+console.log('Sprite rendering defined.');
+
+// ---------------------------------------------------------------------------
+// AUDIO (WebAudio synthesis only — zero external files)
+// All sound routes through a single master gain node so mute/unmute is one
+// operation that affects every SFX call site uniformly, including sounds
+// already in flight (muting mid-tone silences it immediately).
+// ---------------------------------------------------------------------------
+let audioCtx = null;
+let masterGainNode = null;
+let isMuted = false;
+
+// Persisted mute preference (best-effort; falls back to session-only if
+// localStorage is unavailable, e.g. in a sandboxed iframe — never throws).
+function loadMutePreference() {
+  try {
+    const stored = window.localStorage.getItem('airlockZeroMuted');
+    return stored === 'true';
+  } catch (e) {
+    return false;
+  }
+}
+function saveMutePreference(muted) {
+  try {
+    window.localStorage.setItem('airlockZeroMuted', muted ? 'true' : 'false');
+  } catch (e) { /* storage unavailable — mute state just won't persist across reloads */ }
+}
+isMuted = loadMutePreference();
+
+function getAudioCtx() {
+  if (!audioCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AC();
+    masterGainNode = audioCtx.createGain();
+    masterGainNode.gain.value = isMuted ? 0 : 1;
+    masterGainNode.connect(audioCtx.destination);
+  }
+  return audioCtx;
+}
+function getMasterGain() {
+  getAudioCtx(); // ensures masterGainNode exists
+  return masterGainNode;
+}
+function setMuted(muted) {
+  isMuted = muted;
+  saveMutePreference(muted);
+  if (masterGainNode) {
+    masterGainNode.gain.value = muted ? 0 : 1;
+  }
+  updateMuteButtonVisuals();
+}
+function toggleMute() {
+  setMuted(!isMuted);
+}
+
+function playTone(freq, duration, type, startGain, opts) {
+  opts = opts || {};
+  try {
+    const ac = getAudioCtx();
+    const master = getMasterGain();
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.type = type || 'square';
+    osc.frequency.setValueAtTime(freq, ac.currentTime);
+    if (opts.sweepTo) {
+      osc.frequency.exponentialRampToValueAtTime(Math.max(1, opts.sweepTo), ac.currentTime + duration);
+    }
+    gain.gain.setValueAtTime(startGain, ac.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(master);
+    osc.start();
+    osc.stop(ac.currentTime + duration);
+  } catch (e) { /* audio unavailable — fail silently, never block gameplay */ }
+}
+function playNoiseBurst(duration, startGain) {
+  try {
+    const ac = getAudioCtx();
+    const master = getMasterGain();
+    const bufferSize = Math.floor(ac.sampleRate * duration);
+    const buffer = ac.createBuffer(1, bufferSize, ac.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+    const src = ac.createBufferSource();
+    src.buffer = buffer;
+    const gain = ac.createGain();
+    gain.gain.setValueAtTime(startGain, ac.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + duration);
+    src.connect(gain);
+    gain.connect(master);
+    src.start();
+  } catch (e) { /* fail silently */ }
+}
+const SFX = {
+  // chargeFrac (0..1) scales pitch/duration/gain so a full-charge discharge reads
+  // as audibly heavier than a quick reflex tap — Blackout Shift's charge-timing
+  // mechanic needs this feedback to be legible without looking at the HUD.
+  pulseFire: (chargeFrac) => {
+    const cf = chargeFrac === undefined ? 1 : chargeFrac;
+    const baseFreq = 680 + cf * 90;
+    const dur = 0.16 + cf * 0.14;
+    const gain = 0.12 + cf * 0.06;
+    playTone(baseFreq, dur, 'square', gain, { sweepTo: 120 - cf * 40 });
+  },
+  droneStun: () => { playNoiseBurst(0.3, 0.12); playTone(220, 0.25, 'sawtooth', 0.08, { sweepTo: 40 }); },
+  droneAlert: () => playTone(340, 0.22, 'triangle', 0.09, { sweepTo: 700 }),
+  droneFireHit: () => playTone(160, 0.12, 'sawtooth', 0.1, { sweepTo: 60 }),
+  cellPickup: () => {
+    playTone(523.25, 0.11, 'sine', 0.1);
+    setTimeout(() => playTone(659.25, 0.11, 'sine', 0.1), 90);
+    setTimeout(() => playTone(783.99, 0.16, 'sine', 0.11), 180);
+  },
+  win: () => {
+    [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => setTimeout(() => playTone(f, 0.35, 'sine', 0.11), i * 120));
+  },
+  lose: () => { playTone(180, 0.6, 'sawtooth', 0.12, { sweepTo: 40 }); },
+  hurt: () => playTone(140, 0.14, 'square', 0.09, { sweepTo: 60 }),
+  // --- Blackout Shift additions ---
+  flashlightOn: () => playTone(880, 0.06, 'square', 0.07, { sweepTo: 1200 }),
+  flashlightOff: () => playTone(420, 0.07, 'square', 0.06, { sweepTo: 180 }),
+  flashlightDead: () => { playTone(300, 0.18, 'sawtooth', 0.08, { sweepTo: 60 }); playNoiseBurst(0.12, 0.05); },
+  flashlightRefused: () => playTone(140, 0.08, 'square', 0.05, { sweepTo: 100 }),
+  droneSuspicious: () => playTone(500, 0.1, 'triangle', 0.05, { sweepTo: 650 }),
+};
+
+// ---------------------------------------------------------------------------
+// COLLISION-AWARE MOVEMENT
+// ---------------------------------------------------------------------------
+function tryMove(entity, dx, dy, radius) {
+  radius = radius || CFG.PLAYER_RADIUS;
+  // slide along walls: resolve each axis independently so moving diagonally
+  // into a wall still allows sliding along the open axis instead of fully stopping.
+  const newX = entity.x + dx;
+  if (!collidesWall(newX, entity.y, radius)) entity.x = newX;
+  const newY = entity.y + dy;
+  if (!collidesWall(entity.x, newY, radius)) entity.y = newY;
+}
+function collidesWall(x, y, radius) {
+  return isWall(x + radius, y) || isWall(x - radius, y) ||
+         isWall(x, y + radius) || isWall(x, y - radius) ||
+         isWall(x + radius*0.7, y + radius*0.7) || isWall(x - radius*0.7, y - radius*0.7) ||
+         isWall(x + radius*0.7, y - radius*0.7) || isWall(x - radius*0.7, y + radius*0.7);
+}
+
+function hasLineOfSight(x0, y0, x1, y1) {
+  const dx = x1 - x0, dy = y1 - y0;
+  const dist = Math.sqrt(dx*dx + dy*dy);
+  const steps = Math.ceil(dist * 6);
+  for (let i = 1; i < steps; i++) {
+    const t = i / steps;
+    if (isWall(x0 + dx * t, y0 + dy * t)) return false;
+  }
+  return true;
+}
+
+// ---------------------------------------------------------------------------
+// DRONE AI
+// Blackout Shift replaces the parent's binary "canSeePlayer -> snap to ALERT"
+// check with a gradual detection meter (0..CFG.DETECT_MAX per drone). The
+// meter fills while the player sits inside the drone's forward vision cone
+// with line of sight, at a rate shaped by the player's own flashlight state:
+// beam on and washing over the drone fills it fast, flashlight off in deep
+// dark fills it slowly, and being merely in radius+LOS but outside the cone
+// (peripheral) fills slower still. The meter decays when the drone can't
+// sense the player at all. ALERT triggers only once the meter is full, and
+// everything from that point on — chase speed, fire range/cooldown/damage,
+// the distance-based de-escalation back to PATROL — is untouched from parent.
+// ---------------------------------------------------------------------------
+function computeDetectionGain(drone, distToPlayer) {
+  if (distToPlayer > CFG.DRONE_DETECT_RADIUS) return { gain: 0, inCone: false };
+  if (!hasLineOfSight(drone.x, drone.y, player.x, player.y)) return { gain: 0, inCone: false };
+
+  const angleToPlayer = Math.atan2(player.y - drone.y, player.x - drone.x);
+  let angleDiff = angleToPlayer - drone.angle;
+  while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+  while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+  const inCone = Math.abs(angleDiff) <= CFG.DRONE_FOV / 2;
+
+  if (!inCone) {
+    // Peripheral: the drone is aware something is in range and visible, but
+    // not looking straight at it. Slow, steady gain — not blind, just not focused.
+    return { gain: CFG.DETECT_BASE_GAIN_PER_SEC * CFG.DETECT_PERIPHERAL_GAIN_MULT, inCone: false };
+  }
+
+  // In the forward cone. Rate depends on the player's own light discipline.
+  let mult = 1.0;
+  if (player.flashlightOn) {
+    // Lit: beam is on. If the beam happens to be pointed roughly toward this
+    // drone, or the drone is close enough that ambient beam-wash reaches it
+    // regardless of aim, detection accelerates hard — you are, visibly, holding
+    // a torch out in a dark hallway with something looking right at you.
+    const beamAngleToDrone = Math.atan2(drone.y - player.y, drone.x - player.x);
+    let beamDiff = beamAngleToDrone - player.angle;
+    while (beamDiff > Math.PI) beamDiff -= Math.PI * 2;
+    while (beamDiff < -Math.PI) beamDiff += Math.PI * 2;
+    const beamPointedAtDrone = Math.abs(beamDiff) <= CFG.FLASHLIGHT_ARC / 2 && distToPlayer <= CFG.FLASHLIGHT_RANGE_ON;
+    const closeAmbientWash = distToPlayer <= CFG.FLASHLIGHT_RANGE_OFF * 1.3;
+    mult = (beamPointedAtDrone || closeAmbientWash) ? CFG.DETECT_LIT_GAIN_MULT : 1.0;
+  } else if (distToPlayer > CFG.FLASHLIGHT_RANGE_OFF) {
+    // Dark: flashlight off and beyond unaided sight range. This is the payoff
+    // for playing in the dark — a drone can still eventually notice a shape
+    // moving through a doorway, but far slower than if you were lit up.
+    mult = CFG.DETECT_DARK_GAIN_MULT;
+  }
+  // else: flashlight off but close enough for ambient/eyes-adjusted visibility
+  // (within FLASHLIGHT_RANGE_OFF) — treated as baseline (mult stays 1.0):
+  // close-range darkness doesn't fully hide you, only distance does.
+
+  return { gain: CFG.DETECT_BASE_GAIN_PER_SEC * mult, inCone: true };
+}
+
+function updateDrone(drone, dt) {
+  if (drone.hitFlashT > 0) drone.hitFlashT -= dt;
+
+  if (drone.state === 'STUNNED') {
+    drone.stunT -= dt;
+    if (drone.stunT <= 0) {
+      drone.state = 'PATROL';
+      drone.detection = 0;
+      drone.suspicious = false;
+    }
+    return; // stunned drones don't move, fire, or accrue detection
+  }
+
+  const distToPlayer = Math.hypot(player.x - drone.x, player.y - drone.y);
+
+  if (drone.state === 'PATROL') {
+    const { gain } = computeDetectionGain(drone, distToPlayer);
+    if (gain > 0) {
+      drone.detection = Math.min(CFG.DETECT_MAX, drone.detection + gain * dt);
+    } else {
+      drone.detection = Math.max(0, drone.detection - CFG.DETECT_DECAY_PER_SEC * dt);
+    }
+    const wasSuspicious = drone.suspicious;
+    drone.suspicious = drone.detection >= CFG.DETECT_SUSPICION_THRESH;
+    if (drone.suspicious && !wasSuspicious) SFX.droneSuspicious(); // one-shot cue on the rising edge only
+    if (drone.detection >= CFG.DETECT_ALERT_THRESH) {
+      drone.state = 'ALERT';
+      drone.suspicious = false;
+      world.detectionEventCount++;
+      SFX.droneAlert();
+    }
+  }
+  // canSeePlayer retained for the ALERT-state fire/chase logic below, matching
+  // parent's semantics exactly once a drone is already alerted (radius + LOS,
+  // no cone restriction — an alerted drone that's actively hunting you isn't
+  // limited to a forward wedge the way passive detection is).
+  const canSeePlayer = distToPlayer <= CFG.DRONE_DETECT_RADIUS && hasLineOfSight(drone.x, drone.y, player.x, player.y);
+
+  // De-escalate once the player has put real distance between themselves and the
+  // drone. This intentionally does NOT require broken line-of-sight: a drone that
+  // is being clearly outrun down a straight corridor should give up the chase
+  // rather than pursue indefinitely just because it can still technically see the
+  // player. Distance alone is a legitimate and readable "you got away" signal.
+  if (drone.state === 'ALERT' && distToPlayer > CFG.DRONE_DETECT_RADIUS * 1.4) {
+    drone.state = 'PATROL';
+    drone.detection = CFG.DETECT_SUSPICION_THRESH * 0.6; // de-escalates warily, not fully forgetting instantly
+    drone.suspicious = false;
+  }
+
+  if (drone.state === 'ALERT') {
+    // face and move toward player
+    const targetAngle = Math.atan2(player.y - drone.y, player.x - drone.x);
+    drone.angle = targetAngle;
+    if (distToPlayer > CFG.DRONE_FIRE_RANGE * 0.55) {
+      const spd = CFG.DRONE_ALERT_SPEED * dt;
+      const mx = Math.cos(targetAngle) * spd, my = Math.sin(targetAngle) * spd;
+      tryMove(drone, mx, my, CFG.DRONE_SIZE * 0.5);
+    }
+    // fire at player if in range + LOS + cooldown ready
+    drone.fireCooldownT -= dt;
+    if (distToPlayer <= CFG.DRONE_FIRE_RANGE && canSeePlayer && drone.fireCooldownT <= 0) {
+      drone.fireCooldownT = CFG.DRONE_FIRE_COOLDOWN;
+      player.health = Math.max(0, player.health - CFG.DRONE_FIRE_DAMAGE);
+      SFX.droneFireHit();
+      triggerDamageFlash();
+      if (player.health <= 0 && !player.dead && !player.won) {
+        triggerLose('health');
+      }
+    }
+  } else {
+    // PATROL: move along waypoints
+    if (drone.waypoints && drone.waypoints.length > 0) {
+      const wp = drone.waypoints[drone.wpIndex];
+      const d = Math.hypot(wp.x - drone.x, wp.y - drone.y);
+      if (d < 0.25) {
+        drone.wpIndex = (drone.wpIndex + 1) % drone.waypoints.length;
+      } else {
+        const a = Math.atan2(wp.y - drone.y, wp.x - drone.x);
+        drone.angle = a;
+        const spd = CFG.DRONE_PATROL_SPEED * dt;
+        tryMove(drone, Math.cos(a) * spd, Math.sin(a) * spd, CFG.DRONE_SIZE * 0.5);
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// PULSE WEAPON — frontal cone AoE stun, hold-to-charge
+// Blackout Shift replaces the parent's instant flat-stun fire with a
+// hold-to-charge model. Range, arc, and target-selection logic (cone + LOS)
+// are identical to parent. What changes is the payoff: holding fire builds
+// charge over CFG.PULSE_CHARGE_MAX seconds; a full charge lands a much longer
+// stun for a steeper cooldown, while releasing early lands a short, weak stun
+// on a cheaper cooldown. A pure reflex tap still works (it has to, for a
+// last-second save), but camping the fire button for max charge every time
+// isn't free either — timing the charge to when a drone is actually in the
+// cone is what the mechanic rewards.
+// ---------------------------------------------------------------------------
+function beginPulseCharge() {
+  if (player.pulseCooldownT > 0 || player.pulseCharging) return;
+  player.pulseCharging = true;
+  player.pulseChargeT = 0;
+}
+
+function tickPulseCharge(dt) {
+  if (!player.pulseCharging) return;
+  player.pulseChargeT = Math.min(CFG.PULSE_CHARGE_MAX, player.pulseChargeT + dt);
+}
+
+// Tracks whichever cooldown (TAP..FULL range) was actually applied by the
+// most recent release, so updatePulseHUD can normalize its fill fraction
+// correctly instead of assuming a single fixed cooldown constant.
+let lastPulseCooldownMax = CFG.PULSE_COOLDOWN_TAP;
+
+function releasePulse() {
+  if (!player.pulseCharging) return;
+  const heldT = player.pulseChargeT;
+  player.pulseCharging = false;
+  player.pulseChargeT = 0;
+
+  if (heldT < CFG.PULSE_MIN_HOLD_FOR_STUN) {
+    // Too fast even for a reflex tap to register as a real discharge — no
+    // cooldown spent, so mashing the button harmlessly does nothing rather
+    // than accidentally punishing an aborted press.
+    return;
+  }
+
+  const chargeFrac = Math.min(1, heldT / CFG.PULSE_CHARGE_MAX);
+  const stunDuration = CFG.PULSE_STUN_MIN + (CFG.PULSE_STUN_MAX - CFG.PULSE_STUN_MIN) * chargeFrac;
+  const cooldown = CFG.PULSE_COOLDOWN_TAP + (CFG.PULSE_COOLDOWN_FULL - CFG.PULSE_COOLDOWN_TAP) * chargeFrac;
+  player.pulseCooldownT = cooldown;
+  lastPulseCooldownMax = cooldown;
+  SFX.pulseFire(chargeFrac);
+
+  let hitAny = false;
+  world.drones.forEach(drone => {
+    if (drone.state === 'STUNNED') return;
+    const dx = drone.x - player.x, dy = drone.y - player.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist > CFG.PULSE_RANGE) return;
+    const angleToTarget = Math.atan2(dy, dx);
+    let angleDiff = angleToTarget - player.angle;
+    while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+    while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+    if (Math.abs(angleDiff) > CFG.PULSE_ARC / 2) return;
+    if (!hasLineOfSight(player.x, player.y, drone.x, drone.y)) return;
+
+    drone.state = 'STUNNED';
+    drone.stunT = stunDuration;
+    drone.detection = 0;
+    drone.suspicious = false;
+    drone.hitFlashT = 0.5;
+    world.dronesStunnedCount++;
+    hitAny = true;
+  });
+  if (hitAny) SFX.droneStun();
+  spawnPulseVFX(chargeFrac);
+}
+
+// simple expanding-arc VFX state, drawn each frame while active. A fuller
+// charge gets a visibly bigger, brighter ring — the same charge fraction that
+// drove the stun duration also drives how satisfying the discharge looks.
+let pulseVFX = null;
+function spawnPulseVFX(chargeFrac) {
+  pulseVFX = { t: 0, duration: 0.22 + chargeFrac * 0.16, chargeFrac: chargeFrac };
+}
+function updateAndDrawPulseVFX(dt) {
+  if (!pulseVFX) return;
+  pulseVFX.t += dt;
+  if (pulseVFX.t >= pulseVFX.duration) { pulseVFX = null; return; }
+  const frac = pulseVFX.t / pulseVFX.duration;
+  const reach = CFG.PULSE_RANGE * (0.8 + pulseVFX.chargeFrac * 0.35);
+  const radius = frac * reach * (displayH / 2.6); // rough screen-space radius approximation
+  sctx.save();
+  sctx.globalAlpha = (1 - frac) * (0.45 + pulseVFX.chargeFrac * 0.35);
+  sctx.strokeStyle = pulseVFX.chargeFrac > 0.85 ? '#eafdff' : '#5ad4d8';
+  sctx.lineWidth = 3 + pulseVFX.chargeFrac * 2.5;
+  sctx.beginPath();
+  sctx.arc(displayW / 2, displayH / 2, Math.min(radius, displayW * 0.6), 0, Math.PI * 2);
+  sctx.stroke();
+  sctx.restore();
+}
+
+// ---------------------------------------------------------------------------
+// DAMAGE / OXYGEN FEEDBACK
+// ---------------------------------------------------------------------------
+let damageFlashT = 0;
+function triggerDamageFlash() {
+  damageFlashT = 0.35;
+  SFX.hurt();
+}
+function updateVignette(dt) {
+  if (damageFlashT > 0) damageFlashT -= dt;
+  const vignetteEl = document.getElementById('vignette');
+  const o2Frac = player.oxygen / CFG.O2_MAX;
+  let intensity = 0;
+  if (damageFlashT > 0) intensity = Math.max(intensity, (damageFlashT / 0.35) * 90);
+  if (player.oxygen <= CFG.O2_CRIT_THRESH) {
+    const pulse = 0.6 + Math.sin(world.elapsedTime * 6) * 0.4;
+    intensity = Math.max(intensity, 55 * pulse);
+  } else if (player.oxygen <= CFG.O2_WARN_THRESH) {
+    intensity = Math.max(intensity, 22);
+  }
+  vignetteEl.style.boxShadow = `inset 0 0 ${Math.round(intensity * 2.2)}px ${Math.round(intensity * 0.9)}px rgba(216,72,63,${Math.min(0.85, intensity / 90)})`;
+}
+
+// ---------------------------------------------------------------------------
+// PICKUPS + WIN/LOSE TRIGGERS
+// ---------------------------------------------------------------------------
+function checkCellPickups() {
+  world.cells.forEach(cell => {
+    if (cell.collected) return;
+    const d = Math.hypot(player.x - cell.x, player.y - cell.y);
+    if (d < 0.55) {
+      cell.collected = true;
+      player.cellsCollected++;
+      player.cellsFlags[cell.id] = true;
+      player.oxygen = Math.min(CFG.O2_MAX, player.oxygen + CFG.O2_CELL_REFILL);
+      SFX.cellPickup();
+      showObjectiveToast(
+        player.cellsCollected >= 3
+          ? 'ALL REACTOR CELLS RECOVERED — PROCEED TO AIRLOCK'
+          : `REACTOR CELL RECOVERED — ${player.cellsCollected}/3`
+      );
+      updateCellHUD();
+    }
+  });
+}
+
+function checkAirlock() {
+  const d = Math.hypot(player.x - AIRLOCK_POS.x, player.y - AIRLOCK_POS.y);
+  if (d < 0.7) {
+    if (player.cellsCollected >= 3 && !player.won && !player.dead) {
+      triggerWin();
+    } else if (player.cellsCollected < 3) {
+      showObjectiveToast(`AIRLOCK LOCKED — CELLS REQUIRED: ${player.cellsCollected}/3`, true);
+    }
+  }
+}
+
+let lastAirlockToastT = -99;
+let hintShownAndHidden = false; // tracks whether the timed control-hint overlay has already faded out this mission
+function showObjectiveToast(text, throttle) {
+  if (throttle) {
+    if (world.elapsedTime - lastAirlockToastT < 1.8) return;
+    lastAirlockToastT = world.elapsedTime;
+  }
+  const el = document.getElementById('objectiveToast');
+  el.textContent = text;
+  el.classList.remove('show');
+  void el.offsetWidth; // restart animation
+  el.classList.add('show');
+}
+
+console.log('Entity + gameplay systems defined.');
+
+// ---------------------------------------------------------------------------
+// INPUT: KEYBOARD
+// Blackout Shift replaces Reactor Run's tap-to-fire (poll-per-frame edge
+// detect) with hold-to-charge: keydown begins the charge, keyup releases and
+// resolves the stun. This has to be edge-triggered directly off the key
+// events themselves (not polled every frame off the `keys` map) so a held key
+// doesn't repeatedly call beginPulseCharge — the OS key-repeat firing keydown
+// again while still held is otherwise indistinguishable from a fresh press.
+// ---------------------------------------------------------------------------
+const keys = {};
+window.addEventListener('keydown', (e) => {
+  const wasHeld = !!keys[e.code];
+  keys[e.code] = true;
+  if (e.code === 'Space') {
+    e.preventDefault(); // avoid page scroll
+    if (!wasHeld && gameState === 'PLAYING') beginPulseCharge();
+  }
+  if (e.code === 'Escape') handleEscapeKey();
+  if (e.code === 'KeyM') toggleMute(); // keyboard mute toggle — the only reliable path while pointer-locked, since locked mouse clicks don't hit-test to on-screen UI at all
+  if (e.code === 'KeyF' && !wasHeld) toggleFlashlight();
+});
+window.addEventListener('keyup', (e) => {
+  keys[e.code] = false;
+  if (e.code === 'Space') releasePulse();
+});
+// If the window loses focus while Space is held (alt-tab, drag off-window),
+// keyup never fires — resolve any in-progress charge so it doesn't silently
+// stay charging forever and desync the HUD from reality.
+window.addEventListener('blur', () => {
+  if (player.pulseCharging) releasePulse();
+});
+
+// ---------------------------------------------------------------------------
+// INPUT: MOUSE LOOK (Pointer Lock, with graceful fallback)
+// ---------------------------------------------------------------------------
+let pointerLocked = false;
+let mouseFireArmed = true;
+
+let pointerLockRequestInFlight = false;
+let lastPointerLockRequestTime = 0;
+const POINTER_LOCK_REQUEST_COOLDOWN_MS = 400; // avoid hammering the browser with rapid re-requests, a common source of SecurityError
+
+function requestPointerLockSafe() {
+  if (!canvas.requestPointerLock) return; // API unsupported in this browser — silently no-op
+  if (pointerLockRequestInFlight) return; // a request is already pending, don't stack another
+  if (document.pointerLockElement === canvas) return; // already locked, nothing to do
+  const now = performance.now();
+  if (now - lastPointerLockRequestTime < POINTER_LOCK_REQUEST_COOLDOWN_MS) return; // too soon since last attempt
+  lastPointerLockRequestTime = now;
+
+  pointerLockRequestInFlight = true;
+  try {
+    const result = canvas.requestPointerLock();
+    // Modern browsers return a Promise that rejects (e.g. SecurityError) if the
+    // request is denied. Older browsers return undefined. Handle both safely so
+    // a rejection NEVER surfaces as an unhandled promise rejection that could
+    // otherwise interrupt the game loop or show a console error to the player.
+    if (result && typeof result.then === 'function') {
+      result
+        .then(() => { pointerLockRequestInFlight = false; })
+        .catch((err) => {
+          pointerLockRequestInFlight = false;
+          console.log('Pointer lock request was not granted (' + (err && err.name ? err.name : 'unknown reason') + '); continuing without it.');
+          // Gameplay continues normally without lock — mouse-look simply won't
+          // engage until a later request succeeds (e.g. after another click).
+        });
+    } else {
+      // Legacy synchronous-style API — pointerlockchange/pointerlockerror events
+      // (handled below) will resolve the in-flight flag either way.
+      pointerLockRequestInFlight = false;
+    }
+  } catch (err) {
+    // Some browsers throw synchronously rather than rejecting a promise.
+    pointerLockRequestInFlight = false;
+    console.log('Pointer lock request threw synchronously (' + (err && err.name ? err.name : 'unknown reason') + '); continuing without it.');
+  }
+}
+
+document.addEventListener('pointerlockchange', () => {
+  pointerLocked = document.pointerLockElement === canvas;
+  pointerLockRequestInFlight = false;
+});
+document.addEventListener('pointerlockerror', () => {
+  // Fires in browsers that use the older event-based API instead of promise
+  // rejection. Same safe recovery: clear the in-flight flag and carry on.
+  pointerLockRequestInFlight = false;
+  pointerLocked = false;
+  console.log('Pointer lock request failed (pointerlockerror event); continuing without it.');
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if (!pointerLocked || gameState !== 'PLAYING') return;
+  player.angle += (e.movementX || 0) * CFG.MOUSE_SENS;
+});
+
+canvas.addEventListener('mousedown', (e) => {
+  if (gameState !== 'PLAYING') return;
+  if (!pointerLocked) { requestPointerLockSafe(); return; }
+  if (e.button === 0) beginPulseCharge();
+});
+// Listen on window (not canvas) for mouseup so a release that happens after
+// the cursor has drifted off the canvas — easy to do mid-charge — still
+// resolves the shot instead of leaving the charge stuck open indefinitely.
+window.addEventListener('mouseup', (e) => {
+  if (e.button === 0) releasePulse();
+});
+
+// ---------------------------------------------------------------------------
+// INPUT: TOUCH (virtual joystick + drag-look + fire button)
+// ---------------------------------------------------------------------------
+const isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+let touchModeActive = false;
+
+const touchState = {
+  moveActive: false, moveId: null, moveOriginX: 0, moveOriginY: 0, moveDX: 0, moveDY: 0,
+  lookActive: false, lookId: null, lookLastX: 0, lookLastY: 0,
+};
+
+function enableTouchMode() {
+  touchModeActive = true;
+  document.getElementById('touchControls').classList.add('enabled');
+  document.getElementById('desktopPauseHint').style.display = 'none';
+  document.getElementById('desktopHints').style.display = 'none';
+  document.getElementById('touchHints').style.display = 'flex';
+  document.getElementById('btnToggleInputMode').textContent = 'Switch to keyboard + mouse';
+}
+function disableTouchMode() {
+  touchModeActive = false;
+  document.getElementById('touchControls').classList.remove('enabled');
+  document.getElementById('desktopPauseHint').style.display = 'block';
+  document.getElementById('desktopHints').style.display = 'flex';
+  document.getElementById('touchHints').style.display = 'none';
+  document.getElementById('btnToggleInputMode').textContent = 'Switch to touch controls';
+}
+
+const joystickZone = document.getElementById('touchJoystickZone');
+const joystickBase = document.getElementById('joystickBase');
+const joystickNub = document.getElementById('joystickNub');
+const JOY_MAX_RADIUS = 46;
+
+joystickZone.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  if (touchState.moveActive) return;
+  const t = e.changedTouches[0];
+  touchState.moveActive = true;
+  touchState.moveId = t.identifier;
+  touchState.moveOriginX = t.clientX;
+  touchState.moveOriginY = t.clientY;
+  touchState.moveDX = 0; touchState.moveDY = 0;
+  joystickBase.style.display = 'block';
+  joystickBase.style.left = (t.clientX - JOY_MAX_RADIUS) + 'px';
+  joystickBase.style.top = (t.clientY - JOY_MAX_RADIUS) + 'px';
+  joystickNub.style.transform = 'translate(-50%, -50%)';
+}, { passive: false });
+
+joystickZone.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  for (const t of e.changedTouches) {
+    if (t.identifier !== touchState.moveId) continue;
+    let dx = t.clientX - touchState.moveOriginX;
+    let dy = t.clientY - touchState.moveOriginY;
+    const dist = Math.hypot(dx, dy);
+    if (dist > JOY_MAX_RADIUS) { dx = (dx / dist) * JOY_MAX_RADIUS; dy = (dy / dist) * JOY_MAX_RADIUS; }
+    touchState.moveDX = dx / JOY_MAX_RADIUS;
+    touchState.moveDY = dy / JOY_MAX_RADIUS;
+    joystickNub.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+  }
+}, { passive: false });
+
+function endJoystickTouch(e) {
+  for (const t of e.changedTouches) {
+    if (t.identifier !== touchState.moveId) continue;
+    touchState.moveActive = false;
+    touchState.moveDX = 0; touchState.moveDY = 0;
+    joystickBase.style.display = 'none';
+  }
+}
+joystickZone.addEventListener('touchend', endJoystickTouch, { passive: false });
+joystickZone.addEventListener('touchcancel', endJoystickTouch, { passive: false });
+
+const lookZone = document.getElementById('touchLookZone');
+lookZone.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  if (touchState.lookActive) return;
+  const t = e.changedTouches[0];
+  touchState.lookActive = true;
+  touchState.lookId = t.identifier;
+  touchState.lookLastX = t.clientX;
+  touchState.lookLastY = t.clientY;
+}, { passive: false });
+
+lookZone.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  for (const t of e.changedTouches) {
+    if (t.identifier !== touchState.lookId) continue;
+    const dx = t.clientX - touchState.lookLastX;
+    if (gameState === 'PLAYING') player.angle += dx * CFG.TOUCH_LOOK_SENS;
+    touchState.lookLastX = t.clientX;
+    touchState.lookLastY = t.clientY;
+  }
+}, { passive: false });
+
+function endLookTouch(e) {
+  for (const t of e.changedTouches) {
+    if (t.identifier !== touchState.lookId) continue;
+    touchState.lookActive = false;
+  }
+}
+lookZone.addEventListener('touchend', endLookTouch, { passive: false });
+lookZone.addEventListener('touchcancel', endLookTouch, { passive: false });
+
+const fireBtn = document.getElementById('touchFireBtn');
+fireBtn.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  if (gameState === 'PLAYING') beginPulseCharge();
+}, { passive: false });
+function endFireTouch(e) {
+  e.preventDefault();
+  releasePulse();
+}
+fireBtn.addEventListener('touchend', endFireTouch, { passive: false });
+fireBtn.addEventListener('touchcancel', endFireTouch, { passive: false });
+
+const flashlightBtn = document.getElementById('touchFlashlightBtn');
+flashlightBtn.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  if (gameState === 'PLAYING') toggleFlashlight();
+}, { passive: false });
+
+document.getElementById('touchPauseBtn').addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  handleEscapeKey();
+}, { passive: false });
+
+console.log('Input systems defined. Touch device detected:', isTouchDevice);
+
+// ---------------------------------------------------------------------------
+// GAME STATE MACHINE
+// ---------------------------------------------------------------------------
+let gameState = 'MENU'; // MENU | BRIEFING | PLAYING | PAUSED | WIN | LOSE
+let previousStateBeforePause = 'PLAYING';
+
+const screens = {
+  MENU: document.getElementById('screenMenu'),
+  BRIEFING: document.getElementById('screenBriefing'),
+  PAUSED: document.getElementById('screenPause'),
+  WIN: document.getElementById('screenWin'),
+  LOSE: document.getElementById('screenLose'),
+};
+function showScreen(name) {
+  Object.values(screens).forEach(s => s.classList.add('hidden'));
+  if (screens[name]) screens[name].classList.remove('hidden');
+}
+
+function goToMenu() {
+  gameState = 'MENU';
+  showScreen('MENU');
+  if (document.exitPointerLock) document.exitPointerLock();
+}
+
+function goToBriefing() {
+  gameState = 'BRIEFING';
+  document.getElementById('briefingText').innerHTML =
+    'Station <strong>Kessler-9</strong>, reactor deck. A relay fault has taken the primary ' +
+    'grid down deck-wide — emergency power only, and it is not coming back before your ' +
+    'suit runs dry. You are working this shift by <strong>handheld light alone</strong>.<br><br>' +
+    '<span class="warn-text">OBJECTIVE:</span> Recover all 3 reactor cells from their ' +
+    'storage rooms, then reach the airlock at the far end of the station.<br><br>' +
+    '<span class="warn-text">THREATS:</span> Security drones still patrol on their old ' +
+    'sweep routes, sensing by a forward vision cone rather than a station-wide alarm — ' +
+    'watch a drone\'s <span class="warn-text">detection meter</span> climb as it looks your ' +
+    'way. Give them nothing to look at and it decays; hold your beam on one and it fills ' +
+    'fast. Your pulse emitter now rewards a held charge over a reflex tap — a quick tap ' +
+    'lands a short stun on a cheap recovery, a full deliberate charge lands a long one for ' +
+    'a steeper cooldown. Time it.<br><br>' +
+    'Your <strong>flashlight</strong> draws from a small rechargeable cell: it recharges ' +
+    'fast once switched off, but a beam left burning is a beacon to anything watching. ' +
+    'Darkness is cover here, not just an obstacle — move through it, don\'t fight it. Each ' +
+    'recovered reactor cell still grants a small O2 top-up, but it will not fully offset ' +
+    'the clock. Move with purpose, and only light up what you have to.';
+  showScreen('BRIEFING');
+}
+
+function startMission() {
+  // reset all state
+  player.x = SPAWN.x; player.y = SPAWN.y; player.angle = SPAWN.angle;
+  player.health = CFG.HEALTH_MAX;
+  player.oxygen = CFG.O2_MAX;
+  player.cellsCollected = 0;
+  player.cellsFlags = [false, false, false];
+  player.pulseCooldownT = 0;
+  player.dead = false;
+  player.won = false;
+  player.flashlightOn = false;
+  player.flashlightPower = CFG.FLASHLIGHT_POWER_MAX;
+  player.pulseCharging = false;
+  player.pulseChargeT = 0;
+  initEntities();
+  updateCellHUD();
+  updateHealthHUD();
+  updateO2HUD();
+  updateFlashlightHUD();
+  document.getElementById('alertBanner').classList.remove('active');
+
+  gameState = 'PLAYING';
+  Object.values(screens).forEach(s => s.classList.add('hidden'));
+
+  const hintEl = document.getElementById('controlHintOverlay');
+  hintEl.innerHTML = touchModeActive
+    ? '<span>Left side: move</span><span>Right side: drag to look</span><span>Hold PULSE to charge, release to fire</span><span>Flashlight button toggles beam</span>'
+    : '<span><kbd>W A S D</kbd> Move</span><span><kbd>Mouse</kbd> Look</span><span><kbd>Shift</kbd> Sprint</span><span><kbd>Hold Space</kbd> Charge pulse</span><span><kbd>F</kbd> Flashlight</span><span><kbd>Esc</kbd> Pause</span><span><kbd>M</kbd> Mute</span>';
+  hintEl.classList.add('visible');
+  hintShownAndHidden = false;
+
+  if (!touchModeActive) requestPointerLockSafe();
+  lastFrameTime = performance.now();
+}
+
+function handleEscapeKey() {
+  if (gameState === 'PLAYING') {
+    pauseMission();
+  } else if (gameState === 'PAUSED') {
+    resumeMission();
+  }
+}
+function pauseMission() {
+  if (gameState !== 'PLAYING') return;
+  gameState = 'PAUSED';
+  showScreen('PAUSED');
+  if (document.exitPointerLock) document.exitPointerLock();
+}
+function resumeMission() {
+  if (gameState !== 'PAUSED') return;
+  gameState = 'PLAYING';
+  Object.values(screens).forEach(s => s.classList.add('hidden'));
+  if (!touchModeActive) requestPointerLockSafe();
+  lastFrameTime = performance.now();
+}
+
+// Flashlight efficiency: the share of the run spent with the beam OFF. This
+// mission's tension is spending a scarce, rechargeable resource with
+// discipline rather than holding it on continuously, so "efficient" here
+// means darkness-reliant, not light-reliant — a 0% figure means the beam was
+// on for the entire run.
+function computeFlashlightEfficiencyPct() {
+  if (world.elapsedTime <= 0) return 100;
+  const darkFrac = 1 - Math.min(1, world.flashlightOnTime / world.elapsedTime);
+  return Math.round(darkFrac * 100);
+}
+
+function triggerWin() {
+  player.won = true;
+  gameState = 'WIN';
+  SFX.win();
+  if (document.exitPointerLock) document.exitPointerLock();
+  document.getElementById('statO2').textContent = Math.round(player.oxygen) + '%';
+  const mins = Math.floor(world.elapsedTime / 60);
+  const secs = Math.floor(world.elapsedTime % 60).toString().padStart(2, '0');
+  document.getElementById('statTime').textContent = `${mins}:${secs}`;
+  document.getElementById('statHealth').textContent = Math.round((player.health / CFG.HEALTH_MAX) * 100) + '%';
+  document.getElementById('statDrones').textContent = world.dronesStunnedCount;
+  document.getElementById('statCells').textContent = player.cellsCollected + '/3';
+  document.getElementById('statDetections').textContent = world.detectionEventCount;
+  document.getElementById('statFlashlightEff').textContent = computeFlashlightEfficiencyPct() + '%';
+  showScreen('WIN');
+}
+
+function triggerLose(reason) {
+  player.dead = true;
+  gameState = 'LOSE';
+  SFX.lose();
+  if (document.exitPointerLock) document.exitPointerLock();
+  const title = document.getElementById('loseTitle');
+  const sub = document.getElementById('loseSub');
+  if (reason === 'oxygen') {
+    title.textContent = 'MISSION FAILED';
+    sub.textContent = 'O2 SUPPLY DEPLETED';
+  } else {
+    title.textContent = 'MISSION FAILED';
+    sub.textContent = 'HULL BREACH — SYSTEMS OFFLINE';
+  }
+  const mins = Math.floor(world.elapsedTime / 60);
+  const secs = Math.floor(world.elapsedTime % 60).toString().padStart(2, '0');
+  document.getElementById('loseStatTime').textContent = `${mins}:${secs}`;
+  document.getElementById('loseStatCells').textContent = player.cellsCollected + '/3';
+  document.getElementById('loseStatDetections').textContent = world.detectionEventCount;
+  document.getElementById('loseStatFlashlightEff').textContent = computeFlashlightEfficiencyPct() + '%';
+  showScreen('LOSE');
+}
+
+// ---------------------------------------------------------------------------
+// HUD UPDATES
+// ---------------------------------------------------------------------------
+const o2GaugeCanvas = document.getElementById('o2GaugeCanvas');
+const o2gctx = o2GaugeCanvas.getContext('2d');
+
+function updateO2HUD() {
+  const pct = Math.max(0, player.oxygen);
+  document.getElementById('o2Percent').textContent = Math.round(pct);
+  const gaugeEl = document.getElementById('o2Gauge');
+  gaugeEl.classList.remove('warning', 'critical');
+  if (pct <= CFG.O2_CRIT_THRESH) gaugeEl.classList.add('critical');
+  else if (pct <= CFG.O2_WARN_THRESH) gaugeEl.classList.add('warning');
+
+  // draw radial arc gauge — the signature HUD element
+  const cx = 54, cy = 54, r = 44;
+  o2gctx.clearRect(0, 0, 108, 108);
+
+  // track
+  o2gctx.beginPath();
+  o2gctx.arc(cx, cy, r, 0, Math.PI * 2);
+  o2gctx.strokeStyle = 'rgba(90,212,216,0.15)';
+  o2gctx.lineWidth = 6;
+  o2gctx.stroke();
+
+  // depleting arc, starts at top (12 o'clock), goes clockwise
+  const frac = pct / CFG.O2_MAX;
+  const startAngle = -Math.PI / 2;
+  const endAngle = startAngle + Math.PI * 2 * frac;
+  let color = '#5ad4d8';
+  if (pct <= CFG.O2_CRIT_THRESH) color = '#d8483f';
+  else if (pct <= CFG.O2_WARN_THRESH) color = '#e8a13a';
+
+  o2gctx.beginPath();
+  o2gctx.arc(cx, cy, r, startAngle, endAngle);
+  o2gctx.strokeStyle = color;
+  o2gctx.lineWidth = 6;
+  o2gctx.lineCap = 'round';
+  o2gctx.stroke();
+
+  // tick marks every 25%
+  for (let i = 0; i < 4; i++) {
+    const a = -Math.PI / 2 + (i / 4) * Math.PI * 2;
+    const x1 = cx + Math.cos(a) * (r - 7), y1 = cy + Math.sin(a) * (r - 7);
+    const x2 = cx + Math.cos(a) * (r + 7), y2 = cy + Math.sin(a) * (r + 7);
+    o2gctx.beginPath();
+    o2gctx.moveTo(x1, y1); o2gctx.lineTo(x2, y2);
+    o2gctx.strokeStyle = 'rgba(90,212,216,0.3)';
+    o2gctx.lineWidth = 1.5;
+    o2gctx.stroke();
+  }
+}
+
+function updateHealthHUD() {
+  const pct = Math.max(0, (player.health / CFG.HEALTH_MAX) * 100);
+  const fill = document.getElementById('healthBarFill');
+  fill.style.width = pct + '%';
+  fill.style.background = pct <= 30 ? 'var(--hud-red)' : (pct <= 60 ? 'var(--hud-amber)' : 'var(--hud-green)');
+}
+
+function updatePulseHUD() {
+  // Blackout Shift's cooldown is variable (PULSE_COOLDOWN_TAP..PULSE_COOLDOWN_FULL
+  // depending on charge fraction at release), so the fill fraction normalizes
+  // against whichever cooldown was actually applied for the shot in progress
+  // rather than a single fixed constant.
+  const frac = lastPulseCooldownMax > 0 ? (1 - Math.max(0, player.pulseCooldownT) / lastPulseCooldownMax) : 1;
+  document.getElementById('pulseFill').style.width = Math.round(Math.max(0, Math.min(1, frac)) * 100) + '%';
+
+  // While actively charging (button held), show the charge building rather
+  // than the recharge-from-cooldown fill, so holding fire visibly fills the
+  // same bar toward CFG.PULSE_CHARGE_MAX — one bar, two readable meanings
+  // depending on whether the player is charging or recovering.
+  const pulseIndicatorEl = document.getElementById('pulseIndicator');
+  if (player.pulseCharging) {
+    const chargeFrac = Math.min(1, player.pulseChargeT / CFG.PULSE_CHARGE_MAX);
+    document.getElementById('pulseFill').style.width = Math.round(chargeFrac * 100) + '%';
+    document.getElementById('pulseFill').style.background = chargeFrac >= 0.97 ? '#eafdff' : 'var(--hud-cyan)';
+    pulseIndicatorEl.classList.add('charging');
+  } else {
+    document.getElementById('pulseFill').style.background = 'var(--hud-cyan)';
+    pulseIndicatorEl.classList.remove('charging');
+  }
+}
+
+function updateCellHUD() {
+  for (let i = 0; i < 3; i++) {
+    const el = document.getElementById('cellIcon' + i);
+    el.classList.toggle('collected', !!player.cellsFlags[i]);
+  }
+}
+
+function updateFlashlightHUD() {
+  const pct = Math.max(0, player.flashlightPower);
+  const fill = document.getElementById('flashlightFill');
+  fill.style.width = pct + '%';
+  const indicator = document.getElementById('flashlightIndicator');
+  const label = document.getElementById('flashlightLabel');
+  indicator.classList.remove('on', 'warning', 'critical');
+  if (pct <= 15) { indicator.classList.add('critical'); fill.style.background = 'var(--hud-red)'; }
+  else if (pct <= 35) { indicator.classList.add('warning'); fill.style.background = 'var(--hud-amber)'; }
+  else { fill.style.background = 'var(--hud-cyan)'; }
+  if (player.flashlightOn) indicator.classList.add('on');
+  label.textContent = 'FLASHLIGHT — ' + (player.flashlightOn ? 'ON' : 'OFF') + ' ' + Math.round(pct) + '%';
+  if (touchModeActive) flashlightBtn.classList.toggle('on', player.flashlightOn);
+}
+
+// Distinct from updateAlertBanner (which only reflects full ALERT): this
+// drives a secondary "something's noticing you" cue whenever any drone has
+// crossed the suspicion threshold but nothing is fully alerted yet — the
+// direct HUD counterpart to the in-world amber vision-cone/detection-meter
+// state, so the player has a glance-able global signal even when no drone is
+// currently on-screen.
+function updateDetectionHUD() {
+  const anySuspicious = world.drones.some(d => d.suspicious && d.state !== 'ALERT');
+  document.getElementById('alertBanner').classList.toggle('suspicious', anySuspicious && !world.drones.some(d => d.state === 'ALERT'));
+}
+
+function updateAlertBanner() {
+  const anyAlert = world.drones.some(d => d.state === 'ALERT');
+  const banner = document.getElementById('alertBanner');
+  banner.classList.toggle('active', anyAlert);
+  banner.textContent = anyAlert ? '⚠ SECURITY DRONE ALERTED' : '◈ DRONE SUSPICIOUS — HOLD STILL OR BREAK LINE OF SIGHT';
+}
+
+function updateControlHintVisibility() {
+  if (hintShownAndHidden) return;
+  if (world.elapsedTime >= 15) {
+    document.getElementById('controlHintOverlay').classList.remove('visible');
+    hintShownAndHidden = true;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// MINIMAP
+// ---------------------------------------------------------------------------
+const minimapCanvas = document.getElementById('minimapCanvas');
+const mmctx = minimapCanvas.getContext('2d');
+
+function renderMinimap() {
+  mmctx.clearRect(0, 0, 120, 120);
+  const scale = 120 / Math.max(MAP_W, MAP_H);
+  const viewRadius = 6; // tiles shown around player, minimap is player-centered
+  const centerPx = 60, centerPy = 60;
+  const px = player.x, py = player.y;
+  const rimRadius = 54; // px radius of the radar rim, inside the 120x120 canvas edge
+
+  mmctx.save();
+  mmctx.beginPath();
+  mmctx.rect(0, 0, 120, 120);
+  mmctx.clip();
+
+  // draw walls near player
+  for (let y = Math.floor(py - viewRadius); y <= Math.floor(py + viewRadius); y++) {
+    for (let x = Math.floor(px - viewRadius); x <= Math.floor(px + viewRadius); x++) {
+      if (!isWall(x, y)) continue;
+      const sx = centerPx + (x - px) * scale * 2.1;
+      const sy = centerPy + (y - py) * scale * 2.1;
+      mmctx.fillStyle = 'rgba(90,212,216,0.25)';
+      mmctx.fillRect(sx, sy, scale * 2.1 + 1, scale * 2.1 + 1);
+    }
+  }
+
+  // cells (only show uncollected) — drawn at true position when within the visible
+  // window; if outside, a clamped rim marker is drawn afterward instead (see below).
+  world.cells.forEach(c => {
+    if (c.collected) return;
+    const sx = centerPx + (c.x - px) * scale * 2.1;
+    const sy = centerPy + (c.y - py) * scale * 2.1;
+    const distFromCenter = Math.hypot(sx - centerPx, sy - centerPy);
+    if (distFromCenter > rimRadius) return; // out of the visible window; rim marker handles it
+    mmctx.fillStyle = '#4fd67a';
+    mmctx.beginPath();
+    mmctx.arc(sx, sy, 3, 0, Math.PI * 2);
+    mmctx.fill();
+  });
+
+  // airlock — same true-position-or-rim-marker logic, colored by lock state
+  {
+    const sx = centerPx + (AIRLOCK_POS.x - px) * scale * 2.1;
+    const sy = centerPy + (AIRLOCK_POS.y - py) * scale * 2.1;
+    const distFromCenter = Math.hypot(sx - centerPx, sy - centerPy);
+    if (distFromCenter <= rimRadius) {
+      mmctx.fillStyle = player.cellsCollected >= 3 ? '#5ad4d8' : '#e8a13a';
+      mmctx.fillRect(sx - 3, sy - 3, 6, 6);
+    }
+  }
+
+  // drones: red blip once fully ALERT (as in parent); a dimmer amber blip once
+  // a drone has crossed DETECT_SUSPICION_THRESH but hasn't reached full ALERT
+  // yet, giving the player useful early warning on radar. Fully-unaware
+  // patrol drones (detection below the suspicion threshold) still don't show
+  // at all — that uncertainty is deliberate and unchanged from parent.
+  world.drones.forEach(d => {
+    if (d.state === 'ALERT') {
+      const sx = centerPx + (d.x - px) * scale * 2.1;
+      const sy = centerPy + (d.y - py) * scale * 2.1;
+      mmctx.fillStyle = '#d8483f';
+      mmctx.beginPath();
+      mmctx.arc(sx, sy, 3, 0, Math.PI * 2);
+      mmctx.fill();
+    } else if (d.suspicious) {
+      const sx = centerPx + (d.x - px) * scale * 2.1;
+      const sy = centerPy + (d.y - py) * scale * 2.1;
+      const pulse = 0.5 + Math.sin(world.elapsedTime * 6) * 0.5;
+      mmctx.fillStyle = `rgba(232,161,58,${0.45 + pulse * 0.4})`;
+      mmctx.beginPath();
+      mmctx.arc(sx, sy, 2.4, 0, Math.PI * 2);
+      mmctx.fill();
+    }
+  });
+
+  mmctx.restore();
+
+  // --- radar-rim clamped indicators ---
+  // For any objective (uncollected cell or the airlock) that falls outside the
+  // visible window above, draw a small directional chevron clamped to the rim,
+  // pointing outward along the true bearing to that objective. This keeps every
+  // objective "findable" at a glance even before the player has explored toward
+  // it, without revealing its exact distance.
+  function drawRimMarker(worldX, worldY, color) {
+    const rawSx = (worldX - px) * scale * 2.1;
+    const rawSy = (worldY - py) * scale * 2.1;
+    const dist = Math.hypot(rawSx, rawSy);
+    if (dist <= rimRadius) return; // already drawn at true position above
+    const angle = Math.atan2(rawSy, rawSx);
+    const clampedX = centerPx + Math.cos(angle) * rimRadius;
+    const clampedY = centerPy + Math.sin(angle) * rimRadius;
+
+    mmctx.save();
+    mmctx.translate(clampedX, clampedY);
+    mmctx.rotate(angle);
+    mmctx.beginPath();
+    mmctx.moveTo(5, 0);
+    mmctx.lineTo(-3, 3.5);
+    mmctx.lineTo(-3, -3.5);
+    mmctx.closePath();
+    mmctx.fillStyle = color;
+    mmctx.fill();
+    mmctx.restore();
+  }
+
+  world.cells.forEach(c => {
+    if (c.collected) return;
+    drawRimMarker(c.x, c.y, '#4fd67a');
+  });
+  drawRimMarker(AIRLOCK_POS.x, AIRLOCK_POS.y, player.cellsCollected >= 3 ? '#5ad4d8' : '#e8a13a');
+
+  // player marker + facing (always centered, drawn last, outside clip so it's never cut oddly)
+  mmctx.save();
+  mmctx.translate(centerPx, centerPy);
+  mmctx.rotate(player.angle);
+  mmctx.beginPath();
+  mmctx.moveTo(6, 0);
+  mmctx.lineTo(-4, 4);
+  mmctx.lineTo(-4, -4);
+  mmctx.closePath();
+  mmctx.fillStyle = '#eafdff';
+  mmctx.fill();
+  mmctx.restore();
+}
+
+// ---------------------------------------------------------------------------
+// PLAYER MOVEMENT INTEGRATION
+// ---------------------------------------------------------------------------
+function updatePlayerMovement(dt) {
+  let moveX = 0, moveY = 0; // in local forward/strafe space
+  let turnInput = 0;
+
+  if (touchModeActive) {
+    moveY = -touchState.moveDY; // forward = up on stick = negative Y
+    moveX = touchState.moveDX;
+  } else {
+    if (keys['KeyW'] || keys['ArrowUp']) moveY += 1;
+    if (keys['KeyS'] || keys['ArrowDown']) moveY -= 1;
+    if (keys['KeyD']) moveX += 1;
+    if (keys['KeyA']) moveX -= 1;
+    if (keys['ArrowLeft']) turnInput -= 1;
+    if (keys['ArrowRight']) turnInput += 1;
+  }
+
+  player.angle += turnInput * CFG.ROT_SPEED_KB * dt;
+
+  const mag = Math.hypot(moveX, moveY);
+  if (mag > 0.001) {
+    const normX = moveX / Math.max(mag, 1);
+    const normY = moveY / Math.max(mag, 1);
+    const sprinting = !!keys['ShiftLeft'] || !!keys['ShiftRight'];
+    player.sprinting = sprinting && mag > 0.15;
+    const speed = CFG.MOVE_SPEED * (player.sprinting ? CFG.SPRINT_MULT : 1) * Math.min(mag, 1);
+
+    const cosA = Math.cos(player.angle), sinA = Math.sin(player.angle);
+    // forward vector = (cosA, sinA); right vector = (-sinA, cosA)
+    const worldDX = (cosA * normY + -sinA * normX) * speed * dt;
+    const worldDY = (sinA * normY + cosA * normX) * speed * dt;
+    tryMove(player, worldDX, worldDY, CFG.PLAYER_RADIUS);
+  } else {
+    player.sprinting = false;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// MAIN GAME LOOP
+// ---------------------------------------------------------------------------
+let lastFrameTime = performance.now();
+
+function updateOxygen(dt) {
+  let drain = CFG.O2_DRAIN_PER_SEC;
+  if (player.sprinting) drain += CFG.O2_SPRINT_EXTRA_DRAIN;
+  player.oxygen = Math.max(0, player.oxygen - drain * dt);
+  if (player.oxygen <= 0 && !player.dead && !player.won) {
+    triggerLose('oxygen');
+  }
+}
+
+// Rechargeable flashlight: drains while on, recharges while off. If power hits
+// zero the beam force-shuts-off (no held-open exploit at 0%); if power is
+// below CFG.FLASHLIGHT_MIN_TO_TOGGLE_ON it also can't be switched back on from
+// updateControls until it recharges past that floor, so running the tank
+// completely dry has a real, readable recovery cost.
+function updateFlashlight(dt) {
+  if (player.flashlightOn) {
+    player.flashlightPower = Math.max(0, player.flashlightPower - CFG.FLASHLIGHT_DRAIN_PER_SEC * dt);
+    world.flashlightOnTime += dt;
+    if (player.flashlightPower <= 0) {
+      player.flashlightOn = false;
+      SFX.flashlightDead();
+    }
+  } else {
+    player.flashlightPower = Math.min(CFG.FLASHLIGHT_POWER_MAX, player.flashlightPower + CFG.FLASHLIGHT_RECHARGE_PER_SEC * dt);
+  }
+}
+
+function toggleFlashlight() {
+  if (gameState !== 'PLAYING') return;
+  if (!player.flashlightOn) {
+    if (player.flashlightPower < CFG.FLASHLIGHT_MIN_TO_TOGGLE_ON) {
+      SFX.flashlightRefused();
+      return; // too depleted to switch on yet — must recharge past the floor first
+    }
+    player.flashlightOn = true;
+    SFX.flashlightOn();
+  } else {
+    player.flashlightOn = false;
+    SFX.flashlightOff();
+  }
+}
+
+function gameTick(dt) {
+  world.elapsedTime += dt;
+
+  updatePlayerMovement(dt);
+
+  if (player.pulseCooldownT > 0) player.pulseCooldownT = Math.max(0, player.pulseCooldownT - dt);
+  tickPulseCharge(dt);
+  updateFlashlight(dt);
+
+  world.drones.forEach(d => updateDrone(d, dt));
+
+  updateOxygen(dt);
+  checkCellPickups();
+  checkAirlock();
+  updateVignette(dt);
+
+  updateO2HUD();
+  updateHealthHUD();
+  updatePulseHUD();
+  updateFlashlightHUD();
+  updateDetectionHUD();
+  updateAlertBanner();
+  updateControlHintVisibility();
+}
+
+function frame(now) {
+  const dt = Math.min(0.1, (now - lastFrameTime) / 1000); // clamp to avoid huge jumps on tab-switch
+  lastFrameTime = now;
+
+  if (gameState === 'PLAYING') {
+    gameTick(dt);
+    renderFrame();
+    renderSprites();
+    updateAndDrawPulseVFX(dt);
+    renderMinimap();
+  }
+
+  requestAnimationFrame(frame);
+}
+
+console.log('Game loop defined. Starting...');
+requestAnimationFrame(frame);
+
+// ---------------------------------------------------------------------------
+// UI BUTTON WIRING
+// ---------------------------------------------------------------------------
+document.getElementById('btnStart').addEventListener('click', goToBriefing);
+document.getElementById('btnLaunch').addEventListener('click', startMission);
+document.getElementById('btnResume').addEventListener('click', resumeMission);
+document.getElementById('btnQuitToMenu').addEventListener('click', goToMenu);
+document.getElementById('btnPlayAgainWin').addEventListener('click', goToBriefing);
+document.getElementById('btnPlayAgainLose').addEventListener('click', goToBriefing);
+document.getElementById('btnToggleInputMode').addEventListener('click', () => {
+  if (touchModeActive) disableTouchMode(); else enableTouchMode();
+});
+
+const muteBtn = document.getElementById('muteToggleBtn');
+muteBtn.addEventListener('click', (e) => {
+  e.stopPropagation(); // prevent this click from also engaging pointer-lock on the canvas underneath
+  toggleMute();
+});
+function updateMuteButtonVisuals() {
+  muteBtn.textContent = isMuted ? '✕' : '♪';
+  muteBtn.classList.toggle('muted', isMuted);
+  const label = (isMuted ? 'Unmute sound' : 'Mute sound') + ' (M)';
+  muteBtn.setAttribute('aria-label', label);
+  muteBtn.title = label;
+}
+updateMuteButtonVisuals(); // reflect any persisted mute preference immediately on load
+
+if (isTouchDevice) enableTouchMode();
+
+console.log('UI wiring complete. Airlock Zero ready.');
+})();
+</script>
+</body>
+</html>

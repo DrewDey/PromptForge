@@ -19,10 +19,13 @@ import {
   WEEKEND_CHECKLIST_PROJECT_ID,
   WORD_LADDER_SPRINT_PROJECT_ID,
 } from './featured-projects'
+import { AIRLOCK_ZERO_PREPARED_PROJECTS } from './airlock-zero-projects'
 import { PENDING_SOURCE_RUN_SHOWCASE_PROJECTS } from './pending-source-run-showcases'
-export * from './pending-source-run-showcases'
 import type { ProjectForkSource } from './project-forks'
 import type { Prompt } from './types'
+
+export * from './airlock-zero-projects'
+export * from './pending-source-run-showcases'
 
 export type PreparedShowcaseStep = {
   id: string
@@ -36,6 +39,8 @@ export type PreparedShowcaseStep = {
 export type PreparedShowcaseProject = {
   id: string
   sourceRunId: string
+  /** Exact captured package used to reconstruct fork lineage and continuation evidence. */
+  sourceRunPackageFile?: string
   href: string
   title: string
   description: string
@@ -152,6 +157,7 @@ export const DECISION_MATRIX_SHOWCASE_PROJECT: PreparedShowcaseProject = {
 export const HP_10BII_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   id: HP_10BII_PROJECT_ID,
   sourceRunId: 'cb968686-6546-4218-93df-14c5113b1624',
+  sourceRunPackageFile: 'hp-10bii-financial-calculator-claude-opus-48.json',
   href: '/hp-10bii-calculator-demo',
   title: 'HP 10Bii+ Financial Calculator',
   description:
@@ -197,6 +203,7 @@ export const HP_10BII_SHOWCASE_PROJECT: PreparedShowcaseProject = {
 export const SCHOOL_DESK_HP_CALCULATOR_FORK_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   id: SCHOOL_DESK_HP_CALCULATOR_FORK_PROJECT_ID,
   sourceRunId: 'd9fa40e7-7725-4387-ad5b-14f25cf744ce',
+  sourceRunPackageFile: 'school-desk-hp-10bii-calculator-claude-5-fable-max-fork.json',
   href: '/school-desk-hp-calculator-fork-demo',
   title: 'School Desk HP 10Bii+ Calculator',
   description:
@@ -210,7 +217,7 @@ export const SCHOOL_DESK_HP_CALCULATOR_FORK_SHOWCASE_PROJECT: PreparedShowcasePr
   difficulty: 'beginner',
   modelUsed: 'Fable 5 Max (Claude)',
   modelRecommendation: 'Fable 5 Max (Claude)',
-  promptFamilyId: `${HP_10BII_PROJECT_ID}:${HP_10BII_PROJECT_ID}-step-2`,
+  promptFamilyId: `${HP_10BII_PROJECT_ID}:${HP_10BII_PROJECT_ID}:cb968686-6546-4218-93df-14c5113b1624:step:2`,
   toolsUsed: ['Claude', 'HTML', 'Browser'],
   tags: ['fork', 'finance', 'calculator', 'hp-10bii', 'school desk', 'html', 'interaction'],
   artifactPath: '/artifacts/school-desk-hp-10bii-calculator-claude-5-fable-max-fork.html',
@@ -220,11 +227,11 @@ export const SCHOOL_DESK_HP_CALCULATOR_FORK_SHOWCASE_PROJECT: PreparedShowcasePr
   forkSource: {
     sourceProjectId: HP_10BII_PROJECT_ID,
     sourceProjectTitle: 'HP 10Bii+ Financial Calculator',
-    sourceStepId: `${HP_10BII_PROJECT_ID}-step-2`,
+    sourceStepId: `${HP_10BII_PROJECT_ID}:cb968686-6546-4218-93df-14c5113b1624:step:2`,
     sourceStepNumber: 2,
     depth: 0,
     branchIndex: 0,
-    promptFamilyId: `${HP_10BII_PROJECT_ID}:${HP_10BII_PROJECT_ID}-step-2`,
+    promptFamilyId: `${HP_10BII_PROJECT_ID}:${HP_10BII_PROJECT_ID}:cb968686-6546-4218-93df-14c5113b1624:step:2`,
   },
   createdAt: '2026-06-09T16:00:00.000Z',
   updatedAt: '2026-06-09T16:00:00.000Z',
@@ -355,6 +362,7 @@ export const POMODORO_TIMER_SHOWCASE_PROJECT: PreparedShowcaseProject = {
 export const WEEKEND_CHECKLIST_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   id: WEEKEND_CHECKLIST_PROJECT_ID,
   sourceRunId: 'f4f0e2df-58c9-4def-bb1c-7785a3989ec9',
+  sourceRunPackageFile: 'weekend-plan-checklist-chatgpt-6prompt-fixed.json',
   href: '/weekend-plan-checklist-demo',
   title: 'Weekend Plan Checklist',
   description:
@@ -443,6 +451,7 @@ export const WEEKEND_CHECKLIST_SHOWCASE_PROJECT: PreparedShowcaseProject = {
 export const WEEKEND_CHECKLIST_REAL_FORK_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   id: WEEKEND_CHECKLIST_REAL_FORK_PROJECT_ID,
   sourceRunId: '80b083bb-4f94-4411-b071-a5da731d3e2d',
+  sourceRunPackageFile: 'weekend-plan-checklist-chatgpt-family-road-trip-fork.json',
   href: '/weekend-family-road-trip-readiness-fork-demo',
   title: 'Family Road-Trip Readiness Board',
   description:
@@ -456,7 +465,7 @@ export const WEEKEND_CHECKLIST_REAL_FORK_SHOWCASE_PROJECT: PreparedShowcaseProje
   difficulty: 'beginner',
   modelUsed: 'ChatGPT web, Instant mode visible',
   modelRecommendation: 'ChatGPT',
-  promptFamilyId: `${WEEKEND_CHECKLIST_PROJECT_ID}:${WEEKEND_CHECKLIST_PROJECT_ID}-step-3`,
+  promptFamilyId: `${WEEKEND_CHECKLIST_PROJECT_ID}:${WEEKEND_CHECKLIST_PROJECT_ID}:f4f0e2df-58c9-4def-bb1c-7785a3989ec9:step:3`,
   toolsUsed: ['ChatGPT', 'HTML', 'Browser'],
   tags: ['fork', 'weekend planning', 'road trip', 'checklist', 'family', 'productivity', 'html'],
   artifactPath: '/artifacts/weekend-plan-checklist-chatgpt-family-road-trip-fork-step-4.html',
@@ -466,11 +475,11 @@ export const WEEKEND_CHECKLIST_REAL_FORK_SHOWCASE_PROJECT: PreparedShowcaseProje
   forkSource: {
     sourceProjectId: WEEKEND_CHECKLIST_PROJECT_ID,
     sourceProjectTitle: 'Weekend Plan Checklist',
-    sourceStepId: `${WEEKEND_CHECKLIST_PROJECT_ID}-step-3`,
+    sourceStepId: `${WEEKEND_CHECKLIST_PROJECT_ID}:f4f0e2df-58c9-4def-bb1c-7785a3989ec9:step:3`,
     sourceStepNumber: 3,
     depth: 0,
     branchIndex: 0,
-    promptFamilyId: `${WEEKEND_CHECKLIST_PROJECT_ID}:${WEEKEND_CHECKLIST_PROJECT_ID}-step-3`,
+    promptFamilyId: `${WEEKEND_CHECKLIST_PROJECT_ID}:${WEEKEND_CHECKLIST_PROJECT_ID}:f4f0e2df-58c9-4def-bb1c-7785a3989ec9:step:3`,
   },
   createdAt: '2026-06-09T14:23:00.000Z',
   updatedAt: '2026-06-09T14:29:00.000Z',
@@ -525,6 +534,7 @@ export const WEEKEND_CHECKLIST_REAL_FORK_SHOWCASE_PROJECT: PreparedShowcaseProje
 export const NEON_BLOCK_PATROL_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   id: NEON_BLOCK_PATROL_PROJECT_ID,
   sourceRunId: '6b875335-7fab-42e9-8ca0-8ad1d9868ea8',
+  sourceRunPackageFile: 'gta-style-fps-chatgpt-gpt55-heavy-five-prompt.json',
   href: '/neon-block-patrol-demo',
   title: 'Neon Block Patrol v3',
   description:
@@ -603,6 +613,7 @@ export const NEON_BLOCK_PATROL_SHOWCASE_PROJECT: PreparedShowcaseProject = {
 export const SWISH_CITY_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   id: SWISH_CITY_PROJECT_ID,
   sourceRunId: 'f3918d0e-5261-4600-b1da-45199e38b224',
+  sourceRunPackageFile: 'swish-city-claude-opus-4-8-source-run.json',
   href: '/swish-city-timing-hoops-demo',
   title: 'Swish City Timing Hoops',
   description:
@@ -661,6 +672,7 @@ export const SWISH_CITY_SHOWCASE_PROJECT: PreparedShowcaseProject = {
 export const MEETING_COST_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   id: MEETING_COST_PROJECT_ID,
   sourceRunId: '59d48a98-1b9e-4cc0-9522-2f9437680464',
+  sourceRunPackageFile: 'meeting-cost-calculator-chatgpt-source-run.json',
   href: '/meeting-cost-calculator-demo',
   title: 'Meeting Cost Calculator',
   description:
@@ -1089,6 +1101,7 @@ export const LANE_DEFENSE_SHOWCASE_PROJECT: PreparedShowcaseProject = {
 }
 
 export const PREPARED_SHOWCASE_PROJECTS = [
+  ...AIRLOCK_ZERO_PREPARED_PROJECTS,
   SNAKE_SHOWCASE_PROJECT,
   DECISION_MATRIX_SHOWCASE_PROJECT,
   HP_10BII_SHOWCASE_PROJECT,
@@ -1117,4 +1130,43 @@ export function getPreparedShowcaseProjectBySourceRunId(sourceRunId: string) {
 
 export function getPreparedShowcaseProjectById(projectId: string) {
   return PREPARED_SHOWCASE_PROJECTS.find(project => project.id === projectId) ?? null
+}
+
+export const MAX_PREPARED_FORK_DEPTH = 10
+
+/**
+ * Resolve a prepared project's complete root-to-leaf ancestry. Prepared pages
+ * are code-backed before publication, so a broken registry link is a release
+ * error rather than a reason to silently discard older generations.
+ */
+export function resolvePreparedShowcaseLineage(
+  project: PreparedShowcaseProject,
+): PreparedShowcaseProject[] {
+  const lineage = [project]
+  const visited = new Set([project.id])
+  let current = project
+
+  while (current.forkSource) {
+    if (lineage.length > MAX_PREPARED_FORK_DEPTH) {
+      throw new Error(
+        `Prepared fork lineage for ${project.id} exceeds ${MAX_PREPARED_FORK_DEPTH} generations.`,
+      )
+    }
+
+    const parent = getPreparedShowcaseProjectById(current.forkSource.sourceProjectId)
+    if (!parent) {
+      throw new Error(
+        `Prepared fork ${current.id} references missing source project ${current.forkSource.sourceProjectId}.`,
+      )
+    }
+    if (visited.has(parent.id)) {
+      throw new Error(`Prepared fork lineage cycle detected at ${parent.id}.`)
+    }
+
+    visited.add(parent.id)
+    lineage.unshift(parent)
+    current = parent
+  }
+
+  return lineage
 }

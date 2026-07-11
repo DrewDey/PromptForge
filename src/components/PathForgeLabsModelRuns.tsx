@@ -275,7 +275,7 @@ export function PathForgeLabsModelComparison({
             </div>
             <h2 className="mt-1 text-2xl font-black text-surface-900">Same exact brief, two model runs</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-surface-600">
-              The opening request and acceptance contract are fixed. Follow-ups only address defects found during verification.
+              The opening request and acceptance contract are fixed. Follow-ups preserve the run&apos;s own path through verified repairs or clearly labeled product refinement.
             </p>
           </div>
           <Link

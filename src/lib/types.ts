@@ -37,8 +37,12 @@ export type Prompt = {
   bookmark_count: number
   fork_source_project_id?: string | null
   fork_source_project_title?: string | null
+  fork_source_model_variant_id?: string | null
+  fork_source_run_id?: string | null
   fork_source_step_id?: string | null
   fork_source_step_number?: number | null
+  fork_source_artifact_path?: string | null
+  fork_source_artifact_sha256?: string | null
   fork_parent_submission_id?: string | null
   prompt_family_id?: string | null
   fork_depth?: number | null
@@ -85,8 +89,12 @@ export type SourceRunSubmission = {
   notes: string | null
   fork_source_project_id?: string | null
   fork_source_project_title?: string | null
+  fork_source_model_variant_id?: string | null
+  fork_source_run_id?: string | null
   fork_source_step_id?: string | null
   fork_source_step_number?: number | null
+  fork_source_artifact_path?: string | null
+  fork_source_artifact_sha256?: string | null
   fork_parent_submission_id?: string | null
   prompt_family_id?: string | null
   fork_depth?: number | null

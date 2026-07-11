@@ -25,6 +25,7 @@ const sandbox = {
     if (specifier === './types') return {}
     throw new Error(`Unexpected require from project-forks.ts: ${specifier}`)
   },
+  URL,
   URLSearchParams,
   Set,
   Number,
@@ -42,11 +43,15 @@ const {
   buildProjectForkHref,
   buildProjectResponseForkHref,
   createProjectForkDraftContract,
+  filterProjectForkNetworkBySourceRun,
   groupProjectForkNetworkBySourceStep,
   normalizeProjectForkSource,
+  parseProjectForkSearchParams,
   projectForkSourceFromSubmissionFields,
   projectForkSourceToSubmissionFields,
   resolveProjectForkTrail,
+  resolveProjectForkPoint,
+  serializeProjectForkSourceForNotes,
 } = transpiledModule.exports
 
 const failures = []
@@ -95,6 +100,20 @@ const forks = [
       branchIndex: 0,
       promptFamilyId: 'source-project:source-step-2',
     },
+    continuationSteps: [{
+      id: 'fork-step-3',
+      stepNumber: 3,
+      promptTitle: 'Fork prompt 3',
+      promptText: 'Fork prompt 3 text',
+      responseText: 'Fork response 3 text',
+      responsePackageId: 'fork-step-3',
+      artifactVersions: [{
+        id: 'fork-step-3-artifact-1',
+        artifactPath: '/artifacts/airlock-zero/fork-step-3.html',
+        artifactTitle: 'Airlock Zero fork final',
+        isDefault: true,
+      }],
+    }],
   },
   {
     id: 'fork-by-step-number',
@@ -115,7 +134,9 @@ const forks = [
     forkSource: {
       sourceProjectId: 'source-project',
       sourceStepId: 'missing-step',
-      sourceStepNumber: 99,
+      // A matching number must never rescue a stale exact id. This is the
+      // collision shape that previously attached a branch to the wrong run.
+      sourceStepNumber: 2,
       depth: 1,
       branchIndex: 2,
       promptFamilyId: 'source-project:missing-step',
@@ -127,8 +148,28 @@ const grouping = groupProjectForkNetworkBySourceStep(sourceSteps, forks)
 assert(grouping.rows.length === 3, 'network grouping should keep one row per source response')
 assert(grouping.rows[0].forks.map((fork) => fork.id).join(',') === 'fork-by-step-number', 'step-number fork should map to response 1')
 assert(grouping.rows[1].forks.map((fork) => fork.id).join(',') === 'fork-by-step-id', 'step-id fork should map to response 2')
+assert(grouping.rows[1].forks[0]?.continuationSteps?.[0]?.artifactVersions?.[0]?.artifactPath === '/artifacts/airlock-zero/fork-step-3.html', 'network grouping must preserve the exact child artifact selected for inline display')
 assert(grouping.rows[2].forks.length === 0, 'response 3 should remain an empty branch lane')
 assert(grouping.unmatchedForks.map((fork) => fork.id).join(',') === 'fork-unmatched', 'stale fork metadata should remain unmatched instead of being hidden')
+
+const staleExactForkPoint = resolveProjectForkPoint(sourceSteps, {
+  sourceStepId: 'stale-step-id',
+  sourceStepNumber: 2,
+})
+assert(staleExactForkPoint === null, 'a stale exact step id must be rejected instead of falling back to a matching step number')
+
+const missingExactContract = createProjectForkDraftContract({
+  source: {
+    sourceProjectId: 'source-project',
+    sourceStepId: 'stale-step-id',
+    sourceStepNumber: 2,
+    depth: 1,
+    branchIndex: 0,
+  },
+  sourceSteps,
+})
+assert(missingExactContract.forkPointStep === null, 'draft contract must preserve a missing exact fork point for review instead of silently retargeting it')
+assert(missingExactContract.promptFamilyId === undefined, 'draft contract must not derive a prompt family from a different response when the exact id is stale')
 
 const contract = createProjectForkDraftContract({
   source: {
@@ -213,11 +254,39 @@ const maxedResponseHref = buildProjectResponseForkHref({
 })
 assert(maxedResponseHref === null, 'response fork href should stop at the max-depth boundary')
 
+const artifactSha256 = 'a'.repeat(64)
+const variantAwareHref = buildProjectResponseForkHref({
+  sourceProjectId: 'source-project',
+  sourceProjectTitle: 'Source Project',
+  sourceModelVariantId: 'variant-gpt-56-sol-max',
+  sourceRunId: 'run-gpt-56-sol-max',
+  sourceStepId: 'run-gpt-56-sol-max:step:2',
+  sourceStepNumber: 2,
+  sourceArtifactPath: 'public/artifacts/airlock-zero/gpt-56-sol-max-step-2.html',
+  sourceArtifactSha256: artifactSha256,
+})
+assert(variantAwareHref?.includes('forkVariant=variant-gpt-56-sol-max'), 'variant-aware fork href should preserve the exact source model variant')
+assert(variantAwareHref?.includes('forkRun=run-gpt-56-sol-max'), 'variant-aware fork href should preserve the exact source run')
+assert(variantAwareHref?.includes('forkArtifact=public%2Fartifacts%2Fairlock-zero%2Fgpt-56-sol-max-step-2.html'), 'variant-aware fork href should preserve the exact source artifact path')
+assert(variantAwareHref?.includes(`forkArtifactSha256=${artifactSha256}`), 'variant-aware fork href should preserve the exact source artifact digest')
+
+const parsedVariantAwareHref = parseProjectForkSearchParams(
+  new URL(`https://pathforge.test${variantAwareHref}`).searchParams,
+)
+assert(parsedVariantAwareHref?.sourceModelVariantId === 'variant-gpt-56-sol-max', 'fork URL parsing should round-trip the exact source model variant')
+assert(parsedVariantAwareHref?.sourceRunId === 'run-gpt-56-sol-max', 'fork URL parsing should round-trip the exact source run')
+assert(parsedVariantAwareHref?.sourceArtifactPath === 'public/artifacts/airlock-zero/gpt-56-sol-max-step-2.html', 'fork URL parsing should round-trip the exact source artifact path')
+assert(parsedVariantAwareHref?.sourceArtifactSha256 === artifactSha256, 'fork URL parsing should round-trip the exact source artifact digest')
+
 const fields = projectForkSourceToSubmissionFields({
   sourceProjectId: 'source-project',
   sourceProjectTitle: 'Source Project',
+  sourceModelVariantId: 'variant-gpt-56-sol-max',
+  sourceRunId: 'run-gpt-56-sol-max',
   sourceStepId: 'source-step-2',
   sourceStepNumber: 2,
+  sourceArtifactPath: 'public/artifacts/airlock-zero/gpt-56-sol-max-step-2.html',
+  sourceArtifactSha256: artifactSha256,
   parentForkId: 'parent-project',
   depth: 2,
   branchIndex: 3,
@@ -227,6 +296,75 @@ const roundTrip = projectForkSourceFromSubmissionFields(fields)
 assert(roundTrip?.sourceProjectId === 'source-project', 'stored fork fields should round-trip source project id')
 assert(roundTrip?.parentForkId === 'parent-project', 'stored fork fields should round-trip immediate parent id')
 assert(roundTrip?.promptFamilyId === 'source-project:source-step-2', 'stored fork fields should round-trip prompt family id')
+assert(roundTrip?.sourceModelVariantId === 'variant-gpt-56-sol-max', 'stored fork fields should round-trip exact source model variant id')
+assert(roundTrip?.sourceRunId === 'run-gpt-56-sol-max', 'stored fork fields should round-trip exact source run id')
+assert(roundTrip?.sourceArtifactPath === 'public/artifacts/airlock-zero/gpt-56-sol-max-step-2.html', 'stored fork fields should round-trip exact source artifact path')
+assert(roundTrip?.sourceArtifactSha256 === artifactSha256, 'stored fork fields should round-trip exact source artifact digest')
+
+const serializedVariantAwareNotes = serializeProjectForkSourceForNotes(roundTrip)
+assert(serializedVariantAwareNotes.includes('Fork source run: run-gpt-56-sol-max'), 'review notes should retain the exact source run id')
+assert(serializedVariantAwareNotes.includes('Fork source model variant: variant-gpt-56-sol-max'), 'review notes should retain the exact source model variant id')
+assert(serializedVariantAwareNotes.includes('Fork source artifact: public/artifacts/airlock-zero/gpt-56-sol-max-step-2.html'), 'review notes should retain the exact source artifact path')
+assert(serializedVariantAwareNotes.includes(`Fork source artifact SHA-256: ${artifactSha256}`), 'review notes should retain the exact source artifact digest')
+
+const runIsolatedForks = [
+  {
+    id: 'run-a-branch',
+    title: 'Run A branch',
+    createdAt: '2026-07-11T00:00:00.000Z',
+    forkSource: {
+      sourceProjectId: 'source-project',
+      sourceRunId: 'run-a',
+      sourceStepId: 'shared-step-id',
+      sourceStepNumber: 2,
+      depth: 1,
+      branchIndex: 0,
+    },
+  },
+  {
+    id: 'run-b-branch',
+    title: 'Run B branch',
+    createdAt: '2026-07-11T00:01:00.000Z',
+    forkSource: {
+      sourceProjectId: 'source-project',
+      sourceRunId: 'run-b',
+      sourceStepId: 'shared-step-id',
+      sourceStepNumber: 2,
+      depth: 1,
+      branchIndex: 0,
+    },
+  },
+  {
+    id: 'legacy-branch',
+    title: 'Legacy branch without run identity',
+    createdAt: '2026-07-11T00:02:00.000Z',
+    forkSource: {
+      sourceProjectId: 'source-project',
+      sourceStepId: 'shared-step-id',
+      sourceStepNumber: 2,
+      depth: 1,
+      branchIndex: 0,
+    },
+  },
+]
+assert(filterProjectForkNetworkBySourceRun(runIsolatedForks, 'run-a').map((fork) => fork.id).join(',') === 'run-a-branch', 'model run A must never receive branches from run B or legacy runless rows')
+assert(filterProjectForkNetworkBySourceRun(runIsolatedForks, ' run-b ').map((fork) => fork.id).join(',') === 'run-b-branch', 'source-run filter should normalize the requested run id before exact matching')
+assert(filterProjectForkNetworkBySourceRun(runIsolatedForks).length === 3, 'generic canonical pages without a run selector should retain every approved branch')
+assert(filterProjectForkNetworkBySourceRun(runIsolatedForks, '   ').length === 3, 'blank source-run selectors should behave like omitted selectors')
+
+const collisionSteps = [{
+  id: 'shared-step-id',
+  stepNumber: 2,
+  promptTitle: 'Same numbered response in every model run',
+  promptText: 'Prompt text',
+  responseText: 'Response text',
+  responsePackageId: 'shared-step-id',
+}]
+const isolatedGrouping = groupProjectForkNetworkBySourceStep(
+  collisionSteps,
+  filterProjectForkNetworkBySourceRun(runIsolatedForks, 'run-a'),
+)
+assert(isolatedGrouping.rows[0].forks.map((fork) => fork.id).join(',') === 'run-a-branch', 'render grouping must attach only the branch belonging to the selected model run even when step ids collide')
 
 const rootProject = {
   id: 'root-project',

@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Calendar, CheckCircle2, Edit3, ExternalLink, GitFork, Layers3 } from 'lucide-react'
+import { ArrowUp, Bookmark, Calendar, CheckCircle2, Edit3, ExternalLink, GitFork, Layers3 } from 'lucide-react'
 import {
   getProfileProvenance,
   profileAvatarClasses,
@@ -26,11 +26,13 @@ export default function BuilderIdentity({
   const displayName = profile.display_name || profile.username
   const provenance = getProfileProvenance(profile)
   const joined = joinedLabel(profile.created_at)
+  const hasFocus = insights.categoryFocus.length > 0 || insights.modelFocus.length > 0
 
   return (
-    <section className="border border-surface-200 bg-white" aria-labelledby="builder-profile-name">
-      <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_290px]">
-        <div className="p-5 sm:p-7">
+    <section className="relative overflow-hidden border border-surface-200 bg-white shadow-[0_14px_44px_rgba(24,24,27,0.05)]" aria-labelledby="builder-profile-name">
+      <span className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-brand-orange via-brand-orange/35 to-brand-blue" aria-hidden="true" />
+      <div className={hasFocus ? 'grid gap-0 lg:grid-cols-[minmax(0,1fr)_300px]' : ''}>
+        <div className="p-5 sm:p-7 lg:p-8">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
             <div
               className={`flex h-16 w-16 shrink-0 items-center justify-center border border-black/10 sm:h-20 sm:w-20 ${profileAvatarClasses(profile.username)}`}
@@ -94,7 +96,7 @@ export default function BuilderIdentity({
                 </p>
               ) : provenance ? (
                 <p className="mt-4 max-w-3xl text-sm leading-6 text-surface-600">
-                  This profile’s focus is derived from its published, reviewed PathForge work. No personal biography has been inferred or invented.
+                  Explore the kinds of projects and models represented in this builder&apos;s published work.
                 </p>
               ) : (
                 isOwner && (
@@ -111,26 +113,41 @@ export default function BuilderIdentity({
                     Joined {joined}
                   </span>
                 )}
-                <span className="inline-flex items-center gap-1.5">
-                  <Layers3 className="h-3.5 w-3.5" aria-hidden="true" />
-                  {insights.publishedCount} published {insights.publishedCount === 1 ? 'path' : 'paths'}
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <GitFork className="h-3.5 w-3.5" aria-hidden="true" />
-                  {insights.forkCount} published {insights.forkCount === 1 ? 'fork' : 'forks'}
-                </span>
+                {insights.publishedCount > 0 && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Layers3 className="h-3.5 w-3.5" aria-hidden="true" />
+                    {insights.publishedCount} published {insights.publishedCount === 1 ? 'path' : 'paths'}
+                  </span>
+                )}
+                {insights.forkCount > 0 && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <GitFork className="h-3.5 w-3.5" aria-hidden="true" />
+                    {insights.forkCount} published {insights.forkCount === 1 ? 'fork' : 'forks'}
+                  </span>
+                )}
+                {insights.totalUpvotes > 0 && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />
+                    {insights.totalUpvotes} {insights.totalUpvotes === 1 ? 'upvote' : 'upvotes'} received
+                  </span>
+                )}
+                {insights.totalSavesReceived > 0 && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Bookmark className="h-3.5 w-3.5" aria-hidden="true" />
+                    {insights.totalSavesReceived} {insights.totalSavesReceived === 1 ? 'save' : 'saves'} received
+                  </span>
+                )}
               </div>
             </div>
           </div>
         </div>
 
-        <aside className="border-t border-surface-200 bg-surface-50 p-5 lg:border-l lg:border-t-0 sm:p-6">
+        {hasFocus && <aside className="border-t border-surface-200 bg-surface-50 p-5 lg:border-l lg:border-t-0 sm:p-6">
           <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-surface-500">
             Build focus
           </div>
 
-          {insights.categoryFocus.length > 0 || insights.modelFocus.length > 0 ? (
-            <div className="mt-4 space-y-5">
+          <div className="mt-4 space-y-5">
               {insights.categoryFocus.length > 0 && (
                 <div>
                   <div className="text-xs font-bold text-surface-900">Domains</div>
@@ -158,13 +175,8 @@ export default function BuilderIdentity({
                   </div>
                 </div>
               )}
-            </div>
-          ) : (
-            <p className="mt-3 text-sm leading-6 text-surface-500">
-              Focus appears after this builder publishes a path.
-            </p>
-          )}
-        </aside>
+          </div>
+        </aside>}
       </div>
     </section>
   )

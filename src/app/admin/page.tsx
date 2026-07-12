@@ -1,4 +1,13 @@
 import Link from 'next/link'
+import {
+  ArrowUpRight,
+  CheckCircle2,
+  Clock3,
+  FileCheck2,
+  Inbox,
+  Layers3,
+  SearchCheck,
+} from 'lucide-react'
 import { getAllPromptsForAdmin, getAllSourceRunSubmissionsForAdmin, getAllSuggestionsForAdmin } from '@/lib/data'
 import { getPreparedShowcaseProjectBySourceRunId } from '@/lib/prepared-showcase-projects'
 import { projectForkSourceFromSubmissionFields } from '@/lib/project-forks'
@@ -9,14 +18,28 @@ import AdminSuggestionRow from './AdminSuggestionRow'
 
 export const dynamic = 'force-dynamic'
 
+type AdminTab = 'overview' | 'pending' | 'all' | 'suggestions'
+
+const ADMIN_TABS: AdminTab[] = ['overview', 'pending', 'all', 'suggestions']
+
+function adminRequestTimestamp() {
+  // This route is force-dynamic, so the timestamp is created once for each fresh admin request.
+  return Date.now()
+}
+
+function normalizeTab(requestedTab?: string): AdminTab {
+  const normalized = requestedTab === 'source-runs' ? 'pending' : requestedTab
+  return ADMIN_TABS.includes(normalized as AdminTab) ? normalized as AdminTab : 'overview'
+}
+
 export default async function AdminDashboard({
   searchParams,
 }: {
   searchParams: Promise<{ tab?: string }>
 }) {
   const params = await searchParams
-  const requestedTab = params.tab ?? 'overview'
-  const tab = requestedTab === 'source-runs' ? 'pending' : requestedTab
+  const tab = normalizeTab(params.tab)
+  const nowMs = adminRequestTimestamp()
 
   const [allPrompts, allSuggestions, sourceRuns] = await Promise.all([
     getAllPromptsForAdmin(),
@@ -36,21 +59,9 @@ export default async function AdminDashboard({
     return Boolean(
       suggestion.visibility === 'scheduled_public' &&
       suggestion.scheduled_publish_at &&
-      new Date(suggestion.scheduled_publish_at).getTime() <= Date.now()
+      new Date(suggestion.scheduled_publish_at).getTime() <= nowMs
     )
   })
-
-  const stats = {
-    total: allPrompts.length,
-    pending: pendingPrompts.length,
-    approved: approvedPrompts.length,
-  }
-
-  const suggestionStats = {
-    total: allSuggestions.length,
-    pending: pendingSuggestions.length,
-    public: publicSuggestions.length,
-  }
 
   const intakeItems = sourceRuns.filter(sourceRun => (
     (sourceRun.status === 'queued' || sourceRun.status === 'extracting') &&
@@ -62,163 +73,165 @@ export default async function AdminDashboard({
       .map(sourceRun => [sourceRun.extracted_prompt_id, sourceRun])
   )
   const reviewCount = pendingPrompts.length + intakeItems.length
+  const pageCopy = adminPageCopy(tab, reviewCount)
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-        <p className="text-sm text-gray-500 mt-1">Manage prompts, review submissions, and monitor the platform.</p>
-      </div>
-
-      {/* Mobile tab nav */}
-      <div className="flex gap-2 mb-6 md:hidden">
-        <Link href="/admin" className={`text-xs font-medium px-3 py-1.5 border ${tab === 'overview' ? 'bg-brand-orange text-white border-brand-orange' : 'bg-white text-gray-600 border-gray-200'}`}>
-          Overview
-        </Link>
-        <Link href="/admin?tab=pending" className={`text-xs font-medium px-3 py-1.5 border ${tab === 'pending' ? 'bg-brand-orange text-white border-brand-orange' : 'bg-white text-gray-600 border-gray-200'}`}>
-          Review ({reviewCount})
-        </Link>
-        <Link href="/admin?tab=all" className={`text-xs font-medium px-3 py-1.5 border ${tab === 'all' ? 'bg-brand-orange text-white border-brand-orange' : 'bg-white text-gray-600 border-gray-200'}`}>
-          All
-        </Link>
-        <Link href="/admin?tab=suggestions" className={`text-xs font-medium px-3 py-1.5 border ${tab === 'suggestions' ? 'bg-brand-orange text-white border-brand-orange' : 'bg-white text-gray-600 border-gray-200'}`}>
-          Suggestions ({suggestionStats.pending})
-        </Link>
-      </div>
-
-      {/* Stats Cards */}
-      {(tab === 'overview' || tab === 'pending' || tab === 'all' || tab === 'suggestions') && (
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-          <StatCard label="Total Prompts" value={stats.total} />
-          <StatCard label="Pending Review" value={reviewCount} highlight={reviewCount > 0} />
-          <StatCard label="Approved" value={stats.approved} />
-          <StatCard label="Pending Suggestions" value={suggestionStats.pending} highlight={suggestionStats.pending > 0} />
-          <StatCard label="Public Suggestions" value={suggestionStats.public} />
+    <div className="min-w-0">
+      <section className="grid min-w-0 gap-5 border-b border-surface-200 pb-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-brand-orange">
+            <span className="h-2 w-2 bg-brand-orange" aria-hidden="true" />
+            Live review workspace
+          </div>
+          <h1 className="mt-3 text-3xl font-black tracking-[-0.04em] text-surface-900 sm:text-4xl">
+            {pageCopy.title}
+          </h1>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-surface-600 sm:text-base">
+            {pageCopy.description}
+          </p>
         </div>
-      )}
 
-      {/* Pending Review */}
+        <div className="flex min-w-0 items-center gap-3 border border-surface-200 bg-white px-4 py-3 shadow-[4px_4px_0_rgba(24,24,27,0.05)]">
+          <div className={`flex h-9 w-9 shrink-0 items-center justify-center ${reviewCount > 0 ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'}`}>
+            {reviewCount > 0
+              ? <Clock3 className="h-4 w-4" aria-hidden="true" />
+              : <CheckCircle2 className="h-4 w-4" aria-hidden="true" />}
+          </div>
+          <div className="min-w-0">
+            <p className="font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-surface-500">
+              Review queue
+            </p>
+            <p className="truncate text-sm font-bold text-surface-900">
+              {reviewCount > 0 ? `${reviewCount} item${reviewCount === 1 ? '' : 's'} need attention` : 'Queue is clear'}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <nav aria-label="Admin sections" className="mt-6 min-w-0 border border-surface-200 bg-white p-1.5">
+        <div className="grid min-w-0 grid-cols-2 gap-1 sm:flex sm:flex-wrap">
+          <AdminTabLink href="/admin" label="Overview" active={tab === 'overview'} />
+          <AdminTabLink href="/admin?tab=pending" label="Review queue" count={reviewCount} active={tab === 'pending'} />
+          <AdminTabLink href="/admin?tab=all" label="All projects" count={allPrompts.length} active={tab === 'all'} />
+          <AdminTabLink href="/admin?tab=suggestions" label="Suggestions" count={pendingSuggestions.length} active={tab === 'suggestions'} />
+        </div>
+      </nav>
+
+      <dl className="mt-5 grid min-w-0 grid-cols-2 border border-surface-200 bg-white lg:grid-cols-4">
+        <StatCard label="Needs review" value={reviewCount} highlight={reviewCount > 0} />
+        <StatCard label="Published paths" value={approvedPrompts.length} />
+        <StatCard label="Feedback waiting" value={pendingSuggestions.length} highlight={pendingSuggestions.length > 0} />
+        <StatCard label="Public suggestions" value={publicSuggestions.length} />
+      </dl>
+
       {(tab === 'overview' || tab === 'pending') && (
-        <section className="mb-10">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            Pending Review
-            {reviewCount > 0 && (
-              <span className="bg-amber-50 text-amber-700 text-xs font-semibold px-2 py-0.5">
-                {reviewCount}
-              </span>
-            )}
-          </h2>
+        <section className="mt-9 min-w-0" aria-labelledby="pending-review-heading">
+          <SectionHeading
+            eyebrow="Review pipeline"
+            title="Pending review"
+            description={`${pendingPrompts.length} project submission${pendingPrompts.length === 1 ? '' : 's'} and ${intakeItems.length} source-run intake${intakeItems.length === 1 ? '' : 's'}.`}
+            count={reviewCount}
+          />
+
           {reviewCount === 0 ? (
-            <div className="bg-white border border-gray-200 p-8 text-center text-gray-500 text-sm">
-              No prompts pending review. All caught up!
-            </div>
+            <EmptyState
+              icon={<SearchCheck className="h-5 w-5" aria-hidden="true" />}
+              title="Nothing is waiting on review."
+              description="New project submissions and source-run intakes will appear here with their author, model evidence, and next moderation action."
+              action={<Link href="/admin?tab=all" className="font-bold text-brand-orange hover:text-brand-orange-dark">Review published projects</Link>}
+            />
           ) : (
-            <div className="bg-white border border-gray-200 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-200 bg-gray-50">
-                      <th className="text-left px-4 py-3 font-medium text-gray-600">Title</th>
-                      <th className="text-left px-4 py-3 font-medium text-gray-600">Category</th>
-                      <th className="text-left px-4 py-3 font-medium text-gray-600">Difficulty</th>
-                      <th className="text-left px-4 py-3 font-medium text-gray-600">Author</th>
-                      <th className="text-left px-4 py-3 font-medium text-gray-600">Submitted</th>
-                      <th className="text-right px-4 py-3 font-medium text-gray-600">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pendingPrompts.map(prompt => {
-                      const sourceRun = sourceRunByPromptId.get(prompt.id)
-                      return (
-                        <AdminPromptRow
-                          key={prompt.id}
-                          prompt={prompt}
-                          sourceRunHref={sourceRun ? `/admin/source-runs/${sourceRun.id}` : undefined}
-                        />
-                      )
-                    })}
-                    {intakeItems.map(sourceRun => (
-                      <SourceRunIntakeRow key={sourceRun.id} sourceRun={sourceRun} />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <div className="min-w-0 divide-y divide-surface-200 border border-surface-200 bg-white">
+              {pendingPrompts.map(prompt => {
+                const sourceRun = sourceRunByPromptId.get(prompt.id)
+                return (
+                  <AdminPromptRow
+                    key={prompt.id}
+                    prompt={prompt}
+                    sourceRunHref={sourceRun ? `/admin/source-runs/${sourceRun.id}` : undefined}
+                  />
+                )
+              })}
+              {intakeItems.map(sourceRun => (
+                <SourceRunIntakeRow key={sourceRun.id} sourceRun={sourceRun} />
+              ))}
             </div>
           )}
         </section>
       )}
 
-      {/* All Prompts */}
       {tab === 'all' && (
-        <section>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">All Prompts ({allPrompts.length})</h2>
-          <div className="bg-white border border-gray-200 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Title</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Category</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Votes</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Author</th>
-                    <th className="text-right px-4 py-3 font-medium text-gray-600">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {allPrompts.map(prompt => (
-                    <AdminPromptRow key={prompt.id} prompt={prompt} showStatus />
-                  ))}
-                </tbody>
-              </table>
+        <section className="mt-9 min-w-0" aria-labelledby="all-projects-heading">
+          <SectionHeading
+            eyebrow="Project registry"
+            title="All projects"
+            description="Published, pending, and declined projects remain visible here for moderation and recovery."
+            count={allPrompts.length}
+          />
+          {allPrompts.length === 0 ? (
+            <EmptyState
+              icon={<Layers3 className="h-5 w-5" aria-hidden="true" />}
+              title="No projects have entered the registry."
+              description="Approved and pending source-run projects will appear here once the first intake is structured."
+            />
+          ) : (
+            <div className="min-w-0 divide-y divide-surface-200 border border-surface-200 bg-white">
+              {allPrompts.map(prompt => (
+                <AdminPromptRow key={prompt.id} prompt={prompt} showStatus />
+              ))}
             </div>
-          </div>
+          )}
         </section>
       )}
 
       {tab === 'suggestions' && (
-        <section>
-          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Suggestion Box ({allSuggestions.length})</h2>
-              <p className="mt-1 text-sm text-gray-500">
-                Approve PathForge feedback, respond to users, and decide what becomes public after the 24-hour release window.
-              </p>
-            </div>
-            <Link href="/suggestion-box" className="text-sm font-semibold text-brand-orange hover:text-brand-orange-dark">
+        <section className="mt-9 min-w-0" aria-labelledby="suggestion-box-heading">
+          <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <SectionHeading
+              eyebrow="Community feedback"
+              title="Suggestion box"
+              description="Moderate feedback, update its public status, and answer the person who sent it."
+              count={allSuggestions.length}
+            />
+            <Link
+              href="/suggestion-box"
+              className="inline-flex min-h-10 shrink-0 items-center gap-2 border border-surface-300 bg-white px-3 py-2 text-xs font-bold text-surface-700 transition-colors hover:border-brand-orange hover:text-brand-orange focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+            >
               View public board
+              <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
             </Link>
           </div>
+
           {allSuggestions.length === 0 ? (
-            <div className="bg-white border border-gray-200 p-8 text-center text-gray-500 text-sm">
-              No suggestions yet. When users send PathForge feedback, it will appear here for review.
-            </div>
+            <EmptyState
+              icon={<Inbox className="h-5 w-5" aria-hidden="true" />}
+              title="No suggestions have arrived yet."
+              description="Site feedback, bugs, moderation concerns, and feature requests will enter this workspace for review."
+              action={<Link href="/suggestion-box" className="font-bold text-brand-orange hover:text-brand-orange-dark">Open the public form</Link>}
+            />
           ) : (
-            <div className="space-y-4">
+            <div className="mt-6 min-w-0 space-y-8">
               {pendingSuggestions.length > 0 && (
-                <div>
-                  <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-amber-700">
-                    Pending review
-                  </h3>
-                  <div className="space-y-4">
+                <div className="min-w-0">
+                  <SubsectionLabel label="Pending review" count={pendingSuggestions.length} tone="amber" />
+                  <div className="mt-3 min-w-0 space-y-4">
                     {pendingSuggestions.map(suggestion => (
-                      <AdminSuggestionRow key={suggestion.id} suggestion={suggestion} />
+                      <AdminSuggestionRow key={suggestion.id} suggestion={suggestion} nowMs={nowMs} />
                     ))}
                   </div>
                 </div>
               )}
-              <div>
-                <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-500">
-                  Reviewed suggestions
-                </h3>
+
+              <div className="min-w-0">
+                <SubsectionLabel label="Reviewed suggestions" count={reviewedSuggestions.length} />
                 {reviewedSuggestions.length === 0 ? (
-                  <div className="bg-white border border-gray-200 p-6 text-sm text-gray-500">
-                    No reviewed suggestions yet.
+                  <div className="mt-3 border border-surface-200 bg-white p-5 text-sm text-surface-500">
+                    Reviewed feedback will remain here with its response and publication state.
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="mt-3 min-w-0 space-y-4">
                     {reviewedSuggestions.map(suggestion => (
-                      <AdminSuggestionRow key={suggestion.id} suggestion={suggestion} />
+                      <AdminSuggestionRow key={suggestion.id} suggestion={suggestion} nowMs={nowMs} />
                     ))}
                   </div>
                 )}
@@ -227,6 +240,103 @@ export default async function AdminDashboard({
           )}
         </section>
       )}
+    </div>
+  )
+}
+
+function adminPageCopy(tab: AdminTab, reviewCount: number) {
+  if (tab === 'pending') {
+    return {
+      title: 'Review what ships next.',
+      description: reviewCount > 0
+        ? 'Open each intake, verify its source evidence, and take the next publishing or moderation action.'
+        : 'The review queue is clear. New source runs and project submissions will collect here.',
+    }
+  }
+  if (tab === 'all') {
+    return {
+      title: 'Keep the project registry healthy.',
+      description: 'Find any project, confirm its publication state, and recover or remove it without losing its source trail.',
+    }
+  }
+  if (tab === 'suggestions') {
+    return {
+      title: 'Turn feedback into decisions.',
+      description: 'Review what users sent, respond directly, and control what appears on the public suggestion board.',
+    }
+  }
+  return {
+    title: 'Run PathForge with confidence.',
+    description: 'One operational view for project review, source-run intake, publishing state, and community feedback.',
+  }
+}
+
+function AdminTabLink({
+  href,
+  label,
+  count,
+  active,
+}: {
+  href: string
+  label: string
+  count?: number
+  active: boolean
+}) {
+  return (
+    <Link
+      href={href}
+      aria-current={active ? 'page' : undefined}
+      className={[
+        'flex min-h-10 min-w-0 items-center justify-between gap-2 px-3 py-2 text-xs font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange sm:min-w-32 sm:justify-center',
+        active
+          ? 'bg-surface-900 text-white'
+          : 'text-surface-600 hover:bg-primary-50 hover:text-brand-orange',
+      ].join(' ')}
+    >
+      <span className="truncate">{label}</span>
+      {typeof count === 'number' && (
+        <span className={`shrink-0 font-mono text-[9px] ${active ? 'text-brand-orange-light' : 'text-surface-400'}`}>
+          {count}
+        </span>
+      )}
+    </Link>
+  )
+}
+
+function SectionHeading({
+  eyebrow,
+  title,
+  description,
+  count,
+}: {
+  eyebrow: string
+  title: string
+  description: string
+  count: number
+}) {
+  const headingId = title.toLowerCase().replaceAll(' ', '-') + '-heading'
+  return (
+    <div className="mb-4 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+      <div className="min-w-0">
+        <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-brand-orange">{eyebrow}</p>
+        <h2 id={headingId} className="mt-1 text-2xl font-black tracking-[-0.03em] text-surface-900">{title}</h2>
+        <p className="mt-1 max-w-3xl text-sm leading-6 text-surface-600">{description}</p>
+      </div>
+      <span className="w-fit shrink-0 border border-surface-200 bg-white px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-surface-500">
+        {count} total
+      </span>
+    </div>
+  )
+}
+
+function SubsectionLabel({ label, count, tone = 'neutral' }: { label: string; count: number; tone?: 'neutral' | 'amber' }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className={`h-2 w-2 ${tone === 'amber' ? 'bg-amber-500' : 'bg-surface-400'}`} aria-hidden="true" />
+      <h3 className={`font-mono text-[10px] font-bold uppercase tracking-[0.16em] ${tone === 'amber' ? 'text-amber-800' : 'text-surface-500'}`}>
+        {label}
+      </h3>
+      <span className="font-mono text-[10px] text-surface-400">{count}</span>
     </div>
   )
 }
@@ -247,83 +357,118 @@ function SourceRunIntakeRow({ sourceRun }: { sourceRun: SourceRunSubmissionWithR
   const forkSource = projectForkSourceFromSubmissionFields(sourceRun)
 
   return (
-    <tr
-      className="border-b border-gray-100 bg-amber-50/30 hover:bg-amber-50"
+    <article
+      className="min-w-0 bg-amber-50/35 p-4 transition-colors hover:bg-amber-50/70 sm:p-5"
       data-source-run-id={sourceRun.id}
       data-source-url={sourceRun.source_url ?? undefined}
     >
-      <td className="px-4 py-3 align-top">
-        <div className="mb-1 inline-flex items-center gap-1.5 bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-amber-800">
-          {preparedProject ? 'Prepared page ready' : 'Source-run review'}
-        </div>
-        <Link
-          href={`/admin/source-runs/${sourceRun.id}`}
-          className="block font-medium text-gray-900 hover:text-brand-orange"
-        >
-          {title}
-        </Link>
-        <p className="mt-1 break-all text-xs text-gray-500">{sourceLabel}</p>
-        <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] text-gray-700">
-          {forkSource && (
-            <span className="border border-green-100 bg-green-50 px-2 py-1 text-green-800">
-              Fork: {forkSource.sourceStepNumber
-                ? `response ${String(forkSource.sourceStepNumber).padStart(2, '0')}`
-                : 'source attached'}
-              {forkSource.sourceRunId ? ' · exact model run' : ''}
+      <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+        <div className="min-w-0">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <span className={`inline-flex items-center gap-1.5 border px-2 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.12em] ${preparedProject ? 'border-green-200 bg-green-50 text-green-800' : 'border-amber-200 bg-white text-amber-800'}`}>
+              <FileCheck2 className="h-3 w-3" aria-hidden="true" />
+              {preparedProject ? 'Prepared page ready' : 'Source-run review'}
             </span>
-          )}
-          <span className="border border-amber-100 bg-white px-2 py-1">
-            Provider: {modelMetadata.provider || 'Not specified'}
-          </span>
-          <span className="border border-amber-100 bg-white px-2 py-1">
-            Model: {modelMetadata.modelUsed || 'Not specified'}
-          </span>
-          {modelMetadata.modelSettings && (
-            <span className="border border-amber-100 bg-white px-2 py-1">
-              Settings: {modelMetadata.modelSettings}
+            <span className="font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-surface-500">
+              {sourceRun.status.replace('_', ' ')}
             </span>
-          )}
+          </div>
+
+          <Link
+            href={`/admin/source-runs/${sourceRun.id}`}
+            className="block break-words text-base font-black leading-6 text-surface-900 transition-colors hover:text-brand-orange focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+          >
+            {title}
+          </Link>
+          <p className="mt-1 break-all font-mono text-[10px] leading-5 text-surface-500">{sourceLabel}</p>
+
+          <div className="mt-3 flex min-w-0 flex-wrap gap-1.5 text-[11px] text-surface-700">
+            {forkSource && (
+              <span className="border border-green-200 bg-green-50 px-2 py-1 text-green-800">
+                Fork: {forkSource.sourceStepNumber
+                  ? `response ${String(forkSource.sourceStepNumber).padStart(2, '0')}`
+                  : 'source attached'}
+                {forkSource.sourceRunId ? ' · exact model run' : ''}
+              </span>
+            )}
+            <span className="border border-surface-200 bg-white px-2 py-1">
+              Provider: {modelMetadata.provider || 'Not specified'}
+            </span>
+            <span className="border border-surface-200 bg-white px-2 py-1">
+              Model: {modelMetadata.modelUsed || 'Not specified'}
+            </span>
+            {modelMetadata.modelSettings && (
+              <span className="border border-surface-200 bg-white px-2 py-1">
+                Settings: {modelMetadata.modelSettings}
+              </span>
+            )}
+          </div>
+
+          <p className={`mt-3 text-xs leading-5 ${preparedProject ? 'font-semibold text-green-800' : 'text-surface-500'}`}>
+            {preparedProject
+              ? `Prepared for publication at ${preparedProject.href}.`
+              : 'No prepared public page yet. Structure it first, then publish from this review item.'}
+          </p>
         </div>
-        {preparedProject ? (
-          <p className="mt-1 text-xs font-medium text-green-700">
-            Next action: publish prepared page as {preparedProject.href}.
-          </p>
-        ) : (
-          <p className="mt-1 text-xs text-gray-500">
-            No prepared public page yet. Structure it first, then publish from this review item.
-          </p>
-        )}
-      </td>
-      <td className="px-4 py-3 align-top text-gray-600">Source run</td>
-      <td className="px-4 py-3 align-top text-gray-600">{sourceRun.status.replace('_', ' ')}</td>
-      <td className="px-4 py-3 align-top text-gray-600">
-        {sourceRun.author?.display_name ?? sourceRun.author?.username ?? 'Anonymous'}
-      </td>
-      <td className="px-4 py-3 align-top text-xs text-gray-500">
-        {new Date(sourceRun.created_at).toLocaleDateString()}
-      </td>
-      <td className="px-4 py-3 text-right align-top">
-        <Link
-          href={`/admin/source-runs/${sourceRun.id}`}
-          className={[
-            'inline-flex items-center justify-center px-2.5 py-1.5 text-xs font-medium',
-            preparedProject
-              ? 'bg-green-100 text-green-800 hover:bg-green-200'
-              : 'bg-amber-100 text-amber-800 hover:bg-amber-200',
-          ].join(' ')}
-        >
-          {preparedProject ? 'Publish prepared page' : 'Review source run'}
-        </Link>
-      </td>
-    </tr>
+
+        <div className="flex min-w-0 flex-col items-start gap-3 border-t border-surface-200 pt-4 lg:min-w-56 lg:items-end lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
+          <dl className="grid w-full grid-cols-2 gap-x-4 gap-y-2 text-xs lg:grid-cols-1 lg:text-right">
+            <div className="min-w-0">
+              <dt className="font-mono text-[9px] uppercase tracking-[0.12em] text-surface-400">Submitted by</dt>
+              <dd className="mt-0.5 truncate font-semibold text-surface-700">
+                {sourceRun.author?.display_name ?? sourceRun.author?.username ?? 'Anonymous'}
+              </dd>
+            </div>
+            <div className="min-w-0">
+              <dt className="font-mono text-[9px] uppercase tracking-[0.12em] text-surface-400">Received</dt>
+              <dd className="mt-0.5 font-semibold text-surface-700">{new Date(sourceRun.created_at).toLocaleDateString()}</dd>
+            </div>
+          </dl>
+          <Link
+            href={`/admin/source-runs/${sourceRun.id}`}
+            className={[
+              'inline-flex min-h-10 w-full items-center justify-center px-3 py-2 text-xs font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange lg:w-auto',
+              preparedProject
+                ? 'bg-green-800 text-white hover:bg-green-900'
+                : 'bg-surface-900 text-white hover:bg-brand-orange',
+            ].join(' ')}
+          >
+            {preparedProject ? 'Publish prepared page' : 'Review source run'}
+          </Link>
+        </div>
+      </div>
+    </article>
   )
 }
 
 function StatCard({ label, value, highlight }: { label: string; value: number; highlight?: boolean }) {
   return (
-    <div className={`border p-4 ${highlight ? 'border-amber-300 bg-amber-50' : 'bg-white border-gray-200'}`}>
-      <p className="text-xs text-gray-500 mb-1">{label}</p>
-      <p className={`text-2xl font-bold ${highlight ? 'text-amber-700' : 'text-gray-900'}`}>{value}</p>
+    <div className="min-w-0 border-b border-r border-surface-200 p-3.5 last:border-r-0 lg:border-b-0 lg:p-4">
+      <dt className="truncate font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-surface-500">{label}</dt>
+      <dd className={`mt-1 text-2xl font-black tracking-[-0.04em] ${highlight ? 'text-brand-orange-dark' : 'text-surface-900'}`}>{value}</dd>
+    </div>
+  )
+}
+
+function EmptyState({
+  icon,
+  title,
+  description,
+  action,
+}: {
+  icon: React.ReactNode
+  title: string
+  description: string
+  action?: React.ReactNode
+}) {
+  return (
+    <div className="border border-dashed border-surface-300 bg-white px-5 py-10 text-center sm:px-8 sm:py-14">
+      <div className="mx-auto flex h-11 w-11 items-center justify-center bg-primary-50 text-brand-orange">
+        {icon}
+      </div>
+      <h3 className="mt-4 text-lg font-black text-surface-900">{title}</h3>
+      <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-surface-600">{description}</p>
+      {action && <div className="mt-4 text-sm">{action}</div>}
     </div>
   )
 }

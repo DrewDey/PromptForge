@@ -5,20 +5,21 @@ export default function MyForgeLoading() {
         <div className="h-3 w-32 bg-surface-200" />
         <div className="mt-4 h-10 w-56 bg-surface-200" />
         <div className="mt-4 h-4 w-full max-w-xl bg-surface-200" />
-        <div className="mt-7 grid grid-cols-2 border border-surface-200 bg-white lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <div key={index} className="h-20 border-r border-surface-200 p-4 last:border-r-0">
-              <div className="h-3 w-20 bg-surface-200" />
-              <div className="mt-3 h-6 w-8 bg-surface-200" />
-            </div>
-          ))}
+        <div className="mt-7 flex gap-5 border-y border-surface-200 py-3">
+          <div className="h-3 w-20 bg-surface-200" />
+          <div className="h-3 w-16 bg-surface-200" />
+          <div className="h-3 w-24 bg-surface-200" />
         </div>
-        <div className="mt-8 grid gap-8 xl:grid-cols-[minmax(0,1.45fr)_minmax(330px,0.75fr)]">
-          <div className="space-y-3">
-            <div className="h-8 w-40 bg-surface-200" />
-            {Array.from({ length: 3 }).map((_, index) => <div key={index} className="h-32 border border-surface-200 bg-white" />)}
+        <div className="mt-7 h-40 border border-surface-200 bg-white p-6">
+          <div className="h-3 w-24 bg-surface-200" />
+          <div className="mt-3 h-7 w-full max-w-lg bg-surface-200" />
+          <div className="mt-3 h-4 w-full max-w-2xl bg-surface-200" />
+        </div>
+        <div className="mt-10">
+          <div className="h-8 w-48 bg-surface-200" />
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => <div key={index} className="h-44 border border-surface-200 bg-white" />)}
           </div>
-          <div className="h-80 border border-surface-200 bg-white" />
         </div>
       </div>
     </main>

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { canonicalMetadata } from '@/lib/site-url'
-import BrowsePage from '../browse/page'
+import { BuildPathsDiscovery, type BuildPathsSearchParams } from '@/components/discovery/BuildPathsDiscovery'
+import '../browse.css'
 
 export const metadata: Metadata = {
   title: 'Explore AI Build Paths | PathForge',
@@ -8,4 +9,10 @@ export const metadata: Metadata = {
   ...canonicalMetadata('/paths'),
 }
 
-export default BrowsePage
+export default function BuildPathsPage({
+  searchParams,
+}: {
+  searchParams: Promise<BuildPathsSearchParams>
+}) {
+  return <BuildPathsDiscovery searchParams={searchParams} />
+}

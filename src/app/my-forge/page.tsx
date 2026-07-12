@@ -17,6 +17,7 @@ import {
   Sparkles,
   UserRound,
   Wrench,
+  type LucideIcon,
 } from 'lucide-react'
 import { getMyForgeDashboard } from '@/lib/data/my-forge'
 import { getProjectHref } from '@/lib/project-links'
@@ -51,6 +52,24 @@ function projectHref(projectId: string, sourceRunId?: string | null) {
   if (!sourceRunId) return href
   const separator = href.includes('?') ? '&' : '?'
   return `${href}${separator}run=${encodeURIComponent(sourceRunId)}#source-run-path`
+}
+
+function unfinishedForkHref(fork: MyForgeUnfinishedFork) {
+  const { project, state } = fork
+  return buildProjectForkHref({
+    sourceProjectId: project.id,
+    sourceProjectTitle: project.title,
+    sourceModelVariantId: state.forkSourceModelVariantId || undefined,
+    sourceRunId: state.forkSourceRunId || undefined,
+    sourceStepId: state.forkSourceStepId || undefined,
+    sourceStepNumber: state.forkSourceStepNumber || undefined,
+    sourceArtifactPath: state.forkSourceArtifactPath || undefined,
+    sourceArtifactSha256: state.forkSourceArtifactSha256 || undefined,
+    parentForkId: state.forkParentSubmissionId || undefined,
+    depth: state.forkDepth,
+    branchIndex: state.forkBranchIndex,
+    promptFamilyId: state.forkPromptFamilyId || undefined,
+  })
 }
 
 const lifecyclePresentation: Record<
@@ -273,27 +292,36 @@ function SavedPathCard({ saved }: { saved: MyForgeSavedProject }) {
   )
 }
 
-function OwnedProjectRow({ project }: { project: MyForgeOwnedProject }) {
+function OwnedProjectCard({ project }: { project: MyForgeOwnedProject }) {
+  const engagement = [
+    project.voteCount > 0 ? `${project.voteCount} ${project.voteCount === 1 ? 'upvote' : 'upvotes'}` : null,
+    project.bookmarkCount > 0 ? `${project.bookmarkCount} ${project.bookmarkCount === 1 ? 'save' : 'saves'}` : null,
+  ].filter(Boolean)
+
   return (
     <Link
       href={getProjectHref({ id: project.id })}
-      className="group grid gap-2 border-b border-surface-100 py-3 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+      className="group flex min-h-44 flex-col border border-surface-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-brand-orange/50 hover:shadow-[6px_6px_0_rgba(24,24,27,0.06)]"
     >
-      <div className="min-w-0">
-        <div className="flex items-center gap-2">
-          {project.isFork ? (
-            <GitFork className="h-3.5 w-3.5 shrink-0 text-[#07551f]" aria-hidden="true" />
-          ) : (
-            <Layers3 className="h-3.5 w-3.5 shrink-0 text-brand-orange" aria-hidden="true" />
-          )}
-          <span className="truncate text-sm font-bold text-surface-900 group-hover:text-brand-orange">{project.title}</span>
-        </div>
-        <p className="mt-1 line-clamp-1 pl-5.5 text-xs text-surface-500">{project.description}</p>
+      <div className="flex flex-wrap items-center gap-2 font-mono text-[9px] font-black uppercase tracking-[0.12em]">
+        <span className={project.isFork ? 'text-[#07551f]' : 'text-brand-orange'}>
+          {project.isFork ? 'Published fork' : 'Published path'}
+        </span>
+        {project.category && <span className="text-surface-400">{project.category.name}</span>}
       </div>
-      <div className="flex items-center gap-3 pl-5.5 text-[10px] text-surface-400 sm:pl-0">
-        <span>{project.voteCount} upvotes</span>
-        <span>{project.bookmarkCount} saves</span>
-        <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+      <h3 className="mt-3 text-base font-black leading-snug text-surface-900 group-hover:text-brand-orange">
+        {project.title}
+      </h3>
+      <p className="mt-2 line-clamp-2 text-xs leading-5 text-surface-500">{project.description}</p>
+      <div className="mt-auto flex items-end justify-between gap-4 border-t border-surface-100 pt-4 text-[10px] text-surface-500">
+        <div>
+          {project.modelUsed && <div className="line-clamp-1">{project.modelUsed}</div>}
+          {engagement.length > 0 && <div className="mt-1 text-surface-400">{engagement.join(' · ')}</div>}
+        </div>
+        <span className="inline-flex shrink-0 items-center gap-1 font-bold text-surface-700 group-hover:text-brand-orange">
+          Open
+          <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+        </span>
       </div>
     </Link>
   )
@@ -301,20 +329,7 @@ function OwnedProjectRow({ project }: { project: MyForgeOwnedProject }) {
 
 function UnfinishedForkCard({ fork }: { fork: MyForgeUnfinishedFork }) {
   const { project, state } = fork
-  const href = buildProjectForkHref({
-    sourceProjectId: project.id,
-    sourceProjectTitle: project.title,
-    sourceModelVariantId: state.forkSourceModelVariantId || undefined,
-    sourceRunId: state.forkSourceRunId || undefined,
-    sourceStepId: state.forkSourceStepId || undefined,
-    sourceStepNumber: state.forkSourceStepNumber || undefined,
-    sourceArtifactPath: state.forkSourceArtifactPath || undefined,
-    sourceArtifactSha256: state.forkSourceArtifactSha256 || undefined,
-    parentForkId: state.forkParentSubmissionId || undefined,
-    depth: state.forkDepth,
-    branchIndex: state.forkBranchIndex,
-    promptFamilyId: state.forkPromptFamilyId || undefined,
-  })
+  const href = unfinishedForkHref(fork)
 
   return (
     <article className="border border-[#07551f]/25 bg-[#effdf3] p-4">
@@ -346,6 +361,49 @@ function UnfinishedForkCard({ fork }: { fork: MyForgeUnfinishedFork }) {
   )
 }
 
+type ForgeNextAction = {
+  eyebrow: string
+  title: string
+  body: string
+  href: string
+  label: string
+  icon: LucideIcon
+  tone: 'repair' | 'fork' | 'resume' | 'review' | 'published' | 'discover'
+}
+
+const nextActionTone: Record<ForgeNextAction['tone'], { border: string; surface: string; icon: string }> = {
+  repair: { border: 'border-rose-300', surface: 'bg-rose-50', icon: 'bg-rose-700 text-white' },
+  fork: { border: 'border-[#07551f]/35', surface: 'bg-[#effdf3]', icon: 'bg-[#07551f] text-white' },
+  resume: { border: 'border-brand-blue/30', surface: 'bg-accent-50', icon: 'bg-brand-blue text-white' },
+  review: { border: 'border-amber-300', surface: 'bg-amber-50', icon: 'bg-amber-700 text-white' },
+  published: { border: 'border-brand-orange/30', surface: 'bg-primary-50', icon: 'bg-brand-orange text-white' },
+  discover: { border: 'border-surface-300', surface: 'bg-white', icon: 'bg-surface-900 text-white' },
+}
+
+function NextActionCard({ action }: { action: ForgeNextAction }) {
+  const Icon = action.icon
+  const tone = nextActionTone[action.tone]
+
+  return (
+    <section className={`mt-7 border ${tone.border} ${tone.surface}`} aria-labelledby="next-action-heading">
+      <div className="grid gap-5 p-5 sm:grid-cols-[48px_minmax(0,1fr)_auto] sm:items-center sm:p-6">
+        <span className={`flex h-12 w-12 items-center justify-center ${tone.icon}`}>
+          <Icon className="h-5 w-5" aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <div className="font-mono text-[10px] font-black uppercase tracking-[0.16em] text-surface-500">{action.eyebrow}</div>
+          <h2 id="next-action-heading" className="mt-1 text-xl font-black leading-tight text-surface-900 sm:text-2xl">{action.title}</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-surface-600">{action.body}</p>
+        </div>
+        <Link href={action.href} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 bg-surface-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-orange">
+          {action.label}
+          <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        </Link>
+      </div>
+    </section>
+  )
+}
+
 export default async function MyForgePage({
   searchParams,
 }: {
@@ -363,6 +421,97 @@ export default async function MyForgePage({
   )).slice(0, 4)
   const savedWithUpdates = dashboard.savedProjects.filter((saved) => saved.unseenModelUpdateCount > 0)
   const publicProfileHref = dashboard.profile.username ? `/user/${dashboard.profile.username}` : '/settings/profile'
+  const repairRun = activeRuns.find((run) => run.lifecycle === 'needs_repair' || run.lifecycle === 'failed')
+  const unfinishedFork = dashboard.unfinishedForks[0]
+  const savedToResume = savedWithUpdates[0]
+    ?? dashboard.savedProjects.find((saved) => saved.state?.resumeIsValid)
+    ?? dashboard.savedProjects[0]
+  const reviewRun = activeRuns[0]
+  const publishedProject = dashboard.ownedProjects[0]
+  const inProgressCount = activeRuns.length + dashboard.unfinishedForks.length
+  const modelUpdateCount = savedWithUpdates.reduce((total, saved) => total + saved.unseenModelUpdateCount, 0)
+  const summaryItems = [
+    inProgressCount > 0 ? { label: 'In progress', value: inProgressCount } : null,
+    dashboard.savedProjects.length > 0 ? { label: 'Saved', value: dashboard.savedProjects.length } : null,
+    modelUpdateCount > 0 ? { label: 'Model updates', value: modelUpdateCount } : null,
+    dashboard.ownedProjects.length > 0 ? { label: 'Published', value: dashboard.ownedProjects.length } : null,
+  ].filter((item): item is { label: string; value: number } => Boolean(item))
+  const hasPrimaryActivity = dashboard.unfinishedForks.length > 0 || activeRuns.length > 0 || dashboard.savedProjects.length > 0
+  const hasAsideActivity = savedWithUpdates.length > 0 || recentRuns.length > 0
+
+  let nextAction: ForgeNextAction
+  if (repairRun) {
+    nextAction = {
+      eyebrow: 'Needs your attention',
+      title: repairRun.title,
+      body: repairRun.userStatusNote || lifecyclePresentation[repairRun.lifecycle].detail,
+      href: `/build?repair=${encodeURIComponent(repairRun.id)}`,
+      label: 'Repair build',
+      icon: Wrench,
+      tone: 'repair',
+    }
+  } else if (unfinishedFork) {
+    const responseLabel = unfinishedFork.state.forkSourceStepNumber
+      ? ` from response ${String(unfinishedFork.state.forkSourceStepNumber).padStart(2, '0')}`
+      : ''
+    nextAction = {
+      eyebrow: 'Continue where you stopped',
+      title: unfinishedFork.project.title,
+      body: `Your unfinished branch${responseLabel} is ready with its saved source context.`,
+      href: unfinishedForkHref(unfinishedFork),
+      label: 'Continue fork',
+      icon: GitFork,
+      tone: 'fork',
+    }
+  } else if (savedToResume) {
+    const hasModelUpdate = savedToResume.unseenModelUpdateCount > 0
+    nextAction = {
+      eyebrow: hasModelUpdate ? 'New model result available' : 'Resume a saved path',
+      title: savedToResume.project.title,
+      body: hasModelUpdate
+        ? `${savedToResume.unseenModelUpdateCount} new verified ${savedToResume.unseenModelUpdateCount === 1 ? 'run is' : 'runs are'} ready to inspect without losing your saved place.`
+        : savedToResume.state?.selectedStepNumber
+          ? `Return to response ${String(savedToResume.state.selectedStepNumber).padStart(2, '0')} and the exact artifact version you last opened.`
+          : 'Return to this saved path and choose the response or artifact you want to continue from.',
+      href: projectHref(
+        savedToResume.project.id,
+        hasModelUpdate ? savedToResume.latestUnseenSourceRunId : savedToResume.state?.selectedSourceRunId,
+      ),
+      label: hasModelUpdate ? 'View update' : 'Resume path',
+      icon: hasModelUpdate ? Sparkles : Bookmark,
+      tone: 'resume',
+    }
+  } else if (reviewRun) {
+    nextAction = {
+      eyebrow: 'Follow the review',
+      title: reviewRun.title,
+      body: reviewRun.userStatusNote || lifecyclePresentation[reviewRun.lifecycle].detail,
+      href: `/my-forge/builds/${reviewRun.id}`,
+      label: 'View status',
+      icon: Clock3,
+      tone: 'review',
+    }
+  } else if (publishedProject) {
+    nextAction = {
+      eyebrow: 'Your work is live',
+      title: publishedProject.title,
+      body: 'Open your public builder page to see this path alongside the rest of your published work.',
+      href: publicProfileHref,
+      label: 'View public work',
+      icon: Layers3,
+      tone: 'published',
+    }
+  } else {
+    nextAction = {
+      eyebrow: 'Choose a starting point',
+      title: 'Find a path worth making your own.',
+      body: 'Explore working projects, save the useful ones, or fork an exact response when you see a direction you want to continue.',
+      href: '/paths',
+      label: 'Explore build paths',
+      icon: Sparkles,
+      tone: 'discover',
+    }
+  }
 
   return (
     <main className="min-h-[calc(100vh-3rem)] bg-surface-50">
@@ -391,7 +540,7 @@ export default async function MyForgePage({
           <div className="flex flex-wrap gap-2">
             <Link href={publicProfileHref} className="inline-flex min-h-10 items-center gap-2 border border-surface-300 bg-white px-3 py-2 text-xs font-bold text-surface-800 hover:border-brand-orange">
               <UserRound className="h-3.5 w-3.5" aria-hidden="true" />
-              Public profile
+              {dashboard.profile.username ? 'Public profile' : 'Complete profile'}
             </Link>
             <Link href="/settings/profile" className="inline-flex min-h-10 items-center gap-2 border border-surface-300 bg-white px-3 py-2 text-xs font-bold text-surface-800 hover:border-brand-orange">
               <Settings className="h-3.5 w-3.5" aria-hidden="true" />
@@ -404,24 +553,43 @@ export default async function MyForgePage({
           </div>
         </header>
 
-        <section className="grid grid-cols-2 border-x border-b border-surface-200 bg-white lg:grid-cols-4" aria-label="My Forge summary">
-          {[
-            ['In progress', activeRuns.length + dashboard.unfinishedForks.length],
-            ['Saved paths', dashboard.savedProjects.length],
-            ['Model updates', savedWithUpdates.reduce((total, saved) => total + saved.unseenModelUpdateCount, 0)],
-            ['Published', dashboard.ownedProjects.length],
-          ].map(([label, value], index) => (
-            <div key={String(label)} className={`p-4 ${index % 2 ? '' : 'border-r'} border-surface-200 lg:border-r lg:last:border-r-0`}>
-              <div className="font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-surface-500">{String(label)}</div>
-              <div className="mt-1 text-2xl font-black tabular-nums text-surface-900">{Number(value)}</div>
-            </div>
-          ))}
-        </section>
+        {summaryItems.length > 0 && (
+          <div className="flex flex-wrap gap-x-5 gap-y-2 border-b border-surface-200 py-3 text-xs text-surface-500" aria-label="My Forge summary">
+            {summaryItems.map((item) => (
+              <span key={item.label}>
+                <strong className="font-black tabular-nums text-surface-900">{item.value}</strong>{' '}
+                {item.label.toLowerCase()}
+              </span>
+            ))}
+          </div>
+        )}
 
         {!dashboard.profile.isComplete && <div className="mt-6"><ProfilePrompt username={dashboard.profile.username} /></div>}
 
-        <div className="mt-8 grid gap-8 xl:grid-cols-[minmax(0,1.45fr)_minmax(330px,0.75fr)]">
-          <div className="space-y-9">
+        <NextActionCard action={nextAction} />
+
+        {dashboard.ownedProjects.length > 0 && (
+          <section className="mt-10" aria-labelledby="published-work-heading">
+            <div className="mb-5 flex flex-col gap-3 border-b border-surface-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <div className="font-mono text-[10px] font-black uppercase tracking-[0.14em] text-[#07551f]">Published work</div>
+                <h2 id="published-work-heading" className="mt-1 text-2xl font-black text-surface-900">Your public Vault</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-surface-500">These are the projects visitors can open from your public builder profile.</p>
+              </div>
+              <Link href={publicProfileHref} className="inline-flex items-center gap-2 text-xs font-bold text-surface-700 hover:text-brand-orange">
+                View public profile
+                <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+              </Link>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {dashboard.ownedProjects.slice(0, 6).map((project) => <OwnedProjectCard key={project.id} project={project} />)}
+            </div>
+          </section>
+        )}
+
+        {(hasPrimaryActivity || hasAsideActivity) && (
+        <div className={`mt-10 grid gap-8 ${hasPrimaryActivity && hasAsideActivity ? 'xl:grid-cols-[minmax(0,1.45fr)_minmax(330px,0.75fr)]' : ''}`}>
+          {hasPrimaryActivity && <div className="space-y-9">
             {dashboard.unfinishedForks.length > 0 && (
               <section aria-labelledby="continue-forks-heading">
                 <div className="mb-4 flex items-end justify-between gap-4">
@@ -437,7 +605,7 @@ export default async function MyForgePage({
               </section>
             )}
 
-            <section aria-labelledby="active-builds-heading">
+            {activeRuns.length > 0 && <section aria-labelledby="active-builds-heading">
               <div className="mb-4 flex items-end justify-between gap-4">
                 <div>
                   <div className="font-mono text-[10px] font-black uppercase tracking-[0.14em] text-brand-orange">Review pipeline</div>
@@ -445,19 +613,10 @@ export default async function MyForgePage({
                 </div>
                 <span className="text-xs font-medium text-surface-500">{activeRuns.length} active</span>
               </div>
-              {activeRuns.length ? (
-                <div className="space-y-3">{activeRuns.map((run) => <SubmissionCard key={run.id} run={run} />)}</div>
-              ) : (
-                <div className="border border-dashed border-surface-300 bg-white p-7 text-center">
-                  <Hammer className="mx-auto h-6 w-6 text-brand-orange" aria-hidden="true" />
-                  <h3 className="mt-3 text-base font-black text-surface-900">Nothing waiting on review.</h3>
-                  <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-surface-500">Start with a real AI session and submit its source run when the project is ready to become a public path.</p>
-                  <Link href="/build" className="mt-5 inline-flex min-h-10 items-center gap-2 bg-surface-900 px-4 py-2 text-xs font-bold text-white hover:bg-brand-orange">Start a build <ArrowRight className="h-3.5 w-3.5" /></Link>
-                </div>
-              )}
-            </section>
+              <div className="space-y-3">{activeRuns.map((run) => <SubmissionCard key={run.id} run={run} />)}</div>
+            </section>}
 
-            <section aria-labelledby="saved-heading">
+            {dashboard.savedProjects.length > 0 && <section aria-labelledby="saved-heading">
               <div className="mb-4 flex items-end justify-between gap-4">
                 <div>
                   <div className="font-mono text-[10px] font-black uppercase tracking-[0.14em] text-brand-blue">Return loop</div>
@@ -465,21 +624,13 @@ export default async function MyForgePage({
                 </div>
                 <Link href="/paths" className="text-xs font-bold text-surface-500 hover:text-brand-orange">Find paths</Link>
               </div>
-              {dashboard.savedProjects.length ? (
-                <div className="grid gap-3 md:grid-cols-2">
-                  {dashboard.savedProjects.map((saved) => <SavedPathCard key={saved.bookmarkId} saved={saved} />)}
-                </div>
-              ) : (
-                <div className="border border-dashed border-surface-300 bg-white p-6">
-                  <Bookmark className="h-5 w-5 text-brand-orange" aria-hidden="true" />
-                  <h3 className="mt-3 text-sm font-black text-surface-900">Your saved shelf is ready.</h3>
-                  <p className="mt-2 max-w-xl text-xs leading-5 text-surface-500">Save a useful public path and My Forge will remember the exact model run, response, and artifact you last opened.</p>
-                </div>
-              )}
-            </section>
-          </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {dashboard.savedProjects.map((saved) => <SavedPathCard key={saved.bookmarkId} saved={saved} />)}
+              </div>
+            </section>}
+          </div>}
 
-          <aside className="space-y-7">
+          {hasAsideActivity && <aside className="space-y-7">
             {savedWithUpdates.length > 0 && (
               <section className="border border-brand-blue/25 bg-accent-50 p-5" aria-labelledby="model-updates-heading">
                 <div className="flex items-center gap-2 text-brand-blue-dark">
@@ -498,27 +649,6 @@ export default async function MyForgePage({
               </section>
             )}
 
-            <section className="border border-surface-200 bg-white p-5" aria-labelledby="vault-heading">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <div className="font-mono text-[10px] font-black uppercase tracking-[0.14em] text-[#07551f]">Ownership</div>
-                  <h2 id="vault-heading" className="mt-1 text-xl font-black text-surface-900">Your public Vault</h2>
-                </div>
-                <Layers3 className="h-5 w-5 text-[#07551f]" aria-hidden="true" />
-              </div>
-              <div className="mt-3">
-                {dashboard.ownedProjects.length ? (
-                  dashboard.ownedProjects.slice(0, 7).map((project) => <OwnedProjectRow key={project.id} project={project} />)
-                ) : (
-                  <p className="border-t border-surface-100 py-4 text-xs leading-5 text-surface-500">Approved paths will appear here and on your public profile.</p>
-                )}
-              </div>
-              <Link href={publicProfileHref} className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-surface-700 hover:text-brand-orange">
-                View public profile
-                <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-              </Link>
-            </section>
-
             {recentRuns.length > 0 && (
               <section className="border border-surface-200 bg-white p-5" aria-labelledby="history-heading">
                 <h2 id="history-heading" className="font-mono text-[10px] font-black uppercase tracking-[0.14em] text-surface-500">Recent decisions</h2>
@@ -532,8 +662,9 @@ export default async function MyForgePage({
                 </div>
               </section>
             )}
-          </aside>
+          </aside>}
         </div>
+        )}
       </div>
     </main>
   )

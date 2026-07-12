@@ -1,20 +1,18 @@
 'use client'
 
-import Link from 'next/link'
 import Image from 'next/image'
-import { useState } from 'react'
+import Link from 'next/link'
+import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import {
-  BriefcaseBusiness,
   ChevronDown,
   FolderGit2,
-  Gamepad2,
+  Hammer,
   LogOut,
   Menu,
   MessageSquare,
-  Plus,
-  Search,
   Settings,
+  ShieldCheck,
   User,
   X,
 } from 'lucide-react'
@@ -32,17 +30,11 @@ type HeaderClientProps = {
 }
 
 const navItems = [
-  { href: '/what-to-build', label: 'What to Build' },
-  { href: '/paths', label: 'Build Paths' },
-  { href: '/requests', label: 'Build Requests' },
-  { href: '/guide', label: 'Walkthrough' },
-]
-
-const pathsMenuItems = [
-  { href: '/paths?panel=open', label: 'Search all', description: 'Open the full path finder', icon: Search },
-  { href: '/paths?domain=games&panel=open', label: 'Games', description: 'Playable builds and experiments', icon: Gamepad2 },
-  { href: '/paths?domain=productivity&panel=open', label: 'Productivity', description: 'Work tools and practical artifacts', icon: BriefcaseBusiness },
-]
+  { href: '/paths', label: 'Explore' },
+  { href: '/what-to-build', label: 'Ideas' },
+  { href: '/requests', label: 'Requests' },
+  { href: '/guide', label: 'How it works' },
+] as const
 
 function isActivePath(pathname: string, href: string) {
   const hrefPath = href.split('?')[0]
@@ -55,6 +47,8 @@ function isActivePath(pathname: string, href: string) {
       pathname === '/decision-matrix-demo' ||
       pathname === '/hp-10bii-calculator-demo' ||
       pathname === '/tic-tac-toe-demo' ||
+      pathname.endsWith('-demo') ||
+      pathname === '/artifact-viewer' ||
       (pathname.startsWith('/prompt/') && pathname !== '/prompt/new')
     )
   }
@@ -70,303 +64,294 @@ function isActivePath(pathname: string, href: string) {
 export default function HeaderClient({ viewer, isAdmin }: HeaderClientProps) {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [pathsMenuOpen, setPathsMenuOpen] = useState(false)
+  const accountMenuRef = useRef<HTMLDetailsElement>(null)
   const displayName = viewer?.display_name || viewer?.username || 'Account'
   const profileHref = viewer?.username ? `/user/${viewer.username}` : '/settings/profile'
+  const accountAreaActive = (
+    pathname.startsWith('/user/') ||
+    pathname.startsWith('/settings/') ||
+    pathname.startsWith('/suggestion-box') ||
+    pathname.startsWith('/admin')
+  )
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileMenuOpen(false)
+    }
+
+    window.addEventListener('keydown', handleEscape)
+    return () => window.removeEventListener('keydown', handleEscape)
+  }, [mobileMenuOpen])
+
+  const closeMobileMenu = () => setMobileMenuOpen(false)
+  const closeAccountMenu = () => accountMenuRef.current?.removeAttribute('open')
 
   const navLinkClass = (href: string) => (
-    `inline-flex h-8 shrink-0 items-center whitespace-nowrap px-3 text-[13px] font-medium transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
+    `relative inline-flex h-16 shrink-0 items-center whitespace-nowrap px-3 text-[13px] font-semibold transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
       isActivePath(pathname, href)
-        ? 'text-brand-orange bg-primary-50'
-        : 'text-surface-700 hover:text-brand-orange'
+        ? 'text-surface-900 after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:bg-brand-orange'
+        : 'text-surface-600 hover:text-surface-900'
     }`
   )
 
   const mobileNavLinkClass = (href: string) => (
-    `text-sm font-medium px-3 py-3 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
+    `flex min-h-12 items-center justify-between border-b border-surface-100 px-4 py-3 text-[15px] font-semibold transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand-orange ${
       isActivePath(pathname, href)
-        ? 'text-brand-orange bg-primary-50'
-        : 'text-surface-700 hover:text-brand-orange active:bg-surface-100'
+        ? 'bg-primary-50 text-brand-orange'
+        : 'text-surface-800 hover:bg-surface-50 hover:text-brand-orange'
     }`
   )
 
-  const rightNavLinkClass = (href: string) => (
-    `inline-flex h-8 shrink-0 items-center whitespace-nowrap text-[13px] font-medium transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
-      isActivePath(pathname, href)
-        ? 'text-brand-orange'
-        : 'text-surface-600 hover:text-brand-orange'
-    }`
-  )
+  const accountMenuLinkClass = 'flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-surface-700 transition-colors duration-150 hover:bg-primary-50 hover:text-brand-orange focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand-orange'
 
   return (
-    <header className="sticky top-0 z-50 border-b border-surface-200 bg-white shadow-[0_1px_0_rgba(24,24,27,0.04)]">
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-12">
-          <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-2 shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
-              <Image src="/logo.png" alt="PathForge — AI Build Paths" width={110} height={35} loading="eager" />
+    <header className="sticky top-0 z-50 border-b border-surface-200 bg-white/95 shadow-[0_1px_0_rgba(24,24,27,0.04)] backdrop-blur-md">
+      <nav className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" aria-label="Primary navigation">
+        <div className="flex h-16 items-center justify-between gap-5">
+          <div className="flex min-w-0 items-center gap-6 xl:gap-8">
+            <Link
+              href="/"
+              className="flex shrink-0 items-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+              aria-label="PathForge home"
+            >
+              <Image
+                src="/logo.png"
+                alt="PathForge"
+                width={118}
+                height={38}
+                loading="eager"
+              />
             </Link>
 
-            <div className="hidden md:flex items-center gap-1">
+            <div className="hidden items-center lg:flex">
               {navItems.map((item) => (
-                item.href === '/paths' ? (
-                  <div key={item.href} className="relative flex h-8 items-center">
-                    <button
-                      type="button"
-                      onClick={() => setPathsMenuOpen((open) => !open)}
-                      className={navLinkClass(item.href)}
-                      data-testid="build-paths-menu-button"
-                      aria-haspopup="menu"
-                      aria-expanded={pathsMenuOpen}
-                    >
-                      {item.label}
-                    </button>
-                    {pathsMenuOpen && (
-                      <div
-                        className="absolute left-0 top-full mt-2 w-64 border border-surface-200 bg-white p-1 shadow-xl"
-                        data-testid="build-paths-menu"
-                        role="menu"
-                      >
-                        {pathsMenuItems.map((menuItem) => {
-                          const Icon = menuItem.icon
-                          return (
-                            <Link
-                              key={menuItem.href}
-                              href={menuItem.href}
-                              className="flex items-start gap-3 px-3 py-3 text-surface-700 transition-colors hover:bg-primary-50 hover:text-brand-orange focus-visible:outline-2 focus-visible:outline-brand-orange"
-                              onClick={() => setPathsMenuOpen(false)}
-                              role="menuitem"
-                            >
-                              <Icon className="mt-0.5 h-4 w-4 text-brand-orange" />
-                              <span>
-                                <span className="block text-[13px] font-semibold">{menuItem.label}</span>
-                                <span className="mt-0.5 block text-[11px] leading-4 text-surface-500">{menuItem.description}</span>
-                              </span>
-                            </Link>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <Link key={item.href} href={item.href} className={navLinkClass(item.href)}>
-                    {item.label}
-                  </Link>
-                )
+                <Link key={item.href} href={item.href} className={navLinkClass(item.href)}>
+                  {item.label}
+                </Link>
               ))}
-              <Link
-                href="/build"
-                className={`flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap px-3 text-[13px] font-semibold transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
-                  isActivePath(pathname, '/build')
-                    ? 'text-surface-900 bg-brand-orange'
-                    : 'text-brand-orange border border-brand-orange/40 hover:bg-brand-orange hover:text-white'
-                }`}
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Build
-              </Link>
             </div>
           </div>
 
-          <div className="hidden md:flex items-center gap-3">
-            <div className="hidden xl:block">
-              <Link href="/suggestion-box" className={rightNavLinkClass('/suggestion-box')}>
-                Suggestion Box
-              </Link>
-            </div>
+          <div className="hidden shrink-0 items-center gap-2 lg:flex">
             {viewer ? (
+              <Link
+                href="/my-forge"
+                className={`inline-flex h-9 items-center gap-2 px-3 text-[13px] font-semibold transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
+                  isActivePath(pathname, '/my-forge')
+                    ? 'bg-surface-100 text-surface-900'
+                    : 'text-surface-600 hover:bg-surface-50 hover:text-surface-900'
+                }`}
+              >
+                <FolderGit2 className="h-4 w-4" aria-hidden="true" />
+                My Forge
+              </Link>
+            ) : (
               <>
                 <Link
-                  href="/my-forge"
-                  className={`${rightNavLinkClass('/my-forge')} gap-1.5 font-semibold`}
+                  href="/auth/login"
+                  className="inline-flex h-9 items-center px-2.5 text-[13px] font-semibold text-surface-600 transition-colors duration-150 hover:text-surface-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
                 >
-                  <FolderGit2 className="h-3.5 w-3.5" />
-                  My Forge
+                  Log in
                 </Link>
-                <details className="group relative">
-                  <summary className="flex h-8 cursor-pointer list-none items-center gap-1.5 text-[13px] font-medium text-surface-600 transition-colors hover:text-brand-orange focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
-                    <span className="flex h-5 w-5 items-center justify-center border border-surface-200 bg-surface-100">
-                      <User className="h-3 w-3 text-surface-500" />
-                    </span>
-                    <span className="max-w-28 truncate">{displayName}</span>
-                    <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" />
-                  </summary>
-                  <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-56 border border-surface-200 bg-white p-1 shadow-[0_20px_60px_rgba(15,23,42,0.16)]">
-                    <Link href={profileHref} className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-surface-700 hover:bg-primary-50 hover:text-brand-orange">
-                      <User className="h-4 w-4" />
+                <Link
+                  href="/auth/signup"
+                  className="inline-flex h-9 items-center border border-surface-300 px-3 text-[13px] font-semibold text-surface-800 transition-colors duration-150 hover:border-surface-500 hover:bg-surface-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+                >
+                  Sign up
+                </Link>
+              </>
+            )}
+
+            <Link
+              href="/build"
+              className={`inline-flex h-9 items-center gap-2 border px-4 text-[13px] font-bold transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
+                isActivePath(pathname, '/build')
+                  ? 'border-surface-900 bg-surface-900 text-white'
+                  : 'border-brand-orange bg-brand-orange text-white hover:border-brand-orange-dark hover:bg-brand-orange-dark'
+              }`}
+            >
+              <Hammer className="h-4 w-4" aria-hidden="true" />
+              Share a build
+            </Link>
+
+            {viewer && (
+              <details ref={accountMenuRef} className="group relative" data-account-menu>
+                <summary
+                  className={`flex h-9 cursor-pointer list-none items-center gap-2 border px-2.5 text-[13px] font-semibold transition-colors duration-150 marker:content-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange [&::-webkit-details-marker]:hidden ${
+                    accountAreaActive
+                      ? 'border-primary-200 bg-primary-50 text-brand-orange'
+                      : 'border-surface-200 bg-white text-surface-700 hover:border-surface-300 hover:bg-surface-50 hover:text-surface-900'
+                  }`}
+                  aria-label={`Open account menu for ${displayName}`}
+                >
+                  <span className="flex h-5 w-5 items-center justify-center bg-surface-900 text-[10px] font-bold uppercase text-white" aria-hidden="true">
+                    {displayName.charAt(0)}
+                  </span>
+                  <span className="hidden max-w-24 truncate xl:block">{displayName}</span>
+                  <ChevronDown className="h-3.5 w-3.5 transition-transform duration-150 group-open:rotate-180" aria-hidden="true" />
+                </summary>
+
+                <div className="absolute right-0 top-[calc(100%+10px)] z-50 w-64 border border-surface-200 bg-white p-1.5 shadow-[0_22px_70px_rgba(15,23,42,0.18)]">
+                  <div className="border-b border-surface-100 px-3 py-2.5">
+                    <p className="truncate text-sm font-bold text-surface-900">{displayName}</p>
+                    {viewer.username && (
+                      <p className="mt-0.5 truncate text-xs text-surface-500">@{viewer.username}</p>
+                    )}
+                  </div>
+
+                  <div className="py-1">
+                    <Link href={profileHref} className={accountMenuLinkClass} onClick={closeAccountMenu}>
+                      <User className="h-4 w-4" aria-hidden="true" />
                       {viewer.username ? 'Public profile' : 'Complete profile'}
                     </Link>
-                    <Link href="/settings/profile" className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-surface-700 hover:bg-primary-50 hover:text-brand-orange">
-                      <Settings className="h-4 w-4" />
+                    <Link href="/settings/profile" className={accountMenuLinkClass} onClick={closeAccountMenu}>
+                      <Settings className="h-4 w-4" aria-hidden="true" />
                       Edit profile
                     </Link>
-                    <Link href="/suggestion-box/mine" className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-surface-700 hover:bg-primary-50 hover:text-brand-orange">
-                      <MessageSquare className="h-4 w-4" />
-                      Suggestion inbox
+                  </div>
+
+                  <div className="border-t border-surface-100 py-1">
+                    <Link href="/suggestion-box" className={accountMenuLinkClass} onClick={closeAccountMenu}>
+                      <MessageSquare className="h-4 w-4" aria-hidden="true" />
+                      Suggestion Box
+                    </Link>
+                    <Link href="/suggestion-box/mine" className={accountMenuLinkClass} onClick={closeAccountMenu}>
+                      <FolderGit2 className="h-4 w-4" aria-hidden="true" />
+                      Your suggestions
                     </Link>
                     {isAdmin && (
-                      <Link href="/admin" className="flex items-center gap-2 border-t border-surface-100 px-3 py-2.5 text-sm font-medium text-surface-700 hover:bg-primary-50 hover:text-brand-orange">
+                      <Link href="/admin" className={accountMenuLinkClass} onClick={closeAccountMenu}>
+                        <ShieldCheck className="h-4 w-4" aria-hidden="true" />
                         Admin
                       </Link>
                     )}
-                    <form action={logout} className="border-t border-surface-100">
-                      <button type="submit" className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-medium text-surface-600 hover:bg-primary-50 hover:text-brand-orange">
-                        <LogOut className="h-4 w-4" />
+                  </div>
+
+                  <form action={logout} className="border-t border-surface-100 pt-1">
+                    <button type="submit" className={`${accountMenuLinkClass} w-full text-left text-surface-600`}>
+                      <LogOut className="h-4 w-4" aria-hidden="true" />
+                      Log out
+                    </button>
+                  </form>
+                </div>
+              </details>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen((open) => !open)}
+            className="flex h-10 w-10 shrink-0 items-center justify-center border border-surface-200 text-surface-700 transition-colors duration-150 hover:border-surface-300 hover:bg-surface-50 hover:text-brand-orange focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange lg:hidden"
+            aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-controls="mobile-navigation"
+            aria-expanded={mobileMenuOpen}
+          >
+            {mobileMenuOpen ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
+          </button>
+        </div>
+
+        {mobileMenuOpen && (
+          <div
+            id="mobile-navigation"
+            className="absolute inset-x-0 top-full h-[calc(100dvh-4rem)] overflow-y-auto border-b border-surface-200 bg-white shadow-[0_22px_50px_rgba(15,23,42,0.14)] lg:hidden"
+          >
+            <div className="mx-auto max-w-7xl px-4 pb-5 pt-4 sm:px-6">
+              <Link
+                href="/build"
+                className={`mb-4 flex min-h-12 items-center justify-center gap-2 border px-4 py-3 text-sm font-bold transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
+                  isActivePath(pathname, '/build')
+                    ? 'border-surface-900 bg-surface-900 text-white'
+                    : 'border-brand-orange bg-brand-orange text-white hover:bg-brand-orange-dark'
+                }`}
+                onClick={closeMobileMenu}
+              >
+                <Hammer className="h-4 w-4" aria-hidden="true" />
+                Share a build
+              </Link>
+
+              <p className="mb-2 font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-surface-400">Discover</p>
+              <div className="border-t border-surface-100">
+                {navItems.map((item) => (
+                  <Link key={item.href} href={item.href} className={mobileNavLinkClass(item.href)} onClick={closeMobileMenu}>
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+
+              {viewer ? (
+                <div className="mt-5">
+                  <p className="mb-2 font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-surface-400">Your workspace</p>
+                  <div className="border-t border-surface-100">
+                    <Link href="/my-forge" className={mobileNavLinkClass('/my-forge')} onClick={closeMobileMenu}>
+                      <span className="flex items-center gap-2">
+                        <FolderGit2 className="h-4 w-4" aria-hidden="true" />
+                        My Forge
+                      </span>
+                    </Link>
+                    <Link href={profileHref} className={mobileNavLinkClass('/settings/profile')} onClick={closeMobileMenu}>
+                      <span className="flex items-center gap-2">
+                        <User className="h-4 w-4" aria-hidden="true" />
+                        {viewer.username ? 'Public profile' : 'Complete profile'}
+                      </span>
+                    </Link>
+                    <Link href="/settings/profile" className={mobileNavLinkClass('/settings/profile')} onClick={closeMobileMenu}>
+                      <span className="flex items-center gap-2">
+                        <Settings className="h-4 w-4" aria-hidden="true" />
+                        Edit profile
+                      </span>
+                    </Link>
+                    <Link href="/suggestion-box" className={mobileNavLinkClass('/suggestion-box')} onClick={closeMobileMenu}>
+                      <span className="flex items-center gap-2">
+                        <MessageSquare className="h-4 w-4" aria-hidden="true" />
+                        Suggestion Box
+                      </span>
+                    </Link>
+                    <Link href="/suggestion-box/mine" className={mobileNavLinkClass('/suggestion-box')} onClick={closeMobileMenu}>
+                      Your suggestions
+                    </Link>
+                    {isAdmin && (
+                      <Link href="/admin" className={mobileNavLinkClass('/admin')} onClick={closeMobileMenu}>
+                        <span className="flex items-center gap-2">
+                          <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                          Admin
+                        </span>
+                      </Link>
+                    )}
+                    <form action={logout}>
+                      <button
+                        type="submit"
+                        className="flex min-h-12 w-full items-center gap-2 border-b border-surface-100 px-4 py-3 text-left text-[15px] font-semibold text-surface-600 transition-colors duration-150 hover:bg-surface-50 hover:text-brand-orange focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand-orange"
+                      >
+                        <LogOut className="h-4 w-4" aria-hidden="true" />
                         Log out
                       </button>
                     </form>
                   </div>
-                </details>
-              </>
-            ) : (
-              <>
-                <Link href="/auth/login" className="inline-flex h-8 shrink-0 items-center whitespace-nowrap text-[13px] font-medium text-surface-600 hover:text-brand-orange transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
-                  Log in
-                </Link>
-                <Link href="/auth/signup" className="inline-flex h-8 shrink-0 items-center whitespace-nowrap bg-brand-orange px-3.5 text-[13px] font-semibold text-white hover:bg-brand-orange-dark transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
-                  Sign up
-                </Link>
-              </>
-            )}
-          </div>
-
-          <div className="md:hidden">
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="text-surface-600 hover:text-brand-orange p-2.5 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
-              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-              aria-expanded={mobileMenuOpen}
-            >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
-          </div>
-        </div>
-
-        {mobileMenuOpen && (
-          <div className="md:hidden pb-4 border-t border-surface-200 mt-1 pt-3 flex flex-col gap-0.5">
-            {navItems.map((item) => (
-              item.href === '/paths' ? (
-                <div key={item.href} className="border-y border-surface-200 py-1">
-                  <Link
-                    href="/paths?panel=open"
-                    className={mobileNavLinkClass(item.href)}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Build Paths
-                  </Link>
-                  <div className="grid gap-0.5 pl-4">
-                    {pathsMenuItems.slice(1).map((menuItem) => {
-                      const Icon = menuItem.icon
-                      return (
-                        <Link
-                          key={menuItem.href}
-                          href={menuItem.href}
-                          className="flex items-center gap-2 px-3 py-2 text-sm text-surface-600 transition-colors hover:bg-primary-50 hover:text-brand-orange"
-                          onClick={() => setMobileMenuOpen(false)}
-                        >
-                          <Icon className="h-3.5 w-3.5 text-brand-orange" />
-                          {menuItem.label}
-                        </Link>
-                      )
-                    })}
-                  </div>
                 </div>
               ) : (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={mobileNavLinkClass(item.href)}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {item.label}
-                </Link>
-              )
-            ))}
-            <Link
-              href="/build"
-              className={`text-sm font-semibold px-3 py-3 transition-colors duration-200 flex items-center gap-1.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
-                isActivePath(pathname, '/build')
-                  ? 'text-brand-orange bg-primary-50'
-                  : 'text-surface-700 hover:text-brand-orange active:bg-surface-100'
-              }`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Build
-            </Link>
-
-            <Link
-              href="/suggestion-box"
-              className={mobileNavLinkClass('/suggestion-box')}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Suggestion Box
-            </Link>
-
-            <div className="border-t border-surface-200 my-2" />
-
-            {viewer ? (
-              <>
-                <Link
-                  href="/my-forge"
-                  className={mobileNavLinkClass('/my-forge')}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <span className="flex items-center gap-2">
-                    <FolderGit2 className="h-4 w-4" />
-                    My Forge
-                  </span>
-                </Link>
-                {isAdmin && (
-                  <Link href="/admin" className="text-sm text-surface-700 hover:text-brand-orange active:bg-surface-100 px-3 py-3 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange" onClick={() => setMobileMenuOpen(false)}>
-                    Admin
-                  </Link>
-                )}
-                <Link
-                  href={profileHref}
-                  className="text-sm font-medium text-surface-700 hover:text-brand-orange active:bg-surface-100 flex items-center gap-1.5 px-3 py-3 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <User className="w-3.5 h-3.5" />
-                  {viewer.username ? 'Public profile' : 'Complete profile'}
-                </Link>
-                <Link
-                  href="/settings/profile"
-                  className={mobileNavLinkClass('/settings/profile')}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <span className="flex items-center gap-2">
-                    <Settings className="h-4 w-4" />
-                    Edit profile
-                  </span>
-                </Link>
-                <Link
-                  href="/suggestion-box/mine"
-                  className={mobileNavLinkClass('/suggestion-box')}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <span className="flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4" />
-                    Suggestion inbox
-                  </span>
-                </Link>
-                <form action={logout}>
-                  <button type="submit" className="text-sm text-surface-600 hover:text-brand-orange active:bg-surface-100 flex items-center gap-1.5 px-3 py-3 w-full text-left transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
-                    <LogOut className="w-3.5 h-3.5" />
-                    Log out
-                  </button>
-                </form>
-              </>
-            ) : (
-              <>
-                <Link href="/auth/login" className="text-sm font-medium text-surface-700 hover:text-brand-orange active:bg-surface-100 px-3 py-3 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange" onClick={() => setMobileMenuOpen(false)}>
-                  Log in
-                </Link>
-                <Link href="/auth/signup" className="bg-brand-orange text-white px-3 py-3 text-sm font-semibold text-center mx-3 mt-1 hover:bg-brand-orange-dark transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white" onClick={() => setMobileMenuOpen(false)}>
-                  Sign up
-                </Link>
-              </>
-            )}
+                <div className="mt-5">
+                  <p className="mb-2 font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-surface-400">Account</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Link
+                      href="/auth/login"
+                      className="flex min-h-11 items-center justify-center border border-surface-300 px-3 text-sm font-semibold text-surface-800 transition-colors duration-150 hover:bg-surface-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+                      onClick={closeMobileMenu}
+                    >
+                      Log in
+                    </Link>
+                    <Link
+                      href="/auth/signup"
+                      className="flex min-h-11 items-center justify-center bg-surface-900 px-3 text-sm font-semibold text-white transition-colors duration-150 hover:bg-surface-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+                      onClick={closeMobileMenu}
+                    >
+                      Sign up
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </nav>

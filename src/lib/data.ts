@@ -351,7 +351,7 @@ export async function getPrompts(options?: {
     const supabase = await createClient()
     let query = supabase
       .from('prompts')
-      .select('*, category:categories(*), author:profiles(*), steps:prompt_steps(*)')
+      .select('*, category:categories(*), author:profiles!prompts_author_id_fkey(*), steps:prompt_steps(*)')
 
     const status = options?.status ?? 'approved'
     if (status !== 'all') {
@@ -394,7 +394,7 @@ export async function getAllPromptsForAdmin(): Promise<PromptWithRelations[]> {
   const { supabase } = await requireAdminAccess()
   const { data, error } = await supabase
     .from('prompts')
-    .select('*, category:categories(*), author:profiles(*), steps:prompt_steps(*)')
+    .select('*, category:categories(*), author:profiles!prompts_author_id_fkey(*), steps:prompt_steps(*)')
     .order('created_at', { ascending: false })
 
   if (error) throw error
@@ -413,7 +413,7 @@ export async function getPromptById(id: string): Promise<PromptWithRelations | n
     const supabase = await createClient()
     const { data } = await supabase
       .from('prompts')
-      .select('*, category:categories(*), author:profiles(*), steps:prompt_steps(*)')
+      .select('*, category:categories(*), author:profiles!prompts_author_id_fkey(*), steps:prompt_steps(*)')
       .eq('id', resolvedId)
       .maybeSingle()
 
@@ -637,7 +637,7 @@ export async function getApprovedProjectForks(
     const supabase = await createClient()
     let query = supabase
       .from('prompts')
-      .select('id,title,description,model_used,created_at,status,author:profiles(username,display_name),steps:prompt_steps(id,step_number,title,content,result_content),fork_source_project_id,fork_source_project_title,fork_source_model_variant_id,fork_source_run_id,fork_source_step_id,fork_source_step_number,fork_source_artifact_path,fork_source_artifact_sha256,fork_parent_submission_id,prompt_family_id,fork_depth,fork_branch_index')
+      .select('id,title,description,model_used,created_at,status,author:profiles!prompts_author_id_fkey(username,display_name),steps:prompt_steps(id,step_number,title,content,result_content),fork_source_project_id,fork_source_project_title,fork_source_model_variant_id,fork_source_run_id,fork_source_step_id,fork_source_step_number,fork_source_artifact_path,fork_source_artifact_sha256,fork_parent_submission_id,prompt_family_id,fork_depth,fork_branch_index')
       .eq('status', 'approved')
       .or(`fork_source_project_id.eq.${projectId},fork_parent_submission_id.eq.${projectId}`)
     if (sourceRunId) query = query.eq('fork_source_run_id', sourceRunId)
@@ -703,7 +703,7 @@ export async function getProjectsByAuthor(authorId: string, username?: string): 
     const supabase = await createClient()
     const { data } = await supabase
       .from('prompts')
-      .select('*, category:categories(*), author:profiles(*), steps:prompt_steps(*)')
+      .select('*, category:categories(*), author:profiles!prompts_author_id_fkey(*), steps:prompt_steps(*)')
       .eq('author_id', authorId)
       .eq('status', 'approved')
       .order('created_at', { ascending: false })

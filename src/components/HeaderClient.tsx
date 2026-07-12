@@ -104,7 +104,7 @@ export default function HeaderClient({ viewer, isAdmin }: HeaderClientProps) {
         <div className="flex items-center justify-between h-12">
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2 shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
-              <Image src="/logo.png" alt="PathForge — AI Build Paths" width={110} height={35} priority />
+              <Image src="/logo.png" alt="PathForge — AI Build Paths" width={110} height={35} loading="eager" />
             </Link>
 
             <div className="hidden md:flex items-center gap-1">

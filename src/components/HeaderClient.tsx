@@ -7,7 +7,6 @@ import { usePathname } from 'next/navigation'
 import {
   ChevronDown,
   FolderGit2,
-  Hammer,
   LogOut,
   Menu,
   MessageSquare,
@@ -34,6 +33,7 @@ const navItems = [
   { href: '/what-to-build', label: 'Ideas' },
   { href: '/requests', label: 'Requests' },
   { href: '/guide', label: 'How it works' },
+  { href: '/build', label: 'Share a build' },
 ] as const
 
 function isActivePath(pathname: string, href: string) {
@@ -164,18 +164,6 @@ export default function HeaderClient({ viewer, isAdmin }: HeaderClientProps) {
               </>
             )}
 
-            <Link
-              href="/build"
-              className={`inline-flex h-9 items-center gap-2 border px-4 text-[13px] font-bold transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
-                isActivePath(pathname, '/build')
-                  ? 'border-surface-900 bg-surface-900 text-white'
-                  : 'border-brand-orange bg-brand-orange text-white hover:border-brand-orange-dark hover:bg-brand-orange-dark'
-              }`}
-            >
-              <Hammer className="h-4 w-4" aria-hidden="true" />
-              Share a build
-            </Link>
-
             {viewer && (
               <details ref={accountMenuRef} className="group relative" data-account-menu>
                 <summary
@@ -258,20 +246,7 @@ export default function HeaderClient({ viewer, isAdmin }: HeaderClientProps) {
             className="absolute inset-x-0 top-full h-[calc(100dvh-4rem)] overflow-y-auto border-b border-surface-200 bg-white shadow-[0_22px_50px_rgba(15,23,42,0.14)] lg:hidden"
           >
             <div className="mx-auto max-w-7xl px-4 pb-5 pt-4 sm:px-6">
-              <Link
-                href="/build"
-                className={`mb-4 flex min-h-12 items-center justify-center gap-2 border px-4 py-3 text-sm font-bold transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
-                  isActivePath(pathname, '/build')
-                    ? 'border-surface-900 bg-surface-900 text-white'
-                    : 'border-brand-orange bg-brand-orange text-white hover:bg-brand-orange-dark'
-                }`}
-                onClick={closeMobileMenu}
-              >
-                <Hammer className="h-4 w-4" aria-hidden="true" />
-                Share a build
-              </Link>
-
-              <p className="mb-2 font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-surface-400">Discover</p>
+              <p className="mb-2 font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-surface-400">Navigate</p>
               <div className="border-t border-surface-100">
                 {navItems.map((item) => (
                   <Link key={item.href} href={item.href} className={mobileNavLinkClass(item.href)} onClick={closeMobileMenu}>

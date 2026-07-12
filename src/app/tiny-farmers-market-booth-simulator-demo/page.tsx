@@ -7,7 +7,6 @@ export default function TinyFarmersMarketDemoPage() {
     <PreparedSourceRunPage
       project={TINY_FARMERS_MARKET_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('tiny-farmers-market-booth-claude-source-run.json')}
-      route="/tiny-farmers-market-booth-simulator-demo"
       capturedAt="June 5, 2026"
     />
   )

@@ -23,9 +23,9 @@ function loadEnvFile(filePath) {
 function parseArgs(argv) {
   const args = {
     username: 'JordanLee',
-    displayName: 'Jordan Lee',
-    email: 'jordan.lee.seed@pathforge.invalid',
-    bio: 'Explores practical AI build paths and small browser tools.',
+    displayName: '',
+    email: '',
+    bio: 'PathForge-operated seed builder for verified source-run projects.',
     dryRun: false,
   }
 
@@ -42,11 +42,22 @@ function parseArgs(argv) {
     }
   }
 
+  args.displayName = args.displayName.trim() || args.username
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/([A-Za-z])([0-9])/g, '$1 $2')
+    .trim()
+  args.email = args.email.trim() || makeSyntheticEmail(args.username)
+
   return args
 }
 
 function makePassword() {
   return `${randomBytes(32).toString('base64url')}aA1!`
+}
+
+function makeSyntheticEmail(username) {
+  const suffix = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14)
+  return `${username.toLowerCase()}.${suffix}@pathforge-seed.example.com`
 }
 
 function publicResult({ userId, username, displayName, email, bio, dryRun }) {
@@ -103,6 +114,9 @@ async function main() {
     email: args.email,
     password,
     email_confirm: true,
+    app_metadata: {
+      pathforge_seed: true,
+    },
     user_metadata: {
       username: args.username,
       display_name: args.displayName,

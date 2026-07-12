@@ -10,7 +10,6 @@ export default function ReactionTimeTrainerDemoPage() {
     <PreparedSourceRunPage
       project={REACTION_TRAINER_SHOWCASE_PROJECT}
       sourceRunPackage={sourceRunPackage}
-      route="/reaction-time-trainer-demo"
       capturedAt="June 4, 2026"
     />
   )

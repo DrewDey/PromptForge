@@ -7,7 +7,6 @@ export default function PantryShelfLifeRescueDemoPage() {
     <PreparedSourceRunPage
       project={PANTRY_SHELF_LIFE_RESCUE_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('pantry-shelf-life-rescue-gemini-source-run.json')}
-      route="/pantry-shelf-life-rescue-planner-demo"
       capturedAt="June 5, 2026"
     />
   )

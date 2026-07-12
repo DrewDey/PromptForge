@@ -7,7 +7,6 @@ export default function PotluckTablePlannerDemoPage() {
     <PreparedSourceRunPage
       project={POTLUCK_TABLE_PLANNER_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('potluck-table-planner-gemini-source-run.json')}
-      route="/potluck-table-planner-demo"
       capturedAt="June 5, 2026"
     />
   )

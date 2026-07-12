@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useCallback, useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
-import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, LogIn, FileText, GitBranch, Check, AlertCircle, ArrowUp, ArrowDown, ChevronRight, Layers, Cpu, Eye, Keyboard, CheckCircle2, Link2 } from 'lucide-react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, LogIn, FileText, GitBranch, Check, AlertCircle, ArrowUp, ArrowDown, ChevronRight, Layers, Cpu, Eye, Keyboard, CheckCircle2, Link2, Wrench } from 'lucide-react'
 import { getModelsByProvider, getModelName } from '@/lib/models'
 import { submitProject, submitSourceRun } from '@/lib/actions'
 import { detectSourceRunProvider } from '@/lib/source-run-review'
@@ -15,6 +15,7 @@ import {
   type ProjectForkSource,
 } from '@/lib/project-forks'
 import ImageUpload from '@/components/ImageUpload'
+import { loadMyForgeRepairContext, markProjectForkStarted } from '@/lib/my-forge-actions'
 
 const categories = [
   { slug: 'finance', name: 'Finance & Accounting' },
@@ -32,19 +33,6 @@ const categories = [
 type Step = { title: string; content: string; result_content: string; description: string }
 
 type IntakeMode = 'source-run' | 'manual'
-
-type SourceRunImport = {
-  id: string
-  label: string
-  source: string
-  forkSource?: ProjectForkSource
-  provider?: string
-  modelUsed?: string
-  modelSettings?: string
-  notes?: string
-  createdAt: string
-  status: 'queued' | 'failed'
-}
 
 const sourceRunProviderOptions = ['ChatGPT', 'Claude', 'Gemini', 'OpenRouter', 'Other']
 
@@ -295,10 +283,6 @@ function FieldError({ message }: { message?: string }) {
   )
 }
 
-function makeSourceRunImportId() {
-  return `project-source-run-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-}
-
 function intakeCardClass(active: boolean) {
   return `border p-4 text-left transition ${
     active
@@ -509,8 +493,18 @@ function BuildLoggedOutLanding({
 
 export default function SubmitProjectPage() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null)
-  const forkSource = useMemo(() => parseProjectForkSearchParams(searchParams), [searchParams])
+  const urlForkSource = useMemo(() => parseProjectForkSearchParams(searchParams), [searchParams])
+  const repairId = searchParams.get('repair')
+  const [repairForkSource, setRepairForkSource] = useState<ProjectForkSource | null>(null)
+  const [repairSubmissionId, setRepairSubmissionId] = useState<string | null>(null)
+  const [repairAttemptedId, setRepairAttemptedId] = useState<string | null>(null)
+  const [repairLoading, setRepairLoading] = useState(false)
+  const repairContextReady = Boolean(repairId && repairSubmissionId === repairId)
+  const forkSource = repairId
+    ? repairContextReady ? repairForkSource : null
+    : urlForkSource
   const [authReturnPath, setAuthReturnPath] = useState('/build')
 
   // Form state
@@ -523,7 +517,6 @@ export default function SubmitProjectPage() {
   const [sourceRunModel, setSourceRunModel] = useState('')
   const [sourceRunModelSettings, setSourceRunModelSettings] = useState('')
   const [sourceRunNotes, setSourceRunNotes] = useState('')
-  const [sourceRunImports, setSourceRunImports] = useState<SourceRunImport[]>([])
   const [sourceRunSubmitting, setSourceRunSubmitting] = useState(false)
   const [sourceRunError, setSourceRunError] = useState('')
   const [title, setTitle] = useState('')
@@ -553,7 +546,6 @@ export default function SubmitProjectPage() {
 
   // Submission state
   const [submitting, setSubmitting] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
 
   // Client-side validation state
@@ -571,6 +563,73 @@ export default function SubmitProjectPage() {
       current.trim() ? current : serializeProjectForkSourceForNotes(forkSource)
     ))
   }, [forkSource])
+
+  useEffect(() => {
+    if (isLoggedIn !== true || !forkSource?.sourceProjectId) return
+    void markProjectForkStarted(forkSource)
+  }, [forkSource, isLoggedIn])
+
+  useEffect(() => {
+    if (isLoggedIn !== true || !repairId || repairAttemptedId === repairId) return
+
+    let active = true
+    setRepairAttemptedId(repairId)
+    setRepairSubmissionId(null)
+    setRepairForkSource(null)
+    setSourceRunError('')
+    setRepairLoading(true)
+    void loadMyForgeRepairContext(repairId).then((result) => {
+      if (!active) return
+      setRepairLoading(false)
+      if (!result.success || !result.data) {
+        setSourceRunError(result.error || 'That repair entry is unavailable.')
+        return
+      }
+
+      const context = result.data
+      setRepairSubmissionId(context.submissionId)
+      setIntakeMode('source-run')
+      setSourceRunTitle((current) => current.trim() ? current : `${context.title} repair`)
+      setSourceRunNotes((current) => current.trim()
+        ? current
+        : [
+          `Repair submission for ${context.submissionId}.`,
+          context.userStatusNote ? `Review issue: ${context.userStatusNote}` : '',
+        ].filter(Boolean).join('\n\n'))
+
+      if (context.forkSourceProjectId) {
+        setRepairForkSource({
+          sourceProjectId: context.forkSourceProjectId,
+          sourceProjectTitle: context.forkSourceProjectTitle || undefined,
+          sourceModelVariantId: context.forkSourceModelVariantId || undefined,
+          sourceRunId: context.forkSourceRunId || undefined,
+          sourceStepId: context.forkSourceStepId || undefined,
+          sourceStepNumber: context.forkSourceStepNumber || undefined,
+          sourceArtifactPath: context.forkSourceArtifactPath || undefined,
+          sourceArtifactSha256: context.forkSourceArtifactSha256 || undefined,
+          parentForkId: context.forkParentSubmissionId || undefined,
+          promptFamilyId: context.promptFamilyId || undefined,
+          depth: context.forkDepth,
+          branchIndex: context.forkBranchIndex,
+        })
+      }
+    })
+
+    return () => {
+      active = false
+    }
+  }, [isLoggedIn, repairAttemptedId, repairId])
+
+  useEffect(() => {
+    if (repairId) return
+    setRepairSubmissionId(null)
+    setRepairForkSource(null)
+    setRepairAttemptedId(null)
+    setRepairLoading(false)
+    setSourceRunTitle('')
+    setSourceRunNotes('')
+    setSourceRunError('')
+  }, [repairId])
 
   useEffect(() => {
     if (sourceRunProviderTouched) return
@@ -615,7 +674,7 @@ export default function SubmitProjectPage() {
     }
   }, [])
 
-  function computeErrors(): Record<string, string> {
+  const computeErrors = useCallback((): Record<string, string> => {
     const errors: Record<string, string> = {}
     if (!title.trim()) errors.title = 'Project title is required'
     if (!description.trim()) errors.description = 'Short description is required'
@@ -629,13 +688,13 @@ export default function SubmitProjectPage() {
     }
     if (modelId === 'other' && !customModel.trim()) errors.customModel = 'Enter the model name'
     return errors
-  }
+  }, [categorySlug, customModel, description, difficulty, isChain, modelId, promptContent, steps, story, title])
 
   // Clear individual field errors when user types (only after first submit attempt)
   useEffect(() => {
     if (!hasAttemptedSubmit) return
     setValidationErrors(computeErrors())
-  }, [title, description, story, categorySlug, difficulty, promptContent, isChain, steps, modelId, customModel, hasAttemptedSubmit])
+  }, [computeErrors, hasAttemptedSubmit])
 
   function addStep() {
     const newIndex = steps.length
@@ -667,6 +726,10 @@ export default function SubmitProjectPage() {
 
   async function prepareSourceRun(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (repairId && !repairContextReady) {
+      setSourceRunError('The repair record must load before this can be submitted. Retry the repair or return to My Forge.')
+      return
+    }
     const title = sourceRunTitle.trim()
     const url = sourceRunUrl.trim()
     if (!title || !url) return
@@ -698,6 +761,7 @@ export default function SubmitProjectPage() {
       model_settings: modelSettings,
       notes: sourceRunNotes,
       fork_source: forkSource,
+      resubmission_of_id: repairContextReady ? repairSubmissionId : null,
     })
 
     setSourceRunSubmitting(false)
@@ -707,26 +771,8 @@ export default function SubmitProjectPage() {
       return
     }
 
-    setSourceRunImports((current) => [{
-      id: result.id ?? makeSourceRunImportId(),
-      label: title,
-      source: url,
-      forkSource: forkSource ?? undefined,
-      provider: provider || undefined,
-      modelUsed: modelUsed || undefined,
-      modelSettings: modelSettings || undefined,
-      notes: sourceRunNotes.trim() || undefined,
-      createdAt: 'Queued for extraction',
-      status: 'queued',
-    }, ...current])
-    setSourceRunTitle(forkSource ? `${forkSource.sourceProjectTitle || 'Forked Path'} fork` : '')
-    setSourceRunUrl('')
-    setSourceRunProvider('')
-    setSourceRunCustomProvider('')
-    setSourceRunProviderTouched(false)
-    setSourceRunModel('')
-    setSourceRunModelSettings('')
-    setSourceRunNotes(forkSource ? serializeProjectForkSourceForNotes(forkSource) : '')
+    router.push(`/my-forge?submitted=${encodeURIComponent(result.id ?? '')}`)
+    router.refresh()
   }
 
   function validateForm(): Record<string, string> {
@@ -786,7 +832,8 @@ export default function SubmitProjectPage() {
     setSubmitting(false)
 
     if (result.success) {
-      setSubmitted(true)
+      router.push(`/my-forge?submitted=${encodeURIComponent(result.id ?? '')}`)
+      router.refresh()
     } else {
       setError(result.error ?? 'Something went wrong')
     }
@@ -803,47 +850,6 @@ export default function SubmitProjectPage() {
   // Loading auth state
   if (isLoggedIn === null) {
     return <BuildLoggedOutLanding forkSource={forkSource} loginHref={loginHref} signupHref={signupHref} isCheckingAccount />
-  }
-
-  // Success
-  if (submitted) {
-    return (
-      <div className="max-w-2xl mx-auto px-4 py-20 text-center">
-        <div className="w-14 h-14 bg-green-500 text-white flex items-center justify-center mx-auto mb-4">
-          <Check className="w-7 h-7" />
-        </div>
-        <h1 className="text-2xl font-bold text-surface-900 mb-2">Project Submitted!</h1>
-        <p className="text-surface-600 mb-6">
-          Your project has been submitted for review. An admin will approve it shortly.
-        </p>
-        <div className="flex items-center justify-center gap-4">
-          <Link
-            href="/paths"
-            className="bg-brand-orange text-white px-5 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity"
-          >
-            Build Paths
-          </Link>
-          <button
-            onClick={() => {
-              setSubmitted(false)
-              setTitle('')
-              setDescription('')
-              setStory('')
-              setPromptContent('')
-              setResultContent('')
-              setFinalResult('')
-              setSteps([{ title: '', content: '', result_content: '', description: '' }])
-              setIsChain(true)
-              setHasAttemptedSubmit(false)
-              setValidationErrors({})
-            }}
-            className="text-surface-500 hover:text-surface-900 text-sm font-medium transition-colors duration-150"
-          >
-            Submit Another
-          </button>
-        </div>
-      </div>
-    )
   }
 
   // Count filled steps for the summary
@@ -885,6 +891,8 @@ export default function SubmitProjectPage() {
     ? 'Paste the exact routed model, e.g. anthropic/claude-sonnet-4.6'
     : 'Exact model shown, or Not sure'
   const canSubmitSourceRun = Boolean(
+    (!repairId || repairContextReady) &&
+    !repairLoading &&
     sourceRunTitle.trim() &&
     sourceRunUrl.trim() &&
     resolvedSourceRunProvider &&
@@ -982,6 +990,46 @@ export default function SubmitProjectPage() {
       </section>
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+
+      {repairId && (
+        <div className="mb-6 flex items-start gap-3 border border-amber-200 bg-amber-50 p-4 text-amber-950">
+          <Wrench className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-black">
+              {repairLoading
+                ? 'Loading repair context…'
+                : repairContextReady
+                  ? 'Repair submission attached'
+                  : 'Repair context could not be attached'}
+            </div>
+            <p className="mt-1 text-xs leading-5">
+              {repairContextReady
+                ? 'Continue the original work in a new source session, paste that new URL below, and keep the prior review issue in your notes.'
+                : 'PathForge will not create an unrelated intake from this repair link. Retry the record or return to your workspace.'}
+            </p>
+            {!repairLoading && !repairContextReady && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSourceRunError('')
+                    setRepairAttemptedId(null)
+                  }}
+                  className="inline-flex min-h-9 items-center border border-amber-500 bg-white px-3 py-2 text-xs font-bold hover:border-amber-700"
+                >
+                  Retry repair
+                </button>
+                <Link
+                  href="/my-forge"
+                  className="inline-flex min-h-9 items-center bg-surface-900 px-3 py-2 text-xs font-bold text-white hover:bg-brand-orange"
+                >
+                  Return to My Forge
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {forkSource && <ForkSourcePanel forkSource={forkSource} />}
 
@@ -1238,55 +1286,6 @@ export default function SubmitProjectPage() {
               </div>
             )}
 
-            {sourceRunImports.length > 0 && (
-              <div className="border-t border-surface-200 p-5">
-                <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-                  Entry queued
-                </div>
-                <div className="space-y-3">
-                  {sourceRunImports.map((item) => (
-                    <article key={item.id} className="border border-brand-orange/25 bg-brand-orange/5 p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="font-semibold text-surface-900">{item.label}</div>
-                          <div className="mt-1 truncate text-xs text-surface-500">{item.source}</div>
-                          <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] text-surface-600">
-                            {item.forkSource && (
-                              <span className="border border-[#07551f]/25 bg-[#effdf3] px-2 py-1 text-[#07551f]">
-                                {item.forkSource.sourceStepNumber
-                                  ? `Fork: response ${String(item.forkSource.sourceStepNumber).padStart(2, '0')}`
-                                  : 'Fork source attached'}
-                              </span>
-                            )}
-                            <span className="border border-white/80 bg-white px-2 py-1">
-                              Provider: {item.provider || 'Not specified'}
-                            </span>
-                            <span className="border border-white/80 bg-white px-2 py-1">
-                              Model: {item.modelUsed || 'Not specified'}
-                            </span>
-                            {item.modelSettings && (
-                              <span className="border border-white/80 bg-white px-2 py-1">
-                                Settings: {item.modelSettings}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="shrink-0 font-mono text-[10px] uppercase tracking-[0.14em] text-brand-orange">
-                          {item.status === 'queued' ? item.createdAt : 'Needs retry'}
-                        </div>
-                      </div>
-                      {item.notes && <p className="mt-3 text-sm leading-6 text-surface-700">{item.notes}</p>}
-                      <div className="mt-3 grid gap-2 text-xs text-surface-600 sm:grid-cols-4">
-                        <div className="border border-white/80 bg-white px-3 py-2">Open session</div>
-                        <div className="border border-white/80 bg-white px-3 py-2">Extract exact chain</div>
-                        <div className="border border-white/80 bg-white px-3 py-2">Review notes</div>
-                        <div className="border border-white/80 bg-white px-3 py-2">Decide next step</div>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
           </div>

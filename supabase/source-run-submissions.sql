@@ -20,10 +20,23 @@ CREATE TABLE IF NOT EXISTS source_run_submissions (
   prompt_family_id TEXT,
   fork_depth INT NOT NULL DEFAULT 0 CHECK (fork_depth >= 0 AND fork_depth < 10),
   fork_branch_index INT NOT NULL DEFAULT 0 CHECK (fork_branch_index >= 0 AND fork_branch_index < 10),
+  resubmission_of_id UUID,
   author_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  status TEXT NOT NULL DEFAULT 'queued' CHECK (status IN ('queued', 'extracting', 'draft_created', 'failed')),
+  status TEXT NOT NULL DEFAULT 'queued' CHECK (
+    status IN (
+      'queued',
+      'extracting',
+      'in_review',
+      'needs_repair',
+      'draft_created',
+      'published',
+      'declined',
+      'failed'
+    )
+  ),
   extracted_prompt_id UUID REFERENCES prompts(id) ON DELETE SET NULL,
   admin_notes TEXT,
+  user_status_note TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   CHECK (
@@ -47,7 +60,9 @@ ALTER TABLE source_run_submissions
   ADD COLUMN IF NOT EXISTS fork_parent_submission_id TEXT,
   ADD COLUMN IF NOT EXISTS prompt_family_id TEXT,
   ADD COLUMN IF NOT EXISTS fork_depth INT NOT NULL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS fork_branch_index INT NOT NULL DEFAULT 0;
+  ADD COLUMN IF NOT EXISTS fork_branch_index INT NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS resubmission_of_id UUID,
+  ADD COLUMN IF NOT EXISTS user_status_note TEXT;
 
 ALTER TABLE source_run_submissions
   DROP CONSTRAINT IF EXISTS source_run_submissions_fork_step_number_check,
@@ -59,6 +74,26 @@ ALTER TABLE source_run_submissions
   DROP CONSTRAINT IF EXISTS source_run_submissions_fork_branch_index_check,
   ADD CONSTRAINT source_run_submissions_fork_branch_index_check
     CHECK (fork_branch_index >= 0 AND fork_branch_index < 10),
+  DROP CONSTRAINT IF EXISTS source_run_submissions_status_check,
+  ADD CONSTRAINT source_run_submissions_status_check
+    CHECK (
+      status IN (
+        'queued',
+        'extracting',
+        'in_review',
+        'needs_repair',
+        'draft_created',
+        'published',
+        'declined',
+        'failed'
+      )
+    ),
+  DROP CONSTRAINT IF EXISTS source_run_submissions_resubmission_not_self,
+  ADD CONSTRAINT source_run_submissions_resubmission_not_self
+    CHECK (resubmission_of_id IS NULL OR resubmission_of_id <> id),
+  DROP CONSTRAINT IF EXISTS source_run_submissions_user_status_note_length,
+  ADD CONSTRAINT source_run_submissions_user_status_note_length
+    CHECK (user_status_note IS NULL OR LENGTH(user_status_note) <= 2000),
   DROP CONSTRAINT IF EXISTS source_run_submissions_fork_source_run_check,
   ADD CONSTRAINT source_run_submissions_fork_source_run_check
     CHECK (
@@ -122,6 +157,23 @@ BEGIN
 END;
 $$;
 
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conrelid = 'public.source_run_submissions'::REGCLASS
+      AND conname = 'source_run_submissions_resubmission_fkey'
+  ) THEN
+    ALTER TABLE public.source_run_submissions
+      ADD CONSTRAINT source_run_submissions_resubmission_fkey
+      FOREIGN KEY (resubmission_of_id)
+      REFERENCES public.source_run_submissions(id)
+      ON DELETE RESTRICT;
+  END IF;
+END;
+$$;
+
 CREATE INDEX IF NOT EXISTS idx_source_run_submissions_author ON source_run_submissions(author_id);
 CREATE INDEX IF NOT EXISTS idx_source_run_submissions_status ON source_run_submissions(status);
 CREATE INDEX IF NOT EXISTS idx_source_run_submissions_created_at ON source_run_submissions(created_at DESC);
@@ -134,17 +186,38 @@ CREATE INDEX IF NOT EXISTS idx_source_run_submissions_fork_source_run
   WHERE fork_source_run_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_source_run_submissions_prompt_family ON source_run_submissions(prompt_family_id);
 CREATE INDEX IF NOT EXISTS idx_source_run_submissions_parent_fork ON source_run_submissions(fork_parent_submission_id);
+CREATE INDEX IF NOT EXISTS idx_source_run_submissions_resubmission
+  ON source_run_submissions(resubmission_of_id)
+  WHERE resubmission_of_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_source_run_submissions_one_active_repair
+  ON source_run_submissions(resubmission_of_id)
+  WHERE resubmission_of_id IS NOT NULL
+    AND status NOT IN ('failed', 'declined');
+CREATE INDEX IF NOT EXISTS idx_source_run_submissions_owner_lifecycle
+  ON source_run_submissions(author_id, created_at DESC, status);
+CREATE INDEX IF NOT EXISTS idx_source_run_submissions_extracted_prompt
+  ON source_run_submissions(extracted_prompt_id);
+CREATE INDEX IF NOT EXISTS idx_source_run_submissions_exact_variant_artifact
+  ON source_run_submissions(
+    fork_source_model_variant_id,
+    fork_source_step_id,
+    fork_source_step_number,
+    fork_source_artifact_path,
+    fork_source_artifact_sha256
+  );
 
 ALTER TABLE source_run_submissions ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Users can view own source runs" ON source_run_submissions;
 CREATE POLICY "Users can view own source runs" ON source_run_submissions
-  FOR SELECT USING (
-    author_id = auth.uid()
+  FOR SELECT
+  TO authenticated
+  USING (
+    author_id = (SELECT auth.uid())
     OR EXISTS (
       SELECT 1
       FROM profiles
-      WHERE profiles.id = auth.uid()
+      WHERE profiles.id = (SELECT auth.uid())
       AND profiles.role = 'admin'
     )
   );
@@ -497,7 +570,8 @@ BEGIN
     OR NEW.fork_parent_submission_id IS DISTINCT FROM OLD.fork_parent_submission_id
     OR NEW.prompt_family_id IS DISTINCT FROM OLD.prompt_family_id
     OR NEW.fork_depth IS DISTINCT FROM OLD.fork_depth
-    OR NEW.fork_branch_index IS DISTINCT FROM OLD.fork_branch_index THEN
+    OR NEW.fork_branch_index IS DISTINCT FROM OLD.fork_branch_index
+    OR NEW.resubmission_of_id IS DISTINCT FROM OLD.resubmission_of_id THEN
     RAISE EXCEPTION 'Imported source-run intake and lineage evidence is immutable.';
   END IF;
   RETURN NEW;
@@ -859,6 +933,145 @@ REVOKE ALL ON FUNCTION public.publish_prepared_showcase_source_run(UUID, JSONB, 
   FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.publish_prepared_showcase_source_run(UUID, JSONB, JSONB, JSONB)
   TO authenticated, service_role;
+
+-- Owner-visible lifecycle and append-only repair lineage
+-- ---------------------------------------------------------------------------
+
+CREATE SCHEMA IF NOT EXISTS private;
+REVOKE ALL ON SCHEMA private FROM PUBLIC, anon;
+GRANT USAGE ON SCHEMA private TO authenticated, service_role;
+
+-- Failed processing and an explicit review decline are both terminal. Neither
+-- should prevent a corrected source URL from entering the queue again.
+DROP INDEX IF EXISTS public.idx_source_run_submissions_active_source_url;
+DROP INDEX IF EXISTS public.idx_source_run_submissions_active_author_source_url;
+DROP INDEX IF EXISTS public.idx_source_run_submissions_active_canonical_source_url;
+DROP INDEX IF EXISTS public.idx_source_run_submissions_active_author_canonical_source_url;
+CREATE UNIQUE INDEX idx_source_run_submissions_active_source_url
+  ON public.source_run_submissions(source_url)
+  WHERE source_url IS NOT NULL
+    AND status NOT IN ('failed', 'declined');
+CREATE UNIQUE INDEX idx_source_run_submissions_active_author_source_url
+  ON public.source_run_submissions(author_id, source_url)
+  WHERE source_url IS NOT NULL
+    AND status NOT IN ('failed', 'declined');
+CREATE UNIQUE INDEX idx_source_run_submissions_active_canonical_source_url
+  ON public.source_run_submissions(canonical_source_url)
+  WHERE canonical_source_url IS NOT NULL
+    AND status NOT IN ('failed', 'declined');
+CREATE UNIQUE INDEX idx_source_run_submissions_active_author_canonical_source_url
+  ON public.source_run_submissions(author_id, canonical_source_url)
+  WHERE canonical_source_url IS NOT NULL
+    AND status NOT IN ('failed', 'declined');
+
+UPDATE public.source_run_submissions
+SET
+  status = 'declined',
+  user_status_note = COALESCE(
+    user_status_note,
+    'This submission was closed during review and will not be published.'
+  ),
+  updated_at = NOW()
+WHERE status = 'failed'
+  AND admin_notes = 'Dismissed from admin pending review. This intake should not be drafted.';
+
+-- The INSERT policy cannot directly read another owner-protected source-run
+-- row. Keep the lookup narrow, ownership-bound, and unavailable to anon.
+CREATE OR REPLACE FUNCTION private.source_run_owned_by_current_user(target_id UUID)
+RETURNS BOOLEAN
+LANGUAGE SQL
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT
+    (SELECT auth.uid()) IS NOT NULL
+    AND EXISTS (
+      SELECT 1
+      FROM public.source_run_submissions
+      WHERE source_run_submissions.id = target_id
+        AND source_run_submissions.author_id = (SELECT auth.uid())
+    );
+$$;
+
+REVOKE ALL ON FUNCTION private.source_run_owned_by_current_user(UUID)
+  FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION private.source_run_owned_by_current_user(UUID)
+  TO authenticated, service_role;
+
+-- A repair must be a new source session for the same owner and immutable fork
+-- tuple. It may continue only a run explicitly marked repairable or a genuine
+-- processing failure; a declined submission is intentionally ineligible.
+CREATE OR REPLACE FUNCTION private.validate_source_run_resubmission()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  prior_submission public.source_run_submissions%ROWTYPE;
+BEGIN
+  IF NEW.resubmission_of_id IS NULL THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT *
+  INTO prior_submission
+  FROM public.source_run_submissions
+  WHERE id = NEW.resubmission_of_id;
+
+  IF NOT FOUND OR prior_submission.author_id IS DISTINCT FROM NEW.author_id THEN
+    RAISE EXCEPTION 'A repair submission must belong to the same profile as its prior submission.';
+  END IF;
+
+  IF prior_submission.status NOT IN ('needs_repair', 'failed') THEN
+    RAISE EXCEPTION 'A repair submission requires a prior source run that needs repair or genuinely failed processing.';
+  END IF;
+
+  IF ROW(
+    NEW.fork_source_project_id,
+    NEW.fork_source_project_title,
+    NEW.fork_source_model_variant_id,
+    NEW.fork_source_run_id,
+    NEW.fork_source_step_id,
+    NEW.fork_source_step_number,
+    NEW.fork_source_artifact_path,
+    NEW.fork_source_artifact_sha256,
+    NEW.fork_parent_submission_id,
+    NEW.prompt_family_id,
+    NEW.fork_depth,
+    NEW.fork_branch_index
+  ) IS DISTINCT FROM ROW(
+    prior_submission.fork_source_project_id,
+    prior_submission.fork_source_project_title,
+    prior_submission.fork_source_model_variant_id,
+    prior_submission.fork_source_run_id,
+    prior_submission.fork_source_step_id,
+    prior_submission.fork_source_step_number,
+    prior_submission.fork_source_artifact_path,
+    prior_submission.fork_source_artifact_sha256,
+    prior_submission.fork_parent_submission_id,
+    prior_submission.prompt_family_id,
+    prior_submission.fork_depth,
+    prior_submission.fork_branch_index
+  ) THEN
+    RAISE EXCEPTION 'A repair submission must preserve the exact fork lineage of its prior submission.';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION private.validate_source_run_resubmission()
+  FROM PUBLIC, anon, authenticated;
+
+DROP TRIGGER IF EXISTS validate_source_run_resubmission_owner
+  ON public.source_run_submissions;
+CREATE TRIGGER validate_source_run_resubmission_owner
+  BEFORE INSERT OR UPDATE OF resubmission_of_id, author_id
+  ON public.source_run_submissions
+  FOR EACH ROW EXECUTE FUNCTION private.validate_source_run_resubmission();
+
 REVOKE ALL ON TABLE public.source_run_submissions FROM anon, authenticated;
 GRANT SELECT ON TABLE public.source_run_submissions TO authenticated;
 GRANT INSERT (
@@ -878,10 +1091,11 @@ GRANT INSERT (
   prompt_family_id,
   fork_depth,
   fork_branch_index,
+  resubmission_of_id,
   author_id,
   status
 ) ON TABLE public.source_run_submissions TO authenticated;
-GRANT UPDATE (status, extracted_prompt_id, admin_notes, updated_at)
+GRANT UPDATE (status, extracted_prompt_id, admin_notes, user_status_note, updated_at)
   ON TABLE public.source_run_submissions TO authenticated;
 
 DROP POLICY IF EXISTS "Users can submit own source runs" ON public.source_run_submissions;
@@ -893,10 +1107,15 @@ CREATE POLICY "Users submit untouched queued source runs"
     AND status = 'queued'
     AND extracted_prompt_id IS NULL
     AND admin_notes IS NULL
+    AND user_status_note IS NULL
     AND canonical_source_url IS NULL
     AND source_package_file IS NULL
     AND source_package_sha256 IS NULL
     AND intake_evidence IS NULL
+    AND (
+      resubmission_of_id IS NULL
+      OR private.source_run_owned_by_current_user(resubmission_of_id)
+    )
   );
 
 DROP POLICY IF EXISTS "Admins can update source runs" ON public.source_run_submissions;

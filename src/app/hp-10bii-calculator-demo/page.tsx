@@ -12,7 +12,6 @@ export default function Hp10BiiCalculatorDemoPage() {
     <PreparedSourceRunPage
       project={project}
       sourceRunPackage={loadSourceRunPackage('hp-10bii-financial-calculator-claude-opus-48.json')}
-      route={project.href}
       capturedAt="June 1, 2026"
     />
   )

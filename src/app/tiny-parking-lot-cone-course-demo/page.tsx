@@ -7,7 +7,6 @@ export default function TinyParkingLotConeCourseDemoPage() {
     <PreparedSourceRunPage
       project={TINY_PARKING_LOT_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('tiny-parking-lot-cone-course-chatgpt-source-run.json')}
-      route="/tiny-parking-lot-cone-course-demo"
       capturedAt="June 6, 2026"
     />
   )

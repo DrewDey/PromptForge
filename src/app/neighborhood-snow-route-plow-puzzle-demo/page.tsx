@@ -7,7 +7,6 @@ export default function NeighborhoodSnowRoutePlowPuzzleDemoPage() {
     <PreparedSourceRunPage
       project={NEIGHBORHOOD_SNOW_ROUTE_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('neighborhood-snow-route-plow-puzzle-chatgpt-source-run.json')}
-      route="/neighborhood-snow-route-plow-puzzle-demo"
       capturedAt="June 6, 2026"
     />
   )

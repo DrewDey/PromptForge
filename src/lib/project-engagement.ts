@@ -1,98 +1,20 @@
 import {
-  TINY_TRAIN_DISPATCHER_PROJECT_ID,
-  BREAKROOM_SNACK_RESTOCK_PROJECT_ID,
-  PORCH_LIGHT_MOTH_MAZE_PROJECT_ID,
-  PANTRY_SHELF_LIFE_RESCUE_PROJECT_ID,
-  MINI_HARBOR_TUGBOAT_PROJECT_ID,
-  TINY_FARMERS_MARKET_PROJECT_ID,
-  ROOMMATE_CHORE_DRAFT_PROJECT_ID,
-  POCKET_PIRATE_MAP_PROJECT_ID,
-  POTLUCK_TABLE_PLANNER_PROJECT_ID,
-  RAINY_WINDOW_CAFE_RUSH_PROJECT_ID,
-  LUNCHBOX_CONVEYOR_SORTER_PROJECT_ID,
-  PORCH_PLANT_WATERING_PROJECT_ID,
-  SHARED_ERRAND_ROUTE_PROJECT_ID,
-  MINI_GOLF_WINDMILL_PROJECT_ID,
-  LEFTOVER_DINNER_BOARD_PROJECT_ID,
-  TINY_LOOP_SEQUENCER_PROJECT_ID,
-  GARAGE_SALE_TAGS_PROJECT_ID,
-  MICRO_DUNGEON_ROUTE_PROJECT_ID,
-  BAKE_SALE_MARGIN_PROJECT_ID,
-  STAR_MAP_SCAVENGER_PROJECT_ID,
-  DECISION_MATRIX_PROJECT_ID,
-  FLASHCARD_CRAM_PROJECT_ID,
-  FOLLOW_UP_CRM_PROJECT_ID,
-  HP_10BII_PROJECT_ID,
-  LANE_DEFENSE_PROJECT_ID,
-  MEETING_COST_PROJECT_ID,
-  NEON_BLOCK_PATROL_PROJECT_ID,
-  POCKET_RALLY_PROJECT_ID,
   POMODORO_TIMER_PROJECT_ID,
-  PUZZLE_BOX_ESCAPE_PROJECT_ID,
-  REACTION_TRAINER_PROJECT_ID,
   SCHOOL_DESK_HP_CALCULATOR_FORK_PROJECT_ID,
-  SWISH_CITY_PROJECT_ID,
-  TIC_TAC_TOE_PROJECT_ID,
-  TRIP_PACKING_PROJECT_ID,
   WEEKEND_CHECKLIST_REAL_FORK_PROJECT_ID,
-  WEEKEND_CHECKLIST_PROJECT_ID,
-  WORD_LADDER_SPRINT_PROJECT_ID,
 } from './featured-projects'
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-// Code-only "prepared showcase" projects: their UUIDs are well-formed and they
-// render on the site via the in-memory mock fallback, but they have NO row in
-// the live Supabase `prompts` table. Any vote/bookmark INSERT against these IDs
-// fails the FK + RLS "approved prompts row" check, surfacing the red
-// "Could not save vote." error. Treat them as non-persistable so the
-// engagement UI renders read-only counts instead of interactive controls.
-//
-// NOTE: Snake (SNAKE_PROJECT_ID) is intentionally NOT in this set — it is
-// seeded as a real approved prompts row in supabase/prompt-engagement.sql, so
-// its votes/bookmarks persist and it stays interactive. If any of the IDs below
-// is ever published to a real prompts row via
-// publishPreparedShowcaseProjectFromSourceRun, remove it from this set so it
-// becomes interactive again (mirroring how Snake works today).
+// These three legacy showcases still render from checked local evidence but do
+// not yet have canonical rows in the live `prompts` table. Every other prepared
+// showcase is database-backed and can participate in votes, bookmarks, public
+// profiles, and My Forge. Keep this list intentionally tiny and remove entries
+// as the ownership backfill publishes their canonical rows.
 const CODE_ONLY_SHOWCASE_IDS = new Set<string>([
-  TINY_TRAIN_DISPATCHER_PROJECT_ID,
-  BREAKROOM_SNACK_RESTOCK_PROJECT_ID,
-  PORCH_LIGHT_MOTH_MAZE_PROJECT_ID,
-  PANTRY_SHELF_LIFE_RESCUE_PROJECT_ID,
-  MINI_HARBOR_TUGBOAT_PROJECT_ID,
-  TINY_FARMERS_MARKET_PROJECT_ID,
-  ROOMMATE_CHORE_DRAFT_PROJECT_ID,
-  POCKET_PIRATE_MAP_PROJECT_ID,
-  POTLUCK_TABLE_PLANNER_PROJECT_ID,
-  RAINY_WINDOW_CAFE_RUSH_PROJECT_ID,
-  LUNCHBOX_CONVEYOR_SORTER_PROJECT_ID,
-  PORCH_PLANT_WATERING_PROJECT_ID,
-  SHARED_ERRAND_ROUTE_PROJECT_ID,
-  MINI_GOLF_WINDMILL_PROJECT_ID,
-  LEFTOVER_DINNER_BOARD_PROJECT_ID,
-  TINY_LOOP_SEQUENCER_PROJECT_ID,
-  GARAGE_SALE_TAGS_PROJECT_ID,
-  MICRO_DUNGEON_ROUTE_PROJECT_ID,
-  BAKE_SALE_MARGIN_PROJECT_ID,
-  STAR_MAP_SCAVENGER_PROJECT_ID,
-  DECISION_MATRIX_PROJECT_ID,
-  HP_10BII_PROJECT_ID,
-  SCHOOL_DESK_HP_CALCULATOR_FORK_PROJECT_ID,
-  TIC_TAC_TOE_PROJECT_ID,
   POMODORO_TIMER_PROJECT_ID,
-  WEEKEND_CHECKLIST_PROJECT_ID,
   WEEKEND_CHECKLIST_REAL_FORK_PROJECT_ID,
-  NEON_BLOCK_PATROL_PROJECT_ID,
-  SWISH_CITY_PROJECT_ID,
-  MEETING_COST_PROJECT_ID,
-  WORD_LADDER_SPRINT_PROJECT_ID,
-  PUZZLE_BOX_ESCAPE_PROJECT_ID,
-  POCKET_RALLY_PROJECT_ID,
-  TRIP_PACKING_PROJECT_ID,
-  FLASHCARD_CRAM_PROJECT_ID,
-  FOLLOW_UP_CRM_PROJECT_ID,
-  REACTION_TRAINER_PROJECT_ID,
-  LANE_DEFENSE_PROJECT_ID,
+  SCHOOL_DESK_HP_CALCULATOR_FORK_PROJECT_ID,
 ])
 
 export function isPersistableProjectId(projectId: string) {

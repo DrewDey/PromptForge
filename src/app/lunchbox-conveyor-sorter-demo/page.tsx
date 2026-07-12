@@ -7,7 +7,6 @@ export default function LunchboxConveyorSorterDemoPage() {
     <PreparedSourceRunPage
       project={LUNCHBOX_CONVEYOR_SORTER_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('lunchbox-conveyor-sorter-chatgpt-source-run.json')}
-      route="/lunchbox-conveyor-sorter-demo"
       capturedAt="June 5, 2026"
     />
   )

@@ -7,7 +7,6 @@ export default function MovingDayBoxLabelerDemoPage() {
     <PreparedSourceRunPage
       project={MOVING_DAY_BOX_LABELER_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('moving-day-box-labeler-gemini-source-run.json')}
-      route="/moving-day-box-labeler-demo"
       capturedAt="June 6, 2026"
     />
   )

@@ -7,7 +7,6 @@ export default function TinyTrainDispatcherDemoPage() {
     <PreparedSourceRunPage
       project={TINY_TRAIN_DISPATCHER_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('tiny-train-platform-dispatcher-claude-source-run.json')}
-      route="/tiny-train-platform-dispatcher-demo"
       capturedAt="June 5, 2026"
     />
   )

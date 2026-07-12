@@ -10,7 +10,6 @@ export default function SnakeDemoPage() {
     <PreparedSourceRunPage
       project={SNAKE_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('snake-gpt55-pro-oneshot-source-run.json')}
-      route="/snake-demo"
       capturedAt="May 23, 2026"
     />
   )

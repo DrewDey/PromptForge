@@ -97,6 +97,7 @@ export default async function PreparedModelVariantSourceRunPage({
       activeModelVariant={activeVariant}
       compareModelVariant={compareVariant}
       modelVariantRegistryWarning={registryWarning}
+      acknowledgeModelUpdates={Boolean(requestedRun && activeVariant.isCurrent)}
     />
   )
 }

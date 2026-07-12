@@ -1054,6 +1054,7 @@ mustInclude('next.config.ts', nextConfig, 'source: "/artifacts/:path*"', 'raw pu
 mustInclude('next.config.ts', nextConfig, 'Content-Disposition', 'raw public artifacts must download instead of executing on the PathForge origin')
 mustInclude('next.config.ts', nextConfig, "sandbox; default-src 'none'; frame-ancestors 'none'", 'raw artifact responses need a sandboxed deny-all CSP as defense in depth')
 mustInclude('next.config.ts', nextConfig, 'X-Content-Type-Options', 'raw artifact responses must disable MIME sniffing')
+mustInclude('src/components/PreparedSourceRunPage.tsx', preparedSourceRunPage, 'const pageRoute = route ?? project.href', 'prepared source-run wrapper must default the public route from project metadata')
 
 for (const routePath of demoRoutes()) {
   const routeContent = read(routePath)
@@ -1087,6 +1088,9 @@ for (const project of sourceRunProjects) {
   if (!routeContent.includes("from '@/components/SourceRunShowcase'") && !usesPreparedWrapper && !usesModelVariantWrapper) {
     failures.push(`${project.route}: ${project.name} must use the shared source-run showcase, PreparedSourceRunPage, or the model-variant wrapper`)
   }
+  if (usesPreparedWrapper) {
+    mustNotInclude(project.route, routeContent, 'route=', `${project.name} prepared wrapper must use the registry href instead of a duplicate route prop`)
+  }
   mustInclude(project.route, routeShellContent, 'defaultStepNumber', `${project.name} must explicitly default the mounted artifact`)
   mustInclude(project.route, routeShellContent, 'sourceRunUrl=', `${project.name} must pass the full provider source-run link to the shared showcase`)
   mustInclude(project.route, routeShellContent, 'ProjectEngagementBar', `${project.name} must keep the public project shell`)
@@ -1114,8 +1118,15 @@ for (const project of sourceRunProjects) {
   } else if (!project.curated) {
     mustInclude('src/lib/data.ts', data, project.projectId, `${project.name} must be approved in public fallback data`)
   }
-  if (!project.expectPersistableAfterPublish) {
+  const codeOnlyProjectIds = new Set([
+    'POMODORO_TIMER_PROJECT_ID',
+    'WEEKEND_CHECKLIST_REAL_FORK_PROJECT_ID',
+    'SCHOOL_DESK_HP_CALCULATOR_FORK_PROJECT_ID',
+  ])
+  if (codeOnlyProjectIds.has(project.projectId)) {
     mustInclude('src/lib/project-engagement.ts', engagement, project.projectId, `${project.name} must be non-persistable until a real prompts row exists`)
+  } else {
+    mustNotInclude('src/lib/project-engagement.ts', engagement, project.projectId, `${project.name} has a canonical prompts row and must remain persistable`)
   }
   mustInclude('src/lib/mock-data.ts', mockData, project.showcaseExport, `${project.name} must be present in mock prompt/profile data`)
 

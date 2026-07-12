@@ -12,7 +12,6 @@ export default function SwishCityTimingHoopsDemoPage() {
     <PreparedSourceRunPage
       project={project}
       sourceRunPackage={loadSourceRunPackage('swish-city-claude-opus-4-8-source-run.json')}
-      route={project.href}
       capturedAt="June 3, 2026"
     />
   )

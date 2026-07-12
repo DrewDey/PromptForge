@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, CheckCircle, ExternalLink, GitBranch } from 'lucide-react'
-import { dismissSourceRun, publishPreparedShowcaseSourceRun } from '@/lib/actions'
+import { dismissSourceRun, publishPreparedShowcaseSourceRun, requestSourceRunRepair } from '@/lib/actions'
 import { getSourceRunSubmissionForAdmin } from '@/lib/data'
 import { getPreparedShowcaseProjectBySourceRunId } from '@/lib/prepared-showcase-projects'
 import { projectForkSourceFromSubmissionFields } from '@/lib/project-forks'
@@ -34,7 +34,10 @@ export default async function AdminSourceRunDetailPage({
   const preparedProject = getPreparedShowcaseProjectBySourceRunId(sourceRun.id)
   const linkedPromptStatus = sourceRun.extracted_prompt?.status ?? null
   const isPublished = sourceRun.extracted_prompt?.status === 'approved'
-  const isDeclined = sourceRun.status === 'failed' || linkedPromptStatus === 'rejected'
+  const isDeclined = sourceRun.status === 'declined' || linkedPromptStatus === 'rejected'
+  const isRepairRequested = sourceRun.status === 'needs_repair'
+  const isProcessingFailure = sourceRun.status === 'failed'
+  const canPublishPrepared = ['queued', 'draft_created'].includes(sourceRun.status)
   const isPreparedPending = Boolean(sourceRun.extracted_prompt_id) && !isPublished && !isDeclined
   const publishedHref = isPublished && sourceRun.extracted_prompt_id
     ? preparedProject?.href ?? `/prompt/${sourceRun.extracted_prompt_id}`
@@ -45,6 +48,10 @@ export default async function AdminSourceRunDetailPage({
       ? linkedPromptStatus === 'rejected'
         ? 'Rejected source-run page'
         : 'Declined source run'
+      : isRepairRequested
+        ? 'Repair requested'
+      : isProcessingFailure
+        ? 'Source run processing failed'
       : isPreparedPending
         ? 'Prepared page pending approval'
         : sourceRun.status === 'extracting'
@@ -52,8 +59,10 @@ export default async function AdminSourceRunDetailPage({
           : 'Pending source-run review'
   const reviewStatusClass = isPublished
     ? 'bg-green-100 text-green-800'
-    : isDeclined
+    : isDeclined || isProcessingFailure
       ? 'bg-red-100 text-red-800'
+      : isRepairRequested
+        ? 'bg-amber-100 text-amber-900'
       : 'bg-amber-100 text-amber-800'
 
   return (
@@ -230,7 +239,7 @@ export default async function AdminSourceRunDetailPage({
                 </Link>
               </div>
             </section>
-          ) : preparedProject && !isDeclined ? (
+          ) : preparedProject && !isDeclined && !isRepairRequested && canPublishPrepared ? (
             <section className="border border-green-200 bg-green-50 p-4">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -256,6 +265,44 @@ export default async function AdminSourceRunDetailPage({
               </div>
             </section>
           ) : null}
+
+          {!isPublished && !isDeclined && (
+            <section className="border border-amber-200 bg-amber-50 p-4">
+              <div>
+                <h2 className="text-sm font-bold text-amber-950">
+                  {isRepairRequested ? 'Update the repair request' : 'Request a repair'}
+                </h2>
+                <p className="mt-1 text-sm leading-6 text-amber-900">
+                  Write the concrete issue in language the builder can act on. This note appears in My Forge; admin-only notes remain private.
+                </p>
+              </div>
+              <form action={requestSourceRunRepair} className="mt-4 grid gap-3">
+                <input type="hidden" name="source_run_id" value={sourceRun.id} />
+                <label htmlFor="user-status-note" className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-amber-900">
+                  Builder-facing repair note
+                </label>
+                <textarea
+                  id="user-status-note"
+                  name="user_status_note"
+                  defaultValue={sourceRun.user_status_note ?? ''}
+                  minLength={10}
+                  maxLength={2000}
+                  rows={4}
+                  required
+                  placeholder="Example: The final artifact opens, but the primary save button does nothing. Continue the same source run, repair that control, and submit the new share URL."
+                  className="w-full resize-y border border-amber-300 bg-white px-3 py-2 text-sm leading-6 text-gray-900 outline-none focus:border-brand-orange"
+                />
+                <div>
+                  <button
+                    type="submit"
+                    className="inline-flex items-center justify-center gap-2 bg-amber-900 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-950"
+                  >
+                    Request repair
+                  </button>
+                </div>
+              </form>
+            </section>
+          )}
 
           {!isPublished && !isDeclined && (
             <section className="border border-red-200 bg-red-50 p-4">

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowRight, CheckCircle2, ExternalLink, GitFork } from 'lucide-react'
 import CopyButton from '@/app/prompt/[id]/CopyButton'
+import MyForgeResumeTracker from '@/components/MyForgeResumeTracker'
 import ProjectForkBuildPath, {
   type ProjectForkBuildPathCrumb,
 } from '@/components/ProjectForkBuildPath'
@@ -1105,6 +1106,9 @@ export default function SourceRunShowcase({
   sourceRunId,
   sourceArtifactPath,
   sourceArtifactSha256,
+  initialArtifactPath,
+  trackResume = false,
+  acknowledgeModelUpdates = false,
   providerName,
   steps,
   forkNetwork = [],
@@ -1120,6 +1124,9 @@ export default function SourceRunShowcase({
   sourceRunId?: string
   sourceArtifactPath?: string
   sourceArtifactSha256?: string
+  initialArtifactPath?: string | null
+  trackResume?: boolean
+  acknowledgeModelUpdates?: boolean
   providerName: string
   steps: SourceRunShowcaseStep[]
   forkNetwork?: ProjectForkNetworkItem[]
@@ -1222,12 +1229,19 @@ export default function SourceRunShowcase({
     packages.find((pkg) => pkg.isDefaultArtifact) ??
     defaultStepPackages[defaultStepPackages.length - 1] ??
     packages[packages.length - 1]
-  const [selectedPackageId, setSelectedPackageId] = useState(defaultPackage?.id ?? '')
+  const resumedPackage = initialArtifactPath
+    ? packages.find((pkg) => (
+      pkg.artifactPath === initialArtifactPath ||
+      `public${pkg.artifactPath}` === initialArtifactPath
+    ))
+    : undefined
+  const [selectedPackageId, setSelectedPackageId] = useState(resumedPackage?.id ?? defaultPackage?.id ?? '')
   const [activeForkId, setActiveForkId] = useState<string | null>(null)
   const activeForkStageRef = useRef<HTMLDivElement | null>(null)
   const sourceRunPathRef = useRef<HTMLElement | null>(null)
   const selectedPackage =
     displayPackages.find((pkg) => pkg.id === selectedPackageId) ?? defaultPackage ?? packages[0]
+  const selectedPrimaryPackage = packages.find((pkg) => pkg.id === selectedPackage?.id)
   const forkSourceSteps = useMemo<ProjectForkSourceStep[]>(() => steps.map((step) => ({
     id: step.id,
     stepNumber: step.stepNumber,
@@ -1301,6 +1315,18 @@ export default function SourceRunShowcase({
 
   return (
     <>
+      {projectId && sourceRunId && selectedPrimaryPackage && (
+        <MyForgeResumeTracker
+          enabled={trackResume}
+          projectId={projectId}
+          sourceRunId={sourceRunId}
+          stepId={selectedPrimaryPackage.stepId}
+          stepNumber={selectedPrimaryPackage.stepNumber}
+          artifactPath={selectedPrimaryPackage.artifactPath}
+          artifactSha256={selectedPrimaryPackage.artifactSha256}
+          acknowledgeModelUpdates={acknowledgeModelUpdates}
+        />
+      )}
       {selectedPackage && (
         <section className="border-b border-surface-200 bg-surface-50 px-4 pb-9 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl">

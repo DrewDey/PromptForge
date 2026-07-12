@@ -7,7 +7,6 @@ export default function RoommateFreezerBoardDemoPage() {
     <PreparedSourceRunPage
       project={ROOMMATE_FREEZER_BOARD_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('roommate-freezer-board-gemini-source-run.json')}
-      route="/roommate-freezer-board-demo"
       capturedAt="June 6, 2026"
     />
   )

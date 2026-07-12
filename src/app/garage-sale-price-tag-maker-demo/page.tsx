@@ -7,7 +7,6 @@ export default function GarageSaleTagsDemoPage() {
     <PreparedSourceRunPage
       project={GARAGE_SALE_TAGS_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('garage-sale-tags-gemini-source-run.json')}
-      route="/garage-sale-price-tag-maker-demo"
       capturedAt="June 5, 2026"
     />
   )

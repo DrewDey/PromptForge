@@ -7,7 +7,6 @@ export default function MailroomCartRoutePuzzleDemoPage() {
     <PreparedSourceRunPage
       project={MAILROOM_CART_ROUTE_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('mailroom-cart-route-puzzle-chatgpt-source-run.json')}
-      route="/mailroom-cart-route-puzzle-demo"
       capturedAt="June 6, 2026"
     />
   )

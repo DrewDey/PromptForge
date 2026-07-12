@@ -438,15 +438,28 @@ export async function getPromptById(id: string): Promise<PromptWithRelations | n
 // ---- Profiles ----
 
 export async function getProfileByUsername(username: string): Promise<Profile | null> {
-  return readWithFallback(mockProfiles.find(p => p.username === username) ?? null, async () => {
+  const mockProfile = mockProfiles.find((profile) => (
+    profile.username.toLowerCase() === username.toLowerCase()
+  ))
+  const fallback = mockProfile
+    ? {
+        ...mockProfile,
+        provenance: {
+          kind: mockProfile.username === 'pathforge_projects'
+            ? 'pathforge_team' as const
+            : 'pathforge_seed' as const,
+        },
+      }
+    : null
+  return readWithFallback(fallback, async () => {
     const { createClient } = await import('./supabase/server')
     const supabase = await createClient()
     const { data } = await supabase
       .from('profiles')
-      .select('*')
-      .eq('username', username)
+      .select('*, provenance:profile_provenance(kind)')
+      .ilike('username', username.replace(/[\\%_]/g, (character) => `\\${character}`))
       .single()
-    return data
+    return data ? data as Profile : fallback
   })
 }
 

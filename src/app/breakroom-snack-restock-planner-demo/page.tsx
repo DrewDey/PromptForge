@@ -7,7 +7,6 @@ export default function BreakroomSnackRestockDemoPage() {
     <PreparedSourceRunPage
       project={BREAKROOM_SNACK_RESTOCK_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('breakroom-snack-restock-planner-gemini-source-run.json')}
-      route="/breakroom-snack-restock-planner-demo"
       capturedAt="June 5, 2026"
     />
   )

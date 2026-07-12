@@ -7,7 +7,6 @@ export default function TinyBirthdayRsvpTablePlannerDemoPage() {
     <PreparedSourceRunPage
       project={TINY_BIRTHDAY_RSVP_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('tiny-birthday-rsvp-table-planner-gemini-source-run.json')}
-      route="/tiny-birthday-rsvp-table-planner-demo"
       capturedAt="June 6, 2026"
     />
   )

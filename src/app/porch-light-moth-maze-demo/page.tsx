@@ -7,7 +7,6 @@ export default function PorchLightMothMazeDemoPage() {
     <PreparedSourceRunPage
       project={PORCH_LIGHT_MOTH_MAZE_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('porch-light-moth-maze-chatgpt-source-run.json')}
-      route="/porch-light-moth-maze-demo"
       capturedAt="June 5, 2026"
     />
   )

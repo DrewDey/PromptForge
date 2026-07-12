@@ -7,7 +7,6 @@ export default function LeftoverDinnerBoardDemoPage() {
     <PreparedSourceRunPage
       project={LEFTOVER_DINNER_BOARD_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('leftover-dinner-board-gemini-source-run.json')}
-      route="/leftover-dinner-decision-board-demo"
       capturedAt="June 5, 2026"
     />
   )

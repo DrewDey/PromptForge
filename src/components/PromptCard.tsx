@@ -44,9 +44,8 @@ export default function PromptCard({ prompt, featured = false }: { prompt: Promp
   const outcome = resolveOutcome(prompt)
 
   return (
-    <Link
-      href={getProjectHref(prompt)}
-      className={`group block border transition-all duration-150 relative overflow-hidden focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 active:scale-[0.98] ${
+    <article
+      className={`group block border transition-all duration-150 relative overflow-hidden ${
         featured
           ? 'bg-[color-mix(in_srgb,var(--color-brand-orange)_3%,white)] border-l-[3px] border-l-brand-orange border-surface-200 hover:shadow-lg hover:-translate-y-0.5'
           : 'bg-white border-surface-200 hover:border-surface-300 hover:shadow-md hover:-translate-y-px'
@@ -57,7 +56,10 @@ export default function PromptCard({ prompt, featured = false }: { prompt: Promp
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-brand-orange scale-x-0 group-hover:scale-x-100 transition-transform duration-150 origin-left" />
       )}
 
-      <div className={featured ? 'p-6' : 'p-5'}>
+      <Link
+        href={getProjectHref(prompt)}
+        className={`block focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-[-2px] ${featured ? 'p-6 pb-3' : 'p-5 pb-3'}`}
+      >
         {/*
           Featured pill stays at the very top — it's a status badge, it belongs above
           the exhibit frame (like a gallery label), not layered onto the exhibit itself.
@@ -154,7 +156,10 @@ export default function PromptCard({ prompt, featured = false }: { prompt: Promp
           votes · bookmarks on the right. Step-flow chips and N-step count removed —
           the outcome hero carries the "there's a build behind this" signal now.
         */}
-        <div className="flex items-center justify-between gap-3 pt-3 border-t border-surface-100">
+      </Link>
+
+      <div className={featured ? 'px-6 pb-6' : 'px-5 pb-5'}>
+        <div className="flex items-center justify-between gap-3 border-t border-surface-100 pt-3">
           <div className="flex items-center gap-2 min-w-0">
             <span className={`text-[11px] font-medium px-2 py-0.5 border shrink-0 ${difficulty.color}`}>
               {difficulty.label}
@@ -167,9 +172,17 @@ export default function PromptCard({ prompt, featured = false }: { prompt: Promp
             )}
           </div>
           <div className="flex items-center gap-2 text-[11px] text-surface-500 shrink-0">
-            <span className="hidden sm:inline text-surface-500 truncate max-w-[8rem]">
-              by <span className="text-surface-700 font-medium">{prompt.author?.display_name ?? 'Anonymous'}</span>
-            </span>
+            {prompt.author?.username ? (
+              <Link
+                href={`/user/${prompt.author.username}`}
+                className="hidden max-w-[8rem] truncate text-surface-500 hover:text-brand-orange sm:inline"
+                aria-label={`View ${prompt.author.display_name || prompt.author.username}'s profile`}
+              >
+                by <span className="font-medium text-surface-700">{prompt.author.display_name || prompt.author.username}</span>
+              </Link>
+            ) : (
+              <span className="hidden max-w-[8rem] truncate text-surface-500 sm:inline">by Anonymous</span>
+            )}
             <span aria-hidden="true" className="hidden sm:inline text-surface-300">·</span>
             <span className="tabular-nums" aria-label={`${prompt.vote_count} upvotes`}>
               {prompt.vote_count} upvotes
@@ -181,6 +194,6 @@ export default function PromptCard({ prompt, featured = false }: { prompt: Promp
           </div>
         </div>
       </div>
-    </Link>
+    </article>
   )
 }

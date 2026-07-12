@@ -7,7 +7,6 @@ export default function RooftopCourierSwitchbacksDemoPage() {
     <PreparedSourceRunPage
       project={ROOFTOP_COURIER_SWITCHBACKS_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('rooftop-courier-switchbacks-chatgpt-source-run.json')}
-      route="/rooftop-courier-switchbacks-demo"
       capturedAt="June 6, 2026"
     />
   )

@@ -207,7 +207,7 @@ export async function BuildPathsDiscovery({
       if (!value || modelLabel === 'Unknown model') continue
       const current = modelCounts.get(value)
       modelCounts.set(value, {
-        label: current?.label ?? getPublicModelLabel(modelLabel),
+        label: current?.label ?? (getPublicModelLabel(modelLabel) || modelLabel),
         count: (current?.count ?? 0) + 1,
       })
     }
@@ -215,7 +215,6 @@ export async function BuildPathsDiscovery({
   const modelFacets = [...modelCounts.entries()]
     .map(([value, entry]) => ({ value, ...entry }))
     .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label))
-    .slice(0, 8)
 
   function buildUrl(overrides: Partial<BuildPathsUrlParams>) {
     const next: Record<string, string | undefined> = {

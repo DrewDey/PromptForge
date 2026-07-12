@@ -464,7 +464,7 @@
 .pf-paths .path-filter-menu summary::-webkit-details-marker { display: none; }
 .pf-paths .path-filter-menu summary svg { width: 14px; height: 14px; color: var(--path-orange); }
 .pf-paths .path-filter-menu summary b { display: grid; width: 17px; height: 17px; place-items: center; background: var(--path-orange); color: #fff; font-family: var(--font-mono); font-size: 8px; }
-.pf-paths .path-filter-popover { position: absolute; right: 0; top: calc(100% + 8px); width: 340px; border: 1px solid var(--path-ink); background: #fff; box-shadow: 8px 8px 0 rgba(23,23,25,.12); padding: 16px; }
+.pf-paths .path-filter-popover { position: absolute; right: 0; top: calc(100% + 8px); width: 340px; max-height: min(520px, calc(100vh - 140px)); overflow-y: auto; border: 1px solid var(--path-ink); background: #fff; box-shadow: 8px 8px 0 rgba(23,23,25,.12); padding: 16px; }
 .pf-paths .path-filter-popover > div { display: flex; flex-wrap: wrap; gap: 5px; padding-bottom: 14px; }
 .pf-paths .path-filter-popover > div + div { border-top: 1px solid #ececf0; padding-top: 14px; }
 .pf-paths .path-filter-popover strong { width: 100%; margin-bottom: 3px; color: var(--path-muted); font-family: var(--font-mono); font-size: 8px; letter-spacing: .1em; text-transform: uppercase; }

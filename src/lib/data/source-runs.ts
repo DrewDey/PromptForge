@@ -1,4 +1,5 @@
 import type {
+  SourceRunSubmission,
   SourceRunSubmissionStatus,
   SourceRunSubmissionWithRelations,
 } from '../types'
@@ -54,6 +55,7 @@ export async function createSourceRunSubmission(input: {
   model_settings?: string
   notes?: string
   fork_source?: ProjectForkSource | null
+  resubmission_of_id?: string | null
 }) {
   if (!SUPABASE_CONFIGURED) throw new Error('Source run intake requires sign in.')
 
@@ -88,6 +90,53 @@ export async function createSourceRunSubmission(input: {
     throw new Error('Add the exact model shown for this source run, or type Not sure.')
   }
 
+  const resubmissionOfId = input.resubmission_of_id?.trim() || null
+  let effectiveForkSource = input.fork_source ?? null
+
+  if (resubmissionOfId) {
+    const { data: priorSubmission, error: priorError } = await supabase
+      .from('source_run_submissions')
+      .select([
+        'id',
+        'status',
+        'fork_source_project_id',
+        'fork_source_project_title',
+        'fork_source_model_variant_id',
+        'fork_source_run_id',
+        'fork_source_step_id',
+        'fork_source_step_number',
+        'fork_source_artifact_path',
+        'fork_source_artifact_sha256',
+        'fork_parent_submission_id',
+        'prompt_family_id',
+        'fork_depth',
+        'fork_branch_index',
+      ].join(','))
+      .eq('id', resubmissionOfId)
+      .eq('author_id', user.id)
+      .maybeSingle()
+    throwReadableSourceRunError(priorError)
+    if (!priorSubmission) throw new Error('That repair source run is unavailable.')
+    const prior = priorSubmission as unknown as SourceRunSubmission
+    if (!['needs_repair', 'failed'].includes(prior.status)) {
+      throw new Error('That source run is not eligible for a repair submission.')
+    }
+
+    const { data: existingRepairs, error: repairsError } = await supabase
+      .from('source_run_submissions')
+      .select('id,status')
+      .eq('author_id', user.id)
+      .eq('resubmission_of_id', resubmissionOfId)
+    throwReadableSourceRunError(repairsError)
+    if ((existingRepairs ?? []).some((repair) => !['failed', 'declined'].includes(repair.status))) {
+      throw new Error('A repair submission is already active for this source run.')
+    }
+
+    // The prior server-owned record is authoritative. A crafted action call or
+    // stale fork URL cannot rewrite the fork tuple during repair.
+    effectiveForkSource = projectForkSourceFromSubmissionFields(prior)
+  }
+
   const notes = composeSourceRunReviewNotes({
     sourceUrl,
     provider,
@@ -95,7 +144,7 @@ export async function createSourceRunSubmission(input: {
     modelSettings,
     notes: input.notes,
   })
-  const forkFields = projectForkSourceToSubmissionFields(input.fork_source)
+  const forkFields = projectForkSourceToSubmissionFields(effectiveForkSource)
 
   const payload = {
     title,
@@ -103,6 +152,7 @@ export async function createSourceRunSubmission(input: {
     file_name: null,
     notes,
     ...forkFields,
+    resubmission_of_id: resubmissionOfId,
     author_id: user.id,
     status: 'queued',
   }
@@ -113,9 +163,9 @@ export async function createSourceRunSubmission(input: {
     .select('id')
     .single()
 
-  if (sourceRunForkColumnsMissing(error) && input.fork_source) {
+  if (sourceRunForkColumnsMissing(error) && (effectiveForkSource || resubmissionOfId)) {
     throw new Error(
-      'Fork intake is unavailable because the database is missing durable fork-lineage columns. No unlinked submission was created.',
+      'This linked intake is unavailable because the database is missing durable lineage columns. No unlinked submission was created.',
     )
   }
 
@@ -204,19 +254,24 @@ export async function getSourceRunSubmissionByPromptIdForAdmin(promptId: string)
 export async function updateSourceRunStatusById(
   id: string,
   status: SourceRunSubmissionStatus,
-  adminNotes?: string
+  options?: {
+    adminNotes?: string
+    userStatusNote?: string
+  },
 ) {
   const { supabase } = await requireAdminAccess()
   const patch: {
     status: SourceRunSubmissionStatus
     admin_notes?: string
+    user_status_note?: string
     updated_at: string
   } = {
     status,
     updated_at: new Date().toISOString(),
   }
 
-  if (adminNotes?.trim()) patch.admin_notes = adminNotes.trim()
+  if (options?.adminNotes?.trim()) patch.admin_notes = options.adminNotes.trim()
+  if (options?.userStatusNote?.trim()) patch.user_status_note = options.userStatusNote.trim()
 
   const { error } = await supabase
     .from('source_run_submissions')

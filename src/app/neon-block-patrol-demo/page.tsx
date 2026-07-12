@@ -12,7 +12,6 @@ export default function NeonBlockPatrolDemoPage() {
     <PreparedSourceRunPage
       project={project}
       sourceRunPackage={loadSourceRunPackage('gta-style-fps-chatgpt-gpt55-heavy-five-prompt.json')}
-      route={project.href}
       capturedAt="June 3, 2026"
     />
   )

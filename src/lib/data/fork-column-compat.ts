@@ -11,6 +11,7 @@ const SOURCE_RUN_FORK_COLUMNS = [
   'prompt_family_id',
   'fork_depth',
   'fork_branch_index',
+  'resubmission_of_id',
 ]
 
 function errorMentionsAnyColumn(error: { message?: string } | null, columnNames: string[]) {

@@ -80,6 +80,7 @@ export async function bookmarkProject(promptId: string) {
   try {
     const result = await toggleBookmark(promptId)
     revalidatePath(`/prompt/${promptId}`)
+    revalidatePath('/my-forge')
     return result
   } catch {
     return { bookmarked: false, newCount: 0, error: 'Could not save bookmark.' }
@@ -127,10 +128,12 @@ export async function submitSourceRun(data: {
   model_settings?: string
   notes?: string
   fork_source?: ProjectForkSource | null
+  resubmission_of_id?: string | null
 }): Promise<SourceRunSubmitResult> {
   try {
     const result = await createSourceRunSubmission(data)
     revalidatePath('/admin')
+    revalidatePath('/my-forge')
     return { success: true, id: result.id }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Failed to submit source run' }
@@ -143,11 +146,32 @@ export async function dismissSourceRun(formData: FormData) {
 
   await updateSourceRunStatusById(
     id,
-    'failed',
-    'Dismissed from admin pending review. This intake should not be drafted.'
+    'declined',
+    {
+      adminNotes: 'Dismissed from admin pending review. This intake should not be drafted.',
+      userStatusNote: 'This submission was closed during review and will not be published.',
+    },
   )
   revalidatePath('/admin')
   revalidatePath(`/admin/source-runs/${id}`)
+  revalidatePath('/my-forge')
+}
+
+export async function requestSourceRunRepair(formData: FormData) {
+  const id = String(formData.get('source_run_id') ?? '').trim()
+  const userStatusNote = String(formData.get('user_status_note') ?? '').trim()
+  if (!id) return
+  if (userStatusNote.length < 10 || userStatusNote.length > 2000) {
+    throw new Error('A repair request needs a clear user-facing note between 10 and 2,000 characters.')
+  }
+
+  await updateSourceRunStatusById(id, 'needs_repair', {
+    adminNotes: 'Returned to the builder for a repair submission.',
+    userStatusNote,
+  })
+  revalidatePath('/admin')
+  revalidatePath(`/admin/source-runs/${id}`)
+  revalidatePath('/my-forge')
 }
 
 export async function publishPreparedShowcaseSourceRun(formData: FormData) {

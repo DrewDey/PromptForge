@@ -1118,8 +1118,15 @@ for (const project of sourceRunProjects) {
   } else if (!project.curated) {
     mustInclude('src/lib/data.ts', data, project.projectId, `${project.name} must be approved in public fallback data`)
   }
-  if (!project.expectPersistableAfterPublish) {
+  const codeOnlyProjectIds = new Set([
+    'POMODORO_TIMER_PROJECT_ID',
+    'WEEKEND_CHECKLIST_REAL_FORK_PROJECT_ID',
+    'SCHOOL_DESK_HP_CALCULATOR_FORK_PROJECT_ID',
+  ])
+  if (codeOnlyProjectIds.has(project.projectId)) {
     mustInclude('src/lib/project-engagement.ts', engagement, project.projectId, `${project.name} must be non-persistable until a real prompts row exists`)
+  } else {
+    mustNotInclude('src/lib/project-engagement.ts', engagement, project.projectId, `${project.name} has a canonical prompts row and must remain persistable`)
   }
   mustInclude('src/lib/mock-data.ts', mockData, project.showcaseExport, `${project.name} must be present in mock prompt/profile data`)
 

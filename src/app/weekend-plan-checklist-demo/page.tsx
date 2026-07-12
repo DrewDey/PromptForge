@@ -12,7 +12,6 @@ export default function WeekendPlanChecklistDemoPage() {
     <PreparedSourceRunPage
       project={project}
       sourceRunPackage={loadSourceRunPackage('weekend-plan-checklist-chatgpt-6prompt-fixed.json')}
-      route={project.href}
       capturedAt="June 3, 2026"
     />
   )

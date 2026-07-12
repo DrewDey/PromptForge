@@ -15,7 +15,9 @@ CREATE TABLE categories (
 -- Profiles (extends Supabase auth.users)
 CREATE TABLE profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  username TEXT UNIQUE,
+  username TEXT UNIQUE CHECK (
+    username IS NULL OR username ~ '^[A-Za-z0-9_]{3,30}$'
+  ),
   display_name TEXT,
   avatar_url TEXT,
   bio TEXT,

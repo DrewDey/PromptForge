@@ -27,7 +27,7 @@ function parseArgs(argv) {
   const args = {
     package: '',
     username: 'JordanLee',
-    displayName: 'Jordan Lee',
+    displayName: '',
     email: '',
     authMode: 'auto',
     passwordEnv: 'PATHFORGE_SEED_PASSWORD',
@@ -60,8 +60,13 @@ function parseArgs(argv) {
     }
   }
 
+  args.displayName = args.displayName.trim() || args.username
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/([A-Za-z])([0-9])/g, '$1 $2')
+    .trim()
+
   if (!args.package) {
-    throw new Error('Usage: node scripts/import-pathforge-source-run.mjs --package seed-runs/example.json [--username JordanLee] [--auth-mode auto|public-signup|password] [--dry-run] [--emit-intake-json --profile-id <uuid>]')
+    throw new Error('Usage: node scripts/import-pathforge-source-run.mjs --package seed-runs/example.json [--username JordanLee] [--display-name "Jordan Lee"] [--auth-mode auto|public-signup|password] [--dry-run] [--emit-intake-json --profile-id <uuid>]')
   }
   if (args.dryRun && args.emitIntakeJson) {
     throw new Error('Use either --dry-run or --emit-intake-json, not both.')

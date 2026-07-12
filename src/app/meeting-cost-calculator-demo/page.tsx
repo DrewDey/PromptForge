@@ -12,7 +12,6 @@ export default function MeetingCostCalculatorDemoPage() {
     <PreparedSourceRunPage
       project={project}
       sourceRunPackage={loadSourceRunPackage('meeting-cost-calculator-chatgpt-source-run.json')}
-      route={project.href}
       capturedAt="June 3, 2026"
     />
   )

@@ -48,7 +48,6 @@ export default function PomodoroTimerDemoPage() {
     <PreparedSourceRunPage
       project={project}
       sourceRunPackage={sourceRunPackage()}
-      route={project.href}
       capturedAt="June 2, 2026"
     />
   )

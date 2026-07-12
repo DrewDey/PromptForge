@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { isPathForgeReservedProfileHandle } from '@/lib/profile-handles'
 import '../auth.css'
 
 function safeNextPath(next: string | null) {
@@ -71,6 +72,19 @@ export default function SignupPage() {
     setError('')
 
     const formData = new FormData(e.currentTarget)
+    const username = String(formData.get('username') ?? '').trim()
+
+    if (!/^[A-Za-z0-9_]{3,30}$/.test(username)) {
+      setError('Use 3 to 30 letters, numbers, or underscores for your username.')
+      setLoading(false)
+      return
+    }
+
+    if (isPathForgeReservedProfileHandle(username)) {
+      setError('That handle is reserved for an existing PathForge builder profile.')
+      setLoading(false)
+      return
+    }
 
     try {
       const supabase = createClient()
@@ -80,8 +94,8 @@ export default function SignupPage() {
         password: formData.get('password') as string,
         options: {
           data: {
-            username: formData.get('username') as string,
-            display_name: formData.get('username') as string,
+            username,
+            display_name: username,
           },
         },
       })
@@ -203,6 +217,11 @@ export default function SignupPage() {
                 type="text"
                 name="username"
                 required
+                minLength={3}
+                maxLength={30}
+                pattern="[A-Za-z0-9_]+"
+                autoCapitalize="none"
+                autoCorrect="off"
                 placeholder="Choose a username"
               />
             </div>

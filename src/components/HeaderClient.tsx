@@ -4,7 +4,20 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { BriefcaseBusiness, Gamepad2, LogOut, Menu, Plus, Search, User, X } from 'lucide-react'
+import {
+  BriefcaseBusiness,
+  ChevronDown,
+  FolderGit2,
+  Gamepad2,
+  LogOut,
+  Menu,
+  MessageSquare,
+  Plus,
+  Search,
+  Settings,
+  User,
+  X,
+} from 'lucide-react'
 import { logout } from '@/lib/actions'
 
 export type HeaderViewer = {
@@ -49,6 +62,8 @@ function isActivePath(pathname: string, href: string) {
   if (hrefPath === '/requests') return pathname.startsWith('/requests')
   if (hrefPath === '/guide') return pathname === '/guide'
   if (hrefPath === '/build') return pathname === '/build' || pathname === '/prompt/new'
+  if (hrefPath === '/my-forge') return pathname.startsWith('/my-forge')
+  if (hrefPath === '/settings/profile') return pathname === '/settings/profile'
   return false
 }
 
@@ -57,7 +72,7 @@ export default function HeaderClient({ viewer, isAdmin }: HeaderClientProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [pathsMenuOpen, setPathsMenuOpen] = useState(false)
   const displayName = viewer?.display_name || viewer?.username || 'Account'
-  const profileHref = viewer?.username ? `/user/${viewer.username}` : '/'
+  const profileHref = viewer?.username ? `/user/${viewer.username}` : '/settings/profile'
 
   const navLinkClass = (href: string) => (
     `inline-flex h-8 shrink-0 items-center whitespace-nowrap px-3 text-[13px] font-medium transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
@@ -161,25 +176,47 @@ export default function HeaderClient({ viewer, isAdmin }: HeaderClientProps) {
             </div>
             {viewer ? (
               <>
-                {isAdmin && (
-                  <Link href="/admin" className="text-[13px] text-surface-600 hover:text-brand-orange transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
-                    Admin
-                  </Link>
-                )}
                 <Link
-                  href={profileHref}
-                  className="flex items-center gap-1.5 text-[13px] font-medium text-surface-600 hover:text-brand-orange transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+                  href="/my-forge"
+                  className={`${rightNavLinkClass('/my-forge')} gap-1.5 font-semibold`}
                 >
-                  <div className="w-5 h-5 bg-surface-100 border border-surface-200 flex items-center justify-center">
-                    <User className="w-3 h-3 text-surface-500" />
-                  </div>
-                  {displayName}
+                  <FolderGit2 className="h-3.5 w-3.5" />
+                  My Forge
                 </Link>
-                <form action={logout}>
-                  <button type="submit" className="text-surface-500 hover:text-brand-orange transition-colors duration-200 p-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange" aria-label="Log out">
-                    <LogOut className="w-3.5 h-3.5" />
-                  </button>
-                </form>
+                <details className="group relative">
+                  <summary className="flex h-8 cursor-pointer list-none items-center gap-1.5 text-[13px] font-medium text-surface-600 transition-colors hover:text-brand-orange focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
+                    <span className="flex h-5 w-5 items-center justify-center border border-surface-200 bg-surface-100">
+                      <User className="h-3 w-3 text-surface-500" />
+                    </span>
+                    <span className="max-w-28 truncate">{displayName}</span>
+                    <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" />
+                  </summary>
+                  <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-56 border border-surface-200 bg-white p-1 shadow-[0_20px_60px_rgba(15,23,42,0.16)]">
+                    <Link href={profileHref} className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-surface-700 hover:bg-primary-50 hover:text-brand-orange">
+                      <User className="h-4 w-4" />
+                      {viewer.username ? 'Public profile' : 'Complete profile'}
+                    </Link>
+                    <Link href="/settings/profile" className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-surface-700 hover:bg-primary-50 hover:text-brand-orange">
+                      <Settings className="h-4 w-4" />
+                      Edit profile
+                    </Link>
+                    <Link href="/suggestion-box/mine" className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-surface-700 hover:bg-primary-50 hover:text-brand-orange">
+                      <MessageSquare className="h-4 w-4" />
+                      Suggestion inbox
+                    </Link>
+                    {isAdmin && (
+                      <Link href="/admin" className="flex items-center gap-2 border-t border-surface-100 px-3 py-2.5 text-sm font-medium text-surface-700 hover:bg-primary-50 hover:text-brand-orange">
+                        Admin
+                      </Link>
+                    )}
+                    <form action={logout} className="border-t border-surface-100">
+                      <button type="submit" className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-medium text-surface-600 hover:bg-primary-50 hover:text-brand-orange">
+                        <LogOut className="h-4 w-4" />
+                        Log out
+                      </button>
+                    </form>
+                  </div>
+                </details>
               </>
             ) : (
               <>
@@ -270,6 +307,16 @@ export default function HeaderClient({ viewer, isAdmin }: HeaderClientProps) {
 
             {viewer ? (
               <>
+                <Link
+                  href="/my-forge"
+                  className={mobileNavLinkClass('/my-forge')}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <span className="flex items-center gap-2">
+                    <FolderGit2 className="h-4 w-4" />
+                    My Forge
+                  </span>
+                </Link>
                 {isAdmin && (
                   <Link href="/admin" className="text-sm text-surface-700 hover:text-brand-orange active:bg-surface-100 px-3 py-3 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange" onClick={() => setMobileMenuOpen(false)}>
                     Admin
@@ -281,7 +328,27 @@ export default function HeaderClient({ viewer, isAdmin }: HeaderClientProps) {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <User className="w-3.5 h-3.5" />
-                  {displayName}
+                  {viewer.username ? 'Public profile' : 'Complete profile'}
+                </Link>
+                <Link
+                  href="/settings/profile"
+                  className={mobileNavLinkClass('/settings/profile')}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <span className="flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    Edit profile
+                  </span>
+                </Link>
+                <Link
+                  href="/suggestion-box/mine"
+                  className={mobileNavLinkClass('/suggestion-box')}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <span className="flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    Suggestion inbox
+                  </span>
                 </Link>
                 <form action={logout}>
                   <button type="submit" className="text-sm text-surface-600 hover:text-brand-orange active:bg-surface-100 flex items-center gap-1.5 px-3 py-3 w-full text-left transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">

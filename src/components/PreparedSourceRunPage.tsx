@@ -26,6 +26,7 @@ import type {
   ProjectForkSourceStep,
 } from '@/lib/project-forks'
 import { buildProjectResponseForkHref } from '@/lib/project-forks'
+import { getCurrentUserProjectContext } from '@/lib/data/my-forge'
 import type {
   ProjectModelVariant,
   ProjectModelVariantSet,
@@ -402,6 +403,7 @@ export default async function PreparedSourceRunPage({
   activeModelVariant,
   compareModelVariant,
   modelVariantRegistryWarning,
+  acknowledgeModelUpdates = false,
 }: {
   project: PreparedShowcaseProject
   sourceRunPackage: SourceRunPackage
@@ -411,6 +413,7 @@ export default async function PreparedSourceRunPage({
   activeModelVariant?: ProjectModelVariant | null
   compareModelVariant?: ProjectModelVariant | null
   modelVariantRegistryWarning?: string
+  acknowledgeModelUpdates?: boolean
 }) {
   const sourceRun = sourceRunPackage
   const pageRoute = route ?? project.href
@@ -439,8 +442,15 @@ export default async function PreparedSourceRunPage({
       sourceRun,
       childSteps: steps,
       forkSource,
-      route,
+      route: pageRoute,
     })
+    : null
+  const projectContext = await getCurrentUserProjectContext(project.id)
+  const currentSourceRunId = activeModelVariant?.sourceRunId
+    ?? sourceRun.source_run_id
+    ?? project.sourceRunId
+  const resumeArtifactPath = projectContext.state?.selectedSourceRunId === currentSourceRunId
+    ? projectContext.state.selectedArtifactPath
     : null
 
   return (
@@ -464,6 +474,14 @@ export default async function PreparedSourceRunPage({
               <p className="mt-4 max-w-2xl text-sm leading-6 text-surface-600">
                 {project.description}
               </p>
+              <Link
+                href={`/user/${project.authorUsername}`}
+                className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-surface-500 hover:text-brand-orange"
+              >
+                <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-surface-400">Built by</span>
+                {project.authorDisplayName || project.authorUsername}
+                <span className="text-surface-400">@{project.authorUsername}</span>
+              </Link>
             </div>
             {modelVariantSet && activeModelVariant ? (
               <PathForgeLabsModelRuns
@@ -505,7 +523,7 @@ export default async function PreparedSourceRunPage({
         projectId={project.id}
         projectTitle={project.title}
         sourceModelVariantId={activeModelVariant?.databaseId}
-        sourceRunId={activeModelVariant?.sourceRunId}
+        sourceRunId={currentSourceRunId}
         sourceArtifactPath={activeModelVariant?.finalArtifactPath ?? sourceRun.final_artifact_path}
         sourceArtifactSha256={sourceRun.artifact_sha256}
         providerName={providerName}
@@ -514,6 +532,9 @@ export default async function PreparedSourceRunPage({
         forkContext={forkContext}
         allowForks
         defaultStepNumber={defaultStepNumber(sourceRun)}
+        initialArtifactPath={resumeArtifactPath}
+        trackResume={projectContext.isAuthenticated}
+        acknowledgeModelUpdates={acknowledgeModelUpdates}
       />
 
       <ProjectCommunityPanel projectId={project.id} showForkLineage={false} />

@@ -509,9 +509,10 @@ const variantAwareMigrations = readdirSync('supabase/migrations')
   .filter((path) => {
     const sql = read(path)
     return (
-      sql.includes('fork_source_model_variant_id') &&
-      sql.includes('fork_source_run_id') &&
-      sql.includes('fork_source_artifact_sha256')
+      /ALTER\s+TABLE\s+public\.source_run_submissions/i.test(sql) &&
+      /ADD\s+COLUMN\s+IF\s+NOT\s+EXISTS\s+fork_source_model_variant_id/i.test(sql) &&
+      /ADD\s+COLUMN\s+IF\s+NOT\s+EXISTS\s+fork_source_run_id/i.test(sql) &&
+      /ADD\s+COLUMN\s+IF\s+NOT\s+EXISTS\s+fork_source_artifact_sha256/i.test(sql)
     )
   })
 assert(variantAwareMigrations.length >= 1, 'supabase/migrations: variant-aware fork schema must have an additive deployable migration')

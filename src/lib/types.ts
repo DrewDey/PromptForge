@@ -17,6 +17,9 @@ export type Profile = {
   role: 'user' | 'admin'
   created_at: string
   updated_at: string
+  provenance?: {
+    kind: 'member' | 'pathforge_seed' | 'pathforge_team'
+  } | null
 }
 
 export type Prompt = {
@@ -79,7 +82,15 @@ export type PromptWithRelations = Prompt & {
   images?: ProjectImage[]
 }
 
-export type SourceRunSubmissionStatus = 'queued' | 'extracting' | 'draft_created' | 'failed'
+export type SourceRunSubmissionStatus =
+  | 'queued'
+  | 'extracting'
+  | 'in_review'
+  | 'needs_repair'
+  | 'draft_created'
+  | 'published'
+  | 'declined'
+  | 'failed'
 
 export type SourceRunSubmission = {
   id: string
@@ -103,6 +114,8 @@ export type SourceRunSubmission = {
   status: SourceRunSubmissionStatus
   extracted_prompt_id: string | null
   admin_notes: string | null
+  user_status_note?: string | null
+  resubmission_of_id?: string | null
   created_at: string
   updated_at: string
 }

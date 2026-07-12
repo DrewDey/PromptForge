@@ -22,9 +22,10 @@
     "check:airlock-zero": "node scripts/check-airlock-zero-artifacts.mjs public/artifacts/airlock-zero-gpt-56-sol-max-step-2.html public/artifacts/airlock-zero-swarm-shift-gpt-56-sol-max.html public/artifacts/airlock-zero-gemini-35-flash-step-9.html public/artifacts/airlock-zero-hull-breach-gemini-35-flash-verified-final.html public/artifacts/airlock-zero-claude-sonnet-5-max-step-10.html public/artifacts/airlock-zero-blackout-shift-claude-sonnet-5-max.html",
     "check:source-run-intake": "node scripts/check-source-run-intake.mjs",
     "check:source-run-showcases": "node scripts/check-source-run-showcases.mjs && node scripts/check-protected-artifact-sandbox.mjs",
+    "check:my-forge": "node scripts/check-my-forge.mjs && node scripts/check-prepared-showcase-ownership-backfill.mjs",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "autoreview": "npm run lint && npm run typecheck && npm run check:source-run-intake && npm run check:source-run-showcases && npm run check:model-variants && npm run check:project-forks",
+    "autoreview": "npm run lint && npm run typecheck && npm run check:source-run-intake && npm run check:source-run-showcases && npm run check:model-variants && npm run check:project-forks && npm run check:my-forge",
     "autoreview:hourly-manager": "npm run check:hourly-seed-manager"
   },
   "dependencies": {

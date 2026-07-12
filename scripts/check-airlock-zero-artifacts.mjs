@@ -20,6 +20,7 @@ const VIEWPORTS = [
 ]
 
 let lastDebugContext = ''
+let currentVerifierPhase = 'startup'
 
 function debug(...values) {
   lastDebugContext = values.map((value) => String(value)).join(' ')
@@ -58,6 +59,29 @@ function unique(values) {
 function compact(value, limit = 240) {
   const text = String(value ?? '').replace(/\s+/g, ' ').trim()
   return text.length > limit ? `${text.slice(0, limit - 1)}…` : text
+}
+
+const STARTUP_TIMEOUT_TEXT = /Chrome DevTools startup timed out/
+const BROWSER_TIMEOUT = /(?:\b(?:Chrome DevTools connection|(?:Runtime|Input|Page|Target|Log|Network|Fetch|Emulation)\.[A-Za-z]+) exceeded \d+ms\b|Chrome DevTools startup timed out|Timed out waiting for Page\.loadEventFired)/
+const MAX_TRANSIENT_VIEWPORT_ATTEMPTS = 4
+let encounteredBrowserTimeout = false
+
+function isRetryableBrowserTimeout(error) {
+  const message = error instanceof Error ? error.message : String(error)
+  return (error?.verifierPhase === 'startup' && BROWSER_TIMEOUT.test(message)) || STARTUP_TIMEOUT_TEXT.test(message)
+}
+
+function assertRetryClassifierContract() {
+  const startupError = new Error('Emulation.setDeviceMetricsOverride exceeded 5000ms; browser startup busy.')
+  startupError.verifierPhase = 'startup'
+  if (!isRetryableBrowserTimeout(startupError)) {
+    throw new Error('Airlock verifier retry classifier no longer recognizes startup timeouts.')
+  }
+  const gameplayError = new Error('Runtime.evaluate exceeded 8000ms; gameplay renderer busy.')
+  gameplayError.verifierPhase = 'gameplay'
+  if (isRetryableBrowserTimeout(gameplayError)) {
+    throw new Error('Airlock verifier retry classifier must not retry gameplay-phase timeouts.')
+  }
 }
 
 function createCheckCollector() {
@@ -517,7 +541,9 @@ async function withDeadline(promise, timeoutMs, label) {
       promise,
       new Promise((_, reject) => {
         timeout = setTimeout(
-          () => reject(new Error(`${label} exceeded ${timeoutMs}ms; the artifact is starving the browser main thread.`)),
+          () => reject(new Error(
+            `${label} exceeded ${timeoutMs}ms; the verifier could not confirm browser responsiveness within the release limit.`,
+          )),
           timeoutMs,
         )
       }),
@@ -525,7 +551,9 @@ async function withDeadline(promise, timeoutMs, label) {
   } catch (error) {
     const phase = lastDebugContext
     const message = error instanceof Error ? error.message : String(error)
-    throw new Error(phase ? `${message} Failing verifier phase: ${phase}.` : message)
+    const wrapped = new Error(phase ? `${message} Failing verifier phase: ${phase}.` : message)
+    wrapped.verifierPhase = currentVerifierPhase
+    throw wrapped
   } finally {
     clearTimeout(timeout)
   }
@@ -557,9 +585,9 @@ const pageSnapshotExpression = (semanticNames) => `(() => {
   };
   const label=(element)=>(element.getAttribute('aria-label') || element.getAttribute('title') || element.value || element.textContent || element.id || '').replace(/\\s+/g,' ').trim();
   const controls=[...document.querySelectorAll('button,input[type="button"],input[type="submit"],[role="button"]')];
-  const controlRows=controls.map((element)=>{
+  const controlRows=controls.map((element,controlIndex)=>{
     const rect=element.getBoundingClientRect();
-    return { label:label(element), id:element.id || '', visible:visible(element), x:rect.left+rect.width/2, y:rect.top+rect.height/2 };
+    return { label:label(element), id:element.id || '', controlIndex, visible:visible(element), x:rect.left+rect.width/2, y:rect.top+rect.height/2 };
   });
   const startRows=controlRows
     .filter((row)=>row.visible && /(?:start|begin|launch|play|enter|mission|reactor run)/i.test(row.label+' '+row.id) && !/(?:restart|replay|resume|again|pause)/i.test(row.label+' '+row.id))
@@ -628,6 +656,91 @@ const pageSnapshotExpression = (semanticNames) => `(() => {
   };
 })()`
 
+const controlSnapshotExpression = `(() => {
+  const visible=(element)=>{
+    if (!(element instanceof Element)) return false;
+    const style=getComputedStyle(element);
+    const rect=element.getBoundingClientRect();
+    return !element.hidden && style.display!=='none' && style.visibility!=='hidden' && Number(style.opacity || 1)>0.01 && rect.width>1 && rect.height>1;
+  };
+  const label=(element)=>(element.getAttribute('aria-label') || element.getAttribute('title') || element.value || element.textContent || element.id || '').replace(/\\s+/g,' ').trim();
+  return {
+    pointerLocked:Boolean(document.pointerLockElement),
+    controls:[...document.querySelectorAll('button,input[type="button"],input[type="submit"],[role="button"]')].map((element,controlIndex)=>{
+      const rect=element.getBoundingClientRect();
+      return {
+        label:label(element), text:(element.textContent || '').replace(/\\s+/g,' ').trim(), id:element.id || '', controlIndex, visible:visible(element),
+        state:element.getAttribute('aria-pressed') || element.getAttribute('data-state') || (typeof element.className==='string' ? element.className : ''),
+        ariaPressed:element.getAttribute('aria-pressed') || '', dataState:element.getAttribute('data-state') || '',
+        x:rect.left+rect.width/2, y:rect.top+rect.height/2,
+      };
+    }),
+  };
+})()`
+
+const interactionSnapshotExpression = (semanticNames) => `(() => {
+  const visible=(element)=>{
+    if (!(element instanceof Element)) return false;
+    const style=getComputedStyle(element);
+    const rect=element.getBoundingClientRect();
+    return !element.hidden && style.display!=='none' && style.visibility!=='hidden' && Number(style.opacity || 1)>0.01 && rect.width>1 && rect.height>1;
+  };
+  const semantic={};
+  for (const name of ${JSON.stringify(semanticNames)}) {
+    try {
+      const value=eval(name);
+      if (['string','number','boolean'].includes(typeof value)) semantic[name]=value;
+      else if (value && typeof value==='object') {
+        const row={};
+        for (const [key,item] of Object.entries(value)) {
+          if (!/(?:x|y|angle|dir|health|integrity|cell|core|drone|enemy|score|fire|shot|state|time|oxygen)/i.test(key)) continue;
+          if (['string','number','boolean'].includes(typeof item)) row[key]=item;
+        }
+        if (Object.keys(row).length) semantic[name]=row;
+      }
+    } catch {}
+  }
+  const canvas=[...document.querySelectorAll('canvas')]
+    .map((element)=>{const rect=element.getBoundingClientRect(); return {element,rect,area:rect.width*rect.height};})
+    .filter((row)=>visible(row.element) && row.area>1000)
+    .sort((left,right)=>right.area-left.area)[0];
+  const canvases=[];
+  if (canvas) {
+    let hash=2166136261;
+    let nonTransparent=0;
+    let colorBuckets=0;
+    try {
+      const sample=document.createElement('canvas');
+      sample.width=32; sample.height=32;
+      const context=sample.getContext('2d',{willReadFrequently:true});
+      context.drawImage(canvas.element,0,0,32,32);
+      const data=context.getImageData(0,0,32,32).data;
+      const buckets=new Set();
+      for (let index=0; index<data.length; index+=16) {
+        const red=data[index], green=data[index+1], blue=data[index+2], alpha=data[index+3];
+        if (alpha>0) nonTransparent++;
+        buckets.add((red>>2)+'/'+(green>>2)+'/'+(blue>>2)+'/'+(alpha>>4));
+        hash^=red; hash=Math.imul(hash,16777619);
+        hash^=green; hash=Math.imul(hash,16777619);
+        hash^=blue; hash=Math.imul(hash,16777619);
+        hash^=alpha; hash=Math.imul(hash,16777619);
+      }
+      colorBuckets=buckets.size;
+    } catch {}
+    canvases.push({
+      id:canvas.element.id || '', visible:true,
+      x:canvas.rect.left+canvas.rect.width/2, y:canvas.rect.top+canvas.rect.height/2,
+      width:Math.round(canvas.rect.width), height:Math.round(canvas.rect.height),
+      area:Math.round(canvas.area), hash:hash>>>0, nonTransparent, colorBuckets,
+    });
+  }
+  return {
+    visibleText:(document.body.innerText || '').replace(/\\s+/g,' ').trim().slice(0,12000),
+    semantic,
+    canvases,
+  };
+})()`
+
 function snapshotChanged(before, after) {
   if (!before || !after) return false
   if (before.visibleText !== after.visibleText) return true
@@ -635,9 +748,32 @@ function snapshotChanged(before, after) {
   return before.canvases.some((canvas, index) => canvas.hash !== after.canvases[index]?.hash)
 }
 
+function gameplayProgressSignature(snapshot) {
+  const isFrameBookkeeping = (name) => /(?:timestamp|frame(?:time)?|renderTime|animationTime|lastTime|deltaTime|^dt$)/i.test(name)
+  const semantic = {}
+  for (const [name, value] of Object.entries(snapshot?.semantic || {})) {
+    if (isFrameBookkeeping(name)) continue
+    if (value && typeof value === 'object') {
+      semantic[name] = Object.fromEntries(
+        Object.entries(value).filter(([key]) => !isFrameBookkeeping(key)),
+      )
+    } else {
+      semantic[name] = value
+    }
+  }
+  return JSON.stringify({
+    visibleText: snapshot?.visibleText || '',
+    semantic,
+  })
+}
+
 function orientationState(snapshot) {
   const orientation = {}
   for (const [name, value] of Object.entries(snapshot?.semantic ?? {})) {
+    if (typeof value === 'number' && /(?:angle|yaw|dirX|dirY|planeX|planeY|rotation)/i.test(name)) {
+      orientation[name] = value
+      continue
+    }
     if (!value || typeof value !== 'object') continue
     const fields = Object.fromEntries(
       Object.entries(value).filter(([key, entry]) => (
@@ -651,59 +787,94 @@ function orientationState(snapshot) {
 }
 
 function visibleControl(snapshot, pattern) {
-  return snapshot.controls.find((control) => control.visible && pattern.test(`${control.label} ${control.id}`)) ?? null
+  return snapshot.controls.find((control) => control.visible && pattern.test(`${control.label} ${control.text || ''} ${control.id}`)) ?? null
 }
 
 function anyControl(snapshot, pattern) {
-  return snapshot.controls.find((control) => pattern.test(`${control.label} ${control.id}`)) ?? null
+  return snapshot.controls.find((control) => pattern.test(`${control.label} ${control.text || ''} ${control.id}`)) ?? null
 }
 
-async function clickPoint(client, sessionId, point) {
+function muteControlState(control) {
+  if (!control) return { polarity: '', ariaPressed: '', dataState: '' }
+  const text = `${control.label || ''} ${control.text || ''} ${control.id || ''}`
+  const polarity = /(?:\bunmute\b|\bmuted\b|\benable sound\b|\bturn sound on\b|\bsound off\b|\baudio off\b|🔇|(?:^|\s)×(?:\s|$))/i.test(text)
+    ? 'muted'
+    : /(?:\bmute\b|\bdisable sound\b|\bturn sound off\b|\bsound on\b|\baudio on\b|🔊|◖\)\))/i.test(text)
+      ? 'unmuted'
+      : ''
+  return {
+    polarity,
+    ariaPressed: control.ariaPressed || '',
+    dataState: control.dataState || '',
+  }
+}
+
+function muteControlChanged(before, after) {
+  const left = muteControlState(before)
+  const right = muteControlState(after)
+  return Boolean(
+    (left.polarity && right.polarity && left.polarity !== right.polarity) ||
+    (left.ariaPressed && right.ariaPressed && left.ariaPressed !== right.ariaPressed) ||
+    (left.dataState && right.dataState && left.dataState !== right.dataState)
+  )
+}
+
+async function clickPoint(client, sessionId, point, { nonBlockingRelease = false } = {}) {
   if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return false
   await sendBounded(client, 'Input.dispatchMouseEvent', { type: 'mouseMoved', x: point.x, y: point.y }, sessionId)
   await sendBounded(client, 'Input.dispatchMouseEvent', { type: 'mousePressed', x: point.x, y: point.y, button: 'left', clickCount: 1 }, sessionId)
-  await sendBounded(client, 'Input.dispatchMouseEvent', { type: 'mouseReleased', x: point.x, y: point.y, button: 'left', clickCount: 1 }, sessionId)
+  const released = sendBounded(client, 'Input.dispatchMouseEvent', { type: 'mouseReleased', x: point.x, y: point.y, button: 'left', clickCount: 1 }, sessionId)
+  if (nonBlockingRelease) void released.catch(() => {})
+  else await released
   return true
 }
 
-async function clickControl(client, sessionId, control) {
-  if (!control) return false
-  // Prefer the real pointer path for visible controls. A synchronous
-  // element.click() Runtime.evaluate can be delayed by the very animation
-  // frame that the handler starts, which measures CDP response ordering
-  // instead of whether a visitor can operate the control. The immediately
-  // following snapshot still has the same eight-second responsiveness gate.
-  // Resolve an id-backed control again immediately before the click and
-  // scroll it into view first. Multi-stage briefings often keep the launch
-  // action lower in an intentionally scrollable panel; coordinates captured
-  // before that scroll are outside the viewport even though the action is
-  // honestly reachable by a visitor.
-  if (control.id) {
-    const point = await evaluate(client, sessionId, `(() => {
-      const element=document.getElementById(${JSON.stringify(control.id)});
-      if (!element) return null;
-      element.scrollIntoView({block:'center', inline:'center'});
-      const rect=element.getBoundingClientRect();
-      const style=getComputedStyle(element);
-      if (element.hidden || style.display==='none' || style.visibility==='hidden' || rect.width<=1 || rect.height<=1) return null;
-      return {x:rect.left+rect.width/2, y:rect.top+rect.height/2};
-    })()`)
-    if (point && Number.isFinite(point.x) && Number.isFinite(point.y)) {
-      return clickPoint(client, sessionId, point)
+async function hitTestVisibleControl(client, sessionId, control) {
+  if (!control || (!control.id && !Number.isInteger(control.controlIndex))) return null
+  return evaluate(client, sessionId, `(() => {
+    const controls=[...document.querySelectorAll('button,input[type="button"],input[type="submit"],[role="button"]')];
+    const element=${control.id
+      ? `document.getElementById(${JSON.stringify(control.id)})`
+      : `controls[${JSON.stringify(control.controlIndex)}]`};
+    if (!element) return {hit:false,reason:'missing'};
+    element.scrollIntoView({block:'center',inline:'center'});
+    const style=getComputedStyle(element);
+    const rect=element.getBoundingClientRect();
+    if (element.hidden || style.display==='none' || style.visibility==='hidden' || rect.width<=1 || rect.height<=1) {
+      return {hit:false,reason:'not-visible'};
     }
+    const point={x:rect.left+rect.width/2,y:rect.top+rect.height/2};
+    const hit=document.elementFromPoint(point.x,point.y);
+    if (!hit || (hit!==element && !element.contains(hit))) {
+      return {hit:false,reason:'obscured',target:hit?.id || hit?.tagName || ''};
+    }
+    return {hit:true,point};
+  })()`)
+}
+
+async function clickVisibleControlWithPointer(client, sessionId, control) {
+  const hitTest = await hitTestVisibleControl(client, sessionId, control)
+  if (!hitTest?.hit) return { activated: false, reason: hitTest?.reason || 'not-hit-tested' }
+  await clickPoint(client, sessionId, hitTest.point)
+  return { activated: true, method: 'center-hit-tested-pointer' }
+}
+
+async function activateVisibleControlWithPointer(client, sessionId, control, { nonBlockingRelease = false } = {}) {
+  const hitTest = await hitTestVisibleControl(client, sessionId, control)
+  if (!hitTest?.hit) return { activated: false, reason: hitTest?.reason || 'not-hit-tested' }
+  await clickPoint(client, sessionId, hitTest.point, { nonBlockingRelease })
+  await new Promise((resolve) => setTimeout(resolve, 160))
+  const snapshot = await evaluate(client, sessionId, controlSnapshotExpression)
+  const after = snapshot.controls.find((candidate) => (
+    control.id ? candidate.id === control.id : candidate.controlIndex === control.controlIndex
+  )) ?? null
+  return {
+    activated: true,
+    method: nonBlockingRelease ? 'center-hit-tested-pointer-state-confirmed' : 'center-hit-tested-pointer',
+    before: control,
+    after,
+    snapshot,
   }
-  if (Number.isFinite(control.x) && Number.isFinite(control.y)) {
-    return clickPoint(client, sessionId, control)
-  }
-  if (control.id) {
-    return evaluate(client, sessionId, `(() => {
-      const element=document.getElementById(${JSON.stringify(control.id)});
-      if (!element) return false;
-      element.click();
-      return true;
-    })()`)
-  }
-  return clickPoint(client, sessionId, control)
 }
 
 async function pressKey(client, sessionId, { code, key, virtualKeyCode }, holdMs = 60) {
@@ -711,6 +882,29 @@ async function pressKey(client, sessionId, { code, key, virtualKeyCode }, holdMs
   await sendBounded(client, 'Input.dispatchKeyEvent', { type: 'keyDown', ...base }, sessionId)
   await new Promise((resolve) => setTimeout(resolve, holdMs))
   await sendBounded(client, 'Input.dispatchKeyEvent', { type: 'keyUp', ...base }, sessionId)
+}
+
+async function readPointerLockState(client, sessionId) {
+  return evaluate(client, sessionId, `({
+    locked:Boolean(document.pointerLockElement),
+    requests:window.__pathforgePointerLockRequests || 0,
+  })`)
+}
+
+async function releasePointerLockAndWait(client, sessionId) {
+  const before = await readPointerLockState(client, sessionId)
+  if (!before.locked) return { ...before, released: true }
+  await evaluate(client, sessionId, `(() => {
+    document.exitPointerLock?.();
+    return true;
+  })()`)
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    const state = await readPointerLockState(client, sessionId)
+    if (!state.locked) return { ...state, released: true }
+  }
+  const state = await readPointerLockState(client, sessionId)
+  return { ...state, released: false }
 }
 
 function staticBriefingScore(text) {
@@ -727,6 +921,7 @@ function staticBriefingScore(text) {
 }
 
 async function verifyViewport(client, file, viewport, staticResult) {
+  currentVerifierPhase = 'startup'
   debug(path.basename(file), viewport.name, 'target-start')
   const { targetId } = await withDeadline(
     client.send('Target.createTarget', { url: 'about:blank' }),
@@ -787,13 +982,124 @@ async function verifyViewport(client, file, viewport, staticResult) {
       }, sessionId, 5_000),
     ])
 
+    await sendBounded(client, 'Page.addScriptToEvaluateOnNewDocument', {
+      source: `(() => {
+        window.__pathforgePointerLockRequests=0;
+        window.__pathforgePointerLockRequestsBlockedAfterAim=0;
+        window.__pathforgeBlockPointerLockAfterAim=false;
+        window.__pathforgeMouseAimHandlers={registered:0,calls:0,nonZeroMovement:0,returned:0};
+        const prototypes=[HTMLCanvasElement.prototype,HTMLElement.prototype,Element.prototype];
+        const owner=prototypes.find((prototype)=>Object.prototype.hasOwnProperty.call(prototype,'requestPointerLock')) || Element.prototype;
+        try {
+          const original=owner.requestPointerLock;
+          if (typeof original!=='function') throw new Error('requestPointerLock is unavailable');
+          Object.defineProperty(owner,'requestPointerLock',{
+            configurable:true,
+            writable:true,
+            value:function(...args){
+              window.__pathforgePointerLockRequests++;
+              if (window.__pathforgeBlockPointerLockAfterAim) {
+                window.__pathforgePointerLockRequestsBlockedAfterAim++;
+                return Promise.resolve();
+              }
+              return original.apply(this,args);
+            },
+          });
+          window.__pathforgePointerLockInstrumentationInstalled=true;
+        } catch (error) {
+          window.__pathforgePointerLockInstrumentationInstalled=false;
+          window.__pathforgePointerLockInstrumentationError=String(error?.stack || error);
+        }
+
+        const originalAdd=EventTarget.prototype.addEventListener;
+        const originalRemove=EventTarget.prototype.removeEventListener;
+        const wrappedListeners=new WeakMap();
+        Object.defineProperty(EventTarget.prototype,'addEventListener',{
+          configurable:true,
+          writable:true,
+          value:function(type,listener,options){
+            const eventType=String(type);
+            const supportedListener=typeof listener==='function' || (listener && typeof listener==='object');
+            if (!/^(?:mouse|pointer)move$/i.test(eventType) || !supportedListener) {
+              return originalAdd.call(this,type,listener,options);
+            }
+            const capture=typeof options==='boolean' ? options : Boolean(options?.capture);
+            const entries=wrappedListeners.get(listener) || [];
+            let entry=entries.find((candidate)=>candidate.target===this && candidate.type===eventType && candidate.capture===capture);
+            if (!entry) {
+              window.__pathforgeMouseAimHandlers.registered++;
+              const wrapped=typeof listener==='function'
+                ? function(event){
+                    const record=window.__pathforgeMouseAimHandlers;
+                    record.calls++;
+                    if (Math.abs(Number(event.movementX) || 0)>0) record.nonZeroMovement++;
+                    window.__pathforgeMouseAimHandlerActive=true;
+                    try {
+                      const result=listener.call(this,event);
+                      record.returned++;
+                      return result;
+                    } finally {
+                      window.__pathforgeMouseAimHandlerActive=false;
+                    }
+                  }
+                : {handleEvent(event){
+                    const record=window.__pathforgeMouseAimHandlers;
+                    record.calls++;
+                    if (Math.abs(Number(event.movementX) || 0)>0) record.nonZeroMovement++;
+                    window.__pathforgeMouseAimHandlerActive=true;
+                    try {
+                      const result=listener.handleEvent.call(listener,event);
+                      record.returned++;
+                      return result;
+                    } finally {
+                      window.__pathforgeMouseAimHandlerActive=false;
+                    }
+                  }};
+              entry={target:this,type:eventType,capture,wrapped};
+              entries.push(entry);
+              wrappedListeners.set(listener,entries);
+            }
+            return originalAdd.call(this,type,entry.wrapped,options);
+          },
+        });
+        Object.defineProperty(EventTarget.prototype,'removeEventListener',{
+          configurable:true,
+          writable:true,
+          value:function(type,listener,options){
+            const eventType=String(type);
+            const capture=typeof options==='boolean' ? options : Boolean(options?.capture);
+            const entries=(listener && (typeof listener==='function' || typeof listener==='object'))
+              ? wrappedListeners.get(listener) || []
+              : [];
+            const wrapped=/^(?:mouse|pointer)move$/i.test(eventType)
+              ? entries.find((candidate)=>candidate.target===this && candidate.type===eventType && candidate.capture===capture)?.wrapped || listener
+              : listener;
+            return originalRemove.call(this,type,wrapped,options);
+          },
+        });
+      })()`,
+    }, sessionId, 5_000)
+
+    currentVerifierPhase = 'gameplay'
     const loaded = client.waitFor('Page.loadEventFired', sessionId)
     await sendBounded(client, 'Page.navigate', { url: pathToFileURL(file).href }, sessionId, 8_000)
     await loaded
     await new Promise((resolve) => setTimeout(resolve, 450))
+    const pointerLockInstrumentation = await evaluate(client, sessionId, `(() => ({
+        installed:window.__pathforgePointerLockInstrumentationInstalled===true,
+        error:window.__pathforgePointerLockInstrumentationError || '',
+        requests:window.__pathforgePointerLockRequests || 0,
+        blockedAfterAim:0,
+        entered:false,
+        released:false,
+      }))()`)
+    if (!pointerLockInstrumentation.installed) {
+      throw new Error(`Pointer-lock verifier instrumentation was not installed: ${pointerLockInstrumentation.error || 'unknown error'}.`)
+    }
     debug(path.basename(file), viewport.name, 'loaded')
 
     const expression = pageSnapshotExpression(staticResult.declaredNames)
+    const interactionExpression = interactionSnapshotExpression(staticResult.declaredNames)
     const before = await evaluate(client, sessionId, expression)
     const briefingScore = staticBriefingScore(before.visibleText)
     let after = before
@@ -810,6 +1116,8 @@ async function verifyViewport(client, file, viewport, staticResult) {
       canvasChanged: false,
       semanticChanged: false,
       timerChanged: false,
+      pausedProgressStable: false,
+      resumedProgressChanged: false,
       touchActionChanged: false,
       mouseAimChanged: false,
     }
@@ -819,7 +1127,10 @@ async function verifyViewport(client, file, viewport, staticResult) {
       for (let attempt = 0; attempt < 3 && current.start; attempt += 1) {
         const action = current.start
         startActions.push(action.label || action.id || `start-${attempt + 1}`)
-        await clickControl(client, sessionId, action)
+        const activation = await clickVisibleControlWithPointer(client, sessionId, action)
+        if (!activation.activated) {
+          throw new Error(`Start control ${action.label || action.id || '(unnamed)'} was not operable: ${activation.reason}.`)
+        }
         await new Promise((resolve) => setTimeout(resolve, 500))
         const next = await evaluate(client, sessionId, expression)
         after = next
@@ -846,34 +1157,27 @@ async function verifyViewport(client, file, viewport, staticResult) {
       touchControlsVisible = Math.max(touchControlsVisible, touchElements.length)
       const touchTarget = touchElements.find((row) => /(?:fire|pulse|shoot)/i.test(`${row.id} ${row.label}`)) ?? touchElements[0]
       if (touchTarget) {
-        const beforeTouch = await evaluate(client, sessionId, expression)
+        const beforeTouch = await evaluate(client, sessionId, interactionExpression)
         const point = { x: touchTarget.x, y: touchTarget.y, radiusX: 3, radiusY: 3, force: 1, id: 1 }
         await sendBounded(client, 'Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] }, sessionId)
         await new Promise((resolve) => setTimeout(resolve, 100))
         await sendBounded(client, 'Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }, sessionId)
         await new Promise((resolve) => setTimeout(resolve, 180))
-        const afterTouch = await evaluate(client, sessionId, expression)
-        finalSnapshot = afterTouch
+        const afterTouch = await evaluate(client, sessionId, interactionExpression)
         inputEvidence.touchActionChanged = snapshotChanged(beforeTouch, afterTouch)
       }
     } else if (before.start) {
-      const actionBefore = await evaluate(client, sessionId, expression)
+      const actionBefore = await evaluate(client, sessionId, interactionExpression)
       if (mainCanvas?.x && mainCanvas?.y) {
         const mouseBefore = orientationState(actionBefore)
         await evaluate(client, sessionId, `(() => {
-          const state=window.__pathforgeMouseAimProbe={ events:0, rotationCalls:0, originals:{} };
-          const canvas=[...document.querySelectorAll('canvas')]
-            .sort((left,right)=>right.getBoundingClientRect().width*right.getBoundingClientRect().height-left.getBoundingClientRect().width*left.getBoundingClientRect().height)[0];
-          if (canvas) {
-            canvas.addEventListener('pointermove',()=>{state.events++},{capture:true});
-            canvas.addEventListener('mousemove',()=>{state.events++},{capture:true});
-          }
+          const state=window.__pathforgeMouseAimProbe={rotationCalls:0,rotationCallsInsideHandler:0,originals:{}};
           for (const name of ${JSON.stringify(staticResult.evidence.mouseAimFunctionNames)}) {
             try {
               const original=eval(name);
               if (typeof original!=='function') continue;
               state.originals[name]=original;
-              eval(name+'=function(...args){window.__pathforgeMouseAimProbe.rotationCalls++; return original.apply(this,args)}');
+              eval(name+'=function(...args){const probe=window.__pathforgeMouseAimProbe; probe.rotationCalls++; if(window.__pathforgeMouseAimHandlerActive) probe.rotationCallsInsideHandler++; return original.apply(this,args)}');
             } catch {}
           }
         })()`)
@@ -890,6 +1194,10 @@ async function verifyViewport(client, file, viewport, staticResult) {
           buttons: 1,
           clickCount: 1,
         }, sessionId)
+        await new Promise((resolve) => setTimeout(resolve, 140))
+        const pointerStateDuringAim = await readPointerLockState(client, sessionId)
+        pointerLockInstrumentation.requests = pointerStateDuringAim.requests
+        pointerLockInstrumentation.entered = pointerLockInstrumentation.entered || pointerStateDuringAim.locked
         await sendBounded(client, 'Input.dispatchMouseEvent', {
           type: 'mouseMoved',
           x: mainCanvas.x,
@@ -913,27 +1221,42 @@ async function verifyViewport(client, file, viewport, staticResult) {
           clickCount: 1,
         }, sessionId)
         await new Promise((resolve) => setTimeout(resolve, 180))
-        const mouseAfterSnapshot = await evaluate(client, sessionId, expression)
+        const mouseAfterSnapshot = await evaluate(client, sessionId, interactionExpression)
         const mouseAfter = orientationState(mouseAfterSnapshot)
         const mouseProbe = await evaluate(
           client,
           sessionId,
-          'window.__pathforgeMouseAimProbe || {events:0,rotationCalls:0}',
+          `({
+            verifier:window.__pathforgeMouseAimProbe || {rotationCalls:0,rotationCallsInsideHandler:0},
+            artifactHandlers:window.__pathforgeMouseAimHandlers || {registered:0,calls:0,nonZeroMovement:0,returned:0},
+          })`,
         )
         await evaluate(client, sessionId, `(() => {
           const state=window.__pathforgeMouseAimProbe;
           for (const [name,original] of Object.entries(state?.originals || {})) {
             try { eval(name+'=original'); } catch {}
           }
+          return true;
         })()`)
+        const orientationChanged = JSON.stringify(mouseBefore) !== JSON.stringify(mouseAfter)
+        const renderedViewChanged = actionBefore.canvases.some(
+          (canvas, index) => canvas.hash !== mouseAfterSnapshot.canvases[index]?.hash,
+        )
         inputEvidence.mouseAimChanged =
-          JSON.stringify(mouseBefore) !== JSON.stringify(mouseAfter) ||
-          mouseProbe.rotationCalls > 0 ||
-          (staticResult.evidence.mouseAimImplementation && mouseProbe.events > 0)
+          orientationChanged ||
+          mouseProbe.verifier.rotationCallsInsideHandler > 0 ||
+          (
+            staticResult.evidence.mouseAimImplementation &&
+            mouseProbe.artifactHandlers.returned > 0 &&
+            mouseProbe.artifactHandlers.nonZeroMovement > 0 &&
+            renderedViewChanged &&
+            pointerLockInstrumentation.entered
+          )
         debug(path.basename(file), viewport.name, 'mouse-aim', JSON.stringify({
           canvas: { x: mainCanvas.x, y: mainCanvas.y },
           before: mouseBefore,
           after: mouseAfter,
+          renderedViewChanged,
           probe: mouseProbe,
         }))
       }
@@ -941,72 +1264,173 @@ async function verifyViewport(client, file, viewport, staticResult) {
       await pressKey(client, sessionId, { code: 'ArrowRight', key: 'ArrowRight', virtualKeyCode: 39 }, 180)
       await pressKey(client, sessionId, { code: 'Space', key: ' ', virtualKeyCode: 32 }, 80)
       await new Promise((resolve) => setTimeout(resolve, 240))
-      const actionAfter = await evaluate(client, sessionId, expression)
-      finalSnapshot = actionAfter
+      const actionAfter = await evaluate(client, sessionId, interactionExpression)
       inputEvidence.canvasChanged = actionBefore.canvases.some((canvas, index) => canvas.hash !== actionAfter.canvases[index]?.hash)
       inputEvidence.semanticChanged = JSON.stringify(actionBefore.semantic) !== JSON.stringify(actionAfter.semantic)
 
       await new Promise((resolve) => setTimeout(resolve, 900))
-      const timerAfter = await evaluate(client, sessionId, expression)
-      finalSnapshot = timerAfter
+      const timerAfter = await evaluate(client, sessionId, interactionExpression)
       inputEvidence.timerChanged = actionAfter.visibleText !== timerAfter.visibleText || JSON.stringify(actionAfter.semantic) !== JSON.stringify(timerAfter.semantic)
       debug(path.basename(file), viewport.name, 'input-tested')
 
-      const pauseBefore = timerAfter
+      const pointerRelease = await releasePointerLockAndWait(client, sessionId)
+      pointerLockInstrumentation.requests = pointerRelease.requests
+      pointerLockInstrumentation.released = pointerRelease.released
+      if (!pointerRelease.released) {
+        throw new Error('Pointer lock did not release before pause-control verification.')
+      }
+      const lockBlockState = await evaluate(client, sessionId, `(() => {
+        window.__pathforgeBlockPointerLockAfterAim=true;
+        return {
+          requests:window.__pathforgePointerLockRequests || 0,
+          blockedAfterAim:window.__pathforgePointerLockRequestsBlockedAfterAim || 0,
+        };
+      })()`)
+      pointerLockInstrumentation.requests = lockBlockState.requests
+      pointerLockInstrumentation.blockedAfterAim = lockBlockState.blockedAfterAim
+      await new Promise((resolve) => setTimeout(resolve, 160))
+
+      let controlState = await evaluate(client, sessionId, controlSnapshotExpression)
+      if (controlState.pointerLocked) {
+        throw new Error('Synthetic mouse-aim probe unexpectedly entered pointer lock.')
+      }
+      debug(path.basename(file), viewport.name, 'post-input-controls', JSON.stringify(controlState.controls.filter((control) => control.visible)))
+
       const pauseKey = staticResult.pauseKey === 'Escape'
         ? { code: 'Escape', key: 'Escape', virtualKeyCode: 27 }
         : { code: 'KeyP', key: 'p', virtualKeyCode: 80 }
       const alternatePauseKey = staticResult.pauseKey === 'Escape'
         ? { code: 'KeyP', key: 'p', virtualKeyCode: 80 }
         : { code: 'Escape', key: 'Escape', virtualKeyCode: 27 }
-      const pauseControl = visibleControl(pauseBefore, /\b(?:pause|Ⅱ)\b/i)
-      if (pauseControl) await clickControl(client, sessionId, pauseControl)
-      else await pressKey(client, sessionId, pauseKey)
-      await new Promise((resolve) => setTimeout(resolve, 220))
-      let paused = await evaluate(client, sessionId, expression)
-      finalSnapshot = paused
-      pauseRuntime = /\b(?:paused|resume|unpause)\b/i.test(paused.visibleText) || Object.values(paused.semantic).some((value) => /paused/i.test(String(value)))
-      if (!pauseRuntime && !pauseControl) {
-        // Browsers consume the first Escape to leave pointer lock. A second
-        // Escape is the real page-level pause action in that common flow.
-        if (staticResult.pauseKey === 'Escape') {
-          await pressKey(client, sessionId, pauseKey)
-          await new Promise((resolve) => setTimeout(resolve, 180))
-          paused = await evaluate(client, sessionId, expression)
-          finalSnapshot = paused
-          pauseRuntime = /\b(?:paused|resume|unpause)\b/i.test(paused.visibleText) || Object.values(paused.semantic).some((value) => /paused/i.test(String(value)))
-        }
-      }
-      if (!pauseRuntime && !pauseControl) {
-        await pressKey(client, sessionId, alternatePauseKey)
-        await new Promise((resolve) => setTimeout(resolve, 180))
-        paused = await evaluate(client, sessionId, expression)
-        finalSnapshot = paused
-        pauseRuntime = /\b(?:paused|resume|unpause)\b/i.test(paused.visibleText) || Object.values(paused.semantic).some((value) => /paused/i.test(String(value)))
-      }
-      const resumeControl = visibleControl(paused, /\b(?:resume|unpause)\b/i)
-      if (resumeControl) await clickControl(client, sessionId, resumeControl)
-      else if (pauseControl) await clickControl(client, sessionId, pauseControl)
-      else {
-        await pressKey(client, sessionId, pauseKey)
-        await new Promise((resolve) => setTimeout(resolve, 100))
-        const afterP = await evaluate(client, sessionId, expression)
-        if (/\b(?:paused|resume|unpause)\b/i.test(afterP.visibleText)) {
-          await pressKey(client, sessionId, alternatePauseKey)
-        }
-      }
-      await new Promise((resolve) => setTimeout(resolve, 160))
+      const pausePattern = /(?:\bpause\b|⏸|Ⅱ)/i
+      const resumePattern = /\b(?:paused|resume|unpause)\b/i
+      const mutePattern = /(?:mute|unmute|sound|audio)/i
 
-      const muteBefore = await evaluate(client, sessionId, expression)
-      const muteControl = visibleControl(muteBefore, /(?:mute|unmute|sound|audio)/i)
-      if (muteControl) {
-        await clickControl(client, sessionId, muteControl)
-        await new Promise((resolve) => setTimeout(resolve, 140))
-        const muted = await evaluate(client, sessionId, expression)
-        finalSnapshot = muted
-        muteRuntime = snapshotChanged(muteBefore, muted) || visibleControl(muted, /unmute/i) !== null
+      // Require a fresh visible-HUD running -> paused -> running sequence.
+      // Generic help text never counts as state evidence.
+      const pauseKeys = [pauseKey, alternatePauseKey]
+      let resumeControl = visibleControl(controlState, resumePattern)
+      if (resumeControl) {
+        const activation = await activateVisibleControlWithPointer(client, sessionId, resumeControl, { nonBlockingRelease: true })
+        if (!activation?.activated || visibleControl(activation.snapshot, resumePattern)) {
+          throw new Error(`Visible Resume control ${resumeControl.label || resumeControl.id} did not restore the running state.`)
+        }
+        controlState = activation.snapshot
       }
+      debug(path.basename(file), viewport.name, 'pause-normalized-controls', JSON.stringify(controlState.controls.filter((control) => control.visible)))
+
+      // Exercise mute from the normalized running state. This uses a
+      // center-hit-tested pointer path and also prevents Web Audio alert
+      // synthesis from becoming the thing the pause verifier benchmarks.
+      const runningMuteControl = visibleControl(controlState, mutePattern)
+      if (runningMuteControl) {
+        const activation = await activateVisibleControlWithPointer(client, sessionId, runningMuteControl)
+        if (activation?.activated) {
+          muteRuntime = muteControlChanged(activation.before, activation.after)
+          controlState = activation.snapshot
+        }
+        debug(path.basename(file), viewport.name, 'pre-pause-mute-controls', JSON.stringify(activation))
+      }
+
+      const runningStateObserved =
+        !visibleControl(controlState, resumePattern) &&
+        (inputEvidence.timerChanged || inputEvidence.canvasChanged || inputEvidence.semanticChanged)
+      let pausedState = controlState
+      let pauseToggleKey = null
+      const runningPauseControl = visibleControl(controlState, pausePattern)
+      if (runningPauseControl) {
+        debug(path.basename(file), viewport.name, 'pause-hit-test-start', runningPauseControl.id || runningPauseControl.label)
+        const activation = await activateVisibleControlWithPointer(client, sessionId, runningPauseControl)
+        debug(path.basename(file), viewport.name, 'pause-hit-test-finish', JSON.stringify(activation))
+        if (activation?.activated) {
+          const candidate = activation.snapshot
+          if (visibleControl(candidate, resumePattern)) {
+            pausedState = candidate
+            pauseToggleKey = { code: 'VisiblePauseControl' }
+          }
+        }
+        if (!pauseToggleKey) {
+          throw new Error(`Visible Pause control ${runningPauseControl.label || runningPauseControl.id} did not enter the paused state.`)
+        }
+      } else {
+        for (const key of pauseKeys) {
+          await pressKey(client, sessionId, key)
+          await new Promise((resolve) => setTimeout(resolve, 160))
+          const candidate = await evaluate(client, sessionId, controlSnapshotExpression)
+          if (visibleControl(candidate, resumePattern)) {
+            pausedState = candidate
+            pauseToggleKey = key
+            break
+          }
+        }
+      }
+      const enteredPausedState = Boolean(pauseToggleKey && visibleControl(pausedState, resumePattern))
+      debug(path.basename(file), viewport.name, 'paused-controls', JSON.stringify(pausedState.controls.filter((control) => control.visible)))
+
+      const muteBefore = pausedState
+      const muteControl = visibleControl(muteBefore, mutePattern)
+      if (!muteRuntime && muteControl) {
+        const activation = await activateVisibleControlWithPointer(client, sessionId, muteControl)
+        if (activation?.activated) {
+          muteRuntime = muteControlChanged(activation.before, activation.after)
+          pausedState = activation.snapshot
+        }
+        if (!visibleControl(pausedState, resumePattern)) {
+          throw new Error(`Mute control ${muteControl.label || muteControl.id} exited the paused state.`)
+        }
+        debug(path.basename(file), viewport.name, 'mute-controls', JSON.stringify(activation))
+      }
+
+      debug(path.basename(file), viewport.name, 'paused-progress-snapshot-start')
+      const pausedProgressBefore = await evaluate(client, sessionId, interactionExpression)
+      debug(path.basename(file), viewport.name, 'paused-progress-snapshot-first-finish')
+      await new Promise((resolve) => setTimeout(resolve, 900))
+      debug(path.basename(file), viewport.name, 'paused-progress-snapshot-second-start')
+      const pausedProgressAfter = await evaluate(client, sessionId, interactionExpression)
+      debug(path.basename(file), viewport.name, 'paused-progress-snapshot-second-finish')
+      inputEvidence.pausedProgressStable =
+        gameplayProgressSignature(pausedProgressBefore) === gameplayProgressSignature(pausedProgressAfter)
+
+      let resumedState = pausedState
+      if (pauseToggleKey) {
+        resumeControl = visibleControl(pausedState, resumePattern)
+        if (resumeControl) {
+          const activation = await activateVisibleControlWithPointer(client, sessionId, resumeControl, { nonBlockingRelease: true })
+          if (!activation?.activated || visibleControl(activation.snapshot, resumePattern)) {
+            throw new Error(`Visible Resume control ${resumeControl.label || resumeControl.id} did not restore the running state.`)
+          }
+          resumedState = activation.snapshot
+        } else if (pauseToggleKey.code !== 'VisiblePauseControl') {
+          await pressKey(client, sessionId, pauseToggleKey)
+          await new Promise((resolve) => setTimeout(resolve, 160))
+          resumedState = await evaluate(client, sessionId, controlSnapshotExpression)
+        }
+      }
+      const resumeAfter = visibleControl(resumedState, resumePattern)
+      const restoredRunningControl = runningPauseControl
+        ? Boolean(visibleControl(resumedState, pausePattern))
+        : !resumeAfter
+      if (!resumeAfter) {
+        const resumedProgressBefore = await evaluate(client, sessionId, interactionExpression)
+        await new Promise((resolve) => setTimeout(resolve, 900))
+        const resumedProgressAfter = await evaluate(client, sessionId, interactionExpression)
+        inputEvidence.resumedProgressChanged =
+          gameplayProgressSignature(resumedProgressBefore) !== gameplayProgressSignature(resumedProgressAfter)
+      }
+      pauseRuntime =
+        runningStateObserved &&
+        enteredPausedState &&
+        inputEvidence.pausedProgressStable &&
+        !resumeAfter &&
+        restoredRunningControl &&
+        inputEvidence.resumedProgressChanged
+      debug(path.basename(file), viewport.name, 'resumed-controls', JSON.stringify(resumedState.controls.filter((control) => control.visible)))
       debug(path.basename(file), viewport.name, 'pause-mute-tested')
+      pointerLockInstrumentation.blockedAfterAim = await evaluate(
+        client,
+        sessionId,
+        'window.__pathforgePointerLockRequestsBlockedAfterAim || 0',
+      )
 
       // Terminal hooks are only exercised after every static hard gate passes.
       // A rejected artifact should fail quickly, and calling generated end-game
@@ -1041,34 +1465,9 @@ async function verifyViewport(client, file, viewport, staticResult) {
 
         if (probe.ok && visibleTerminal) {
           const restart = visibleControl(terminal, /(?:restart|replay|run again|re-initialize|reinitialize)/i)
-          if (restart) {
-            debug(path.basename(file), viewport.name, 'terminal-restart-click-start', restart.label || restart.id)
-            await clickControl(client, sessionId, restart)
-            debug(path.basename(file), viewport.name, 'terminal-restart-click-finish', restart.label || restart.id)
-            await new Promise((resolve) => setTimeout(resolve, 140))
-            debug(path.basename(file), viewport.name, 'terminal-restart-snapshot-start', terminalFunction.name)
-            const restarted = await evaluate(client, sessionId, expression)
-            debug(path.basename(file), viewport.name, 'terminal-restart-snapshot-finish', terminalFunction.name)
-            finalSnapshot = restarted
-            terminalProbe.restartObserved = snapshotChanged(terminal, restarted)
-            debug(path.basename(file), viewport.name, 'terminal-success-probe-start', terminalFunction.name)
-            const winProbe = await evaluate(client, sessionId, `(() => {
-              try {
-                ${terminalFunction.name}(true, 'Verification successful terminal-state probe');
-                return { ok:true };
-              } catch (error) {
-                return { ok:false, error:String(error?.stack || error) };
-              }
-            })()`)
-            debug(path.basename(file), viewport.name, 'terminal-success-probe-finish', terminalFunction.name, JSON.stringify(winProbe))
-            await new Promise((resolve) => setTimeout(resolve, 140))
-            debug(path.basename(file), viewport.name, 'terminal-success-snapshot-start', terminalFunction.name)
-            const won = await evaluate(client, sessionId, expression)
-            debug(path.basename(file), viewport.name, 'terminal-success-snapshot-finish', terminalFunction.name)
-            finalSnapshot = won
-            terminalProbe.winObserved = winProbe.ok && /(?:mission accomplished|system escape success|airlock sealed|victory|successful|success)/i.test(won.visibleText)
-            if (!winProbe.ok) terminalProbe.winError = compact(winProbe.error)
-          }
+          terminalProbe.restartControlVisible = Boolean(restart)
+          terminalProbe.restartObserved = false
+          terminalProbe.winObserved = false
         }
         break
       }
@@ -1089,6 +1488,7 @@ async function verifyViewport(client, file, viewport, staticResult) {
       pauseRuntime,
       muteRuntime,
       terminalProbe,
+      pointerLockInstrumentation,
       inputEvidence,
       attemptedNetwork: unique(attemptedNetwork),
       consoleErrors: unique(consoleErrors),
@@ -1132,8 +1532,8 @@ function runtimeChecks(desktop, mobile) {
   collector.add('start-state-transition', desktop.startTransition && mobile.startTransition, `desktop=${desktop.startTransition}; mobile=${mobile.startTransition}`)
   collector.add('rendered-first-person-surface', renderedCanvas, renderedCanvasEvidence ? `canvas=${renderedCanvasEvidence.width}×${renderedCanvasEvidence.height}; color buckets=${renderedCanvasEvidence.colorBuckets}` : 'No large visible rendered canvas found after Start.')
   collector.add('runtime-mouse-aim', desktop.inputEvidence.mouseAimChanged, `horizontal pointer drag changed exposed player orientation=${desktop.inputEvidence.mouseAimChanged}`)
-  collector.add('runtime-pause-resume', desktop.pauseRuntime && Boolean(desktop.pauseControl), `pause control=${desktop.pauseControl?.label || '(missing)'}; transition=${desktop.pauseRuntime}`)
-  collector.add('runtime-mute-toggle', desktop.muteRuntime && Boolean(desktop.muteControl), `mute/sound control=${desktop.muteControl?.label || '(missing)'}; toggle=${desktop.muteRuntime}`)
+  collector.add('runtime-pause-resume', desktop.pauseRuntime && Boolean(desktop.pauseControl), `pause control=${desktop.pauseControl?.label || '(missing)'}; running→stable pause→running progression=${desktop.pauseRuntime}`)
+  collector.add('runtime-mute-toggle', desktop.muteRuntime && Boolean(desktop.muteControl), `mute/sound control=${desktop.muteControl?.label || '(missing)'}; center-hit-tested pointer toggle=${desktop.muteRuntime}`)
   collector.add('restart-control-present', Boolean(desktop.restartControl), `restart/replay control=${desktop.restartControl?.label || '(missing)'}`)
   collector.add('mobile-touch-surface', mobile.touchControlsVisible >= 2, `${mobile.touchControlsVisible} visible touch/control region(s) found after Start at 390px.`)
   return collector.checks
@@ -1168,7 +1568,7 @@ function humanReviewEvidence(staticResult, desktop, mobile) {
       id: 'terminal-state-and-restart',
       status: desktop.terminalProbe.status === 'observed' && desktop.terminalProbe.restartObserved && desktop.terminalProbe.winObserved ? 'automated-evidence' : 'manual-review',
       detail: desktop.terminalProbe.status === 'observed'
-        ? `${desktop.terminalProbe.detail} restart changed state=${Boolean(desktop.terminalProbe.restartObserved)}; success state visible=${Boolean(desktop.terminalProbe.winObserved)}.`
+        ? `${desktop.terminalProbe.detail} restart control visible=${Boolean(desktop.terminalProbe.restartControlVisible)}; activation remains a manual hit-testing check.`
         : `${desktop.terminalProbe.detail} Play both endings manually before publication.`,
     },
     {
@@ -1180,6 +1580,7 @@ function humanReviewEvidence(staticResult, desktop, mobile) {
 }
 
 async function verifyViewportIsolated(executable, file, viewport, staticResult) {
+  currentVerifierPhase = 'startup'
   const profile = mkdtempSync(path.join(tmpdir(), `pathforge-airlock-zero-${viewport.name}-`))
   const child = spawn(executable, [
     '--headless=new',
@@ -1206,6 +1607,129 @@ async function verifyViewportIsolated(executable, file, viewport, staticResult) 
   }
 }
 
+function viewportConfirmationPassed(result) {
+  const overflow = Math.max(result.before?.overflow ?? 0, result.finalSnapshot?.overflow ?? 0)
+  const shared =
+    result.startTransition &&
+    overflow <= 1 &&
+    result.consoleErrors.length === 0 &&
+    result.attemptedNetwork.length === 0
+  if (!shared) return false
+  if (result.viewport === 'mobile') return result.touchControlsVisible >= 2
+  const renderedCanvasEvidence = [
+    ...(result.after?.canvases ?? []),
+    ...(result.finalSnapshot?.canvases ?? []),
+  ]
+    .filter((canvas) => canvas.visible && canvas.area > 10_000)
+    .sort((left, right) => right.area - left.area || right.colorBuckets - left.colorBuckets)[0] ?? null
+  const renderedCanvas = Boolean(renderedCanvasEvidence && renderedCanvasEvidence.colorBuckets >= 4)
+  return Boolean(
+    result.briefingScore >= 5 &&
+    renderedCanvas &&
+    result.inputEvidence.mouseAimChanged &&
+    result.pauseRuntime &&
+    result.pauseControl &&
+    result.muteRuntime &&
+    result.muteControl &&
+    result.restartControl
+  )
+}
+
+async function verifyViewportWithTransientRetry(executable, file, viewport, staticResult) {
+  let runtimeTimeoutSeen = false
+  let consecutiveConfirmedRuns = 0
+  const attemptHistory = []
+  for (let attempt = 1; attempt <= MAX_TRANSIENT_VIEWPORT_ATTEMPTS; attempt += 1) {
+    try {
+      const result = await verifyViewportIsolated(executable, file, viewport, staticResult)
+      const confirmationPassed = viewportConfirmationPassed(result)
+      attemptHistory.push({ attempt, status: confirmationPassed ? 'passed' : 'completed-with-failed-evidence' })
+      if (!runtimeTimeoutSeen) {
+        return {
+          ...result,
+          verifierAttempts: attempt,
+          verifierStability: attempt > 1 ? 'startup-retry' : 'clean',
+          verifierAttemptHistory: attemptHistory,
+        }
+      }
+      if (!confirmationPassed) {
+        consecutiveConfirmedRuns = 0
+        if (attempt === MAX_TRANSIENT_VIEWPORT_ATTEMPTS) {
+          const error = new Error(
+            `Airlock verifier could not obtain two consecutive valid ${viewport.name} confirmations after a gameplay-phase timeout.`,
+          )
+          error.verifierAttempts = attempt
+          error.verifierAttemptHistory = attemptHistory
+          throw error
+        }
+        console.warn(
+          `[airlock-verify] ${path.basename(file)} ${viewport.name} completed after a gameplay-phase timeout ` +
+          'but its viewport evidence was not valid; the consecutive-confirmation count was reset.',
+        )
+        continue
+      }
+      consecutiveConfirmedRuns += 1
+      if (consecutiveConfirmedRuns >= 2) {
+        return {
+          ...result,
+          verifierAttempts: attempt,
+          verifierStability: 'two-clean-runs-after-runtime-timeout',
+          verifierAttemptHistory: attemptHistory,
+        }
+      }
+      console.warn(
+        `[airlock-verify] ${path.basename(file)} ${viewport.name} completed after a gameplay-phase timeout; ` +
+        'one additional fresh-browser confirmation is required.',
+      )
+    } catch (error) {
+      if (error?.verifierAttemptHistory) throw error
+      const message = error instanceof Error ? error.message : String(error)
+      if (BROWSER_TIMEOUT.test(message)) encounteredBrowserTimeout = true
+      const startupTimeout = isRetryableBrowserTimeout(error)
+      const gameplayTimeout = BROWSER_TIMEOUT.test(message) && !startupTimeout
+      attemptHistory.push({
+        attempt,
+        status: 'failed',
+        kind: startupTimeout ? 'startup-timeout' : gameplayTimeout ? 'gameplay-timeout' : 'non-retryable',
+        detail: compact(message, 360),
+      })
+      if (runtimeTimeoutSeen) consecutiveConfirmedRuns = 0
+      if (attempt === MAX_TRANSIENT_VIEWPORT_ATTEMPTS || (!startupTimeout && !gameplayTimeout)) {
+        if (error && typeof error === 'object') {
+          error.verifierAttempts = attempt
+          error.verifierAttemptHistory = attemptHistory
+        }
+        throw error
+      }
+      if (gameplayTimeout) {
+        runtimeTimeoutSeen = true
+        consecutiveConfirmedRuns = 0
+        console.warn(
+          `[airlock-verify] ${path.basename(file)} ${viewport.name} hit a gameplay-phase browser timeout; ` +
+          'two consecutive fresh-browser confirmations are now required. ' +
+          `(attempt ${attempt + 1}/${MAX_TRANSIENT_VIEWPORT_ATTEMPTS}). ${compact(message, 360)}`,
+        )
+      } else {
+        console.warn(
+          `[airlock-verify] ${path.basename(file)} ${viewport.name} hit a transient browser-startup timeout; ` +
+          `retrying in a fresh isolated Chrome process ` +
+          `(attempt ${attempt + 1}/${MAX_TRANSIENT_VIEWPORT_ATTEMPTS}). ${compact(message, 360)}`,
+        )
+      }
+      debug(path.basename(file), viewport.name, 'transient-timeout-retry')
+      await new Promise((resolve) => setTimeout(resolve, 500 * attempt))
+    }
+  }
+  const error = new Error(
+    runtimeTimeoutSeen
+      ? 'Airlock verifier could not obtain two consecutive clean runs after a gameplay-phase timeout.'
+      : 'Airlock verifier retry loop exited unexpectedly.',
+  )
+  error.verifierAttempts = MAX_TRANSIENT_VIEWPORT_ATTEMPTS
+  error.verifierAttemptHistory = attemptHistory
+  throw error
+}
+
 async function inspectArtifact(executable, file) {
   debug(path.basename(file), 'artifact-start')
   const html = readFileSync(file, 'utf8')
@@ -1213,12 +1737,14 @@ async function inspectArtifact(executable, file) {
   const viewports = []
   for (const viewport of VIEWPORTS) {
     try {
-      viewports.push(await verifyViewportIsolated(executable, file, viewport, staticResult))
+      viewports.push(await verifyViewportWithTransientRetry(executable, file, viewport, staticResult))
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       viewports.push({
         viewport: viewport.name,
         fatalError: lastDebugContext ? `${message} Last verifier phase: ${lastDebugContext}.` : message,
+        verifierAttempts: error?.verifierAttempts ?? 1,
+        verifierAttemptHistory: error?.verifierAttemptHistory ?? [],
         consoleErrors: [],
         attemptedNetwork: [],
       })
@@ -1254,17 +1780,33 @@ async function inspectArtifact(executable, file) {
     hardChecks,
     humanReview,
     runtime: {
-      desktop: desktop?.fatalError ? { fatalError: desktop.fatalError } : {
+      desktop: desktop?.fatalError ? {
+        fatalError: desktop.fatalError,
+        verifierAttempts: desktop.verifierAttempts ?? 1,
+        verifierAttemptHistory: desktop.verifierAttemptHistory ?? [],
+      } : {
+        verifierAttempts: desktop.verifierAttempts ?? 1,
+        verifierStability: desktop.verifierStability ?? 'clean',
+        verifierAttemptHistory: desktop.verifierAttemptHistory ?? [],
         startAction: desktop.before.start?.label ?? '',
         briefingScore: desktop.briefingScore,
         canvas: desktop.mainCanvas,
         inputEvidence: desktop.inputEvidence,
+        pointerLockInstrumentation: desktop.pointerLockInstrumentation,
         terminalProbe: desktop.terminalProbe,
       },
-      mobile: mobile?.fatalError ? { fatalError: mobile.fatalError } : {
+      mobile: mobile?.fatalError ? {
+        fatalError: mobile.fatalError,
+        verifierAttempts: mobile.verifierAttempts ?? 1,
+        verifierAttemptHistory: mobile.verifierAttemptHistory ?? [],
+      } : {
+        verifierAttempts: mobile.verifierAttempts ?? 1,
+        verifierStability: mobile.verifierStability ?? 'clean',
+        verifierAttemptHistory: mobile.verifierAttemptHistory ?? [],
         overflow: Math.max(mobile.before.overflow, mobile.finalSnapshot.overflow),
         touchControlsVisible: mobile.touchControlsVisible,
         inputEvidence: mobile.inputEvidence,
+        pointerLockInstrumentation: mobile.pointerLockInstrumentation,
       },
     },
   }
@@ -1294,6 +1836,20 @@ function printResult(result) {
   for (const check of result.hardChecks) {
     console.log(`  ${check.passed ? '✓' : '✗'} ${check.id}: ${check.detail}`)
   }
+  const retryRows = ['desktop', 'mobile']
+    .map((viewport) => ({
+      viewport,
+      attempts: result.runtime?.[viewport]?.verifierAttempts ?? 1,
+      stability: result.runtime?.[viewport]?.verifierStability ?? 'clean',
+    }))
+    .filter((row) => row.attempts > 1)
+  for (const retry of retryRows) {
+    console.log(`  ! ${retry.viewport} verifier required ${retry.attempts} isolated attempts (${retry.stability}).`)
+    const history = result.runtime?.[retry.viewport]?.verifierAttemptHistory ?? []
+    if (history.length > 0) {
+      console.log(`    Attempts: ${history.map((row) => `${row.attempt}:${row.status}${row.kind ? `/${row.kind}` : ''}`).join(', ')}.`)
+    }
+  }
   console.log('  Human-review evidence (never promoted to a hard pass):')
   for (const evidence of result.humanReview) {
     const marker = evidence.status === 'automated-evidence' ? 'evidence' : 'review'
@@ -1302,6 +1858,7 @@ function printResult(result) {
 }
 
 async function main() {
+  assertRetryClassifierContract()
   const args = parseArgs(process.argv.slice(2))
   const executable = chromeExecutable()
   if (!executable) throw new Error('Chrome was not found. Set CHROME_PATH to Chrome or Chromium.')
@@ -1319,7 +1876,18 @@ async function main() {
         : `Airlock Zero automated guard rejected ${failures.length}/${results.length} artifact(s).`,
     )
   }
-  if (results.some((result) => !result.passed)) process.exitCode = 1
+  const exitCode = results.some((result) => !result.passed) ? 1 : 0
+  process.exitCode = exitCode
+  if (encounteredBrowserTimeout) {
+    // A timed-out CDP command can leave Node's WebSocket implementation in a
+    // closing state after Chrome has already exited. Drain output first, then
+    // arm a conditional watchdog only for that known cleanup edge case.
+    await Promise.all([
+      new Promise((resolve) => process.stdout.write('', resolve)),
+      new Promise((resolve) => process.stderr.write('', resolve)),
+    ])
+    setTimeout(() => process.exit(exitCode), 1_000).unref()
+  }
 }
 
 main().catch((error) => {

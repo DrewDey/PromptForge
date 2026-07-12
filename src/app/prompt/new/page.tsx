@@ -951,7 +951,7 @@ export default function SubmitProjectPage() {
                 <div className="mt-1 text-sm font-bold">Admin decision</div>
               </div>
             </div>
-            <Link href="/guide" className="mt-5 inline-flex items-center gap-2 border border-surface-300 bg-white px-4 py-2.5 text-sm font-bold text-surface-900 transition hover:border-brand-orange">
+            <Link href="/guide#submit" className="mt-5 inline-flex items-center gap-2 border border-surface-300 bg-white px-4 py-2.5 text-sm font-bold text-surface-900 transition hover:border-brand-orange">
               <FileText className="h-4 w-4 text-brand-orange" aria-hidden="true" />
               See exactly what to click
             </Link>

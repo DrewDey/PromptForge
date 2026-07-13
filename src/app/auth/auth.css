@@ -58,25 +58,40 @@
 .pf-auth .oauth-divider { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .12em; color: var(--color-surface-500); }
 .pf-auth .oauth-divider::before, .pf-auth .oauth-divider::after { content: ""; flex: 1; height: 1px; background: var(--color-surface-800); }
 
-/* Error */
-.pf-auth .auth-error { display: flex; align-items: flex-start; gap: 8px; background: rgba(220,38,38,.12); border: 1px solid rgba(248,113,113,.32); color: #fca5a5; font-size: 13px; padding: 11px 14px; margin-bottom: 18px; line-height: 1.45; }
-.pf-auth .auth-error svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; }
+/* Feedback */
+.pf-auth .auth-notice { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; padding: 11px 14px; margin-bottom: 18px; line-height: 1.45; }
+.pf-auth .auth-notice a { text-decoration: underline; text-underline-offset: 2px; font-weight: 700; }
+.pf-auth .auth-notice-error { background: rgba(220,38,38,.12); border: 1px solid rgba(248,113,113,.32); color: #fca5a5; }
+.pf-auth .auth-notice-success { background: rgba(16,185,129,.11); border: 1px solid rgba(52,211,153,.3); color: #a7f3d0; }
+.pf-auth .auth-notice-info { background: rgba(59,130,246,.11); border: 1px solid rgba(96,165,250,.3); color: #bfdbfe; }
+.pf-auth .auth-notice-mark { width: 18px; height: 18px; flex-shrink: 0; display: grid; place-items: center; border: 1px solid currentColor; font-family: var(--font-mono); font-size: 10px; font-weight: 800; margin-top: 1px; }
+.pf-auth .auth-notice-mark svg { width: 11px; height: 11px; stroke-width: 3; }
+.pf-auth .auth-inline-action { display: block; width: fit-content; margin-top: 8px; padding: 0; border: 0; border-bottom: 1px solid currentColor; background: transparent; color: inherit; font: inherit; font-weight: 750; cursor: pointer; }
+.pf-auth .auth-inline-action:disabled { cursor: wait; opacity: .65; }
 
 /* Form */
 .pf-auth form { display: flex; flex-direction: column; gap: 16px; }
 .pf-auth .field { display: flex; flex-direction: column; gap: 6px; }
+.pf-auth .field-label-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .pf-auth .field label { font-family: var(--font-mono); font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--color-surface-400); }
 .pf-auth .field input { width: 100%; background: var(--color-surface-800); border: 1px solid var(--color-surface-700); color: #fff; padding: 11px 14px; font-size: 14px; font-family: var(--font-sans); transition: border-color .15s, box-shadow .15s; }
 .pf-auth .field input::placeholder { color: var(--color-surface-500); }
 .pf-auth .field input:focus { outline: none; border-color: var(--color-brand-orange); box-shadow: 0 0 0 3px rgba(232,122,44,.18); }
 
 /* Password helper */
-.pf-auth .pw-hint { display: flex; align-items: center; gap: 7px; }
-.pf-auth .pw-box { width: 14px; height: 14px; flex-shrink: 0; border: 1px solid var(--color-surface-600); display: grid; place-items: center; transition: background .15s, border-color .15s; }
-.pf-auth .pw-box.ok { background: var(--color-brand-orange); border-color: var(--color-brand-orange); }
-.pf-auth .pw-box svg { width: 9px; height: 9px; color: #fff; }
-.pf-auth .pw-hint span { font-size: 12px; color: var(--color-surface-500); transition: color .15s; }
-.pf-auth .pw-hint span.ok { color: var(--color-brand-orange); }
+.pf-auth .password-toggle { display: inline-flex; align-items: center; gap: 5px; color: var(--color-surface-400); font-size: 11px; font-weight: 600; }
+.pf-auth .password-toggle:hover { color: #fff; }
+.pf-auth .password-toggle svg { width: 13px; height: 13px; }
+.pf-auth .field-help { color: var(--color-surface-500); font-size: 11.5px; line-height: 1.45; }
+.pf-auth .password-checks { display: flex; flex-wrap: wrap; gap: 7px 12px; margin-top: -7px; }
+.pf-auth .password-checks span { display: inline-flex; align-items: center; gap: 6px; color: var(--color-surface-500); font-size: 11.5px; }
+.pf-auth .password-checks i { width: 14px; height: 14px; display: grid; place-items: center; border: 1px solid var(--color-surface-600); font-style: normal; }
+.pf-auth .password-checks i svg { width: 9px; height: 9px; stroke-width: 4; }
+.pf-auth .password-checks span.complete { color: #a7f3d0; }
+.pf-auth .password-checks span.complete i { background: #047857; border-color: #059669; color: #fff; }
+.pf-auth .form-assist { display: flex; justify-content: flex-end; margin-top: -7px; }
+.pf-auth .form-assist a { color: var(--color-surface-300); font-size: 12px; font-weight: 600; }
+.pf-auth .form-assist a:hover { color: var(--color-brand-orange); }
 
 /* Submit — orange on dark (mirrors .finalcta .btn-primary) */
 .pf-auth .btn-primary { width: 100%; justify-content: center; background: var(--color-brand-orange); color: #fff; padding: 13px 22px; font-size: 14px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; transition: background .15s, transform .15s; margin-top: 4px; min-height: 44px; }
@@ -85,12 +100,18 @@
 .pf-auth .btn-primary .arrow { transition: transform .15s; }
 .pf-auth .btn-primary:hover:not(:disabled) .arrow { transform: translateX(3px); }
 .pf-auth .btn-primary .spin { width: 16px; height: 16px; animation: pf-spin .7s linear infinite; }
+.pf-auth a.btn-primary { text-decoration: none; }
+.pf-auth .btn-secondary { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; border: 1px solid var(--color-surface-700); color: #fff; padding: 11px 16px; font-size: 13px; font-weight: 700; }
+.pf-auth .btn-secondary:hover { border-color: var(--color-surface-500); background: var(--color-surface-800); }
 @keyframes pf-spin { to { transform: rotate(360deg); } }
 
 /* Footer cross-link */
 .pf-auth .form-foot { text-align: center; font-size: 13px; color: var(--color-surface-500); margin-top: 22px; }
 .pf-auth .form-foot a { color: var(--color-brand-orange); font-weight: 600; transition: color .15s; }
 .pf-auth .form-foot a:hover { color: var(--color-brand-orange-dark); }
+.pf-auth .oauth-note, .pf-auth .privacy-note { color: var(--color-surface-500); font-size: 11.5px; line-height: 1.5; }
+.pf-auth .oauth-note { margin: -10px 0 18px; text-align: center; }
+.pf-auth .privacy-note { margin-top: 18px; text-align: center; }
 
 /* Success (signup → check email) */
 .pf-auth .success-card { width: 100%; max-width: 380px; text-align: center; position: relative; z-index: 1; }
@@ -98,6 +119,11 @@
 .pf-auth .success-icon svg { width: 28px; height: 28px; color: var(--color-brand-orange); }
 .pf-auth .success-card h1 { font-size: 28px; font-weight: 900; letter-spacing: -0.02em; color: #fff; margin-bottom: 10px; }
 .pf-auth .success-card p { font-size: 14px; color: var(--color-surface-400); line-height: 1.55; margin-bottom: 24px; }
+.pf-auth .success-card p strong { color: #fff; overflow-wrap: anywhere; }
+.pf-auth .success-card .success-help { margin-top: -12px; color: var(--color-surface-500); font-size: 12px; }
+.pf-auth .success-card > .btn-primary { max-width: 280px; margin-inline: auto; }
+.pf-auth .success-actions { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+.pf-auth .success-actions .btn-primary { margin-top: 0; }
 
 /* Focus-visible */
 .pf-auth a:focus-visible, .pf-auth button:focus-visible { outline: 2px solid var(--color-brand-orange); outline-offset: 2px; }
@@ -113,4 +139,5 @@
 }
 @media (max-width: 480px) {
   .pf-auth .form-panel { padding: 40px 20px; }
+  .pf-auth .success-actions { grid-template-columns: 1fr; }
 }

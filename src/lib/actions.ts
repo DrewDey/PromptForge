@@ -34,6 +34,11 @@ export type BuildRequestSubmitState = {
   error: string | null
 }
 
+export type BuildRequestResponseState = {
+  error: string | null
+  success?: boolean
+}
+
 export type SourceRunSubmitResult = {
   success: boolean
   id?: string
@@ -273,17 +278,25 @@ export async function submitBuildRequest(
   redirect('/requests?submitted=1')
 }
 
-export async function respondToBuildRequest(formData: FormData) {
+export async function respondToBuildRequest(
+  _prevState: BuildRequestResponseState,
+  formData: FormData,
+): Promise<BuildRequestResponseState> {
   const requestId = String(formData.get('request_id') ?? '')
-  if (!requestId) return
+  if (!requestId) return { error: 'That build request is unavailable.' }
 
-  await createBuildRequestResponse({
-    requestId,
-    body: String(formData.get('body') ?? ''),
-    url: String(formData.get('url') ?? ''),
-  })
+  try {
+    await createBuildRequestResponse({
+      requestId,
+      body: String(formData.get('body') ?? ''),
+      url: String(formData.get('url') ?? ''),
+    })
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'PathForge could not add that response.' }
+  }
 
   revalidatePath('/requests')
+  return { error: null, success: true }
 }
 
 export async function voteOnBuildRequest(formData: FormData) {

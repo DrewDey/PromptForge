@@ -11,11 +11,6 @@ import {
 } from './shared'
 
 export const SUGGESTION_PUBLIC_DELAY_HOURS = 24
-const SUGGESTION_PUBLIC_DELAY_MS = SUGGESTION_PUBLIC_DELAY_HOURS * 60 * 60 * 1000
-
-function suggestionPublishDate(approvedAt: string) {
-  return new Date(new Date(approvedAt).getTime() + SUGGESTION_PUBLIC_DELAY_MS).toISOString()
-}
 
 function isPublicSuggestion(suggestion: SuggestionWithRelations, now = new Date()) {
   if (suggestion.moderation_status !== 'approved') return false
@@ -47,11 +42,12 @@ function normalizeSuggestionRows(rows: SuggestionWithRelations[] | null | undefi
 function throwReadableSuggestionError(error: { code?: string; message?: string } | null) {
   if (!error) return
 
+  if (error.message?.includes('Too many submissions')) {
+    throw new Error('You have sent several suggestions recently. Wait a while before sending another.')
+  }
+
   if (
-    error.code === '42P01' ||
-    error.message?.includes('suggestions') ||
-    error.message?.includes('suggestion_responses') ||
-    error.message?.includes('suggestion_votes')
+    error.code === '42P01' || error.code === 'PGRST205'
   ) {
     throw new Error('Suggestion Box is not connected to the database yet.')
   }
@@ -173,7 +169,9 @@ export async function createSuggestion(input: { title: string; body: string }) {
   const title = input.title.trim()
   const body = input.body.trim()
   if (title.length < 4) throw new Error('Add a clearer suggestion title.')
+  if (title.length > 160) throw new Error('Keep the suggestion title under 160 characters.')
   if (body.length < 12) throw new Error('Add a little more detail so PathForge can respond.')
+  if (body.length > 5000) throw new Error('Keep the suggestion under 5,000 characters.')
 
   const { data, error } = await supabase
     .from('suggestions')
@@ -181,10 +179,6 @@ export async function createSuggestion(input: { title: string; body: string }) {
       title,
       body,
       author_id: user.id,
-      moderation_status: 'pending',
-      public_status: 'under_review',
-      visibility: 'private',
-      vote_count: 0,
     })
     .select('id')
     .single()
@@ -197,91 +191,48 @@ export async function createSuggestion(input: { title: string; body: string }) {
 export async function approveSuggestionById(id: string) {
   if (!SUPABASE_CONFIGURED) return
 
-  const approvedAt = new Date().toISOString()
   const { supabase } = await requireAdminAccess()
   const { error } = await supabase
-    .from('suggestions')
-    .update({
-      moderation_status: 'approved',
-      public_status: 'under_review',
-      visibility: 'scheduled_public',
-      approved_at: approvedAt,
-      scheduled_publish_at: suggestionPublishDate(approvedAt),
-      kept_private_at: null,
-      updated_at: approvedAt,
-    })
-    .eq('id', id)
+    .rpc('pathforge_approve_suggestion', { target_suggestion_id: id })
 
-  if (error) throw error
+  throwReadableSuggestionError(error)
 }
 
 export async function declineSuggestionById(id: string) {
   if (!SUPABASE_CONFIGURED) return
 
-  const now = new Date().toISOString()
   const { supabase } = await requireAdminAccess()
   const { error } = await supabase
-    .from('suggestions')
-    .update({
-      moderation_status: 'declined',
-      public_status: 'declined',
-      visibility: 'private',
-      updated_at: now,
-    })
-    .eq('id', id)
+    .rpc('pathforge_decline_suggestion', { target_suggestion_id: id })
 
-  if (error) throw error
+  throwReadableSuggestionError(error)
 }
 
 export async function keepSuggestionPrivateById(id: string) {
   if (!SUPABASE_CONFIGURED) return
 
-  const now = new Date().toISOString()
   const { createClient } = await import('../supabase/server')
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Log in to update this suggestion.')
 
   const { error } = await supabase
-    .from('suggestions')
-    .update({
-      visibility: 'private',
-      kept_private_at: now,
-      updated_at: now,
-    })
-    .eq('id', id)
-    .eq('author_id', user.id)
-    .eq('visibility', 'scheduled_public')
-    .gt('scheduled_publish_at', now)
+    .rpc('pathforge_keep_suggestion_private', { target_suggestion_id: id })
 
-  if (error) throw error
+  throwReadableSuggestionError(error)
 }
 
 export async function updateSuggestionPublicStatusById(id: string, status: SuggestionPublicStatus) {
   if (!SUPABASE_CONFIGURED) return
 
-  const now = new Date().toISOString()
   const { supabase } = await requireAdminAccess()
-  const updates: {
-    public_status: SuggestionPublicStatus
-    updated_at: string
-    moderation_status?: 'approved' | 'declined'
-    visibility?: 'private'
-  } = { public_status: status, updated_at: now }
-
-  if (status === 'declined') {
-    updates.moderation_status = 'declined'
-    updates.visibility = 'private'
-  } else if (status === 'planned' || status === 'shipped') {
-    updates.moderation_status = 'approved'
-  }
-
   const { error } = await supabase
-    .from('suggestions')
-    .update(updates)
-    .eq('id', id)
+    .rpc('pathforge_set_suggestion_public_status', {
+      target_suggestion_id: id,
+      target_public_status: status,
+    })
 
-  if (error) throw error
+  throwReadableSuggestionError(error)
 }
 
 export async function createSuggestionResponse(input: {
@@ -293,10 +244,10 @@ export async function createSuggestionResponse(input: {
 
   const body = input.body.trim()
   if (!body) throw new Error('Write a response first.')
+  if (body.length > 5000) throw new Error('Keep the response under 5,000 characters.')
 
   const { supabase, user } = await requireAdminAccess()
 
-  const now = new Date().toISOString()
   const { error } = await supabase
     .from('suggestion_responses')
     .insert({
@@ -307,11 +258,6 @@ export async function createSuggestionResponse(input: {
     })
 
   if (error) throw error
-
-  await supabase
-    .from('suggestions')
-    .update({ updated_at: now })
-    .eq('id', input.suggestionId)
 }
 
 export async function getUserSuggestionVotes(suggestionIds: string[]): Promise<Set<string>> {

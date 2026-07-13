@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowRight, GitFork, Search } from 'lucide-react'
+import { ArrowRight, Hammer, Search } from 'lucide-react'
 
 export default function GuideFinalCta() {
   return (
@@ -21,10 +21,10 @@ export default function GuideFinalCta() {
             <strong>Explore build paths</strong>
             <ArrowRight aria-hidden="true" />
           </Link>
-          <Link href="/calming-sleep-sound-mixer-demo#source-run-path" className="guide-final-card">
-            <GitFork aria-hidden="true" />
-            <span>Use the worked example</span>
-            <strong>Open the Sleep-Sound Mixer</strong>
+          <Link href="/build" className="guide-final-card">
+            <Hammer aria-hidden="true" />
+            <span>Already finished something?</span>
+            <strong>Share your finished run</strong>
             <ArrowRight aria-hidden="true" />
           </Link>
         </div>

@@ -1,5 +1,15 @@
 import Link from 'next/link'
-import { ArrowUp, Bookmark, Calendar, CheckCircle2, Edit3, ExternalLink, GitFork, Layers3 } from 'lucide-react'
+import {
+  ArrowRight,
+  ArrowUp,
+  Bookmark,
+  Calendar,
+  CheckCircle2,
+  Cpu,
+  Edit3,
+  GitFork,
+  Layers3,
+} from 'lucide-react'
 import {
   getProfileProvenance,
   profileAvatarClasses,
@@ -26,12 +36,23 @@ export default function BuilderIdentity({
   const displayName = profile.display_name || profile.username
   const provenance = getProfileProvenance(profile)
   const joined = joinedLabel(profile.created_at)
-  const hasFocus = insights.categoryFocus.length > 0 || insights.modelFocus.length > 0
+  const hasPublicRecord = insights.publishedCount > 0
+  const publicRecord = [
+    insights.originalCount > 0 ? { value: insights.originalCount, label: insights.originalCount === 1 ? 'Path' : 'Paths', icon: Layers3 } : null,
+    insights.forkCount > 0 ? { value: insights.forkCount, label: insights.forkCount === 1 ? 'Fork' : 'Forks', icon: GitFork } : null,
+    insights.distinctModelCount > 0 ? { value: insights.distinctModelCount, label: insights.distinctModelCount === 1 ? 'Model' : 'Models', icon: Cpu } : null,
+    insights.verifiedModelRunCount > 0 ? { value: insights.verifiedModelRunCount, label: insights.verifiedModelRunCount === 1 ? 'Verified run' : 'Verified runs', icon: CheckCircle2 } : null,
+  ].filter((item): item is { value: number; label: string; icon: typeof Layers3 } => Boolean(item))
+  const provenanceFallback = provenance?.tone === 'team'
+    ? 'Official PathForge work and model comparisons, published with exact prompts, responses, and artifacts attached.'
+    : provenance?.tone === 'source-run'
+      ? 'Reviewed developer-operated source runs with exact prompts, responses, and artifacts attached.'
+      : null
 
   return (
     <section className="relative overflow-hidden border border-surface-200 bg-white shadow-[0_14px_44px_rgba(24,24,27,0.05)]" aria-labelledby="builder-profile-name">
       <span className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-brand-orange via-brand-orange/35 to-brand-blue" aria-hidden="true" />
-      <div className={hasFocus ? 'grid gap-0 lg:grid-cols-[minmax(0,1fr)_300px]' : ''}>
+      <div className={hasPublicRecord ? 'grid gap-0 lg:grid-cols-[minmax(0,1fr)_340px]' : ''}>
         <div className="p-5 sm:p-7 lg:p-8">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
             <div
@@ -52,7 +73,7 @@ export default function BuilderIdentity({
                   >
                     {displayName}
                   </h1>
-                  <p className="mt-2 font-mono text-xs text-surface-500">@{profile.username}</p>
+                  <p className="mt-2 font-mono text-xs text-surface-500">@{profile.username || 'builder'}</p>
                 </div>
 
                 {isOwner && (
@@ -69,7 +90,7 @@ export default function BuilderIdentity({
                       className="inline-flex min-h-10 items-center gap-2 bg-surface-900 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-brand-orange focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
                     >
                       My Forge
-                      <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                      <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                     </Link>
                   </div>
                 )}
@@ -94,9 +115,9 @@ export default function BuilderIdentity({
                 <p className="mt-4 max-w-3xl whitespace-pre-line text-[15px] leading-7 text-surface-700">
                   {profile.bio}
                 </p>
-              ) : provenance ? (
+              ) : provenanceFallback ? (
                 <p className="mt-4 max-w-3xl text-sm leading-6 text-surface-600">
-                  Explore the kinds of projects and models represented in this builder&apos;s published work.
+                  {provenanceFallback}
                 </p>
               ) : (
                 isOwner && (
@@ -111,18 +132,6 @@ export default function BuilderIdentity({
                   <span className="inline-flex items-center gap-1.5">
                     <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
                     Joined {joined}
-                  </span>
-                )}
-                {insights.publishedCount > 0 && (
-                  <span className="inline-flex items-center gap-1.5">
-                    <Layers3 className="h-3.5 w-3.5" aria-hidden="true" />
-                    {insights.publishedCount} published {insights.publishedCount === 1 ? 'path' : 'paths'}
-                  </span>
-                )}
-                {insights.forkCount > 0 && (
-                  <span className="inline-flex items-center gap-1.5">
-                    <GitFork className="h-3.5 w-3.5" aria-hidden="true" />
-                    {insights.forkCount} published {insights.forkCount === 1 ? 'fork' : 'forks'}
                   </span>
                 )}
                 {insights.totalUpvotes > 0 && (
@@ -142,15 +151,25 @@ export default function BuilderIdentity({
           </div>
         </div>
 
-        {hasFocus && <aside className="border-t border-surface-200 bg-surface-50 p-5 lg:border-l lg:border-t-0 sm:p-6">
-          <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-surface-500">
-            Build focus
+        {hasPublicRecord && <aside className="border-t border-surface-200 bg-surface-50 p-5 sm:p-6 lg:border-l lg:border-t-0">
+          <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-surface-500">Public record</div>
+
+          <div className={`mt-4 grid border-l border-t border-surface-200 bg-white ${publicRecord.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+            {publicRecord.map(({ value, label, icon: Icon }) => (
+              <div key={label} className="border-b border-r border-surface-200 p-3.5">
+                <div className="flex items-center justify-between gap-2">
+                  <strong className="text-xl font-black tabular-nums text-surface-900">{value}</strong>
+                  <Icon className="h-3.5 w-3.5 text-surface-400" aria-hidden="true" />
+                </div>
+                <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.1em] text-surface-500">{label}</div>
+              </div>
+            ))}
           </div>
 
-          <div className="mt-4 space-y-5">
+          <div className="mt-5 space-y-5">
               {insights.categoryFocus.length > 0 && (
                 <div>
-                  <div className="text-xs font-bold text-surface-900">Domains</div>
+                  <div className="text-[11px] font-bold uppercase tracking-[0.08em] text-surface-500">Build focus</div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {insights.categoryFocus.map((focus) => (
                       <span key={focus.label} className="border border-surface-200 bg-white px-2.5 py-1.5 text-xs text-surface-700">
@@ -164,7 +183,7 @@ export default function BuilderIdentity({
 
               {insights.modelFocus.length > 0 && (
                 <div>
-                  <div className="text-xs font-bold text-surface-900">Models used</div>
+                  <div className="text-[11px] font-bold uppercase tracking-[0.08em] text-surface-500">Models represented</div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {insights.modelFocus.map((focus) => (
                       <span key={focus.label} className="border border-surface-200 bg-white px-2.5 py-1.5 text-xs text-surface-700">

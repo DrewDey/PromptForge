@@ -2,8 +2,10 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { ArrowLeft, Eye, LockKeyhole } from 'lucide-react'
-import ProfileSettingsForm from '@/components/ProfileSettingsForm'
+import ProfileSettingsForm, { type ProfileSettingsSummary } from '@/components/ProfileSettingsForm'
 import { getAuthenticatedProfile } from '@/lib/data/profiles'
+import { getPublicProjectsByAuthor } from '@/lib/data/public-profiles'
+import { derivePublicProfileInsights } from '@/lib/profile-presentation'
 import { canonicalMetadata } from '@/lib/site-url'
 
 export const metadata: Metadata = {
@@ -20,7 +22,7 @@ export default async function ProfileSettingsPage() {
 
   if (!profile) {
     return (
-      <main className="mx-auto max-w-2xl px-4 py-16 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="border border-surface-200 bg-white p-7 text-center">
           <LockKeyhole className="mx-auto h-8 w-8 text-brand-orange" aria-hidden="true" />
           <h1 className="mt-4 text-2xl font-black text-surface-900">Your profile is still being prepared.</h1>
@@ -31,13 +33,25 @@ export default async function ProfileSettingsPage() {
             Return home
           </Link>
         </div>
-      </main>
+      </div>
     )
   }
 
+  const profileUsername = profile.username?.trim() || ''
+  const projects = await getPublicProjectsByAuthor(profile.id, profileUsername || undefined)
+  const insights = derivePublicProfileInsights(projects)
+  const summary: ProfileSettingsSummary = {
+    originalCount: insights.originalCount,
+    forkCount: insights.forkCount,
+    distinctModelCount: insights.distinctModelCount,
+    verifiedModelRunCount: insights.verifiedModelRunCount,
+    categoryLabels: insights.categoryFocus.map((focus) => focus.label),
+    modelLabels: insights.modelFocus.map((focus) => focus.label),
+  }
+
   return (
-    <main className="min-h-[calc(100vh-3rem)] bg-surface-50">
-      <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+    <div className="min-h-[calc(100vh-3rem)] bg-surface-50">
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
         <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <Link href="/my-forge" className="inline-flex items-center gap-2 text-sm font-medium text-surface-500 hover:text-brand-orange">
@@ -49,17 +63,19 @@ export default async function ProfileSettingsPage() {
             </div>
             <h1 className="mt-2 text-4xl font-black tracking-[-0.035em] text-surface-900">Your public builder identity.</h1>
           </div>
-          <Link
-            href={`/user/${profile.username}`}
-            className="inline-flex min-h-10 items-center gap-2 border border-surface-300 bg-white px-3 py-2 text-xs font-bold text-surface-800 hover:border-surface-900"
-          >
-            <Eye className="h-3.5 w-3.5" aria-hidden="true" />
-            Preview profile
-          </Link>
+          {profileUsername && (
+            <Link
+              href={`/user/${profileUsername}`}
+              className="inline-flex min-h-10 items-center gap-2 border border-surface-300 bg-white px-3 py-2 text-xs font-bold text-surface-800 hover:border-surface-900"
+            >
+              <Eye className="h-3.5 w-3.5" aria-hidden="true" />
+              Open saved profile
+            </Link>
+          )}
         </div>
 
-        <ProfileSettingsForm profile={profile} />
+        <ProfileSettingsForm profile={profile} summary={summary} />
       </div>
-    </main>
+    </div>
   )
 }

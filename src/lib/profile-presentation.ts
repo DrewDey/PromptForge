@@ -1,6 +1,7 @@
 import { getPromptModelLabel } from './prompt-comparisons'
 import { projectForkSourceFromSubmissionFields } from './project-forks'
 import { getProjectModelProfileSummary } from './project-model-profile-summaries'
+import { getPublicModelLabel } from './public-model-labels'
 import type { Profile, PromptWithRelations } from './types'
 
 export { profileAvatarClasses, profileMonogram } from './profile-visuals'
@@ -49,6 +50,31 @@ function rankedFocus(counts: Map<string, number>, limit = 3): ProfileFocus[] {
     .slice(0, limit)
 }
 
+function modelIdentityKey(label: string) {
+  return label
+    .trim()
+    .toLocaleLowerCase()
+    .replace(/^(?:anthropic|claude|openai|chatgpt|google)\s+/, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+}
+
+function distinctModelLabels(labels: string[]) {
+  const byIdentity = new Map<string, string>()
+  for (const label of labels) {
+    const trimmed = label.trim()
+    if (!trimmed) continue
+    const identity = modelIdentityKey(trimmed)
+    if (!byIdentity.has(identity)) byIdentity.set(identity, trimmed)
+  }
+  return [...byIdentity.values()]
+}
+
+function profileModelLabel(label: string) {
+  const trimmed = label.trim()
+  return getPublicModelLabel(trimmed) || trimmed
+}
+
 function lastProjectOutcome(project: PromptWithRelations) {
   const topLevelOutcome = project.result_content?.trim()
   if (topLevelOutcome) return topLevelOutcome
@@ -64,10 +90,10 @@ export function getPublicProfileProjectEvidence(
 ): PublicProfileProjectEvidence {
   const verifiedRuns = getProjectModelProfileSummary(project.id)
   const defaultModelLabel = getPromptModelLabel(project)
-  const modelLabels = [...new Set([
+  const modelLabels = distinctModelLabels([
     ...verifiedRuns.map((run) => run.modelLabel),
     ...(defaultModelLabel === 'Unknown model' ? [] : [defaultModelLabel]),
-  ])]
+  ].map(profileModelLabel))
   const currentModelRunCount = verifiedRuns.filter((run) => run.isCurrent).length
 
   return {

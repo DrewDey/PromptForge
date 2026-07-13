@@ -1,0 +1,18 @@
+[
+  "/admin/source-runs/*",
+  "/prompt/\\[id\\]",
+  "/my-forge",
+  "/my-forge/builds/*",
+  "/airlock-zero-blackout-shift-fork-demo",
+  "/airlock-zero-hull-breach-fork-demo",
+  "/airlock-zero-reactor-run-demo",
+  "/airlock-zero-swarm-shift-fork-demo",
+  "/booking-flow-handoff-simulator-demo",
+  "/calming-sleep-sound-mixer-demo",
+  "/first-principles-claim-ladder-game-demo",
+  "/gym-mirror-progress-shot-consistency-studio-demo",
+  "/rental-walkthrough-red-flag-scorecard-demo",
+  "/security-cam-anomaly-timeline-game-demo",
+  "/t-shirt-print-alignment-press-game-demo",
+  "/tiny-festival-set-time-clash-game-demo"
+]

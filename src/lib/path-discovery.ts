@@ -1,7 +1,7 @@
 import { getPreparedShowcaseProjectById } from './prepared-showcase-projects'
 import { getProjectHref } from './project-links'
 import { getPromptModelLabel } from './prompt-comparisons'
-import { getProjectModelVariantSet } from './project-model-variants'
+import { getProjectModelProfileSummary } from './project-model-profile-summaries'
 import type { Category, PromptWithRelations } from './types'
 
 export type DiscoveryIntent =
@@ -188,10 +188,10 @@ export function buildPathDiscoveryCatalog(
     const prepared = getPreparedShowcaseProjectById(prompt.id)
     const promptCount = prepared?.steps.length ?? prompt.steps?.length ?? 0
     const modelLabel = getPromptModelLabel(prompt)
-    const variantSet = getProjectModelVariantSet(prompt.id)
+    const variantSummary = getProjectModelProfileSummary(prompt.id)
     const modelLabels = [...new Set([
       modelLabel,
-      ...(variantSet?.variants.map((variant) => variant.modelLabel) ?? []),
+      ...variantSummary.map((variant) => variant.modelLabel),
     ].filter((label) => label !== 'Unknown model'))]
     const comparisonCount = Math.max(1, modelLabels.length)
     const preview = previewForPrompt(prompt)

@@ -31,6 +31,9 @@ BEGIN
 END;
 $$;
 
+REVOKE ALL ON FUNCTION update_prompt_vote_count()
+  FROM PUBLIC, anon, authenticated, service_role;
+
 DROP TRIGGER IF EXISTS prompt_vote_count_trigger ON votes;
 CREATE TRIGGER prompt_vote_count_trigger
   AFTER INSERT OR DELETE ON votes
@@ -62,6 +65,9 @@ BEGIN
   RETURN NULL;
 END;
 $$;
+
+REVOKE ALL ON FUNCTION update_prompt_bookmark_count()
+  FROM PUBLIC, anon, authenticated, service_role;
 
 DROP TRIGGER IF EXISTS prompt_bookmark_count_trigger ON bookmarks;
 CREATE TRIGGER prompt_bookmark_count_trigger

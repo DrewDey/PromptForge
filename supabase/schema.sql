@@ -1342,6 +1342,7 @@ GRANT INSERT (
 
 DROP POLICY IF EXISTS "Authenticated users can create prompt steps" ON public.prompt_steps;
 DROP POLICY IF EXISTS "Owners can add steps to pending prompts" ON public.prompt_steps;
+DROP POLICY IF EXISTS "Users can add steps to their prompts" ON public.prompt_steps;
 CREATE POLICY "Owners can add steps to pending prompts"
   ON public.prompt_steps FOR INSERT TO authenticated
   WITH CHECK (
@@ -1432,10 +1433,17 @@ BEGIN
   INSERT INTO public.profiles (id, username, display_name, role)
   VALUES (
     NEW.id,
-    NEW.raw_user_meta_data->>'username',
-    COALESCE(NEW.raw_user_meta_data->>'display_name', NEW.raw_user_meta_data->>'username'),
+    NULLIF(BTRIM(NEW.raw_user_meta_data->>'username'), ''),
+    LEFT(COALESCE(
+      NULLIF(BTRIM(NEW.raw_user_meta_data->>'display_name'), ''),
+      NULLIF(BTRIM(NEW.raw_user_meta_data->>'full_name'), ''),
+      NULLIF(BTRIM(NEW.raw_user_meta_data->>'name'), ''),
+      NULLIF(BTRIM(NEW.raw_user_meta_data->>'username'), ''),
+      'PathForge builder'
+    ), 60),
     'user'
-  );
+  )
+  ON CONFLICT (id) DO NOTHING;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';

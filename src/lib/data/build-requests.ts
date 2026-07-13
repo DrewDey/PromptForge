@@ -1,5 +1,6 @@
 import type { BuildRequestWithRelations } from '../types'
 import { mockBuildRequests } from '../mock-data'
+import { getSiteUrl } from '../site-url'
 import { SUPABASE_CONFIGURED, SUPABASE_READ_TIMEOUT_MS } from './shared'
 
 function sortBuildRequests<T extends BuildRequestWithRelations>(items: T[]) {
@@ -22,16 +23,38 @@ function normalizeBuildRequestRows(rows: BuildRequestWithRelations[] | null | un
 function throwReadableBuildRequestError(error: { code?: string; message?: string } | null) {
   if (!error) return
 
+  if (error.message?.includes('Too many submissions')) {
+    throw new Error('You have posted several requests recently. Wait a while before posting another.')
+  }
+
   if (
-    error.code === '42P01' ||
-    error.message?.includes('build_requests') ||
-    error.message?.includes('build_request_responses') ||
-    error.message?.includes('build_request_votes')
+    error.code === '42P01' || error.code === 'PGRST205'
   ) {
     throw new Error('Build Requests are not connected to the database yet.')
   }
 
   throw error
+}
+
+function normalizePathForgeBuildUrl(value: string) {
+  const raw = value.trim()
+  if (!raw) return null
+
+  let url: URL
+  try {
+    url = new URL(raw, `${getSiteUrl()}/`)
+  } catch {
+    throw new Error('Paste a valid PathForge project URL.')
+  }
+
+  if (url.origin !== new URL(getSiteUrl()).origin) {
+    throw new Error('Build responses can only link to a PathForge project or fork.')
+  }
+  if (!(/^\/prompt\/[A-Za-z0-9-]+$/.test(url.pathname) || /^\/[A-Za-z0-9-]+-demo$/.test(url.pathname))) {
+    throw new Error('Link to a PathForge project or fork page, not a general website page.')
+  }
+
+  return `${url.pathname}${url.search}${url.hash}`
 }
 
 async function readBuildRequestsWithFallback<T>(fallback: T, read: () => Promise<T>): Promise<T> {
@@ -73,7 +96,9 @@ export async function createBuildRequest(input: { title: string; body: string })
   const title = input.title.trim()
   const body = input.body.trim()
   if (title.length < 4) throw new Error('Add a clearer request title.')
+  if (title.length > 160) throw new Error('Keep the request title under 160 characters.')
   if (body.length < 20) throw new Error('Add more detail so builders know what to make.')
+  if (body.length > 5000) throw new Error('Keep the request under 5,000 characters.')
 
   const { error } = await supabase
     .from('build_requests')
@@ -81,8 +106,6 @@ export async function createBuildRequest(input: { title: string; body: string })
       title,
       body,
       author_id: user.id,
-      status: 'open',
-      vote_count: 0,
     })
 
   throwReadableBuildRequestError(error)
@@ -96,8 +119,9 @@ export async function createBuildRequestResponse(input: {
   if (!SUPABASE_CONFIGURED) return
 
   const body = input.body.trim()
-  const url = input.url.trim()
+  const url = normalizePathForgeBuildUrl(input.url)
   if (!body && !url) throw new Error('Add a response or a link to a build.')
+  if (body.length > 5000) throw new Error('Keep the response under 5,000 characters.')
 
   const { createClient } = await import('../supabase/server')
   const supabase = await createClient()
@@ -110,7 +134,7 @@ export async function createBuildRequestResponse(input: {
       request_id: input.requestId,
       responder_id: user.id,
       body: body || 'Shared a build link.',
-      url: url || null,
+      url,
     })
 
   throwReadableBuildRequestError(error)

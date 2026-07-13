@@ -57,9 +57,11 @@ function ReadinessItem({ complete, children }: { complete: boolean; children: Re
 export default function ProfileSettingsForm({
   profile,
   summary,
+  continueHref,
 }: {
   profile: Profile
   summary: ProfileSettingsSummary
+  continueHref?: string | null
 }) {
   const router = useRouter()
   const savedUsername = profile.username?.trim() || ''
@@ -253,6 +255,14 @@ export default function ProfileSettingsForm({
                 <Eye className="h-4 w-4" aria-hidden="true" />
                 Save a handle to open profile
               </span>
+            )}
+            {continueHref && state.success && (
+              <Link
+                href={continueHref}
+                className="inline-flex min-h-11 items-center gap-2 bg-brand-orange px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-orange-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+              >
+                Continue to PathForge
+              </Link>
             )}
           </div>
         </div>

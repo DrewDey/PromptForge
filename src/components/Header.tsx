@@ -1,4 +1,6 @@
 import HeaderClient, { type HeaderViewer } from './HeaderClient'
+import { cookies } from 'next/headers'
+import { hasSupabaseAuthCookie } from '@/lib/supabase/auth-cookies'
 
 const SUPABASE_CONFIGURED = !!(
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -36,6 +38,9 @@ async function readHeaderState(): Promise<{ viewer: HeaderViewer; isAdmin: boole
 async function getHeaderState(): Promise<{ viewer: HeaderViewer; isAdmin: boolean }> {
   const fallback = { viewer: null, isAdmin: false }
   if (!SUPABASE_CONFIGURED) return fallback
+
+  const cookieStore = await cookies()
+  if (!hasSupabaseAuthCookie(cookieStore.getAll())) return fallback
 
   return Promise.race([
     readHeaderState(),

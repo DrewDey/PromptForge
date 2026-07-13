@@ -14,7 +14,9 @@ CREATE TABLE IF NOT EXISTS suggestions (
   scheduled_publish_at TIMESTAMPTZ,
   kept_private_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  CONSTRAINT suggestions_title_length CHECK (char_length(title) BETWEEN 4 AND 160),
+  CONSTRAINT suggestions_body_length CHECK (char_length(body) BETWEEN 12 AND 5000)
 );
 
 CREATE TABLE IF NOT EXISTS suggestion_responses (
@@ -23,7 +25,8 @@ CREATE TABLE IF NOT EXISTS suggestion_responses (
   responder_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
   body TEXT NOT NULL,
   visibility TEXT NOT NULL DEFAULT 'submitter' CHECK (visibility IN ('public', 'submitter')),
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  CONSTRAINT suggestion_responses_body_length CHECK (char_length(body) BETWEEN 1 AND 5000)
 );
 
 CREATE TABLE IF NOT EXISTS suggestion_votes (
@@ -44,11 +47,11 @@ CREATE OR REPLACE FUNCTION update_suggestion_vote_count()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = ''
 AS $$
 BEGIN
   IF TG_OP = 'INSERT' THEN
-    UPDATE suggestions
+    UPDATE public.suggestions
     SET vote_count = vote_count + 1,
         updated_at = NOW()
     WHERE id = NEW.suggestion_id;
@@ -56,7 +59,7 @@ BEGIN
   END IF;
 
   IF TG_OP = 'DELETE' THEN
-    UPDATE suggestions
+    UPDATE public.suggestions
     SET vote_count = GREATEST(vote_count - 1, 0),
         updated_at = NOW()
     WHERE id = OLD.suggestion_id;
@@ -74,6 +77,28 @@ DROP TRIGGER IF EXISTS suggestion_vote_count_trigger ON suggestion_votes;
 CREATE TRIGGER suggestion_vote_count_trigger
   AFTER INSERT OR DELETE ON suggestion_votes
   FOR EACH ROW EXECUTE FUNCTION update_suggestion_vote_count();
+
+CREATE OR REPLACE FUNCTION pathforge_touch_suggestion_on_response()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+  UPDATE public.suggestions
+  SET updated_at = NOW()
+  WHERE id = NEW.suggestion_id;
+  RETURN NEW;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION pathforge_touch_suggestion_on_response()
+  FROM PUBLIC, anon, authenticated, service_role;
+
+DROP TRIGGER IF EXISTS pathforge_touch_suggestion_on_response ON suggestion_responses;
+CREATE TRIGGER pathforge_touch_suggestion_on_response
+  AFTER INSERT ON suggestion_responses
+  FOR EACH ROW EXECUTE FUNCTION pathforge_touch_suggestion_on_response();
 
 ALTER TABLE suggestions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE suggestion_responses ENABLE ROW LEVEL SECURITY;
@@ -94,8 +119,18 @@ CREATE POLICY "Suggestions are visible when public or owned" ON suggestions
   );
 
 DROP POLICY IF EXISTS "Users can create own suggestions" ON suggestions;
-CREATE POLICY "Users can create own suggestions" ON suggestions
-  FOR INSERT WITH CHECK (auth.uid() = author_id);
+DROP POLICY IF EXISTS "Users create pending private suggestions" ON suggestions;
+CREATE POLICY "Users create pending private suggestions" ON suggestions
+  FOR INSERT TO authenticated WITH CHECK (
+    (SELECT auth.uid()) = author_id
+    AND moderation_status = 'pending'
+    AND public_status = 'under_review'
+    AND visibility = 'private'
+    AND vote_count = 0
+    AND approved_at IS NULL
+    AND scheduled_publish_at IS NULL
+    AND kept_private_at IS NULL
+  );
 
 DROP POLICY IF EXISTS "Users can keep own scheduled suggestions private" ON suggestions;
 CREATE POLICY "Users can keep own scheduled suggestions private" ON suggestions
@@ -148,8 +183,15 @@ CREATE POLICY "Admins can create suggestion responses" ON suggestion_responses
   );
 
 DROP POLICY IF EXISTS "Suggestion votes are visible by everyone" ON suggestion_votes;
-CREATE POLICY "Suggestion votes are visible by everyone" ON suggestion_votes
-  FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Suggestion votes visible to owners and admins" ON suggestion_votes;
+CREATE POLICY "Suggestion votes visible to owners and admins" ON suggestion_votes
+  FOR SELECT USING (
+    user_id = (SELECT auth.uid())
+    OR EXISTS (
+      SELECT 1 FROM profiles
+      WHERE profiles.id = (SELECT auth.uid()) AND profiles.role = 'admin'
+    )
+  );
 
 DROP POLICY IF EXISTS "Users can vote on suggestions" ON suggestion_votes;
 CREATE POLICY "Users can vote on suggestions" ON suggestion_votes
@@ -169,3 +211,16 @@ CREATE POLICY "Users can vote on suggestions" ON suggestion_votes
 DROP POLICY IF EXISTS "Users can remove own suggestion votes" ON suggestion_votes;
 CREATE POLICY "Users can remove own suggestion votes" ON suggestion_votes
   FOR DELETE USING (auth.uid() = user_id);
+
+REVOKE ALL ON TABLE suggestions, suggestion_responses, suggestion_votes
+  FROM anon, authenticated;
+GRANT SELECT ON TABLE suggestions, suggestion_responses, suggestion_votes
+  TO anon, authenticated;
+GRANT INSERT (title, body, author_id) ON TABLE suggestions TO authenticated;
+GRANT INSERT (suggestion_id, responder_id, body, visibility)
+  ON TABLE suggestion_responses TO authenticated;
+GRANT INSERT (user_id, suggestion_id), DELETE
+  ON TABLE suggestion_votes TO authenticated;
+
+-- Privileged suggestion state changes and user creation quotas are installed
+-- by the matching versioned migration in supabase/migrations.

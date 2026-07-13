@@ -569,6 +569,10 @@ function makeSyntheticEmail(username) {
   return `${username.toLowerCase()}.${suffix}@pathforge-seed.example.com`
 }
 
+function escapeLikePattern(value) {
+  return value.replace(/[\\%_]/g, character => `\\${character}`)
+}
+
 async function createServiceRoleClient(supabaseUrl, serviceRoleKey) {
   const { createClient } = await import('@supabase/supabase-js')
   return createClient(supabaseUrl, serviceRoleKey, {
@@ -590,6 +594,19 @@ async function createSyntheticSessionClient(supabaseUrl, anonKey, args) {
 
   const email = args.email || makeSyntheticEmail(args.username)
   const password = makePassword()
+  const { data: handleMatches, error: handleError } = await supabase
+    .from('profiles')
+    .select('id, username')
+    .ilike('username', escapeLikePattern(args.username))
+    .limit(5)
+
+  if (handleError) throw handleError
+  if ((handleMatches ?? []).some(profile => profile.username?.toLowerCase() === args.username.toLowerCase())) {
+    throw new Error(
+      `Profile handle ${args.username} already exists. Public signup cannot attach a new auth user to that profile; use --auth-mode password with the existing account or configure SUPABASE_SERVICE_ROLE_KEY.`,
+    )
+  }
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,

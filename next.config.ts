@@ -7,6 +7,7 @@ const sourceRunRuntimeFiles = [
 ]
 
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
   // Most project evidence is consumed while static pages are built. These
   // request-time routes are the deliberate exceptions: admin publication,
   // model/fork readers, and the signed-in workspace may verify source-run
@@ -17,6 +18,16 @@ const nextConfig: NextConfig = {
   ),
   async headers() {
     return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Content-Security-Policy", value: "object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), browsing-topics=()" },
+        ],
+      },
       {
         source: "/artifacts/:path*",
         headers: [

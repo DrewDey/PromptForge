@@ -1,40 +1,31 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import {
+  AuthFormHeader,
+  AuthNotice,
+  AuthPageShell,
+  OAuthButtons,
+  PasswordField,
+  SubmitButton,
+  useEnabledOAuthProviders,
+} from '../AuthPageShell'
+import { friendlyAuthError } from '@/lib/auth-errors'
+import { authCallbackUrl, authHref, safeAuthNextPath } from '@/lib/auth-redirects'
 import { createClient } from '@/lib/supabase/client'
 import '../auth.css'
 
-function safeNextPath(next: string | null) {
-  if (!next || !next.startsWith('/') || next.startsWith('//')) return '/'
-  return next
-}
-
 const FLOW = [
-  { label: 'Prompt', desc: 'Start with an idea' },
-  { label: 'Result', desc: 'See what AI produced' },
-  { label: 'Iterate', desc: 'Refine and improve' },
+  { label: 'Explore', description: 'Find a proven build path' },
+  { label: 'Fork', description: 'Continue from the useful step' },
+  { label: 'Keep building', description: 'Save your work in My Forge' },
 ]
 
-function GitHubIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M12 .5C5.37.5 0 5.78 0 12.29c0 5.2 3.44 9.6 8.21 11.16.6.11.82-.25.82-.56 0-.28-.01-1.02-.02-2-3.34.71-4.04-1.58-4.04-1.58-.55-1.36-1.33-1.73-1.33-1.73-1.09-.73.08-.71.08-.71 1.2.08 1.83 1.21 1.83 1.21 1.07 1.8 2.81 1.28 3.5.98.11-.76.42-1.28.76-1.57-2.67-.3-5.47-1.31-5.47-5.83 0-1.29.47-2.34 1.24-3.17-.12-.3-.54-1.52.12-3.16 0 0 1.01-.32 3.3 1.21.96-.26 1.98-.39 3-.4 1.02.01 2.04.14 3 .4 2.29-1.53 3.3-1.21 3.3-1.21.66 1.64.24 2.86.12 3.16.77.83 1.24 1.88 1.24 3.17 0 4.53-2.81 5.53-5.49 5.82.43.36.81 1.09.81 2.2 0 1.59-.01 2.87-.01 3.26 0 .31.22.68.83.56C20.56 21.88 24 17.48 24 12.29 24 5.78 18.63.5 12 .5z" />
-    </svg>
-  )
-}
-
-function GoogleIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path fill="#4285F4" d="M23.52 12.27c0-.79-.07-1.54-.2-2.27H12v4.51h6.47a5.53 5.53 0 0 1-2.4 3.63v3h3.88c2.27-2.09 3.57-5.17 3.57-8.87z" />
-      <path fill="#34A853" d="M12 24c3.24 0 5.96-1.08 7.95-2.91l-3.88-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.09A12 12 0 0 0 12 24z" />
-      <path fill="#FBBC05" d="M5.27 14.29a7.2 7.2 0 0 1 0-4.58V6.62H1.29a12 12 0 0 0 0 10.76l3.98-3.09z" />
-      <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.44-3.44C17.95 1.19 15.23 0 12 0A12 12 0 0 0 1.29 6.62l3.98 3.09C6.22 6.86 8.87 4.75 12 4.75z" />
-    </svg>
-  )
+const STATUS_MESSAGES: Record<string, string> = {
+  'password-updated': 'Your password was updated. Log in with the new password.',
+  'signed-out': 'You have been logged out.',
 }
 
 export default function LoginPage() {
@@ -42,160 +33,135 @@ export default function LoginPage() {
   const searchParams = useSearchParams()
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [resending, setResending] = useState(false)
+  const [unconfirmedEmail, setUnconfirmedEmail] = useState('')
+  const [resendStatus, setResendStatus] = useState('')
   const [oauthPending, setOauthPending] = useState<'github' | 'google' | null>(null)
-  const nextPath = safeNextPath(searchParams.get('next'))
-  const signupHref = `/auth/signup?next=${encodeURIComponent(nextPath)}`
+  const enabledOAuthProviders = useEnabledOAuthProviders()
+  const nextPath = safeAuthNextPath(searchParams.get('next'))
+  const statusMessage = STATUS_MESSAGES[searchParams.get('status') ?? '']
+  const callbackError = searchParams.get('error') === 'auth'
+    ? 'That sign-in link is invalid or expired. Try logging in again.'
+    : ''
 
   async function handleOAuth(provider: 'github' | 'google') {
     setError('')
     setOauthPending(provider)
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}` },
+      options: { redirectTo: authCallbackUrl(window.location.origin, nextPath, 'oauth') },
     })
-    if (error) {
-      setError(error.message)
+    if (oauthError) {
+      setError(friendlyAuthError(oauthError, 'PathForge could not start that sign-in. Try again.'))
       setOauthPending(null)
     }
-    // on success the browser redirects to the provider; nothing else runs
   }
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
     setLoading(true)
     setError('')
 
-    const formData = new FormData(e.currentTarget)
+    const formData = new FormData(event.currentTarget)
+    const email = String(formData.get('email') ?? '').trim()
     const supabase = createClient()
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email: formData.get('email') as string,
-      password: formData.get('password') as string,
+    const { error: loginError } = await supabase.auth.signInWithPassword({
+      email,
+      password: String(formData.get('password') ?? ''),
     })
 
-    if (error) {
-      setError(error.message)
+    if (loginError) {
+      const needsConfirmation = loginError.code === 'email_not_confirmed' || loginError.message.toLowerCase().includes('email not confirmed')
+      setUnconfirmedEmail(needsConfirmation ? email : '')
+      setResendStatus('')
+      setError(friendlyAuthError(loginError, 'PathForge could not log you in. Try again.'))
       setLoading(false)
       return
     }
 
-    router.push(nextPath)
+    router.replace(nextPath)
     router.refresh()
   }
 
+  async function handleResendConfirmation() {
+    if (!unconfirmedEmail || resending) return
+    setResending(true)
+    setResendStatus('')
+
+    const supabase = createClient()
+    const { error: resendError } = await supabase.auth.resend({
+      type: 'signup',
+      email: unconfirmedEmail,
+      options: {
+        emailRedirectTo: authCallbackUrl(window.location.origin, nextPath, 'signup'),
+      },
+    })
+
+    if (resendError) {
+      setError(friendlyAuthError(resendError, 'PathForge could not send another confirmation link. Try again shortly.'))
+    } else {
+      setError('')
+      setResendStatus('If the account still needs confirmation, a fresh link is on its way.')
+    }
+    setResending(false)
+  }
+
   return (
-    <div className="pf-auth">
-      {/* Brand panel — desktop only */}
-      <aside className="brand-panel">
-        <Link href="/" className="brand-logo">
-          <Image src="/logo.png" alt="PathForge" width={32} height={32} />
-          PathForge
-        </Link>
-        <div className="eyebrow">The library</div>
-        <h2>
-          See what others <span className="serif">built.</span>
-        </h2>
-        <p className="lead">
-          Explore real projects with step-by-step prompts and results. Learn from the community, then share your own.
+    <AuthPageShell
+      eyebrow="Your workspace"
+      title="Return to what you"
+      accent="started."
+      lead="Your saved paths, forks, submissions, and model updates stay together in My Forge."
+      items={FLOW}
+    >
+      <div className="form-card">
+        <AuthFormHeader
+          eyebrow="Log in"
+          title="Welcome"
+          accent="back."
+          copy="Continue building from the exact place you left off."
+        />
+
+        {(error || callbackError) && (
+          <AuthNotice kind="error">
+            {error || callbackError}
+            {unconfirmedEmail && (
+              <button type="button" className="auth-inline-action" onClick={handleResendConfirmation} disabled={resending}>
+                {resending ? 'Sending…' : 'Resend confirmation'}
+              </button>
+            )}
+          </AuthNotice>
+        )}
+        {resendStatus && <AuthNotice kind="success">{resendStatus}</AuthNotice>}
+        {statusMessage && <AuthNotice kind="success">{statusMessage}</AuthNotice>}
+
+        {enabledOAuthProviders.length > 0 && (
+          <OAuthButtons providers={enabledOAuthProviders} pending={oauthPending} disabled={loading} onOAuth={handleOAuth} />
+        )}
+        <div className="oauth-divider">{enabledOAuthProviders.length > 0 ? 'or log in with email' : 'log in with email'}</div>
+
+        <form onSubmit={handleSubmit}>
+          <div className="field">
+            <label htmlFor="login-email">Email</label>
+            <input id="login-email" type="email" name="email" required autoComplete="email" inputMode="email" placeholder="you@example.com" />
+          </div>
+          <PasswordField
+            id="login-password"
+            name="password"
+            placeholder="Your password"
+            autoComplete="current-password"
+          />
+          <div className="form-assist">
+            <Link href={authHref('/auth/forgot-password', nextPath)}>Forgot your password?</Link>
+          </div>
+          <SubmitButton loading={loading} idle="Log in" pending="Logging in…" />
+        </form>
+
+        <p className="form-foot">
+          New to PathForge? <Link href={authHref('/auth/signup', nextPath)}>Create an account</Link>
         </p>
-        <div className="flow">
-          {FLOW.map((step, i) => (
-            <div key={i} className="flow-item">
-              <div className="flow-num">{i + 1}</div>
-              <div className="flow-rule" />
-              <div className="flow-text">
-                <b>{step.label}</b>
-                <span className="desc">{step.desc}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </aside>
-
-      {/* Form panel */}
-      <main className="form-panel">
-        <div className="form-card">
-          <div className="form-head">
-            <Link href="/" className="mobile-logo">
-              <Image src="/logo.png" alt="PathForge" width={28} height={28} />
-              PathForge
-            </Link>
-            <div className="eyebrow">Log in</div>
-            <h1>
-              Welcome <span className="serif">back.</span>
-            </h1>
-            <p>Log in to pick up where the community left off.</p>
-          </div>
-
-          {error && (
-            <div className="auth-error" role="alert">
-              <svg fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-              <span>{error}</span>
-            </div>
-          )}
-
-          <div className="oauth-list">
-            <button type="button" className="btn-oauth" onClick={() => handleOAuth('github')} disabled={oauthPending !== null}>
-              <GitHubIcon />
-              {oauthPending === 'github' ? 'Connecting…' : 'Continue with GitHub'}
-            </button>
-            <button type="button" className="btn-oauth" onClick={() => handleOAuth('google')} disabled={oauthPending !== null}>
-              <GoogleIcon />
-              {oauthPending === 'google' ? 'Connecting…' : 'Continue with Google'}
-            </button>
-          </div>
-
-          <div className="oauth-divider">or log in with email</div>
-
-          <form onSubmit={handleSubmit}>
-            <div className="field">
-              <label htmlFor="email">Email</label>
-              <input
-                id="email"
-                type="email"
-                name="email"
-                required
-                placeholder="you@example.com"
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="password">Password</label>
-              <input
-                id="password"
-                type="password"
-                name="password"
-                required
-                placeholder="Your password"
-              />
-            </div>
-            <button type="submit" disabled={loading} className="btn-primary">
-              {loading ? (
-                <>
-                  <svg className="spin" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" opacity="0.25" />
-                    <path fill="currentColor" opacity="0.75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  Logging in…
-                </>
-              ) : (
-                <>
-                  Log in
-                  <svg className="arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square">
-                    <path d="M5 12H19M13 6L19 12L13 18" />
-                  </svg>
-                </>
-              )}
-            </button>
-          </form>
-
-          <p className="form-foot">
-            Don&apos;t have an account? <Link href={signupHref}>Sign up</Link>
-          </p>
-        </div>
-      </main>
-    </div>
+      </div>
+    </AuthPageShell>
   )
 }

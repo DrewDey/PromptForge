@@ -20,7 +20,7 @@ export default function BuildRequestSubmitForm() {
           name="title"
           required
           minLength={4}
-          maxLength={120}
+          maxLength={160}
           placeholder="Example: A one-file Tetris game I can fork"
           className="w-full border border-surface-300 bg-white px-3 py-3 text-sm font-medium text-surface-900 placeholder:text-surface-400 focus:border-brand-orange focus:outline-none focus:ring-2 focus:ring-brand-orange/15"
         />
@@ -35,6 +35,7 @@ export default function BuildRequestSubmitForm() {
           name="body"
           required
           minLength={20}
+          maxLength={5000}
           rows={7}
           placeholder="Describe the artifact you want, the model or platform you care about, and what would count as a good finished result."
           className="w-full border border-surface-300 bg-white px-3 py-3 text-sm leading-relaxed text-surface-900 placeholder:text-surface-400 focus:border-brand-orange focus:outline-none focus:ring-2 focus:ring-brand-orange/15"

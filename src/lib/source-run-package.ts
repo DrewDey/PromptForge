@@ -1,3 +1,4 @@
+import 'server-only'
 import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -324,28 +325,38 @@ function packageLocation(fileName: string) {
     throw new Error(`Invalid source-run package path: ${fileName}`)
   }
 
-  const root = path.resolve(process.cwd(), 'seed-runs')
-  const absolutePath = path.resolve(root, normalizedFileName)
-  if (absolutePath !== root && !absolutePath.startsWith(`${root}${path.sep}`)) {
-    throw new Error(`Source-run package path escapes seed-runs: ${fileName}`)
-  }
-
   return {
-    absolutePath,
     relativeFileName: normalizedFileName,
     evidenceFileName: `seed-runs/${normalizedFileName}`,
-    root,
+  }
+}
+
+function readSourceRunPackageBytes(fileName: string) {
+  const location = packageLocation(fileName)
+  return {
+    location,
+    bytes: fs.readFileSync(
+      /* turbopackIgnore: true */
+      path.join(
+        /* turbopackIgnore: true */ process.cwd(),
+        'seed-runs',
+        location.relativeFileName,
+      ),
+    ),
   }
 }
 
 function listSourceRunPackageJsonFiles() {
-  const seedRunsRoot = path.join(process.cwd(), 'seed-runs')
-  const modelVariantsRoot = path.join(process.cwd(), 'seed-runs', 'model-variants')
-  return [seedRunsRoot, modelVariantsRoot].flatMap((directory) => {
-    if (!fs.existsSync(directory)) return []
-    return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => (
+  return ['', 'model-variants'].flatMap((relativeDirectory) => {
+    const directory = path.join(
+      /* turbopackIgnore: true */ process.cwd(),
+      'seed-runs',
+      relativeDirectory,
+    )
+    if (!fs.existsSync(/* turbopackIgnore: true */ directory)) return []
+    return fs.readdirSync(/* turbopackIgnore: true */ directory, { withFileTypes: true }).flatMap((entry) => (
       entry.isFile() && entry.name.endsWith('.json')
-        ? [path.join(directory, entry.name)]
+        ? [relativeDirectory ? `${relativeDirectory}/${entry.name}` : entry.name]
         : []
     ))
   })
@@ -360,12 +371,12 @@ function rawPackageRunId(value: unknown) {
 export function findSourceRunPackageFileById(sourceRunId: string) {
   const normalizedRunId = sourceRunId.trim()
   if (!normalizedRunId) return undefined
-  const { root } = packageLocation('placeholder.json')
-  const matches = listSourceRunPackageJsonFiles().flatMap((candidatePath) => {
+  const matches = listSourceRunPackageJsonFiles().flatMap((candidateFileName) => {
     try {
-      const raw = JSON.parse(fs.readFileSync(candidatePath, 'utf8')) as unknown
+      const { bytes } = readSourceRunPackageBytes(candidateFileName)
+      const raw = JSON.parse(bytes.toString('utf8')) as unknown
       if (rawPackageRunId(raw) !== normalizedRunId) return []
-      return [path.relative(root, candidatePath).split(path.sep).join('/')]
+      return [candidateFileName]
     } catch {
       return []
     }
@@ -378,17 +389,26 @@ export function findSourceRunPackageFileById(sourceRunId: string) {
 }
 
 function verifyArtifactDigest(artifactPath: string, expectedSha256: string) {
-  const publicArtifactsRoot = path.resolve(process.cwd(), 'public/artifacts')
   const relativeArtifactPath = artifactPath.replace(/^public\/artifacts\//, '')
-  const absoluteArtifactPath = path.resolve(publicArtifactsRoot, relativeArtifactPath)
-  if (!absoluteArtifactPath.startsWith(`${publicArtifactsRoot}${path.sep}`)) {
+  if (
+    !relativeArtifactPath ||
+    relativeArtifactPath.startsWith('/') ||
+    relativeArtifactPath.includes('\\') ||
+    relativeArtifactPath.split('/').some((segment) => segment === '..' || segment === '.' || segment === '')
+  ) {
     throw new Error('Variant-aware fork artifact must remain under public/artifacts.')
   }
-  if (!fs.existsSync(absoluteArtifactPath)) {
+  const absoluteArtifactPath = path.join(
+    /* turbopackIgnore: true */ process.cwd(),
+    'public',
+    'artifacts',
+    relativeArtifactPath,
+  )
+  if (!fs.existsSync(/* turbopackIgnore: true */ absoluteArtifactPath)) {
     throw new Error(`Variant-aware fork artifact is missing: ${artifactPath}`)
   }
   const actualSha256 = createHash('sha256')
-    .update(fs.readFileSync(absoluteArtifactPath))
+    .update(fs.readFileSync(/* turbopackIgnore: true */ absoluteArtifactPath))
     .digest('hex')
   if (actualSha256 !== expectedSha256.toLowerCase()) {
     throw new Error(`Variant-aware fork artifact digest does not match ${artifactPath}.`)
@@ -418,7 +438,7 @@ function reconcileVariantAwareForkWithParentPackage(
   }
 
   const parentRaw = JSON.parse(
-    fs.readFileSync(packageLocation(parentFileName).absolutePath, 'utf8'),
+    readSourceRunPackageBytes(parentFileName).bytes.toString('utf8'),
   ) as unknown
   if (!isRecord(parentRaw) || !Array.isArray(parentRaw.steps)) {
     throw new Error('Variant-aware fork parent package has no exact step evidence.')
@@ -581,10 +601,8 @@ function parseSourceRunPackage(value: unknown, fileName: string): SourceRunPacka
 }
 
 export function loadSourceRunPackage(fileName: string): SourceRunPackage {
-  const location = packageLocation(fileName)
-  const rawPackage = JSON.parse(
-    fs.readFileSync(location.absolutePath, 'utf8')
-  ) as unknown
+  const { location, bytes } = readSourceRunPackageBytes(fileName)
+  const rawPackage = JSON.parse(bytes.toString('utf8')) as unknown
 
   return parseSourceRunPackage(rawPackage, location.relativeFileName)
 }
@@ -592,8 +610,7 @@ export function loadSourceRunPackage(fileName: string): SourceRunPackage {
 export function loadSourceRunPackagePublicationEvidence(
   fileName: string,
 ): SourceRunPackagePublicationEvidence {
-  const location = packageLocation(fileName)
-  const packageBytes = fs.readFileSync(location.absolutePath)
+  const { location, bytes: packageBytes } = readSourceRunPackageBytes(fileName)
   const rawPackage = JSON.parse(packageBytes.toString('utf8')) as unknown
   return {
     sourceRunPackage: parseSourceRunPackage(rawPackage, location.relativeFileName),

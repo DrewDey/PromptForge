@@ -79,6 +79,9 @@ BEGIN
 END;
 $$;
 
+REVOKE ALL ON FUNCTION update_build_request_vote_count()
+  FROM PUBLIC, anon, authenticated, service_role;
+
 DROP TRIGGER IF EXISTS build_request_vote_count_trigger ON build_request_votes;
 CREATE TRIGGER build_request_vote_count_trigger
   AFTER INSERT OR DELETE ON build_request_votes
@@ -98,6 +101,9 @@ BEGIN
   RETURN NEW;
 END;
 $$;
+
+REVOKE ALL ON FUNCTION touch_build_request_on_response()
+  FROM PUBLIC, anon, authenticated, service_role;
 
 DROP TRIGGER IF EXISTS build_request_response_touch_trigger ON build_request_responses;
 CREATE TRIGGER build_request_response_touch_trigger

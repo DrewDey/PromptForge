@@ -6,6 +6,7 @@
     "dev": "next dev --turbopack",
     "prebuild": "npm run check:model-variants && node scripts/check-project-model-variant-live-registry.mjs",
     "build": "next build",
+    "postbuild": "node scripts/check-output-file-tracing.mjs",
     "start": "next start",
     "check:hourly-seed-manager": "node scripts/check-hourly-seed-manager.mjs",
     "check:prompt-comparisons": "node scripts/check-prompt-comparisons.mjs",
@@ -23,9 +24,11 @@
     "check:source-run-intake": "node scripts/check-source-run-intake.mjs",
     "check:source-run-showcases": "node scripts/check-source-run-showcases.mjs && node scripts/check-protected-artifact-sandbox.mjs",
     "check:my-forge": "node scripts/check-my-forge.mjs && node scripts/check-prepared-showcase-ownership-backfill.mjs",
+    "check:security-boundaries": "node scripts/check-supabase-function-security.mjs",
+    "check:output-tracing": "node scripts/check-output-file-tracing.mjs",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "autoreview": "npm run lint && npm run typecheck && npm run check:source-run-intake && npm run check:source-run-showcases && npm run check:model-variants && npm run check:project-forks && npm run check:my-forge",
+    "autoreview": "npm run lint && npm run typecheck && npm run check:source-run-intake && npm run check:source-run-showcases && npm run check:model-variants && npm run check:project-forks && npm run check:my-forge && npm run check:security-boundaries",
     "autoreview:hourly-manager": "npm run check:hourly-seed-manager"
   },
   "dependencies": {

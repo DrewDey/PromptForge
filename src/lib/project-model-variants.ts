@@ -179,12 +179,37 @@ function assertModelVariantSourceAccess(
 }
 
 function seedRunPath(fileName: string) {
-  return path.join(process.cwd(), 'seed-runs', fileName)
+  const normalizedFileName = fileName.replace(/\\/g, '/').replace(/^seed-runs\//, '')
+  if (
+    !normalizedFileName ||
+    normalizedFileName.startsWith('/') ||
+    normalizedFileName.split('/').some((segment) => segment === '..' || segment === '.' || segment === '')
+  ) {
+    throw new Error(`Invalid model-variant package path: ${fileName}`)
+  }
+  return path.join(
+    /* turbopackIgnore: true */ process.cwd(),
+    'seed-runs',
+    normalizedFileName,
+  )
 }
 
 function resolveArtifactPath(fileName: string) {
   const relativePath = fileName.replace(/^public\/artifacts\//, '')
-  return path.join(process.cwd(), 'public', 'artifacts', relativePath)
+  if (
+    !relativePath ||
+    relativePath.startsWith('/') ||
+    relativePath.includes('\\') ||
+    relativePath.split('/').some((segment) => segment === '..' || segment === '.' || segment === '')
+  ) {
+    throw new Error(`Invalid model-variant artifact path: ${fileName}`)
+  }
+  return path.join(
+    /* turbopackIgnore: true */ process.cwd(),
+    'public',
+    'artifacts',
+    relativePath,
+  )
 }
 
 function validateMetrics(
@@ -338,7 +363,7 @@ function prepareVariantSet(rawSet: RawProjectModelVariantSet): ProjectModelVaria
     }
 
     const sourceRunPackage = loadSourceRunPackage(variant.packageFile)
-    if (sha256(readFileSync(seedRunPath(variant.packageFile))) !== variant.packageSha256) {
+    if (sha256(readFileSync(/* turbopackIgnore: true */ seedRunPath(variant.packageFile))) !== variant.packageSha256) {
       throw new Error(`Model variant ${variant.sourceRunId} package hash does not match.`)
     }
     const firstPrompt = sourceRunPackage.steps[0]?.prompt_exact
@@ -379,7 +404,7 @@ function prepareVariantSet(rawSet: RawProjectModelVariantSet): ProjectModelVaria
     }
     if (
       !sourceRunPackage.artifact_sha256 ||
-      sha256(readFileSync(resolveArtifactPath(variant.finalArtifactPath))) !== sourceRunPackage.artifact_sha256
+      sha256(readFileSync(/* turbopackIgnore: true */ resolveArtifactPath(variant.finalArtifactPath))) !== sourceRunPackage.artifact_sha256
     ) {
       throw new Error(`Model variant ${variant.sourceRunId} final artifact hash does not match.`)
     }
@@ -387,14 +412,7 @@ function prepareVariantSet(rawSet: RawProjectModelVariantSet): ProjectModelVaria
       if (!artifactPath.startsWith('public/artifacts/')) {
         throw new Error(`Model variant ${variant.sourceRunId} has an invalid artifact path.`)
       }
-      readFileSync(
-        path.join(
-          process.cwd(),
-          'public',
-          'artifacts',
-          artifactPath.replace(/^public\/artifacts\//, ''),
-        ),
-      )
+      readFileSync(/* turbopackIgnore: true */ resolveArtifactPath(artifactPath))
     }
 
     return { ...variant, sourceRunPackage }

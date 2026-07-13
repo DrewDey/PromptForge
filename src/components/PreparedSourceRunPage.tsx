@@ -42,9 +42,20 @@ function getPublicArtifactPath(artifactPath?: string | null) {
 
 function artifactSha256(artifactPath: string) {
   if (!artifactPath.startsWith('public/artifacts/')) return undefined
+  const relativeArtifactPath = artifactPath.replace(/^public\/artifacts\//, '')
+  if (
+    !relativeArtifactPath ||
+    relativeArtifactPath.includes('\\') ||
+    relativeArtifactPath.split('/').some((segment) => segment === '..' || segment === '.' || segment === '')
+  ) return undefined
   try {
     return createHash('sha256')
-      .update(readFileSync(path.join(process.cwd(), artifactPath)))
+      .update(readFileSync(/* turbopackIgnore: true */ path.join(
+        /* turbopackIgnore: true */ process.cwd(),
+        'public',
+        'artifacts',
+        relativeArtifactPath,
+      )))
       .digest('hex')
   } catch {
     return undefined

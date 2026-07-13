@@ -1200,7 +1200,7 @@ $$;
 REVOKE ALL ON FUNCTION set_project_model_variant_default(UUID, UUID) FROM PUBLIC;
 REVOKE ALL ON FUNCTION set_project_model_variant_default(UUID, UUID) FROM anon, authenticated;
 GRANT EXECUTE ON FUNCTION set_project_model_variant_default(UUID, UUID)
-  TO authenticated, service_role;
+  TO service_role;
 
 -- Indexes
 CREATE INDEX idx_prompts_category ON prompts(category_id);
@@ -1438,7 +1438,12 @@ BEGIN
   );
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';
+
+REVOKE ALL ON FUNCTION public.handle_new_user()
+  FROM PUBLIC, anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.handle_new_user()
+  TO supabase_auth_admin;
 
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users

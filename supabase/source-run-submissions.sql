@@ -931,8 +931,6 @@ $$;
 
 REVOKE ALL ON FUNCTION public.publish_prepared_showcase_source_run(UUID, JSONB, JSONB, JSONB)
   FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.publish_prepared_showcase_source_run(UUID, JSONB, JSONB, JSONB)
-  TO authenticated, service_role;
 
 -- Owner-visible lifecycle and append-only repair lineage
 -- ---------------------------------------------------------------------------
@@ -940,6 +938,32 @@ GRANT EXECUTE ON FUNCTION public.publish_prepared_showcase_source_run(UUID, JSON
 CREATE SCHEMA IF NOT EXISTS private;
 REVOKE ALL ON SCHEMA private FROM PUBLIC, anon;
 GRANT USAGE ON SCHEMA private TO authenticated, service_role;
+
+ALTER FUNCTION public.publish_prepared_showcase_source_run(UUID, JSONB, JSONB, JSONB)
+  SET SCHEMA private;
+REVOKE ALL ON FUNCTION private.publish_prepared_showcase_source_run(UUID, JSONB, JSONB, JSONB)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION private.publish_prepared_showcase_source_run(UUID, JSONB, JSONB, JSONB)
+  TO authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.publish_prepared_showcase_source_run(
+  target_source_run_id UUID,
+  expected_intake JSONB,
+  expected_fork JSONB,
+  project_payload JSONB
+)
+RETURNS UUID
+LANGUAGE SQL
+SECURITY INVOKER
+SET search_path = ''
+AS $$
+  SELECT private.publish_prepared_showcase_source_run($1, $2, $3, $4);
+$$;
+
+REVOKE ALL ON FUNCTION public.publish_prepared_showcase_source_run(UUID, JSONB, JSONB, JSONB)
+  FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.publish_prepared_showcase_source_run(UUID, JSONB, JSONB, JSONB)
+  TO authenticated, service_role;
 
 -- Failed processing and an explicit review decline are both terminal. Neither
 -- should prevent a corrected source URL from entering the queue again.

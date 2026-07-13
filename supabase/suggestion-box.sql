@@ -67,6 +67,9 @@ BEGIN
 END;
 $$;
 
+REVOKE ALL ON FUNCTION update_suggestion_vote_count()
+  FROM PUBLIC, anon, authenticated, service_role;
+
 DROP TRIGGER IF EXISTS suggestion_vote_count_trigger ON suggestion_votes;
 CREATE TRIGGER suggestion_vote_count_trigger
   AFTER INSERT OR DELETE ON suggestion_votes

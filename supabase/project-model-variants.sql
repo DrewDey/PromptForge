@@ -1084,7 +1084,7 @@ $$;
 REVOKE ALL ON FUNCTION set_project_model_variant_default(UUID, UUID) FROM PUBLIC;
 REVOKE ALL ON FUNCTION set_project_model_variant_default(UUID, UUID) FROM anon, authenticated;
 GRANT EXECUTE ON FUNCTION set_project_model_variant_default(UUID, UUID)
-  TO authenticated, service_role;
+  TO service_role;
 
 -- Immutable model-run artifact evidence
 -- ---------------------------------------------------------------------------

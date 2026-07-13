@@ -3,6 +3,7 @@ import 'server-only'
 import type { ProjectForkSource } from '../project-forks'
 import { getProjectModelVariantSet } from '../project-model-variants'
 import { createClient } from '../supabase/server'
+import { SUPABASE_CONFIGURED } from './shared'
 import type {
   MyForgeDashboard,
   MyForgeOwnedProject,
@@ -192,6 +193,22 @@ const PROJECT_STATE_SELECT = [
 function firstRelation<T>(value: T | T[] | null | undefined): T | null {
   if (Array.isArray(value)) return value[0] ?? null
   return value ?? null
+}
+
+function sourceRunDisplayTitle(raw: RawSourceRun, extractedProject?: RawProject | null) {
+  const explicitTitle = raw.title?.trim()
+  if (explicitTitle) return explicitTitle
+
+  const projectTitle = extractedProject?.title?.trim()
+  if (projectTitle) return projectTitle
+
+  const fileName = raw.file_name?.trim().split(/[\\/]/).at(-1)
+  const cleanedFileName = fileName
+    ?.replace(/\.[^.]+$/, '')
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  return cleanedFileName || 'Source run'
 }
 
 function assertUuid(value: string, label: string) {
@@ -416,6 +433,7 @@ function sourceRunLifecycle(
 }
 
 async function currentViewer(): Promise<ViewerContext | null> {
+  if (!SUPABASE_CONFIGURED) return null
   const supabase = await createClient()
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error || !user) return null
@@ -555,7 +573,10 @@ async function readSourceRuns({ supabase, userId }: ViewerContext): Promise<MyFo
   if (error) throw error
 
   const rows = (data ?? []) as unknown as RawSourceRun[]
-  const titlesById = new Map(rows.map((row) => [row.id, row.title?.trim() || 'Untitled source run']))
+  const titlesById = new Map(rows.map((row) => [
+    row.id,
+    sourceRunDisplayTitle(row, firstRelation(row.extracted_project)),
+  ]))
   const repairByPriorId = new Map<string, RawSourceRun>()
   for (const row of rows) {
     if (row.resubmission_of_id && !repairByPriorId.has(row.resubmission_of_id)) {
@@ -567,7 +588,7 @@ async function readSourceRuns({ supabase, userId }: ViewerContext): Promise<MyFo
     const repairSubmission = repairByPriorId.get(row.id)
     return {
       id: row.id,
-      title: row.title?.trim() || 'Untitled source run',
+      title: sourceRunDisplayTitle(row, extractedProject),
       sourceUrl: row.source_url,
       fileName: row.file_name,
       status: row.status,
@@ -579,7 +600,7 @@ async function readSourceRuns({ supabase, userId }: ViewerContext): Promise<MyFo
         : null,
       repairSubmissionId: repairSubmission?.id ?? null,
       repairSubmissionTitle: repairSubmission
-        ? repairSubmission.title?.trim() || 'Repair submission'
+        ? sourceRunDisplayTitle(repairSubmission, firstRelation(repairSubmission.extracted_project))
         : null,
       extractedPromptId: row.extracted_prompt_id,
       extractedProject: extractedProject ? mapProject(extractedProject) : null,

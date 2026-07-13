@@ -3,9 +3,9 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import BuilderIdentity from '@/components/BuilderIdentity'
-import PromptCard from '@/components/PromptCard'
-import { getProfileByUsername, getProjectsByAuthor } from '@/lib/data'
+import BuilderWorkCard from '@/components/BuilderWorkCard'
 import { getAuthenticatedUserId } from '@/lib/data/profiles'
+import { getPublicProfileByUsername, getPublicProjectsByAuthor } from '@/lib/data/public-profiles'
 import { derivePublicProfileInsights } from '@/lib/profile-presentation'
 import { canonicalMetadata } from '@/lib/site-url'
 
@@ -15,7 +15,7 @@ type UserProfilePageProps = {
 
 export async function generateMetadata({ params }: UserProfilePageProps): Promise<Metadata> {
   const { username } = await params
-  const profile = await getProfileByUsername(username)
+  const profile = await getPublicProfileByUsername(username)
   if (!profile) return { title: 'Builder not found | PathForge' }
 
   const displayName = profile.display_name || profile.username
@@ -29,26 +29,29 @@ export async function generateMetadata({ params }: UserProfilePageProps): Promis
 
 export default async function UserProfilePage({ params }: UserProfilePageProps) {
   const { username } = await params
-  const profile = await getProfileByUsername(username)
+  const profile = await getPublicProfileByUsername(username)
 
   if (!profile) notFound()
 
   const [projects, authenticatedUserId] = await Promise.all([
-    getProjectsByAuthor(profile.id, profile.username),
+    getPublicProjectsByAuthor(profile.id, profile.username),
     getAuthenticatedUserId(),
   ])
   const insights = derivePublicProfileInsights(projects)
   const isOwner = authenticatedUserId === profile.id
   const forkIds = new Set(insights.forks.map((project) => project.id))
   const originalProjects = projects.filter((project) => !forkIds.has(project.id))
+  const evidenceByProjectId = new Map(insights.projectEvidence.map((evidence) => (
+    [evidence.projectId, evidence]
+  )))
   const hasPublishedWork = projects.length > 0
 
   return (
-    <main className="min-h-[calc(100vh-3rem)] bg-surface-50">
+    <div className="min-h-[calc(100vh-3rem)] bg-surface-50">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
         <BuilderIdentity profile={profile} insights={insights} isOwner={isOwner} />
 
-        <div className="mt-10 grid gap-12">
+        <div className="mt-10 grid gap-14">
           {originalProjects.length > 0 && <section id="vault" aria-labelledby="vault-heading">
             <div className="mb-5 flex flex-col gap-2 border-b border-surface-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
@@ -58,17 +61,33 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
                 <h2 id="vault-heading" className="mt-1 text-2xl font-black tracking-[-0.025em] text-surface-900">
                   Published paths
                 </h2>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-surface-500">Working projects with their prompts, results, and build history attached.</p>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-surface-500">Working projects with the prompts, model runs, results, and build history that produced them.</p>
               </div>
               <span className="text-sm font-medium tabular-nums text-surface-500">
                 {originalProjects.length} {originalProjects.length === 1 ? 'path' : 'paths'}
               </span>
             </div>
 
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-              {originalProjects.map((project) => (
-                <PromptCard key={project.id} prompt={project} />
-              ))}
+            <div className={[
+              'grid gap-5',
+              originalProjects.length === 1
+                ? 'grid-cols-1'
+                : originalProjects.length === 2
+                  ? 'grid-cols-1 lg:grid-cols-2'
+                  : 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3',
+            ].join(' ')}>
+              {originalProjects.map((project) => {
+                const evidence = evidenceByProjectId.get(project.id)
+                if (!evidence) return null
+                return (
+                  <BuilderWorkCard
+                    key={project.id}
+                    project={project}
+                    evidence={evidence}
+                    featured={originalProjects.length === 1}
+                  />
+                )
+              })}
             </div>
           </section>}
 
@@ -81,17 +100,33 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
                 <h2 id="forks-heading" className="mt-1 text-2xl font-black tracking-[-0.025em] text-surface-900">
                   Published forks
                 </h2>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-surface-500">New directions that continue from a specific response in another build path.</p>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-surface-500">Each branch stays attached to the exact project and response where its direction changed.</p>
               </div>
               <span className="text-sm font-medium tabular-nums text-surface-500">
                 {insights.forkCount} {insights.forkCount === 1 ? 'fork' : 'forks'}
               </span>
             </div>
 
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-              {insights.forks.map((project) => (
-                <PromptCard key={project.id} prompt={project} />
-              ))}
+            <div className={[
+              'grid gap-5',
+              insights.forks.length === 1
+                ? 'grid-cols-1'
+                : insights.forks.length === 2
+                  ? 'grid-cols-1 lg:grid-cols-2'
+                  : 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3',
+            ].join(' ')}>
+              {insights.forks.map((project) => {
+                const evidence = evidenceByProjectId.get(project.id)
+                if (!evidence) return null
+                return (
+                  <BuilderWorkCard
+                    key={project.id}
+                    project={project}
+                    evidence={evidence}
+                    featured={insights.forks.length === 1}
+                  />
+                )
+              })}
             </div>
           </section>}
 
@@ -106,7 +141,7 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
           )}
         </div>
       </div>
-    </main>
+    </div>
   )
 }
 

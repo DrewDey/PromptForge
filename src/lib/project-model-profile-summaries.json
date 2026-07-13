@@ -1,0 +1,43 @@
+{
+  "31faf192-93d1-41d0-a74c-4402d4223937": [
+    { "modelLabel": "Sonnet 5 Max", "isCurrent": true, "runRole": "comparison-run" },
+    { "modelLabel": "5.6 Sol Max", "isCurrent": true, "runRole": "comparison-run" },
+    { "modelLabel": "Gemini 3.5 Flash", "isCurrent": true, "runRole": "comparison-run" }
+  ],
+  "0ddfc7cf-37bf-47ae-8fe0-d8d445ba1bee": [
+    { "modelLabel": "GPT-5.6 Luna", "isCurrent": true, "runRole": "comparison-run" },
+    { "modelLabel": "Gemini 3.1 Pro", "isCurrent": true, "runRole": "comparison-run" }
+  ],
+  "dc5e67c3-42d0-4823-ae23-586b7d3985cb": [
+    { "modelLabel": "Fable 5 High", "isCurrent": true, "runRole": "comparison-run" },
+    { "modelLabel": "Gemini 3.1 Pro", "isCurrent": true, "runRole": "comparison-run" }
+  ],
+  "e0e4e2b7-082e-4db1-9468-484fc3fd3a69": [
+    { "modelLabel": "Fable 5 High", "isCurrent": true, "runRole": "comparison-run" },
+    { "modelLabel": "Gemini 3.1 Pro", "isCurrent": true, "runRole": "comparison-run" }
+  ],
+  "ca0c2e08-9e02-4725-90f5-58ef248fe4c7": [
+    { "modelLabel": "Sonnet 4.6 Max", "isCurrent": false, "runRole": "historical-baseline" },
+    { "modelLabel": "GPT-5.6 Luna", "isCurrent": true, "runRole": "comparison-run" },
+    { "modelLabel": "Gemini 3.1 Pro", "isCurrent": true, "runRole": "comparison-run" }
+  ],
+  "22bcc36b-497f-43f7-824f-3ccba9690da6": [
+    { "modelLabel": "GPT-5.5", "isCurrent": false, "runRole": "historical-baseline" },
+    { "modelLabel": "Fable 5 High", "isCurrent": true, "runRole": "comparison-run" },
+    { "modelLabel": "Gemini 3.1 Pro", "isCurrent": true, "runRole": "comparison-run" }
+  ],
+  "384ebd4d-88af-400b-b230-4eb771bb2194": [
+    { "modelLabel": "GPT-5.5", "isCurrent": false, "runRole": "historical-baseline" },
+    { "modelLabel": "Fable 5 High", "isCurrent": true, "runRole": "comparison-run" },
+    { "modelLabel": "Gemini 3.1 Pro", "isCurrent": true, "runRole": "comparison-run" }
+  ],
+  "17c42c87-3709-4d5e-9ae3-d4ac4807bc4c": [
+    { "modelLabel": "Fable 5 High", "isCurrent": true, "runRole": "comparison-run" },
+    { "modelLabel": "Gemini 3.1 Pro", "isCurrent": true, "runRole": "comparison-run" }
+  ],
+  "a7201847-c8d6-4e09-814b-0a382f8f8080": [
+    { "modelLabel": "Opus 4.8 Medium", "isCurrent": false, "runRole": "historical-baseline" },
+    { "modelLabel": "GPT-5.6 Luna", "isCurrent": true, "runRole": "comparison-run" },
+    { "modelLabel": "Gemini 3.1 Pro", "isCurrent": true, "runRole": "comparison-run" }
+  ]
+}

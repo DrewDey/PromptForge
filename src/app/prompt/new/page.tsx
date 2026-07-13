@@ -3,7 +3,7 @@
 import { useCallback, useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, LogIn, FileText, GitBranch, Check, AlertCircle, ArrowUp, ArrowDown, ChevronRight, Layers, Cpu, Eye, Keyboard, CheckCircle2, Link2, Wrench } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, LogIn, FileText, GitBranch, Check, AlertCircle, ArrowUp, ArrowDown, ChevronRight, Layers, Cpu, Eye, Keyboard, Link2, Wrench } from 'lucide-react'
 import { getModelsByProvider, getModelName } from '@/lib/models'
 import { submitProject, submitSourceRun } from '@/lib/actions'
 import { detectSourceRunProvider } from '@/lib/source-run-review'
@@ -35,17 +35,6 @@ type Step = { title: string; content: string; result_content: string; descriptio
 type IntakeMode = 'source-run' | 'manual'
 
 const sourceRunProviderOptions = ['ChatGPT', 'Claude', 'Gemini', 'OpenRouter', 'Other']
-
-const sourceRunModelSuggestions: Record<string, string[]> = {
-  ChatGPT: ['GPT-5.5', 'GPT-5.5 Thinking', 'GPT-5', 'GPT-5 mini'],
-  Claude: ['Claude Sonnet 4.6', 'Claude Opus 4.8', 'Claude Haiku'],
-  Gemini: ['Gemini 3.1 Pro', 'Gemini 3.1 Flash', 'Gemini 2.5 Pro'],
-  OpenRouter: [
-    'anthropic/claude-sonnet-4.6',
-    'openai/gpt-5.5',
-    'google/gemini-3.1-pro',
-  ],
-}
 
 // Mirrors PromptCard's difficulty chip palette so the preview card reads the same
 // as the Build Paths grid's real cards.
@@ -283,14 +272,6 @@ function FieldError({ message }: { message?: string }) {
   )
 }
 
-function intakeCardClass(active: boolean) {
-  return `border p-4 text-left transition ${
-    active
-      ? 'border-brand-orange bg-brand-orange/5 shadow-[0_12px_34px_rgba(247,127,0,0.12)]'
-      : 'border-surface-200 bg-white hover:border-surface-400'
-  }`
-}
-
 function ForkCapacityDots({
   value,
   max,
@@ -441,7 +422,7 @@ function BuildLoggedOutLanding({
               </Link>
               <Link href={loginHref} className="inline-flex items-center gap-2 bg-brand-orange px-5 py-3 text-sm font-bold text-white transition hover:bg-brand-orange-dark">
                 <LogIn className="h-4 w-4" aria-hidden="true" />
-                Sign in to build
+                Sign in to share
               </Link>
               <Link href={signupHref} className="inline-flex items-center gap-2 border border-surface-300 bg-white px-5 py-3 text-sm font-bold text-surface-900 transition hover:border-brand-orange">
                 Create account
@@ -455,7 +436,7 @@ function BuildLoggedOutLanding({
 
           <div className="border border-surface-200 bg-primary-50 p-5 shadow-[10px_10px_0_rgba(232,122,44,0.10)]">
             <div className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-brand-orange">
-              What Build does
+              What sharing does
             </div>
             <div className="mt-5 space-y-3">
               {[
@@ -481,7 +462,7 @@ function BuildLoggedOutLanding({
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         {forkSource && <ForkSourcePanel forkSource={forkSource} />}
         <div className="max-w-2xl border border-surface-200 bg-white p-5">
-          <h2 className="text-xl font-black text-surface-900">Sign in when you are ready to build</h2>
+          <h2 className="text-xl font-black text-surface-900">Sign in when you are ready to share</h2>
           <p className="mt-2 text-sm leading-6 text-surface-600">
             Browse existing paths without an account. To submit a run, PathForge needs a profile so review can keep source links, notes, and publish decisions attached to the right builder.
           </p>
@@ -886,7 +867,6 @@ export default function SubmitProjectPage() {
   const resolvedSourceRunProvider = selectedSourceRunProvider === 'Other'
     ? sourceRunCustomProvider.trim()
     : selectedSourceRunProvider
-  const modelSuggestions = sourceRunModelSuggestions[selectedSourceRunProvider] ?? []
   const modelPlaceholder = selectedSourceRunProvider === 'OpenRouter'
     ? 'Paste the exact routed model, e.g. anthropic/claude-sonnet-4.6'
     : 'Exact model shown, or Not sure'
@@ -898,6 +878,13 @@ export default function SubmitProjectPage() {
     resolvedSourceRunProvider &&
     sourceRunModel.trim()
   )
+  const sourceRunReadiness = [
+    { label: 'Project title', ready: Boolean(sourceRunTitle.trim()) },
+    { label: 'Shared session link', ready: Boolean(sourceRunUrl.trim()) },
+    { label: 'AI service', ready: Boolean(resolvedSourceRunProvider) },
+    { label: 'Exact model', ready: Boolean(sourceRunModel.trim()) },
+  ]
+  const sourceRunReadyCount = sourceRunReadiness.filter((item) => item.ready).length
 
   function toggleSection(section: number) {
     setOpenSections(prev => {
@@ -919,77 +906,38 @@ export default function SubmitProjectPage() {
 
   return (
     <div className="bg-surface-50">
-      <section className="relative overflow-hidden border-b border-surface-200 bg-white text-surface-900">
-        <div className="absolute inset-0 opacity-70 [background-image:linear-gradient(var(--color-surface-100)_1px,transparent_1px),linear-gradient(90deg,var(--color-surface-100)_1px,transparent_1px)] [background-size:54px_54px]" aria-hidden="true" />
-        <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[minmax(0,1fr)_440px] lg:px-8 lg:py-16">
-          <div>
-            <Link href="/paths" className="mb-7 inline-flex items-center gap-2 text-sm text-surface-500 transition-colors hover:text-brand-orange">
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              Back to Build Paths
-            </Link>
-            <div className="mb-4 inline-flex items-center gap-2 border border-brand-orange/35 bg-brand-orange/10 px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-brand-orange">
-              <Link2 className="h-3.5 w-3.5" aria-hidden="true" />
-              Build intake
+      <section className="border-b border-surface-200 bg-white text-surface-900">
+        <div className="mx-auto max-w-7xl px-4 py-9 sm:px-6 lg:px-8 lg:py-11">
+          <Link href="/paths" className="inline-flex items-center gap-2 text-sm text-surface-500 transition-colors hover:text-brand-orange">
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            Back to Build Paths
+          </Link>
+          <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
+            <div>
+              <div className="inline-flex items-center gap-2 font-mono text-[10px] font-black uppercase tracking-[0.18em] text-brand-orange">
+                <Link2 className="h-4 w-4" aria-hidden="true" />
+                Share a finished AI build
+              </div>
+              <h1 className="mt-3 max-w-3xl text-4xl font-black leading-[1.02] tracking-[-0.04em] sm:text-5xl">
+                Bring the source. Keep the work trustworthy.
+              </h1>
+              <p className="mt-4 max-w-3xl text-base leading-7 text-surface-600">
+                Paste the real provider conversation, identify the model, and point review to the finished result. Your source link, model info, and notes only enter the review queue; nothing publishes automatically.
+              </p>
             </div>
-            <h1 className="max-w-3xl text-4xl font-black leading-[1.04] tracking-[-0.03em] sm:text-5xl lg:text-6xl">
-              Submit the run. Let PathForge structure the project.
-            </h1>
-            <p className="mt-5 max-w-2xl text-base leading-relaxed text-surface-600">
-              This page is for real AI sessions: a source link, exact model details, and notes for review. It is not the suggestion box, and it does not publish anything by itself.
-            </p>
-            <div className="mt-8 grid max-w-2xl gap-3 sm:grid-cols-3">
-              <div className="border border-surface-200 bg-white p-3">
-                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand-orange">Input</div>
-                <div className="mt-1 text-sm font-bold">AI session link</div>
-              </div>
-              <div className="border border-surface-200 bg-white p-3">
-                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand-orange">Queue</div>
-                <div className="mt-1 text-sm font-bold">Normal review</div>
-              </div>
-              <div className="border border-surface-200 bg-white p-3">
-                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand-orange">Publish</div>
-                <div className="mt-1 text-sm font-bold">Admin decision</div>
-              </div>
-            </div>
-            <Link href="/guide#submit" className="mt-5 inline-flex items-center gap-2 border border-surface-300 bg-white px-4 py-2.5 text-sm font-bold text-surface-900 transition hover:border-brand-orange">
-              <FileText className="h-4 w-4 text-brand-orange" aria-hidden="true" />
-              See exactly what to click
-            </Link>
+            <aside className="border-l-2 border-brand-orange bg-primary-50 px-4 py-3 text-xs leading-5 text-surface-600">
+              <strong className="block text-sm text-surface-900">Is this the right place?</strong>
+              <p className="mt-1">
+                Need someone to make it? <Link href="/requests" className="font-bold text-brand-orange hover:underline">Post a request</Link>.
+                {' '}Have site feedback? <Link href="/suggestion-box" className="font-bold text-brand-orange hover:underline">Use Suggestion Box</Link>.
+                {' '}Adapting a path? Fork the exact response first.
+              </p>
+            </aside>
           </div>
-
-          <aside className="border border-surface-200 bg-primary-50 p-5 shadow-[16px_16px_0_rgba(232,122,44,0.12)]">
-            <div className="flex items-center justify-between border-b border-primary-200 pb-4">
-              <div>
-                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-surface-500">Source package</div>
-                <div className="mt-1 text-lg font-black">Review-ready intake</div>
-              </div>
-              <div className="flex h-11 w-11 items-center justify-center bg-brand-orange text-white">
-                <Link2 className="h-5 w-5" aria-hidden="true" />
-              </div>
-            </div>
-            <div className="mt-5 space-y-3">
-              {[
-                ['01', 'Session URL', 'The original conversation stays attached.'],
-                ['02', 'Model evidence', 'Provider, exact model, and settings stay separate.'],
-                ['03', 'Review notes', 'Point review toward the final artifact and caveats.'],
-                ['04', 'No auto-publish', 'The entry waits for an explicit admin step.'],
-              ].map(([number, title, body]) => (
-                <div key={number} className="grid grid-cols-[42px_1fr] gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center border border-primary-200 bg-white font-mono text-xs font-black text-brand-orange">
-                    {number}
-                  </div>
-                  <div className="border-l border-primary-200 pl-3">
-                    <div className="text-sm font-bold text-surface-900">{title}</div>
-                    <p className="mt-0.5 text-xs leading-5 text-surface-600">{body}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </aside>
         </div>
       </section>
 
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+      <div className="mx-auto max-w-7xl px-4 py-7 sm:px-6 lg:px-8 lg:py-9">
 
       {repairId && (
         <div className="mb-6 flex items-start gap-3 border border-amber-200 bg-amber-50 p-4 text-amber-950">
@@ -1040,99 +988,31 @@ export default function SubmitProjectPage() {
         </div>
       )}
 
-      <section className="mb-8 overflow-hidden border border-surface-200 bg-white shadow-[10px_10px_0_rgba(24,24,27,0.06)]">
-        <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_330px]">
-          <div>
-            <div className="border-b border-surface-200 bg-white px-5 py-5 sm:px-6">
-              <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-brand-orange">
-                Preferred intake
-              </div>
-              <h2 className="mt-1 text-2xl font-black tracking-[-0.02em] text-surface-900">
-                Start from the actual AI session
-              </h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-surface-600">
-                Paste the share link and the model info. The agent structures it after review, keeping this separate from product feedback and build requests.
-              </p>
-            </div>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
+        <section className="overflow-hidden border border-surface-200 bg-white shadow-[10px_10px_0_rgba(24,24,27,0.05)]">
+          <div className="border-b border-surface-200 px-5 py-5 sm:px-6">
+            <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-brand-orange">Source-run intake</div>
+            <h2 className="mt-1 text-2xl font-black tracking-[-0.02em] text-surface-900">Submit the original session</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-surface-600">
+              Use the shared ChatGPT, Claude, Gemini, OpenRouter, or other provider run. Review preserves the evidence and decides whether the result belongs in the public library.
+            </p>
+          </div>
 
-            <div className="grid gap-3 border-b border-surface-200 bg-surface-50 p-5 sm:p-6 md:grid-cols-2">
-            <button
-              type="button"
-              onClick={() => setIntakeMode('source-run')}
-              className={intakeCardClass(intakeMode === 'source-run')}
-              aria-pressed={intakeMode === 'source-run'}
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div className="inline-flex h-9 w-9 items-center justify-center border border-brand-orange/35 bg-brand-orange/10 text-brand-orange">
-                  <Link2 className="h-4 w-4" aria-hidden="true" />
-                </div>
-                {intakeMode === 'source-run' && <CheckCircle2 className="h-4 w-4 text-brand-orange" aria-hidden="true" />}
-              </div>
-              <div className="mt-3 font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-                AI session
-              </div>
-              <div className="mt-1 text-base font-black text-surface-900">Let the agent structure it</div>
-              <p className="mt-2 text-xs leading-5 text-surface-600">
-                Paste the ChatGPT, Gemini, Claude, or OpenRouter run. It enters the normal review queue with the
-                source link, model info, and notes only.
-              </p>
-            </button>
+          {intakeMode === 'source-run' && (
+            <div>
+              <form onSubmit={prepareSourceRun} className="space-y-6 p-5 sm:p-6">
+              <fieldset className="space-y-5">
+                <legend className="mb-1 flex w-full items-center gap-3 border-b border-surface-100 pb-3">
+                  <span className="flex h-7 w-7 items-center justify-center bg-surface-900 font-mono text-[10px] font-black text-white">01</span>
+                  <span>
+                    <strong className="block text-sm text-surface-900">Source conversation</strong>
+                    <span className="block text-xs text-surface-500">Name the result and attach its real provider session.</span>
+                  </span>
+                </legend>
 
-            <button
-              type="button"
-              disabled
-              className="relative cursor-not-allowed overflow-hidden border border-red-200 bg-red-50/30 p-4 text-left opacity-85"
-              aria-disabled="true"
-            >
-              <div className="relative opacity-45">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="inline-flex h-9 w-9 items-center justify-center border border-brand-blue/35 bg-brand-blue/10 text-brand-blue">
-                    <Keyboard className="h-4 w-4" aria-hidden="true" />
-                  </div>
-                  <CheckCircle2 className="h-4 w-4 text-surface-300" aria-hidden="true" />
-                </div>
-                <div className="mt-3 font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-                  Manual entry
-                </div>
-                <div className="mt-1 text-base font-black text-surface-900">Fallback: build it by hand</div>
-                <p className="mt-2 text-xs leading-5 text-surface-600">
-                  Manually add project basics, prompts, responses, screenshots, and final result when no usable source
-                  link is available.
-                </p>
-              </div>
-              <div className="pointer-events-none absolute left-[-12%] top-1/2 flex h-9 w-[124%] -translate-y-1/2 -rotate-6 items-center justify-center bg-red-600 text-white shadow-sm" aria-hidden="true">
-                <span className="font-mono text-[10px] font-black uppercase tracking-[0.16em]">
-                  Not available for now
-                </span>
-              </div>
-            </button>
-            </div>
-
-        {intakeMode === 'source-run' && (
-          <div>
-            <form onSubmit={prepareSourceRun} className="space-y-5 p-5 sm:p-6">
-              <div className="grid gap-3 border border-brand-orange/25 bg-brand-orange/[0.04] p-3 text-xs text-surface-700 sm:grid-cols-4">
                 <div>
-                  <div className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-orange">1 · Source</div>
-                  <p className="mt-1 leading-5">Paste the real AI session link.</p>
-                </div>
-                <div>
-                  <div className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-orange">2 · Extract</div>
-                  <p className="mt-1 leading-5">Agent reads prompts, responses, code, files, and screenshots.</p>
-                </div>
-                <div>
-                  <div className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-orange">3 · Review</div>
-                  <p className="mt-1 leading-5">Admin reviews the source run and notes.</p>
-                </div>
-                <div>
-                  <div className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-orange">4 · Decide</div>
-                  <p className="mt-1 leading-5">Nothing is public until an explicit publish step.</p>
-                </div>
-              </div>
-
-              <div>
                 <label htmlFor="project-source-run-title" className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-                  Title
+                  Project title<RequiredDot />
                 </label>
                 <input
                   id="project-source-run-title"
@@ -1140,27 +1020,40 @@ export default function SubmitProjectPage() {
                   value={sourceRunTitle}
                   onChange={(event) => setSourceRunTitle(event.target.value)}
                   placeholder="Decision matrix from Gemini Flash"
-                  className="mt-2 w-full border border-surface-200 bg-surface-50 px-3 py-2 text-sm text-surface-900 outline-none transition focus:border-brand-orange focus:bg-white"
+                  required
+                  className="mt-2 min-h-11 w-full border border-surface-200 bg-surface-50 px-3 py-2 text-sm text-surface-900 outline-none transition focus:border-brand-orange focus:bg-white"
                 />
               </div>
 
               <div>
                 <label htmlFor="project-source-run-url" className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-                  AI session link
+                  AI session link<RequiredDot />
                 </label>
-                <div className="mt-2 flex items-center border border-surface-200 bg-surface-50 focus-within:border-brand-orange focus-within:bg-white">
+                <div className="mt-2 flex min-h-11 items-center border border-surface-200 bg-surface-50 focus-within:border-brand-orange focus-within:bg-white">
                   <Link2 className="ml-3 h-4 w-4 shrink-0 text-surface-400" aria-hidden="true" />
                   <input
+                    type="url"
                     id="project-source-run-url"
                     name="source_url"
                     value={sourceRunUrl}
                     onChange={(event) => setSourceRunUrl(event.target.value)}
                     placeholder="https://chatgpt.com/c/... or another supported session link"
+                    required
                     className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm text-surface-900 outline-none"
                   />
                 </div>
+                <p className="mt-1 text-xs leading-5 text-surface-500">Use the provider&apos;s shared conversation URL, not a link to the final file by itself.</p>
               </div>
+              </fieldset>
 
+              <fieldset className="space-y-5">
+                <legend className="mb-1 flex w-full items-center gap-3 border-b border-surface-100 pb-3">
+                  <span className="flex h-7 w-7 items-center justify-center bg-surface-900 font-mono text-[10px] font-black text-white">02</span>
+                  <span>
+                    <strong className="block text-sm text-surface-900">Model identity</strong>
+                    <span className="block text-xs text-surface-500">Record what the provider actually shows.</span>
+                  </span>
+                </legend>
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <label htmlFor="project-source-run-provider" className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
@@ -1174,7 +1067,7 @@ export default function SubmitProjectPage() {
                       setSourceRunProvider(event.target.value)
                       setSourceRunProviderTouched(Boolean(event.target.value))
                     }}
-                    className="mt-2 w-full border border-surface-200 bg-surface-50 px-3 py-2 text-sm text-surface-900 outline-none transition focus:border-brand-orange focus:bg-white"
+                    className="mt-2 min-h-11 w-full border border-surface-200 bg-surface-50 px-3 py-2 text-sm text-surface-900 outline-none transition focus:border-brand-orange focus:bg-white"
                   >
                     <option value="">Auto-detect from link</option>
                     {sourceRunProviderOptions.map((provider) => (
@@ -1200,21 +1093,14 @@ export default function SubmitProjectPage() {
                   <input
                     id="project-source-run-model"
                     name="model_used"
-                    list="project-source-run-model-suggestions"
                     value={sourceRunModel}
                     onChange={(event) => setSourceRunModel(event.target.value)}
                     placeholder={modelPlaceholder}
-                    className="mt-2 w-full border border-surface-200 bg-surface-50 px-3 py-2 text-sm text-surface-900 outline-none transition focus:border-brand-orange focus:bg-white"
+                    required
+                    className="mt-2 min-h-11 w-full border border-surface-200 bg-surface-50 px-3 py-2 text-sm text-surface-900 outline-none transition focus:border-brand-orange focus:bg-white"
                   />
-                  {modelSuggestions.length > 0 && (
-                    <datalist id="project-source-run-model-suggestions">
-                      {modelSuggestions.map((model) => (
-                        <option key={model} value={model} />
-                      ))}
-                    </datalist>
-                  )}
                   <p className="mt-1 text-xs text-surface-500">
-                    Type Not sure if the session does not show the exact model.
+                    Copy the visible model label exactly. Type Not sure if the session does not show the exact model.
                   </p>
                 </div>
               </div>
@@ -1249,34 +1135,50 @@ export default function SubmitProjectPage() {
                   className="mt-2 w-full resize-y border border-surface-200 bg-surface-50 px-3 py-2 text-sm leading-6 text-surface-900 outline-none transition focus:border-brand-orange focus:bg-white"
                 />
               </div>
+              </fieldset>
 
-              <div>
-                <label htmlFor="project-source-run-notes" className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-                  Notes for review
-                </label>
+              <fieldset className="space-y-4 border border-brand-orange/30 bg-brand-orange/[0.035] p-4 sm:p-5">
+                <legend className="flex items-center gap-3 bg-white px-2">
+                  <span className="flex h-7 w-7 items-center justify-center bg-brand-orange font-mono text-[10px] font-black text-white">03</span>
+                  <span>
+                    <strong className="block text-sm text-surface-900">Review handoff</strong>
+                    <span className="block text-xs text-surface-500">Help review find the finished thing quickly.</span>
+                  </span>
+                </legend>
+                <div className="border-l-2 border-brand-orange pl-3 text-xs leading-5 text-surface-600">
+                  <strong className="text-surface-900">Where is the final result?</strong>{' '}
+                  Name the final response, file, code block, or screenshot. Add any privacy caveat or known limitation.
+                </div>
+                <div>
+                  <label htmlFor="project-source-run-notes" className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
+                    Notes for review <span className="font-sans normal-case tracking-normal text-surface-400">(recommended)</span>
+                  </label>
                 <textarea
                   id="project-source-run-notes"
                   name="notes"
                   value={sourceRunNotes}
                   onChange={(event) => setSourceRunNotes(event.target.value)}
                   rows={3}
-                  placeholder="Optional: tell review which response is the final artifact, what should stay private, or what screenshots/files matter."
-                  className="mt-2 w-full resize-y border border-surface-200 bg-surface-50 px-3 py-2 text-sm leading-6 text-surface-900 outline-none transition focus:border-brand-orange focus:bg-white"
+                  placeholder="Example: The complete working artifact is in response 03 as app.html. Response 02 is an earlier version. No private information is included."
+                  className="mt-2 w-full resize-y border border-brand-orange/30 bg-white px-3 py-2 text-sm leading-6 text-surface-900 outline-none transition focus:border-brand-orange"
                 />
               </div>
+              </fieldset>
 
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs leading-5 text-surface-500">
-                  This enters the normal review queue as source link, model info, and notes. It does not create a public project page.
-                </p>
+              <div className="border-t border-surface-200 pt-5">
                 <button
                   type="submit"
                   disabled={sourceRunSubmitting || !canSubmitSourceRun}
-                  className="inline-flex items-center justify-center gap-2 border border-brand-orange bg-brand-orange px-3 py-2 text-xs font-semibold uppercase tracking-wider text-white transition hover:bg-brand-orange-dark disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 bg-brand-orange px-5 py-3 text-sm font-black text-white transition hover:bg-brand-orange-dark disabled:cursor-not-allowed disabled:bg-surface-200 disabled:text-surface-500"
                 >
                   <Link2 className="h-3.5 w-3.5" aria-hidden="true" />
                   {sourceRunSubmitting ? 'Submitting...' : 'Submit to queue'}
                 </button>
+                <p className="mt-3 text-center text-xs leading-5 text-surface-500">
+                  {canSubmitSourceRun
+                    ? 'Ready to send. It does not create a public project page.'
+                    : `${sourceRunReadyCount} of 4 required details complete. Finish the checklist to submit.`}
+                </p>
               </div>
             </form>
 
@@ -1286,51 +1188,85 @@ export default function SubmitProjectPage() {
               </div>
             )}
 
-          </div>
-        )}
-          </div>
+              <div className="border-t border-surface-200 bg-surface-50 p-4 sm:px-6">
+                <button
+                  type="button"
+                  disabled
+                  className="relative flex w-full cursor-not-allowed items-center gap-3 overflow-hidden border border-red-200 bg-white px-4 py-3 text-left opacity-75"
+                  aria-disabled="true"
+                >
+                  <Keyboard className="h-4 w-4 shrink-0 text-surface-400" aria-hidden="true" />
+                  <span className="min-w-0 pr-32">
+                    <span className="block font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">Manual entry</span>
+                    <span className="mt-0.5 block text-xs leading-5 text-surface-600">No usable source link? Manual reconstruction is closed.</span>
+                  </span>
+                  <span className="pointer-events-none absolute -right-4 top-1/2 flex h-7 w-40 -translate-y-1/2 -rotate-6 items-center justify-center bg-red-600 font-mono text-[9px] font-black uppercase tracking-[0.12em] text-white" aria-hidden="true">
+                    Not available for now
+                  </span>
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
 
-          <aside className="border-t border-surface-200 bg-primary-50 p-5 text-surface-900 lg:border-l lg:border-t-0">
-            <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-brand-orange">
-              This page is for
+        <aside className="space-y-4 lg:sticky lg:top-24">
+          <section className="border border-surface-200 bg-surface-900 p-5 text-white shadow-[8px_8px_0_rgba(232,122,44,0.13)]" aria-labelledby="submission-packet-title">
+            <div className="flex items-start justify-between gap-4 border-b border-white/15 pb-4">
+              <div>
+                <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-brand-orange-light">Submission packet</div>
+                <h2 id="submission-packet-title" className="mt-1 text-xl font-black">{sourceRunReadyCount} / 4 ready</h2>
+              </div>
+              <span className="flex h-9 w-9 items-center justify-center bg-brand-orange text-white">
+                <Link2 className="h-4 w-4" aria-hidden="true" />
+              </span>
             </div>
-            <div className="mt-4 space-y-4">
-              <div className="border border-primary-200 bg-white p-4">
-                <div className="flex items-center gap-2 text-sm font-bold">
-                  <Link2 className="h-4 w-4 text-brand-orange" aria-hidden="true" />
-                  Captured AI runs
-                </div>
-                <p className="mt-2 text-xs leading-5 text-surface-600">
-                  Submit the actual session so review can preserve the prompt and response chain.
-                </p>
-              </div>
-              <div className="border border-primary-200 bg-white p-4">
-                <div className="flex items-center gap-2 text-sm font-bold">
-                  <FileText className="h-4 w-4 text-brand-orange" aria-hidden="true" />
-                  Evidence for review
-                </div>
-                <p className="mt-2 text-xs leading-5 text-surface-600">
-                  Model, settings, source link, and notes stay attached before anything is public.
-                </p>
-              </div>
-              <div className="border border-brand-blue/35 bg-brand-blue/10 p-4">
-                <div className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-blue-light">
-                  Not the suggestion box
-                </div>
-                <p className="mt-2 text-xs leading-5 text-surface-600">
-                  Website feedback, feature ideas, and moderation concerns belong in Suggestion Box.
-                </p>
-              </div>
+            <ul className="mt-4 space-y-2" aria-label="Required submission details">
+              {sourceRunReadiness.map((item) => (
+                <li key={item.label} className="flex items-center gap-3 border border-white/10 bg-white/[0.04] px-3 py-2.5 text-xs">
+                  <span className={`flex h-5 w-5 shrink-0 items-center justify-center ${item.ready ? 'bg-emerald-500 text-white' : 'border border-white/25 text-surface-400'}`} aria-hidden="true">
+                    {item.ready ? <Check className="h-3 w-3" /> : '·'}
+                  </span>
+                  <span className={item.ready ? 'text-white' : 'text-surface-300'}>{item.label}</span>
+                </li>
+              ))}
+            </ul>
+            <div className={`mt-3 border px-3 py-3 text-xs leading-5 ${sourceRunNotes.trim() ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-100' : 'border-brand-orange/45 bg-brand-orange/10 text-primary-100'}`}>
+              <strong className="block text-white">Final-result clue {sourceRunNotes.trim() ? 'added' : 'recommended'}</strong>
+              {sourceRunNotes.trim() ? 'Review has a handoff note.' : 'Tell review which response or file is the finished artifact.'}
             </div>
-          </aside>
-        </div>
-      </section>
+          </section>
+
+          <section className="border border-surface-200 bg-white p-5">
+            <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-surface-500">After submission</div>
+            <ol className="mt-4 space-y-4">
+              {[
+                ['01', 'Received in My Forge', 'The source link and model evidence get a durable status record.'],
+                ['02', 'Source and result reviewed', 'The conversation, artifact, safety, and presentation are checked.'],
+                ['03', 'A clear decision', 'Useful work can publish; close work may return with a repair note; weak work can be declined.'],
+              ].map(([number, title, body]) => (
+                <li key={number} className="grid grid-cols-[28px_1fr] gap-3">
+                  <span className="flex h-7 w-7 items-center justify-center bg-primary-50 font-mono text-[9px] font-black text-brand-orange">{number}</span>
+                  <span>
+                    <strong className="block text-sm text-surface-900">{title}</strong>
+                    <span className="mt-0.5 block text-xs leading-5 text-surface-500">{body}</span>
+                  </span>
+                </li>
+              ))}
+            </ol>
+            <p className="mt-4 border-t border-surface-200 pt-4 text-xs font-bold leading-5 text-surface-700">Nothing is public until an explicit publish step.</p>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+              <Link href="/my-forge" className="inline-flex min-h-10 items-center justify-center border border-surface-300 px-3 text-xs font-bold text-surface-900 hover:border-brand-orange">Open My Forge</Link>
+              <Link href="/guide#submit" className="inline-flex min-h-10 items-center justify-center border border-surface-300 px-3 text-xs font-bold text-surface-900 hover:border-brand-orange">See the walkthrough</Link>
+            </div>
+          </section>
+        </aside>
+      </div>
 
       {/* Two-pane builder on lg+: form on the left (kept at its original ~680px
           max so no field gets unwieldy), live preview rail on the right. Mobile
           stacks vertically (preview drops below the form so the first interaction
           is always the form). */}
-      {intakeMode === 'manual' ? (
+      {intakeMode === 'manual' && (
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)] lg:gap-10 lg:items-start">
       <form onSubmit={handleSubmit} noValidate className="space-y-4 max-w-2xl">
 
@@ -1777,19 +1713,6 @@ export default function SubmitProjectPage() {
           />
         </aside>
       </div>
-      ) : (
-        <div className="border border-dashed border-surface-300 bg-white px-5 py-8">
-          <div className="max-w-2xl">
-            <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-              Session first
-            </div>
-            <h2 className="mt-2 text-2xl font-black text-surface-900">Paste the run and send it to review.</h2>
-            <p className="mt-3 text-sm leading-6 text-surface-600">
-              This path is for captured sessions, not manual reconstruction. The entry stays as source link plus notes
-              until an explicit admin action decides what to do next.
-            </p>
-          </div>
-        </div>
       )}
       </div>
     </div>

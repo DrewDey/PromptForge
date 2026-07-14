@@ -6,7 +6,7 @@ import {
 } from '@/lib/activation/session'
 import { validateActivationEventPayload } from '@/lib/activation/validation'
 import type { ActivationEnvironment } from '@/lib/activation/contract'
-import { createClient } from '@/lib/supabase/server'
+import { ActivationGatewayError, callActivationGateway } from '@/lib/activation/gateway'
 
 export const runtime = 'nodejs'
 
@@ -74,55 +74,47 @@ export async function POST(request: NextRequest) {
     return analyticsResponse(400)
   }
 
+  let cookieValue: string | undefined
   try {
-    const ingestSecret = process.env.ACTIVATION_INGEST_SECRET
-    if (!ingestSecret) throw new Error('Activation ingestion is not configured.')
-    const supabase = await createClient()
     const session = await resolveActivationSession(request)
+    cookieValue = session.cookieValue
     const environment = currentEnvironment()
-    const { data, error } = await supabase.rpc('pathforge_record_product_event_from_app', {
-      p_ingest_secret: ingestSecret,
-      p_event_id: payload.eventId,
-      p_session_id: session.sessionId,
-      p_event_name: payload.eventName,
-      p_environment: environment,
-      p_path: payload.path,
-      p_surface: payload.surface ?? null,
-      p_action: payload.action ?? null,
-      p_project_id: payload.projectId ?? null,
-      p_project_title: payload.projectTitle ?? null,
-      p_source_run_id: payload.sourceRunId ?? null,
-      p_metric_value: payload.metricValue ?? null,
-      p_schema_version: payload.schemaVersion,
-    })
-
-    if (error) {
-      const rateLimited = error.code === 'P0001' && error.message.includes('rate limit')
+    let data: { inserted: boolean; actor_type: string }
+    try {
+      data = await callActivationGateway('record', {
+        payload: {
+          ...payload,
+          sessionId: session.sessionId,
+          environment,
+        },
+      })
+    } catch (error) {
+      const rateLimited = error instanceof ActivationGatewayError && error.status === 429
       console.warn(JSON.stringify({
         event: 'activation_event_rejected',
         eventName: payload.eventName,
         environment,
-        reason: rateLimited ? 'rate_limited' : 'database_error',
+        reason: rateLimited ? 'rate_limited' : 'gateway_rejected',
         durationMs: Math.round(performance.now() - startedAt),
       }))
-      return analyticsResponse(rateLimited ? 429 : 503, session.cookieValue)
+      return analyticsResponse(rateLimited ? 429 : 503, cookieValue)
     }
 
     console.info(JSON.stringify({
       event: 'activation_event_recorded',
       eventName: payload.eventName,
       environment,
-      actorType: data?.actor_type ?? 'unknown',
-      inserted: Boolean(data?.inserted),
+      actorType: data.actor_type,
+      inserted: data.inserted,
       durationMs: Math.round(performance.now() - startedAt),
     }))
-    return analyticsResponse(202, session.cookieValue)
+    return analyticsResponse(202, cookieValue)
   } catch {
     console.error(JSON.stringify({
       event: 'activation_event_failed',
       eventName: payload.eventName,
       durationMs: Math.round(performance.now() - startedAt),
     }))
-    return analyticsResponse(503)
+    return analyticsResponse(503, cookieValue)
   }
 }

@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { createClient } from '@/lib/supabase/server'
+import { callActivationGateway } from './gateway'
 import type { ActivationDashboardData, ActivationEnvironment } from './contract'
 
 export const ACTIVATION_WINDOWS = [7, 30, 90] as const
@@ -17,11 +17,9 @@ export async function getActivationDashboard(
   days: ActivationWindow,
   environment: ActivationEnvironment = 'production',
 ) {
-  const supabase = await createClient()
-  const { data, error } = await supabase.rpc('pathforge_activation_dashboard_for_admin', {
-    p_days: days,
-    p_environment: environment,
+  const response = await callActivationGateway<{ data: ActivationDashboardData }>('dashboard', {
+    days,
+    environment,
   })
-  if (error) throw new Error(`Activation dashboard query failed: ${error.message}`)
-  return data as ActivationDashboardData
+  return response.data
 }

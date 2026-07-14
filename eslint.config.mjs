@@ -9,6 +9,7 @@ const generatedAndRuntimeIgnores = [
   "out/**",
   "public/artifacts/**",
   "seed-runs/**",
+  "supabase/functions/**",
 ];
 
 const config = [

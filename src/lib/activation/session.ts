@@ -10,7 +10,7 @@ const MAX_CLOCK_SKEW_SECONDS = 60
 const encoder = new TextEncoder()
 
 function signingSecret() {
-  const secret = process.env.ACTIVATION_COOKIE_SECRET ?? process.env.SUPABASE_SERVICE_ROLE_KEY
+  const secret = process.env.ACTIVATION_COOKIE_SECRET ?? process.env.ACTIVATION_INGEST_SECRET
   if (!secret) throw new Error('Activation event sessions require a server-side signing secret.')
   return `pathforge-activation-session-v1:${secret}`
 }

@@ -59,9 +59,9 @@ PathForge stores only a strict event name and small public classifications. It d
 - user agents;
 - email addresses.
 
-The browser receives a signed, HttpOnly, SameSite 30-minute session cookie. It cannot read or invent a valid session identifier. The identifier is not shared across sites and is not renewed without PathForge activity.
+The browser receives a signed, HttpOnly, SameSite 30-minute session cookie. Its issue time is covered by the signature, so browser expiry and server verification both enforce the rolling lifetime. The browser cannot read or invent a valid session identifier. The identifier is not shared across sites and is not renewed without PathForge activity.
 
-The ingestion route is same-origin, payload-limited, allowlisted, and best-effort so measurement cannot break a product action. The database applies an atomic 90-event-per-10-minute session quota. Events are append-only, and maintenance removes events older than 400 days. The public Data API grants neither anonymous nor authenticated users access to the event table or RPCs.
+The ingestion route is same-origin, payload-limited, allowlisted, abortable, and best-effort so measurement cannot break a product action. It authenticates to one narrowly scoped database gateway with a dedicated server-side secret; Postgres stores only the secret digest and derives user/internal actor classification from the verified Supabase identity. The web runtime does not hold the Supabase service-role key. The database applies an atomic 90-event-per-10-minute session quota. Events are append-only, and maintenance removes events older than 400 days. The public Data API grants neither anonymous nor authenticated users table access; the only public-facing RPC capability is the secret-gated insert gateway, while dashboard access independently requires a signed-in admin.
 
 `actor_type` keeps `anonymous` and ordinary `member` traffic separate from `seed`, `team`, and `admin` traffic. Primary and supporting product metrics use only anonymous/member activity. Preview and development environments are also separated from production.
 

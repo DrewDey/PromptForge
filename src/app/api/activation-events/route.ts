@@ -5,8 +5,7 @@ import {
   resolveActivationSession,
 } from '@/lib/activation/session'
 import { validateActivationEventPayload } from '@/lib/activation/validation'
-import type { ActivationActorType, ActivationEnvironment } from '@/lib/activation/contract'
-import { createAdminClient } from '@/lib/supabase/admin'
+import type { ActivationEnvironment } from '@/lib/activation/contract'
 import { createClient } from '@/lib/supabase/server'
 
 export const runtime = 'nodejs'
@@ -38,34 +37,6 @@ function requestIsSameOrigin(request: NextRequest) {
     ))
   } catch {
     return false
-  }
-}
-
-async function actorContext(admin: ReturnType<typeof createAdminClient>) {
-  try {
-    const supabase = await createClient()
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
-    if (userError && userError.name !== 'AuthSessionMissingError') return null
-    if (!user) return { userId: null, actorType: 'anonymous' as const }
-
-    const [profileResult, provenanceResult] = await Promise.all([
-      admin.from('profiles').select('role').eq('id', user.id).maybeSingle(),
-      admin.from('profile_provenance').select('kind').eq('profile_id', user.id).maybeSingle(),
-    ])
-    if (profileResult.error || provenanceResult.error) return null
-    const profile = profileResult.data
-    const provenance = provenanceResult.data
-
-    let actorType: ActivationActorType = 'member'
-    if (profile?.role === 'admin') actorType = 'admin'
-    else if (provenance?.kind === 'pathforge_seed') actorType = 'seed'
-    else if (provenance?.kind === 'pathforge_team') actorType = 'team'
-
-    return { userId: user.id, actorType }
-  } catch {
-    // An auth outage must not break the product journey. Drop the measurement
-    // instead of misclassifying a signed-in internal account as real traffic.
-    return null
   }
 }
 
@@ -104,19 +75,15 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Initialize the admin client before starting async session work. If local
-    // server credentials are missing, the request can fail quietly without
-    // leaving an orphaned signing promise behind.
-    const admin = createAdminClient()
+    const ingestSecret = process.env.ACTIVATION_INGEST_SECRET
+    if (!ingestSecret) throw new Error('Activation ingestion is not configured.')
+    const supabase = await createClient()
     const session = await resolveActivationSession(request)
-    const actor = await actorContext(admin)
-    if (!actor) return analyticsResponse(503, session.cookieValue)
     const environment = currentEnvironment()
-    const { data: inserted, error } = await admin.rpc('pathforge_record_product_event', {
+    const { data, error } = await supabase.rpc('pathforge_record_product_event_from_app', {
+      p_ingest_secret: ingestSecret,
       p_event_id: payload.eventId,
       p_session_id: session.sessionId,
-      p_user_id: actor.userId,
-      p_actor_type: actor.actorType,
       p_event_name: payload.eventName,
       p_environment: environment,
       p_path: payload.path,
@@ -145,8 +112,8 @@ export async function POST(request: NextRequest) {
       event: 'activation_event_recorded',
       eventName: payload.eventName,
       environment,
-      actorType: actor.actorType,
-      inserted: Boolean(inserted),
+      actorType: data?.actor_type ?? 'unknown',
+      inserted: Boolean(data?.inserted),
       durationMs: Math.round(performance.now() - startedAt),
     }))
     return analyticsResponse(202, session.cookieValue)

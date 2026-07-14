@@ -6,7 +6,7 @@ function Pulse({ className, style }: { className: string; style?: CSSProperties 
 
 export default function BuildPathsLoading() {
   return (
-    <main className="min-h-screen bg-white" aria-busy="true" aria-label="Loading build paths">
+    <div className="min-h-screen bg-white" aria-busy="true" aria-label="Loading build paths">
       <section className="border-b border-surface-800 bg-surface-900 text-white">
         <div className="mx-auto w-[min(1240px,calc(100%_-_28px))] py-10 sm:py-12">
           <Pulse className="h-3 w-52 bg-brand-orange/40" />
@@ -52,6 +52,6 @@ export default function BuildPathsLoading() {
           </div>
         </div>
       </section>
-    </main>
+    </div>
   )
 }

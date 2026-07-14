@@ -5,6 +5,8 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
+  Circle,
+  CircleX,
   Clock3,
   ExternalLink,
   FileWarning,
@@ -24,17 +26,78 @@ export const metadata: Metadata = {
   ...canonicalMetadata('/my-forge'),
 }
 
-const lifecycleSteps = [
-  { key: 'received', label: 'Received' },
-  { key: 'extracting', label: 'Extracting' },
-  { key: 'in_review', label: 'In review' },
-  { key: 'live', label: 'Live' },
-] as const
+type ProgressStep = {
+  key: string
+  label: string
+  state: 'complete' | 'current' | 'pending' | 'stopped'
+  stateLabel: string
+}
 
-function lifecycleIndex(lifecycle: MyForgeSourceRun['lifecycle']) {
-  if (lifecycle === 'needs_repair' || lifecycle === 'failed') return 2
-  if (lifecycle === 'declined') return 2
-  return lifecycleSteps.findIndex((step) => step.key === lifecycle)
+function reviewProgress(lifecycle: MyForgeSourceRun['lifecycle']): ProgressStep[] {
+  if (lifecycle === 'failed') {
+    return [
+      { key: 'received', label: 'Received', state: 'complete', stateLabel: 'Complete' },
+      { key: 'failed', label: 'Could not process', state: 'stopped', stateLabel: 'Processing stopped' },
+      { key: 'review', label: 'Review', state: 'pending', stateLabel: 'Not reached' },
+      { key: 'live', label: 'Live', state: 'pending', stateLabel: 'Not reached' },
+    ]
+  }
+
+  const terminalLabel = lifecycle === 'needs_repair'
+    ? 'Needs attention'
+    : lifecycle === 'declined'
+      ? 'Declined'
+      : 'Live'
+  const activeIndex = lifecycle === 'received'
+    ? 0
+    : lifecycle === 'extracting'
+      ? 1
+      : lifecycle === 'in_review'
+        ? 2
+        : 3
+  const labels = ['Received', 'Extracting', 'In review', terminalLabel]
+
+  return labels.map((label, index) => ({
+    key: `${index}-${label}`,
+    label,
+    state: index < activeIndex ? 'complete' : index === activeIndex ? 'current' : 'pending',
+    stateLabel: index < activeIndex
+      ? 'Complete'
+      : index === activeIndex
+        ? 'Current status'
+        : 'Not reached',
+  }))
+}
+
+function lifecycleHeading(lifecycle: MyForgeSourceRun['lifecycle']) {
+  if (lifecycle === 'needs_repair') return 'Needs attention'
+  if (lifecycle === 'failed') return 'Could not process'
+  if (lifecycle === 'in_review') return 'In review'
+  return lifecycle.charAt(0).toUpperCase() + lifecycle.slice(1)
+}
+
+function StatusIcon({ lifecycle }: { lifecycle: MyForgeSourceRun['lifecycle'] }) {
+  if (lifecycle === 'live') return <CheckCircle2 className="h-5 w-5 text-emerald-600" aria-hidden="true" />
+  if (lifecycle === 'declined') return <CircleX className="h-5 w-5 text-surface-600" aria-hidden="true" />
+  if (lifecycle === 'needs_repair' || lifecycle === 'failed') {
+    return <FileWarning className="h-5 w-5 text-rose-600" aria-hidden="true" />
+  }
+  return <Clock3 className="h-5 w-5 text-brand-blue" aria-hidden="true" />
+}
+
+function ProgressIcon({ step, lifecycle }: { step: ProgressStep; lifecycle: MyForgeSourceRun['lifecycle'] }) {
+  if (step.state === 'complete') return <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+  if (step.state === 'stopped' || (step.state === 'current' && lifecycle === 'declined')) {
+    return <CircleX className="h-4 w-4" aria-hidden="true" />
+  }
+  if (step.state === 'current' && lifecycle === 'needs_repair') {
+    return <FileWarning className="h-4 w-4" aria-hidden="true" />
+  }
+  if (step.state === 'current' && lifecycle === 'live') {
+    return <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+  }
+  if (step.state === 'current') return <Clock3 className="h-4 w-4" aria-hidden="true" />
+  return <Circle className="h-4 w-4" aria-hidden="true" />
 }
 
 function statusCopy(run: MyForgeSourceRun) {
@@ -73,14 +136,14 @@ export default async function MyForgeBuildDetailPage({
   const run = dashboard.sourceRuns.find((candidate) => candidate.id === id)
   if (!run) notFound()
 
-  const progressIndex = lifecycleIndex(run.lifecycle)
+  const progress = reviewProgress(run.lifecycle)
   const needsAction = (run.lifecycle === 'needs_repair' || run.lifecycle === 'failed') && !run.repairSubmissionId
   const liveHref = run.extractedProject ? getProjectHref({ id: run.extractedProject.id }) : null
 
   return (
-    <main className="min-h-[calc(100vh-3rem)] bg-surface-50">
+    <div className="min-h-[calc(100vh-3rem)] bg-surface-50">
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <Link href="/my-forge" className="inline-flex items-center gap-2 text-sm font-medium text-surface-500 hover:text-brand-orange">
+        <Link href="/my-forge" className="inline-flex items-center gap-2 text-sm font-medium text-surface-500 hover:text-brand-orange-ink">
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           My Forge
         </Link>
@@ -89,7 +152,7 @@ export default async function MyForgeBuildDetailPage({
           <header className="border-b border-surface-200 p-5 sm:p-7">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <div className="font-mono text-[10px] font-black uppercase tracking-[0.14em] text-brand-orange">Private build record</div>
+                <div className="font-mono text-[10px] font-black uppercase tracking-[0.14em] text-brand-orange-ink">Private build record</div>
                 <h1 className="mt-2 text-3xl font-black tracking-[-0.035em] text-surface-900 sm:text-4xl">{run.title}</h1>
                 <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-surface-500">
                   <span>Submitted {formatTimestamp(run.createdAt)}</span>
@@ -99,7 +162,7 @@ export default async function MyForgeBuildDetailPage({
               </div>
               <div className="flex shrink-0 flex-wrap gap-2">
                 {needsAction && (
-                  <Link href={`/build?repair=${encodeURIComponent(run.id)}`} className="inline-flex min-h-10 items-center gap-2 bg-surface-900 px-4 py-2 text-xs font-bold text-white hover:bg-brand-orange">
+                  <Link href={`/build?repair=${encodeURIComponent(run.id)}`} className="inline-flex min-h-10 items-center gap-2 bg-surface-900 px-4 py-2 text-xs font-bold text-white hover:bg-primary-700">
                     Repair run
                     <Wrench className="h-3.5 w-3.5" aria-hidden="true" />
                   </Link>
@@ -116,9 +179,9 @@ export default async function MyForgeBuildDetailPage({
 
           <section className="p-5 sm:p-7" aria-labelledby="status-heading">
             <div className="flex items-center gap-2">
-              {needsAction ? <FileWarning className="h-5 w-5 text-rose-600" aria-hidden="true" /> : run.lifecycle === 'live' ? <CheckCircle2 className="h-5 w-5 text-emerald-600" aria-hidden="true" /> : <Clock3 className="h-5 w-5 text-brand-blue" aria-hidden="true" />}
+              <StatusIcon lifecycle={run.lifecycle} />
               <h2 id="status-heading" className="text-xl font-black text-surface-900">
-                {run.lifecycle === 'needs_repair' ? 'Needs attention' : run.lifecycle.replace('_', ' ')}
+                {lifecycleHeading(run.lifecycle)}
               </h2>
             </div>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-surface-600">{statusCopy(run)}</p>
@@ -129,23 +192,37 @@ export default async function MyForgeBuildDetailPage({
                   <div className="text-sm font-black text-surface-900">Repair submitted</div>
                   <p className="mt-1 text-xs leading-5 text-surface-600">The next submission now owns the active review step for this build.</p>
                 </div>
-                <Link href={`/my-forge/builds/${run.repairSubmissionId}`} className="inline-flex min-h-10 shrink-0 items-center gap-2 bg-surface-900 px-3 py-2 text-xs font-bold text-white hover:bg-brand-orange">
+                <Link href={`/my-forge/builds/${run.repairSubmissionId}`} className="inline-flex min-h-10 shrink-0 items-center gap-2 bg-surface-900 px-3 py-2 text-xs font-bold text-white hover:bg-primary-700">
                   View repair
                   <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                 </Link>
               </div>
             )}
 
-            <ol className="mt-7 grid grid-cols-4 gap-1" aria-label="Review progress">
-              {lifecycleSteps.map((step, index) => {
-                const complete = run.lifecycle === 'live' || index < progressIndex
-                const current = index === progressIndex && run.lifecycle !== 'declined'
+            <ol className="mt-7 grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="Review progress">
+              {progress.map((step) => {
+                const activeTone = step.state === 'current'
+                  ? run.lifecycle === 'live'
+                    ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
+                    : run.lifecycle === 'declined'
+                      ? 'border-surface-400 bg-surface-100 text-surface-800'
+                      : 'border-brand-orange/40 bg-orange-50 text-surface-900'
+                  : step.state === 'stopped'
+                    ? 'border-rose-300 bg-rose-50 text-rose-800'
+                    : step.state === 'complete'
+                      ? 'border-emerald-200 bg-white text-emerald-800'
+                      : 'border-surface-200 bg-surface-50 text-surface-400'
                 return (
-                  <li key={step.key} className="min-w-0">
-                    <div className={`h-1.5 ${complete || current ? 'bg-brand-orange' : 'bg-surface-200'}`} aria-hidden="true" />
-                    <div className={`mt-2 truncate font-mono text-[9px] font-bold uppercase tracking-[0.08em] ${current ? 'text-surface-900' : complete ? 'text-brand-orange' : 'text-surface-400'}`}>
-                      {step.label}
+                  <li
+                    key={step.key}
+                    className={`min-w-0 border p-3 ${activeTone}`}
+                    aria-current={step.state === 'current' || step.state === 'stopped' ? 'step' : undefined}
+                  >
+                    <div className="flex items-center gap-2">
+                      <ProgressIcon step={step} lifecycle={run.lifecycle} />
+                      <span className="text-xs font-black leading-4">{step.label}</span>
                     </div>
+                    <div className="mt-2 font-mono text-[8px] font-bold uppercase tracking-[0.08em]">{step.stateLabel}</div>
                   </li>
                 )
               })}
@@ -181,7 +258,7 @@ export default async function MyForgeBuildDetailPage({
                     {run.forkSourceStepNumber && <span className="border border-surface-200 bg-surface-50 px-2 py-1">Response {run.forkSourceStepNumber}</span>}
                     {run.forkSourceRunId && <span className="border border-surface-200 bg-surface-50 px-2 py-1">Model run locked</span>}
                   </div>
-                  <Link href={getProjectHref({ id: run.forkSourceProjectId })} className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-[#07551f] hover:text-brand-orange">
+                  <Link href={getProjectHref({ id: run.forkSourceProjectId })} className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-[#07551f] hover:text-brand-orange-ink">
                     View parent path
                     <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                   </Link>
@@ -190,7 +267,7 @@ export default async function MyForgeBuildDetailPage({
                 <p className="mt-4 text-sm leading-6 text-surface-500">Original build. This entry does not branch from another PathForge response.</p>
               )}
               {run.resubmissionOfId && (
-                <Link href={`/my-forge/builds/${run.resubmissionOfId}`} className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-surface-700 hover:text-brand-orange">
+                <Link href={`/my-forge/builds/${run.resubmissionOfId}`} className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-surface-700 hover:text-brand-orange-ink">
                   <Wrench className="h-3.5 w-3.5" aria-hidden="true" />
                   View the entry this repair continues
                 </Link>
@@ -199,6 +276,6 @@ export default async function MyForgeBuildDetailPage({
           </section>
         </div>
       </div>
-    </main>
+    </div>
   )
 }

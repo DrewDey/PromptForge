@@ -32,6 +32,10 @@ const dashboardPath = 'src/app/my-forge/page.tsx'
 const dashboard = read(dashboardPath)
 const buildDetailPath = 'src/app/my-forge/builds/[id]/page.tsx'
 const buildDetail = read(buildDetailPath)
+const profileReadinessPath = 'src/lib/profile-readiness.ts'
+const profileReadiness = read(profileReadinessPath)
+const profileSettingsFormPath = 'src/components/ProfileSettingsForm.tsx'
+const profileSettingsForm = read(profileSettingsFormPath)
 const trackerPath = 'src/components/MyForgeResumeTracker.tsx'
 const tracker = read(trackerPath)
 const preparedPagePath = 'src/components/PreparedSourceRunPage.tsx'
@@ -126,11 +130,32 @@ for (const section of ['Active builds', 'Saved paths', 'Updated models', 'Your p
   requireText(dashboardPath, dashboard, section, `dashboard must include ${section}`)
 }
 requireText(dashboardPath, dashboard, 'Unfinished forks', 'My Forge must expose the durable fork return loop')
+requireText(dashboardPath, dashboard, 'order-2 self-start', 'mobile My Forge must put the work queue before the identity rail')
+requireText(dashboardPath, dashboard, 'lg:order-1', 'desktop My Forge must retain the identity rail before the work queue')
 requireText(dataPath, data, 'readUnfinishedForks', 'the dashboard must derive unfinished forks from owner state')
 requireText(dashboardPath, dashboard, 'LoggedOutForge', 'My Forge must have an intentional signed-out state')
 forbidText(dashboardPath, dashboard, 'adminNotes', 'dashboard must not expose admin-only review text')
 requireText(buildDetailPath, buildDetail, 'Private build record', 'owners need a durable submission detail view')
 requireText(buildDetailPath, buildDetail, 'Source evidence', 'submission detail must preserve source access')
+for (const terminalState of ['Needs attention', 'Could not process', 'Declined', 'Live']) {
+  requireText(buildDetailPath, buildDetail, terminalState, `submission progress must name the ${terminalState} state in text`)
+}
+for (const progressMeaning of ['Complete', 'Current status', 'Not reached', 'Processing stopped']) {
+  requireText(buildDetailPath, buildDetail, progressMeaning, `submission progress must explain ${progressMeaning} without relying on color`)
+}
+requireText(profileReadinessPath, profileReadiness, 'deriveProfileIdentityReadiness', 'profile identity needs one shared readiness contract')
+requireText(profileReadinessPath, profileReadiness, 'Published work is portfolio progress', 'identity readiness must stay separate from portfolio progress')
+requireText(dataPath, data, "from '../profile-readiness'", 'My Forge must use the shared identity-readiness contract')
+requireText(profileSettingsFormPath, profileSettingsForm, "from '@/lib/profile-readiness'", 'profile settings must use the shared identity-readiness contract')
+requireText(profileSettingsFormPath, profileSettingsForm, 'Portfolio progress', 'profile settings must present portfolio progress separately')
+forbidText(profileSettingsFormPath, profileSettingsForm, "label: 'At least one published project'", 'published work must not gate identity readiness')
+requireText(dataPath, data, 'sourceRunProviderLabel', 'legacy submissions need a stable provider-aware fallback label')
+requireText(dataPath, data, 'stableToken', 'legacy submission labels must remain distinguishable')
+for (const authLayoutPath of ['src/app/auth/login/layout.tsx', 'src/app/auth/signup/layout.tsx']) {
+  const authLayout = read(authLayoutPath)
+  requireText(authLayoutPath, authLayout, 'getAuthenticatedUserId', 'signed-in visitors should not see an auth form')
+  requireText(authLayoutPath, authLayout, "redirect('/my-forge')", 'signed-in auth routes should return to My Forge')
+}
 
 requireText(sourceRunPath, sourceRun, 'resubmission_of_id: resubmissionOfId', 'source-run inserts must persist repair lineage')
 requireText(sourceRunPath, sourceRun, 'effectiveForkSource = projectForkSourceFromSubmissionFields(prior)', 'repair inserts must derive fork identity from the prior server record')

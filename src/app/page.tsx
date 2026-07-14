@@ -33,7 +33,7 @@ export default async function HomePage() {
   const featurePool = workingProjects.length > 0 ? workingProjects : recommended
   const featured = selectCuratedItems(featurePool, START_HERE_PROJECT_IDS, 1)[0]
   const recentPool = newestOrder(workingProjects.length > 0 ? workingProjects : recommended)
-  const recent = recentPool.filter((item) => item.id !== featured?.id).slice(0, 3)
+  const recent = recentPool.filter((item) => item.id !== featured?.id).slice(0, 4)
   const modelEvolution = selectCuratedItems(
     catalog.filter((item) => item.comparisonCount > 1),
     MODEL_COMPARISON_PROJECT_IDS,
@@ -42,8 +42,8 @@ export default async function HomePage() {
 
   return (
     <div className="pf-home-next">
-      <HomeHero pathCount={catalog.length} />
-      {featured && <HomeBuildMosaic featured={featured} recent={recent} />}
+      <HomeHero pathCount={catalog.length} featured={featured} />
+      {recent.length > 0 && <HomeBuildMosaic items={recent} />}
       <HomeProcess />
       {modelEvolution && <HomeModelEvolution item={modelEvolution} />}
       <HomeSupportRoutes />

@@ -30,14 +30,14 @@ export default function AdminError({
           <button
             type="button"
             onClick={reset}
-            className="inline-flex min-h-11 items-center justify-center gap-2 bg-surface-900 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-orange focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+            className="inline-flex min-h-11 items-center justify-center gap-2 bg-surface-900 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange-ink"
           >
             <RefreshCw className="h-4 w-4" aria-hidden="true" />
             Try again
           </button>
           <Link
             href="/my-forge"
-            className="inline-flex min-h-11 items-center justify-center gap-2 border border-surface-300 bg-white px-4 py-2.5 text-sm font-bold text-surface-700 transition-colors hover:border-brand-orange hover:text-brand-orange focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+            className="inline-flex min-h-11 items-center justify-center gap-2 border border-surface-300 bg-white px-4 py-2.5 text-sm font-bold text-surface-700 transition-colors hover:border-brand-orange-ink hover:text-brand-orange-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange-ink"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             Return to My Forge

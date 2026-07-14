@@ -58,7 +58,7 @@ export default async function ArtifactViewerPage({
   }
 
   return (
-    <main className="fixed inset-0 z-[100] overflow-auto bg-surface-950 text-white">
+    <div className="fixed inset-0 z-[100] overflow-auto bg-surface-950 text-white">
       <header className="border-b border-surface-800 bg-surface-900 px-4 py-4 sm:px-6">
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-4">
           <div>
@@ -92,6 +92,6 @@ export default async function ArtifactViewerPage({
           contextLabel="Isolated full-page preview"
         />
       </div>
-    </main>
+    </div>
   )
 }

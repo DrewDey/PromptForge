@@ -1,291 +1,251 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { canonicalMetadata } from '@/lib/site-url'
-import '../home.css'
+import styles from './about.module.css'
 
 export const metadata: Metadata = {
   title: 'About — PathForge',
-  description: 'Why PathForge exists, what a build path actually is, and the long game behind the platform.',
+  description: 'The vision, evidence standard, and publishing principles behind PathForge.',
   ...canonicalMetadata('/about'),
 }
 
-/* ─────────────────────────────────────────────────────────
-   About / Why page — explains the product, the problem it's
-   solving, and where it's headed. Reuses .pf-home design
-   system (home.css) so it reads as part of the same site.
-   ───────────────────────────────────────────────────────── */
+const evidencePrinciples = [
+  {
+    number: '01',
+    title: 'Start with the result',
+    body: 'A path should lead to a finished, production-servable artifact people can inspect and use—not stop at a clever prompt or a description of what might be built.',
+  },
+  {
+    number: '02',
+    title: 'Keep the run attached',
+    body: 'The exact prompts, visible model responses, provider and model details, and real artifact versions stay with the project. The evidence is part of the product.',
+  },
+  {
+    number: '03',
+    title: 'Show how it changes',
+    body: 'A fork keeps the shared path visible. A new model run keeps its own source evidence. Improvement should add history, not rewrite it.',
+  },
+] as const
+
+const publishingStandards = [
+  {
+    label: 'Useful',
+    title: 'There is a real outcome worth opening.',
+    body: 'The artifact works, has a clear purpose, and offers more than a generic demo or a transcript dressed up as a project.',
+  },
+  {
+    label: 'Traceable',
+    title: 'The source run can be inspected.',
+    body: 'Prompts and responses are preserved as they appeared, model information is explicit, and each artifact is attached to the step that actually produced it.',
+  },
+  {
+    label: 'Legible',
+    title: 'The project tells one coherent build story.',
+    body: 'The title, summary, artifact, prompt chain, and lineage agree. A visitor should understand what changed without reconstructing the history themselves.',
+  },
+  {
+    label: 'Attributable',
+    title: 'Ownership and operation are clear.',
+    body: 'Projects live under profiles. Community work, official PathForge work, and developer-operated model runs are labeled for what they are.',
+  },
+  {
+    label: 'Reviewed',
+    title: 'Submission is not publication.',
+    body: 'New builds enter review before they become public. Weak, broken, unsafe, incomplete, or misleading work does not receive a product page simply because it was submitted.',
+  },
+] as const
 
 export default function AboutPage() {
   return (
-    <div className="pf-home">
-      {/* ═══════════ HERO ═══════════ */}
-      <section className="hero">
-        <div className="hero-wrap" style={{ gridTemplateColumns: '1fr', textAlign: 'left', maxWidth: 820, padding: '96px 24px 72px' }}>
-          <div>
-            <div className="hero-eyebrow">
-              <span className="pulse" />
-              <span>About PathForge</span>
-            </div>
-            <h1 style={{ fontSize: 68 }}>
-              Why this <span className="serif">exists</span>.
-            </h1>
-            <p className="lead" style={{ maxWidth: 680, fontSize: 20 }}>
-              PathForge is a library of real AI build paths — the actual projects people built with AI, the prompts that produced them, and every result along the way. This page explains what that means, why it matters, and where the platform is headed.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════ THE PROBLEM (extended) ═══════════ */}
-      <section className="problem">
-        <div className="sect-wrap">
-          <div>
-            <div className="eyebrow">The problem</div>
-            <h2>The best AI work is <span className="serif">hidden</span>.</h2>
-            <p style={{ marginBottom: 18 }}>
-              Millions of people have AI subscriptions. Very few of them are doing anything interesting with them. Not because they&apos;re lazy or uncreative — because every good AI workflow has to be re-invented from a blank chat, by one person, in private, every single time.
-            </p>
-            <p style={{ marginBottom: 18 }}>
-              The best work happens in Slack DMs and personal Notion pages and screenshot archives. It lives inside someone&apos;s head. The rest of us open a new chat at 10pm, type &ldquo;help me build a thing,&rdquo; give up after three tries, and close the tab.
-            </p>
-            <p>
-              The tool isn&apos;t the bottleneck. Access to examples is.
-            </p>
-          </div>
-          <div className="problem-visual" aria-hidden="true" style={{ maxWidth: 560 }}>
-            <div className="pv-line"><span className="caret">$</span> average evening with AI <span style={{ color: 'var(--color-surface-600)' }}>{'// n=you'}</span></div>
-            <div className="pv-line you">&gt; I should use my Claude subscription more</div>
-            <div className="pv-line ai">Great! What would you like to work on?</div>
-            <div className="pv-line you">&gt; I don&apos;t know</div>
-            <div className="pv-line ai">What are your goals?</div>
-            <div className="pv-line you">&gt; I don&apos;t know</div>
-            <div className="pv-line" style={{ marginTop: 16 }}><span className="caret">$</span> <span style={{ color: 'var(--color-surface-600)' }}>close tab — open Netflix</span></div>
-            <div className="overlay">Wasted tokens</div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════ WHAT A BUILD PATH IS ═══════════ */}
-      <section>
-        <div className="sect-wrap" style={{ maxWidth: 920 }}>
-          <div className="eyebrow">The unit of work</div>
-          <h2 className="section-title">A build path isn&apos;t a <span className="serif">prompt template</span>.</h2>
-          <p className="section-sub" style={{ marginBottom: 36 }}>
-            This is the single most important distinction on the platform. Everything else follows from it.
-          </p>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 40 }}>
-            <div style={{ background: '#fff', border: '1px solid var(--color-surface-200)', padding: 28 }}>
-              <div className="eyebrow" style={{ color: 'var(--color-surface-500)' }}>What it isn&apos;t</div>
-              <ul style={{ listStyle: 'none', padding: 0, fontSize: 14, lineHeight: 1.65, color: 'var(--color-surface-600)', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <li>❌ <b style={{ color: 'var(--color-surface-900)' }}>Not a prompt library.</b> No generic &ldquo;write me an email about [TOPIC]&rdquo; templates. Those are already everywhere and they don&apos;t work.</li>
-                <li>❌ <b style={{ color: 'var(--color-surface-900)' }}>Not a tutorial.</b> Tutorials tell you what to type. A build path shows you what someone actually typed and what came back.</li>
-                <li>❌ <b style={{ color: 'var(--color-surface-900)' }}>Not a case study.</b> Case studies tell you about work that&apos;s already done. A build path is watching it get done.</li>
-                <li>❌ <b style={{ color: 'var(--color-surface-900)' }}>Not AI marketing copy.</b> No &ldquo;10x your productivity&rdquo; anything. The paths are built by normal people solving normal problems.</li>
-              </ul>
-            </div>
-            <div style={{ background: 'var(--color-surface-900)', color: '#fff', border: '1px solid var(--color-surface-900)', padding: 28 }}>
-              <div className="eyebrow" style={{ color: 'var(--color-brand-orange)' }}>What it is</div>
-              <ul style={{ listStyle: 'none', padding: 0, fontSize: 14, lineHeight: 1.65, color: 'var(--color-surface-300)', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <li>✓ <b style={{ color: '#fff' }}>A finished project.</b> Something real, built with AI, that you can actually ship or use.</li>
-                <li>✓ <b style={{ color: '#fff' }}>The full chain.</b> Every prompt the author typed, in order, with its actual output visible underneath.</li>
-                <li>✓ <b style={{ color: '#fff' }}>The context.</b> Why they built it, what constraints they had, what model they used, what they tried that didn&apos;t work.</li>
-                <li>✓ <b style={{ color: '#fff' }}>Fork-ready.</b> Designed to be copied, tweaked, and re-run with your own context. Not read once and forgotten.</li>
-              </ul>
-            </div>
-          </div>
-
-          <p style={{ fontSize: 17, lineHeight: 1.7, color: 'var(--color-surface-700)', maxWidth: 720 }}>
-            The closest analog is a Jupyter notebook someone shared on GitHub — the code runs, the outputs are visible, and you can fork it and start changing things. PathForge is that, but for the domain you actually work in: finance, marketing, writing, design, code, study plans, tax prep, anything you&apos;d actually open a chat for.
-          </p>
-        </div>
-      </section>
-
-      {/* ═══════════ NO FABRICATION ═══════════ */}
-      <section>
-        <div className="sect-wrap" style={{ maxWidth: 920 }}>
-          <div className="eyebrow">The ethos</div>
-          <h2 className="section-title">Every output is <span className="serif">real</span>.</h2>
-          <p className="section-sub" style={{ marginBottom: 28 }}>
-            The engagement counts start at zero. The projects start as real work. This is non-negotiable.
-          </p>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 22, maxWidth: 760 }}>
-            <p style={{ fontSize: 16, lineHeight: 1.7, color: 'var(--color-surface-700)' }}>
-              It would be trivial to pad the site with fabricated engagement metrics and AI-generated prompt chains that merely <em>look</em> like real work. Most content platforms do this. We don&apos;t.
-            </p>
-            <p style={{ fontSize: 16, lineHeight: 1.7, color: 'var(--color-surface-700)' }}>
-              Every build path shows real prompts typed by someone solving a real problem, and real outputs returned by the AI at the time. If the project used Claude Sonnet 4.6, the response in the card is what Claude Sonnet 4.6 actually said. If a step failed or needed three attempts, that lives in the chain too — not airbrushed.
-            </p>
-            <p style={{ fontSize: 16, lineHeight: 1.7, color: 'var(--color-surface-700)' }}>
-              Why this matters: the value of the platform is trust. If you fork a path that shipped a real tax estimator for its author, it has to actually work when you run the same prompts with your numbers. If half the paths are fabricated, the library collapses into another SEO farm.
-            </p>
-            <p style={{ fontSize: 16, lineHeight: 1.7, color: 'var(--color-surface-700)' }}>
-              Engagement counts — votes, bookmarks, forks — are zero on day one for every project. They can only go up by real humans using the site. No bot army, no fake activity, no implied-social-proof on projects nobody has actually touched.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════ FORK & REMIX ═══════════ */}
-      <section style={{ background: '#fff' }}>
-        <div className="sect-wrap" style={{ maxWidth: 920 }}>
-          <div className="eyebrow">The loop</div>
-          <h2 className="section-title">Take it. <span className="serif">Change it.</span> Ship yours.</h2>
-          <p className="section-sub" style={{ marginBottom: 28 }}>
-            The value of someone else&apos;s build path isn&apos;t that you&apos;ll copy it verbatim. It&apos;s that you&apos;ll save the first three hours of guessing.
-          </p>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginBottom: 32 }}>
-            <div style={{ padding: 22, border: '1px solid var(--color-surface-200)', background: 'var(--color-surface-50)' }}>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--color-brand-orange)', fontWeight: 600, marginBottom: 8 }}>01 / Find</div>
-              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>Find a path that&apos;s close</div>
-              <p style={{ fontSize: 13.5, color: 'var(--color-surface-600)', lineHeight: 1.55 }}>
-                It doesn&apos;t have to match your problem exactly. It has to match the <em>shape</em> — the same kind of chain, the same kind of output. Close enough that you can see where your version diverges.
+    <div className={styles.page}>
+      <header className={styles.masthead}>
+        <div className={styles.shell}>
+          <p className={styles.kicker}>PathForge / why it exists</p>
+          <div className={styles.heroLayout}>
+            <div className={styles.heroCopy}>
+              <h1>The work matters more than the prompt.</h1>
+              <p className={styles.lead}>
+                PathForge is a library of finished projects built with AI, preserved with the exact
+                evidence that produced them. Open the result first. Inspect the path behind it. Then
+                carry the strongest work forward without losing where it came from.
               </p>
+              <div className={styles.heroActions}>
+                <Link href="/paths" className={styles.primaryLink}>
+                  Explore build paths <span aria-hidden="true">→</span>
+                </Link>
+                <Link href="/guide" className={styles.textLink}>
+                  See how PathForge works
+                </Link>
+              </div>
             </div>
-            <div style={{ padding: 22, border: '1px solid var(--color-surface-200)', background: 'var(--color-surface-50)' }}>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--color-brand-orange)', fontWeight: 600, marginBottom: 8 }}>02 / Fork</div>
-              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>Fork the chain</div>
-              <p style={{ fontSize: 13.5, color: 'var(--color-surface-600)', lineHeight: 1.55 }}>
-                One click copies the whole build path into your own draft — every prompt, every note, every tool reference. You edit from there. No blank chat.
+
+            <aside className={styles.definition} aria-label="PathForge in one sentence">
+              <p className={styles.definitionLabel}>The compact definition</p>
+              <p className={styles.definitionText}>
+                A public record of <strong>what worked</strong>, <strong>how it was made</strong>, and
+                <strong> what happened next</strong>.
               </p>
-            </div>
-            <div style={{ padding: 22, border: '1px solid var(--color-surface-200)', background: 'var(--color-surface-50)' }}>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--color-brand-orange)', fontWeight: 600, marginBottom: 8 }}>03 / Ship</div>
-              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>Swap your context, run it</div>
-              <p style={{ fontSize: 13.5, color: 'var(--color-surface-600)', lineHeight: 1.55 }}>
-                Replace their variables with yours, run the chain, get a real artifact by bedtime. Share yours back if it&apos;s worth sharing — that&apos;s how the library gets better.
-              </p>
-            </div>
-          </div>
-
-          <p style={{ fontSize: 16, lineHeight: 1.7, color: 'var(--color-surface-700)', maxWidth: 720 }}>
-            You&apos;re not trying to recreate someone else&apos;s work. You&apos;re trying to build <em>yours</em>, and theirs is the fastest starting point. Every path on the site is designed to be a launching pad, not a monument.
-          </p>
-        </div>
-      </section>
-
-      {/* ═══════════ WHO IT'S FOR ═══════════ */}
-      <section>
-        <div className="sect-wrap" style={{ maxWidth: 920 }}>
-          <div className="eyebrow">Audience</div>
-          <h2 className="section-title">Who this is <span className="serif">for</span>.</h2>
-          <p className="section-sub" style={{ marginBottom: 32 }}>
-            One specific person, and a few more behind them.
-          </p>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 28, maxWidth: 760 }}>
-            <div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--color-brand-orange)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: 10 }}>The core user</div>
-              <h3 style={{ fontSize: 22, fontWeight: 800, marginBottom: 10, color: 'var(--color-surface-900)', letterSpacing: '-0.01em' }}>You, at 10pm, with a subscription and no plan.</h3>
-              <p style={{ fontSize: 16, lineHeight: 1.7, color: 'var(--color-surface-700)' }}>
-                The whole site is designed around this moment. You&apos;ve paid for AI tools. You&apos;ve got an hour. You don&apos;t know what to do with it. PathForge exists so you land on the homepage, skim a few paths, fork one that looks close to something you&apos;d actually want, and have a real thing to show by bedtime. That&apos;s the success metric.
-              </p>
-            </div>
-
-            <div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--color-brand-orange)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: 10 }}>Also</div>
-              <h3 style={{ fontSize: 22, fontWeight: 800, marginBottom: 10, color: 'var(--color-surface-900)', letterSpacing: '-0.01em' }}>Freelancers and operators systemizing their work.</h3>
-              <p style={{ fontSize: 16, lineHeight: 1.7, color: 'var(--color-surface-700)' }}>
-                If you&apos;re a freelance consultant who&apos;s been quietly using Claude to triple your output, the paths you&apos;ve built are genuinely valuable. Publishing them here is a credible portfolio — and a way to attract clients who understand the work. &ldquo;Here&apos;s how I actually deliver&rdquo; beats any case study.
-              </p>
-            </div>
-
-            <div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--color-brand-orange)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: 10 }}>And</div>
-              <h3 style={{ fontSize: 22, fontWeight: 800, marginBottom: 10, color: 'var(--color-surface-900)', letterSpacing: '-0.01em' }}>The curious who want to see what&apos;s actually possible.</h3>
-              <p style={{ fontSize: 16, lineHeight: 1.7, color: 'var(--color-surface-700)' }}>
-                AI coverage online is mostly hype screenshots and doomer thinkpieces. If you want to know what people are actually doing with these tools on an average Tuesday, this is the library. Explore without logging in. Read without remixing. It&apos;s fine.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════ QUALITY BAR ═══════════ */}
-      <section style={{ background: 'var(--color-surface-900)', color: '#fff' }}>
-        <div className="sect-wrap" style={{ maxWidth: 920 }}>
-          <div className="eyebrow">Editorial standards</div>
-          <h2 className="section-title" style={{ color: '#fff' }}>What makes a <span className="serif">great</span> path.</h2>
-          <p className="section-sub" style={{ color: 'var(--color-surface-400)', marginBottom: 32, maxWidth: 720 }}>
-            Not every contribution makes it onto the homepage. The quality bar is explicit, and it exists so the library actually stays useful when there are thousands of paths instead of dozens.
-          </p>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 20, maxWidth: 760 }}>
-            {[
-              {
-                label: 'Verbose, contextual prompts',
-                body: 'A great path doesn\'t ship with "write me an email." It ships with a prompt that reads like a real person typed it — 80+ words, with the author\'s constraints, prior context, voice, and specific asks. The prompt is half the value.',
-              },
-              {
-                label: 'Substantive real outputs',
-                body: 'Every step\'s result is a real artifact — working code, actual drafts, real calculations, 300+ words of substance. Not a summary of what an AI would produce. If the result is generic, the prompt needs rewriting until it produces something specific.',
-              },
-              {
-                label: 'Coherent chains',
-                body: 'Step N+1 references step N\'s output. A reader should be able to follow along without extra context. If a chain jumps around or repeats itself, it isn\'t a build path — it\'s a collection of prompts.',
-              },
-              {
-                label: 'Real voice',
-                body: 'The best paths mention gotchas, flag edge cases, push back on bad premises. The AI is working with the author, not performing for them. If a chain reads like marketing copy, it isn\'t a build path.',
-              },
-              {
-                label: 'Screenshots when applicable',
-                body: 'For anything visual — design, code output, dashboards, renders — a screenshot at the right step is worth more than any prose description. The image-upload feature is being wired; early paths ship without.',
-              },
-            ].map((item) => (
-              <div key={item.label} style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: 24, padding: '22px 0', borderBottom: '1px solid var(--color-surface-800)' }}>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11.5, color: 'var(--color-brand-orange)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em' }}>
-                  {item.label}
+              <dl className={styles.ledger}>
+                <div>
+                  <dt>Outcome</dt>
+                  <dd>Finished artifact</dd>
                 </div>
-                <div style={{ fontSize: 15, lineHeight: 1.65, color: 'var(--color-surface-300)' }}>
-                  {item.body}
+                <div>
+                  <dt>Evidence</dt>
+                  <dd>Exact source run</dd>
+                </div>
+                <div>
+                  <dt>Evolution</dt>
+                  <dd>Forks + model history</dd>
+                </div>
+                <div>
+                  <dt>Trust</dt>
+                  <dd>Reviewed + attributable</dd>
+                </div>
+              </dl>
+            </aside>
+          </div>
+        </div>
+      </header>
+
+      <section className={styles.section} aria-labelledby="evidence-title">
+        <div className={`${styles.shell} ${styles.sectionLayout}`}>
+          <div className={styles.sectionIntro}>
+            <p className={styles.sectionNumber}>01 / The unit of value</p>
+            <h2 id="evidence-title">An outcome with its evidence still attached.</h2>
+            <p>
+              A prompt alone is easy to copy and hard to trust. PathForge keeps the working result and
+              the decisions behind it in the same place.
+            </p>
+          </div>
+
+          <ol className={styles.principleList}>
+            {evidencePrinciples.map((principle) => (
+              <li key={principle.number} className={styles.principle}>
+                <span className={styles.principleNumber}>{principle.number}</span>
+                <div>
+                  <h3>{principle.title}</h3>
+                  <p>{principle.body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <section className={`${styles.section} ${styles.evolution}`} aria-labelledby="evolution-title">
+        <div className={styles.shell}>
+          <div className={styles.wideHeading}>
+            <p className={styles.sectionNumber}>02 / Project evolution</p>
+            <h2 id="evolution-title">Two ways a project grows. They are not the same thing.</h2>
+            <p>
+              PathForge keeps both forms of progress visible while preserving the distinction between
+              community authorship and platform-operated comparison work.
+            </p>
+          </div>
+
+          <div className={styles.lanes}>
+            <article className={styles.lane}>
+              <div className={styles.laneHeader}>
+                <span className={styles.laneMarker} aria-hidden="true">↳</span>
+                <div>
+                  <p className={styles.laneType}>Community branch</p>
+                  <h3>A fork chooses a new direction.</h3>
                 </div>
               </div>
+              <p>
+                A fork begins from one exact response in an existing path. The shared prompts and
+                responses remain visible, the branch point stays attached, and the new work belongs to
+                the builder who continued it.
+              </p>
+              <p className={styles.laneRule}>Same history. New owner. New direction.</p>
+            </article>
+
+            <article className={styles.lane}>
+              <div className={styles.laneHeader}>
+                <span className={`${styles.laneMarker} ${styles.laneMarkerBlue}`} aria-hidden="true">≋</span>
+                <div>
+                  <p className={styles.laneType}>Model history</p>
+                  <h3>A model run tests the project again.</h3>
+                </div>
+              </div>
+              <p>
+                PathForge developers can run the same project contract with another model. Each run
+                keeps its own prompts, responses, settings, and artifact versions, then appears in the
+                project&apos;s model selector for direct comparison.
+              </p>
+              <p className={styles.laneRule}>Independent evidence. Same project. Not a community fork.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section className={`${styles.section} ${styles.standards}`} aria-labelledby="standards-title">
+        <div className={`${styles.shell} ${styles.sectionLayout}`}>
+          <div className={styles.sectionIntro}>
+            <p className={styles.sectionNumber}>03 / Publishing standard</p>
+            <h2 id="standards-title">A page is earned by the work.</h2>
+            <p>
+              PathForge is seeded enough to be useful, but inventory is not the goal. Review protects
+              the library from becoming a pile of interchangeable AI output.
+            </p>
+          </div>
+
+          <ol className={styles.standardList}>
+            {publishingStandards.map((standard) => (
+              <li key={standard.label} className={styles.standard}>
+                <p className={styles.standardLabel}>{standard.label}</p>
+                <div>
+                  <h3>{standard.title}</h3>
+                  <p>{standard.body}</p>
+                </div>
+              </li>
             ))}
-          </div>
+          </ol>
         </div>
       </section>
 
-      {/* ═══════════ THE LONG GAME ═══════════ */}
-      <section>
-        <div className="sect-wrap" style={{ maxWidth: 920 }}>
-          <div className="eyebrow">The long game</div>
-          <h2 className="section-title">Where this is <span className="serif">headed</span>.</h2>
-          <p className="section-sub" style={{ marginBottom: 28 }}>
-            PathForge is being built in public, iteratively, for the long haul. It is not a launch.
-          </p>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 22, maxWidth: 760 }}>
-            <p style={{ fontSize: 16, lineHeight: 1.7, color: 'var(--color-surface-700)' }}>
-              The short-term roadmap is boring on purpose: wire image uploads so paths can ship with real screenshots, finish the one-click fork-to-draft flow, let authors attach their own assets, grow the seed library until there&apos;s a genuinely useful path in every category an ordinary person would search for.
+      <section className={styles.trust} aria-labelledby="trust-title">
+        <div className={`${styles.shell} ${styles.trustLayout}`}>
+          <div>
+            <p className={styles.sectionNumber}>04 / The trust rule</p>
+            <h2 id="trust-title">Nothing gets a head start it did not earn.</h2>
+          </div>
+          <div className={styles.trustCopy}>
+            <p>
+              Public work belongs to a real profile. Votes, bookmarks, comments, and forks come from
+              real activity. New projects start without manufactured momentum, and developer-operated
+              runs are identified instead of being passed off as community contributions.
             </p>
-            <p style={{ fontSize: 16, lineHeight: 1.7, color: 'var(--color-surface-700)' }}>
-              The medium-term goal is one specific outcome: when someone tells a friend they&apos;re stuck on how to use their AI subscription, the friend says &ldquo;have you checked PathForge?&rdquo; That&apos;s it. That&apos;s the product-market fit. Not viral traffic, not growth hacking — just becoming the default place people go.
-            </p>
-            <p style={{ fontSize: 16, lineHeight: 1.7, color: 'var(--color-surface-700)' }}>
-              The long-term bet is that shared AI workflow knowledge becomes its own genre, the way open-source code or Stack Overflow answers or GitHub Gists did. Nobody assumed those would matter at the start. They did because they were the simplest place to find the answer.
-            </p>
-            <p style={{ fontSize: 16, lineHeight: 1.7, color: 'var(--color-surface-700)' }}>
-              PathForge is not trying to be a prompt-engineering course, a SaaS tool, a marketplace, a newsletter, or a YouTube channel. It&apos;s a library. Libraries win by being reliable, legible, and consulted — not by optimizing engagement loops or extracting value from attention. If the site makes your next Tuesday evening more useful, it&apos;s working.
+            <p>
+              That restraint is deliberate. The library only becomes more valuable over time if people
+              can trust the artifact, the source evidence, the lineage, and the signals around it.
             </p>
           </div>
         </div>
       </section>
 
-      {/* ═══════════ FINAL CTA ═══════════ */}
-      <section className="finalcta">
-        <div className="sect-wrap">
-          <div className="eyebrow">Your turn</div>
-          <h2>Explore the library. <span className="serif">Fork</span> something.</h2>
-          <p>If one path saves you an evening of blank-chat guessing, the whole site has paid for itself. If you end up with something worth sharing, add it back.</p>
-          <div className="finalcta-btns">
-            <Link href="/paths" className="btn-primary">
-              Build Paths
-              <svg className="arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square"><path d="M5 12H19M13 6L19 12L13 18" /></svg>
-            </Link>
-            <Link href="/build" className="btn-secondary">Build a path</Link>
+      <section className={styles.closing} aria-labelledby="closing-title">
+        <div className={styles.shell}>
+          <p className={styles.kicker}>The long game</p>
+          <div className={styles.closingLayout}>
+            <h2 id="closing-title">A useful project should appreciate as the models improve.</h2>
+            <div>
+              <p>
+                PathForge does not have to replace an older run to show a better one. It can keep the
+                original evidence, add a new developer-operated model result, and let visitors see the
+                difference. The project becomes a living benchmark without pretending its history never
+                happened.
+              </p>
+              <div className={styles.closingActions}>
+                <Link href="/paths" className={styles.primaryLink}>
+                  Find a project <span aria-hidden="true">→</span>
+                </Link>
+                <Link href="/build" className={styles.secondaryLink}>
+                  Share finished work
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </section>

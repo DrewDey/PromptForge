@@ -115,6 +115,39 @@ export default function GuideProviderRun() {
           </aside>
         </div>
 
+        <figure className="guide-real-provider-reference">
+          <figcaption className="guide-real-provider-copy">
+            <span className="guide-overline">Real interface reference</span>
+            <h3>ChatGPT: attach, run, then share.</h3>
+            <p>
+              These are crops from the actual provider controls—not a PathForge mockup. Interfaces
+              move, but the two actions remain the same.
+            </p>
+          </figcaption>
+          <div className="guide-real-provider-controls">
+            <div className="guide-real-control-crop">
+              <Image
+                src="/screenshots/guide/chatgpt-prompt-controls.jpg"
+                alt="ChatGPT composer showing the plus attachment control and Extended reasoning control"
+                width={780}
+                height={56}
+                sizes="(max-width: 520px) calc(100vw - 76px), (max-width: 860px) 65vw, 520px"
+              />
+              <span><b>1</b> Use + to add the current artifact before you send the change.</span>
+            </div>
+            <div className="guide-real-control-crop guide-real-share-crop">
+              <Image
+                src="/screenshots/guide/chatgpt-share-button.jpg"
+                alt="ChatGPT Share control at the top of a conversation"
+                width={190}
+                height={68}
+                sizes="190px"
+              />
+              <span><b>2</b> Use Share only after the final response is complete.</span>
+            </div>
+          </div>
+        </figure>
+
         <details className="guide-provider-help">
           <summary>
             <span><span className="guide-overline">Provider reference</span><strong>Where do I attach the artifact?</strong></span>

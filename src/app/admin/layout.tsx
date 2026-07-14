@@ -9,12 +9,12 @@ const SUPABASE_CONFIGURED = !!(
 
 function AccessDenied() {
   return (
-    <main className="flex min-h-[calc(100vh-3rem)] items-center justify-center bg-surface-50 px-5 py-16">
+    <div className="flex min-h-[calc(100vh-3rem)] items-center justify-center bg-surface-50 px-5 py-16">
       <section className="w-full max-w-xl border border-surface-200 bg-white p-7 shadow-[8px_8px_0_rgba(24,24,27,0.06)] sm:p-10">
         <div className="mb-6 flex h-12 w-12 items-center justify-center bg-surface-900 text-white">
           <ShieldCheck className="h-5 w-5" aria-hidden="true" />
         </div>
-        <p className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-brand-orange">
+        <p className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-brand-orange-ink">
           Protected workspace
         </p>
         <h1 className="mt-2 text-3xl font-black tracking-[-0.035em] text-surface-900">
@@ -25,13 +25,13 @@ function AccessDenied() {
         </p>
         <Link
           href="/"
-          className="mt-7 inline-flex min-h-11 items-center gap-2 bg-surface-900 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-orange focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+          className="mt-7 inline-flex min-h-11 items-center gap-2 bg-surface-900 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange-ink"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           Return to PathForge
         </Link>
       </section>
-    </main>
+    </div>
   )
 }
 
@@ -63,7 +63,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <header className="border-b border-surface-800 bg-surface-900 text-white">
         <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-5 px-4 py-6 sm:px-6 lg:flex-row lg:items-end lg:justify-between lg:px-8">
           <div className="flex min-w-0 items-start gap-4">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center bg-brand-orange text-white shadow-[4px_4px_0_rgba(255,255,255,0.12)]">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center bg-brand-orange text-surface-900 shadow-[4px_4px_0_rgba(255,255,255,0.12)]">
               <ShieldCheck className="h-5 w-5" aria-hidden="true" />
             </div>
             <div className="min-w-0">
@@ -80,14 +80,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <Link
               href="/"
-              className="inline-flex min-h-10 items-center gap-2 border border-surface-700 px-3 py-2 text-xs font-bold text-surface-200 transition-colors hover:border-surface-500 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+              className="inline-flex min-h-10 items-center gap-2 border border-surface-700 px-3 py-2 text-xs font-bold text-surface-200 transition-colors hover:border-surface-500 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange-light"
             >
               <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
               Public site
             </Link>
             <Link
               href="/my-forge"
-              className="inline-flex min-h-10 items-center bg-white px-3 py-2 text-xs font-bold text-surface-900 transition-colors hover:bg-brand-orange hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+              className="inline-flex min-h-10 items-center bg-white px-3 py-2 text-xs font-bold text-surface-900 transition-colors hover:bg-brand-orange-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange-light"
             >
               My Forge
             </Link>
@@ -95,9 +95,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </div>
       </header>
 
-      <main className="mx-auto min-w-0 w-full max-w-[1600px] px-4 py-7 sm:px-6 sm:py-9 lg:px-8">
+      <div className="mx-auto min-w-0 w-full max-w-[1600px] px-4 py-7 sm:px-6 sm:py-9 lg:px-8">
         {children}
-      </main>
+      </div>
     </div>
   )
 }

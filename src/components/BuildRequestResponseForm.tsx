@@ -21,7 +21,7 @@ export default function BuildRequestResponseForm({ requestId }: { requestId: str
           type="url"
           maxLength={500}
           placeholder="PathForge project or fork URL"
-          className="border border-surface-300 bg-white px-3 py-2.5 text-sm text-surface-900 placeholder:text-surface-400 focus:border-brand-orange focus:outline-none"
+          className="border border-surface-300 bg-white px-3 py-2.5 text-base text-surface-900 placeholder:text-surface-600 focus:border-brand-orange-ink focus:outline-none sm:text-sm"
         />
         <label htmlFor={`build-request-note-${requestId}`} className="sr-only">
           Short note about what you made
@@ -31,12 +31,12 @@ export default function BuildRequestResponseForm({ requestId }: { requestId: str
           name="body"
           maxLength={5000}
           placeholder="Short note about what you made"
-          className="border border-surface-300 bg-white px-3 py-2.5 text-sm text-surface-900 placeholder:text-surface-400 focus:border-brand-orange focus:outline-none"
+          className="border border-surface-300 bg-white px-3 py-2.5 text-base text-surface-900 placeholder:text-surface-600 focus:border-brand-orange-ink focus:outline-none sm:text-sm"
         />
         <button
           type="submit"
           disabled={pending}
-          className="bg-surface-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-orange disabled:cursor-wait disabled:opacity-60"
+          className="bg-surface-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-primary-700 disabled:cursor-wait disabled:opacity-60"
         >
           {pending ? 'Responding…' : 'Respond'}
         </button>

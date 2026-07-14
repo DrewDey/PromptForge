@@ -15,9 +15,7 @@ import { getCategories, getPrompts, getUserVotesAndBookmarks } from '@/lib/data'
 import {
   DISCOVERY_INTENTS,
   MODEL_COMPARISON_PROJECT_IDS,
-  PLAY_PROJECT_IDS,
   START_HERE_PROJECT_IDS,
-  USEFUL_NOW_PROJECT_IDS,
   buildPathDiscoveryCatalog,
   itemMatchesIntent,
   newestOrder,
@@ -239,12 +237,8 @@ export async function BuildPathsDiscovery({
   }
 
   const usedIds = new Set<string>()
-  const startHere = selectCuratedItems(catalog, START_HERE_PROJECT_IDS, 5, usedIds)
+  const startHere = selectCuratedItems(catalog, START_HERE_PROJECT_IDS, 3, usedIds)
   startHere.forEach((item) => usedIds.add(item.id))
-  const usefulNow = selectCuratedItems(catalog, USEFUL_NOW_PROJECT_IDS, 4, usedIds)
-  usefulNow.forEach((item) => usedIds.add(item.id))
-  const playSomething = selectCuratedItems(catalog, PLAY_PROJECT_IDS, 4, usedIds)
-  playSomething.forEach((item) => usedIds.add(item.id))
   const compareModels = selectCuratedItems(
     catalog.filter((item) => item.comparisonCount > 1),
     MODEL_COMPARISON_PROJECT_IDS,
@@ -264,7 +258,7 @@ export async function BuildPathsDiscovery({
   ].filter(Boolean).length
 
   return (
-    <main className="pf-paths">
+    <div className="pf-paths">
       <section className="path-hero">
         <div className="path-hero-inner">
           <div className="path-hero-copy">
@@ -320,101 +314,22 @@ export async function BuildPathsDiscovery({
       </section>
 
       {!isFiltered && activePage === 1 && startHere.length > 0 && (
-        <>
-          <section id="start-here" className="path-section path-start-section">
-            <div className="path-container">
-              <SectionHeading
-                eyebrow="Staff picks"
-                title="Start with the paths that explain PathForge best."
-                description="Useful, polished projects with a working result and a build story worth opening."
-                action={{ href: '#all-paths', label: 'Browse every path' }}
-              />
-              <div className="path-start-grid">
-                <BuildPathCard item={startHere[0]} featured />
-                <div className="path-start-supporting">
-                  {startHere.slice(1).map((item) => <BuildPathCard key={item.id} item={item} compact />)}
-                </div>
+        <section id="start-here" className="path-section path-start-section">
+          <div className="path-container">
+            <SectionHeading
+              eyebrow="Staff picks · 3 paths"
+              title="Start with three projects worth opening."
+              description="Real working results first, with the prompts, model runs, and forks available when you want the build story."
+              action={{ href: '#all-paths', label: 'Browse every path' }}
+            />
+            <div className="path-start-grid">
+              <BuildPathCard item={startHere[0]} featured />
+              <div className="path-start-supporting">
+                {startHere.slice(1).map((item) => <BuildPathCard key={item.id} item={item} compact />)}
               </div>
             </div>
-          </section>
-
-          <section className="path-section path-intents-section">
-            <div className="path-container">
-              <SectionHeading
-                eyebrow="Choose a goal"
-                title="You do not need to know the right search term."
-                description="Pick the outcome that sounds closest. The technical details can wait until you open a path."
-              />
-              <div className="path-intent-grid">
-                {DISCOVERY_INTENTS.map((intent, index) => (
-                  <Link key={intent.value} href={`/paths?intent=${intent.value}#all-paths`}>
-                    <span>{String(index + 1).padStart(2, '0')}</span>
-                    <strong>{intent.label}</strong>
-                    <p>{intent.description}</p>
-                    <ArrowRight aria-hidden="true" />
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {usefulNow.length > 0 && (
-            <section className="path-section path-shelf-section">
-              <div className="path-container">
-                <SectionHeading
-                  eyebrow="Useful right now"
-                  title="Open a tool you can actually use."
-                  description="Practical planners, calculators, trackers, and decision aids—not prompt text without a result."
-                  action={{ href: '/paths?intent=organize#all-paths', label: 'See practical paths' }}
-                />
-                <div className="path-card-grid path-card-grid-four">
-                  {usefulNow.map((item) => <BuildPathCard key={item.id} item={item} />)}
-                </div>
-              </div>
-            </section>
-          )}
-
-          {playSomething.length > 0 && (
-            <section className="path-section path-shelf-section path-shelf-tint">
-              <div className="path-container">
-                <SectionHeading
-                  eyebrow="Try something"
-                  title="Play first. Read the build path second."
-                  description="Interactive projects make the value obvious before you inspect how the conversation worked."
-                  action={{ href: '/paths?intent=play#all-paths', label: 'See playable paths' }}
-                />
-                <div className="path-card-grid path-card-grid-four">
-                  {playSomething.map((item) => <BuildPathCard key={item.id} item={item} />)}
-                </div>
-              </div>
-            </section>
-          )}
-
-          {compareModels.length > 0 && (
-            <section className="path-compare-section">
-              <div className="path-container path-compare-inner">
-                <div className="path-compare-copy">
-                  <div className="path-eyebrow path-eyebrow-blue"><GitCompareArrows aria-hidden="true" /> PathForge Labs</div>
-                  <h2>See what changed when the model changed.</h2>
-                  <p>
-                    The same brief, rebuilt across ChatGPT, Claude, and Gemini. Open any project to switch runs or compare outcomes.
-                  </p>
-                  <Link href="/paths?compare=models#all-paths">Browse model comparisons <ArrowRight aria-hidden="true" /></Link>
-                </div>
-                <div className="path-compare-list">
-                  {compareModels.map((item) => (
-                    <Link key={item.id} href={item.href}>
-                      <span>{item.categoryLabel}</span>
-                      <strong>{item.title}</strong>
-                      <small>{item.comparisonCount} verified model runs</small>
-                      <ArrowRight aria-hidden="true" />
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </section>
-          )}
-        </>
+          </div>
+        </section>
       )}
 
       <section id="all-paths" className="path-catalog-section">
@@ -559,6 +474,31 @@ export async function BuildPathsDiscovery({
           )}
         </div>
       </section>
-    </main>
+
+      {!isFiltered && activePage === 1 && compareModels.length > 0 && (
+        <section className="path-compare-section" aria-labelledby="model-comparison-title">
+          <div className="path-container path-compare-inner">
+            <div className="path-compare-copy">
+              <div className="path-eyebrow path-eyebrow-blue"><GitCompareArrows aria-hidden="true" /> Model comparisons</div>
+              <h2 id="model-comparison-title">See what changed when the model changed.</h2>
+              <p>
+                Open the same brief across ChatGPT, Claude, and Gemini, then compare the working results and build decisions.
+              </p>
+              <Link href="/paths?compare=models#all-paths">Browse every comparison <ArrowRight aria-hidden="true" /></Link>
+            </div>
+            <div className="path-compare-list">
+              {compareModels.map((item) => (
+                <Link key={item.id} href={item.href}>
+                  <span>{item.categoryLabel}</span>
+                  <strong>{item.title}</strong>
+                  <small>{item.comparisonCount} verified model runs</small>
+                  <ArrowRight aria-hidden="true" />
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+    </div>
   )
 }

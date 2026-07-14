@@ -380,12 +380,16 @@ export function ProtectedArtifactFrame({
   showOpenAction = true,
   frameHeight = ARTIFACT_FRAME_HEIGHT,
   contextLabel,
+  bare = false,
+  frameId = 'final-result',
 }: {
   selectedPackage: ArtifactPackage
   providerName: string
   showOpenAction?: boolean
   frameHeight?: string
   contextLabel?: string
+  bare?: boolean
+  frameId?: string
 }) {
   const frameRef = useRef<HTMLDivElement | null>(null)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
@@ -618,33 +622,37 @@ export function ProtectedArtifactFrame({
 
   return (
     <div
-      id="final-result"
-      className="overflow-hidden border border-surface-800 bg-[#111827] shadow-[0_28px_90px_rgba(0,0,0,0.28)]"
+      id={frameId}
+      className={bare
+        ? 'h-full overflow-hidden bg-[#111827]'
+        : 'overflow-hidden border border-surface-800 bg-[#111827] shadow-[0_28px_90px_rgba(0,0,0,0.28)]'}
     >
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-surface-800 bg-surface-900 px-4 py-3 text-white">
-        <div className="min-w-0">
-          <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-brand-orange">
-            Current artifact
+      {!bare && (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-surface-800 bg-surface-900 px-4 py-3 text-white">
+          <div className="min-w-0">
+            <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-brand-orange">
+              Current artifact
+            </div>
+            <div className="truncate text-sm font-semibold">{selectedPackage.artifactTitle}</div>
+            <div className="mt-1 text-xs text-surface-400">
+              {contextLabel ?? (
+                `Prompt ${String(selectedPackage.stepNumber).padStart(2, '0')} version from ${providerName}`
+              )}
+            </div>
           </div>
-          <div className="truncate text-sm font-semibold">{selectedPackage.artifactTitle}</div>
-          <div className="mt-1 text-xs text-surface-400">
-            {contextLabel ?? (
-              `Prompt ${String(selectedPackage.stepNumber).padStart(2, '0')} version from ${providerName}`
-            )}
-          </div>
+          {showOpenAction && (
+            <Link
+              href={artifactViewerHref(selectedPackage, providerName)}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex shrink-0 items-center gap-1.5 border border-surface-700 px-3 py-1.5 text-xs font-semibold text-surface-300 transition hover:border-brand-orange hover:text-brand-orange"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Open safely
+            </Link>
+          )}
         </div>
-        {showOpenAction && (
-          <Link
-            href={artifactViewerHref(selectedPackage, providerName)}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex shrink-0 items-center gap-1.5 border border-surface-700 px-3 py-1.5 text-xs font-semibold text-surface-300 transition hover:border-brand-orange hover:text-brand-orange"
-          >
-            <ExternalLink className="h-3.5 w-3.5" />
-            Open safely
-          </Link>
-        )}
-      </div>
+      )}
       <div
         ref={frameRef}
         data-artifact-fit-mode={fitMode}

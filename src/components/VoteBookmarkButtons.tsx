@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { ArrowUp, Bookmark } from 'lucide-react'
 import { voteOnProject, bookmarkProject } from '@/lib/actions'
 
@@ -22,7 +22,7 @@ export default function VoteBookmarkButtons({
   initialBookmarked: boolean
   isLoggedIn: boolean
   size?: 'default' | 'large'
-  loginNextPath?: string
+  loginNextPath: string
   hideZeroCounts?: boolean
 }) {
   const [voteCount, setVoteCount] = useState(initialVoteCount)
@@ -32,16 +32,7 @@ export default function VoteBookmarkButtons({
   const [votePending, setVotePending] = useState(false)
   const [bookmarkPending, setBookmarkPending] = useState(false)
   const [message, setMessage] = useState('')
-  const [loginHref, setLoginHref] = useState(
-    loginNextPath ? `/auth/login?next=${encodeURIComponent(loginNextPath)}` : '/auth/login'
-  )
-
-  useEffect(() => {
-    if (loginNextPath) return
-
-    const next = `${window.location.pathname}${window.location.search}${window.location.hash}`
-    setLoginHref(`/auth/login?next=${encodeURIComponent(next)}`)
-  }, [loginNextPath])
+  const loginHref = `/auth/login?next=${encodeURIComponent(loginNextPath)}`
 
   async function handleVote(e: React.MouseEvent) {
     e.preventDefault()

@@ -8,6 +8,7 @@ import {
   GitFork,
   MessageSquareText,
 } from 'lucide-react'
+import { ProjectPreview } from '@/components/ProjectPreview'
 import { getProjectHref } from '@/lib/project-links'
 import type { PublicProfileProjectEvidence } from '@/lib/profile-presentation'
 import type { PromptWithRelations } from '@/lib/types'
@@ -20,12 +21,18 @@ export default function BuilderWorkCard({
   project,
   evidence,
   featured = false,
+  showArtifactPreview = false,
 }: {
   project: PromptWithRelations
   evidence: PublicProfileProjectEvidence
   featured?: boolean
+  showArtifactPreview?: boolean
 }) {
+  const projectHref = getProjectHref(project)
   const isFork = Boolean(evidence.forkSource)
+  const hasFeaturedArtifact = Boolean(
+    featured && showArtifactPreview && evidence.hasWorkingArtifact && evidence.artifactPath,
+  )
   const engagement = [
     project.vote_count > 0 ? { icon: ArrowUp, label: `${project.vote_count} ${plural(project.vote_count, 'upvote')}` } : null,
     project.bookmark_count > 0 ? { icon: Bookmark, label: `${project.bookmark_count} ${plural(project.bookmark_count, 'save')}` } : null,
@@ -43,15 +50,38 @@ export default function BuilderWorkCard({
         className={`absolute inset-y-0 left-0 w-1 ${isFork ? 'bg-[#07551f]' : 'bg-brand-orange'}`}
       />
 
+      {hasFeaturedArtifact && (
+        <Link
+          href={projectHref}
+          className="block lg:col-span-2 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-orange-ink"
+          aria-label={`Open the working artifact and full path for ${project.title}`}
+        >
+          <ProjectPreview
+            artifactPath={evidence.artifactPath}
+            title={project.title}
+            label="Featured work · real artifact"
+          />
+        </Link>
+      )}
+
       <div className={featured ? 'p-6 sm:p-7 lg:p-8' : 'flex flex-1 flex-col p-5 pl-6'}>
         <div className="flex flex-wrap items-center gap-2 font-mono text-[9px] font-black uppercase tracking-[0.14em]">
-          <span className={isFork ? 'text-[#07551f]' : 'text-brand-orange'}>
+          <span className={isFork ? 'text-[#07551f]' : 'text-brand-orange-ink'}>
             {isFork ? 'Published branch' : 'Published path'}
           </span>
           {project.category?.name && (
             <>
               <span aria-hidden="true" className="text-surface-300">/</span>
               <span className="text-surface-500">{project.category.icon} {project.category.name}</span>
+            </>
+          )}
+          {evidence.hasWorkingArtifact && (
+            <>
+              <span aria-hidden="true" className="text-surface-300">/</span>
+              <span className="inline-flex items-center gap-1 text-emerald-700">
+                <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
+                Working artifact
+              </span>
             </>
           )}
         </div>
@@ -140,8 +170,8 @@ export default function BuilderWorkCard({
         )}
 
         <Link
-          href={getProjectHref(project)}
-          className="mt-auto inline-flex min-h-11 items-center justify-between gap-3 border-t border-surface-200 pt-5 text-sm font-black text-surface-900 hover:text-brand-orange"
+          href={projectHref}
+          className="mt-auto inline-flex min-h-11 items-center justify-between gap-3 border-t border-surface-200 pt-5 text-sm font-black text-surface-900 hover:text-brand-orange-ink"
         >
           Inspect the full path
           <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />

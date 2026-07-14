@@ -50,7 +50,7 @@ export default function AdminPromptRow({
 
           <Link
             href={detailHref}
-            className="block break-words text-base font-black leading-6 text-surface-900 transition-colors hover:text-brand-orange focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+            className="block break-words text-base font-black leading-6 text-surface-900 transition-colors hover:text-brand-orange-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange-ink"
           >
             {title}
           </Link>
@@ -83,7 +83,7 @@ export default function AdminPromptRow({
         <div className="flex min-w-0 flex-wrap items-center gap-2 border-t border-surface-200 pt-4 lg:max-w-xs lg:justify-end lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
           <Link
             href={detailHref}
-            className="inline-flex min-h-10 items-center justify-center gap-1.5 border border-surface-300 bg-white px-3 py-2 text-xs font-bold text-surface-700 transition-colors hover:border-brand-orange hover:text-brand-orange focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+            className="inline-flex min-h-10 items-center justify-center gap-1.5 border border-surface-300 bg-white px-3 py-2 text-xs font-bold text-surface-700 transition-colors hover:border-brand-orange-ink hover:text-brand-orange-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange-ink"
           >
             View
             <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />

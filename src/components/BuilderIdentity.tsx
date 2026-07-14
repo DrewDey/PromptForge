@@ -38,11 +38,11 @@ export default function BuilderIdentity({
   const joined = joinedLabel(profile.created_at)
   const hasPublicRecord = insights.publishedCount > 0
   const publicRecord = [
-    insights.originalCount > 0 ? { value: insights.originalCount, label: insights.originalCount === 1 ? 'Path' : 'Paths', icon: Layers3 } : null,
-    insights.forkCount > 0 ? { value: insights.forkCount, label: insights.forkCount === 1 ? 'Fork' : 'Forks', icon: GitFork } : null,
-    insights.distinctModelCount > 0 ? { value: insights.distinctModelCount, label: insights.distinctModelCount === 1 ? 'Model' : 'Models', icon: Cpu } : null,
-    insights.verifiedModelRunCount > 0 ? { value: insights.verifiedModelRunCount, label: insights.verifiedModelRunCount === 1 ? 'Verified run' : 'Verified runs', icon: CheckCircle2 } : null,
-  ].filter((item): item is { value: number; label: string; icon: typeof Layers3 } => Boolean(item))
+    insights.originalCount > 0 ? { value: insights.originalCount, label: insights.originalCount === 1 ? 'Path' : 'Paths', icon: Layers3, href: '#vault' } : null,
+    insights.forkCount > 0 ? { value: insights.forkCount, label: insights.forkCount === 1 ? 'Fork' : 'Forks', icon: GitFork, href: '#forks' } : null,
+    insights.distinctModelCount > 0 ? { value: insights.distinctModelCount, label: insights.distinctModelCount === 1 ? 'Model' : 'Models', icon: Cpu, href: null } : null,
+    insights.verifiedModelRunCount > 0 ? { value: insights.verifiedModelRunCount, label: insights.verifiedModelRunCount === 1 ? 'Verified run' : 'Verified runs', icon: CheckCircle2, href: null } : null,
+  ].filter((item): item is { value: number; label: string; icon: typeof Layers3; href: string | null } => Boolean(item))
   const provenanceFallback = provenance?.tone === 'team'
     ? 'Official PathForge work and model comparisons, published with exact prompts, responses, and artifacts attached.'
     : provenance?.tone === 'source-run'
@@ -80,14 +80,14 @@ export default function BuilderIdentity({
                   <div className="flex flex-wrap gap-2">
                     <Link
                       href="/settings/profile"
-                      className="inline-flex min-h-10 items-center gap-2 border border-surface-300 bg-white px-3 py-2 text-xs font-bold text-surface-800 transition-colors hover:border-brand-orange hover:text-brand-orange focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+                      className="inline-flex min-h-10 items-center gap-2 border border-surface-300 bg-white px-3 py-2 text-xs font-bold text-surface-800 transition-colors hover:border-brand-orange-ink hover:text-brand-orange-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange-ink"
                     >
                       <Edit3 className="h-3.5 w-3.5" aria-hidden="true" />
                       Edit profile
                     </Link>
                     <Link
                       href="/my-forge"
-                      className="inline-flex min-h-10 items-center gap-2 bg-surface-900 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-brand-orange focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+                      className="inline-flex min-h-10 items-center gap-2 bg-surface-900 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-primary-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange-ink"
                     >
                       My Forge
                       <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -101,7 +101,7 @@ export default function BuilderIdentity({
                   <span className={[
                     'inline-flex items-center gap-1.5 border px-2.5 py-1 font-mono text-[9px] font-black uppercase tracking-[0.14em]',
                     provenance.tone === 'team'
-                      ? 'border-brand-orange/30 bg-primary-50 text-brand-orange-dark'
+                      ? 'border-brand-orange/30 bg-primary-50 text-brand-orange-ink'
                       : 'border-brand-blue/30 bg-accent-50 text-brand-blue-dark',
                   ].join(' ')}>
                     <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
@@ -155,15 +155,31 @@ export default function BuilderIdentity({
           <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-surface-500">Public record</div>
 
           <div className={`mt-4 grid border-l border-t border-surface-200 bg-white ${publicRecord.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
-            {publicRecord.map(({ value, label, icon: Icon }) => (
-              <div key={label} className="border-b border-r border-surface-200 p-3.5">
-                <div className="flex items-center justify-between gap-2">
-                  <strong className="text-xl font-black tabular-nums text-surface-900">{value}</strong>
-                  <Icon className="h-3.5 w-3.5 text-surface-400" aria-hidden="true" />
+            {publicRecord.map(({ value, label, icon: Icon, href }) => {
+              const metric = (
+                <>
+                  <div className="flex items-center justify-between gap-2">
+                    <strong className="text-xl font-black tabular-nums text-surface-900">{value}</strong>
+                    <Icon className="h-3.5 w-3.5 text-surface-400" aria-hidden="true" />
+                  </div>
+                  <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.1em] text-surface-500">{label}</div>
+                </>
+              )
+              return href ? (
+                <Link
+                  key={label}
+                  href={href}
+                  className="border-b border-r border-surface-200 p-3.5 transition-colors hover:bg-primary-50 focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand-orange-ink"
+                  aria-label={`Jump to ${value} published ${label.toLowerCase()}`}
+                >
+                  {metric}
+                </Link>
+              ) : (
+                <div key={label} className="border-b border-r border-surface-200 p-3.5">
+                  {metric}
                 </div>
-                <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.1em] text-surface-500">{label}</div>
-              </div>
-            ))}
+              )
+            })}
           </div>
 
           <div className="mt-5 space-y-5">

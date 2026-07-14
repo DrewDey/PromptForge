@@ -78,7 +78,7 @@ export default function ResetPasswordPage() {
   if (complete) {
     return (
       <div className="pf-auth">
-        <main className="form-panel">
+        <div className="form-panel">
           <div className="success-card">
             <div className="success-icon"><KeyRound aria-hidden="true" /></div>
             <div className="eyebrow">Account secured</div>
@@ -86,7 +86,7 @@ export default function ResetPasswordPage() {
             <p>Your new password is active and other signed-in devices have been removed.</p>
             <Link href={nextPath} className="btn-primary">Continue to PathForge</Link>
           </div>
-        </main>
+        </div>
       </div>
     )
   }

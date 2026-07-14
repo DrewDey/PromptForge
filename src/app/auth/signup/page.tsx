@@ -128,7 +128,7 @@ export default function SignupPage() {
   if (successEmail) {
     return (
       <div className="pf-auth">
-        <main className="form-panel">
+        <div className="form-panel">
           <div className="success-card">
             <div className="success-icon"><Mail aria-hidden="true" /></div>
             <div className="eyebrow">One last step</div>
@@ -139,7 +139,7 @@ export default function SignupPage() {
             <p className="success-help">It may take a minute. Check spam before requesting another account.</p>
             <p className="form-foot"><Link href={authHref('/auth/login', nextPath)}>Return to login</Link></p>
           </div>
-        </main>
+        </div>
       </div>
     )
   }

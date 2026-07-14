@@ -41,8 +41,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable}`}>
       <body className="bg-surface-50 text-surface-900 min-h-screen flex flex-col font-sans antialiased">
+        <a className="site-skip-link" href="#main-content">
+          Skip to main content
+        </a>
         <Header />
-        <main className="flex-1">{children}</main>
+        <main id="main-content" className="flex-1" tabIndex={-1}>{children}</main>
         <Footer />
       </body>
     </html>

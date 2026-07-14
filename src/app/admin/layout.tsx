@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { ArrowLeft, ShieldCheck } from 'lucide-react'
+import { Activity, ArrowLeft, ShieldCheck } from 'lucide-react'
 
 const SUPABASE_CONFIGURED = !!(
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -78,6 +78,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </div>
 
           <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <Link
+              href="/admin/analytics"
+              className="inline-flex min-h-10 items-center gap-2 border border-brand-orange/60 px-3 py-2 text-xs font-bold text-brand-orange-light transition-colors hover:border-brand-orange-light hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange-light"
+            >
+              <Activity className="h-3.5 w-3.5" aria-hidden="true" />
+              Launch activation
+            </Link>
             <Link
               href="/"
               className="inline-flex min-h-10 items-center gap-2 border border-surface-700 px-3 py-2 text-xs font-bold text-surface-200 transition-colors hover:border-surface-500 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange-light"

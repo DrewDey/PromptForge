@@ -27,7 +27,7 @@ export function HomeHero({ pathCount, featured }: HomeHeroProps) {
               Open a finished project, inspect the exact prompts and responses behind it, then fork the point where your version changes.
             </p>
 
-            <form className="home-search" action="/paths" method="get" role="search">
+            <form className="home-search" action="/paths" method="get" role="search" data-activation-search="home">
               <Search aria-hidden="true" />
               <label className="sr-only" htmlFor="home-path-search">Search build paths</label>
               <input

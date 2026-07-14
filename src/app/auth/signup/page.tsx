@@ -18,6 +18,7 @@ import { authCallbackUrl, authHref, safeAuthNextPath } from '@/lib/auth-redirect
 import { PATHFORGE_PASSWORD_MIN_LENGTH, pathForgePasswordChecks } from '@/lib/password-policy'
 import { isPathForgeReservedProfileHandle } from '@/lib/profile-handles'
 import { createClient } from '@/lib/supabase/client'
+import { trackActivationEvent } from '@/lib/activation/track'
 import '../auth.css'
 
 const PERKS = [
@@ -113,6 +114,16 @@ export default function SignupPage() {
       setError(friendlyAuthError(signupError, 'PathForge could not create your account. Try again.'))
       setLoading(false)
       return
+    }
+
+    const isNewIdentity = !data.user?.identities || data.user.identities.length > 0
+    if (isNewIdentity) {
+      await trackActivationEvent({
+        eventName: 'account_created',
+        surface: 'signup',
+        action: 'email',
+        path: '/auth/signup',
+      })
     }
 
     if (!data.session) {

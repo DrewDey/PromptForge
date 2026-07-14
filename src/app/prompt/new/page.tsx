@@ -14,6 +14,7 @@ import {
   type ProjectForkSource,
 } from '@/lib/project-forks'
 import { loadMyForgeRepairContext, markProjectForkStarted } from '@/lib/my-forge-actions'
+import { trackActivationEvent } from '@/lib/activation/track'
 
 const sourceRunProviderOptions = ['ChatGPT', 'Claude', 'Gemini', 'OpenRouter', 'Other']
 
@@ -267,6 +268,18 @@ export default function SubmitProjectPage() {
   }, [forkSource, isLoggedIn])
 
   useEffect(() => {
+    if (!forkSource?.sourceProjectId) return
+    void trackActivationEvent({
+      eventName: 'builder_action_started',
+      surface: 'build',
+      action: 'fork',
+      projectId: forkSource.sourceProjectId,
+      projectTitle: forkSource.sourceProjectTitle,
+      sourceRunId: forkSource.sourceRunId,
+    })
+  }, [forkSource])
+
+  useEffect(() => {
     if (isLoggedIn !== true || !repairId || repairAttemptedId === repairId) return
 
     let active = true
@@ -415,6 +428,15 @@ export default function SubmitProjectPage() {
       return
     }
 
+    await trackActivationEvent({
+      eventName: 'source_run_submitted',
+      surface: 'build',
+      action: forkSource ? 'fork' : 'share',
+      projectId: forkSource?.sourceProjectId,
+      projectTitle: forkSource?.sourceProjectTitle,
+      sourceRunId: forkSource?.sourceRunId,
+    })
+
     router.push(`/my-forge?submitted=${encodeURIComponent(result.id ?? '')}`)
     router.refresh()
   }
@@ -544,7 +566,19 @@ export default function SubmitProjectPage() {
           </div>
 
           <div>
-              <form onSubmit={prepareSourceRun} className="space-y-6 p-5 sm:p-6">
+              <form
+                onSubmit={prepareSourceRun}
+                onFocusCapture={() => {
+                  if (forkSource) return
+                  void trackActivationEvent({
+                    eventName: 'builder_action_started',
+                    surface: 'build',
+                    action: 'share',
+                    path: '/build',
+                  })
+                }}
+                className="space-y-6 p-5 sm:p-6"
+              >
               <fieldset className="space-y-5">
                 <legend className="mb-1 flex w-full items-center gap-3 border-b border-surface-100 pb-3">
                   <span className="flex h-7 w-7 items-center justify-center bg-surface-900 font-mono text-[10px] font-black text-white">01</span>

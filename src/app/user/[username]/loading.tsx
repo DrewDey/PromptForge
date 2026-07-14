@@ -2,7 +2,7 @@ import { SkeletonBox, SkeletonCardGrid } from '@/components/Skeleton'
 
 export default function UserProfileLoading() {
   return (
-    <main className="min-h-[calc(100vh-3rem)] bg-surface-50" aria-busy="true">
+    <div className="min-h-[calc(100vh-3rem)] bg-surface-50" aria-busy="true">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
         <div className="border border-surface-200 bg-white">
           <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_290px]">
@@ -63,6 +63,6 @@ export default function UserProfileLoading() {
           <SkeletonCardGrid count={3} />
         </div>
       </div>
-    </main>
+    </div>
   )
 }

@@ -465,7 +465,7 @@ export default async function PreparedSourceRunPage({
     : null
 
   return (
-    <main className="min-h-screen bg-surface-50 text-surface-900">
+    <div className="min-h-screen bg-surface-50 text-surface-900">
       <section className="border-b border-surface-200 bg-white text-surface-900">
         <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -549,6 +549,6 @@ export default async function PreparedSourceRunPage({
       />
 
       <ProjectCommunityPanel projectId={project.id} showForkLineage={false} />
-    </main>
+    </div>
   )
 }

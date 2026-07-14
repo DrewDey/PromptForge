@@ -22,7 +22,7 @@ export default function BuildRequestSubmitForm() {
           minLength={4}
           maxLength={160}
           placeholder="Example: A one-file Tetris game I can fork"
-          className="w-full border border-surface-300 bg-white px-3 py-3 text-sm font-medium text-surface-900 placeholder:text-surface-400 focus:border-brand-orange focus:outline-none focus:ring-2 focus:ring-brand-orange/15"
+          className="w-full border border-surface-300 bg-white px-3 py-3 text-base font-medium text-surface-900 placeholder:text-surface-600 focus:border-brand-orange-ink focus:outline-none focus:ring-2 focus:ring-brand-orange/15 sm:text-sm"
         />
       </div>
 
@@ -38,7 +38,7 @@ export default function BuildRequestSubmitForm() {
           maxLength={5000}
           rows={7}
           placeholder="Describe the artifact you want, the model or platform you care about, and what would count as a good finished result."
-          className="w-full border border-surface-300 bg-white px-3 py-3 text-sm leading-relaxed text-surface-900 placeholder:text-surface-400 focus:border-brand-orange focus:outline-none focus:ring-2 focus:ring-brand-orange/15"
+          className="w-full border border-surface-300 bg-white px-3 py-3 text-base leading-relaxed text-surface-900 placeholder:text-surface-600 focus:border-brand-orange-ink focus:outline-none focus:ring-2 focus:ring-brand-orange/15 sm:text-sm"
         />
       </div>
 
@@ -51,7 +51,7 @@ export default function BuildRequestSubmitForm() {
       <button
         type="submit"
         disabled={pending}
-        className="inline-flex min-h-11 items-center gap-2 bg-surface-900 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-orange focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex min-h-11 items-center gap-2 bg-surface-900 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange-ink disabled:cursor-not-allowed disabled:opacity-60"
       >
         <Send className="h-4 w-4" aria-hidden="true" />
         {pending ? 'Posting...' : 'Post build request'}

@@ -1,10 +1,16 @@
 @import "tailwindcss";
 
+:root {
+  --site-header-height: 4rem;
+  --site-sticky-offset: calc(var(--site-header-height) + 1rem);
+}
+
 @theme {
   /* PathForge brand colors — extracted from logo */
   --color-brand-orange: #E87A2C;
   --color-brand-orange-light: #F5A623;
   --color-brand-orange-dark: #C45A1A;
+  --color-brand-orange-ink: #A8470D;
   --color-brand-blue: #3B8FE4;
   --color-brand-blue-light: #64B5F6;
   --color-brand-blue-dark: #2563EB;
@@ -80,6 +86,37 @@
 /* Base body background */
 body {
   background-color: #fafafa;
+}
+
+/* Keyboard users can bypass the persistent header and land on the page content. */
+.site-skip-link {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 100;
+  padding: 0.75rem 1rem;
+  border: 2px solid #18181b;
+  background: #fff;
+  color: #18181b;
+  font-size: 0.875rem;
+  font-weight: 700;
+  box-shadow: 4px 4px 0 #e87a2c;
+  transform: translateY(calc(-100% - 1rem));
+  transition: transform 150ms ease;
+}
+
+.site-skip-link:focus-visible {
+  outline: 3px solid #3b8fe4;
+  outline-offset: 2px;
+  transform: translateY(0);
+}
+
+#main-content {
+  scroll-margin-top: var(--site-sticky-offset);
+}
+
+#main-content:focus {
+  outline: none;
 }
 
 /* Pipe animation */
@@ -168,7 +205,20 @@ body {
   animation: shimmer 1.8s ease-in-out infinite;
 }
 
+/* Prevent iOS Safari from zooming the page when a form control receives focus. */
+@media (max-width: 767px) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .site-skip-link {
+    transition: none;
+  }
+
   .skeleton-shimmer {
     animation: none;
     background: #e4e4e7; /* surface-200 */

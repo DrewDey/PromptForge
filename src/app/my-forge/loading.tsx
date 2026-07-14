@@ -1,6 +1,6 @@
 export default function MyForgeLoading() {
   return (
-    <main className="min-h-[calc(100vh-3rem)] bg-surface-50" aria-busy="true" aria-label="Loading My Forge">
+    <div className="min-h-[calc(100vh-3rem)] bg-surface-50" aria-busy="true" aria-label="Loading My Forge">
       <div className="mx-auto max-w-7xl animate-pulse px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
         <div className="h-3 w-32 bg-surface-200" />
         <div className="mt-4 h-10 w-56 bg-surface-200" />
@@ -22,6 +22,6 @@ export default function MyForgeLoading() {
           </div>
         </div>
       </div>
-    </main>
+    </div>
   )
 }

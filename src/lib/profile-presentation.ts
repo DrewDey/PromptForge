@@ -1,6 +1,7 @@
 import { getPromptModelLabel } from './prompt-comparisons'
 import { projectForkSourceFromSubmissionFields } from './project-forks'
 import { getProjectModelProfileSummary } from './project-model-profile-summaries'
+import { getPreparedShowcaseProjectById } from './prepared-showcase-projects'
 import { getPublicModelLabel } from './public-model-labels'
 import type { Profile, PromptWithRelations } from './types'
 
@@ -39,6 +40,8 @@ export type PublicProfileProjectEvidence = {
   verifiedModelRunCount: number
   currentModelRunCount: number
   hasModelHistory: boolean
+  artifactPath: string | null
+  hasWorkingArtifact: boolean
   outcome: string | null
   forkSource: ReturnType<typeof projectForkSourceFromSubmissionFields>
 }
@@ -95,6 +98,7 @@ export function getPublicProfileProjectEvidence(
     ...(defaultModelLabel === 'Unknown model' ? [] : [defaultModelLabel]),
   ].map(profileModelLabel))
   const currentModelRunCount = verifiedRuns.filter((run) => run.isCurrent).length
+  const artifactPath = getPreparedShowcaseProjectById(project.id)?.artifactPath?.trim() || null
 
   return {
     projectId: project.id,
@@ -103,6 +107,8 @@ export function getPublicProfileProjectEvidence(
     verifiedModelRunCount: verifiedRuns.length,
     currentModelRunCount,
     hasModelHistory: verifiedRuns.some((run) => run.runRole === 'historical-baseline'),
+    artifactPath,
+    hasWorkingArtifact: Boolean(artifactPath),
     outcome: lastProjectOutcome(project),
     forkSource: projectForkSourceFromSubmissionFields(project),
   }

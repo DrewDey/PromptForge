@@ -79,7 +79,7 @@ export default async function AdminDashboard({
     <div className="min-w-0">
       <section className="grid min-w-0 gap-5 border-b border-surface-200 pb-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-brand-orange">
+          <div className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-brand-orange-ink">
             <span className="h-2 w-2 bg-brand-orange" aria-hidden="true" />
             Live review workspace
           </div>
@@ -138,7 +138,7 @@ export default async function AdminDashboard({
               icon={<SearchCheck className="h-5 w-5" aria-hidden="true" />}
               title="Nothing is waiting on review."
               description="New project submissions and source-run intakes will appear here with their author, model evidence, and next moderation action."
-              action={<Link href="/admin?tab=all" className="font-bold text-brand-orange hover:text-brand-orange-dark">Review published projects</Link>}
+              action={<Link href="/admin?tab=all" className="font-bold text-brand-orange-ink hover:text-primary-700">Review published projects</Link>}
             />
           ) : (
             <div className="min-w-0 divide-y divide-surface-200 border border-surface-200 bg-white">
@@ -195,7 +195,7 @@ export default async function AdminDashboard({
             />
             <Link
               href="/suggestion-box"
-              className="inline-flex min-h-10 shrink-0 items-center gap-2 border border-surface-300 bg-white px-3 py-2 text-xs font-bold text-surface-700 transition-colors hover:border-brand-orange hover:text-brand-orange focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+              className="inline-flex min-h-10 shrink-0 items-center gap-2 border border-surface-300 bg-white px-3 py-2 text-xs font-bold text-surface-700 transition-colors hover:border-brand-orange-ink hover:text-brand-orange-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange-ink"
             >
               View public board
               <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -207,7 +207,7 @@ export default async function AdminDashboard({
               icon={<Inbox className="h-5 w-5" aria-hidden="true" />}
               title="No suggestions have arrived yet."
               description="Site feedback, bugs, moderation concerns, and feature requests will enter this workspace for review."
-              action={<Link href="/suggestion-box" className="font-bold text-brand-orange hover:text-brand-orange-dark">Open the public form</Link>}
+              action={<Link href="/suggestion-box" className="font-bold text-brand-orange-ink hover:text-primary-700">Open the public form</Link>}
             />
           ) : (
             <div className="mt-6 min-w-0 space-y-8">
@@ -287,10 +287,10 @@ function AdminTabLink({
       href={href}
       aria-current={active ? 'page' : undefined}
       className={[
-        'flex min-h-10 min-w-0 items-center justify-between gap-2 px-3 py-2 text-xs font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange sm:min-w-32 sm:justify-center',
+        'flex min-h-10 min-w-0 items-center justify-between gap-2 px-3 py-2 text-xs font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange-ink sm:min-w-32 sm:justify-center',
         active
           ? 'bg-surface-900 text-white'
-          : 'text-surface-600 hover:bg-primary-50 hover:text-brand-orange',
+          : 'text-surface-600 hover:bg-primary-50 hover:text-brand-orange-ink',
       ].join(' ')}
     >
       <span className="truncate">{label}</span>
@@ -318,7 +318,7 @@ function SectionHeading({
   return (
     <div className="mb-4 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
-        <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-brand-orange">{eyebrow}</p>
+        <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-brand-orange-ink">{eyebrow}</p>
         <h2 id={headingId} className="mt-1 text-2xl font-black tracking-[-0.03em] text-surface-900">{title}</h2>
         <p className="mt-1 max-w-3xl text-sm leading-6 text-surface-600">{description}</p>
       </div>
@@ -376,7 +376,7 @@ function SourceRunIntakeRow({ sourceRun }: { sourceRun: SourceRunSubmissionWithR
 
           <Link
             href={`/admin/source-runs/${sourceRun.id}`}
-            className="block break-words text-base font-black leading-6 text-surface-900 transition-colors hover:text-brand-orange focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+            className="block break-words text-base font-black leading-6 text-surface-900 transition-colors hover:text-brand-orange-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange-ink"
           >
             {title}
           </Link>
@@ -427,10 +427,10 @@ function SourceRunIntakeRow({ sourceRun }: { sourceRun: SourceRunSubmissionWithR
           <Link
             href={`/admin/source-runs/${sourceRun.id}`}
             className={[
-              'inline-flex min-h-10 w-full items-center justify-center px-3 py-2 text-xs font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange lg:w-auto',
+              'inline-flex min-h-10 w-full items-center justify-center px-3 py-2 text-xs font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange-ink lg:w-auto',
               preparedProject
                 ? 'bg-green-800 text-white hover:bg-green-900'
-                : 'bg-surface-900 text-white hover:bg-brand-orange',
+                : 'bg-surface-900 text-white hover:bg-primary-700',
             ].join(' ')}
           >
             {preparedProject ? 'Publish prepared page' : 'Review source run'}
@@ -445,7 +445,7 @@ function StatCard({ label, value, highlight }: { label: string; value: number; h
   return (
     <div className="min-w-0 border-b border-r border-surface-200 p-3.5 last:border-r-0 lg:border-b-0 lg:p-4">
       <dt className="truncate font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-surface-500">{label}</dt>
-      <dd className={`mt-1 text-2xl font-black tracking-[-0.04em] ${highlight ? 'text-brand-orange-dark' : 'text-surface-900'}`}>{value}</dd>
+      <dd className={`mt-1 text-2xl font-black tracking-[-0.04em] ${highlight ? 'text-brand-orange-ink' : 'text-surface-900'}`}>{value}</dd>
     </div>
   )
 }
@@ -463,7 +463,7 @@ function EmptyState({
 }) {
   return (
     <div className="border border-dashed border-surface-300 bg-white px-5 py-10 text-center sm:px-8 sm:py-14">
-      <div className="mx-auto flex h-11 w-11 items-center justify-center bg-primary-50 text-brand-orange">
+      <div className="mx-auto flex h-11 w-11 items-center justify-center bg-primary-50 text-brand-orange-ink">
         {icon}
       </div>
       <h3 className="mt-4 text-lg font-black text-surface-900">{title}</h3>

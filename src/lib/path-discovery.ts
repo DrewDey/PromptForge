@@ -37,6 +37,7 @@ export type BuildPathDiscoveryItem = {
   authorUsername: string | null
   promptCount: number
   comparisonCount: number
+  artifactPath: string | null
   hasWorkingArtifact: boolean
   hasFork: boolean
   createdAt: string
@@ -195,7 +196,8 @@ export function buildPathDiscoveryCatalog(
     ].filter((label) => label !== 'Unknown model'))]
     const comparisonCount = Math.max(1, modelLabels.length)
     const preview = previewForPrompt(prompt)
-    const hasWorkingArtifact = Boolean(prepared?.artifactPath)
+    const artifactPath = prepared?.artifactPath ?? null
+    const hasWorkingArtifact = Boolean(artifactPath)
     const hasFork = Boolean(prepared?.forkSource || prompt.fork_source_project_id)
     const richnessScore = Math.min(
       15,
@@ -226,6 +228,7 @@ export function buildPathDiscoveryCatalog(
       authorUsername: prompt.author?.username ?? null,
       promptCount,
       comparisonCount,
+      artifactPath,
       hasWorkingArtifact,
       hasFork,
       createdAt: prompt.created_at,

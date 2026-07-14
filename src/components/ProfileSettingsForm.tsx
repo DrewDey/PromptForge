@@ -15,11 +15,11 @@ import {
   Save,
 } from 'lucide-react'
 import { updateProfile, type ProfileUpdateState } from '@/lib/profile-actions'
+import { deriveProfileIdentityReadiness } from '@/lib/profile-readiness'
 import { profileAvatarClasses, profileMonogram } from '@/lib/profile-visuals'
 import type { Profile } from '@/lib/types'
 
 const initialState: ProfileUpdateState = { success: false }
-const USERNAME_PATTERN = /^[A-Za-z0-9_]{3,30}$/
 
 function normalizeSingleLine(value: string) {
   return value.trim().replace(/\s+/g, ' ')
@@ -112,14 +112,12 @@ export default function ProfileSettingsForm({
     currentIdentity.username !== savedIdentity.username ||
     currentIdentity.bio !== savedIdentity.bio
   )
-  const handleIsReady = USERNAME_PATTERN.test(username.trim())
-  const readiness = [
-    { complete: displayName.trim().length >= 2, label: 'A recognizable display name' },
-    { complete: handleIsReady, label: 'A valid public handle' },
-    { complete: bio.trim().length > 0, label: 'A factual builder bio' },
-    { complete: summary.originalCount + summary.forkCount > 0, label: 'At least one published project' },
-  ]
-  const readinessCount = readiness.filter((item) => item.complete).length
+  const identityReadiness = deriveProfileIdentityReadiness({
+    displayName: currentIdentity.displayName,
+    username: currentIdentity.username,
+    bio: currentIdentity.bio,
+  })
+  const publishedProjectCount = summary.originalCount + summary.forkCount
   const savedProfileHref = savedUsername ? `/user/${savedUsername}` : null
   const profileHref = state.profileHref ?? savedProfileHref
   const previewDisplayName = displayName.trim() || 'Your display name'
@@ -129,6 +127,12 @@ export default function ProfileSettingsForm({
     summary.forkCount > 0 ? { icon: GitFork, value: summary.forkCount, label: summary.forkCount === 1 ? 'fork' : 'forks' } : null,
     summary.distinctModelCount > 0 ? { icon: Cpu, value: summary.distinctModelCount, label: summary.distinctModelCount === 1 ? 'model' : 'models' } : null,
   ].filter((item): item is { icon: typeof Layers3; value: number; label: string } => Boolean(item))
+  const portfolioMetrics = [
+    { label: 'Original paths', value: summary.originalCount },
+    { label: 'Forks', value: summary.forkCount },
+    { label: 'Models used', value: summary.distinctModelCount },
+    { label: 'Verified runs', value: summary.verifiedModelRunCount },
+  ]
 
   return (
     <div className="grid gap-7 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)] lg:items-start">
@@ -237,7 +241,7 @@ export default function ProfileSettingsForm({
             <button
               type="submit"
               disabled={pending}
-              className="inline-flex min-h-11 items-center gap-2 bg-surface-900 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-orange focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange disabled:cursor-wait disabled:opacity-60"
+              className="inline-flex min-h-11 items-center gap-2 bg-surface-900 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange-ink disabled:cursor-wait disabled:opacity-60"
             >
               <Save className="h-4 w-4" aria-hidden="true" />
               {pending ? 'Saving…' : 'Save profile'}
@@ -259,7 +263,7 @@ export default function ProfileSettingsForm({
             {continueHref && state.success && (
               <Link
                 href={continueHref}
-                className="inline-flex min-h-11 items-center gap-2 bg-brand-orange px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-orange-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+                className="inline-flex min-h-11 items-center gap-2 bg-brand-orange px-4 py-2.5 text-sm font-extrabold text-surface-900 transition-colors hover:bg-brand-orange-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange-ink"
               >
                 Continue to PathForge
               </Link>
@@ -272,7 +276,7 @@ export default function ProfileSettingsForm({
         <section className="overflow-hidden border border-surface-200 bg-white shadow-[0_14px_40px_rgba(24,24,27,0.05)]" aria-labelledby="profile-preview-heading">
           <div className="flex items-center justify-between gap-3 border-b border-surface-200 px-5 py-3">
             <div>
-              <div className="font-mono text-[9px] font-black uppercase tracking-[0.14em] text-brand-orange">Live preview</div>
+              <div className="font-mono text-[9px] font-black uppercase tracking-[0.14em] text-brand-orange-ink">Live preview</div>
               <h2 id="profile-preview-heading" className="mt-0.5 text-sm font-black text-surface-900">How your identity reads</h2>
             </div>
             <span className={`text-[10px] font-medium ${hasUnsavedChanges ? 'text-amber-700' : 'text-emerald-700'}`}>
@@ -322,24 +326,51 @@ export default function ProfileSettingsForm({
         <section className="border border-surface-200 bg-surface-50 p-5" aria-labelledby="profile-readiness-heading">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <div className="font-mono text-[9px] font-black uppercase tracking-[0.14em] text-surface-500">Profile readiness</div>
-              <h2 id="profile-readiness-heading" className="mt-1 text-base font-black text-surface-900">{readinessCount} of {readiness.length} signals ready</h2>
+              <div className="font-mono text-[9px] font-black uppercase tracking-[0.14em] text-surface-500">
+                {hasUnsavedChanges ? 'Draft identity readiness' : 'Identity readiness'}
+              </div>
+              <h2 id="profile-readiness-heading" className="mt-1 text-base font-black text-surface-900">
+                {identityReadiness.completeCount} of {identityReadiness.totalCount} identity details ready
+              </h2>
             </div>
-            <span className={`flex h-9 w-9 items-center justify-center ${readinessCount === readiness.length ? 'bg-emerald-700 text-white' : 'bg-white text-surface-400'}`}>
-              {readinessCount === readiness.length
+            <span className={`flex h-9 w-9 items-center justify-center ${identityReadiness.isComplete ? 'bg-emerald-700 text-white' : 'bg-white text-surface-400'}`}>
+              {identityReadiness.isComplete
                 ? <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
                 : <Layers3 className="h-4 w-4" aria-hidden="true" />}
             </span>
           </div>
           <ul className="mt-4 space-y-2.5">
-            {readiness.map((item) => (
-              <ReadinessItem key={item.label} complete={item.complete}>{item.label}</ReadinessItem>
+            {identityReadiness.signals.map((signal) => (
+              <ReadinessItem key={signal.key} complete={signal.complete}>{signal.label}</ReadinessItem>
             ))}
           </ul>
+          {hasUnsavedChanges && (
+            <p className="mt-4 border-l-2 border-amber-400 pl-3 text-[11px] leading-5 text-amber-900">
+              This is the readiness of your draft. Save the profile to make it your My Forge identity status.
+            </p>
+          )}
           <div className="mt-5 flex items-start gap-2 border-t border-surface-200 pt-4 text-[11px] leading-5 text-surface-500">
             <LockKeyhole className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             Saved paths, submissions, and review notes never appear in this public preview.
           </div>
+        </section>
+
+        <section className="border border-surface-200 bg-white p-5" aria-labelledby="portfolio-progress-heading">
+          <div className="font-mono text-[9px] font-black uppercase tracking-[0.14em] text-[#07551f]">Portfolio progress</div>
+          <h2 id="portfolio-progress-heading" className="mt-1 text-base font-black text-surface-900">
+            {publishedProjectCount} published {publishedProjectCount === 1 ? 'project' : 'projects'}
+          </h2>
+          <dl className="mt-4 grid grid-cols-2 gap-px overflow-hidden border border-surface-200 bg-surface-200">
+            {portfolioMetrics.map((metric) => (
+              <div key={metric.label} className="bg-white p-3">
+                <dt className="text-[10px] leading-4 text-surface-500">{metric.label}</dt>
+                <dd className="mt-1 font-mono text-base font-black tabular-nums text-surface-900">{metric.value}</dd>
+              </div>
+            ))}
+          </dl>
+          <p className="mt-4 text-[11px] leading-5 text-surface-500">
+            Portfolio progress grows when builds are approved. It does not block your public identity from being ready.
+          </p>
         </section>
       </aside>
     </div>

@@ -178,12 +178,12 @@ export default async function SuggestionBoxPage() {
               <p className="mt-2 text-sm leading-6 text-surface-600">You must be logged in. New feedback goes to review before it can appear on the board.</p>
             </div>
             <div className="border border-surface-200 bg-white p-5">
-              <Clock className="h-5 w-5 text-brand-orange" aria-hidden="true" />
+              <Clock className="h-5 w-5 text-brand-orange-ink" aria-hidden="true" />
               <h2 className="mt-3 text-base font-black text-surface-900">{SUGGESTION_PUBLIC_DELAY_HOURS}-hour release window</h2>
               <p className="mt-2 text-sm leading-6 text-surface-600">After approval, you have time to keep it private before it appears publicly.</p>
             </div>
             <div className="border border-primary-200 bg-primary-50 p-5 text-surface-900">
-              <LockKeyhole className="h-5 w-5 text-brand-orange" aria-hidden="true" />
+              <LockKeyhole className="h-5 w-5 text-brand-orange-ink" aria-hidden="true" />
               <h2 className="mt-3 text-base font-black">Personal replies stay possible</h2>
               <p className="mt-2 text-sm leading-6 text-surface-600">PathForge can respond to your private box even when the public board never sees the note.</p>
             </div>

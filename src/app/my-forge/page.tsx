@@ -5,6 +5,7 @@ import {
   Bookmark,
   Bot,
   CheckCircle2,
+  CircleX,
   Clock3,
   FileWarning,
   FolderGit2,
@@ -114,6 +115,7 @@ const lifecyclePresentation: Record<
 
 function SubmissionStatusIcon({ lifecycle }: { lifecycle: MyForgeSourceRun['lifecycle'] }) {
   if (lifecycle === 'live') return <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
+  if (lifecycle === 'declined') return <CircleX className="h-3 w-3" aria-hidden="true" />
   if (lifecycle === 'needs_repair' || lifecycle === 'failed') {
     return <FileWarning className="h-3 w-3" aria-hidden="true" />
   }
@@ -127,7 +129,7 @@ function LoggedOutForge() {
       <div className="mx-auto max-w-5xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
         <section className="grid overflow-hidden border border-surface-200 bg-white lg:grid-cols-[minmax(0,1fr)_340px]">
           <div className="p-7 sm:p-10">
-            <div className="inline-flex items-center gap-2 font-mono text-[10px] font-black uppercase tracking-[0.16em] text-brand-orange">
+            <div className="inline-flex items-center gap-2 font-mono text-[10px] font-black uppercase tracking-[0.16em] text-brand-orange-ink">
               <FolderGit2 className="h-4 w-4" aria-hidden="true" />
               Private workspace
             </div>
@@ -138,7 +140,7 @@ function LoggedOutForge() {
               My Forge keeps saved paths, exact artifact versions, model updates, review progress, and published work attached to your account.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/auth/login?next=%2Fmy-forge" className="inline-flex min-h-11 items-center gap-2 bg-brand-orange px-5 py-3 text-sm font-bold text-white hover:bg-brand-orange-dark">
+              <Link href="/auth/login?next=%2Fmy-forge" className="inline-flex min-h-11 items-center gap-2 bg-brand-orange px-5 py-3 text-sm font-extrabold text-surface-900 hover:bg-brand-orange-light">
                 Log in to My Forge
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
@@ -213,7 +215,7 @@ function QueueItem({ item, position }: { item: WorkQueueItem; position: number }
           <p className={`mt-1.5 text-surface-600 ${isFirst ? 'max-w-2xl text-sm leading-6' : 'line-clamp-2 text-xs leading-5'}`}>{item.body}</p>
           <div className="mt-2 font-mono text-[9px] uppercase tracking-[0.09em] text-surface-400">{item.meta}</div>
         </div>
-        <Link href={item.href} className={`inline-flex shrink-0 items-center justify-center gap-2 bg-surface-900 font-bold text-white hover:bg-brand-orange ${isFirst ? 'min-h-11 px-4 py-2.5 text-sm' : 'min-h-10 px-3 py-2 text-xs'}`}>
+        <Link href={item.href} className={`inline-flex shrink-0 items-center justify-center gap-2 bg-surface-900 font-bold text-white hover:bg-primary-700 ${isFirst ? 'min-h-11 px-4 py-2.5 text-sm' : 'min-h-10 px-3 py-2 text-xs'}`}>
           {item.action}
           <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
         </Link>
@@ -242,7 +244,7 @@ function IdentityRail({
   ]
 
   return (
-    <aside className="self-start border border-surface-200 bg-white lg:sticky lg:top-24">
+    <aside className="order-2 self-start border border-surface-200 bg-white lg:order-1 lg:sticky lg:top-24">
       <div className="border-b border-surface-200 p-5">
         <div className="flex items-start gap-3">
           <span className={`flex h-12 w-12 shrink-0 items-center justify-center text-sm font-black ${profileAvatarClasses(profile.username)}`}>
@@ -255,23 +257,23 @@ function IdentityRail({
             </div>
             <div className={`mt-2 inline-flex items-center gap-1.5 font-mono text-[9px] font-black uppercase tracking-[0.12em] ${profile.isComplete ? 'text-emerald-700' : 'text-amber-700'}`}>
               <span className={`h-1.5 w-1.5 ${profile.isComplete ? 'bg-emerald-500' : 'bg-amber-500'}`} aria-hidden="true" />
-              {profile.isComplete ? 'Profile ready' : 'Profile needs details'}
+              {profile.isComplete ? 'Identity ready' : 'Identity needs details'}
             </div>
           </div>
         </div>
 
         {!profile.isComplete && (
           <p className="mt-4 border-l-2 border-brand-orange pl-3 text-xs leading-5 text-surface-600">
-            Finish your name, handle, and bio before your next published path introduces you to visitors.
+            Finish your display name, public handle, and bio so every published path introduces you clearly.
           </p>
         )}
 
         <div className="mt-4 grid grid-cols-2 gap-2">
-          <Link href={publicProfileHref} className="inline-flex min-h-10 items-center justify-center gap-2 border border-surface-300 px-3 py-2 text-xs font-bold text-surface-800 hover:border-brand-orange hover:text-brand-orange">
+          <Link href={publicProfileHref} className="inline-flex min-h-10 items-center justify-center gap-2 border border-surface-300 px-3 py-2 text-xs font-bold text-surface-800 hover:border-brand-orange-ink hover:text-brand-orange-ink">
             <UserRound className="h-3.5 w-3.5" aria-hidden="true" />
             {profile.username ? 'Public profile' : 'Choose handle'}
           </Link>
-          <Link href="/settings/profile" className="inline-flex min-h-10 items-center justify-center gap-2 border border-surface-300 px-3 py-2 text-xs font-bold text-surface-800 hover:border-brand-orange hover:text-brand-orange">
+          <Link href="/settings/profile" className="inline-flex min-h-10 items-center justify-center gap-2 border border-surface-300 px-3 py-2 text-xs font-bold text-surface-800 hover:border-brand-orange-ink hover:text-brand-orange-ink">
             <Settings className="h-3.5 w-3.5" aria-hidden="true" />
             Edit profile
           </Link>
@@ -304,22 +306,22 @@ function IdentityRail({
           <div className="mt-3 divide-y divide-surface-100 border-y border-surface-100">
             {dashboard.ownedProjects.slice(0, 3).map((project) => (
               <Link key={project.id} href={getProjectHref({ id: project.id })} className="group flex items-center justify-between gap-3 py-2.5 text-xs">
-                <span className="line-clamp-1 font-bold text-surface-700 group-hover:text-brand-orange">{project.title}</span>
-                <ArrowRight className="h-3 w-3 shrink-0 text-surface-300 group-hover:text-brand-orange" aria-hidden="true" />
+                <span className="line-clamp-1 font-bold text-surface-700 group-hover:text-brand-orange-ink">{project.title}</span>
+                <ArrowRight className="h-3 w-3 shrink-0 text-surface-300 group-hover:text-brand-orange-ink" aria-hidden="true" />
               </Link>
             ))}
           </div>
         ) : (
           <p className="mt-3 text-xs leading-5 text-surface-500">Approved work will collect here and on your public profile.</p>
         )}
-        <Link href={publicProfileHref} className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-surface-600 hover:text-brand-orange">
-          {profile.username ? 'View complete public profile' : 'Prepare public profile'}
+        <Link href={publicProfileHref} className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-surface-600 hover:text-brand-orange-ink">
+          {profile.username ? 'View public profile' : 'Prepare public profile'}
           <ArrowRight className="h-3 w-3" aria-hidden="true" />
         </Link>
       </div>
 
       <div className="grid grid-cols-2 gap-2 p-5">
-        <Link href="/build" className="inline-flex min-h-11 items-center justify-center gap-2 bg-brand-orange px-3 py-2.5 text-xs font-bold text-white hover:bg-brand-orange-dark">
+        <Link href="/build" className="inline-flex min-h-11 items-center justify-center gap-2 bg-brand-orange px-3 py-2.5 text-xs font-extrabold text-surface-900 hover:bg-brand-orange-light">
           <Hammer className="h-3.5 w-3.5" aria-hidden="true" />
           Share a build
         </Link>
@@ -336,7 +338,11 @@ function queueItemForRun(run: MyForgeSourceRun): WorkQueueItem {
   const presentation = lifecyclePresentation[run.lifecycle]
   return {
     id: `run-${run.id}`,
-    eyebrow: needsRepair ? 'Repair requested' : presentation.label,
+    eyebrow: run.lifecycle === 'failed'
+      ? 'Could not process'
+      : needsRepair
+        ? 'Repair requested'
+        : presentation.label,
     title: run.title,
     body: run.userStatusNote || presentation.detail,
     meta: `${run.forkSourceProjectTitle ? `Fork of ${run.forkSourceProjectTitle} · ` : ''}Updated ${formatDate(run.updatedAt)}`,
@@ -427,7 +433,7 @@ export default async function MyForgePage({
       <div className="mx-auto max-w-7xl px-4 py-7 sm:px-6 lg:px-8 lg:py-9">
         <header className="mb-6 flex flex-col gap-4 border-b border-surface-200 pb-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <div className="flex items-center gap-2 font-mono text-[10px] font-black uppercase tracking-[0.16em] text-brand-orange">
+            <div className="flex items-center gap-2 font-mono text-[10px] font-black uppercase tracking-[0.16em] text-brand-orange-ink">
               <FolderGit2 className="h-4 w-4" aria-hidden="true" />
               Private workspace
             </div>
@@ -436,7 +442,7 @@ export default async function MyForgePage({
               One work console for review, unfinished branches, saved paths, and the public portfolio they become.
             </p>
           </div>
-          <Link href="/build" className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 bg-surface-900 px-4 py-2 text-xs font-bold text-white hover:bg-brand-orange">
+          <Link href="/build" className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 bg-surface-900 px-4 py-2 text-xs font-bold text-white hover:bg-primary-700">
             <Hammer className="h-3.5 w-3.5" aria-hidden="true" />
             Share another build
           </Link>
@@ -461,7 +467,7 @@ export default async function MyForgePage({
             modelUpdateCount={modelUpdateCount}
           />
 
-          <div className="min-w-0">
+          <div className="order-1 min-w-0 lg:order-2">
             <section aria-labelledby="work-queue-heading">
               <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
@@ -491,7 +497,7 @@ export default async function MyForgePage({
                       <h3 className="mt-1 text-lg font-black text-surface-900">Nothing needs your attention.</h3>
                       <p className="mt-1 text-sm leading-6 text-surface-600">Start another source run, or find a proven path worth saving and continuing.</p>
                     </div>
-                    <Link href="/build" className="inline-flex min-h-11 items-center justify-center gap-2 bg-brand-orange px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-orange-dark">
+                    <Link href="/build" className="inline-flex min-h-11 items-center justify-center gap-2 bg-brand-orange px-4 py-2.5 text-sm font-extrabold text-surface-900 hover:bg-brand-orange-light">
                       Share another build
                       <ArrowRight className="h-4 w-4" aria-hidden="true" />
                     </Link>
@@ -510,7 +516,7 @@ export default async function MyForgePage({
                   {recentRuns.map((run) => (
                     <Link key={run.id} href={`/my-forge/builds/${run.id}`} className="group grid gap-2 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
                       <div className="min-w-0">
-                        <div className="line-clamp-1 text-xs font-bold text-surface-800 group-hover:text-brand-orange">{run.title}</div>
+                        <div className="line-clamp-1 text-xs font-bold text-surface-800 group-hover:text-brand-orange-ink">{run.title}</div>
                         <div className="mt-1 font-mono text-[9px] uppercase tracking-[0.09em] text-surface-400">Updated {formatDate(run.updatedAt)}</div>
                       </div>
                       <span className={`inline-flex w-fit items-center gap-1.5 border px-2 py-1 font-mono text-[9px] font-black uppercase tracking-[0.1em] ${lifecyclePresentation[run.lifecycle].className}`}>

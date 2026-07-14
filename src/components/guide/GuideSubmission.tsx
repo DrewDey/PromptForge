@@ -44,7 +44,7 @@ export default function GuideSubmission() {
               </div>
               <div className="guide-form-footer">
                 <div><Check aria-hidden="true" /> The fork source remains attached</div>
-                <Link href="/build" className="inline-flex min-h-11 items-center justify-center gap-2 bg-[#e87a2c] px-4 text-[11px] font-bold text-white transition hover:bg-[#c95e18] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                <Link href="/build" className="inline-flex min-h-11 items-center justify-center gap-2 bg-[#e87a2c] px-4 text-[11px] font-extrabold text-[#1f1914] transition hover:bg-[#f5a623] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
                   Send to review <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                 </Link>
               </div>

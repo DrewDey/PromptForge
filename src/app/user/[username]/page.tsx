@@ -44,6 +44,12 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
   const evidenceByProjectId = new Map(insights.projectEvidence.map((evidence) => (
     [evidence.projectId, evidence]
   )))
+  const previewProjectId = [
+    originalProjects.length === 1 ? originalProjects[0] : null,
+    insights.forks.length === 1 ? insights.forks[0] : null,
+  ].find((project) => (
+    project && evidenceByProjectId.get(project.id)?.hasWorkingArtifact
+  ))?.id ?? null
   const hasPublishedWork = projects.length > 0
 
   return (
@@ -52,10 +58,10 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
         <BuilderIdentity profile={profile} insights={insights} isOwner={isOwner} />
 
         <div className="mt-10 grid gap-14">
-          {originalProjects.length > 0 && <section id="vault" aria-labelledby="vault-heading">
+          {originalProjects.length > 0 && <section id="vault" className="scroll-mt-32" aria-labelledby="vault-heading">
             <div className="mb-5 flex flex-col gap-2 border-b border-surface-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-brand-orange">
+                <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-brand-orange-ink">
                   Public work
                 </div>
                 <h2 id="vault-heading" className="mt-1 text-2xl font-black tracking-[-0.025em] text-surface-900">
@@ -85,13 +91,14 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
                     project={project}
                     evidence={evidence}
                     featured={originalProjects.length === 1}
+                    showArtifactPreview={project.id === previewProjectId}
                   />
                 )
               })}
             </div>
           </section>}
 
-          {insights.forks.length > 0 && <section id="forks" aria-labelledby="forks-heading">
+          {insights.forks.length > 0 && <section id="forks" className="scroll-mt-32" aria-labelledby="forks-heading">
             <div className="mb-5 flex flex-col gap-2 border-b border-surface-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#07551f]">
@@ -124,6 +131,7 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
                     project={project}
                     evidence={evidence}
                     featured={insights.forks.length === 1}
+                    showArtifactPreview={project.id === previewProjectId}
                   />
                 )
               })}
@@ -156,7 +164,7 @@ function ProfileEmptyState({
 }) {
   return (
     <div className="flex flex-col gap-5 border border-dashed border-surface-300 bg-white p-5 sm:flex-row sm:items-center sm:p-6">
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center border border-brand-orange/25 bg-primary-50 text-brand-orange">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center border border-brand-orange/25 bg-primary-50 text-brand-orange-ink">
         <Plus className="h-5 w-5" aria-hidden="true" />
       </div>
       <div className="min-w-0 flex-1">
@@ -166,7 +174,7 @@ function ProfileEmptyState({
       {action && (
         <Link
           href={action.href}
-          className="inline-flex min-h-11 shrink-0 items-center justify-center bg-surface-900 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-orange focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+          className="inline-flex min-h-11 shrink-0 items-center justify-center bg-surface-900 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange-ink"
         >
           {action.label}
         </Link>

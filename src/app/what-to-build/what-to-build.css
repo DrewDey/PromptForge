@@ -4,7 +4,7 @@
   --ideas-line: #d9d8d3;
   --ideas-paper: #fffdf9;
   --ideas-warm: #f3eee5;
-  --ideas-orange: var(--color-brand-orange);
+  --ideas-orange: var(--color-brand-orange-ink);
   min-height: 100vh;
   overflow: hidden;
   background: var(--ideas-paper);
@@ -94,10 +94,10 @@
 }
 .pf-ideas .ideas-opening h1 span {
   color: var(--ideas-orange);
-  font-family: var(--font-display);
-  font-style: italic;
-  font-weight: 400;
-  letter-spacing: -.03em;
+  font-family: inherit;
+  font-style: normal;
+  font-weight: 950;
+  letter-spacing: inherit;
 }
 .pf-ideas .ideas-opening-copy > p {
   max-width: 600px;
@@ -156,6 +156,12 @@
   background: rgba(255,255,255,.47);
   padding-inline: 10px;
 }
+.pf-ideas .ideas-intention-index li a.is-active {
+  background: #fff;
+  box-shadow: inset 3px 0 0 var(--ideas-orange);
+  padding-inline: 10px;
+}
+.pf-ideas .ideas-intention-index li a.is-active .ideas-index-copy strong { color: #9b5727; }
 .pf-ideas .ideas-index-number {
   color: #a76130;
   font-family: var(--font-mono);
@@ -192,6 +198,7 @@
 /* Featured starting point */
 .pf-ideas .ideas-feature-section {
   position: relative;
+  scroll-margin-top: var(--site-sticky-offset, 5rem);
   padding: 78px 0 86px;
   background: #fff;
 }
@@ -207,6 +214,78 @@
   transform: rotate(-9deg);
   pointer-events: none;
 }
+.pf-ideas .ideas-pace-chooser {
+  display: grid;
+  grid-template-columns: minmax(250px, .7fr) minmax(0, 1.3fr);
+  gap: clamp(32px, 5vw, 72px);
+  align-items: end;
+  margin-bottom: 46px;
+  border: 1px solid #d9d4cc;
+  border-top: 3px solid var(--ideas-ink);
+  background: var(--ideas-paper);
+  padding: clamp(22px, 3vw, 34px);
+}
+.pf-ideas .ideas-pace-heading > span {
+  color: var(--ideas-orange);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+.pf-ideas .ideas-pace-heading h2 {
+  max-width: 470px;
+  margin: 10px 0 0;
+  font-size: clamp(25px, 3vw, 35px);
+  font-weight: 900;
+  letter-spacing: -.04em;
+  line-height: 1.03;
+}
+.pf-ideas .ideas-pace-heading p {
+  max-width: 500px;
+  margin: 10px 0 0;
+  color: var(--ideas-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+.pf-ideas .ideas-pace-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: 1px solid #d9d4cc;
+}
+.pf-ideas .ideas-pace-options > a {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 118px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-content: start;
+  gap: 7px 10px;
+  padding: 17px 15px 15px;
+  background: #fff;
+  transition: background .16s ease, color .16s ease;
+}
+.pf-ideas .ideas-pace-options > a + a { border-left: 1px solid #d9d4cc; }
+.pf-ideas .ideas-pace-options strong {
+  font-size: 13px;
+  font-weight: 850;
+  letter-spacing: -.015em;
+}
+.pf-ideas .ideas-pace-options span {
+  grid-column: 1 / -1;
+  color: #68676e;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.pf-ideas .ideas-pace-options svg { width: 14px; height: 14px; color: #9a9893; }
+.pf-ideas .ideas-pace-options > a:hover { background: #f8f3ec; }
+.pf-ideas .ideas-pace-options > a.is-active {
+  background: var(--ideas-ink);
+  color: #fff;
+  box-shadow: inset 0 -3px 0 var(--ideas-orange);
+}
+.pf-ideas .ideas-pace-options > a.is-active span { color: #c9c9cf; }
+.pf-ideas .ideas-pace-options > a.is-active svg { color: #f19a5c; }
 .pf-ideas .ideas-section-label {
   display: flex;
   align-items: baseline;
@@ -254,6 +333,13 @@
   mask-image: linear-gradient(125deg, #000, transparent 66%);
 }
 .pf-ideas .ideas-feature-preview .idea-artifact { position: relative; z-index: 1; }
+.pf-ideas .ideas-feature-preview .ideas-real-project-preview {
+  z-index: 1;
+  width: 100%;
+  min-height: 430px;
+  border-color: rgba(255,255,255,.28);
+  box-shadow: 16px 20px 0 rgba(0,0,0,.18);
+}
 .pf-ideas .ideas-preview-caption {
   position: relative;
   z-index: 1;
@@ -348,6 +434,29 @@
 }
 .pf-ideas .ideas-feature-footer > span { color: var(--ideas-muted); font-size: 12px; }
 .pf-ideas .ideas-feature-footer strong { color: var(--ideas-ink); }
+.pf-ideas .ideas-selection-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px 18px;
+  margin-top: 18px;
+  border-top: 1px solid #dfdcd6;
+  padding-top: 14px;
+}
+.pf-ideas .ideas-selection-actions a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 6px;
+  color: #6a686d;
+  font-size: 10px;
+  font-weight: 800;
+  text-decoration: underline;
+  text-decoration-color: #c9c4bc;
+  text-underline-offset: 4px;
+}
+.pf-ideas .ideas-selection-actions a:hover { color: var(--ideas-orange); }
+.pf-ideas .ideas-selection-actions svg { width: 12px; height: 12px; }
 .pf-ideas .ideas-primary-link {
   display: inline-flex;
   min-height: 44px;
@@ -606,6 +715,7 @@
   .pf-ideas .ideas-opening-layout { grid-template-columns: minmax(0, .72fr) minmax(480px, 1.28fr); gap: 42px; }
   .pf-ideas .ideas-opening-copy { padding-left: 0; }
   .pf-ideas .ideas-feature { grid-template-columns: minmax(0, 1.05fr) minmax(360px, .95fr); }
+  .pf-ideas .ideas-pace-chooser { grid-template-columns: 1fr; gap: 24px; }
   .pf-ideas .ideas-feature-footer { align-items: flex-start; flex-direction: column; }
   .pf-ideas .ideas-request-note { grid-template-columns: 1fr 1.1fr; gap: 28px 42px; }
   .pf-ideas .ideas-request-note > a { grid-column: 2; justify-self: start; }
@@ -642,7 +752,12 @@
   .pf-ideas .ideas-index-copy strong { font-size: 13px; line-height: 1.2; }
   .pf-ideas .ideas-intention-index li a:hover { padding-inline: 8px; }
   .pf-ideas .ideas-section-label { align-items: flex-start; flex-direction: column; gap: 7px; }
+  .pf-ideas .ideas-pace-chooser { margin-bottom: 34px; padding: 20px 16px; }
+  .pf-ideas .ideas-pace-options { grid-template-columns: 1fr; }
+  .pf-ideas .ideas-pace-options > a { min-height: 82px; }
+  .pf-ideas .ideas-pace-options > a + a { border-top: 1px solid #d9d4cc; border-left: 0; }
   .pf-ideas .ideas-feature-preview { min-height: 320px; padding: 24px; }
+  .pf-ideas .ideas-feature-preview .ideas-real-project-preview { min-height: 280px; box-shadow: 9px 10px 0 rgba(0,0,0,.18); }
   .pf-ideas .idea-artifact-stage { min-height: 220px; }
   .pf-ideas .idea-artifact-mixer > span { width: 190px; }
   .pf-ideas .idea-artifact-board { padding: 20px; }

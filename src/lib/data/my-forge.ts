@@ -2,6 +2,7 @@ import 'server-only'
 
 import type { ProjectForkSource } from '../project-forks'
 import { getProjectModelVariantSet } from '../project-model-variants'
+import { deriveProfileIdentityReadiness } from '../profile-readiness'
 import { createClient } from '../supabase/server'
 import { SUPABASE_CONFIGURED } from './shared'
 import type {
@@ -195,12 +196,29 @@ function firstRelation<T>(value: T | T[] | null | undefined): T | null {
   return value ?? null
 }
 
+function meaningfulSourceRunTitle(value: string | null | undefined) {
+  const title = value?.trim().replace(/\s+/g, ' ')
+  if (!title) return null
+  const comparable = title.toLowerCase().replace(/[-_]+/g, ' ')
+  if (/^(?:untitled(?:\s+(?:build|project|source\s+run|submission))?|source\s+run|new\s+build|build\s+submission)$/.test(comparable)) {
+    return null
+  }
+  return title
+}
+
 function sourceRunDisplayTitle(raw: RawSourceRun, extractedProject?: RawProject | null) {
-  const explicitTitle = raw.title?.trim()
+  const explicitTitle = meaningfulSourceRunTitle(raw.title)
   if (explicitTitle) return explicitTitle
 
-  const projectTitle = extractedProject?.title?.trim()
-  if (projectTitle) return projectTitle
+  const date = sourceRunDateLabel(raw.created_at)
+  const provider = sourceRunProviderLabel(raw.source_url)
+  const stableToken = raw.id.replace(/-/g, '').slice(0, 8) || 'legacy'
+  const fallbackContext = `${provider} · ${date} · ${stableToken}`
+  const projectTitle = meaningfulSourceRunTitle(extractedProject?.title)
+  if (projectTitle) return `${projectTitle} · ${fallbackContext}`
+
+  const forkSourceTitle = meaningfulSourceRunTitle(raw.fork_source_project_title)
+  if (forkSourceTitle) return `Fork of ${forkSourceTitle} · ${fallbackContext}`
 
   const fileName = raw.file_name?.trim().split(/[\\/]/).at(-1)
   const cleanedFileName = fileName
@@ -208,7 +226,42 @@ function sourceRunDisplayTitle(raw: RawSourceRun, extractedProject?: RawProject 
     .replace(/[-_]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
-  return cleanedFileName || 'Source run'
+  const meaningfulFileName = meaningfulSourceRunTitle(cleanedFileName)
+  if (
+    meaningfulFileName &&
+    !/^(?:submission|upload|package)$/i.test(meaningfulFileName)
+  ) return `${meaningfulFileName} · ${fallbackContext}`
+
+  return `${provider} run · ${date} · ${stableToken}`
+}
+
+function sourceRunDateLabel(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return 'date unknown'
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(date)
+}
+
+function sourceRunProviderLabel(sourceUrl: string | null) {
+  if (!sourceUrl) return 'Imported source'
+  try {
+    const hostname = new URL(sourceUrl).hostname.toLowerCase().replace(/^www\./, '')
+    if (hostname === 'chatgpt.com' || hostname === 'chat.openai.com') return 'ChatGPT'
+    if (hostname === 'claude.ai') return 'Claude'
+    if (hostname === 'gemini.google.com' || hostname === 'aistudio.google.com') return 'Gemini'
+    if (hostname === 'openrouter.ai') return 'OpenRouter'
+    if (hostname === 'kimi.com' || hostname.endsWith('.moonshot.cn')) return 'Kimi'
+    if (hostname === 'chat.qwen.ai' || hostname.endsWith('.qwen.ai')) return 'Qwen'
+    if (hostname === 'chat.z.ai' || hostname === 'z.ai') return 'Z.ai'
+    if (hostname === 'chat.deepseek.com' || hostname === 'deepseek.com') return 'DeepSeek'
+    return hostname || 'Linked source'
+  } catch {
+    return 'Linked source'
+  }
 }
 
 function assertUuid(value: string, label: string) {
@@ -276,11 +329,11 @@ function mapProfile(raw: RawProfile): MyForgeProfile {
     createdAt: raw.created_at,
     updatedAt: raw.updated_at,
     provenance,
-    isComplete: Boolean(
-      username &&
-      displayName &&
-      (raw.bio?.trim() || provenance?.kind === 'pathforge_seed' || provenance?.kind === 'pathforge_team'),
-    ),
+    isComplete: deriveProfileIdentityReadiness({
+      username,
+      displayName,
+      bio: raw.bio,
+    }).isComplete,
   }
 }
 

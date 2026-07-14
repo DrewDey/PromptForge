@@ -113,7 +113,7 @@ export default function AdminSuggestionRow({
           </select>
           <button
             type="submit"
-            className="mt-2 inline-flex min-h-10 w-full items-center justify-center bg-surface-900 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-brand-orange focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+            className="mt-2 inline-flex min-h-10 w-full items-center justify-center bg-surface-900 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-primary-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange-ink"
           >
             Update status
           </button>
@@ -130,7 +130,7 @@ export default function AdminSuggestionRow({
             name="body"
             rows={3}
             placeholder="Write a response to this suggestion..."
-            className="mt-2 w-full min-w-0 resize-y border border-surface-300 bg-white px-3 py-2.5 text-sm leading-6 text-surface-900 outline-none transition-colors placeholder:text-surface-400 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10"
+            className="mt-2 w-full min-w-0 resize-y border border-surface-300 bg-white px-3 py-2.5 text-base leading-6 text-surface-900 outline-none transition-colors placeholder:text-surface-600 focus:border-brand-orange-ink focus:ring-2 focus:ring-brand-orange/10 sm:text-sm"
           />
           <div className="mt-2 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <label htmlFor={visibilityId} className="sr-only">Response visibility</label>
@@ -145,7 +145,7 @@ export default function AdminSuggestionRow({
             </select>
             <button
               type="submit"
-              className="inline-flex min-h-10 shrink-0 items-center justify-center bg-surface-900 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-brand-orange focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+              className="inline-flex min-h-10 shrink-0 items-center justify-center bg-surface-900 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-primary-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange-ink"
             >
               Send response
             </button>

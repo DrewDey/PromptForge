@@ -67,7 +67,7 @@ export default async function AdminSourceRunDetailPage({
 
   return (
     <div className="mx-auto max-w-4xl">
-      <Link href="/admin?tab=pending" className="mb-6 inline-flex items-center gap-1 text-sm font-medium text-gray-500 hover:text-brand-orange">
+      <Link href="/admin?tab=pending" className="mb-6 inline-flex items-center gap-1 text-sm font-medium text-gray-500 hover:text-brand-orange-ink">
         <ArrowLeft className="h-4 w-4" aria-hidden="true" />
         Back to review queue
       </Link>
@@ -133,7 +133,7 @@ export default async function AdminSourceRunDetailPage({
                 href={sourceRun.source_url}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex max-w-full items-center gap-2 break-all border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-900 hover:border-brand-orange hover:text-brand-orange"
+                className="inline-flex max-w-full items-center gap-2 break-all border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-900 hover:border-brand-orange-ink hover:text-brand-orange-ink"
               >
                 {sourceRun.source_url}
                 <ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" />

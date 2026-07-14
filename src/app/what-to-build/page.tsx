@@ -13,14 +13,17 @@ import {
   Scale,
   Sparkles,
 } from 'lucide-react'
+import { ProjectPreview } from '@/components/ProjectPreview'
 import { IdeaArtifactPreview } from '@/components/ideas/IdeaArtifactPreview'
 import { getPrompts } from '@/lib/data'
 import {
   buildPathDiscoveryCatalog,
+  itemMatchesIntent,
   recommendedOrder,
   selectCuratedItems,
   START_HERE_PROJECT_IDS,
   type BuildPathDiscoveryItem,
+  type DiscoveryIntent,
 } from '@/lib/path-discovery'
 import { canonicalMetadata } from '@/lib/site-url'
 import './what-to-build.css'
@@ -33,42 +36,113 @@ export const metadata: Metadata = {
 
 const intentions = [
   {
+    value: 'organize',
     icon: ListChecks,
     label: 'Make work easier',
     detail: 'Boards, trackers, checklists, and repeatable workflows.',
-    href: '/paths?intent=organize&panel=open',
   },
   {
+    value: 'decide',
     icon: Scale,
     label: 'Think something through',
     detail: 'Calculators, comparisons, scorers, and decision tools.',
-    href: '/paths?intent=decide&panel=open',
   },
   {
+    value: 'learn',
     icon: Lightbulb,
     label: 'Learn by doing',
     detail: 'Practice tools, explainers, quizzes, and study aids.',
-    href: '/paths?intent=learn&panel=open',
   },
   {
+    value: 'create',
     icon: Palette,
     label: 'Make something visual',
     detail: 'Studios, editors, maps, and creative experiments.',
-    href: '/paths?intent=create&panel=open',
   },
   {
+    value: 'play',
     icon: Gamepad2,
     label: 'Play or experiment',
     detail: 'Games, puzzles, simulations, and strange little worlds.',
-    href: '/paths?intent=play&panel=open',
   },
   {
+    value: 'one-prompt',
     icon: Sparkles,
     label: 'See what one prompt can do',
     detail: 'Small complete projects without a long specification.',
-    href: '/paths?intent=one-prompt&panel=open',
   },
-] as const
+] as const satisfies ReadonlyArray<{
+  value: DiscoveryIntent
+  icon: typeof ListChecks
+  label: string
+  detail: string
+}>
+
+type BuildPace = 'quick' | 'guided' | 'any'
+
+const buildPaces: ReadonlyArray<{
+  value: BuildPace
+  label: string
+  detail: string
+}> = [
+  {
+    value: 'quick',
+    label: 'One prompt',
+    detail: 'A compact, finished starting point.',
+  },
+  {
+    value: 'guided',
+    label: 'A short path',
+    detail: 'Two or three prompts with visible iteration.',
+  },
+  {
+    value: 'any',
+    label: 'Show the strongest',
+    detail: 'Choose quality over conversation length.',
+  },
+]
+
+type WhatToBuildSearchParams = Promise<Record<string, string | string[] | undefined>>
+
+function firstParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value
+}
+
+function parseIntent(value: string | undefined): DiscoveryIntent | null {
+  return intentions.some((intention) => intention.value === value)
+    ? value as DiscoveryIntent
+    : null
+}
+
+function parsePace(value: string | undefined): BuildPace {
+  return buildPaces.some((pace) => pace.value === value)
+    ? value as BuildPace
+    : 'any'
+}
+
+function paceMatches(item: BuildPathDiscoveryItem, pace: BuildPace) {
+  if (pace === 'quick') return item.promptCount <= 1
+  if (pace === 'guided') return item.promptCount >= 2 && item.promptCount <= 3
+  return true
+}
+
+function ideaMatchesIntent(item: BuildPathDiscoveryItem, intent: DiscoveryIntent) {
+  if (intent === 'organize') return item.preview === 'board' || item.preview === 'checklist'
+  if (intent === 'decide') return item.preview === 'calculator' || item.preview === 'matrix'
+  if (intent === 'create') return item.preview === 'studio' || item.preview === 'mixer'
+  if (intent === 'play') return item.preview === 'game'
+  return itemMatchesIntent(item, intent)
+}
+
+function ideaHref(intent: DiscoveryIntent, pace: BuildPace) {
+  return `/what-to-build?goal=${intent}&pace=${pace}#matches`
+}
+
+function paceHref(pace: BuildPace, intent: DiscoveryIntent | null) {
+  const params = new URLSearchParams({ pace })
+  if (intent) params.set('goal', intent)
+  return `/what-to-build?${params.toString()}#matches`
+}
 
 function promptLabel(item: BuildPathDiscoveryItem) {
   const count = Math.max(1, item.promptCount)
@@ -109,11 +183,33 @@ function selectVariedRail(catalog: BuildPathDiscoveryItem[], featuredId?: string
   return selected
 }
 
-export default async function WhatToBuildPage() {
+export default async function WhatToBuildPage({
+  searchParams,
+}: {
+  searchParams: WhatToBuildSearchParams
+}) {
+  const params = await searchParams
+  const selectedIntent = parseIntent(firstParam(params.goal))
+  const selectedPace = parsePace(firstParam(params.pace))
   const prompts = await getPrompts()
   const catalog = buildPathDiscoveryCatalog(prompts, [])
-  const featured = selectCuratedItems(catalog, START_HERE_PROJECT_IDS, 1)[0] ?? recommendedOrder(catalog)[0]
-  const rail = selectVariedRail(catalog, featured?.id)
+  const intentMatches = selectedIntent
+    ? catalog.filter((item) => ideaMatchesIntent(item, selectedIntent))
+    : catalog
+  const exactMatches = intentMatches.filter((item) => paceMatches(item, selectedPace))
+  const candidatePool = exactMatches.length > 0
+    ? exactMatches
+    : intentMatches.length > 0
+      ? intentMatches
+      : catalog
+  const defaultFeatured = selectCuratedItems(catalog, START_HERE_PROJECT_IDS, 1)[0]
+  const featured = selectedIntent || selectedPace !== 'any'
+    ? recommendedOrder(candidatePool)[0]
+    : defaultFeatured ?? recommendedOrder(catalog)[0]
+  const rail = selectVariedRail(candidatePool, featured?.id)
+  const selectedIntention = intentions.find((intention) => intention.value === selectedIntent)
+  const selectedPaceOption = buildPaces.find((pace) => pace.value === selectedPace) ?? buildPaces[2]
+  const hasFallback = exactMatches.length === 0 && (selectedIntent !== null || selectedPace !== 'any')
 
   return (
     <div className="pf-ideas">
@@ -145,9 +241,14 @@ export default async function WhatToBuildPage() {
             <ol>
               {intentions.map((intention, index) => {
                 const Icon = intention.icon
+                const active = intention.value === selectedIntent
                 return (
-                  <li key={intention.href}>
-                    <Link href={intention.href}>
+                  <li key={intention.value}>
+                    <Link
+                      href={ideaHref(intention.value, selectedPace)}
+                      className={active ? 'is-active' : undefined}
+                      aria-current={active ? 'true' : undefined}
+                    >
                       <span className="ideas-index-number">0{index + 1}</span>
                       <Icon aria-hidden="true" />
                       <span className="ideas-index-copy">
@@ -164,17 +265,57 @@ export default async function WhatToBuildPage() {
         </div>
       </section>
 
-      <section className="ideas-feature-section" aria-labelledby="ideas-feature-title">
+      <section className="ideas-feature-section" id="matches" aria-labelledby="ideas-feature-title">
         <div className="ideas-shell">
+          <div className="ideas-pace-chooser" aria-labelledby="ideas-pace-title">
+            <div className="ideas-pace-heading">
+              <span>Then choose the runway</span>
+              <div>
+                <h2 id="ideas-pace-title">How much build path do you want?</h2>
+                <p>The result stays useful; only the amount of visible iteration changes.</p>
+              </div>
+            </div>
+            <div className="ideas-pace-options">
+              {buildPaces.map((pace) => {
+                const active = pace.value === selectedPace
+                return (
+                  <Link
+                    key={pace.value}
+                    href={paceHref(pace.value, selectedIntent)}
+                    className={active ? 'is-active' : undefined}
+                    aria-current={active ? 'true' : undefined}
+                  >
+                    <strong>{pace.label}</strong>
+                    <span>{pace.detail}</span>
+                    <ArrowRight aria-hidden="true" />
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+
           <div className="ideas-section-label">
-            <span>One strong place to begin</span>
-            <p>See the finished direction before you inspect how it was made.</p>
+            <span>{selectedIntention ? `Matched to: ${selectedIntention.label}` : 'One strong place to begin'}</span>
+            <p>
+              {hasFallback
+                ? 'No path matched both choices exactly, so this is the strongest close fit.'
+                : `${selectedPaceOption.label}. See the finished direction before you inspect how it was made.`}
+            </p>
           </div>
 
           {featured ? (
             <article className="ideas-feature">
               <Link href={featured.href} className="ideas-feature-preview" aria-label={`Open ${featured.title}`}>
-                <IdeaArtifactPreview title={featured.title} variant={featured.preview} />
+                {featured.artifactPath ? (
+                  <ProjectPreview
+                    artifactPath={featured.artifactPath}
+                    title={featured.title}
+                    label="Real project artifact"
+                    className="ideas-real-project-preview"
+                  />
+                ) : (
+                  <IdeaArtifactPreview title={featured.title} variant={featured.preview} />
+                )}
                 <span className="ideas-preview-caption">
                   {featured.hasWorkingArtifact ? 'Working artifact included' : 'Build path preview'}
                   <ArrowUpRight aria-hidden="true" />
@@ -209,6 +350,18 @@ export default async function WhatToBuildPage() {
                     <ArrowRight aria-hidden="true" />
                   </Link>
                 </div>
+
+                {(selectedIntent || selectedPace !== 'any') && (
+                  <div className="ideas-selection-actions">
+                    <Link href="/what-to-build#matches">Clear choices</Link>
+                    {selectedIntent && (
+                      <Link href={`/paths?intent=${selectedIntent}&panel=open`}>
+                        Browse every matching path
+                        <ArrowUpRight aria-hidden="true" />
+                      </Link>
+                    )}
+                  </div>
+                )}
               </div>
             </article>
           ) : (
@@ -225,10 +378,16 @@ export default async function WhatToBuildPage() {
           <div className="ideas-shell">
             <div className="ideas-rail-heading">
               <div>
-                <span>Change the kind of challenge</span>
-                <h2 id="ideas-rail-title">Different results need different paths.</h2>
+                <span>{selectedIntention ? 'More matches for your direction' : 'Change the kind of challenge'}</span>
+                <h2 id="ideas-rail-title">
+                  {selectedIntention ? `More ways to ${selectedIntention.label.toLowerCase()}.` : 'Different results need different paths.'}
+                </h2>
               </div>
-              <p>Move from practical tools to games, visual work, or a shorter prompt run without starting from a blank chat.</p>
+              <p>
+                {selectedIntention
+                  ? 'Compare finished outcomes first, then choose the build path whose decisions are worth borrowing.'
+                  : 'Move from practical tools to games, visual work, or a shorter prompt run without starting from a blank chat.'}
+              </p>
             </div>
 
             <div className="ideas-path-rail" role="list">
@@ -258,9 +417,9 @@ export default async function WhatToBuildPage() {
             </div>
 
             <div className="ideas-rail-footer">
-              <p>{catalog.length} real build {catalog.length === 1 ? 'path is' : 'paths are'} available to explore.</p>
-              <Link href="/paths?panel=open" className="ideas-text-link">
-                View every path
+              <p>{candidatePool.length} matching build {candidatePool.length === 1 ? 'path is' : 'paths are'} available to explore.</p>
+              <Link href={selectedIntent ? `/paths?intent=${selectedIntent}&panel=open` : '/paths?panel=open'} className="ideas-text-link">
+                View the full matching set
                 <ArrowRight aria-hidden="true" />
               </Link>
             </div>

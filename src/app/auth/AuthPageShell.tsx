@@ -90,8 +90,10 @@ export function AuthPageShell({
     <div className="pf-auth">
       <aside className="brand-panel">
         <Link href="/" className="brand-logo">
-          <Image src="/logo.png" alt="PathForge" width={32} height={32} />
-          PathForge
+          <span className="brand-mark" aria-hidden="true">
+            <Image src="/logo.png" alt="" width={100} height={32} loading="eager" />
+          </span>
+          <span>PathForge</span>
         </Link>
         <div className="eyebrow">{eyebrow}</div>
         <h2>{title} <span className="serif">{accent}</span></h2>
@@ -109,7 +111,7 @@ export function AuthPageShell({
           ))}
         </div>
       </aside>
-      <main className="form-panel">{children}</main>
+      <div className="form-panel">{children}</div>
     </div>
   )
 }
@@ -128,8 +130,10 @@ export function AuthFormHeader({
   return (
     <div className="form-head">
       <Link href="/" className="mobile-logo">
-        <Image src="/logo.png" alt="PathForge" width={28} height={28} />
-        PathForge
+        <span className="brand-mark" aria-hidden="true">
+          <Image src="/logo.png" alt="" width={88} height={28} loading="eager" />
+        </span>
+        <span>PathForge</span>
       </Link>
       <div className="eyebrow">{eyebrow}</div>
       <h1>{title} <span className="serif">{accent}</span></h1>

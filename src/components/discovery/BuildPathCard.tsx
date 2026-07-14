@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { ArrowUpRight, GitFork, Layers3 } from 'lucide-react'
 import VoteBookmarkButtons from '@/components/VoteBookmarkButtons'
+import { ProjectPreview } from '@/components/ProjectPreview'
 import type { BuildPathDiscoveryItem } from '@/lib/path-discovery'
 import { ArtifactPreview } from './ArtifactPreview'
 
@@ -33,11 +34,21 @@ export function BuildPathCard({ item, featured = false, compact = false, engagem
     .join('')
     .slice(0, 2)
     .toUpperCase()
+  const showArtifactPreview = Boolean(item.artifactPath && (featured || compact))
 
   return (
     <article className={`path-card${featured ? ' is-featured' : ''}${compact ? ' is-compact' : ''}`}>
-      <Link href={item.href} className="path-card-link" aria-label={`Explore ${item.title}`}>
-        <ArtifactPreview variant={item.preview} title={item.title} large={featured} live={item.hasWorkingArtifact} />
+      <div className="path-card-link">
+        {showArtifactPreview ? (
+          <ProjectPreview
+            artifactPath={item.artifactPath}
+            title={item.title}
+            label="Staff pick · real artifact"
+            className="path-real-project-preview"
+          />
+        ) : (
+          <ArtifactPreview variant={item.preview} title={item.title} large={featured} live={item.hasWorkingArtifact} />
+        )}
         <div className="path-card-body">
           <div className="path-card-labels">
             <span>{item.categoryLabel}</span>
@@ -57,6 +68,9 @@ export function BuildPathCard({ item, featured = false, compact = false, engagem
             <span className="path-card-action">Explore path <ArrowUpRight aria-hidden="true" /></span>
           </div>
         </div>
+      </div>
+      <Link href={item.href} className="path-card-hit-area" aria-label={`Explore ${item.title}`}>
+        <span className="sr-only">Explore {item.title}</span>
       </Link>
       {engagement && (
         <div className="path-card-quick-actions" aria-label={`Save or upvote ${item.title}`}>

@@ -33,7 +33,7 @@ export default function SuggestionSubmitForm() {
           minLength={4}
           maxLength={160}
           placeholder="Example: Make the fork button easier to find"
-          className="w-full border border-surface-300 bg-white px-3 py-3 text-sm font-medium text-surface-900 placeholder:text-surface-400 focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/15"
+          className="w-full border border-surface-300 bg-white px-3 py-3 text-base font-medium text-surface-900 placeholder:text-surface-600 focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/15 sm:text-sm"
         />
       </div>
 
@@ -49,7 +49,7 @@ export default function SuggestionSubmitForm() {
           maxLength={5000}
           rows={7}
           placeholder="Describe the site feedback, bug, confusing page, moderation concern, or feature that would make PathForge better."
-          className="w-full border border-surface-300 bg-white px-3 py-3 text-sm leading-relaxed text-surface-900 placeholder:text-surface-400 focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/15"
+          className="w-full border border-surface-300 bg-white px-3 py-3 text-base leading-relaxed text-surface-900 placeholder:text-surface-600 focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/15 sm:text-sm"
         />
       </div>
 

@@ -56,7 +56,7 @@ export default function Footer() {
             </Link>
             <Link
               href="/build"
-              className="inline-flex min-h-11 items-center justify-center gap-2 border border-brand-orange bg-brand-orange px-4 text-sm font-bold text-white transition-colors duration-150 hover:border-brand-orange-dark hover:bg-brand-orange-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange-light"
+              className="inline-flex min-h-11 items-center justify-center gap-2 border border-brand-orange bg-brand-orange px-4 text-sm font-bold text-surface-900 transition-colors duration-150 hover:border-brand-orange-light hover:bg-brand-orange-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange-light"
             >
               <Hammer className="h-4 w-4" aria-hidden="true" />
               Share a build
@@ -67,7 +67,7 @@ export default function Footer() {
         <div className="grid gap-10 py-10 sm:grid-cols-2 md:grid-cols-12 md:gap-8 md:py-12">
           <div className="sm:col-span-2 md:col-span-5">
             <Link href="/" className="inline-flex focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-orange-light" aria-label="PathForge home">
-              <Image src="/logo.png" alt="PathForge" width={142} height={45} />
+              <Image src="/logo.png" alt="PathForge" width={971} height={310} className="h-auto w-[142px]" loading="eager" />
             </Link>
             <p className="mt-5 max-w-sm text-sm leading-6 text-surface-400">
               Explore what people built with AI, inspect the path that produced it, and carry the strongest work forward.
@@ -81,7 +81,7 @@ export default function Footer() {
           <div className="grid grid-cols-2 gap-8 sm:col-span-2 sm:grid-cols-3 md:col-span-7">
             {footerGroups.map((group) => (
               <div key={group.label}>
-                <h3 className="mb-4 font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-surface-500">
+                <h3 className="mb-4 font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-surface-400">
                   {group.label}
                 </h3>
                 <ul className="space-y-3 text-sm">
@@ -101,7 +101,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-2 border-t border-white/10 py-5 text-xs text-surface-500 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2 border-t border-white/10 py-5 text-xs text-surface-400 sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} PathForge</p>
           <p>Transparent AI work, built to improve over time.</p>
         </div>

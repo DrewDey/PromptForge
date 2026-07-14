@@ -56,7 +56,7 @@ export default function ForgotPasswordPage() {
   if (sent) {
     return (
       <div className="pf-auth">
-        <main className="form-panel">
+        <div className="form-panel">
           <div className="success-card">
             <div className="success-icon"><Mail aria-hidden="true" /></div>
             <div className="eyebrow">Reset requested</div>
@@ -68,7 +68,7 @@ export default function ForgotPasswordPage() {
               <Link href={authHref('/auth/login', nextPath)} className="btn-primary">Return to login</Link>
             </div>
           </div>
-        </main>
+        </div>
       </div>
     )
   }

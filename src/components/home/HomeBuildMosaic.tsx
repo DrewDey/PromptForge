@@ -4,11 +4,10 @@ import type { BuildPathDiscoveryItem } from '@/lib/path-discovery'
 import { HomeBuildCard } from './HomeBuildCard'
 
 type HomeBuildMosaicProps = {
-  featured: BuildPathDiscoveryItem
-  recent: BuildPathDiscoveryItem[]
+  items: BuildPathDiscoveryItem[]
 }
 
-export function HomeBuildMosaic({ featured, recent }: HomeBuildMosaicProps) {
+export function HomeBuildMosaic({ items }: HomeBuildMosaicProps) {
   return (
     <section className="home-library" aria-labelledby="home-library-title">
       <div className="home-shell">
@@ -23,14 +22,14 @@ export function HomeBuildMosaic({ featured, recent }: HomeBuildMosaicProps) {
           <Link href="/paths">Browse all paths <ArrowRight aria-hidden="true" /></Link>
         </header>
 
-        <div className="home-build-mosaic">
-          <HomeBuildCard item={featured} lead positionLabel="Editor’s starting point" />
-          <div className="home-recent-stack" aria-label="Recently added working projects">
-            <p className="home-stack-label">Recently added</p>
-            {recent.map((item) => (
-              <HomeBuildCard key={item.id} item={item} positionLabel="New path" />
-            ))}
-          </div>
+        <div className="home-build-grid" aria-label="Recently added working projects">
+          {items.map((item, index) => (
+            <HomeBuildCard
+              key={item.id}
+              item={item}
+              positionLabel={index === 0 ? 'Recommended next' : 'Recently added'}
+            />
+          ))}
         </div>
       </div>
     </section>

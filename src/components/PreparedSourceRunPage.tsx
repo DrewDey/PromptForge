@@ -12,6 +12,7 @@ import SourceRunShowcase, {
   type SourceRunShowcaseArtifactVersion,
   type SourceRunShowcaseStep,
 } from '@/components/SourceRunShowcase'
+import ProjectActivationTracker from '@/components/analytics/ProjectActivationTracker'
 import { getApprovedProjectForks } from '@/lib/data'
 import {
   getPreparedShowcaseProjectById,
@@ -466,6 +467,11 @@ export default async function PreparedSourceRunPage({
 
   return (
     <div className="min-h-screen bg-surface-50 text-surface-900">
+      <ProjectActivationTracker
+        projectId={project.id}
+        projectTitle={project.title}
+        sourceRunId={currentSourceRunId}
+      />
       <section className="border-b border-surface-200 bg-white text-surface-900">
         <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">

@@ -29,6 +29,7 @@ import type {
   MyForgeUnfinishedFork,
 } from '@/lib/my-forge-types'
 import { buildProjectForkHref } from '@/lib/project-forks'
+import MyForgeActivationTracker from '@/components/analytics/MyForgeActivationTracker'
 
 export const metadata: Metadata = {
   title: 'My Forge | PathForge',
@@ -430,6 +431,7 @@ export default async function MyForgePage({
 
   return (
     <div className="min-h-[calc(100vh-3rem)] bg-surface-50">
+      <MyForgeActivationTracker />
       <div className="mx-auto max-w-7xl px-4 py-7 sm:px-6 lg:px-8 lg:py-9">
         <header className="mb-6 flex flex-col gap-4 border-b border-surface-200 pb-5 sm:flex-row sm:items-end sm:justify-between">
           <div>

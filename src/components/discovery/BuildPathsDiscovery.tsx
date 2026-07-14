@@ -271,7 +271,7 @@ export async function BuildPathsDiscovery({
             </p>
           </div>
 
-          <form action="/paths" method="get" className="path-search">
+          <form action="/paths" method="get" className="path-search" data-activation-search="explore">
             <Search aria-hidden="true" />
             <label>
               <span>Search the library</span>

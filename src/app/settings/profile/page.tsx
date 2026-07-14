@@ -8,6 +8,7 @@ import { getAuthenticatedProfile } from '@/lib/data/profiles'
 import { getPublicProjectsByAuthor } from '@/lib/data/public-profiles'
 import { derivePublicProfileInsights } from '@/lib/profile-presentation'
 import { canonicalMetadata } from '@/lib/site-url'
+import AccountCreatedActivationTracker from '@/components/analytics/AccountCreatedActivationTracker'
 
 export const metadata: Metadata = {
   title: 'Edit Profile | PathForge',
@@ -61,6 +62,7 @@ export default async function ProfileSettingsPage({
 
   return (
     <div className="min-h-[calc(100vh-3rem)] bg-surface-50">
+      {welcome && <AccountCreatedActivationTracker />}
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
         {welcome && (
           <div className="mb-7 border border-orange-200 bg-orange-50 px-5 py-4 text-sm leading-6 text-surface-700">

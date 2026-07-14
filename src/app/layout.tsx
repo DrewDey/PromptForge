@@ -1,8 +1,12 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { Inter, Instrument_Serif, JetBrains_Mono } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/next'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import './globals.css'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import ActivationPageTracker from '@/components/analytics/ActivationPageTracker'
 import { getSiteUrl } from '@/lib/site-url'
 
 const inter = Inter({
@@ -45,8 +49,11 @@ export default function RootLayout({
           Skip to main content
         </a>
         <Header />
+        <Suspense fallback={null}><ActivationPageTracker /></Suspense>
         <main id="main-content" className="flex-1" tabIndex={-1}>{children}</main>
         <Footer />
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )

@@ -253,11 +253,10 @@
   min-width: 0;
   border: 1px solid var(--path-line);
   background: #fff;
-  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  transition: transform .18s ease, border-color .18s ease;
 }
 .pf-paths .path-card:hover {
   border-color: var(--path-ink);
-  box-shadow: 7px 7px 0 rgba(23,23,25,.1);
   transform: translateY(-2px);
 }
 .pf-paths .path-card-link { display: flex; height: 100%; min-width: 0; flex-direction: column; }

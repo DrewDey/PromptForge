@@ -168,7 +168,7 @@ function selectVariedRail(catalog: BuildPathDiscoveryItem[], featuredId?: string
   const usedPreviews = new Set<string>()
 
   for (const item of candidates) {
-    if (selected.length >= 5) break
+    if (selected.length >= 3) break
     if (selected.some(selectedItem => selectedItem.id === item.id)) continue
     if (usedPreviews.has(item.preview)) continue
     selected.push(item)
@@ -176,7 +176,7 @@ function selectVariedRail(catalog: BuildPathDiscoveryItem[], featuredId?: string
   }
 
   for (const item of candidates) {
-    if (selected.length >= 5) break
+    if (selected.length >= 3) break
     if (!selected.some(selectedItem => selectedItem.id === item.id)) selected.push(item)
   }
 

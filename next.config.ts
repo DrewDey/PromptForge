@@ -8,6 +8,10 @@ const sourceRunRuntimeFiles = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // The local review links shared during design work use both hostnames. Keep
+  // Next's development client available on 127.0.0.1 as well as localhost so
+  // client-mounted artifact previews do not remain stuck in their loading UI.
+  allowedDevOrigins: ['127.0.0.1'],
   // Most project evidence is consumed while static pages are built. These
   // request-time routes are the deliberate exceptions: admin publication,
   // model/fork readers, and the signed-in workspace may verify source-run

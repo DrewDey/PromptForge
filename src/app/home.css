@@ -164,8 +164,9 @@
 .pf-home-next .home-hero-demo {
   display: block;
   min-width: 0;
-  border: 1px solid var(--home-line);
-  background: #fff;
+  border: 0;
+  border-top: 1px solid var(--home-line);
+  background: transparent;
   transition: border-color 150ms ease, transform 150ms ease;
 }
 
@@ -183,8 +184,7 @@
   justify-content: space-between;
   gap: 18px;
   min-height: 44px;
-  padding: 9px 12px;
-  border-bottom: 1px solid var(--home-line);
+  padding: 9px 0 10px;
   font-family: var(--font-mono);
   font-size: 9px;
   letter-spacing: .08em;
@@ -288,13 +288,13 @@
 .pf-home-next .home-build-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: 30px 28px;
   margin-top: 28px;
 }
 
 .pf-home-next .home-build-card {
   min-width: 0;
-  background: #fff;
+  background: transparent;
 }
 
 .pf-home-next .home-build-card > a {
@@ -302,7 +302,8 @@
   grid-template-columns: 150px minmax(0, 1fr);
   min-height: 210px;
   height: 100%;
-  border: 1px solid var(--home-line);
+  border: 0;
+  border-top: 1px solid var(--home-line);
   transition: border-color 150ms ease, transform 150ms ease;
 }
 
@@ -391,7 +392,7 @@
   display: flex;
   min-width: 0;
   flex-direction: column;
-  padding: 17px;
+  padding: 17px 2px 0 18px;
 }
 
 .pf-home-next .home-build-category {
@@ -481,33 +482,33 @@
 .pf-home-next .home-process ol {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
   margin: 0;
   padding: 0;
-  border-top: 1px solid var(--home-line);
   list-style: none;
 }
 
 .pf-home-next .home-process li {
   min-width: 0;
-  border-bottom: 1px solid var(--home-line);
+  border-top: 1px solid var(--home-line);
 }
 
 .pf-home-next .home-process li + li {
-  border-left: 1px solid var(--home-line);
+  border-left: 0;
 }
 
 .pf-home-next .home-process li > a {
   display: grid;
   grid-template-columns: auto 20px;
   gap: 10px;
-  min-height: 220px;
-  padding: 18px;
+  min-height: 210px;
+  padding: 18px 0;
   transition: background 150ms ease, color 150ms ease;
 }
 
 .pf-home-next .home-process li > a:hover,
 .pf-home-next .home-process li > a:focus-visible {
-  background: var(--home-soft);
+  background: transparent;
   color: var(--home-accent);
 }
 
@@ -585,7 +586,7 @@
 .pf-home-next .home-support-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: 28px;
   margin-top: 28px;
 }
 
@@ -594,9 +595,10 @@
   grid-template-columns: 30px minmax(0, 1fr);
   gap: 14px;
   min-height: 190px;
-  border: 1px solid var(--home-line);
-  padding: 20px;
-  background: #fff;
+  border: 0;
+  border-top: 1px solid var(--home-line);
+  padding: 20px 0 10px;
+  background: transparent;
   transition: border-color 150ms ease, transform 150ms ease;
 }
 
@@ -835,6 +837,10 @@
 @media (max-width: 430px) {
   .pf-home-next .home-build-card > a {
     grid-template-columns: 1fr;
+  }
+
+  .pf-home-next .home-build-copy {
+    padding: 17px 2px 22px;
   }
 
   .pf-home-next .home-build-visual {

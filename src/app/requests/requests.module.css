@@ -230,13 +230,13 @@
 
 .composer {
   scroll-margin-top: var(--site-sticky-offset, 80px);
-  border: 1px solid var(--request-line);
+  border: 0;
   border-top: 3px solid var(--request-accent);
-  background: #fff;
+  background: transparent;
 }
 
 .composerHeader {
-  padding: 20px 20px 15px;
+  padding: 20px 0 15px;
 }
 
 .composerHeader h2 {
@@ -256,7 +256,7 @@
 
 .composerForm :global(form) {
   border: 0;
-  padding: 18px 20px 20px;
+  padding: 18px 0 20px;
   background: transparent;
 }
 
@@ -295,7 +295,7 @@
 
 .signInPrompt {
   border-top: 1px solid var(--request-line);
-  padding: 18px 20px 20px;
+  padding: 18px 0 20px;
 }
 
 .signInPrompt h3 {
@@ -334,11 +334,12 @@
   display: grid;
   grid-template-columns: 20px minmax(0, 1fr);
   gap: 8px;
-  padding: 14px;
+  padding: 14px 0;
 }
 
 .briefNotes > div + div {
   border-left: 1px solid var(--request-line);
+  padding-left: 14px;
 }
 
 .briefNotes span {
@@ -732,6 +733,7 @@
   .briefNotes > div + div {
     border-top: 1px solid var(--request-line);
     border-left: 0;
+    padding-left: 0;
   }
 
   .responseComposer :global(form > div) {

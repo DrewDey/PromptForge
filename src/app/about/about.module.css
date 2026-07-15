@@ -116,9 +116,9 @@
 }
 
 .definition {
-  border: 1px solid var(--about-line);
-  background: var(--about-soft);
-  padding: 20px;
+  border-top: 1px solid var(--about-ink);
+  background: transparent;
+  padding: 18px 0 0;
 }
 
 .definitionText {
@@ -134,12 +134,12 @@
   grid-template-columns: 1fr 1fr;
   margin: 18px 0 0;
   border-top: 1px solid var(--about-line);
-  border-left: 1px solid var(--about-line);
+  column-gap: 18px;
 }
 
 .ledger > div {
-  padding: 10px;
-  border-right: 1px solid var(--about-line);
+  padding: 10px 0;
+  border-right: 0;
   border-bottom: 1px solid var(--about-line);
   background: #fff;
 }
@@ -257,7 +257,7 @@
 .lanes {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  gap: 30px;
   margin-top: 30px;
 }
 
@@ -265,9 +265,9 @@
   display: flex;
   min-height: 260px;
   flex-direction: column;
-  border: 1px solid var(--about-line);
-  background: #fff;
-  padding: 22px;
+  border-top: 1px solid var(--about-ink);
+  background: transparent;
+  padding: 22px 0 0;
 }
 
 .laneHeader {

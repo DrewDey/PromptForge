@@ -105,14 +105,14 @@ export default function GuidePage() {
             </div>
           </div>
 
-          <nav className="border border-surface-200 bg-surface-50" aria-label="Walkthrough chapters">
-            <p className="border-b border-surface-200 px-4 py-3 font-mono text-[9px] font-bold uppercase tracking-[0.13em] text-surface-500">
+          <nav className="border-t border-surface-300" aria-label="Walkthrough chapters">
+            <p className="border-b border-surface-200 py-3 font-mono text-[9px] font-bold uppercase tracking-[0.13em] text-surface-500">
               The whole idea in three moves
             </p>
             <ol>
               {steps.map((step) => (
                 <li key={step.number} className="border-b border-surface-200 last:border-b-0">
-                  <a href={step.href} className="grid grid-cols-[28px_minmax(0,1fr)_16px] gap-3 px-4 py-4 hover:bg-white">
+                  <a href={step.href} className="grid grid-cols-[28px_minmax(0,1fr)_16px] gap-3 py-4 hover:text-brand-orange-ink">
                     <span className="font-mono text-[9px] font-bold text-brand-orange-ink">{step.number}</span>
                     <span>
                       <strong className="block text-sm text-surface-900">{step.title}</strong>
@@ -131,7 +131,7 @@ export default function GuidePage() {
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,1.12fr)_minmax(320px,.88fr)] lg:items-center lg:px-8 lg:py-14">
           <Link
             href="/calming-sleep-sound-mixer-demo"
-            className="block border border-surface-200 bg-white p-3 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-orange-ink"
+            className="block focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-orange-ink"
             aria-label="Open the Calming Sleep-Sound Mixer project"
           >
             <ProjectPreview
@@ -181,7 +181,7 @@ export default function GuidePage() {
           </div>
 
           <div className="mt-8 grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
-            <aside className="border border-surface-200 bg-surface-50 p-4">
+            <aside className="border-t border-surface-300 pt-4">
               <div className="flex items-center gap-2 border-b border-surface-200 pb-3">
                 <Layers3 className="h-4 w-4 text-brand-orange-ink" aria-hidden="true" />
                 <div>
@@ -195,7 +195,7 @@ export default function GuidePage() {
                   ['Claude', 'Fable 5 High'],
                   ['Gemini', 'Gemini 3.1 Pro'],
                 ].map(([provider, model], index) => (
-                  <div key={provider} className={`border px-3 py-3 ${index === 1 ? 'border-brand-orange bg-white' : 'border-surface-200 bg-white'}`}>
+                  <div key={provider} className={`py-3 ${index === 1 ? 'border-l-2 border-brand-orange bg-white pl-3' : 'border-t border-surface-200'}`}>
                     <strong className="block text-xs">{provider}</strong>
                     <span className="mt-1 block text-[10px] text-surface-500">{model}</span>
                   </div>
@@ -206,7 +206,7 @@ export default function GuidePage() {
               </p>
             </aside>
 
-            <div className="border border-surface-200 bg-white p-4 sm:p-5">
+            <div className="border-t border-surface-300 pt-4">
               <div className="grid gap-3 sm:grid-cols-2">
                 {[
                   ['Prompt 01', 'Build the offline mixer', 'The exact request is preserved.'],
@@ -216,7 +216,7 @@ export default function GuidePage() {
                 ].map(([label, title, body], index) => (
                   <article
                     key={label}
-                    className={`border p-4 ${index === 3 ? 'border-brand-blue bg-accent-50' : 'border-surface-200 bg-surface-50'}`}
+                    className={`p-4 ${index === 3 ? 'border-l-2 border-green-700 bg-green-50' : 'border-t border-surface-200'}`}
                   >
                     <p className="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-brand-orange-ink">{label}</p>
                     <h3 className="mt-2 text-base font-black">{title}</h3>
@@ -254,17 +254,17 @@ export default function GuidePage() {
             </div>
 
             <div className="grid gap-3 sm:grid-cols-[180px_36px_minmax(0,1fr)] sm:items-center">
-              <div className="border border-surface-300 bg-white p-3">
+              <div className="border-l border-surface-300 pl-3">
                 <p className="font-mono text-[8px] font-bold uppercase tracking-[0.1em] text-surface-500">Shared path</p>
                 <div className="mt-3 grid gap-2 text-[10px]">
-                  <span className="border border-surface-200 bg-surface-50 p-2">Prompt 01</span>
-                  <span className="border border-surface-200 bg-surface-50 p-2">Response 01</span>
-                  <span className="border border-surface-200 bg-surface-50 p-2">Prompt 02</span>
-                  <strong className="border border-green-700 bg-green-50 p-2 text-green-800">Response 02 · fork point</strong>
+                  <span className="border-t border-surface-200 py-2">Prompt 01</span>
+                  <span className="border-t border-surface-200 py-2">Response 01</span>
+                  <span className="border-t border-surface-200 py-2">Prompt 02</span>
+                  <strong className="border-l-2 border-green-700 bg-green-50 p-2 text-green-800">Response 02 · fork point</strong>
                 </div>
               </div>
               <div className="hidden h-px bg-green-700 sm:block" aria-hidden="true" />
-              <div className="border-2 border-green-800 bg-white p-5">
+              <div className="border-l-2 border-green-800 bg-white p-5">
                 <p className="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-green-800">New branch</p>
                 <h3 className="mt-2 text-xl font-black">Prompt 03 gets the stage.</h3>
                 <p className="mt-2 text-xs leading-5 text-surface-600">
@@ -289,7 +289,7 @@ export default function GuidePage() {
               </div>
               <div className="grid gap-3 md:grid-cols-3">
                 {providerPanels.map((panel) => (
-                  <article key={panel.provider} className="border border-surface-200 bg-white p-3">
+                  <article key={panel.provider} className="border-t border-surface-300 pt-3">
                     <div className="flex items-center justify-between gap-3">
                       <strong className="text-sm">{panel.provider}</strong>
                       <MousePointerClick className="h-4 w-4 text-brand-orange-ink" aria-hidden="true" />
@@ -309,7 +309,7 @@ export default function GuidePage() {
               </div>
             </div>
 
-            <div className="border border-surface-200 bg-white p-4">
+            <div className="border-t border-surface-300 pt-4">
               <p className="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-brand-orange-ink">A clear fork message</p>
               <p className="mt-2 text-xs leading-5 text-surface-600">
                 Plain language is fine. The model needs the current artifact and the change.
@@ -339,7 +339,7 @@ export default function GuidePage() {
               ].map(([Icon, title, body]) => {
                 const StepIcon = Icon as typeof Share2
                 return (
-                  <article key={title as string} className="border border-surface-200 bg-surface-50 p-4">
+                  <article key={title as string} className="border-t border-surface-200 py-4">
                     <StepIcon className="h-5 w-5 text-brand-orange-ink" aria-hidden="true" />
                     <h3 className="mt-3 text-sm font-black">{title as string}</h3>
                     <p className="mt-2 text-xs leading-5 text-surface-600">{body as string}</p>
@@ -349,8 +349,8 @@ export default function GuidePage() {
             </div>
           </div>
 
-          <aside className="border border-surface-200 bg-surface-50 p-5">
-            <div className="border border-surface-200 bg-white p-3">
+          <aside className="border-t-2 border-brand-orange pt-5">
+            <div>
               <p className="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-surface-500">ChatGPT share control</p>
               <Image
                 src="/screenshots/guide/chatgpt-share-button.jpg"

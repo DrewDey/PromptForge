@@ -110,8 +110,8 @@
 }
 
 .pf-ideas .ideas-intention-index {
-  border: 1px solid var(--ideas-line);
-  background: #fff;
+  border: 0;
+  background: transparent;
 }
 
 .pf-ideas .ideas-index-heading {
@@ -120,7 +120,7 @@
   justify-content: space-between;
   gap: 16px;
   min-height: 42px;
-  padding: 9px 12px;
+  padding: 9px 0;
   border-bottom: 1px solid var(--ideas-line);
 }
 
@@ -132,6 +132,7 @@
 .pf-ideas .ideas-intention-index ol {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 26px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -143,7 +144,7 @@
 }
 
 .pf-ideas .ideas-intention-index li:nth-child(odd) {
-  border-right: 1px solid var(--ideas-line);
+  border-right: 0;
 }
 
 .pf-ideas .ideas-intention-index li:nth-last-child(-n + 2) {
@@ -156,7 +157,7 @@
   gap: 9px;
   align-items: start;
   min-height: 104px;
-  padding: 14px;
+  padding: 14px 0;
   transition: background 150ms ease, color 150ms ease;
 }
 
@@ -235,8 +236,9 @@
 .pf-ideas .ideas-pace-options {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  border: 1px solid var(--ideas-line);
-  background: #fff;
+  gap: 10px;
+  border: 0;
+  background: transparent;
 }
 
 .pf-ideas .ideas-pace-options > a {
@@ -245,11 +247,12 @@
   min-height: 72px;
   gap: 4px 9px;
   align-content: center;
+  border-top: 1px solid var(--ideas-line);
   padding: 11px 13px;
 }
 
 .pf-ideas .ideas-pace-options > a + a {
-  border-left: 1px solid var(--ideas-line);
+  border-left: 0;
 }
 
 .pf-ideas .ideas-pace-options > a:hover,
@@ -299,8 +302,9 @@
 .pf-ideas .ideas-feature {
   display: grid;
   grid-template-columns: minmax(0, 1.08fr) minmax(350px, .92fr);
-  border: 1px solid var(--ideas-line);
-  background: #fff;
+  gap: 34px;
+  border: 0;
+  background: transparent;
 }
 
 .pf-ideas .ideas-feature-preview {
@@ -309,7 +313,7 @@
   min-height: 430px;
   place-items: center;
   overflow: hidden;
-  border-right: 1px solid var(--ideas-line);
+  border-right: 0;
   background: #e9e8e5;
   padding: 30px;
 }
@@ -331,7 +335,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid var(--ideas-line);
+  border: 0;
   background: rgba(255, 255, 255, .95);
   padding: 7px 9px;
   color: var(--ideas-ink);
@@ -349,7 +353,7 @@
   display: flex;
   min-width: 0;
   flex-direction: column;
-  padding: 30px;
+  padding: 12px 0;
 }
 
 .pf-ideas .ideas-feature-meta,
@@ -405,15 +409,15 @@
 .pf-ideas .ideas-traits {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px 14px;
   margin: 16px 0 0;
   padding: 0;
   list-style: none;
 }
 
 .pf-ideas .ideas-traits li {
-  border: 1px solid var(--ideas-line);
-  padding: 6px 8px;
+  border-bottom: 1px solid var(--ideas-line);
+  padding: 6px 0;
   color: var(--ideas-muted);
   font-family: var(--font-mono);
   font-size: 8px;
@@ -622,14 +626,15 @@
 .pf-ideas .ideas-path-rail {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  gap: 30px 22px;
   margin-top: 26px;
 }
 
 .pf-ideas .ideas-rail-item {
   min-width: 0;
-  border: 1px solid var(--ideas-line);
-  background: #fff;
+  border: 0;
+  border-top: 1px solid var(--ideas-line);
+  background: transparent;
   transition: border-color 150ms ease, transform 150ms ease;
 }
 
@@ -648,7 +653,7 @@
   position: relative;
   min-height: 185px;
   overflow: hidden;
-  border-bottom: 1px solid var(--ideas-line);
+  border-bottom: 0;
   background: #ededed;
   padding: 14px;
 }
@@ -671,7 +676,7 @@
   flex: 1;
   min-width: 0;
   flex-direction: column;
-  padding: 18px;
+  padding: 18px 2px 0;
 }
 
 .pf-ideas .ideas-rail-copy h3 {
@@ -819,7 +824,7 @@
   .pf-ideas .ideas-feature-preview {
     min-height: 380px;
     border-right: 0;
-    border-bottom: 1px solid var(--ideas-line);
+    border-bottom: 0;
   }
 
   .pf-ideas .ideas-path-rail {
@@ -852,7 +857,7 @@
   .pf-ideas .ideas-intention-index li a {
     grid-template-columns: 18px minmax(0, 1fr) 12px;
     min-height: 88px;
-    padding: 11px;
+    padding: 11px 0;
   }
 
   .pf-ideas .ideas-intention-index li a > svg:not(.ideas-index-arrow) {
@@ -894,7 +899,7 @@
   }
 
   .pf-ideas .ideas-feature-story {
-    padding: 22px;
+    padding: 22px 2px 4px;
   }
 
   .pf-ideas .ideas-feature-story h2 {

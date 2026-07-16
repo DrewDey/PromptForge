@@ -9,10 +9,10 @@ type HomeHeroProps = {
 }
 
 const startingPoints = [
-  { href: '/paths?intent=organize', label: 'Use something practical', note: 'Planners, boards, calculators' },
-  { href: '/paths?intent=play', label: 'Play something', note: 'Games, puzzles, experiments' },
-  { href: '/paths?compare=models', label: 'Compare model runs', note: 'Same brief, different models' },
-  { href: '/paths?intent=one-prompt', label: 'Start with one prompt', note: 'Small paths with a short runway' },
+  { href: '/paths?intent=organize', label: 'Practical tools' },
+  { href: '/paths?intent=play', label: 'Games and experiments' },
+  { href: '/paths?compare=models', label: 'Model comparisons' },
+  { href: '/paths?intent=one-prompt', label: 'One-prompt builds' },
 ] as const
 
 export function HomeHero({ pathCount, featured }: HomeHeroProps) {
@@ -63,20 +63,16 @@ export function HomeHero({ pathCount, featured }: HomeHeroProps) {
         </div>
 
         <nav className="home-entry-strip" aria-label="Browse build paths by outcome">
-          <p>Browse by outcome</p>
-          <ol>
+          <span>Browse:</span>
+          <ul>
             {startingPoints.map((item) => (
               <li key={item.href}>
                 <Link href={item.href}>
-                  <span>
-                    <strong>{item.label}</strong>
-                    <small>{item.note}</small>
-                  </span>
-                  <ArrowRight aria-hidden="true" />
+                  {item.label}
                 </Link>
               </li>
             ))}
-          </ol>
+          </ul>
         </nav>
       </div>
     </section>

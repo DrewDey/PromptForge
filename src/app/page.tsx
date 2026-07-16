@@ -1,12 +1,10 @@
 import type { Metadata } from 'next'
 import { HomeBuildMosaic } from '@/components/home/HomeBuildMosaic'
 import { HomeHero } from '@/components/home/HomeHero'
-import { HomeModelEvolution } from '@/components/home/HomeModelEvolution'
 import { HomeProcess } from '@/components/home/HomeProcess'
 import { HomeSupportRoutes } from '@/components/home/HomeSupportRoutes'
 import { getCategories, getPrompts } from '@/lib/data'
 import {
-  MODEL_COMPARISON_PROJECT_IDS,
   START_HERE_PROJECT_IDS,
   buildPathDiscoveryCatalog,
   newestOrder,
@@ -34,18 +32,12 @@ export default async function HomePage() {
   const featured = selectCuratedItems(featurePool, START_HERE_PROJECT_IDS, 1)[0]
   const recentPool = newestOrder(workingProjects.length > 0 ? workingProjects : recommended)
   const recent = recentPool.filter((item) => item.id !== featured?.id).slice(0, 4)
-  const modelEvolution = selectCuratedItems(
-    catalog.filter((item) => item.comparisonCount > 1),
-    MODEL_COMPARISON_PROJECT_IDS,
-    1,
-  )[0]
 
   return (
     <div className="pf-home-next">
       <HomeHero pathCount={catalog.length} featured={featured} />
       {recent.length > 0 && <HomeBuildMosaic items={recent} />}
       <HomeProcess />
-      {modelEvolution && <HomeModelEvolution item={modelEvolution} />}
       <HomeSupportRoutes />
     </div>
   )

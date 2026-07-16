@@ -5,22 +5,17 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  GitCompareArrows,
   Search,
   SlidersHorizontal,
-  Sparkles,
 } from 'lucide-react'
 import { BROAD_DOMAINS, getPromptBroadDomain } from '@/lib/broad-domains'
 import { getCategories, getPrompts, getUserVotesAndBookmarks } from '@/lib/data'
 import {
   DISCOVERY_INTENTS,
-  MODEL_COMPARISON_PROJECT_IDS,
-  START_HERE_PROJECT_IDS,
   buildPathDiscoveryCatalog,
   itemMatchesIntent,
   newestOrder,
   recommendedOrder,
-  selectCuratedItems,
   type BuildPathDiscoveryItem,
   type DiscoveryIntent,
 } from '@/lib/path-discovery'
@@ -85,12 +80,10 @@ function SectionHeading({
   eyebrow,
   title,
   description,
-  action,
 }: {
   eyebrow: string
   title: string
   description: string
-  action?: { href: string; label: string }
 }) {
   return (
     <header className="path-section-heading">
@@ -99,11 +92,6 @@ function SectionHeading({
         <h2>{title}</h2>
         <p>{description}</p>
       </div>
-      {action && (
-        <Link href={action.href} className="path-section-action">
-          {action.label} <ArrowRight aria-hidden="true" />
-        </Link>
-      )}
     </header>
   )
 }
@@ -236,16 +224,6 @@ export async function BuildPathsDiscovery({
     return `/paths${search ? `?${search}` : ''}`
   }
 
-  const usedIds = new Set<string>()
-  const startHere = selectCuratedItems(catalog, START_HERE_PROJECT_IDS, 3, usedIds)
-  startHere.forEach((item) => usedIds.add(item.id))
-  const compareModels = selectCuratedItems(
-    catalog.filter((item) => item.comparisonCount > 1),
-    MODEL_COMPARISON_PROJECT_IDS,
-    4,
-    usedIds,
-  )
-
   const activeFilterCount = [
     query,
     activeIntent,
@@ -262,12 +240,12 @@ export async function BuildPathsDiscovery({
       <section className="path-hero">
         <div className="path-hero-inner">
           <div className="path-hero-copy">
-            <div className="path-eyebrow path-eyebrow-light">
-              <Sparkles aria-hidden="true" /> PathForge library · {catalog.length} verified paths
+            <div className="path-eyebrow">
+              PathForge library · {catalog.length} published paths
             </div>
-            <h1>Find something <span>worth building.</span></h1>
+            <h1>Explore finished AI projects.</h1>
             <p>
-              Start with a working project, then inspect the prompts, responses, models, and forks that made it possible.
+              Open the result first. Then inspect the prompts, responses, models, and forks behind it.
             </p>
           </div>
 
@@ -313,25 +291,6 @@ export async function BuildPathsDiscovery({
         </div>
       </section>
 
-      {!isFiltered && activePage === 1 && startHere.length > 0 && (
-        <section id="start-here" className="path-section path-start-section">
-          <div className="path-container">
-            <SectionHeading
-              eyebrow="Staff picks · 3 paths"
-              title="Start with three projects worth opening."
-              description="Real working results first, with the prompts, model runs, and forks available when you want the build story."
-              action={{ href: '#all-paths', label: 'Browse every path' }}
-            />
-            <div className="path-start-grid">
-              <BuildPathCard item={startHere[0]} featured />
-              <div className="path-start-supporting">
-                {startHere.slice(1).map((item) => <BuildPathCard key={item.id} item={item} compact />)}
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
       <section id="all-paths" className="path-catalog-section">
         <div className="path-container">
           <SectionHeading
@@ -339,7 +298,7 @@ export async function BuildPathsDiscovery({
             title={isFiltered ? `${ordered.length} ${ordered.length === 1 ? 'path matches' : 'paths match'}.` : 'All build paths.'}
             description={isFiltered
               ? 'Results stay in a stable order until you change a filter.'
-              : 'Recommended starts with editorial quality and working artifacts—not empty popularity numbers.'}
+              : 'Search the complete published library or narrow it by outcome, domain, model, and project features.'}
           />
 
           <div className="path-catalog-toolbar">
@@ -475,30 +434,6 @@ export async function BuildPathsDiscovery({
         </div>
       </section>
 
-      {!isFiltered && activePage === 1 && compareModels.length > 0 && (
-        <section className="path-compare-section" aria-labelledby="model-comparison-title">
-          <div className="path-container path-compare-inner">
-            <div className="path-compare-copy">
-              <div className="path-eyebrow path-eyebrow-blue"><GitCompareArrows aria-hidden="true" /> Model comparisons</div>
-              <h2 id="model-comparison-title">See what changed when the model changed.</h2>
-              <p>
-                Open the same brief across ChatGPT, Claude, and Gemini, then compare the working results and build decisions.
-              </p>
-              <Link href="/paths?compare=models#all-paths">Browse every comparison <ArrowRight aria-hidden="true" /></Link>
-            </div>
-            <div className="path-compare-list">
-              {compareModels.map((item) => (
-                <Link key={item.id} href={item.href}>
-                  <span>{item.categoryLabel}</span>
-                  <strong>{item.title}</strong>
-                  <small>{item.comparisonCount} verified model runs</small>
-                  <ArrowRight aria-hidden="true" />
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
     </div>
   )
 }

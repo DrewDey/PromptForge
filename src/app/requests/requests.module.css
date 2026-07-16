@@ -1,160 +1,157 @@
 .page {
-  --request-paper: #f6f0e5;
-  --request-paper-light: #fffcf6;
-  --request-ink: #1f211f;
-  --request-muted: #67675f;
-  --request-rule: #d8cfbf;
+  --request-ink: #18181b;
+  --request-muted: #62626b;
+  --request-line: #e4e4e7;
+  --request-soft: #f7f7f8;
   --request-accent: #a8470d;
   min-height: 100vh;
+  background: #fff;
   color: var(--request-ink);
-  background:
-    radial-gradient(circle at 8% 3%, rgba(232, 122, 44, 0.09), transparent 23rem),
-    linear-gradient(90deg, transparent 0, transparent calc(50% - 0.5px), rgba(83, 72, 54, 0.04) 50%, transparent calc(50% + 0.5px)),
-    var(--request-paper);
+}
+.page *,
+.page *::before,
+.page *::after {
+  box-sizing: border-box;
 }
 
+.page a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.page svg {
+  display: block;
+}
+
+/* Compact page introduction */
 .intro {
-  width: min(100% - 2rem, 1320px);
+  width: min(100% - 48px, 1200px);
   margin-inline: auto;
-  padding: 3.5rem 0 2.25rem;
-  border-bottom: 1px solid var(--request-rule);
+  padding: 48px 0 28px;
+  border-bottom: 1px solid var(--request-line);
 }
 
 .kicker,
 .queueHeading > div:first-child > span,
-.composerHeader > span,
-.requestMeta,
-.exampleBriefs > p {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.66rem;
+.composerHeader > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--request-accent);
+  font-family: var(--font-mono);
+  font-size: 9px;
   font-weight: 800;
-  line-height: 1.2;
-  letter-spacing: 0.16em;
+  letter-spacing: .13em;
   text-transform: uppercase;
 }
 
-.kicker {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
-  color: var(--request-accent);
-}
-
 .kicker svg {
-  width: 1rem;
-  height: 1rem;
+  width: 14px;
+  height: 14px;
 }
 
 .introGrid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 3rem;
+  gap: 34px;
   align-items: end;
-  margin-top: 1.1rem;
+  margin-top: 10px;
 }
 
 .intro h1 {
-  max-width: 800px;
-  font-size: clamp(2.55rem, 5.5vw, 5.35rem);
+  max-width: 760px;
+  margin: 0;
+  font-size: clamp(40px, 5vw, 58px);
   font-weight: 900;
-  line-height: 0.92;
-  letter-spacing: -0.055em;
+  letter-spacing: -.05em;
+  line-height: 1;
+  text-wrap: balance;
 }
 
 .introGrid > div > p {
-  max-width: 710px;
-  margin-top: 1.15rem;
+  max-width: 670px;
+  margin: 14px 0 0;
   color: var(--request-muted);
-  font-size: clamp(1rem, 1.45vw, 1.2rem);
+  font-size: 15px;
   line-height: 1.65;
 }
 
 .introActions {
   display: flex;
-  gap: 0.65rem;
-  align-items: center;
-  padding-bottom: 0.2rem;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .introActions a,
 .emptyLead a,
 .signInPrompt a {
   display: inline-flex;
-  min-height: 44px;
+  min-height: 42px;
   align-items: center;
   justify-content: center;
-  gap: 0.55rem;
-  border: 1px solid #aaa191;
-  padding: 0.68rem 0.9rem;
-  background: rgba(255, 252, 246, 0.7);
+  gap: 7px;
+  border: 1px solid var(--request-line);
+  padding: 0 13px;
+  background: #fff;
   color: var(--request-ink);
-  font-size: 0.82rem;
+  font-size: 11px;
   font-weight: 800;
-  transition: border-color 150ms ease, color 150ms ease, background-color 150ms ease;
+  transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
 }
 
 .introActions a:hover,
 .emptyLead a:hover,
 .signInPrompt a:hover {
-  border-color: var(--request-accent);
-  color: var(--request-accent);
+  border-color: var(--request-ink);
 }
 
-.introActions a:focus-visible,
-.emptyLead a:focus-visible,
-.signInPrompt a:focus-visible,
-.feedbackNote a:focus-visible,
-.voteButton:focus-visible,
-.votedButton:focus-visible {
-  outline: 2px solid var(--request-accent);
-  outline-offset: 3px;
-}
-
-.introActions svg,
-.emptyLead a svg {
-  width: 1rem;
-  height: 1rem;
-}
-
-.introActions .primaryAction {
+.introActions .primaryAction,
+.emptyLead a {
   border-color: var(--request-ink);
   background: var(--request-ink);
   color: #fff;
 }
 
-.introActions .primaryAction:hover {
-  border-color: var(--request-accent);
-  background: var(--request-accent);
-  color: #fff;
+.introActions .primaryAction:hover,
+.emptyLead a:hover {
+  border-color: var(--color-brand-orange-dark);
+  background: var(--color-brand-orange-dark);
+}
+
+.introActions svg,
+.emptyLead a svg {
+  width: 14px;
+  height: 14px;
 }
 
 .submittedBanner {
   display: flex;
   width: fit-content;
   align-items: center;
-  gap: 0.55rem;
-  margin-top: 1.35rem;
+  gap: 7px;
+  margin-top: 18px;
   border-left: 3px solid #2d7c4e;
-  padding: 0.6rem 0.8rem;
-  background: rgba(226, 243, 232, 0.8);
+  background: #eff8f2;
+  padding: 8px 10px;
   color: #245f3d;
-  font-size: 0.85rem;
+  font-size: 12px;
   font-weight: 750;
 }
 
 .submittedBanner svg {
-  width: 1rem;
-  height: 1rem;
+  width: 14px;
+  height: 14px;
 }
 
+/* Queue plus focused request composer */
 .workspace {
   display: grid;
-  width: min(100% - 2rem, 1320px);
-  grid-template-columns: minmax(0, 1.62fr) minmax(330px, 0.78fr);
-  gap: clamp(2rem, 5vw, 5.25rem);
+  width: min(100% - 48px, 1200px);
+  grid-template-columns: minmax(0, 1.45fr) minmax(310px, .65fr);
+  gap: clamp(30px, 5vw, 60px);
   align-items: start;
   margin-inline: auto;
-  padding: 2.5rem 0 6rem;
+  padding: 36px 0 72px;
 }
 
 .queue {
@@ -165,133 +162,66 @@
   display: flex;
   align-items: end;
   justify-content: space-between;
-  gap: 1rem;
-  padding-bottom: 1.1rem;
-  border-bottom: 2px solid var(--request-ink);
-}
-
-.queueHeading > div:first-child > span,
-.composerHeader > span,
-.exampleBriefs > p {
-  color: var(--request-accent);
+  gap: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--request-ink);
 }
 
 .queueHeading h2,
 .composerHeader h2 {
-  margin-top: 0.35rem;
-  font-size: clamp(1.6rem, 3vw, 2.3rem);
+  margin: 5px 0 0;
+  font-size: clamp(24px, 3vw, 34px);
   font-weight: 900;
-  line-height: 1.03;
-  letter-spacing: -0.04em;
+  letter-spacing: -.04em;
+  line-height: 1.06;
 }
 
 .queueCount {
   display: flex;
   align-items: baseline;
-  gap: 0.4rem;
+  gap: 5px;
   color: var(--request-muted);
 }
 
 .queueCount strong {
   color: var(--request-ink);
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 1.35rem;
+  font-family: var(--font-mono);
+  font-size: 18px;
 }
 
 .queueCount span {
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: 9px;
+  font-weight: 750;
   text-transform: uppercase;
 }
 
 .emptyBoard {
-  display: grid;
-  grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
-  min-height: 480px;
-  border-bottom: 1px solid var(--request-rule);
-  background: rgba(255, 252, 246, 0.46);
+  border-bottom: 1px solid var(--request-line);
 }
 
 .emptyLead {
-  position: relative;
-  padding: 4rem 2.25rem 3rem 0;
-}
-
-.boardPin {
-  position: absolute;
-  top: 1.3rem;
-  left: 0;
-  width: 2.4rem;
-  height: 0.22rem;
-  background: var(--request-accent);
+  padding: 54px 0;
 }
 
 .emptyLead h3 {
-  max-width: 390px;
-  font-family: var(--font-display), Georgia, serif;
-  font-size: clamp(1.75rem, 3vw, 2.75rem);
-  font-weight: 400;
-  font-style: italic;
-  line-height: 1.08;
-  letter-spacing: -0.025em;
+  max-width: 520px;
+  margin: 0;
+  font-size: 25px;
+  font-weight: 850;
+  letter-spacing: -.03em;
 }
 
 .emptyLead p {
-  max-width: 440px;
-  margin-top: 1rem;
+  max-width: 620px;
+  margin: 10px 0 0;
   color: var(--request-muted);
-  font-size: 0.93rem;
-  line-height: 1.7;
+  font-size: 13px;
+  line-height: 1.65;
 }
 
 .emptyLead a {
   width: fit-content;
-  margin-top: 1.45rem;
-  border-color: var(--request-ink);
-  background: var(--request-ink);
-  color: #fff;
-}
-
-.emptyLead a:hover {
-  background: var(--request-accent);
-  color: #fff;
-}
-
-.exampleBriefs {
-  padding: 3rem 0 3rem 2.2rem;
-  border-left: 1px solid var(--request-rule);
-}
-
-.exampleBriefs > p {
-  margin-bottom: 0.65rem;
-}
-
-.exampleBriefs article {
-  display: grid;
-  grid-template-columns: 2.2rem minmax(0, 1fr);
-  gap: 0.8rem;
-  padding: 1.15rem 0;
-  border-top: 1px solid var(--request-rule);
-}
-
-.exampleBriefs article > span {
-  padding-top: 0.15rem;
-  color: var(--request-accent);
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.65rem;
-  font-weight: 800;
-}
-
-.exampleBriefs h4 {
-  font-size: 0.93rem;
-  font-weight: 850;
-}
-
-.exampleBriefs article p {
-  margin-top: 0.3rem;
-  color: var(--request-muted);
-  font-size: 0.82rem;
-  line-height: 1.55;
+  margin-top: 18px;
 }
 
 .sidebar {
@@ -299,61 +229,57 @@
 }
 
 .composer {
-  scroll-margin-top: 6rem;
-  border-top: 5px solid var(--request-accent);
-  background: var(--request-paper-light);
-  box-shadow: 0 1.5rem 3rem rgba(54, 44, 31, 0.08);
+  scroll-margin-top: var(--site-sticky-offset, 80px);
+  border: 0;
+  border-top: 3px solid var(--request-accent);
+  background: transparent;
 }
 
 .composerHeader {
-  padding: 1.45rem 1.45rem 1.1rem;
-  border-right: 1px solid var(--request-rule);
-  border-left: 1px solid var(--request-rule);
+  padding: 20px 0 15px;
 }
 
 .composerHeader h2 {
-  font-size: 1.7rem;
+  font-size: 26px;
 }
 
 .composerHeader p {
-  margin-top: 0.55rem;
+  margin: 7px 0 0;
   color: var(--request-muted);
-  font-size: 0.85rem;
+  font-size: 12px;
   line-height: 1.55;
 }
 
 .composerForm {
-  border-right: 1px solid var(--request-rule);
-  border-left: 1px solid var(--request-rule);
+  border-top: 1px solid var(--request-line);
 }
 
 .composerForm :global(form) {
   border: 0;
-  border-top: 1px solid var(--request-rule);
-  padding: 1.2rem 1.45rem 1.35rem;
+  padding: 18px 0 20px;
   background: transparent;
 }
 
 .composerForm :global(form > div) {
-  margin-bottom: 1rem;
+  margin-bottom: 14px;
 }
 
 .composerForm :global(label) {
-  margin-bottom: 0.45rem;
-  color: #766e61;
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.61rem;
-  letter-spacing: 0.14em;
+  margin-bottom: 6px;
+  color: var(--request-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: .1em;
 }
 
 .composerForm :global(input),
 .composerForm :global(textarea) {
-  border-color: #c8bead;
-  background: #fffefa;
+  border-color: #d4d4d8;
+  background: #fff;
 }
 
 .composerForm :global(textarea) {
-  min-height: 9rem;
+  min-height: 130px;
   resize: vertical;
 }
 
@@ -364,31 +290,32 @@
 }
 
 .composerForm :global(button[type='submit']:hover) {
-  background: var(--request-accent);
+  background: var(--color-brand-orange-dark);
 }
 
 .signInPrompt {
-  border: 1px solid var(--request-rule);
-  border-top: 0;
-  padding: 1.3rem 1.45rem 1.45rem;
+  border-top: 1px solid var(--request-line);
+  padding: 18px 0 20px;
 }
 
 .signInPrompt h3 {
-  font-size: 0.95rem;
+  margin: 0;
+  font-size: 15px;
   font-weight: 850;
 }
 
 .signInPrompt > p {
-  margin-top: 0.45rem;
+  margin: 6px 0 0;
   color: var(--request-muted);
-  font-size: 0.82rem;
+  font-size: 12px;
   line-height: 1.55;
 }
 
 .signInPrompt > div {
   display: flex;
-  gap: 0.55rem;
-  margin-top: 1rem;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 14px;
 }
 
 .signInPrompt a:first-child {
@@ -400,31 +327,32 @@
 .briefNotes {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  border: 1px solid var(--request-rule);
-  border-top: 0;
+  border-top: 1px solid var(--request-line);
 }
 
 .briefNotes > div {
   display: grid;
-  grid-template-columns: 1.5rem minmax(0, 1fr);
-  gap: 0.55rem;
-  padding: 0.95rem;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 8px;
+  padding: 14px 0;
 }
 
 .briefNotes > div + div {
-  border-left: 1px solid var(--request-rule);
+  border-left: 1px solid var(--request-line);
+  padding-left: 14px;
 }
 
 .briefNotes span {
   color: var(--request-accent);
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.58rem;
+  font-family: var(--font-mono);
+  font-size: 8px;
   font-weight: 800;
 }
 
 .briefNotes p {
+  margin: 0;
   color: var(--request-muted);
-  font-size: 0.72rem;
+  font-size: 10px;
   line-height: 1.5;
 }
 
@@ -434,23 +362,24 @@
 
 .feedbackNote {
   display: flex;
-  gap: 0.75rem;
-  margin-top: 1.1rem;
-  padding: 1rem 0.15rem;
-  border-top: 1px solid var(--request-rule);
+  gap: 9px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--request-line);
   color: var(--request-muted);
 }
 
 .feedbackNote svg {
-  width: 1rem;
-  height: 1rem;
+  width: 14px;
+  height: 14px;
   flex: 0 0 auto;
-  margin-top: 0.15rem;
+  margin-top: 2px;
   color: var(--request-accent);
 }
 
 .feedbackNote p {
-  font-size: 0.78rem;
+  margin: 0;
+  font-size: 11px;
   line-height: 1.55;
 }
 
@@ -462,18 +391,19 @@
   color: var(--request-accent);
   font-weight: 800;
   text-decoration: underline;
-  text-underline-offset: 0.18em;
+  text-underline-offset: 2px;
 }
 
+/* Request cards and responses */
 .requestList {
-  border-bottom: 1px solid var(--request-rule);
+  border-bottom: 1px solid var(--request-line);
 }
 
 .requestCard {
   display: grid;
-  grid-template-columns: 3.4rem minmax(0, 1fr);
-  border-bottom: 1px solid var(--request-rule);
-  background: rgba(255, 252, 246, 0.48);
+  grid-template-columns: 44px minmax(0, 1fr);
+  border-bottom: 1px solid var(--request-line);
+  background: #fff;
 }
 
 .requestCard:last-child {
@@ -481,25 +411,30 @@
 }
 
 .requestNumber {
-  padding: 1.55rem 0.65rem;
-  border-right: 1px solid var(--request-rule);
+  padding: 20px 8px;
+  border-right: 1px solid var(--request-line);
   color: var(--request-accent);
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.68rem;
-  font-weight: 900;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 850;
   text-align: center;
 }
 
 .requestContent {
   min-width: 0;
-  padding: 1.45rem 1.25rem 1.55rem 1.5rem;
+  padding: 20px 18px 22px 20px;
 }
 
 .requestMeta {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem 1rem;
-  color: #7a746a;
+  gap: 7px 14px;
+  color: #777780;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 750;
+  letter-spacing: .08em;
+  text-transform: uppercase;
 }
 
 .requestMeta span:first-child {
@@ -516,34 +451,35 @@
 
 .requestContent > h3 {
   max-width: 790px;
-  margin-top: 0.65rem;
-  font-size: clamp(1.25rem, 2.1vw, 1.75rem);
+  margin: 8px 0 0;
+  font-size: clamp(20px, 2.1vw, 27px);
   font-weight: 900;
+  letter-spacing: -.03em;
   line-height: 1.12;
-  letter-spacing: -0.03em;
 }
 
 .requestBody {
   max-width: 800px;
-  margin-top: 0.75rem;
+  margin: 9px 0 0;
   color: var(--request-muted);
-  font-size: 0.9rem;
-  line-height: 1.7;
+  font-size: 13px;
+  line-height: 1.65;
 }
 
 .requestByline {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  margin-top: 1.1rem;
-  padding-top: 0.8rem;
-  border-top: 1px solid rgba(216, 207, 191, 0.7);
+  gap: 14px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--request-line);
 }
 
 .requestByline p {
-  color: #7a746a;
-  font-size: 0.72rem;
+  margin: 0;
+  color: #777780;
+  font-size: 10px;
 }
 
 .requestByline strong {
@@ -555,14 +491,13 @@
   display: inline-flex;
   min-height: 36px;
   align-items: center;
-  gap: 0.35rem;
-  border: 1px solid #aaa191;
-  padding: 0.4rem 0.65rem;
-  background: #fffefa;
-  color: #55534d;
-  font-size: 0.72rem;
-  font-weight: 850;
-  transition: border-color 150ms ease, color 150ms ease, background-color 150ms ease;
+  gap: 5px;
+  border: 1px solid var(--request-line);
+  padding: 6px 9px;
+  background: #fff;
+  color: var(--request-muted);
+  font-size: 10px;
+  font-weight: 800;
 }
 
 .voteButton:hover {
@@ -572,116 +507,110 @@
 
 .votedButton {
   border-color: var(--request-accent);
-  background: #fff2e7;
+  background: #fff7ed;
   color: var(--request-accent);
 }
 
 .voteButton svg,
 .votedButton svg {
-  width: 0.9rem;
-  height: 0.9rem;
+  width: 12px;
+  height: 12px;
 }
 
 .responses {
-  margin-top: 1.25rem;
-  border-top: 2px solid var(--request-ink);
+  margin-top: 18px;
+  border-top: 1px solid var(--request-ink);
 }
 
 .responses > h4 {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
-  padding: 0.7rem 0;
+  gap: 6px;
+  margin: 0;
+  padding: 10px 0;
   color: var(--request-accent);
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.62rem;
-  font-weight: 850;
-  letter-spacing: 0.14em;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .12em;
   text-transform: uppercase;
 }
 
 .responses > h4 svg {
-  width: 0.9rem;
-  height: 0.9rem;
+  width: 12px;
+  height: 12px;
 }
 
 .response {
-  padding: 1rem 0;
-  border-top: 1px solid var(--request-rule);
+  padding: 14px 0;
+  border-top: 1px solid var(--request-line);
 }
 
 .response > div {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  color: #817b70;
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.6rem;
+  gap: 10px;
+  color: #777780;
+  font-family: var(--font-mono);
+  font-size: 8px;
   font-weight: 750;
-  letter-spacing: 0.08em;
+  letter-spacing: .08em;
   text-transform: uppercase;
 }
 
 .acceptedResponse {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 4px;
   color: #28704a;
 }
 
 .acceptedResponse svg {
-  width: 0.85rem;
-  height: 0.85rem;
+  width: 12px;
+  height: 12px;
 }
 
 .response > p {
-  margin-top: 0.55rem;
-  color: #4f4f49;
-  font-size: 0.85rem;
-  line-height: 1.65;
+  margin: 7px 0 0;
+  color: var(--request-muted);
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .response > a {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  margin-top: 0.65rem;
+  gap: 5px;
+  margin-top: 8px;
   color: var(--request-accent);
-  font-size: 0.78rem;
-  font-weight: 850;
-}
-
-.response > a:hover {
-  color: #ae4a16;
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
+  font-size: 11px;
+  font-weight: 800;
 }
 
 .response > a svg {
-  width: 0.85rem;
-  height: 0.85rem;
+  width: 12px;
+  height: 12px;
 }
 
 .responseComposer {
-  margin-top: 0.6rem;
-  padding-top: 0.1rem;
+  margin-top: 8px;
 }
 
 .responseComposer :global(form) {
   margin-top: 0;
-  padding-top: 1rem;
-  border-color: var(--request-rule);
+  padding-top: 14px;
+  border-color: var(--request-line);
 }
 
 .responseComposer :global(form > div) {
-  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.25fr) auto;
-  gap: 0.55rem;
+  grid-template-columns: minmax(0, .95fr) minmax(0, 1.25fr) auto;
+  gap: 7px;
 }
 
 .responseComposer :global(input) {
   min-width: 0;
-  border-color: #c8bead;
-  background: #fffefa;
+  border-color: var(--request-line);
+  background: #fff;
 }
 
 .responseComposer :global(button) {
@@ -690,62 +619,45 @@
 }
 
 .responseComposer :global(button:hover) {
-  background: var(--request-accent);
+  background: var(--color-brand-orange-dark);
 }
 
-.responseSignIn {
-  margin-top: 1rem;
-  padding: 0.8rem 0;
-  border-top: 1px solid var(--request-rule);
-  color: #777168;
-  font-size: 0.76rem;
+.responseSignIn,
+.closedNotice {
+  margin-top: 14px;
+  padding: 11px 0;
+  border-top: 1px solid var(--request-line);
+  color: var(--request-muted);
+  font-size: 11px;
+  line-height: 1.55;
 }
 
 .responseSignIn a {
   color: var(--request-accent);
-  font-weight: 850;
+  font-weight: 800;
 }
 
-.closedNotice {
-  margin-top: 1rem;
-  padding: 0.8rem 0;
-  border-top: 1px solid var(--request-rule);
-  color: #777168;
-  font-size: 0.76rem;
-  line-height: 1.55;
-}
-
-@media (min-width: 1050px) {
+@media (min-width: 1000px) {
   .sidebar {
     position: sticky;
-    top: 6rem;
+    top: calc(var(--site-header-height, 4rem) + 1.25rem);
   }
 }
 
-@media (max-width: 1049px) {
-  .introGrid {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
-
-  .introActions {
-    padding-bottom: 0;
-  }
-
+@media (max-width: 999px) {
+  .introGrid,
   .workspace {
     grid-template-columns: 1fr;
   }
 
-  .queue {
-    order: 1;
+  .introActions {
+    justify-self: start;
   }
 
   .sidebar {
-    order: 2;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(240px, 0.45fr);
-    gap: 1.4rem;
-    align-items: start;
+    grid-template-columns: minmax(0, 1fr) minmax(240px, .5fr);
+    gap: 18px;
   }
 
   .feedbackNote {
@@ -755,23 +667,18 @@
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 680px) {
   .intro,
   .workspace {
-    width: min(100% - 1.25rem, 1320px);
+    width: min(100% - 28px, 1200px);
   }
 
   .intro {
-    padding: 2.5rem 0 1.7rem;
+    padding: 34px 0 22px;
   }
 
   .intro h1 {
-    max-width: 580px;
-    font-size: clamp(2.45rem, 13vw, 4rem);
-  }
-
-  .introGrid > div > p {
-    font-size: 0.98rem;
+    font-size: clamp(38px, 11.5vw, 50px);
   }
 
   .introActions {
@@ -784,26 +691,12 @@
   }
 
   .workspace {
-    gap: 2.5rem;
-    padding: 1.7rem 0 4rem;
+    gap: 38px;
+    padding: 26px 0 54px;
   }
 
   .queueHeading {
-    align-items: start;
-  }
-
-  .emptyBoard {
-    grid-template-columns: 1fr;
-  }
-
-  .emptyLead {
-    padding: 3.7rem 0 2.3rem;
-  }
-
-  .exampleBriefs {
-    padding: 1.5rem 0 2rem;
-    border-top: 1px solid var(--request-rule);
-    border-left: 0;
+    align-items: flex-start;
   }
 
   .sidebar {
@@ -811,21 +704,21 @@
   }
 
   .feedbackNote {
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--request-rule);
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--request-line);
   }
 
   .requestCard {
-    grid-template-columns: 2.3rem minmax(0, 1fr);
+    grid-template-columns: 32px minmax(0, 1fr);
   }
 
   .requestNumber {
-    padding-inline: 0.35rem;
+    padding-inline: 4px;
   }
 
   .requestContent {
-    padding: 1.2rem 0.65rem 1.35rem 1rem;
+    padding: 18px 8px 20px 14px;
   }
 
   .requestByline {
@@ -838,8 +731,9 @@
   }
 
   .briefNotes > div + div {
-    border-top: 1px solid var(--request-rule);
+    border-top: 1px solid var(--request-line);
     border-left: 0;
+    padding-left: 0;
   }
 
   .responseComposer :global(form > div) {

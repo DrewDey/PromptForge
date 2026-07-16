@@ -45,12 +45,6 @@ function signupHref(next: string) {
   return `/auth/signup?next=${encodeURIComponent(next)}`
 }
 
-const EMPTY_REQUEST_EXAMPLES = [
-  ['Make a routine usable', 'A one-file meal planner that turns pantry staples into a realistic week.'],
-  ['Make a decision clearer', 'A moving-cost comparison that shows the tradeoffs, not only the total.'],
-  ['Make learning active', 'A small game that teaches a concept through the decisions the player makes.'],
-]
-
 export default async function BuildRequestsPage({
   searchParams,
 }: {
@@ -119,7 +113,6 @@ export default async function BuildRequestsPage({
           {requests.length === 0 ? (
             <div className={styles.emptyBoard}>
               <div className={styles.emptyLead}>
-                <span className={styles.boardPin} aria-hidden="true" />
                 <h3>The board is empty, not unfinished.</h3>
                 <p>
                   PathForge does not fill this space with made-up demand. A strong first brief is specific about the outcome and leaves room for a builder to solve it well.
@@ -128,19 +121,6 @@ export default async function BuildRequestsPage({
                   {viewer ? 'Post the first brief' : 'Log in to post a brief'}
                   <ArrowRight aria-hidden="true" />
                 </Link>
-              </div>
-
-              <div className={styles.exampleBriefs} aria-label="Build request examples">
-                <p>Useful directions to start from</p>
-                {EMPTY_REQUEST_EXAMPLES.map(([title, body], index) => (
-                  <article key={title}>
-                    <span>{String(index + 1).padStart(2, '0')}</span>
-                    <div>
-                      <h4>{title}</h4>
-                      <p>{body}</p>
-                    </div>
-                  </article>
-                ))}
               </div>
             </div>
           ) : (

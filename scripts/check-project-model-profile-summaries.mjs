@@ -21,6 +21,7 @@ for (const fileName of manifestFiles) {
       modelLabel: variant.modelLabel,
       isCurrent: variant.isCurrent,
       runRole: variant.runRole,
+      capturedAt: variant.capturedAt,
     }))
 }
 

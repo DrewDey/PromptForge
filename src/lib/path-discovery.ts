@@ -2,6 +2,12 @@ import { getPreparedShowcaseProjectById } from './prepared-showcase-projects'
 import { getProjectHref } from './project-links'
 import { getPromptModelLabel } from './prompt-comparisons'
 import { getProjectModelProfileSummary } from './project-model-profile-summaries'
+import {
+  calculateDiscoveryActivity,
+  compareActiveDiscoveryItems,
+  compareForkDiscoveryItems,
+  compareModelRunDiscoveryItems,
+} from './discovery-activity.mjs'
 import type { Category, PromptWithRelations } from './types'
 
 export type DiscoveryIntent =
@@ -37,10 +43,16 @@ export type BuildPathDiscoveryItem = {
   authorUsername: string | null
   promptCount: number
   comparisonCount: number
+  modelRunCount: number
   artifactPath: string | null
   hasWorkingArtifact: boolean
   hasFork: boolean
+  isFork: boolean
+  forkCount: number
   createdAt: string
+  latestActivityAt: string | null
+  activityScore: number
+  isActive: boolean
   recommendationScore: number
   preview: DiscoveryPreview
 }
@@ -184,6 +196,29 @@ export function buildPathDiscoveryCatalog(
   categories: Category[],
 ): BuildPathDiscoveryItem[] {
   const categoryById = new Map(categories.map((category) => [category.id, category]))
+  const catalogIds = new Set(prompts.map((prompt) => prompt.id))
+  const forkActivityByProject = new Map<string, { count: number; latestAt: string | null }>()
+
+  for (const prompt of prompts) {
+    const sourceProjectIds = new Set([
+      prompt.fork_source_project_id,
+      prompt.fork_parent_submission_id,
+    ].filter((value): value is string => Boolean(value && catalogIds.has(value))))
+
+    for (const sourceProjectId of sourceProjectIds) {
+      const current = forkActivityByProject.get(sourceProjectId) ?? { count: 0, latestAt: null }
+      const nextCreatedAt = Number.isFinite(Date.parse(prompt.created_at)) ? prompt.created_at : null
+      const latestAt = !current.latestAt || (
+        nextCreatedAt && Date.parse(nextCreatedAt) > Date.parse(current.latestAt)
+      )
+        ? nextCreatedAt
+        : current.latestAt
+      forkActivityByProject.set(sourceProjectId, {
+        count: current.count + 1,
+        latestAt,
+      })
+    }
+  }
 
   return prompts.map((prompt) => {
     const prepared = getPreparedShowcaseProjectById(prompt.id)
@@ -195,10 +230,32 @@ export function buildPathDiscoveryCatalog(
       ...variantSummary.map((variant) => variant.modelLabel),
     ].filter((label) => label !== 'Unknown model'))]
     const comparisonCount = Math.max(1, modelLabels.length)
+    const modelRunCount = variantSummary.length
     const preview = previewForPrompt(prompt)
     const artifactPath = prepared?.artifactPath ?? null
     const hasWorkingArtifact = Boolean(artifactPath)
-    const hasFork = Boolean(prepared?.forkSource || prompt.fork_source_project_id)
+    const isFork = Boolean(
+      prepared?.forkSource ||
+      prompt.fork_source_project_id ||
+      prompt.fork_parent_submission_id,
+    )
+    const forkActivity = forkActivityByProject.get(prompt.id) ?? { count: 0, latestAt: null }
+    const forkCount = forkActivity.count
+    const hasFork = forkCount > 0
+    const latestModelRunAt = variantSummary.reduce<string | null>((latest, variant) => {
+      if (!Number.isFinite(Date.parse(variant.capturedAt))) return latest
+      if (!latest || Date.parse(variant.capturedAt) > Date.parse(latest)) return variant.capturedAt
+      return latest
+    }, null)
+    const latestActivityAt = [latestModelRunAt, forkActivity.latestAt]
+      .filter((value): value is string => Boolean(value))
+      .sort((left, right) => Date.parse(right) - Date.parse(left))[0] ?? null
+    const activity = calculateDiscoveryActivity({
+      modelRunCount,
+      forkCount,
+      voteCount: prompt.vote_count,
+      bookmarkCount: prompt.bookmark_count,
+    })
     const richnessScore = Math.min(
       15,
       Math.min(promptCount, 4) * 2 +
@@ -228,10 +285,16 @@ export function buildPathDiscoveryCatalog(
       authorUsername: prompt.author?.username ?? null,
       promptCount,
       comparisonCount,
+      modelRunCount,
       artifactPath,
       hasWorkingArtifact,
       hasFork,
+      isFork,
+      forkCount,
       createdAt: prompt.created_at,
+      latestActivityAt,
+      activityScore: activity.score,
+      isActive: activity.isActive,
       recommendationScore,
       preview,
     }
@@ -242,15 +305,29 @@ export function recommendedOrder(items: BuildPathDiscoveryItem[]) {
   return [...items].sort((left, right) => (
     right.recommendationScore - left.recommendationScore ||
     Date.parse(right.createdAt) - Date.parse(left.createdAt) ||
-    left.title.localeCompare(right.title)
+    left.title.localeCompare(right.title) ||
+    left.id.localeCompare(right.id)
   ))
 }
 
 export function newestOrder(items: BuildPathDiscoveryItem[]) {
   return [...items].sort((left, right) => (
     Date.parse(right.createdAt) - Date.parse(left.createdAt) ||
-    left.title.localeCompare(right.title)
+    left.title.localeCompare(right.title) ||
+    left.id.localeCompare(right.id)
   ))
+}
+
+export function activeOrder(items: BuildPathDiscoveryItem[]) {
+  return [...items].sort(compareActiveDiscoveryItems)
+}
+
+export function forkCountOrder(items: BuildPathDiscoveryItem[]) {
+  return [...items].sort(compareForkDiscoveryItems)
+}
+
+export function modelRunCountOrder(items: BuildPathDiscoveryItem[]) {
+  return [...items].sort(compareModelRunDiscoveryItems)
 }
 
 export function selectCuratedItems(

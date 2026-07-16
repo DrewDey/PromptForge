@@ -20,8 +20,16 @@ type BuildPathCardProps = {
 function PathAnatomy({ item }: { item: BuildPathDiscoveryItem }) {
   const parts = [
     `${item.promptCount || 1} ${item.promptCount === 1 ? 'prompt' : 'prompts'}`,
-    item.comparisonCount > 1 ? `${item.comparisonCount} models` : item.modelLabel,
-    item.hasFork ? 'Fork available' : null,
+    item.modelRunCount > 0
+      ? `${item.modelRunCount} model ${item.modelRunCount === 1 ? 'run' : 'runs'}`
+      : item.comparisonCount > 1
+        ? `${item.comparisonCount} models`
+        : item.modelLabel,
+    item.forkCount > 0
+      ? `${item.forkCount} ${item.forkCount === 1 ? 'fork' : 'forks'}`
+      : item.isFork
+        ? 'Forked path'
+        : null,
   ].filter(Boolean)
 
   return <span>{parts.join(' · ')}</span>
@@ -52,7 +60,19 @@ export function BuildPathCard({ item, featured = false, compact = false, engagem
         <div className="path-card-body">
           <div className="path-card-labels">
             <span>{item.categoryLabel}</span>
-            {item.hasWorkingArtifact && <span className="path-card-verified"><i /> Working artifact</span>}
+            {(item.isActive || item.hasWorkingArtifact) && (
+              <span className="path-card-statuses">
+                {item.isActive && (
+                  <span
+                    className="path-card-active"
+                    title={`${item.modelRunCount} verified model runs and ${item.forkCount} approved forks`}
+                  >
+                    <i /> Active
+                  </span>
+                )}
+                {item.hasWorkingArtifact && <span className="path-card-verified"><i /> Working artifact</span>}
+              </span>
+            )}
           </div>
           <h3>{item.title}</h3>
           <p>{item.description}</p>
@@ -62,7 +82,7 @@ export function BuildPathCard({ item, featured = false, compact = false, engagem
           </div>
           <div className="path-card-foot">
             <span className="path-card-anatomy">
-              {item.hasFork ? <GitFork aria-hidden="true" /> : <Layers3 aria-hidden="true" />}
+              {item.hasFork || item.isFork ? <GitFork aria-hidden="true" /> : <Layers3 aria-hidden="true" />}
               <PathAnatomy item={item} />
             </span>
             <span className="path-card-action">Explore path <ArrowUpRight aria-hidden="true" /></span>

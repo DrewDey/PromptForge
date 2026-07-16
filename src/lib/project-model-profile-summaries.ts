@@ -4,6 +4,7 @@ export type ProjectModelProfileRunSummary = {
   modelLabel: string
   isCurrent: boolean
   runRole: 'historical-baseline' | 'comparison-run'
+  capturedAt: string
 }
 
 const summaries = rawSummaries as Record<string, ProjectModelProfileRunSummary[]>

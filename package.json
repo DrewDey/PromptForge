@@ -27,10 +27,11 @@
     "check:security-boundaries": "node scripts/check-supabase-function-security.mjs",
     "check:auth-readiness": "node scripts/check-auth-readiness.mjs",
     "check:activation-analytics": "node scripts/check-activation-analytics.mjs",
+    "check:discovery-activity": "node scripts/check-discovery-activity.mjs",
     "check:output-tracing": "node scripts/check-output-file-tracing.mjs",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "autoreview": "npm run lint && npm run typecheck && npm run check:source-run-intake && npm run check:source-run-showcases && npm run check:model-variants && npm run check:project-forks && npm run check:my-forge && npm run check:security-boundaries && npm run check:auth-readiness && npm run check:activation-analytics",
+    "autoreview": "npm run lint && npm run typecheck && npm run check:discovery-activity && npm run check:source-run-intake && npm run check:source-run-showcases && npm run check:model-variants && npm run check:project-forks && npm run check:my-forge && npm run check:security-boundaries && npm run check:auth-readiness && npm run check:activation-analytics",
     "autoreview:hourly-manager": "npm run check:hourly-seed-manager"
   },
   "dependencies": {

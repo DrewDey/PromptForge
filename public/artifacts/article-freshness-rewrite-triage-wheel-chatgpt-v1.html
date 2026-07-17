@@ -1,0 +1,833 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Freshness Rewrite Checker</title>
+  <style>
+    :root {
+      --bg: #f7f3ec;
+      --panel: #fffaf2;
+      --panel-2: #ffffff;
+      --ink: #201914;
+      --muted: #6d6258;
+      --line: #ded2c3;
+      --soft: #efe5d7;
+      --good: #236c45;
+      --watch: #8a5a12;
+      --bad: #9b2f24;
+      --accent: #2f5c7c;
+      --shadow: 0 10px 30px rgba(40, 28, 18, .08);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top, #fff9ee 0, var(--bg) 44%, #f3eadf 100%);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.35;
+    }
+
+    .wrap {
+      width: 100%;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 14px;
+    }
+
+    header {
+      padding: 18px 4px 10px;
+    }
+
+    h1 {
+      margin: 0 0 7px;
+      font-size: clamp(1.45rem, 7vw, 2.25rem);
+      line-height: 1.05;
+      letter-spacing: -.04em;
+    }
+
+    .sub {
+      margin: 0;
+      color: var(--muted);
+      font-size: .96rem;
+    }
+
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .card {
+      background: rgba(255, 250, 242, .92);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+      min-width: 0;
+    }
+
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 1.02rem;
+      letter-spacing: -.01em;
+    }
+
+    label {
+      display: block;
+      font-size: .82rem;
+      color: var(--muted);
+      margin: 12px 0 6px;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      max-width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 11px 12px;
+      background: var(--panel-2);
+      color: var(--ink);
+      font: inherit;
+      outline: none;
+    }
+
+    textarea {
+      min-height: 118px;
+      resize: vertical;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(47, 92, 124, .14);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    @media (min-width: 620px) {
+      .row.two {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      max-width: 100%;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 8px 10px;
+      font-size: .87rem;
+      user-select: none;
+      overflow-wrap: anywhere;
+    }
+
+    .chip input {
+      width: auto;
+      margin: 0;
+      accent-color: var(--accent);
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 14px 0 8px;
+      color: var(--ink);
+      font-size: .9rem;
+    }
+
+    .small {
+      font-size: .78rem;
+      color: var(--muted);
+    }
+
+    .risk-card {
+      display: grid;
+      gap: 10px;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 12px;
+    }
+
+    .risk-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .risk-label {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -.03em;
+    }
+
+    .risk-score {
+      font-size: .9rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .bar {
+      height: 13px;
+      border-radius: 999px;
+      background: var(--soft);
+      overflow: hidden;
+      border: 1px solid var(--line);
+    }
+
+    .bar span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: var(--good);
+      transition: width .2s ease;
+    }
+
+    .reasons {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: .9rem;
+    }
+
+    .reasons li {
+      margin: 5px 0;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      width: 100%;
+    }
+
+    button {
+      min-width: 0;
+      border: 1px solid var(--line);
+      background: var(--ink);
+      color: #fff;
+      border-radius: 14px;
+      padding: 11px 10px;
+      font: inherit;
+      font-weight: 750;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      background: var(--panel-2);
+      color: var(--ink);
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .brief {
+      min-height: 230px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .86rem;
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+
+    .status {
+      min-height: 20px;
+      color: var(--muted);
+      font-size: .86rem;
+      padding: 2px 2px 0;
+    }
+
+    .pill-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .mini-pill {
+      border: 1px solid var(--line);
+      background: var(--soft);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 5px 8px;
+      font-size: .76rem;
+    }
+
+    @media (max-width: 430px) {
+      .wrap {
+        padding: 10px;
+      }
+
+      .card {
+        padding: 12px;
+        border-radius: 16px;
+      }
+
+      .chip {
+        font-size: .82rem;
+        padding: 7px 8px;
+        gap: 6px;
+      }
+
+      .actions {
+        grid-template-columns: 1fr;
+      }
+
+      input, textarea, select, button {
+        border-radius: 13px;
+      }
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      header, .input-card, .actions, .status {
+        display: none;
+      }
+
+      .wrap {
+        max-width: none;
+        padding: 0;
+      }
+
+      .card {
+        border: 0;
+        box-shadow: none;
+      }
+
+      textarea.brief {
+        border: 0;
+        min-height: 90vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <h1>Freshness Rewrite Checker</h1>
+      <p class="sub">Paste an older article, mark gaps, get a rewrite risk result, then copy or download the brief. Works offline.</p>
+    </header>
+
+    <section class="grid">
+      <div class="card input-card">
+        <h2>Article inputs</h2>
+
+        <label for="title">Article title</label>
+        <input id="title" type="text" placeholder="Example: Best Roth Conversion Strategies for 2024">
+
+        <div class="row two">
+          <div>
+            <label for="lastDate">Last published or updated date</label>
+            <input id="lastDate" type="date">
+          </div>
+          <div>
+            <label for="topicType">Topic sensitivity</label>
+            <select id="topicType">
+              <option value="evergreen">Mostly evergreen</option>
+              <option value="software">Software, AI, tools, platforms</option>
+              <option value="money">Finance, tax, legal, medical, rules</option>
+              <option value="product">Pricing, products, vendors</option>
+              <option value="news">News, trends, fast-moving topic</option>
+            </select>
+          </div>
+        </div>
+
+        <label for="notes">Rough notes, claims, old sections, or concerns</label>
+        <textarea id="notes" placeholder="Paste notes here. Mention old stats, weak claims, missing screenshots, outdated examples, thin FAQ coverage, or anything that feels stale."></textarea>
+
+        <div class="section-title">
+          <span>Source gaps</span>
+          <span class="small">evidence risk</span>
+        </div>
+        <div class="chips">
+          <label class="chip"><input type="checkbox" class="gap" data-points="13" data-name="No primary source">No primary source</label>
+          <label class="chip"><input type="checkbox" class="gap" data-points="11" data-name="Old or undated sources">Old or undated sources</label>
+          <label class="chip"><input type="checkbox" class="gap" data-points="9" data-name="Stats lack year/context">Stats lack year/context</label>
+          <label class="chip"><input type="checkbox" class="gap" data-points="10" data-name="Screenshots/examples stale">Screenshots/examples stale</label>
+        </div>
+
+        <div class="section-title">
+          <span>Date gaps</span>
+          <span class="small">timeliness risk</span>
+        </div>
+        <div class="chips">
+          <label class="chip"><input type="checkbox" class="gap" data-points="14" data-name="Missing visible update date">Missing visible update date</label>
+          <label class="chip"><input type="checkbox" class="gap" data-points="12" data-name="Time-sensitive claims">Time-sensitive claims</label>
+          <label class="chip"><input type="checkbox" class="gap" data-points="12" data-name="Rules/prices/tools may have changed">Rules/prices/tools changed</label>
+          <label class="chip"><input type="checkbox" class="gap" data-points="8" data-name="Competitor pages look fresher">Competitors fresher</label>
+        </div>
+
+        <div class="section-title">
+          <span>FAQ and intent gaps</span>
+          <span class="small">search fit</span>
+        </div>
+        <div class="chips">
+          <label class="chip"><input type="checkbox" class="gap" data-points="9" data-name="Missing current-year FAQ">Missing current-year FAQ</label>
+          <label class="chip"><input type="checkbox" class="gap" data-points="8" data-name="Reader next steps unclear">Next steps unclear</label>
+          <label class="chip"><input type="checkbox" class="gap" data-points="7" data-name="FAQ does not answer objections">Objections unanswered</label>
+          <label class="chip"><input type="checkbox" class="gap" data-points="6" data-name="Snippet/schema opportunity">Snippet/schema gap</label>
+        </div>
+
+        <div class="pill-line">
+          <span class="mini-pill">No APIs</span>
+          <span class="mini-pill">No external libraries</span>
+          <span class="mini-pill">Local save</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Visible risk result</h2>
+        <div class="risk-card">
+          <div class="risk-top">
+            <div id="riskLabel" class="risk-label">Needs input</div>
+            <div id="riskScore" class="risk-score">0 / 100</div>
+          </div>
+          <div class="bar" aria-label="Risk meter">
+            <span id="riskBar"></span>
+          </div>
+          <ul id="reasons" class="reasons"></ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Rewrite brief</h2>
+        <textarea id="brief" class="brief" spellcheck="false"></textarea>
+        <div class="actions">
+          <button id="copyBtn" type="button">Copy brief</button>
+          <button id="downloadBtn" type="button" class="secondary">Download .txt</button>
+          <button id="saveBtn" type="button" class="secondary">Save locally</button>
+          <button id="clearBtn" type="button" class="secondary">Clear</button>
+        </div>
+        <div id="status" class="status" aria-live="polite"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var els = {
+        title: document.getElementById("title"),
+        lastDate: document.getElementById("lastDate"),
+        topicType: document.getElementById("topicType"),
+        notes: document.getElementById("notes"),
+        gaps: Array.prototype.slice.call(document.querySelectorAll(".gap")),
+        riskLabel: document.getElementById("riskLabel"),
+        riskScore: document.getElementById("riskScore"),
+        riskBar: document.getElementById("riskBar"),
+        reasons: document.getElementById("reasons"),
+        brief: document.getElementById("brief"),
+        copyBtn: document.getElementById("copyBtn"),
+        downloadBtn: document.getElementById("downloadBtn"),
+        saveBtn: document.getElementById("saveBtn"),
+        clearBtn: document.getElementById("clearBtn"),
+        status: document.getElementById("status")
+      };
+
+      var storageKey = "freshnessRewriteChecker.v1";
+
+      function monthsOld(dateValue) {
+        if (!dateValue) return null;
+        var then = new Date(dateValue + "T00:00:00");
+        if (isNaN(then.getTime())) return null;
+        var now = new Date();
+        var years = now.getFullYear() - then.getFullYear();
+        var months = now.getMonth() - then.getMonth();
+        return Math.max(0, years * 12 + months);
+      }
+
+      function topicPoints(type) {
+        var map = {
+          evergreen: 0,
+          software: 17,
+          money: 22,
+          product: 18,
+          news: 25
+        };
+        return map[type] || 0;
+      }
+
+      function topicLabel(type) {
+        var map = {
+          evergreen: "mostly evergreen",
+          software: "software / AI / tools",
+          money: "finance / tax / legal / medical / rules",
+          product: "pricing / product / vendor",
+          news: "news / trend / fast-moving"
+        };
+        return map[type] || "mostly evergreen";
+      }
+
+      function getCheckedGaps() {
+        return els.gaps
+          .filter(function (box) { return box.checked; })
+          .map(function (box) {
+            return {
+              name: box.getAttribute("data-name") || "Gap",
+              points: Number(box.getAttribute("data-points") || 0)
+            };
+          });
+      }
+
+      function classify(score) {
+        if (score >= 70) {
+          return {
+            label: "Rewrite now",
+            color: "var(--bad)",
+            action: "Full freshness rewrite recommended."
+          };
+        }
+        if (score >= 42) {
+          return {
+            label: "Review soon",
+            color: "var(--watch)",
+            action: "Targeted update recommended."
+          };
+        }
+        if (score >= 18) {
+          return {
+            label: "Light refresh",
+            color: "var(--accent)",
+            action: "Small update may be enough."
+          };
+        }
+        return {
+          label: "Low risk",
+          color: "var(--good)",
+          action: "No major freshness rewrite needed from these inputs."
+        };
+      }
+
+      function buildReasons(score, ageMonths, gaps) {
+        var reasons = [];
+        var type = els.topicType.value;
+
+        if (!els.title.value.trim() && !els.notes.value.trim()) {
+          reasons.push("Add a title or notes to get a useful result.");
+          return reasons;
+        }
+
+        if (ageMonths === null) {
+          reasons.push("No update date entered, so the article may look stale to readers.");
+        } else if (ageMonths >= 36) {
+          reasons.push("The article is about " + ageMonths + " months old.");
+        } else if (ageMonths >= 24) {
+          reasons.push("The article is over two years old.");
+        } else if (ageMonths >= 12) {
+          reasons.push("The article is over one year old.");
+        }
+
+        if (type !== "evergreen") {
+          reasons.push("Topic type is " + topicLabel(type) + ", so freshness matters more.");
+        }
+
+        gaps.slice(0, 5).forEach(function (gap) {
+          reasons.push(gap.name + " is marked.");
+        });
+
+        if (score >= 70) {
+          reasons.push("Risk is high enough that small edits may not fix trust or search intent issues.");
+        } else if (score >= 42) {
+          reasons.push("Risk is moderate, so prioritize the highest-impact outdated sections first.");
+        } else if (score >= 18) {
+          reasons.push("Risk is present but likely fixable with a focused refresh.");
+        } else {
+          reasons.push("Few freshness gaps are marked.");
+        }
+
+        return reasons;
+      }
+
+      function calculate() {
+        var title = els.title.value.trim();
+        var notes = els.notes.value.trim();
+        var age = monthsOld(els.lastDate.value);
+        var gaps = getCheckedGaps();
+        var score = 0;
+
+        score += topicPoints(els.topicType.value);
+
+        if (age === null) {
+          score += title || notes ? 18 : 0;
+        } else if (age >= 36) {
+          score += 24;
+        } else if (age >= 24) {
+          score += 19;
+        } else if (age >= 18) {
+          score += 14;
+        } else if (age >= 12) {
+          score += 8;
+        } else if (age >= 6) {
+          score += 4;
+        }
+
+        gaps.forEach(function (gap) {
+          score += gap.points;
+        });
+
+        if (notes.length > 650) score += 5;
+        if (/\b(2020|2021|2022|2023|2024)\b/i.test(notes)) score += 8;
+        if (/\b(price|pricing|tax|law|rule|rate|benchmark|ranking|best|latest|current|AI|software|tool|platform)\b/i.test(notes)) score += 6;
+
+        score = Math.min(100, Math.max(0, Math.round(score)));
+
+        return {
+          score: score,
+          age: age,
+          gaps: gaps,
+          result: classify(score)
+        };
+      }
+
+      function setReasons(reasons) {
+        while (els.reasons.firstChild) {
+          els.reasons.removeChild(els.reasons.firstChild);
+        }
+
+        reasons.forEach(function (reason) {
+          var li = document.createElement("li");
+          li.textContent = reason;
+          els.reasons.appendChild(li);
+        });
+      }
+
+      function briefText(calc) {
+        var title = els.title.value.trim() || "Untitled article";
+        var dateText = els.lastDate.value || "No visible update date entered";
+        var notes = els.notes.value.trim() || "No rough notes entered.";
+        var gapNames = calc.gaps.map(function (gap) { return gap.name; });
+        var ageText = calc.age === null ? "unknown age" : calc.age + " months old";
+
+        var priority;
+        if (calc.score >= 70) {
+          priority = "Full freshness rewrite. Re-check source base, rebuild stale sections, update examples, and add current FAQs.";
+        } else if (calc.score >= 42) {
+          priority = "Targeted refresh. Update dated claims, replace weak sources, and improve FAQ coverage before republishing.";
+        } else if (calc.score >= 18) {
+          priority = "Light refresh. Add visible update date, verify a few claims, and patch obvious FAQ gaps.";
+        } else {
+          priority = "Monitor only. No major rewrite signal from current checks.";
+        }
+
+        return [
+          "Freshness Rewrite Brief",
+          "",
+          "Article: " + title,
+          "Last published/updated: " + dateText,
+          "Estimated age: " + ageText,
+          "Topic sensitivity: " + topicLabel(els.topicType.value),
+          "Risk result: " + calc.result.label + " (" + calc.score + "/100)",
+          "",
+          "Recommended action:",
+          priority,
+          "",
+          "Marked gaps:",
+          gapNames.length ? "- " + gapNames.join("\n- ") : "- None marked",
+          "",
+          "Rewrite priorities:",
+          "- Verify all dated claims, stats, screenshots, prices, tool names, rules, and rankings.",
+          "- Replace weak or old sources with current primary sources where possible.",
+          "- Add or update a visible published/updated date if the article earns it.",
+          "- Add FAQs that answer current-year, objection, comparison, cost, and next-step questions.",
+          "- Rewrite the intro if it promises outdated information or old search intent.",
+          "- Add an editor note only when important facts changed since the prior version.",
+          "",
+          "Notes to use during rewrite:",
+          notes,
+          "",
+          "Republish checklist:",
+          "- Current sources checked",
+          "- Stale examples replaced",
+          "- FAQ gaps filled",
+          "- Title/meta aligned with refreshed angle",
+          "- Internal links checked",
+          "- Brief human review completed"
+        ].join("\n");
+      }
+
+      function render() {
+        var calc = calculate();
+        var reasons = buildReasons(calc.score, calc.age, calc.gaps);
+
+        els.riskLabel.textContent = calc.result.label;
+        els.riskScore.textContent = calc.score + " / 100";
+        els.riskBar.style.width = calc.score + "%";
+        els.riskBar.style.background = calc.result.color;
+        setReasons(reasons);
+
+        els.brief.value = briefText(calc);
+      }
+
+      function collectState() {
+        return {
+          title: els.title.value,
+          lastDate: els.lastDate.value,
+          topicType: els.topicType.value,
+          notes: els.notes.value,
+          gaps: els.gaps.map(function (box) { return box.checked; })
+        };
+      }
+
+      function applyState(state) {
+        if (!state) return;
+        els.title.value = state.title || "";
+        els.lastDate.value = state.lastDate || "";
+        els.topicType.value = state.topicType || "evergreen";
+        els.notes.value = state.notes || "";
+        if (Array.isArray(state.gaps)) {
+          els.gaps.forEach(function (box, index) {
+            box.checked = Boolean(state.gaps[index]);
+          });
+        }
+      }
+
+      function saveLocal(silent) {
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(collectState()));
+          if (!silent) setStatus("Saved on this device.");
+        } catch (err) {
+          setStatus("Could not save locally in this browser.");
+        }
+      }
+
+      function loadLocal() {
+        try {
+          var raw = localStorage.getItem(storageKey);
+          if (raw) applyState(JSON.parse(raw));
+        } catch (err) {
+          setStatus("Could not load saved draft.");
+        }
+      }
+
+      function setStatus(message) {
+        els.status.textContent = message;
+        window.clearTimeout(setStatus.timer);
+        setStatus.timer = window.setTimeout(function () {
+          els.status.textContent = "";
+        }, 2800);
+      }
+
+      function copyBrief() {
+        els.brief.select();
+        els.brief.setSelectionRange(0, els.brief.value.length);
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(els.brief.value)
+            .then(function () { setStatus("Brief copied."); })
+            .catch(function () {
+              fallbackCopy();
+            });
+        } else {
+          fallbackCopy();
+        }
+      }
+
+      function fallbackCopy() {
+        try {
+          document.execCommand("copy");
+          setStatus("Brief copied.");
+        } catch (err) {
+          setStatus("Copy failed. Select the brief and copy manually.");
+        }
+      }
+
+      function safeFileName(text) {
+        var base = text.trim().toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "")
+          .slice(0, 48);
+        return (base || "freshness-rewrite-brief") + ".txt";
+      }
+
+      function downloadBrief() {
+        var blob = new Blob([els.brief.value], { type: "text/plain;charset=utf-8" });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = safeFileName(els.title.value);
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        setStatus("Download started.");
+      }
+
+      function clearAll() {
+        els.title.value = "";
+        els.lastDate.value = "";
+        els.topicType.value = "evergreen";
+        els.notes.value = "";
+        els.gaps.forEach(function (box) { box.checked = false; });
+        try {
+          localStorage.removeItem(storageKey);
+        } catch (err) {}
+        render();
+        setStatus("Cleared.");
+      }
+
+      function bind() {
+        [els.title, els.lastDate, els.topicType, els.notes].forEach(function (el) {
+          el.addEventListener("input", function () {
+            render();
+            saveLocal(true);
+          });
+          el.addEventListener("change", function () {
+            render();
+            saveLocal(true);
+          });
+        });
+
+        els.gaps.forEach(function (box) {
+          box.addEventListener("change", function () {
+            render();
+            saveLocal(true);
+          });
+        });
+
+        els.copyBtn.addEventListener("click", copyBrief);
+        els.downloadBtn.addEventListener("click", downloadBrief);
+        els.saveBtn.addEventListener("click", function () { saveLocal(false); });
+        els.clearBtn.addEventListener("click", clearAll);
+      }
+
+      loadLocal();
+      bind();
+      render();
+    }());
+  </script>
+</body>
+</html>

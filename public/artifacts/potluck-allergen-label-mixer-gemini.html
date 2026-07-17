@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Potluck Host Helper</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --success: #059669;
+            --success-hover: #047857;
+            --danger: #dc2626;
+            --danger-hover: #b91c1c;
+            --bg-main: #f9fafb;
+            --bg-card: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #4b5563;
+            --text-light: #9ca3af;
+            --border-color: #e5e7eb;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            line-height: 1.5;
+            padding-bottom: 3rem;
+        }
+
+        .container {
+            max-width: 56rem;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        header h1 {
+            color: var(--primary);
+            font-size: 1.875rem;
+            font-weight: 700;
+        }
+
+        header p {
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        .layout-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        @media (min-width: 768px) {
+            .layout-grid {
+                grid-template-columns: 1fr 2fr;
+            }
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            height: fit-content;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+
+        .form-control:focus {
+            border-color: #a5b4fc;
+            box-shadow: 0 0 0 3px rgba(165, 180, 252, 0.4);
+        }
+
+        .grid-half {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 0.375rem;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: background-color 0.15s, color 0.15s;
+            width: 100%;
+        }
+
+        .btn-primary { background-color: var(--primary); color: #fff; }
+        .btn-primary:hover { background-color: var(--primary-hover); }
+        .btn-success { background-color: var(--success); color: #fff; }
+        .btn-success:hover { background-color: var(--success-hover); }
+        .btn-secondary { background-color: #4b5563; color: #fff; }
+        .btn-secondary:hover { background-color: #374151; }
+        .btn-light { background-color: #f3f4f6; color: #374151; border-color: var(--border-color); }
+        .btn-light:hover { background-color: #e5e7eb; }
+        .btn-danger-text { background-color: transparent; color: var(--danger); border: none; padding: 0.25rem 0.5rem; width: auto; }
+        .btn-danger-text:hover { color: var(--danger-hover); background-color: #fef2f2; }
+
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .toolbar .btn {
+            width: auto;
+        }
+
+        .toolbar-right {
+            margin-left: auto;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .counter-badge {
+            font-size: 0.75rem;
+            background-color: #e0e7ff;
+            color: #3730a3;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+
+        .empty-state {
+            color: var(--text-light);
+            text-align: center;
+            padding: 2rem 0;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: start;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .checklist-item:last-child {
+            border-bottom: none;
+        }
+
+        .checklist-item.arrived {
+            opacity: 0.6;
+        }
+
+        .checklist-left {
+            display: flex;
+            align-items: start;
+            gap: 0.75rem;
+        }
+
+        .checkbox-input {
+            width: 1.25rem;
+            height: 1.25rem;
+            margin-top: 0.25rem;
+            cursor: pointer;
+        }
+
+        .item-details p {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .item-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .arrived .item-title {
+            text-decoration: line-through;
+            color: var(--text-light);
+        }
+
+        .label-bold {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        /* Printable area setup */
+        #printArea {
+            display: none;
+        }
+
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                background-color: #fff;
+                color: #000;
+                padding: 0;
+            }
+            #printArea {
+                display: block !important;
+                width: 100%;
+            }
+            .print-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1.5rem;
+            }
+            .print-card {
+                border: 2px dashed #9ca3af;
+                border-radius: 0.5rem;
+                padding: 1.5rem;
+                height: 3.5in; /* Approximate standard desk tent card sizing context */
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                page-break-inside: avoid;
+                break-inside: avoid;
+                background: #fff;
+            }
+            .print-card h2 {
+                font-size: 1.75rem;
+                font-weight: 700;
+                border-bottom: 2px solid #e5e7eb;
+                padding-bottom: 0.5rem;
+                margin-bottom: 0.75rem;
+            }
+            .print-card p {
+                font-size: 0.875rem;
+            }
+            .print-footer {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-end;
+                border-top: 1px solid #e5e7eb;
+                padding-top: 0.5rem;
+                font-size: 0.75rem;
+                color: #4b5563;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container no-print">
+        <header>
+            <h1>Potluck Host Helper</h1>
+            <p>Manage your menu logistics securely and print item table display cards.</p>
+        </header>
+
+        <div class="layout-grid">
+            <div class="card">
+                <h2 style="font-size: 1.25rem; margin-bottom: 1rem;">Add New Dish</h2>
+                <form id="dishForm">
+                    <div class="form-group">
+                        <label for="dishName">Dish Name</label>
+                        <input type="text" id="dishName" required class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="allergens">Ingredients / Allergens</label>
+                        <input type="text" id="allergens" placeholder="e.g., Nuts, Dairy, Gluten-free" class="form-control">
+                    </div>
+                    <div class="grid-half form-group">
+                        <div>
+                            <label for="servings">Servings</label>
+                            <input type="number" id="servings" placeholder="12" class="form-control">
+                        </div>
+                        <div>
+                            <label for="tempNotes">Temp / Setup</label>
+                            <input type="text" id="tempNotes" placeholder="e.g., Needs outlet, Hot" class="form-control">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem;">Add to List</button>
+                </form>
+            </div>
+
+            <div>
+                <div class="toolbar">
+                    <button id="btnPrint" class="btn btn-success">Print Label Cards</button>
+                    <button id="btnCopy" class="btn btn-secondary">Copy Text Checklist</button>
+                    <button id="btnExport" class="btn btn-light toolbar-right">Export Backup</button>
+                </div>
+
+                <div class="card" style="width: 100%;">
+                    <div class="panel-header">
+                        <h2 style="font-size: 1.25rem;">Host Checklist (Mobile-Friendly)</h2>
+                        <span id="counter" class="counter-badge">0 items</span>
+                    </div>
+                    <div id="checklistContainer">
+                        </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="printArea">
+        <div id="printCardsContainer" class="print-grid">
+            </div>
+    </div>
+
+    <script>
+        let dishes = [];
+
+        const dishForm = document.getElementById('dishForm');
+        const checklistContainer = document.getElementById('checklistContainer');
+        const printCardsContainer = document.getElementById('printCardsContainer');
+        const counter = document.getElementById('counter');
+
+        // Form Submission
+        dishForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const dish = {
+                id: Date.now(),
+                name: document.getElementById('dishName').value.trim(),
+                allergens: document.getElementById('allergens').value.trim() || 'None specified',
+                servings: document.getElementById('servings').value.trim() || 'N/A',
+                tempNotes: document.getElementById('tempNotes').value.trim() || 'None',
+                arrived: false
+            };
+
+            dishes.push(dish);
+            dishForm.reset();
+            render();
+        });
+
+        // Trigger Native Printer
+        document.getElementById('btnPrint').addEventListener('click', () => {
+            if (dishes.length > 0) window.print();
+        });
+
+        // Copy Text Function
+        document.getElementById('btnCopy').addEventListener('click', () => {
+            if (dishes.length === 0) return;
+            const text = dishes.map(d => 
+                `[${d.arrived ? 'X' : ' '}] ${d.name}\n   Allergens: ${d.allergens}\n   Servings: ${d.servings}\n   Notes: ${d.tempNotes}`
+            ).join('\n\n');
+            
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Checklist copied to clipboard!');
+            });
+        });
+
+        // JSON Download Function
+        document.getElementById('btnExport').addEventListener('click', () => {
+            if (dishes.length === 0) return;
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dishes, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "potluck_checklist.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        });
+
+        function toggleArrived(id) {
+            const dish = dishes.find(d => d.id === id);
+            if (dish) dish.arrived = !dish.arrived;
+            render();
+        }
+
+        function deleteDish(id) {
+            dishes = dishes.filter(d => d.id !== id);
+            render();
+        }
+
+        // DOM Sanitization & Render Engine
+        function render() {
+            // Update UI count
+            counter.textContent = `${dishes.length} dish${dishes.length === 1 ? '' : 'es'}`;
+
+            // Reset wrappers safely
+            checklistContainer.textContent = '';
+            printCardsContainer.textContent = '';
+
+            if (dishes.length === 0) {
+                const empty = document.createElement('p');
+                empty.className = 'empty-state';
+                empty.textContent = 'No dishes added yet. Fill out the form to start.';
+                checklistContainer.appendChild(empty);
+                return;
+            }
+
+            dishes.forEach(dish => {
+                // 1. BUILD CHECKLIST NODE
+                const itemDiv = document.createElement('div');
+                itemDiv.className = `checklist-item ${dish.arrived ? 'arrived' : ''}`;
+
+                const leftDiv = document.createElement('div');
+                leftDiv.className = 'checklist-left';
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'checkbox-input';
+                checkbox.checked = dish.arrived;
+                checkbox.addEventListener('change', () => toggleArrived(dish.id));
+
+                const detailsDiv = document.createElement('div');
+                detailsDiv.className = 'item-details';
+
+                const titleP = document.createElement('p');
+                titleP.className = 'item-title';
+                titleP.textContent = dish.name;
+
+                const allergenP = document.createElement('p');
+                const labelAllergen = document.createElement('strong');
+                labelAllergen.className = 'label-bold';
+                labelAllergen.textContent = 'Allergens: ';
+                allergenP.appendChild(labelAllergen);
+                allergenP.appendChild(document.createTextNode(dish.allergens));
+
+                const logisticsP = document.createElement('p');
+                const labelServings = document.createElement('strong');
+                labelServings.className = 'label-bold';
+                labelServings.textContent = 'Servings: ';
+                const labelSetup = document.createElement('strong');
+                labelSetup.className = 'label-bold';
+                labelSetup.textContent = ' | Setup: ';
+
+                logisticsP.appendChild(labelServings);
+                logisticsP.appendChild(document.createTextNode(dish.servings));
+                logisticsP.appendChild(labelSetup);
+                logisticsP.appendChild(document.createTextNode(dish.tempNotes));
+
+                detailsDiv.appendChild(titleP);
+                detailsDiv.appendChild(allergenP);
+                detailsDiv.appendChild(logisticsP);
+                leftDiv.appendChild(checkbox);
+                leftDiv.appendChild(detailsDiv);
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn btn-danger-text';
+                deleteBtn.textContent = 'Remove';
+                deleteBtn.addEventListener('click', () => deleteDish(dish.id));
+
+                itemDiv.appendChild(leftDiv);
+                itemDiv.appendChild(deleteBtn);
+                checklistContainer.appendChild(itemDiv);
+
+                // 2. BUILD PRINT CARD NODE
+                const cardDiv = document.createElement('div');
+                cardDiv.className = 'print-card';
+
+                const topSection = document.createElement('div');
+                const cardTitle = document.createElement('h2');
+                cardTitle.textContent = dish.name;
+                
+                const cardAllergenP = document.createElement('p');
+                const cardLabelAllergen = document.createElement('strong');
+                cardLabelAllergen.style.color = '#312e81';
+                cardLabelAllergen.textContent = 'Ingredients/Allergens: ';
+                cardAllergenP.appendChild(cardLabelAllergen);
+                cardAllergenP.appendChild(document.createTextNode(dish.allergens));
+                
+                topSection.appendChild(cardTitle);
+                topSection.appendChild(cardAllergenP);
+
+                const footerSection = document.createElement('div');
+                footerSection.className = 'print-footer';
+                
+                const cardServingsSpan = document.createElement('span');
+                cardServingsSpan.textContent = `Est. Servings: ${dish.servings}`;
+                
+                const cardNotesSpan = document.createElement('span');
+                cardNotesSpan.style.fontStyle = 'italic';
+                cardNotesSpan.textContent = dish.tempNotes !== 'None' ? dish.tempNotes : '';
+
+                footerSection.appendChild(cardServingsSpan);
+                footerSection.appendChild(cardNotesSpan);
+
+                cardDiv.appendChild(topSection);
+                cardDiv.appendChild(footerSection);
+                printCardsContainer.appendChild(cardDiv);
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Search Promise Board</title>
+<style>
+  :root{
+    --bg:#f7f4ee;
+    --panel:#fffdf8;
+    --ink:#211f1c;
+    --muted:#6e675d;
+    --line:#ddd4c6;
+    --soft:#efe6d8;
+    --accent:#2f6f63;
+    --accent2:#8a5a2f;
+    --bad:#9b3d30;
+    --good:#2f6f43;
+    --shadow:0 10px 28px rgba(35,28,18,.08);
+    --radius:18px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  body{min-width:320px}
+  .wrap{width:min(760px,100%);margin:0 auto;padding:14px}
+  header{
+    background:linear-gradient(135deg,#fffdf8,#efe4d2);
+    border:1px solid var(--line);
+    border-radius:22px;
+    padding:16px;
+    box-shadow:var(--shadow);
+    margin-bottom:12px;
+  }
+  h1{font-size:1.35rem;line-height:1.15;margin:0 0 7px}
+  p{margin:0;color:var(--muted);font-size:.94rem;line-height:1.35}
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:12px;
+    box-shadow:var(--shadow);
+    margin:12px 0;
+  }
+  label{display:block;font-size:.8rem;font-weight:800;color:var(--muted);margin:0 0 5px}
+  input,textarea,select,button{
+    font:inherit;
+  }
+  input,textarea,select{
+    width:100%;
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--ink);
+    border-radius:13px;
+    padding:11px;
+    outline:none;
+  }
+  textarea{min-height:74px;resize:vertical;line-height:1.35}
+  input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(47,111,99,.14)}
+  .grid{display:grid;grid-template-columns:1fr;gap:10px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  button{
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--ink);
+    border-radius:999px;
+    padding:10px 12px;
+    min-height:42px;
+    font-weight:750;
+    cursor:pointer;
+  }
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  button.warn{color:var(--bad)}
+  button.small{font-size:.82rem;padding:8px 10px;min-height:36px}
+  button:active{transform:translateY(1px)}
+  .meta{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    margin-bottom:8px;
+  }
+  .pill{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    border:1px solid var(--line);
+    background:var(--soft);
+    color:var(--muted);
+    border-radius:999px;
+    padding:6px 9px;
+    font-size:.78rem;
+    font-weight:800;
+    white-space:nowrap;
+  }
+  .score{
+    font-size:1.1rem;
+    color:var(--accent);
+    font-weight:900;
+  }
+  .card{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:12px;
+    margin:10px 0;
+    box-shadow:0 7px 20px rgba(35,28,18,.06);
+  }
+  .card.top{border-color:rgba(47,111,99,.45);box-shadow:0 9px 26px rgba(47,111,99,.10)}
+  .card h2{
+    font-size:1rem;
+    margin:0;
+    line-height:1.2;
+  }
+  .cardtools{display:flex;gap:6px;flex-wrap:wrap}
+  .fields{display:grid;gap:9px;margin-top:10px}
+  .sliders{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:8px;
+    background:#faf6ef;
+    border:1px solid var(--line);
+    border-radius:15px;
+    padding:10px;
+  }
+  .sliderline{
+    display:grid;
+    grid-template-columns:92px 1fr 28px;
+    align-items:center;
+    gap:8px;
+  }
+  .sliderline span:first-child{font-size:.78rem;font-weight:850;color:var(--muted)}
+  .sliderline output{text-align:right;font-weight:900;color:var(--ink)}
+  input[type="range"]{padding:0;border:none;box-shadow:none;accent-color:var(--accent)}
+  .briefbox{
+    white-space:pre-wrap;
+    background:#211f1c;
+    color:#fff8ef;
+    border-radius:16px;
+    padding:12px;
+    font-size:.88rem;
+    line-height:1.38;
+    overflow-wrap:anywhere;
+    max-height:360px;
+    overflow:auto;
+  }
+  .empty{
+    border:1px dashed var(--line);
+    border-radius:16px;
+    padding:16px;
+    text-align:center;
+    color:var(--muted);
+    background:#fffaf1;
+  }
+  .status{font-size:.82rem;color:var(--muted);margin-top:8px;min-height:1.2em}
+  .footer{font-size:.78rem;color:var(--muted);text-align:center;padding:16px 6px}
+  @media (min-width:650px){
+    .grid.two{grid-template-columns:1fr 1fr}
+    .sliders{grid-template-columns:1fr 1fr 1fr}
+    .sliderline{grid-template-columns:1fr}
+    .sliderline output{text-align:left}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Search Promise Board</h1>
+    <p>Draft SERP-facing promises, score them for specificity, proof strength, and risk, then copy a compact content brief.</p>
+  </header>
+
+  <section class="panel">
+    <div class="grid two">
+      <div>
+        <label for="topic">Topic</label>
+        <input id="topic" placeholder="Example: Roth conversion mistakes">
+      </div>
+      <div>
+        <label for="audience">Audience</label>
+        <input id="audience" placeholder="Example: retirees with taxable income">
+      </div>
+    </div>
+    <div class="actions">
+      <button class="primary" id="draftBtn">Draft promise cards</button>
+      <button id="addBtn">Add blank card</button>
+      <button id="sortBtn">Sort by score</button>
+      <button class="warn" id="clearBtn">Clear</button>
+    </div>
+    <div class="status" id="status"></div>
+  </section>
+
+  <section class="panel">
+    <div class="meta">
+      <div>
+        <span class="pill" id="countPill">0 cards</span>
+        <span class="pill" id="avgPill">Avg 0</span>
+      </div>
+      <span class="pill">Risk lowers score</span>
+    </div>
+    <div id="cards"></div>
+  </section>
+
+  <section class="panel">
+    <div class="meta">
+      <h2 style="font-size:1rem;margin:0;">Concise brief</h2>
+      <div class="cardtools">
+        <button class="small primary" id="copyBtn">Copy brief</button>
+        <button class="small" id="exportBtn">Export .txt</button>
+      </div>
+    </div>
+    <div class="briefbox" id="brief"></div>
+  </section>
+
+  <div class="footer">Runs locally. No accounts, APIs, external files, or internet needed.</div>
+</div>
+
+<script>
+(function(){
+  const storeKey = "searchPromiseBoard.v1";
+  const $ = (id) => document.getElementById(id);
+
+  let state = {
+    topic:"",
+    audience:"",
+    cards:[]
+  };
+
+  function uid(){
+    return "c" + Math.random().toString(36).slice(2,10);
+  }
+
+  function esc(s){
+    return String(s || "").replace(/[&<>"']/g, ch => ({
+      "&":"&amp;",
+      "<":"&lt;",
+      ">":"&gt;",
+      '"':"&quot;",
+      "'":"&#039;"
+    }[ch]));
+  }
+
+  function score(card){
+    const spec = Number(card.specificity || 1);
+    const proof = Number(card.proofScore || 1);
+    const risk = Number(card.riskScore || 1);
+    return Math.round(((spec * 0.38) + (proof * 0.38) + ((6 - risk) * 0.24)) / 5 * 100);
+  }
+
+  function scoreLabel(n){
+    if(n >= 82) return "Strong";
+    if(n >= 65) return "Usable";
+    if(n >= 45) return "Needs work";
+    return "Weak";
+  }
+
+  function save(){
+    state.topic = $("topic").value.trim();
+    state.audience = $("audience").value.trim();
+    localStorage.setItem(storeKey, JSON.stringify(state));
+    buildBrief();
+  }
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(storeKey);
+      if(raw) state = JSON.parse(raw);
+    }catch(e){}
+    $("topic").value = state.topic || "";
+    $("audience").value = state.audience || "";
+  }
+
+  function setStatus(msg){
+    $("status").textContent = msg || "";
+    if(msg){
+      clearTimeout(setStatus.t);
+      setStatus.t = setTimeout(() => $("status").textContent = "", 2200);
+    }
+  }
+
+  function makeCard(data){
+    return Object.assign({
+      id:uid(),
+      promise:"",
+      snippet:"",
+      proof:"",
+      risk:"",
+      notes:"",
+      specificity:3,
+      proofScore:3,
+      riskScore:3
+    }, data || {});
+  }
+
+  function cleanTopic(){
+    return $("topic").value.trim() || "your topic";
+  }
+
+  function cleanAudience(){
+    return $("audience").value.trim() || "your audience";
+  }
+
+  function draftCards(){
+    const topic = cleanTopic();
+    const audience = cleanAudience();
+
+    state.topic = $("topic").value.trim();
+    state.audience = $("audience").value.trim();
+
+    state.cards = [
+      makeCard({
+        promise:`A practical ${topic} checklist for ${audience}`,
+        snippet:`Give searchers a clear first-pass checklist so they can spot the main decisions, common misses, and next action without reading a giant guide.`,
+        proof:`Use numbered steps, example scenarios, decision criteria, and a small “when this matters” section.`,
+        risk:`Do not imply the checklist replaces professional judgment. Define who it is and is not for.`,
+        notes:`Best when the SERP has broad explainers but weak actionability.`,
+        specificity:4,
+        proofScore:4,
+        riskScore:2
+      }),
+      makeCard({
+        promise:`The biggest ${topic} mistakes ${audience} should avoid`,
+        snippet:`Position the result around costly or annoying errors, then explain how to recognize and prevent each one.`,
+        proof:`Back each mistake with a plain example, consequence, warning sign, and safer alternative.`,
+        risk:`Avoid fearmongering. Keep claims proportional and name assumptions clearly.`,
+        notes:`Good for high-click intent, but risk control matters.`,
+        specificity:4,
+        proofScore:3,
+        riskScore:3
+      }),
+      makeCard({
+        promise:`How to decide whether ${topic} is worth it for ${audience}`,
+        snippet:`Help searchers compare tradeoffs instead of giving a one-size-fits-all answer.`,
+        proof:`Include a decision matrix, pros and cons, thresholds, and sample cases.`,
+        risk:`Avoid guaranteeing the “right” choice. Show the variables that change the answer.`,
+        notes:`Strong for nuanced topics where searchers need confidence.`,
+        specificity:5,
+        proofScore:4,
+        riskScore:3
+      }),
+      makeCard({
+        promise:`${topic} explained simply, with examples for ${audience}`,
+        snippet:`Make the page feel approachable while still giving enough detail to act intelligently.`,
+        proof:`Use definitions, before/after examples, short FAQs, and a glossary of confusing terms.`,
+        risk:`Avoid being too generic. Add audience-specific examples early.`,
+        notes:`Useful when the audience is anxious or early in the research journey.`,
+        specificity:3,
+        proofScore:3,
+        riskScore:2
+      }),
+      makeCard({
+        promise:`A proof-backed ${topic} guide for ${audience}`,
+        snippet:`Promise a more credible result by showing what the guidance is based on and where uncertainty remains.`,
+        proof:`Use citations, screenshots, expert review notes, data points, and clearly labeled assumptions.`,
+        risk:`Only use this if the article can actually support the proof promise.`,
+        notes:`Highest ceiling when competitors make unsupported claims.`,
+        specificity:4,
+        proofScore:5,
+        riskScore:4
+      })
+    ];
+
+    render();
+    save();
+    setStatus("Drafted 5 editable promise cards.");
+  }
+
+  function render(){
+    const box = $("cards");
+    if(!state.cards.length){
+      box.innerHTML = `<div class="empty">No cards yet. Add one or draft from your topic and audience.</div>`;
+    }else{
+      const ranked = [...state.cards].sort((a,b) => score(b) - score(a));
+      const topId = ranked[0] ? ranked[0].id : "";
+      box.innerHTML = state.cards.map((card, i) => {
+        const n = score(card);
+        return `
+          <article class="card ${card.id === topId ? "top" : ""}" data-id="${card.id}">
+            <div class="meta">
+              <div>
+                <h2>Promise ${i + 1}</h2>
+                <span class="pill"><span class="score">${n}</span> ${scoreLabel(n)}</span>
+              </div>
+              <div class="cardtools">
+                <button class="small" data-action="copyCard">Copy</button>
+                <button class="small" data-action="dupe">Duplicate</button>
+                <button class="small warn" data-action="delete">Delete</button>
+              </div>
+            </div>
+
+            <div class="fields">
+              <div>
+                <label>Search-result promise</label>
+                <textarea data-field="promise">${esc(card.promise)}</textarea>
+              </div>
+              <div>
+                <label>Snippet angle</label>
+                <textarea data-field="snippet">${esc(card.snippet)}</textarea>
+              </div>
+              <div>
+                <label>Proof needed</label>
+                <textarea data-field="proof">${esc(card.proof)}</textarea>
+              </div>
+              <div>
+                <label>Risk / claim control</label>
+                <textarea data-field="risk">${esc(card.risk)}</textarea>
+              </div>
+              <div>
+                <label>Notes</label>
+                <textarea data-field="notes">${esc(card.notes)}</textarea>
+              </div>
+
+              <div class="sliders">
+                <div class="sliderline">
+                  <span>Specificity</span>
+                  <input type="range" min="1" max="5" value="${Number(card.specificity || 1)}" data-field="specificity">
+                  <output>${Number(card.specificity || 1)}</output>
+                </div>
+                <div class="sliderline">
+                  <span>Proof</span>
+                  <input type="range" min="1" max="5" value="${Number(card.proofScore || 1)}" data-field="proofScore">
+                  <output>${Number(card.proofScore || 1)}</output>
+                </div>
+                <div class="sliderline">
+                  <span>Risk</span>
+                  <input type="range" min="1" max="5" value="${Number(card.riskScore || 1)}" data-field="riskScore">
+                  <output>${Number(card.riskScore || 1)}</output>
+                </div>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    $("countPill").textContent = `${state.cards.length} card${state.cards.length === 1 ? "" : "s"}`;
+    const avg = state.cards.length ? Math.round(state.cards.reduce((sum,c) => sum + score(c), 0) / state.cards.length) : 0;
+    $("avgPill").textContent = `Avg ${avg}`;
+    wireCards();
+    buildBrief();
+  }
+
+  function wireCards(){
+    document.querySelectorAll(".card").forEach(el => {
+      const id = el.getAttribute("data-id");
+      const card = state.cards.find(c => c.id === id);
+      if(!card) return;
+
+      el.querySelectorAll("textarea").forEach(input => {
+        input.addEventListener("input", () => {
+          card[input.dataset.field] = input.value;
+          save();
+        });
+      });
+
+      el.querySelectorAll('input[type="range"]').forEach(input => {
+        input.addEventListener("input", () => {
+          card[input.dataset.field] = Number(input.value);
+          input.nextElementSibling.textContent = input.value;
+          save();
+          render();
+        });
+      });
+
+      el.querySelectorAll("button[data-action]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const action = btn.dataset.action;
+          if(action === "delete"){
+            state.cards = state.cards.filter(c => c.id !== id);
+            render();
+            save();
+          }
+          if(action === "dupe"){
+            const copy = makeCard(JSON.parse(JSON.stringify(card)));
+            copy.id = uid();
+            copy.promise = copy.promise + " copy";
+            const idx = state.cards.findIndex(c => c.id === id);
+            state.cards.splice(idx + 1, 0, copy);
+            render();
+            save();
+          }
+          if(action === "copyCard"){
+            copyText(cardText(card));
+          }
+        });
+      });
+    });
+  }
+
+  function cardText(card){
+    return [
+      `Promise: ${card.promise || ""}`,
+      `Score: ${score(card)} (${scoreLabel(score(card))})`,
+      `Snippet angle: ${card.snippet || ""}`,
+      `Proof needed: ${card.proof || ""}`,
+      `Risk control: ${card.risk || ""}`,
+      `Notes: ${card.notes || ""}`
+    ].join("\n");
+  }
+
+  function buildBrief(){
+    const topic = $("topic").value.trim() || "Not set";
+    const audience = $("audience").value.trim() || "Not set";
+    const ranked = [...state.cards].sort((a,b) => score(b) - score(a));
+    const top = ranked[0];
+
+    if(!ranked.length){
+      $("brief").textContent = "Draft or add cards to generate a concise brief.";
+      return "";
+    }
+
+    const lines = [];
+    lines.push("SEARCH PROMISE BRIEF");
+    lines.push("");
+    lines.push(`Topic: ${topic}`);
+    lines.push(`Audience: ${audience}`);
+    lines.push("");
+
+    if(top){
+      lines.push("Recommended lead promise");
+      lines.push(`${top.promise || "Untitled promise"} — Score ${score(top)}`);
+      lines.push(`Snippet angle: ${top.snippet || "Add snippet angle."}`);
+      lines.push(`Proof needed: ${top.proof || "Add proof requirement."}`);
+      lines.push(`Risk control: ${top.risk || "Add risk control."}`);
+      lines.push("");
+    }
+
+    lines.push("Ranked promise options");
+    ranked.forEach((card, i) => {
+      lines.push(`${i + 1}. ${card.promise || "Untitled promise"} — ${score(card)}`);
+      if(card.notes) lines.push(`   Note: ${card.notes}`);
+    });
+
+    lines.push("");
+    lines.push("Use this page to");
+    lines.push("1. Match the promise to the real search intent.");
+    lines.push("2. Add proof before making strong claims.");
+    lines.push("3. Reduce or qualify high-risk wording.");
+    lines.push("4. Turn the best promise into title, meta, intro, and outline.");
+
+    const out = lines.join("\n");
+    $("brief").textContent = out;
+    return out;
+  }
+
+  function addBlank(){
+    state.cards.unshift(makeCard({
+      promise:"New search-result promise",
+      snippet:"What the searcher will understand, decide, or do after clicking.",
+      proof:"Examples, sources, screenshots, data, expert review, or visible process.",
+      risk:"Claims that need qualification, narrowing, or removal.",
+      notes:""
+    }));
+    render();
+    save();
+  }
+
+  function sortCards(){
+    state.cards.sort((a,b) => score(b) - score(a));
+    render();
+    save();
+    setStatus("Sorted by score.");
+  }
+
+  function clearAll(){
+    if(!confirm("Clear the board?")) return;
+    state = { topic:"", audience:"", cards:[] };
+    $("topic").value = "";
+    $("audience").value = "";
+    localStorage.removeItem(storeKey);
+    render();
+    setStatus("Cleared.");
+  }
+
+  async function copyText(text){
+    try{
+      await navigator.clipboard.writeText(text);
+      setStatus("Copied.");
+    }catch(e){
+      const temp = document.createElement("textarea");
+      temp.value = text;
+      document.body.appendChild(temp);
+      temp.select();
+      document.execCommand("copy");
+      temp.remove();
+      setStatus("Copied.");
+    }
+  }
+
+  function exportTxt(){
+    const text = buildBrief();
+    const blob = new Blob([text], {type:"text/plain"});
+    const a = document.createElement("a");
+    const stamp = new Date().toISOString().slice(0,10);
+    a.href = URL.createObjectURL(blob);
+    a.download = `search-promise-brief-${stamp}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    URL.revokeObjectURL(a.href);
+    a.remove();
+  }
+
+  $("draftBtn").addEventListener("click", draftCards);
+  $("addBtn").addEventListener("click", addBlank);
+  $("sortBtn").addEventListener("click", sortCards);
+  $("clearBtn").addEventListener("click", clearAll);
+  $("copyBtn").addEventListener("click", () => copyText(buildBrief()));
+  $("exportBtn").addEventListener("click", exportTxt);
+
+  ["topic","audience"].forEach(id => {
+    $(id).addEventListener("input", save);
+  });
+
+  load();
+  render();
+})();
+</script>
+</body>
+</html>

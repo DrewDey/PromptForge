@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pop-Up Menu Hub</title>
+    <style>
+        :root {
+            --bg: #f3f4f6; --card-bg: #ffffff; --text: #1f2937;
+            --primary: #4f46e5; --border: #e5e7eb; --success: #16a34a; --danger: #dc2626;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 10px; max-width: 800px; margin: 0 auto; padding-bottom: 60px; }
+        .no-print h1 { font-size: 1.6rem; text-align: center; margin: 15px 0; }
+        .section { background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 15px; }
+        .btn { background: var(--primary); color: white; border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%; margin-bottom: 10px; }
+        .dish-card { background: #fff; border: 1px solid var(--border); padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; }
+        input, textarea { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px; }
+        .menu-preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
+        .menu-card { border: 2px dashed #9ca3af; padding: 15px; text-align: center; background: #fffdf9; min-height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .brief-box { background: #1e293b; color: #f8fafc; padding: 10px; font-family: monospace; font-size: 0.8rem; white-space: pre-wrap; max-height: 200px; overflow-y: auto; }
+        @media print { .no-print { display: none !important; } }
+    </style>
+</head>
+<body>
+
+    <div class="no-print">
+        <h1>Pop-Up Menu Hub</h1>
+        <button class="btn" onclick="addDish()">+ Add New Dish</button>
+        <div id="editorContainer"></div>
+    </div>
+
+    <div class="section">
+        <h2 class="no-print">Live Menu Cards</h2>
+        <div id="cardsContainer" class="menu-preview-grid"></div>
+        <button class="no-print btn" style="background:#059669; margin-top:20px;" onclick="window.print()">Print Cards</button>
+    </div>
+
+    <div class="section no-print">
+        <h2>Master Brief</h2>
+        <div id="briefOutput" class="brief-box"></div>
+        <button class="btn" style="background:#4b5563; margin-top:10px;" onclick="copyBrief()">Copy Brief</button>
+    </div>
+
+    <script>
+        let menuItems = [];
+
+        function addDish() {
+            const item = { id: Date.now(), name: '', hook: '', servings: 20, cost: 0, price: 0, allergens: '' };
+            menuItems.push(item);
+            render();
+        }
+
+        function removeDish(id) {
+            menuItems = menuItems.filter(i => i.id !== id);
+            render();
+        }
+
+        function updateItem(id, key, val) {
+            const item = menuItems.find(i => i.id === id);
+            item[key] = (key === 'servings' || key === 'cost' || key === 'price') ? parseFloat(val) || 0 : val;
+            render();
+        }
+
+        function render() {
+            const container = document.getElementById('editorContainer');
+            const cards = document.getElementById('cardsContainer');
+            const brief = document.getElementById('briefOutput');
+            container.innerHTML = '';
+            cards.innerHTML = '';
+            let briefText = "";
+
+            menuItems.forEach(item => {
+                // Editor UI
+                const div = document.createElement('div');
+                div.className = 'dish-card';
+                div.innerHTML = `<div><strong>Dish</strong></div><input oninput="updateItem(${item.id}, 'name', this.value)" value="${item.name}">`;
+                
+                const hook = document.createElement('textarea');
+                hook.placeholder = "Hook...";
+                hook.oninput = (e) => updateItem(item.id, 'hook', e.target.value);
+                hook.textContent = item.hook;
+                div.appendChild(hook);
+
+                const grid = document.createElement('div');
+                grid.className = 'grid-3';
+                ['servings', 'cost', 'price'].forEach(k => {
+                    const inp = document.createElement('input');
+                    inp.type = 'number';
+                    inp.value = item[k];
+                    inp.oninput = (e) => updateItem(item.id, k, e.target.value);
+                    grid.appendChild(inp);
+                });
+                div.appendChild(grid);
+                
+                const del = document.createElement('button');
+                del.className = 'btn'; del.style.background = 'var(--danger)';
+                del.textContent = 'Remove';
+                del.onclick = () => removeDish(item.id);
+                div.appendChild(del);
+                container.appendChild(div);
+
+                // Preview Card
+                const card = document.createElement('div');
+                card.className = 'menu-card';
+                const nameEl = document.createElement('div'); nameEl.style.fontWeight = 'bold'; nameEl.textContent = item.name || 'New Dish';
+                const hookEl = document.createElement('div'); hookEl.textContent = item.hook;
+                const priceEl = document.createElement('div'); priceEl.textContent = '$' + item.price.toFixed(2);
+                card.append(nameEl, hookEl, priceEl);
+                cards.appendChild(card);
+
+                // Brief Text
+                briefText += `${item.name}: $${item.price.toFixed(2)}\nHook: ${item.hook}\nMargin: $${(item.price - item.cost).toFixed(2)}\n\n`;
+            });
+            brief.textContent = briefText;
+        }
+
+        function copyBrief() {
+            navigator.clipboard.writeText(document.getElementById('briefOutput').textContent);
+            alert('Copied!');
+        }
+    </script>
+</body>
+</html>

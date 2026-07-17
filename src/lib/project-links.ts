@@ -70,8 +70,10 @@ import {
   UTILITY_BILL_BALANCE_PROJECT_ID,
   BLOCK_BIKE_COURIER_PROJECT_ID,
 } from './featured-projects'
+import { RECOVERED_SOURCE_RUN_ROUTE_OVERRIDES } from './recovered-source-run-showcases'
 
 const PROJECT_ROUTE_OVERRIDES: Record<string, string> = {
+  ...RECOVERED_SOURCE_RUN_ROUTE_OVERRIDES,
   [AIRLOCK_ZERO_PROJECT_ID]: '/airlock-zero-reactor-run-demo',
   [AIRLOCK_ZERO_CLAUDE_FORK_PROJECT_ID]: '/airlock-zero-blackout-shift-fork-demo',
   [AIRLOCK_ZERO_GPT_FORK_PROJECT_ID]: '/airlock-zero-swarm-shift-fork-demo',

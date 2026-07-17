@@ -21,11 +21,13 @@ import {
 } from './featured-projects'
 import { AIRLOCK_ZERO_PREPARED_PROJECTS } from './airlock-zero-projects'
 import { PENDING_SOURCE_RUN_SHOWCASE_PROJECTS } from './pending-source-run-showcases'
+import { RECOVERED_SOURCE_RUN_SHOWCASE_PROJECTS } from './recovered-source-run-showcases'
 import type { ProjectForkSource } from './project-forks'
 import type { Prompt } from './types'
 
 export * from './airlock-zero-projects'
 export * from './pending-source-run-showcases'
+export * from './recovered-source-run-showcases'
 
 export type PreparedShowcaseStep = {
   id: string
@@ -1122,6 +1124,7 @@ export const PREPARED_SHOWCASE_PROJECTS = [
   REACTION_TRAINER_SHOWCASE_PROJECT,
   LANE_DEFENSE_SHOWCASE_PROJECT,
   ...PENDING_SOURCE_RUN_SHOWCASE_PROJECTS,
+  ...RECOVERED_SOURCE_RUN_SHOWCASE_PROJECTS,
 ]
 
 export function getPreparedShowcaseProjectBySourceRunId(sourceRunId: string) {

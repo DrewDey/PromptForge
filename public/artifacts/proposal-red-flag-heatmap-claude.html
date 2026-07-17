@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>BriefCheck — Proposal Fit Tool</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+:root {
+  --bg:       #14161c;
+  --surface:  #1e2130;
+  --surface2: #262b3d;
+  --border:   #2e3450;
+  --text:     #e8e4da;
+  --muted:    #7a8099;
+  --amber:    #e8c84a;
+  --green:    #3fb06a;
+  --red:      #d94f35;
+  --yellow:   #e09c2e;
+  --mono: 'Courier New', Consolas, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+ 
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.55;
+  min-height: 100vh;
+}
+ 
+/* header */
+header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 100;
+}
+.wordmark {
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+.tagline {
+  font-size: 12px;
+  color: var(--muted);
+}
+#reset-btn {
+  margin-left: auto;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 5px 11px;
+  border-radius: 3px;
+  cursor: pointer;
+  letter-spacing: 0.08em;
+  transition: border-color 0.15s, color 0.15s;
+}
+#reset-btn:hover { border-color: var(--muted); color: var(--text); }
+ 
+/* layout */
+main { padding: 20px; max-width: 1100px; margin: 0 auto; }
+ 
+.step-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.step-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.divider { height: 1px; background: var(--border); margin: 24px 0; }
+ 
+/* brief */
+#brief-section { margin-bottom: 4px; }
+#brief {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.65;
+  padding: 16px;
+  resize: vertical;
+  min-height: 180px;
+  outline: none;
+  transition: border-color 0.15s;
+  caret-color: var(--amber);
+}
+#brief::placeholder { color: var(--muted); }
+#brief:focus { border-color: #3a4068; }
+ 
+.brief-footer {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+#char-count {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+#analyze-btn {
+  margin-left: auto;
+  background: var(--amber);
+  border: none;
+  color: #111;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 10px 22px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: opacity 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+#analyze-btn:hover { opacity: 0.88; }
+#analyze-btn:active { transform: scale(0.97); }
+#analyze-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+ 
+/* tag section */
+#tag-section { margin-bottom: 4px; }
+#preset-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 12px;
+}
+.risk-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.12s, background 0.12s;
+}
+.risk-tag .dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: background 0.12s;
+  flex-shrink: 0;
+}
+.risk-tag.active-red    { border-color: var(--red);    background: rgba(217,79,53,0.13); }
+.risk-tag.active-red    .dot { background: var(--red); }
+.risk-tag.active-yellow { border-color: var(--yellow); background: rgba(224,156,46,0.13); }
+.risk-tag.active-yellow .dot { background: var(--yellow); }
+.risk-tag.active-green  { border-color: var(--green);  background: rgba(63,176,106,0.13); }
+.risk-tag.active-green  .dot { background: var(--green); }
+.risk-tag:hover { border-color: #4a5070; }
+.risk-tag-check {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  display: none;
+}
+.risk-tag.active-red    .risk-tag-check,
+.risk-tag.active-yellow .risk-tag-check,
+.risk-tag.active-green  .risk-tag-check { display: inline; }
+ 
+/* custom tag row */
+.custom-tag-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+#custom-tag-input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 13px;
+  padding: 7px 12px;
+  border-radius: 4px;
+  outline: none;
+  width: 200px;
+  caret-color: var(--amber);
+  transition: border-color 0.15s;
+}
+#custom-tag-input:focus { border-color: #3a4068; }
+#custom-tag-input::placeholder { color: var(--muted); }
+ 
+.sev-toggle {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.sev-btn {
+  background: none;
+  border: none;
+  padding: 7px 12px;
+  font-size: 11px;
+  font-family: var(--mono);
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  color: var(--muted);
+  transition: background 0.12s, color 0.12s;
+}
+.sev-btn.sel-red    { background: rgba(217,79,53,0.2);  color: var(--red); }
+.sev-btn.sel-yellow { background: rgba(224,156,46,0.2); color: var(--yellow); }
+#add-tag-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 7px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  letter-spacing: 0.08em;
+  transition: border-color 0.15s;
+}
+#add-tag-btn:hover { border-color: var(--muted); }
+ 
+/* active chips */
+#active-tags { display: flex; flex-wrap: wrap; gap: 6px; min-height: 24px; }
+.active-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 3px;
+  padding: 4px 9px;
+  font-size: 12px;
+  font-family: var(--mono);
+}
+.active-chip.red    { background: rgba(217,79,53,0.18);  border: 1px solid rgba(217,79,53,0.4);  color: #f08070; }
+.active-chip.yellow { background: rgba(224,156,46,0.18); border: 1px solid rgba(224,156,46,0.4); color: #e8b84a; }
+.active-chip.green  { background: rgba(63,176,106,0.18); border: 1px solid rgba(63,176,106,0.4); color: #70d090; }
+.chip-remove {
+  cursor: pointer;
+  opacity: 0.6;
+  font-size: 14px;
+  line-height: 1;
+  background: none;
+  border: none;
+  color: inherit;
+  padding: 0;
+}
+.chip-remove:hover { opacity: 1; }
+ 
+/* loading */
+#loading-state {
+  display: none;
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  padding: 32px 0;
+  font-family: var(--mono);
+  letter-spacing: 0.06em;
+}
+.spinner {
+  display: inline-block;
+  width: 12px; height: 12px;
+  border: 2px solid var(--border);
+  border-top-color: var(--amber);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+ 
+/* results */
+#results-section { display: none; }
+ 
+/* score bar */
+.score-bar-wrap { margin-bottom: 24px; }
+.score-bar-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+.score-bar-label { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 0.1em; }
+.score-bar-value { font-family: var(--mono); font-size: 22px; font-weight: 700; }
+.score-bar-track { height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+.score-bar-fill  { height: 100%; border-radius: 4px; width: 0%; transition: width 0.8s cubic-bezier(.22,.68,0,1.2); }
+ 
+/* heatmap */
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+  gap: 8px;
+  margin-bottom: 28px;
+}
+.hm-cell {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 14px 12px;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(8px);
+  animation: cellIn 0.35s ease forwards;
+}
+@keyframes cellIn { to { opacity: 1; transform: translateY(0); } }
+.hm-cell.green  { border-color: rgba(63,176,106,0.5);  background: rgba(63,176,106,0.09);  }
+.hm-cell.yellow { border-color: rgba(224,156,46,0.5);  background: rgba(224,156,46,0.09);  }
+.hm-cell.red    { border-color: rgba(217,79,53,0.5);   background: rgba(217,79,53,0.09);   }
+.hm-category { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.hm-score    { font-family: var(--mono); font-size: 28px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+.hm-cell.green  .hm-score { color: var(--green); }
+.hm-cell.yellow .hm-score { color: var(--yellow); }
+.hm-cell.red    .hm-score { color: var(--red); }
+.hm-label { font-size: 11px; color: var(--muted); }
+ 
+/* panels */
+.panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+@media (max-width: 640px) { .panels { grid-template-columns: 1fr; } }
+ 
+.panel { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.panel-header {
+  padding: 10px 14px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+}
+.ph-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.panel-body { padding: 14px; }
+ 
+.question-list, .warning-list { list-style: none; }
+.question-list li, .warning-list li {
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+.question-list li:last-child, .warning-list li:last-child { border-bottom: none; }
+.question-list li { color: #c8c4ba; }
+.warning-list  li { color: #d8a060; }
+.q-num  { font-family: var(--mono); font-size: 10px; color: var(--amber); flex-shrink: 0; padding-top: 2px; }
+.w-icon { flex-shrink: 0; font-size: 12px; }
+ 
+/* go/no-go */
+.gonogo-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin-bottom: 28px; }
+.gonogo-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.gonogo-title { font-family: var(--mono); font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+.verdict-badge { font-family: var(--mono); font-size: 13px; font-weight: 700; letter-spacing: 0.1em; padding: 5px 16px; border-radius: 3px; }
+.verdict-badge.GO      { background: rgba(63,176,106,0.2);  color: var(--green);  border: 1px solid rgba(63,176,106,0.4); }
+.verdict-badge.CAUTION { background: rgba(224,156,46,0.2);  color: var(--yellow); border: 1px solid rgba(224,156,46,0.4); }
+.verdict-badge.NO-GO   { background: rgba(217,79,53,0.2);   color: var(--red);    border: 1px solid rgba(217,79,53,0.4); }
+#copy-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  padding: 5px 12px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+#copy-btn:hover { border-color: var(--muted); color: var(--text); }
+#copy-btn.copied { border-color: var(--green); color: var(--green); }
+#gonogo-body {
+  padding: 16px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.8;
+  color: #b8b4aa;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+ 
+@media (max-width: 540px) {
+  .heatmap-grid { grid-template-columns: repeat(2, 1fr); }
+  #analyze-btn  { width: 100%; }
+}
+</style>
+</head>
+<body>
+ 
+<header>
+  <span class="wordmark">BriefCheck</span>
+  <span class="tagline">Proposal fit analyzer for freelancers</span>
+  <button id="reset-btn">&#8635; Reset</button>
+</header>
+ 
+<main>
+ 
+  <section id="brief-section">
+    <div class="step-label">01 &mdash; Paste the client brief</div>
+    <textarea id="brief" placeholder="Paste the full project brief, email, or RFP here. The more text the better.&#10;&#10;Look for: vague scope, budget pressure, timeline crunches, too many decision-makers, revision expectations, signs they fired the last freelancer..."></textarea>
+    <div class="brief-footer">
+      <span id="char-count">0 words</span>
+      <button id="analyze-btn" disabled>Analyze Brief &rarr;</button>
+    </div>
+  </section>
+ 
+  <div class="divider"></div>
+ 
+  <section id="tag-section">
+    <div class="step-label">02 &mdash; Tag the risk clues you spotted</div>
+    <div id="preset-tags"></div>
+    <div class="custom-tag-row">
+      <input type="text" id="custom-tag-input" placeholder="Add your own clue&hellip;" maxlength="60">
+      <div class="sev-toggle">
+        <button class="sev-btn" id="sev-red">&#11044; RED</button>
+        <button class="sev-btn" id="sev-yellow">&#11044; YLW</button>
+      </div>
+      <button id="add-tag-btn">+ Add</button>
+    </div>
+    <div id="active-tags"></div>
+  </section>
+ 
+  <div class="divider"></div>
+ 
+  <div id="loading-state"><span class="spinner"></span>Analyzing brief&hellip;</div>
+ 
+  <section id="results-section">
+    <div class="step-label">03 &mdash; Proposal fit heatmap</div>
+    <div class="score-bar-wrap" id="score-bar-wrap">
+      <div class="score-bar-meta">
+        <span class="score-bar-label" id="score-bar-label">OVERALL FIT SCORE</span>
+        <span class="score-bar-value" id="score-bar-value">0/100</span>
+      </div>
+      <div class="score-bar-track"><div class="score-bar-fill" id="score-bar-fill"></div></div>
+    </div>
+    <div class="heatmap-grid" id="heatmap"></div>
+    <div class="panels">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="ph-dot" style="background:#4a7fc1"></span>
+          Follow-up questions before quoting
+        </div>
+        <div class="panel-body"><ul class="question-list" id="questions-list"></ul></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="ph-dot" style="background:#e8c84a"></span>
+          Price-pressure &amp; scope-creep warnings
+        </div>
+        <div class="panel-body"><ul class="warning-list" id="warnings-list"></ul></div>
+      </div>
+    </div>
+    <div class="gonogo-wrap">
+      <div class="gonogo-header">
+        <span class="gonogo-title">Go / No-Go Summary</span>
+        <span class="verdict-badge" id="verdict-badge">&mdash;</span>
+        <button id="copy-btn">Copy &nearr;</button>
+      </div>
+      <div id="gonogo-body"></div>
+    </div>
+  </section>
+ 
+</main>
+ 
+<script>
+(function () {
+  'use strict';
+ 
+  /* ── constants ── */
+  var PRESET_TAGS = [
+    { id: 'vague-scope',         label: 'Vague / no scope',          sev: 'red'    },
+    { id: 'asap',                label: '"ASAP" timeline',            sev: 'red'    },
+    { id: 'low-budget',          label: 'Budget feels low',           sev: 'red'    },
+    { id: 'no-budget',           label: 'No budget stated',           sev: 'yellow' },
+    { id: 'many-stakeholders',   label: 'Many stakeholders',          sev: 'yellow' },
+    { id: 'revisions-unlimited', label: '"Unlimited" revisions',      sev: 'red'    },
+    { id: 'competitor-compare',  label: 'Compared to cheaper alt',    sev: 'red'    },
+    { id: 'rushed-decision',     label: 'Rushed decision to hire',    sev: 'yellow' },
+    { id: 'past-freelancer',     label: 'Fired previous freelancer',  sev: 'red'    },
+    { id: 'nda-heavy',           label: 'Heavy NDA / IP grab',        sev: 'yellow' },
+    { id: 'payment-delay',       label: 'Vague payment terms',        sev: 'red'    },
+    { id: 'scope-creep-hint',    label: 'Scope creep language',       sev: 'yellow' },
+    { id: 'micromanage',         label: 'Micromanage signals',        sev: 'yellow' },
+    { id: 'dream-client',        label: 'Dream client / referral',    sev: 'green'  },
+    { id: 'clear-brief',         label: 'Clear brief + examples',     sev: 'green'  },
+    { id: 'budget-confirmed',    label: 'Budget confirmed upfront',   sev: 'green'  },
+    { id: 'reasonable-timeline', label: 'Reasonable timeline',        sev: 'green'  }
+  ];
+ 
+  var CATEGORIES = [
+    { key: 'scope',    label: 'Scope Clarity' },
+    { key: 'budget',   label: 'Budget Health' },
+    { key: 'timeline', label: 'Timeline Risk' },
+    { key: 'client',   label: 'Client Quality' },
+    { key: 'payment',  label: 'Payment Safety' },
+    { key: 'legal',    label: 'Legal / IP Risk' }
+  ];
+ 
+  var TAG_MAP = {
+    'vague-scope':         { cats: ['scope'],             weight: -40 },
+    'asap':                { cats: ['timeline'],           weight: -35 },
+    'low-budget':          { cats: ['budget', 'payment'], weight: -40 },
+    'no-budget':           { cats: ['budget'],             weight: -20 },
+    'many-stakeholders':   { cats: ['scope', 'client'],   weight: -20 },
+    'revisions-unlimited': { cats: ['scope', 'budget'],   weight: -35 },
+    'competitor-compare':  { cats: ['budget', 'client'],  weight: -30 },
+    'rushed-decision':     { cats: ['client', 'timeline'],weight: -20 },
+    'past-freelancer':     { cats: ['client'],             weight: -45 },
+    'nda-heavy':           { cats: ['legal'],              weight: -30 },
+    'payment-delay':       { cats: ['payment'],            weight: -40 },
+    'scope-creep-hint':    { cats: ['scope'],              weight: -25 },
+    'micromanage':         { cats: ['client'],             weight: -30 },
+    'dream-client':        { cats: ['client'],             weight:  40 },
+    'clear-brief':         { cats: ['scope'],              weight:  40 },
+    'budget-confirmed':    { cats: ['budget', 'payment'],  weight:  45 },
+    'reasonable-timeline': { cats: ['timeline'],           weight:  35 }
+  };
+ 
+  /* ── state ── */
+  var activeTags = [];
+  var customSev  = 'yellow';
+  var summaryText = '';
+ 
+  /* ── DOM refs ── */
+  var briefEl     = document.getElementById('brief');
+  var charCount   = document.getElementById('char-count');
+  var analyzeBtn  = document.getElementById('analyze-btn');
+  var presetGrid  = document.getElementById('preset-tags');
+  var activeWrap  = document.getElementById('active-tags');
+  var customInput = document.getElementById('custom-tag-input');
+  var sevRed      = document.getElementById('sev-red');
+  var sevYellow   = document.getElementById('sev-yellow');
+  var addTagBtn   = document.getElementById('add-tag-btn');
+  var loadingEl   = document.getElementById('loading-state');
+  var resultsEl   = document.getElementById('results-section');
+  var heatmapEl   = document.getElementById('heatmap');
+  var scoreLabel  = document.getElementById('score-bar-label');
+  var scoreValue  = document.getElementById('score-bar-value');
+  var scoreFill   = document.getElementById('score-bar-fill');
+  var questionsList = document.getElementById('questions-list');
+  var warningsList  = document.getElementById('warnings-list');
+  var verdictBadge  = document.getElementById('verdict-badge');
+  var gonogoBody    = document.getElementById('gonogo-body');
+  var copyBtn       = document.getElementById('copy-btn');
+  var resetBtn      = document.getElementById('reset-btn');
+ 
+  /* ── init ── */
+  buildPresetTags();
+  selectSev('yellow');
+ 
+  briefEl.addEventListener('input', onBriefInput);
+  analyzeBtn.addEventListener('click', analyze);
+  addTagBtn.addEventListener('click', addCustomTag);
+  copyBtn.addEventListener('click', copySummary);
+  resetBtn.addEventListener('click', resetAll);
+  sevRed.addEventListener('click', function () { selectSev('red'); });
+  sevYellow.addEventListener('click', function () { selectSev('yellow'); });
+  customInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') addCustomTag();
+  });
+ 
+  /* ── preset tag buttons ── */
+  function buildPresetTags() {
+    PRESET_TAGS.forEach(function (tag) {
+      var btn  = document.createElement('button');
+      btn.className = 'risk-tag';
+      btn.id = 'ptag-' + tag.id;
+ 
+      var dot   = document.createElement('span');
+      dot.className = 'dot';
+ 
+      var text  = document.createTextNode(tag.label);
+ 
+      var check = document.createElement('span');
+      check.className = 'risk-tag-check';
+      check.textContent = '\u2713';
+ 
+      btn.appendChild(dot);
+      btn.appendChild(text);
+      btn.appendChild(check);
+ 
+      btn.addEventListener('click', function () { togglePreset(tag); });
+      presetGrid.appendChild(btn);
+    });
+  }
+ 
+  /* ── brief word count ── */
+  function onBriefInput() {
+    var text  = briefEl.value.trim();
+    var words = text ? text.split(/\s+/).length : 0;
+    charCount.textContent = words + (words === 1 ? ' word' : ' words');
+    analyzeBtn.disabled = words < 10;
+  }
+ 
+  /* ── severity selector ── */
+  function selectSev(s) {
+    customSev = s;
+    sevRed.className    = 'sev-btn' + (s === 'red'    ? ' sel-red'    : '');
+    sevYellow.className = 'sev-btn' + (s === 'yellow' ? ' sel-yellow' : '');
+  }
+ 
+  /* ── toggle preset tag on/off ── */
+  function togglePreset(tag) {
+    var idx = activeTags.findIndex(function (t) { return t.id === tag.id; });
+    if (idx >= 0) {
+      activeTags.splice(idx, 1);
+    } else {
+      activeTags.push({ id: tag.id, label: tag.label, sev: tag.sev });
+    }
+    syncTagUI();
+  }
+ 
+  /* ── add custom tag ── */
+  function addCustomTag() {
+    var label = customInput.value.trim();
+    if (!label) return;
+    var id = 'custom-' + Date.now();
+    activeTags.push({ id: id, label: label, sev: customSev });
+    customInput.value = '';
+    syncTagUI();
+  }
+ 
+  /* ── remove a tag by id ── */
+  function removeTag(id) {
+    activeTags = activeTags.filter(function (t) { return t.id !== id; });
+    syncTagUI();
+  }
+ 
+  /* ── rebuild tag UI from state ── */
+  function syncTagUI() {
+    /* preset button states */
+    PRESET_TAGS.forEach(function (pt) {
+      var btn = document.getElementById('ptag-' + pt.id);
+      if (!btn) return;
+      var isActive = activeTags.some(function (t) { return t.id === pt.id; });
+      btn.className = 'risk-tag' + (isActive ? ' active-' + pt.sev : '');
+    });
+ 
+    /* active chip list — built with DOM, not innerHTML */
+    while (activeWrap.firstChild) activeWrap.removeChild(activeWrap.firstChild);
+ 
+    activeTags.forEach(function (tag) {
+      var chip = document.createElement('span');
+      chip.className = 'active-chip ' + tag.sev;
+ 
+      var labelNode = document.createTextNode(tag.label + ' ');
+ 
+      var removeEl = document.createElement('button');
+      removeEl.className = 'chip-remove';
+      removeEl.textContent = '\u00d7';
+      removeEl.setAttribute('aria-label', 'Remove ' + tag.label);
+      /* capture tag.id in closure */
+      (function (capturedId) {
+        removeEl.addEventListener('click', function () { removeTag(capturedId); });
+      }(tag.id));
+ 
+      chip.appendChild(labelNode);
+      chip.appendChild(removeEl);
+      activeWrap.appendChild(chip);
+    });
+  }
+ 
+  /* ── auto-detect risk signals in brief text ── */
+  var AUTO_RULES = [
+    { pattern: /\basap\b|as soon as possible|urgent(?:ly)?|immediately|right away/i,                     id: 'asap' },
+    { pattern: /unlimited revision|as many revision|however many|revise until/i,                          id: 'revisions-unlimited' },
+    { pattern: /no budget|haven'?t set a budget|not sure on budget|flexible budget|tight budget/i,        id: 'no-budget' },
+    { pattern: /\$\s*\d|budget.*low|can'?t afford|minimal budget|small budget/i,                          id: 'low-budget' },
+    { pattern: /fired|let.*go|previous (?:freelancer|designer|developer)|last person|other (?:freelancer|designer)/i, id: 'past-freelancer' },
+    { pattern: /\bnda\b|intellectual property|ip rights|work.?for.?hire|all rights reserved|ownership of all/i,       id: 'nda-heavy' },
+    { pattern: /net[\s-]?60|net[\s-]?90|upon completion|when project is done|after launch/i,              id: 'payment-delay' },
+    { pattern: /cheaper|lower price|quoted less|other (?:quotes?|bids?)|competitor|another (?:designer|developer)/i,  id: 'competitor-compare' },
+    { pattern: /many (?:team|stakeholder|decision|approver)|committee|multiple (?:approver|decision)/i,   id: 'many-stakeholders' },
+    { pattern: /unclear|not sure what|open to ideas|figure it out|you decide|anything works/i,            id: 'vague-scope' },
+    { pattern: /check in daily|daily update|available at all times|need to be.*on call/i,                 id: 'micromanage' },
+    { pattern: /scope creep|as we go|evolve|expand later|start small and grow/i,                          id: 'scope-creep-hint' }
+  ];
+ 
+  function autoParseBrief(text) {
+    var found = [];
+    AUTO_RULES.forEach(function (rule) {
+      if (rule.pattern.test(text)) {
+        var preset = PRESET_TAGS.find(function (p) { return p.id === rule.id; });
+        if (preset && !activeTags.some(function (t) { return t.id === rule.id; })) {
+          found.push({ id: preset.id, label: preset.label, sev: preset.sev });
+        }
+      }
+    });
+    return found;
+  }
+ 
+  /* ── scoring ── */
+  function computeScores(tags, wordCount) {
+    var scores = {};
+    CATEGORIES.forEach(function (c) { scores[c.key] = 50; });
+ 
+    tags.forEach(function (tag) {
+      var mapping = TAG_MAP[tag.id];
+      if (mapping) {
+        mapping.cats.forEach(function (cat) {
+          scores[cat] = Math.max(0, Math.min(100, scores[cat] + mapping.weight));
+        });
+      } else {
+        /* custom tag: spread a small impact across all categories */
+        var w = tag.sev === 'red' ? -8 : tag.sev === 'yellow' ? -4 : 5;
+        CATEGORIES.forEach(function (c) {
+          scores[c.key] = Math.max(0, Math.min(100, scores[c.key] + w));
+        });
+      }
+    });
+ 
+    /* brief-length signal */
+    if (wordCount > 400) {
+      scores['client'] = Math.min(100, scores['client'] + 8);
+      scores['scope']  = Math.min(100, scores['scope']  + 8);
+    } else if (wordCount < 80) {
+      scores['scope']  = Math.max(0, scores['scope']  - 10);
+      scores['client'] = Math.max(0, scores['client'] - 8);
+    }
+ 
+    return scores;
+  }
+ 
+  function computeOverall(scores) {
+    var vals = Object.values(scores);
+    return Math.round(vals.reduce(function (a, b) { return a + b; }, 0) / vals.length);
+  }
+ 
+  function colorForScore(n) {
+    if (n >= 65) return 'green';
+    if (n >= 40) return 'yellow';
+    return 'red';
+  }
+ 
+  /* ── questions ── */
+  function generateQuestions(tags, wordCount) {
+    var ids = tags.map(function (t) { return t.id; });
+    var qs  = [];
+ 
+    if (ids.includes('vague-scope') || ids.includes('scope-creep-hint'))
+      qs.push('Can you share a detailed list of every deliverable expected at launch?');
+    if (ids.includes('revisions-unlimited'))
+      qs.push('How many rounds of revisions do you typically go through before approval?');
+    if (ids.includes('no-budget') || ids.includes('low-budget'))
+      qs.push('What is the approved budget range for this project?');
+    if (ids.includes('asap'))
+      qs.push('What is the hard deadline, and what happens if it slips by a week?');
+    if (ids.includes('many-stakeholders'))
+      qs.push('Who has final approval authority, and how are stakeholder disagreements resolved?');
+    if (ids.includes('past-freelancer'))
+      qs.push('What went wrong with the previous freelancer, and what would success look like differently?');
+    if (ids.includes('competitor-compare'))
+      qs.push('How are you evaluating proposals — is price the primary factor?');
+    if (ids.includes('micromanage'))
+      qs.push('What does your preferred communication cadence look like during a project?');
+    if (ids.includes('payment-delay'))
+      qs.push('Are you open to a milestone-based payment schedule rather than payment on completion?');
+    if (ids.includes('nda-heavy'))
+      qs.push('Which deliverables must stay confidential, and for how long?');
+ 
+    if (qs.length < 3)
+      qs.push('What does success look like six months after launch?');
+    if (qs.length < 3)
+      qs.push('Have you worked with freelancers before, and do you have a preferred contract template?');
+    if (qs.length < 4)
+      qs.push('Is there an existing brand guide, or is that part of scope?');
+ 
+    if (wordCount < 100)
+      qs.unshift('The brief is quite short — can you share more context or examples of what you are envisioning?');
+ 
+    return qs.slice(0, 7);
+  }
+ 
+  /* ── warnings ── */
+  function generateWarnings(tags) {
+    var ids = tags.map(function (t) { return t.id; });
+    var ws  = [];
+ 
+    if (ids.includes('revisions-unlimited'))
+      ws.push('Unlimited revisions = unlimited liability. Cap revision rounds explicitly in your contract.');
+    if (ids.includes('past-freelancer'))
+      ws.push('They fired the previous freelancer. Understand why before quoting — this pattern repeats.');
+    if (ids.includes('low-budget') || ids.includes('competitor-compare'))
+      ws.push('Price shopping in progress. Anchor your value early or risk a race to the bottom.');
+    if (ids.includes('asap'))
+      ws.push('"ASAP" projects often expand scope after kickoff. Get a written scope-freeze clause.');
+    if (ids.includes('payment-delay'))
+      ws.push('Deferred payment is free credit to the client. Require at least 30-50% upfront.');
+    if (ids.includes('vague-scope'))
+      ws.push('No defined scope = no limit. You will be asked for things never originally discussed.');
+    if (ids.includes('many-stakeholders'))
+      ws.push('Multiple approvers multiply revision cycles. Charge per round, not per hour.');
+    if (ids.includes('micromanage'))
+      ws.push('Micromanagement signals a trust deficit. Set communication boundaries in the proposal.');
+    if (ids.includes('nda-heavy'))
+      ws.push('Broad IP clauses can strip your portfolio rights. Negotiate a case-study carve-out.');
+ 
+    if (ws.length < 2)
+      ws.push('No major red flags detected — always require a signed agreement before starting work.');
+    if (ws.length < 3)
+      ws.push('Document all scope decisions in writing, even verbal agreements via follow-up email.');
+ 
+    return ws.slice(0, 6);
+  }
+ 
+  /* ── go/no-go summary (plain text, safe for clipboard) ── */
+  function generateSummary(scores, overall, tags, wordCount) {
+    var verdict     = overall >= 65 ? 'GO' : overall >= 40 ? 'CAUTION' : 'NO-GO';
+    var redFlags    = tags.filter(function (t) { return t.sev === 'red'; }).map(function (t) { return t.label; });
+    var yellowFlags = tags.filter(function (t) { return t.sev === 'yellow'; }).map(function (t) { return t.label; });
+    var greenFlags  = tags.filter(function (t) { return t.sev === 'green'; }).map(function (t) { return t.label; });
+    var weakCats    = CATEGORIES.filter(function (c) { return scores[c.key] < 40; }).map(function (c) { return c.label; });
+ 
+    var lines = [];
+    lines.push('VERDICT: ' + verdict + '  |  Overall Fit Score: ' + overall + '/100');
+    lines.push('Brief length: ' + wordCount + ' words');
+    lines.push('');
+    lines.push('\u2501\u2501\u2501 RISK FLAGS \u2501\u2501\u2501');
+    if (redFlags.length)    lines.push('RED      : ' + redFlags.join(', '));
+    if (yellowFlags.length) lines.push('WATCH    : ' + yellowFlags.join(', '));
+    if (greenFlags.length)  lines.push('POSITIVE : ' + greenFlags.join(', '));
+    if (!redFlags.length && !yellowFlags.length) lines.push('No material risk tags applied.');
+    lines.push('');
+    lines.push('\u2501\u2501\u2501 CATEGORY SCORES \u2501\u2501\u2501');
+    CATEGORIES.forEach(function (c) {
+      var s      = scores[c.key];
+      var symbol = colorForScore(s) === 'green' ? '\u25cf' : colorForScore(s) === 'yellow' ? '\u25d1' : '\u25cb';
+      lines.push(symbol + ' ' + padEnd(c.label, 14) + ' ' + s + '/100');
+    });
+ 
+    if (weakCats.length) {
+      lines.push('');
+      lines.push('\u2501\u2501\u2501 AREAS NEEDING CLARITY BEFORE QUOTING \u2501\u2501\u2501');
+      weakCats.forEach(function (cat) { lines.push('  - ' + cat); });
+    }
+ 
+    lines.push('');
+    lines.push('\u2501\u2501\u2501 RECOMMENDATION \u2501\u2501\u2501');
+    if (verdict === 'GO') {
+      lines.push('Proceed to proposal. Conditions look favorable.');
+      if (yellowFlags.length) lines.push('Address "' + yellowFlags[0] + '" in your contract terms to protect yourself.');
+    } else if (verdict === 'CAUTION') {
+      lines.push('Proceed with conditions. Get written answers to follow-up questions before quoting.');
+      if (redFlags.length) lines.push('Most critical issue: "' + redFlags[0] + '". Resolve this first.');
+    } else {
+      lines.push('Do not proceed without major revisions to the engagement terms.');
+      if (redFlags.length) lines.push('Dealbreaker: "' + redFlags[0] + '". This alone justifies walking away.');
+      lines.push('If you want the work, require a fixed scope document, 50% upfront, and a strict revision policy before sending a proposal.');
+    }
+ 
+    lines.push('');
+    lines.push('-- Analyzed by BriefCheck on ' + new Date().toLocaleDateString());
+ 
+    return { text: lines.join('\n'), verdict: verdict };
+  }
+ 
+  function padEnd(str, len) {
+    while (str.length < len) str += ' ';
+    return str;
+  }
+ 
+  /* ── render helpers (all DOM, no innerHTML with user content) ── */
+  function renderHeatmap(scores) {
+    while (heatmapEl.firstChild) heatmapEl.removeChild(heatmapEl.firstChild);
+    CATEGORIES.forEach(function (cat, i) {
+      var s     = scores[cat.key];
+      var cls   = colorForScore(s);
+      var lbl   = cls === 'green' ? 'Low risk' : cls === 'yellow' ? 'Watch this' : 'High risk';
+ 
+      var cell  = document.createElement('div');
+      cell.className = 'hm-cell ' + cls;
+      cell.style.animationDelay = (i * 0.07) + 's';
+ 
+      var catEl = document.createElement('div');
+      catEl.className = 'hm-category';
+      catEl.textContent = cat.label;
+ 
+      var scoreEl = document.createElement('div');
+      scoreEl.className = 'hm-score';
+      scoreEl.textContent = String(s);
+ 
+      var lblEl = document.createElement('div');
+      lblEl.className = 'hm-label';
+      lblEl.textContent = lbl;
+ 
+      cell.appendChild(catEl);
+      cell.appendChild(scoreEl);
+      cell.appendChild(lblEl);
+      heatmapEl.appendChild(cell);
+    });
+  }
+ 
+  function renderScoreBar(overall) {
+    var cls   = colorForScore(overall);
+    var color = cls === 'green' ? 'var(--green)' : cls === 'yellow' ? 'var(--yellow)' : 'var(--red)';
+    var lbl   = cls === 'green' ? 'STRONG FIT' : cls === 'yellow' ? 'PROCEED WITH CAUTION' : 'HIGH RISK -- REVIEW CAREFULLY';
+    scoreLabel.textContent = 'OVERALL FIT SCORE -- ' + lbl;
+    scoreValue.textContent = overall + '/100';
+    scoreValue.style.color = color;
+    scoreFill.style.background = color;
+    scoreFill.style.width = '0%';
+    setTimeout(function () { scoreFill.style.width = overall + '%'; }, 50);
+  }
+ 
+  function renderList(ulEl, items, makeItem) {
+    while (ulEl.firstChild) ulEl.removeChild(ulEl.firstChild);
+    items.forEach(function (item, i) {
+      var li = document.createElement('li');
+      makeItem(li, item, i);
+      ulEl.appendChild(li);
+    });
+  }
+ 
+  function renderQuestions(qs) {
+    renderList(questionsList, qs, function (li, q, i) {
+      var num = document.createElement('span');
+      num.className = 'q-num';
+      num.textContent = String(i + 1).padStart(2, '0');
+      var txt = document.createTextNode(q);
+      li.appendChild(num);
+      li.appendChild(txt);
+    });
+  }
+ 
+  function renderWarnings(ws) {
+    renderList(warningsList, ws, function (li, w) {
+      var icon = document.createElement('span');
+      icon.className = 'w-icon';
+      icon.textContent = '\u26a0';
+      var txt = document.createTextNode(w);
+      li.appendChild(icon);
+      li.appendChild(txt);
+    });
+  }
+ 
+  function renderSummary(result) {
+    gonogoBody.textContent = result.text;
+    verdictBadge.textContent = result.verdict;
+    verdictBadge.className = 'verdict-badge ' + result.verdict;
+    summaryText = result.text;
+  }
+ 
+  /* ── copy to clipboard ── */
+  function copySummary() {
+    if (!summaryText) return;
+    navigator.clipboard.writeText(summaryText).then(function () {
+      copyBtn.textContent = 'Copied \u2713';
+      copyBtn.classList.add('copied');
+      setTimeout(function () {
+        copyBtn.textContent = 'Copy \u2197';
+        copyBtn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+ 
+  /* ── main analyze flow ── */
+  function analyze() {
+    var text  = briefEl.value.trim();
+    var words = text ? text.split(/\s+/).length : 0;
+    if (words < 10) return;
+ 
+    loadingEl.style.display  = 'block';
+    resultsEl.style.display  = 'none';
+    analyzeBtn.disabled      = true;
+ 
+    /* merge auto-detected tags into activeTags */
+    var autoFound = autoParseBrief(text);
+    autoFound.forEach(function (at) {
+      if (!activeTags.some(function (t) { return t.id === at.id; })) {
+        activeTags.push(at);
+      }
+    });
+    syncTagUI();
+ 
+    setTimeout(function () {
+      var scores   = computeScores(activeTags, words);
+      var overall  = computeOverall(scores);
+      var questions = generateQuestions(activeTags, words);
+      var warnings  = generateWarnings(activeTags);
+      var summary   = generateSummary(scores, overall, activeTags, words);
+ 
+      renderScoreBar(overall);
+      renderHeatmap(scores);
+      renderQuestions(questions);
+      renderWarnings(warnings);
+      renderSummary(summary);
+ 
+      loadingEl.style.display = 'none';
+      resultsEl.style.display = 'block';
+      analyzeBtn.disabled     = false;
+ 
+      resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 600);
+  }
+ 
+  /* ── reset ── */
+  function resetAll() {
+    briefEl.value   = '';
+    activeTags      = [];
+    summaryText     = '';
+    syncTagUI();
+    onBriefInput();
+    resultsEl.style.display = 'none';
+    loadingEl.style.display = 'none';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+ 
+}());
+</script>
+</body>
+</html>
+ 

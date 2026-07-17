@@ -443,7 +443,11 @@ export function ProtectedArtifactFrame({
       try {
         const response = await fetch(selectedPackage.artifactPath, {
           signal: controller.signal,
-          credentials: 'omit',
+          // Preview deployments can protect same-origin artifact routes with an
+          // authentication cookie. Keep credentials origin-bound so protected
+          // previews load without widening the artifact sandbox or leaking
+          // credentials to another host.
+          credentials: 'same-origin',
         })
         const contentLength = Number(response.headers.get('content-length'))
 

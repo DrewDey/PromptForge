@@ -1,0 +1,458 @@
+<html>
+<head>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--font-sans, sans-serif); font-size: 14px; color: var(--color-text-primary); }
+.container { display: flex; gap: 12px; height: 100vh; padding: 12px; background: var(--color-background-tertiary); }
+.panel { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; padding: 12px; background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); }
+.left-panel { width: 180px; }
+.center-panel { flex: 1; }
+.right-panel { width: 160px; }
+.poster-canvas { width: 100%; height: 100%; border: 0.5px solid var(--color-border-tertiary); background: white; border-radius: var(--border-radius-md); }
+.section-label { font-size: 12px; font-weight: 500; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 12px; margin-bottom: 4px; }
+.section-label:first-child { margin-top: 0; }
+.option-btn { padding: 8px 12px; border: 0.5px solid var(--color-border-secondary); background: var(--color-background-primary); border-radius: var(--border-radius-md); cursor: pointer; font-size: 13px; transition: all 0.15s; }
+.option-btn:hover { background: var(--color-background-secondary); border-color: var(--color-border-primary); }
+.option-btn.active { background: var(--color-background-info); color: var(--color-text-info); border-color: var(--color-border-info); }
+.score-card { background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 8px; margin-bottom: 8px; }
+.score-label { font-size: 11px; color: var(--color-text-secondary); }
+.score-value { font-size: 18px; font-weight: 500; color: var(--color-text-primary); }
+.score-bar { width: 100%; height: 6px; background: var(--color-background-tertiary); border-radius: 3px; margin-top: 4px; overflow: hidden; }
+.score-fill { height: 100%; background: var(--color-background-success); transition: width 0.3s; }
+.button-group { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+.action-btn { flex: 1; min-width: 60px; padding: 8px 12px; border: 0.5px solid var(--color-border-secondary); background: var(--color-background-primary); border-radius: var(--border-radius-md); cursor: pointer; font-size: 12px; font-weight: 500; transition: all 0.15s; }
+.action-btn:hover { background: var(--color-background-secondary); }
+.action-btn:active { transform: scale(0.95); }
+svg { width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="panel left-panel">
+    <div>
+      <div class="section-label">Destination</div>
+      <div id="dest-buttons"></div>
+    </div>
+    <div>
+      <div class="section-label">Sky</div>
+      <div id="sky-buttons"></div>
+    </div>
+    <div>
+      <div class="section-label">Landmark</div>
+      <div id="landmark-buttons"></div>
+    </div>
+    <div>
+      <div class="section-label">Badge</div>
+      <div id="badge-buttons"></div>
+    </div>
+    <div>
+      <div class="section-label">Texture</div>
+      <div id="texture-buttons"></div>
+    </div>
+  </div>
+
+  <div class="panel center-panel">
+    <svg class="poster-canvas" id="poster-canvas" viewBox="0 0 600 800">
+      <defs>
+        <pattern id="noise" patternUnits="userSpaceOnUse" width="4" height="4">
+          <rect width="4" height="4" fill="white" opacity="0.02"/>
+        </pattern>
+      </defs>
+      <rect width="600" height="800" id="bg-sky" fill="#87CEEB"/>
+      <g id="poster-content"></g>
+      <rect width="600" height="800" id="texture-overlay" fill="url(#noise)" opacity="0"/>
+    </svg>
+  </div>
+
+  <div class="panel right-panel">
+    <div class="section-label">Score</div>
+    <div id="scores"></div>
+    <div class="button-group" style="margin-top: 20px;">
+      <button class="action-btn" id="reset-btn">Reset</button>
+      <button class="action-btn" id="randomize-btn">Randomize</button>
+    </div>
+    <div class="button-group">
+      <button class="action-btn" id="export-btn" style="flex: 1;">Export Brief</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const destinations = {
+  'paris': { name: 'Paris', skyColor: '#4a90e2', textColor: '#fff', landmark: '✦ Eiffel Tower', accentColor: '#d4af37' },
+  'tokyo': { name: 'Tokyo', skyColor: '#ff6b6b', textColor: '#fff', landmark: '⛩ Temple', accentColor: '#ffd700' },
+  'newyork': { name: 'New York', skyColor: '#2c3e50', textColor: '#fff', landmark: '🏢 Skyline', accentColor: '#f39c12' },
+  'sydney': { name: 'Sydney', skyColor: '#3498db', textColor: '#fff', landmark: '🎭 Opera House', accentColor: '#e74c3c' },
+  'rome': { name: 'Rome', skyColor: '#e67e22', textColor: '#fff', landmark: '🏛 Colosseum', accentColor: '#ecf0f1' },
+};
+
+const skies = {
+  'dawn': { color: '#ff9a56', label: 'Dawn' },
+  'day': { color: '#87ceeb', label: 'Day' },
+  'sunset': { color: '#ff6b6b', label: 'Sunset' },
+  'night': { color: '#1a1a2e', label: 'Night' },
+  'mountain': { color: '#c9ada7', label: 'Mountain' },
+};
+
+const landmarks = {
+  'monument': { icon: '✦', label: 'Monument', size: 'large' },
+  'building': { icon: '⬛', label: 'Building', size: 'large' },
+  'nature': { icon: '🌲', label: 'Nature', size: 'medium' },
+  'arch': { icon: '⌢', label: 'Arch', size: 'medium' },
+  'dome': { icon: '⬤', label: 'Dome', size: 'medium' },
+};
+
+const badges = {
+  'circle': { shape: 'circle', label: 'Circle Badge' },
+  'ribbon': { shape: 'ribbon', label: 'Ribbon' },
+  'stamp': { shape: 'stamp', label: 'Stamp' },
+  'banner': { shape: 'banner', label: 'Banner' },
+};
+
+const textures = {
+  'none': { opacity: 0, label: 'None' },
+  'subtle': { opacity: 0.08, label: 'Subtle' },
+  'medium': { opacity: 0.15, label: 'Medium' },
+  'heavy': { opacity: 0.25, label: 'Heavy' },
+};
+
+let state = {
+  destination: 'paris',
+  sky: 'day',
+  landmark: 'monument',
+  badge: 'circle',
+  texture: 'none',
+  landmarkX: 300,
+  landmarkY: 350,
+};
+
+function createSVGElement(tag, attrs) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  Object.entries(attrs).forEach(([key, value]) => {
+    el.setAttribute(key, value);
+  });
+  return el;
+}
+
+function render() {
+  const svg = document.getElementById('poster-content');
+  while (svg.firstChild) {
+    svg.removeChild(svg.firstChild);
+  }
+  
+  const dest = destinations[state.destination];
+  const skyObj = skies[state.sky];
+  
+  document.getElementById('bg-sky').setAttribute('fill', skyObj.color);
+  
+  const title = createSVGElement('text', {
+    x: '300',
+    y: '100',
+    'text-anchor': 'middle',
+    'font-size': '48',
+    'font-weight': '700',
+    fill: dest.textColor,
+    'font-family': 'serif'
+  });
+  title.textContent = dest.name;
+  svg.appendChild(title);
+  
+  const landmarkObj = landmarks[state.landmark];
+  const lSize = landmarkObj.size === 'large' ? 120 : 80;
+  const landmark = createSVGElement('text', {
+    x: state.landmarkX.toString(),
+    y: state.landmarkY.toString(),
+    'text-anchor': 'middle',
+    'font-size': lSize.toString(),
+    fill: dest.accentColor
+  });
+  landmark.textContent = landmarkObj.icon;
+  svg.appendChild(landmark);
+  
+  const badgeObj = badges[state.badge];
+  if (badgeObj.shape === 'circle') {
+    const badge = createSVGElement('circle', {
+      cx: '480',
+      cy: '680',
+      r: '45',
+      fill: dest.accentColor,
+      opacity: '0.9'
+    });
+    svg.appendChild(badge);
+    
+    const badgeText = createSVGElement('text', {
+      x: '480',
+      y: '690',
+      'text-anchor': 'middle',
+      'font-size': '14',
+      fill: skyObj.color,
+      'font-weight': '700'
+    });
+    badgeText.textContent = 'TRAVEL';
+    svg.appendChild(badgeText);
+  } else if (badgeObj.shape === 'ribbon') {
+    const ribbon = createSVGElement('rect', {
+      x: '420',
+      y: '650',
+      width: '160',
+      height: '60',
+      fill: dest.accentColor,
+      opacity: '0.85'
+    });
+    svg.appendChild(ribbon);
+    
+    const ribbonText = createSVGElement('text', {
+      x: '500',
+      y: '685',
+      'text-anchor': 'middle',
+      'font-size': '16',
+      fill: skyObj.color,
+      'font-weight': '700'
+    });
+    ribbonText.textContent = 'EXPLORE';
+    svg.appendChild(ribbonText);
+  } else if (badgeObj.shape === 'stamp') {
+    const stamp = createSVGElement('rect', {
+      x: '450',
+      y: '650',
+      width: '80',
+      height: '80',
+      fill: 'none',
+      stroke: dest.accentColor,
+      'stroke-width': '3',
+      opacity: '0.8',
+      transform: 'rotate(-25 490 690)'
+    });
+    svg.appendChild(stamp);
+    
+    const stampText = createSVGElement('text', {
+      x: '490',
+      y: '700',
+      'text-anchor': 'middle',
+      'font-size': '12',
+      fill: dest.accentColor,
+      'font-weight': '700'
+    });
+    stampText.textContent = '★';
+    svg.appendChild(stampText);
+  } else if (badgeObj.shape === 'banner') {
+    const banner = createSVGElement('polygon', {
+      points: '420,680 580,680 560,720 440,720',
+      fill: dest.accentColor,
+      opacity: '0.9'
+    });
+    svg.appendChild(banner);
+    
+    const bannerText = createSVGElement('text', {
+      x: '500',
+      y: '705',
+      'text-anchor': 'middle',
+      'font-size': '14',
+      fill: skyObj.color,
+      'font-weight': '700'
+    });
+    bannerText.textContent = 'VISIT NOW';
+    svg.appendChild(bannerText);
+  }
+  
+  const textureObj = textures[state.texture];
+  document.getElementById('texture-overlay').setAttribute('opacity', textureObj.opacity.toString());
+  
+  updateScores();
+  updateUI();
+}
+
+function updateScores() {
+  const dest = destinations[state.destination];
+  const skyObj = skies[state.sky];
+  const landmarkObj = landmarks[state.landmark];
+  
+  let balance = 50;
+  const landmarkDistFromCenter = Math.sqrt(Math.pow(state.landmarkX - 300, 2) + Math.pow(state.landmarkY - 400, 2));
+  balance = Math.max(0, 100 - (landmarkDistFromCenter / 5));
+  
+  let readability = 50;
+  const skyL = parseInt(skyObj.color.slice(1, 3), 16) + parseInt(skyObj.color.slice(3, 5), 16) + parseInt(skyObj.color.slice(5, 7), 16);
+  const textL = dest.textColor === '#fff' ? 255 * 3 : 0;
+  const contrast = Math.abs(skyL - textL) / (255 * 3) * 100;
+  readability = Math.min(100, contrast * 1.5);
+  
+  let coverage = landmarkObj.size === 'large' ? 75 : 50;
+  
+  let clutter = 100 - (Object.keys(badges).indexOf(state.badge) * 15 + (state.texture !== 'none' ? 10 : 0));
+  clutter = Math.max(0, clutter);
+  
+  const scores = {
+    'Balance': Math.round(balance),
+    'Readability': Math.round(readability),
+    'Coverage': Math.round(coverage),
+    'Clarity': Math.round(clutter),
+  };
+  
+  const scoresDiv = document.getElementById('scores');
+  while (scoresDiv.firstChild) {
+    scoresDiv.removeChild(scoresDiv.firstChild);
+  }
+  
+  Object.entries(scores).forEach(([label, value]) => {
+    const card = document.createElement('div');
+    card.className = 'score-card';
+    
+    const labelEl = document.createElement('div');
+    labelEl.className = 'score-label';
+    labelEl.textContent = label;
+    card.appendChild(labelEl);
+    
+    const valueEl = document.createElement('div');
+    valueEl.className = 'score-value';
+    valueEl.textContent = value;
+    card.appendChild(valueEl);
+    
+    const bar = document.createElement('div');
+    bar.className = 'score-bar';
+    
+    const fill = document.createElement('div');
+    fill.className = 'score-fill';
+    fill.style.width = value + '%';
+    bar.appendChild(fill);
+    
+    card.appendChild(bar);
+    scoresDiv.appendChild(card);
+  });
+}
+
+function updateUI() {
+  document.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('active'));
+  const activeKeys = {
+    [state.destination]: 'dest',
+    [state.sky]: 'sky',
+    [state.landmark]: 'landmark',
+    [state.badge]: 'badge',
+    [state.texture]: 'texture'
+  };
+  Object.entries(activeKeys).forEach(([key, type]) => {
+    const btn = document.querySelector(`[data-${type}="${key}"]`);
+    if (btn) btn.classList.add('active');
+  });
+}
+
+function reset() {
+  state = { destination: 'paris', sky: 'day', landmark: 'monument', badge: 'circle', texture: 'none', landmarkX: 300, landmarkY: 350 };
+  render();
+}
+
+function randomize() {
+  state.destination = Object.keys(destinations)[Math.floor(Math.random() * Object.keys(destinations).length)];
+  state.sky = Object.keys(skies)[Math.floor(Math.random() * Object.keys(skies).length)];
+  state.landmark = Object.keys(landmarks)[Math.floor(Math.random() * Object.keys(landmarks).length)];
+  state.badge = Object.keys(badges)[Math.floor(Math.random() * Object.keys(badges).length)];
+  state.texture = Object.keys(textures)[Math.floor(Math.random() * Object.keys(textures).length)];
+  state.landmarkX = 200 + Math.random() * 200;
+  state.landmarkY = 300 + Math.random() * 200;
+  render();
+}
+
+function exportBrief() {
+  const scoreValues = Array.from(document.querySelectorAll('.score-value')).map(e => e.textContent);
+  const brief = `RETRO TRAVEL POSTER BRIEF
+Destination: ${destinations[state.destination].name}
+Sky: ${skies[state.sky].label}
+Landmark: ${landmarks[state.landmark].label}
+Badge Style: ${badges[state.badge].label}
+Texture: ${textures[state.texture].label}
+Landmark Position: (${Math.round(state.landmarkX)}, ${Math.round(state.landmarkY)})
+
+Scores:
+Balance: ${scoreValues[0] || 'N/A'}
+Readability: ${scoreValues[1] || 'N/A'}
+Coverage: ${scoreValues[2] || 'N/A'}
+Clarity: ${scoreValues[3] || 'N/A'}
+
+Design Notes:
+This retro travel poster combines classic design principles with modern composition techniques.`;
+  
+  const blob = new Blob([brief], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${destinations[state.destination].name.toLowerCase()}_poster_brief.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function initializeButtons() {
+  const destContainer = document.getElementById('dest-buttons');
+  Object.entries(destinations).forEach(([key, dest]) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.setAttribute('data-dest', key);
+    btn.textContent = dest.name;
+    btn.addEventListener('click', () => {
+      state.destination = key;
+      render();
+    });
+    destContainer.appendChild(btn);
+  });
+
+  const skyContainer = document.getElementById('sky-buttons');
+  Object.entries(skies).forEach(([key, sky]) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.setAttribute('data-sky', key);
+    btn.textContent = sky.label;
+    btn.addEventListener('click', () => {
+      state.sky = key;
+      render();
+    });
+    skyContainer.appendChild(btn);
+  });
+
+  const landmarkContainer = document.getElementById('landmark-buttons');
+  Object.entries(landmarks).forEach(([key, lm]) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.setAttribute('data-landmark', key);
+    btn.textContent = lm.icon + ' ' + lm.label;
+    btn.addEventListener('click', () => {
+      state.landmark = key;
+      render();
+    });
+    landmarkContainer.appendChild(btn);
+  });
+
+  const badgeContainer = document.getElementById('badge-buttons');
+  Object.entries(badges).forEach(([key, badge]) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.setAttribute('data-badge', key);
+    btn.textContent = badge.label;
+    btn.addEventListener('click', () => {
+      state.badge = key;
+      render();
+    });
+    badgeContainer.appendChild(btn);
+  });
+
+  const textureContainer = document.getElementById('texture-buttons');
+  Object.entries(textures).forEach(([key, tex]) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.setAttribute('data-texture', key);
+    btn.textContent = tex.label;
+    btn.addEventListener('click', () => {
+      state.texture = key;
+      render();
+    });
+    textureContainer.appendChild(btn);
+  });
+
+  document.getElementById('reset-btn').addEventListener('click', reset);
+  document.getElementById('randomize-btn').addEventListener('click', randomize);
+  document.getElementById('export-btn').addEventListener('click', exportBrief);
+}
+
+initializeButtons();
+render();
+</script>
+</body>
+</html>

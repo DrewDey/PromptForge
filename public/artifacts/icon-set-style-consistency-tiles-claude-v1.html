@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Icon Studio</title>
+<style>
+  :root {
+    --bg: #0F0F11;
+    --surface: #18181C;
+    --surface2: #222228;
+    --border: #2E2E38;
+    --text: #E8E8F0;
+    --muted: #72728A;
+    --accent: #14B8A6;
+    --warn: #F59E0B;
+    --danger: #EF4444;
+    --tile-bg: #F5F5F0;
+    --mono: 'Courier New', Courier, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    min-height: 100dvh;
+    padding-bottom: 90px;
+  }
+
+  /* ── HEADER ── */
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px 8px;
+  }
+  .site-header h1 {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .site-header h1 span { color: var(--accent); }
+
+  /* ── DNA PANEL ── */
+  .dna-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 4px;
+  }
+  .dna-panel summary {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .dna-panel summary::after { content: '▾'; transition: transform .2s; }
+  .dna-panel[open] summary::after { transform: rotate(180deg); }
+  .dna-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .dna-grid label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    display: block;
+    margin-bottom: 3px;
+  }
+  .dna-grid input, .dna-grid select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 6px 8px;
+    outline: none;
+  }
+  .dna-grid input:focus, .dna-grid select:focus {
+    border-color: var(--accent);
+  }
+  .dna-swatch-row {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .swatch-input {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .swatch-input input[type=color] {
+    width: 28px; height: 28px;
+    padding: 2px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  .swatch-input input[type=text] {
+    width: 72px;
+    font-size: 11px;
+    padding: 4px 6px;
+  }
+  .btn-add-swatch, .btn-rm-swatch {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 7px;
+    line-height: 1.4;
+  }
+  .btn-add-swatch:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-rm-swatch:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* ── MAIN GRID ── */
+  .main { padding: 12px 16px; }
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .tile-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  @media (min-width: 500px) {
+    .tile-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (min-width: 700px) {
+    .tile-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+  @media (min-width: 960px) {
+    .tile-grid { grid-template-columns: repeat(5, 1fr); }
+  }
+
+  /* ── TILE CARD ── */
+  .tile-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    transition: border-color .15s;
+  }
+  .tile-card.flagged { border-color: var(--danger); }
+  .tile-card.warn { border-color: var(--warn); }
+
+  .tile-canvas {
+    background: var(--tile-bg);
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: pointer;
+    overflow: hidden;
+  }
+  .tile-canvas svg { width: 60%; height: 60%; }
+  .tile-canvas .tile-placeholder {
+    font-size: 28px;
+    opacity: .2;
+    user-select: none;
+  }
+  .tile-canvas img {
+    max-width: 70%;
+    max-height: 70%;
+    object-fit: contain;
+  }
+  .tile-drift-bar {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 4px;
+    display: flex;
+  }
+  .drift-seg {
+    flex: 1;
+    height: 100%;
+    background: var(--border);
+    transition: background .3s;
+  }
+  .drift-seg.ok { background: var(--accent); }
+  .drift-seg.warn { background: var(--warn); }
+  .drift-seg.bad { background: var(--danger); }
+
+  .tile-body { padding: 8px 10px 6px; }
+  .tile-name-input {
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 600;
+    outline: none;
+    padding: 0;
+    margin-bottom: 6px;
+  }
+  .tile-name-input::placeholder { color: var(--muted); }
+
+  .axis-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  .axis-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    text-transform: uppercase;
+    width: 40px;
+    flex-shrink: 0;
+  }
+  .axis-sel {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text);
+    font-size: 11px;
+    padding: 3px 5px;
+    outline: none;
+    font-family: var(--mono);
+  }
+  .axis-sel:focus { border-color: var(--accent); }
+
+  .tile-note-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text);
+    font-size: 11px;
+    font-family: var(--sans);
+    padding: 5px 7px;
+    resize: none;
+    outline: none;
+    margin-top: 4px;
+    min-height: 44px;
+  }
+  .tile-note-input:focus { border-color: var(--accent); }
+  .tile-note-input::placeholder { color: var(--muted); }
+
+  .tile-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px 8px;
+    border-top: 1px solid var(--border);
+    margin-top: 4px;
+  }
+  .drift-badge {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: .06em;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+  .drift-badge.ok { background: rgba(20,184,166,.15); color: var(--accent); }
+  .drift-badge.warn { background: rgba(245,158,11,.15); color: var(--warn); }
+  .drift-badge.bad { background: rgba(239,68,68,.15); color: var(--danger); }
+
+  .tile-actions {
+    display: flex;
+    gap: 4px;
+  }
+  .btn-icon {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: color .15s;
+  }
+  .btn-icon:hover { color: var(--text); }
+  .btn-icon.flag-btn.active { color: var(--danger); }
+
+  /* ── ADD TILE BTN ── */
+  .btn-add-tile {
+    grid-column: 1 / -1;
+    background: none;
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .08em;
+    padding: 14px;
+    text-align: center;
+    text-transform: uppercase;
+    width: 100%;
+    transition: border-color .15s, color .15s;
+  }
+  .btn-add-tile:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── BOTTOM BAR ── */
+  .bottom-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(15,15,17,.92);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border);
+    padding: 10px 16px max(10px, env(safe-area-inset-bottom));
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 200;
+  }
+  .drift-summary {
+    flex: 1;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: .06em;
+  }
+  .drift-summary strong { color: var(--text); }
+  .drift-summary .bad-count { color: var(--danger); }
+  .drift-summary .warn-count { color: var(--warn); }
+
+  .btn-copy {
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    color: #000;
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    padding: 10px 14px;
+    text-transform: uppercase;
+    transition: opacity .15s;
+    white-space: nowrap;
+  }
+  .btn-copy:hover { opacity: .85; }
+  .btn-copy:active { opacity: .7; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 80px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .06em;
+    padding: 8px 16px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .2s, transform .2s;
+    z-index: 300;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── FILE UPLOAD OVERLAY ── */
+  .upload-hit {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    background: rgba(20,184,166,.08);
+    opacity: 0;
+    transition: opacity .15s;
+  }
+  .tile-canvas:hover .upload-hit { opacity: 1; }
+  .upload-hit span { font-size: 20px; }
+  .upload-hit small {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+  }
+  input[type=file] { display: none; }
+
+  /* ── SCROLL FIX ── */
+  details.dna-panel { margin-bottom: 0; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="site-header">
+  <h1>⬡ Icon <span>Consistency</span> Studio</h1>
+  <details class="dna-panel" open id="dnaDetails">
+    <summary>Family DNA &nbsp;— tap to collapse</summary>
+    <div class="dna-grid" id="dnaGrid">
+      <div>
+        <label>Shape language</label>
+        <select id="dna-shape">
+          <option>Rounded corners</option>
+          <option>Sharp / geometric</option>
+          <option>Organic / freeform</option>
+          <option>Mixed</option>
+        </select>
+      </div>
+      <div>
+        <label>Corner radius</label>
+        <input type="text" id="dna-radius" placeholder="e.g. 4 px / 20%" value="8 px">
+      </div>
+      <div>
+        <label>Stroke weight</label>
+        <input type="text" id="dna-stroke" placeholder="e.g. 2 px" value="2 px">
+      </div>
+      <div>
+        <label>Fill style</label>
+        <select id="dna-fill">
+          <option>Outline / line</option>
+          <option>Filled / solid</option>
+          <option>Duotone</option>
+          <option>Gradient</option>
+          <option>Mixed</option>
+        </select>
+      </div>
+      <div>
+        <label>Detail level</label>
+        <select id="dna-detail">
+          <option>Minimal (1–2 elements)</option>
+          <option>Medium (3–5 elements)</option>
+          <option>Rich (6+ elements)</option>
+        </select>
+      </div>
+      <div>
+        <label>Optical size target</label>
+        <input type="text" id="dna-size" placeholder="e.g. 24 px / 48 px" value="24 px">
+      </div>
+      <div class="dna-swatch-row">
+        <label style="width:100%;margin-bottom:4px;">Brand palette</label>
+        <div id="swatchList" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+        <button class="btn-add-swatch" onclick="addSwatch()">＋</button>
+      </div>
+      <div style="grid-column:1/-1;">
+        <label>Design notes / constraints</label>
+        <textarea id="dna-notes" class="tile-note-input" style="margin-top:3px;" placeholder="e.g. No gradients on < 16 px usage. Maintain 2:1 contrast on brand blue. Icons must work at 50% opacity for disabled state…" rows="2"></textarea>
+      </div>
+    </div>
+  </details>
+</header>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="section-label">Concepts</div>
+  <div class="tile-grid" id="tileGrid"></div>
+</main>
+
+<!-- BOTTOM BAR -->
+<div class="bottom-bar">
+  <div class="drift-summary" id="driftSummary">Loading…</div>
+  <button class="btn-copy" onclick="copyArtDirection()">⎘ Copy note</button>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────────
+const SHAPE_OPTS    = ['Matches','Minor drift','Major drift'];
+const COLOR_OPTS    = ['Matches','Minor drift','Major drift'];
+const DETAIL_OPTS   = ['Matches','Minor drift','Major drift'];
+const DRIFT_LEVELS  = ['ok','warn','bad'];
+
+let tiles = [];
+let swatches = [];
+const STORAGE_KEY = 'icon-studio-v2';
+
+// ── PERSISTENCE ────────────────────────────────────────────────────────────
+function save() {
+  const dna = getDNA();
+  const data = { dna, swatches, tiles: tiles.map(t => ({
+    id: t.id, name: t.name,
+    shape: t.shape, color: t.color, detail: t.detail,
+    note: t.note, flagged: t.flagged, imgData: t.imgData || null
+  }))};
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e){}
+}
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch(e) { return null; }
+}
+
+// ── DNA ────────────────────────────────────────────────────────────────────
+function getDNA() {
+  return {
+    shape:  document.getElementById('dna-shape').value,
+    radius: document.getElementById('dna-radius').value,
+    stroke: document.getElementById('dna-stroke').value,
+    fill:   document.getElementById('dna-fill').value,
+    detail: document.getElementById('dna-detail').value,
+    size:   document.getElementById('dna-size').value,
+    notes:  document.getElementById('dna-notes').value,
+  };
+}
+
+function setDNA(dna) {
+  if (!dna) return;
+  ['shape','radius','stroke','fill','detail','size','notes'].forEach(k => {
+    const el = document.getElementById('dna-' + k);
+    if (el && dna[k] !== undefined) el.value = dna[k];
+  });
+}
+
+// DNA change listeners
+['dna-shape','dna-radius','dna-stroke','dna-fill','dna-detail','dna-size','dna-notes'].forEach(id => {
+  document.getElementById(id)?.addEventListener('input', () => save());
+});
+
+// ── SWATCHES ───────────────────────────────────────────────────────────────
+function addSwatch(hex) {
+  hex = hex || '#000000';
+  swatches.push(hex);
+  renderSwatches();
+}
+
+function renderSwatches() {
+  const list = document.getElementById('swatchList');
+  list.innerHTML = '';
+  swatches.forEach((hex, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'swatch-input';
+
+    const picker = document.createElement('input');
+    picker.type = 'color';
+    picker.value = hex;
+    picker.className = 'axis-sel';
+    picker.style.cssText = 'width:28px;height:28px;padding:2px;border-radius:5px;cursor:pointer;';
+    picker.addEventListener('input', () => {
+      hexInput.value = picker.value;
+      swatches[i] = picker.value;
+      save();
+    });
+
+    const hexInput = document.createElement('input');
+    hexInput.type = 'text';
+    hexInput.value = hex;
+    hexInput.className = 'axis-sel';
+    hexInput.style.width = '72px';
+    hexInput.maxLength = 9;
+    hexInput.addEventListener('input', () => {
+      let v = hexInput.value;
+      if (/^#[0-9A-Fa-f]{6}$/.test(v)) { picker.value = v; swatches[i] = v; save(); }
+    });
+
+    const rm = document.createElement('button');
+    rm.className = 'btn-rm-swatch';
+    rm.textContent = '×';
+    rm.onclick = () => { swatches.splice(i, 1); renderSwatches(); save(); };
+
+    wrap.appendChild(picker);
+    wrap.appendChild(hexInput);
+    wrap.appendChild(rm);
+    list.appendChild(wrap);
+  });
+}
+
+// ── TILES ──────────────────────────────────────────────────────────────────
+let tileCounter = 0;
+
+function createTile(data) {
+  tileCounter++;
+  const t = {
+    id: data?.id || tileCounter,
+    name: data?.name || '',
+    shape: data?.shape || 0,
+    color: data?.color || 0,
+    detail: data?.detail || 0,
+    note: data?.note || '',
+    flagged: data?.flagged || false,
+    imgData: data?.imgData || null,
+  };
+  tiles.push(t);
+  return t;
+}
+
+function driftLevel(t) {
+  // 0=ok,1=warn,2=bad per axis
+  const worst = Math.max(t.shape, t.color, t.detail);
+  return DRIFT_LEVELS[worst];
+}
+
+function driftLabel(t) {
+  const labels = ['On-spec','Drift detected','Flagged drift'];
+  const worst = Math.max(t.shape, t.color, t.detail);
+  if (t.flagged) return 'Flagged';
+  return labels[worst];
+}
+
+function renderTiles() {
+  const grid = document.getElementById('tileGrid');
+  // Remove all tile cards (not the add button)
+  grid.querySelectorAll('.tile-card').forEach(el => el.remove());
+  // Find or create add button
+  let addBtn = grid.querySelector('.btn-add-tile');
+  if (!addBtn) {
+    addBtn = document.createElement('button');
+    addBtn.className = 'btn-add-tile';
+    addBtn.textContent = '＋ Add concept';
+    addBtn.onclick = () => { createTile(); renderTiles(); save(); };
+    grid.appendChild(addBtn);
+  }
+
+  tiles.forEach(t => {
+    const card = buildTileCard(t);
+    grid.insertBefore(card, addBtn);
+  });
+
+  updateSummary();
+}
+
+function buildTileCard(t) {
+  const dl = driftLevel(t);
+  const card = document.createElement('div');
+  card.className = 'tile-card ' + (t.flagged ? 'flagged' : dl === 'warn' ? 'warn' : '');
+  card.dataset.id = t.id;
+
+  // Canvas
+  const canvas = document.createElement('div');
+  canvas.className = 'tile-canvas';
+
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = 'image/*,.svg';
+  fileInput.onchange = (e) => handleImageUpload(e, t);
+
+  if (t.imgData) {
+    const img = document.createElement('img');
+    img.src = t.imgData;
+    canvas.appendChild(img);
+  } else {
+    const ph = document.createElement('div');
+    ph.className = 'tile-placeholder';
+    ph.textContent = '◻';
+    canvas.appendChild(ph);
+  }
+
+  const uploadHit = document.createElement('div');
+  uploadHit.className = 'upload-hit';
+  uploadHit.innerHTML = '<span>⬆</span><small>Tap to upload</small>';
+  uploadHit.onclick = () => fileInput.click();
+  canvas.appendChild(uploadHit);
+  canvas.appendChild(fileInput);
+
+  // Drift bar
+  const bar = document.createElement('div');
+  bar.className = 'tile-drift-bar';
+  ['shape','color','detail'].forEach(axis => {
+    const seg = document.createElement('div');
+    seg.className = 'drift-seg ' + DRIFT_LEVELS[t[axis]];
+    bar.appendChild(seg);
+  });
+  canvas.appendChild(bar);
+  card.appendChild(canvas);
+
+  // Body
+  const body = document.createElement('div');
+  body.className = 'tile-body';
+
+  const nameInput = document.createElement('input');
+  nameInput.type = 'text';
+  nameInput.className = 'tile-name-input';
+  nameInput.placeholder = 'Icon name…';
+  nameInput.value = t.name;
+  nameInput.oninput = () => { t.name = nameInput.value; save(); updateSummary(); };
+  body.appendChild(nameInput);
+
+  // Axis rows
+  [
+    { key: 'shape', label: 'Shape', opts: SHAPE_OPTS },
+    { key: 'color', label: 'Color', opts: COLOR_OPTS },
+    { key: 'detail', label: 'Detail', opts: DETAIL_OPTS },
+  ].forEach(({ key, label, opts }) => {
+    const row = document.createElement('div');
+    row.className = 'axis-row';
+    const lbl = document.createElement('span');
+    lbl.className = 'axis-label';
+    lbl.textContent = label;
+    const sel = document.createElement('select');
+    sel.className = 'axis-sel';
+    opts.forEach((o, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = o;
+      if (i === t[key]) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.onchange = () => {
+      t[key] = parseInt(sel.value);
+      refreshCard(card, t);
+      save();
+      updateSummary();
+    };
+    row.appendChild(lbl);
+    row.appendChild(sel);
+    body.appendChild(row);
+  });
+
+  // Note
+  const noteInput = document.createElement('textarea');
+  noteInput.className = 'tile-note-input';
+  noteInput.placeholder = 'Observation…';
+  noteInput.rows = 2;
+  noteInput.value = t.note;
+  noteInput.oninput = () => { t.note = noteInput.value; save(); };
+  body.appendChild(noteInput);
+
+  card.appendChild(body);
+
+  // Footer
+  const footer = document.createElement('div');
+  footer.className = 'tile-footer';
+
+  const badge = document.createElement('span');
+  badge.className = 'drift-badge ' + dl;
+  badge.textContent = driftLabel(t);
+  if (t.flagged) { badge.className = 'drift-badge bad'; }
+  footer.appendChild(badge);
+
+  const actions = document.createElement('div');
+  actions.className = 'tile-actions';
+
+  const flagBtn = document.createElement('button');
+  flagBtn.className = 'btn-icon flag-btn' + (t.flagged ? ' active' : '');
+  flagBtn.title = 'Flag for review';
+  flagBtn.textContent = '⚑';
+  flagBtn.onclick = () => {
+    t.flagged = !t.flagged;
+    refreshCard(card, t);
+    save();
+    updateSummary();
+  };
+  actions.appendChild(flagBtn);
+
+  const delBtn = document.createElement('button');
+  delBtn.className = 'btn-icon';
+  delBtn.title = 'Remove';
+  delBtn.textContent = '✕';
+  delBtn.onclick = () => {
+    tiles = tiles.filter(x => x.id !== t.id);
+    card.remove();
+    save();
+    updateSummary();
+  };
+  actions.appendChild(delBtn);
+
+  footer.appendChild(actions);
+  card.appendChild(footer);
+
+  return card;
+}
+
+function refreshCard(card, t) {
+  const dl = driftLevel(t);
+  card.className = 'tile-card ' + (t.flagged ? 'flagged' : dl === 'warn' ? 'warn' : '');
+
+  // Drift bar
+  const segs = card.querySelectorAll('.drift-seg');
+  ['shape','color','detail'].forEach((axis, i) => {
+    segs[i].className = 'drift-seg ' + DRIFT_LEVELS[t[axis]];
+  });
+
+  // Badge
+  const badge = card.querySelector('.drift-badge');
+  badge.className = 'drift-badge ' + (t.flagged ? 'bad' : dl);
+  badge.textContent = driftLabel(t);
+
+  // Flag btn
+  const flagBtn = card.querySelector('.flag-btn');
+  flagBtn.className = 'btn-icon flag-btn' + (t.flagged ? ' active' : '');
+}
+
+function handleImageUpload(e, t) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    t.imgData = ev.target.result;
+    renderTiles();
+    save();
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── SUMMARY & ART DIRECTION ────────────────────────────────────────────────
+function updateSummary() {
+  const total = tiles.length;
+  const flagged = tiles.filter(t => t.flagged).length;
+  const bad = tiles.filter(t => !t.flagged && driftLevel(t) === 'bad').length;
+  const warn = tiles.filter(t => !t.flagged && driftLevel(t) === 'warn').length;
+  const ok = total - flagged - bad - warn;
+  const el = document.getElementById('driftSummary');
+  el.innerHTML = `<strong>${total}</strong> tiles &nbsp;·&nbsp; `
+    + `<span class="bad-count">${flagged + bad} ⚑</span> drift &nbsp;·&nbsp; `
+    + `<span class="warn-count">${warn} ~</span> warn &nbsp;·&nbsp; `
+    + `${ok} ✓ ok`;
+}
+
+function buildArtDirectionNote() {
+  const dna = getDNA();
+  const lines = [];
+
+  lines.push('ICON FAMILY ART DIRECTION');
+  lines.push('═'.repeat(40));
+  lines.push('');
+  lines.push('SPEC');
+  lines.push(`  Shape: ${dna.shape}  ·  Corner radius: ${dna.radius}`);
+  lines.push(`  Stroke: ${dna.stroke}  ·  Fill: ${dna.fill}`);
+  lines.push(`  Detail: ${dna.detail}  ·  Target size: ${dna.size}`);
+  if (swatches.length) {
+    lines.push(`  Palette: ${swatches.join('  ')}`);
+  }
+  if (dna.notes) {
+    lines.push('');
+    lines.push('CONSTRAINTS');
+    dna.notes.split('\n').forEach(l => { if(l.trim()) lines.push('  ' + l.trim()); });
+  }
+
+  const drifted = tiles.filter(t => t.flagged || driftLevel(t) !== 'ok');
+  if (drifted.length) {
+    lines.push('');
+    lines.push('DRIFT FLAGS');
+    drifted.forEach(t => {
+      const axes = [];
+      if (t.shape > 0) axes.push(`shape(${SHAPE_OPTS[t.shape]})`);
+      if (t.color > 0) axes.push(`color(${COLOR_OPTS[t.color]})`);
+      if (t.detail > 0) axes.push(`detail(${DETAIL_OPTS[t.detail]})`);
+      const name = t.name || `Tile ${t.id}`;
+      const flag = t.flagged ? ' ⚑' : '';
+      lines.push(`  ${name}${flag}: ${axes.join(', ') || 'manually flagged'}`);
+      if (t.note) lines.push(`    → ${t.note}`);
+    });
+  }
+
+  const ok = tiles.filter(t => !t.flagged && driftLevel(t) === 'ok');
+  if (ok.length) {
+    lines.push('');
+    lines.push('ON-SPEC');
+    lines.push('  ' + ok.map(t => t.name || `Tile ${t.id}`).join('  ·  '));
+  }
+
+  lines.push('');
+  lines.push(`Generated ${new Date().toLocaleString()}`);
+
+  return lines.join('\n');
+}
+
+function copyArtDirection() {
+  const note = buildArtDirectionNote();
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(note).then(() => showToast('Art direction copied ✓'));
+  } else {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = note;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    document.execCommand('copy');
+    ta.remove();
+    showToast('Copied ✓');
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+function init() {
+  const saved = load();
+  if (saved) {
+    setDNA(saved.dna);
+    swatches = saved.swatches || [];
+    renderSwatches();
+    (saved.tiles || []).forEach(td => createTile(td));
+    if (saved.tiles?.length) tileCounter = Math.max(...saved.tiles.map(t => t.id));
+  } else {
+    // Seed with 3 starter tiles
+    swatches = ['#1E40AF','#FFFFFF','#F1F5F9'];
+    renderSwatches();
+    createTile({ name: 'Home' });
+    createTile({ name: 'Settings' });
+    createTile({ name: 'Search' });
+  }
+  renderTiles();
+  save();
+
+  // Auto-save DNA on any change
+  document.querySelectorAll('#dnaGrid input, #dnaGrid select, #dnaGrid textarea').forEach(el => {
+    el.addEventListener('change', save);
+  });
+}
+
+init();
+</script>
+</body>
+</html>

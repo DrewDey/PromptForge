@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Landing Page Proof Receipt</title>
+<style>
+  :root{
+    --bg:#f6f3ee;
+    --card:#fffdf8;
+    --ink:#211f1a;
+    --muted:#6d675d;
+    --line:#ded6c8;
+    --good:#1f7a4f;
+    --warn:#9a651d;
+    --bad:#9a2d2d;
+    --soft:#efe7d8;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  body{padding:14px}
+  .wrap{max-width:980px;margin:0 auto;display:grid;gap:14px}
+  header,.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 10px 25px rgba(45,36,20,.06)}
+  h1{font-size:clamp(1.6rem,7vw,3rem);line-height:1;margin:0 0 8px}
+  h1 span{display:block}
+  p{margin:0;color:var(--muted);line-height:1.45}
+  label{display:block;font-weight:750;margin:12px 0 6px}
+  textarea,input,select,button{
+    width:100%;
+    max-width:100%;
+    font:inherit;
+    border-radius:12px;
+    border:1px solid var(--line);
+  }
+  textarea,input,select{padding:11px;background:#fff;color:var(--ink)}
+  textarea{min-height:112px;resize:vertical}
+  button{padding:12px 14px;border:0;background:var(--ink);color:#fff;font-weight:800;cursor:pointer}
+  button.secondary{background:var(--soft);color:var(--ink);border:1px solid var(--line)}
+  .grid{display:grid;grid-template-columns:1fr;gap:14px}
+  .actions{display:grid;grid-template-columns:1fr;gap:8px;margin-top:12px}
+  .claim{border:1px solid var(--line);border-radius:14px;padding:12px;background:#fff;margin-top:10px}
+  .claim-head{display:grid;gap:8px}
+  .status{display:inline-block;width:max-content;max-width:100%;padding:5px 9px;border-radius:999px;font-size:.86rem;font-weight:850}
+  .supported{background:#dff3e8;color:var(--good)}
+  .handwave{background:#fff0d7;color:var(--warn)}
+  .unsupported{background:#ffe0de;color:var(--bad)}
+  .mini{font-size:.9rem;color:var(--muted);margin-top:6px}
+  .meter{height:12px;background:var(--soft);border-radius:999px;overflow:hidden;margin:10px 0}
+  .bar{height:100%;width:0%;background:var(--good)}
+  .receipt{white-space:pre-wrap;background:#fff;border:1px dashed var(--line);border-radius:14px;padding:12px;line-height:1.45;overflow-wrap:anywhere}
+  .split{display:grid;grid-template-columns:1fr;gap:10px}
+  @media (min-width:760px){
+    .grid{grid-template-columns:1.05fr .95fr}
+    .actions{grid-template-columns:1fr 1fr}
+    .split{grid-template-columns:1fr 1fr}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1><span>Landing Page</span><span>Proof Receipt</span></h1>
+    <p>Paste claims and evidence notes. The page scores support strength, flags hand-wavy promises, and builds a reviewer handoff you can copy.</p>
+  </header>
+
+  <main class="grid">
+    <section class="card">
+      <label for="page">Page or offer name</label>
+      <input id="page" value="Homepage hero section">
+
+      <label for="claims">Claims, one per line</label>
+      <textarea id="claims">Save 10 hours per week on reporting
+Trusted by growing advisory teams
+No setup friction
+Cleaner client-ready summaries</textarea>
+
+      <label for="evidence">Evidence notes</label>
+      <textarea id="evidence">Beta users reported saving 6-10 hours per week on recurring reporting.
+Three advisory teams used the workflow during onboarding.
+Setup takes about 15 minutes using the sample import template.
+Client-ready summaries still need compliance review before sending.</textarea>
+
+      <label for="strictness">Reviewer strictness</label>
+      <select id="strictness">
+        <option value="normal">Normal</option>
+        <option value="strict">Strict</option>
+        <option value="light">Light</option>
+      </select>
+
+      <div class="actions">
+        <button id="run">Build proof receipt</button>
+        <button class="secondary" id="sample">Reload sample</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Readiness score</h2>
+      <div class="meter"><div class="bar" id="bar"></div></div>
+      <p id="scoreText">Run the receipt to score the page.</p>
+      <div id="cards"></div>
+    </section>
+  </main>
+
+  <section class="card">
+    <h2>Reviewer handoff</h2>
+    <div class="receipt" id="receipt">No receipt yet.</div>
+    <div class="actions">
+      <button id="copy">Copy handoff</button>
+      <button class="secondary" id="download">Download .txt</button>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  const page = document.getElementById("page");
+  const claims = document.getElementById("claims");
+  const evidence = document.getElementById("evidence");
+  const strictness = document.getElementById("strictness");
+  const cards = document.getElementById("cards");
+  const receipt = document.getElementById("receipt");
+  const bar = document.getElementById("bar");
+  const scoreText = document.getElementById("scoreText");
+
+  const weakWords = ["best","revolutionary","seamless","effortless","guaranteed","instant","trusted","proven","leading","no friction","frictionless","world-class"];
+  const proofWords = ["reported","measured","survey","case study","customer","client","beta","data","minutes","hours","percent","%","tested","used","verified","template"];
+
+  function lines(text){
+    return text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+  }
+
+  function tokens(text){
+    return text.toLowerCase().replace(/[^a-z0-9% ]/g," ").split(/\s+/).filter(w => w.length > 3);
+  }
+
+  function scoreClaim(claim, evidenceText){
+    const cTokens = tokens(claim);
+    const ev = evidenceText.toLowerCase();
+    let overlap = 0;
+    cTokens.forEach(t => { if(ev.includes(t)) overlap++; });
+
+    let proofHits = proofWords.filter(w => ev.includes(w)).length;
+    let weakHits = weakWords.filter(w => claim.toLowerCase().includes(w)).length;
+
+    let raw = overlap * 18 + proofHits * 8 - weakHits * 18;
+    if(strictness.value === "strict") raw -= 12;
+    if(strictness.value === "light") raw += 10;
+    return Math.max(0, Math.min(100, raw));
+  }
+
+  function statusFor(score){
+    if(score >= 65) return ["Supported","supported"];
+    if(score >= 35) return ["Hand-wavy","handwave"];
+    return ["Unsupported","unsupported"];
+  }
+
+  function makeEl(tag, text, cls){
+    const el = document.createElement(tag);
+    if(text) el.textContent = text;
+    if(cls) el.className = cls;
+    return el;
+  }
+
+  function build(){
+    const claimList = lines(claims.value);
+    const evText = evidence.value;
+    cards.replaceChildren();
+
+    if(!claimList.length){
+      receipt.textContent = "Add at least one claim.";
+      bar.style.width = "0%";
+      scoreText.textContent = "No claims found.";
+      return;
+    }
+
+    let results = claimList.map(claim => {
+      const score = scoreClaim(claim, evText);
+      const st = statusFor(score);
+      return {claim, score, label:st[0], cls:st[1]};
+    });
+
+    const avg = Math.round(results.reduce((a,b)=>a+b.score,0) / results.length);
+    bar.style.width = avg + "%";
+    scoreText.textContent = avg + "/100 proof readiness";
+
+    results.forEach(r => {
+      const card = makeEl("div", "", "claim");
+      const head = makeEl("div", "", "claim-head");
+      head.appendChild(makeEl("strong", r.claim));
+      head.appendChild(makeEl("span", r.label + " · " + r.score + "/100", "status " + r.cls));
+      card.appendChild(head);
+
+      let note = "Reviewer note: ";
+      if(r.cls === "supported") note += "claim appears tied to concrete evidence.";
+      if(r.cls === "handwave") note += "claim needs tighter proof, softer wording, or a source.";
+      if(r.cls === "unsupported") note += "claim should be cut, rewritten, or backed before publishing.";
+      card.appendChild(makeEl("p", note, "mini"));
+      cards.appendChild(card);
+    });
+
+    const supported = results.filter(r=>r.cls==="supported").map(r=>"- " + r.claim);
+    const handwave = results.filter(r=>r.cls==="handwave").map(r=>"- " + r.claim);
+    const unsupported = results.filter(r=>r.cls==="unsupported").map(r=>"- " + r.claim);
+
+    const output =
+`Landing Page Proof Receipt
+Page: ${page.value || "Untitled page"}
+Proof readiness: ${avg}/100
+
+Supported claims:
+${supported.length ? supported.join("\n") : "- None"}
+
+Hand-wavy claims:
+${handwave.length ? handwave.join("\n") : "- None"}
+
+Unsupported claims:
+${unsupported.length ? unsupported.join("\n") : "- None"}
+
+Evidence notes reviewed:
+${evText || "No evidence notes provided."}
+
+Reviewer handoff:
+- Keep supported claims close to the evidence wording.
+- Soften broad promises that lack numbers, named proof, or source context.
+- Remove or source unsupported claims before final approval.`;
+
+    receipt.textContent = output;
+    localStorage.setItem("proofReceiptDraft", JSON.stringify({
+      page:page.value, claims:claims.value, evidence:evidence.value, strictness:strictness.value
+    }));
+  }
+
+  function loadSaved(){
+    try{
+      const saved = JSON.parse(localStorage.getItem("proofReceiptDraft") || "null");
+      if(saved){
+        page.value = saved.page || page.value;
+        claims.value = saved.claims || claims.value;
+        evidence.value = saved.evidence || evidence.value;
+        strictness.value = saved.strictness || strictness.value;
+      }
+    }catch(e){}
+  }
+
+  document.getElementById("run").addEventListener("click", build);
+  document.getElementById("sample").addEventListener("click", function(){
+    localStorage.removeItem("proofReceiptDraft");
+    location.reload();
+  });
+  document.getElementById("copy").addEventListener("click", async function(){
+    await navigator.clipboard.writeText(receipt.textContent);
+  });
+  document.getElementById("download").addEventListener("click", function(){
+    const blob = new Blob([receipt.textContent], {type:"text/plain"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "landing-page-proof-receipt.txt";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  loadSaved();
+  build();
+})();
+</script>
+</body>
+</html>

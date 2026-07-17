@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Casual Reference Shot Lab</title>
+<style>
+  :root { 
+    --bg: #121212; 
+    --card: #1e1e1e; 
+    --text: #e0e0e0; 
+    --accent: #5c8374; 
+    --danger: #ff5252;
+    --border: #333;
+  }
+  body { 
+    font-family: system-ui, -apple-system, sans-serif; 
+    background: var(--bg); 
+    color: var(--text); 
+    padding: 20px; 
+    max-width: 800px; 
+    margin: 0 auto; 
+    line-height: 1.5;
+  }
+  h1 { 
+    text-align: center; 
+    font-size: 1.75rem; 
+    margin-bottom: 30px;
+    color: #fff;
+  }
+  .grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+    gap: 20px; 
+    margin-bottom: 25px; 
+  }
+  .card { 
+    background: var(--card); 
+    padding: 20px; 
+    border-radius: 8px; 
+    border: 1px solid var(--border);
+  }
+  .card h3 { 
+    margin: 0 0 10px 0; 
+    font-size: 1rem; 
+    color: #9e9e9e; 
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  textarea { 
+    width: 100%; 
+    box-sizing: border-box; 
+    background: #121212; 
+    color: var(--text); 
+    border: 1px solid #444; 
+    padding: 12px; 
+    border-radius: 6px; 
+    resize: vertical; 
+    min-height: 80px; 
+    font-family: inherit; 
+    font-size: 0.95rem;
+  }
+  textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .checklist { 
+    background: var(--card); 
+    padding: 20px; 
+    border-radius: 8px; 
+    margin-bottom: 25px; 
+    border: 1px solid var(--border);
+  }
+  .checklist h3 {
+    margin: 0 0 15px 0;
+    font-size: 1rem;
+    color: #9e9e9e;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .checkbox-group { 
+    display: flex; 
+    flex-wrap: wrap; 
+    gap: 20px; 
+  }
+  label { 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+    cursor: pointer; 
+    font-size: 1rem;
+    user-select: none;
+  }
+  input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--danger);
+    cursor: pointer;
+  }
+  .flag-warning { 
+    display: none; 
+    color: var(--danger); 
+    background: rgba(255, 82, 82, 0.1);
+    font-weight: 600; 
+    margin-top: 20px; 
+    padding: 12px; 
+    border: 1px solid var(--danger); 
+    border-radius: 6px;
+    text-align: center;
+  }
+  button { 
+    background: var(--accent); 
+    color: white; 
+    border: none; 
+    padding: 15px 20px; 
+    font-size: 1.1rem; 
+    border-radius: 6px; 
+    cursor: pointer; 
+    width: 100%; 
+    font-weight: bold;
+    transition: background 0.2s;
+  }
+  button:hover { 
+    background: #4a6b5e; 
+  }
+  #toast { 
+    display: none; 
+    text-align: center; 
+    margin-top: 15px; 
+    color: #81c784; 
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+
+  <h1>Casual Reference Shot Lab</h1>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Camera Angle</h3>
+      <textarea id="val-angle" placeholder="e.g., Hip-level, slight dutch angle, handheld sway..."></textarea>
+    </div>
+    <div class="card">
+      <h3>Bad Lighting Intent</h3>
+      <textarea id="val-lighting" placeholder="e.g., Blown out window highlights, harsh overhead fluorescent shadow..."></textarea>
+    </div>
+    <div class="card">
+      <h3>Composition Flaw</h3>
+      <textarea id="val-comp" placeholder="e.g., Awkward headroom, subject clipped on the edge of frame..."></textarea>
+    </div>
+    <div class="card">
+      <h3>Wardrobe & Props</h3>
+      <textarea id="val-props" placeholder="e.g., Half-drank water bottle on desk, shirt untucked on the left..."></textarea>
+    </div>
+  </div>
+
+  <div class="checklist">
+    <h3>Realism Flags</h3>
+    <div class="checkbox-group">
+      <label><input type="checkbox" class="flag-check" value="Too Polished"> Too Polished</label>
+      <label><input type="checkbox" class="flag-check" value="Too Vague"> Too Vague</label>
+      <label><input type="checkbox" class="flag-check" value="Production-Ready"> Production-Ready</label>
+    </div>
+    <div id="flag-warning" class="flag-warning">
+      ⚠ WARNING: Concept flagged. Break the composition or light to restore casual realism.
+    </div>
+  </div>
+
+  <button onclick="copyBrief()">Copy Shot Brief</button>
+  <div id="toast">Brief copied to clipboard!</div>
+
+  <script>
+    const checkboxes = document.querySelectorAll('.flag-check');
+    const warning = document.getElementById('flag-warning');
+
+    // Toggle the warning box if any flags are checked
+    checkboxes.forEach(cb => {
+      cb.addEventListener('change', () => {
+        const anyChecked = Array.from(checkboxes).some(c => c.checked);
+        warning.style.display = anyChecked ? 'block' : 'none';
+      });
+    });
+
+    // Compile textarea inputs and flags into a clean text block
+    function copyBrief() {
+      const angle = document.getElementById('val-angle').value.trim() || '[Not specified]';
+      const lighting = document.getElementById('val-lighting').value.trim() || '[Not specified]';
+      const comp = document.getElementById('val-comp').value.trim() || '[Not specified]';
+      const props = document.getElementById('val-props').value.trim() || '[Not specified]';
+      
+      const flags = Array.from(checkboxes).filter(c => c.checked).map(c => c.value);
+      const flagText = flags.length > 0 
+        ? 'FLAGGED: ' + flags.join(', ') 
+        : 'CLEARED (Casual & Authentic)';
+
+      const brief = `[ CASUAL SHOT BRIEF ]\n\n` +
+                    `ANGLE: ${angle}\n` +
+                    `LIGHTING: ${lighting}\n` +
+                    `COMPOSITION: ${comp}\n` +
+                    `WARDROBE/PROPS: ${props}\n\n` +
+                    `REALISM STATUS: ${flagText}`;
+
+      navigator.clipboard.writeText(brief).then(() => {
+        const toast = document.getElementById('toast');
+        toast.style.display = 'block';
+        setTimeout(() => toast.style.display = 'none', 2500);
+      }).catch(err => {
+        alert('Failed to copy. Your browser might block clipboard access from local files.');
+      });
+    }
+  </script>
+</body>
+</html>

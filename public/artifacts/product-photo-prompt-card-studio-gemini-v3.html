@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Photo Prompt Studio</title>
+    <style>
+        :root {
+            --bg-main: #121214; --bg-card: #1a1a1e; --bg-input: #26262b;
+            --text-main: #f3f4f6; --accent: #6366f1; --border: #33333a;
+        }
+        body { background: var(--bg-main); color: var(--text-main); font-family: sans-serif; padding: 20px; line-height: 1.5; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .studio-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .form-group { margin-bottom: 12px; }
+        label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; }
+        select, input { width: 100%; padding: 10px; background: var(--bg-input); border: 1px solid var(--border); color: white; border-radius: 6px; }
+        button { width: 100%; padding: 12px; background: var(--accent); border: none; color: white; border-radius: 6px; cursor: pointer; font-weight: 600; margin-top: 10px; }
+        .card { background: white; color: #111827; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+        .chip { display: inline-block; background: #e5e7eb; padding: 4px 8px; border-radius: 12px; font-size: 0.7rem; margin: 2px; }
+        .warning { color: #b45309; background: #fffbeb; padding: 8px; border-radius: 6px; font-size: 0.8rem; margin: 10px 0; }
+        textarea { width: 100%; height: 80px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; padding: 8px; }
+        .btn-row { display: flex; gap: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="studio-card">
+        <div class="form-group"><label>Product</label><input type="text" id="in-product" value="Minimalist Watch"></div>
+        <div class="form-group"><label>Surface</label><select id="in-surf"><option>Dark Marble</option><option>Light Oak</option></select></div>
+        <div class="form-group"><label>Lighting</label><select id="in-light"><option>Dramatic Side</option><option>Soft Diffused</option></select></div>
+        <div class="form-group"><label>Angle</label><select id="in-angle"><option>Macro Close-up</option><option>Top-Down</option></select></div>
+        <div class="form-group"><label>Mood</label><select id="in-mood"><option>Luxury Editorial</option><option>Earthy Minimalist</option></select></div>
+        <button id="add-btn">Generate Prompt Card</button>
+    </div>
+    <div id="cards-container"></div>
+</div>
+
+<script>
+    const container = document.getElementById('cards-container');
+    const addBtn = document.getElementById('add-btn');
+
+    addBtn.addEventListener('click', () => {
+        const product = document.getElementById('in-product').value;
+        const surf = document.getElementById('in-surf').value;
+        const light = document.getElementById('in-light').value;
+        const angle = document.getElementById('in-angle').value;
+        const mood = document.getElementById('in-mood').value;
+
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        const title = document.createElement('h3');
+        title.textContent = product;
+        card.appendChild(title);
+
+        const chipContainer = document.createElement('div');
+        [surf, light, angle, mood].forEach(text => {
+            const chip = document.createElement('span');
+            chip.className = 'chip';
+            chip.textContent = text;
+            chipContainer.appendChild(chip);
+        });
+        card.appendChild(chipContainer);
+
+        if (surf.includes('Dark') && product.toLowerCase().includes('dark')) {
+            const warn = document.createElement('div');
+            warn.className = 'warning';
+            warn.textContent = 'Contrast Warning: Dark object on dark surface.';
+            card.appendChild(warn);
+        }
+
+        const area = document.createElement('textarea');
+        area.value = `${product}, ${angle}, ${surf}, ${light}, ${mood}`;
+        card.appendChild(area);
+
+        const row = document.createElement('div');
+        row.className = 'btn-row';
+        
+        const copyBtn = document.createElement('button');
+        copyBtn.textContent = 'Copy';
+        copyBtn.addEventListener('click', () => navigator.clipboard.writeText(area.value));
+        
+        const delBtn = document.createElement('button');
+        delBtn.textContent = 'Remove';
+        delBtn.style.background = '#ef4444';
+        delBtn.addEventListener('click', () => card.remove());
+
+        row.appendChild(copyBtn);
+        row.appendChild(delBtn);
+        card.appendChild(row);
+
+        container.prepend(card);
+    });
+</script>
+</body>
+</html>
+

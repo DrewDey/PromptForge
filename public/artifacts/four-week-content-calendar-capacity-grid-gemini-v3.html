@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Content Planner</title>
+    <style>
+        :root { --primary: #4f46e5; --border: #e2e8f0; --warn: #ef4444; --success: #10b981; }
+        body { font-family: sans-serif; padding: 12px; background: #f8fafc; font-size: 14px; }
+        .section { background: #fff; padding: 16px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 16px; }
+        label { display: block; font-weight: 600; margin: 8px 0 4px; }
+        input, textarea, select { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; }
+        .week-block { border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 16px; }
+        .week-header { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+        .days-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; }
+        .day-card { border: 1px solid var(--border); padding: 8px; border-radius: 4px; }
+        .slot { background: #eef2ff; border-left: 3px solid var(--primary); padding: 4px; margin-top: 4px; cursor: pointer; font-size: 11px; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; padding: 20px; }
+        .modal-content { background: #fff; padding: 20px; border-radius: 8px; width: 100%; max-width: 400px; }
+        .btn-group { display: flex; gap: 8px; margin-top: 12px; }
+        button { padding: 8px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .btn-pri { background: var(--primary); color: #fff; flex: 1; }
+    </style>
+</head>
+<body>
+
+<div class="section">
+    <h1>Planner Setup</h1>
+    <label>Channels</label><input type="text" id="channels" value="Instagram, LinkedIn">
+    <label>Weekly Limit</label><input type="number" id="limit" value="3">
+    <label>Campaign Themes</label><textarea id="themes" rows="2"></textarea>
+    <button id="refreshBtn" class="btn-pri">Apply Settings & Refresh</button>
+</div>
+
+<div id="calendar"></div>
+
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <h3 id="modalTitle">Edit Post</h3>
+        <select id="modalChan"></select>
+        <input type="text" id="modalTit" placeholder="Title">
+        <textarea id="modalCopy" rows="4" placeholder="Brief copy..."></textarea>
+        <div class="btn-group">
+            <button id="saveBtn" class="btn-pri">Save</button>
+            <button id="dlBtn">Download Brief</button>
+            <button id="closeBtn">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const state = JSON.parse(localStorage.getItem('planner')) || { limit: 3, slots: [] };
+    let activeSlot = null;
+
+    function render() {
+        const cal = document.getElementById('calendar');
+        cal.textContent = '';
+        const limit = parseInt(document.getElementById('limit').value);
+        
+        for (let w = 1; w <= 4; w++) {
+            const weekSlots = state.slots.filter(s => s.week === w);
+            const wBlock = document.createElement('div');
+            wBlock.className = 'week-block';
+            const h = document.createElement('div');
+            h.className = 'week-header';
+            h.textContent = `Week ${w} (${weekSlots.length}/${limit} posts)`;
+            if(weekSlots.length > limit) h.style.color = 'red';
+            
+            const grid = document.createElement('div');
+            grid.className = 'days-grid';
+            ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].forEach(d => {
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'day-card';
+                dayDiv.textContent = d;
+                weekSlots.filter(s => s.day === d).forEach(s => {
+                    const slot = document.createElement('div');
+                    slot.className = 'slot';
+                    slot.textContent = s.title;
+                    slot.addEventListener('click', () => openModal(s));
+                    dayDiv.appendChild(slot);
+                });
+                const add = document.createElement('button');
+                add.textContent = '+';
+                add.addEventListener('click', () => openModal({week: w, day: d}));
+                dayDiv.appendChild(add);
+                grid.appendChild(dayDiv);
+            });
+            wBlock.appendChild(h);
+            wBlock.appendChild(grid);
+            cal.appendChild(wBlock);
+        }
+    }
+
+    function openModal(slot) {
+        activeSlot = slot;
+        document.getElementById('modalTitle').textContent = `Week ${slot.week} - ${slot.day}`;
+        const select = document.getElementById('modalChan');
+        select.textContent = '';
+        document.getElementById('channels').value.split(',').forEach(c => {
+            const opt = document.createElement('option');
+            opt.textContent = c.trim();
+            if(c.trim() === slot.channel) opt.selected = true;
+            select.appendChild(opt);
+        });
+        document.getElementById('modalTit').value = slot.title || '';
+        document.getElementById('modalCopy').value = slot.copy || '';
+        document.getElementById('modal').style.display = 'flex';
+    }
+
+    document.getElementById('saveBtn').addEventListener('click', () => {
+        if(!activeSlot.id) { activeSlot.id = Date.now(); state.slots.push(activeSlot); }
+        activeSlot.channel = document.getElementById('modalChan').value;
+        activeSlot.title = document.getElementById('modalTit').value;
+        activeSlot.copy = document.getElementById('modalCopy').value;
+        localStorage.setItem('planner', JSON.stringify(state));
+        document.getElementById('modal').style.display = 'none';
+        render();
+    });
+
+    document.getElementById('dlBtn').addEventListener('click', () => {
+        const blob = new Blob([`Channel: ${activeSlot.channel}\nTitle: ${activeSlot.title}\nCopy: ${activeSlot.copy}`], {type: 'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'brief.txt';
+        a.click();
+    });
+
+    document.getElementById('closeBtn').addEventListener('click', () => document.getElementById('modal').style.display = 'none');
+    document.getElementById('refreshBtn').addEventListener('click', render);
+    render();
+</script>
+</body>
+</html>

@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Photo Prompt Studio</title>
+    <style>
+        :root {
+            --bg-main: #121214;
+            --bg-card: #1a1a1e;
+            --bg-input: #26262b;
+            --border: #33333a;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            padding: 16px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            margin-bottom: 4px;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .studio-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--text-main);
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 1rem;
+            appearance: none;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus, select:focus {
+            border-color: var(--accent);
+        }
+
+        .select-wrapper {
+            position: relative;
+        }
+
+        .select-wrapper::after {
+            content: "▼";
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+
+        button.btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button.btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .prompt-card {
+            background: #ffffff;
+            color: #111827;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .card-title-area {
+            margin-bottom: 12px;
+            border-bottom: 2px solid #f3f4f6;
+            padding-bottom: 8px;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #374151;
+        }
+
+        .chip-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+
+        .chip {
+            background: #e5e7eb;
+            color: #374151;
+            padding: 4px 10px;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .prompt-editable {
+            width: 100%;
+            min-height: 100px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 1rem;
+            color: #111827;
+            resize: vertical;
+            outline: none;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .prompt-editable:focus {
+            border-color: var(--accent);
+        }
+
+        .warning-box {
+            display: none;
+            background: #fffbeb;
+            border: 1px solid #fef3c7;
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 12px;
+            font-size: 0.825rem;
+            color: #b45309;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .warning-box.visible {
+            display: flex;
+        }
+
+        .card-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .btn-action {
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            border: none;
+            transition: opacity 0.2s;
+        }
+
+        .btn-action:hover {
+            opacity: 0.9;
+        }
+
+        .btn-copy {
+            background: #111827;
+            color: white;
+        }
+
+        .btn-export {
+            background: #ef4444;
+            color: white;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--success);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Prompt Card Studio</h1>
+            <p class="subtitle">Generate offline-ready studio shot prompts</p>
+        </header>
+
+        <main>
+            <div class="studio-card">
+                <div class="form-group">
+                    <label for="product">Product Object</label>
+                    <input type="text" id="product" placeholder="e.g., Matte black ceramic perfume bottle" value="Ceramic coffee mug">
+                </div>
+
+                <div class="form-group">
+                    <label for="surface">Surface / Environment</label>
+                    <div class="select-wrapper">
+                        <select id="surface">
+                            <option value="polished dark marble tabletop">Polished Dark Marble</option>
+                            <option value="raw, textured light concrete block">Raw Concrete</option>
+                            <option value="natural light oak wood surface">Natural Oak Wood</option>
+                            <option value="reflective liquid mirror pool">Reflective Water Mirror</option>
+                            <option value="minimalist pastel sand foundation">Minimalist Sand</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="lighting">Lighting Setup</label>
+                    <div class="select-wrapper">
+                        <select id="lighting">
+                            <option value="dramatic high-contrast side lighting with deep shadows">Dramatic Side Light</option>
+                            <option value="soft, diffused cinematic golden hour sunlight via a nearby window">Golden Hour Diffused</option>
+                            <option value="sharp neon cyberpunk rim lighting, high contrast">Cyberpunk Rim Light</option>
+                            <option value="clean, shadowless high-key studio commercial lighting">Clean Commercial Studio</option>
+                            <option value="moody low-key chiaroscuro lighting scheme">Moody Chiaroscuro</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="angle">Camera Angle & Composition</label>
+                    <div class="select-wrapper">
+                        <select id="angle">
+                            <option value="Eye-level macro close-up shot, center composition, shallow depth of field">Macro Close-Up (Eye-Level)</option>
+                            <option value="Low-angle heroic product shot, looking up, imposing presence">Low-Angle Heroic</option>
+                            <option value="Flat-lay top-down view, geometric arrangement, crisp focus">Top-Down Flat-Lay</option>
+                            <option value="Dynamic 45-degree three-quarter profile perspective">Three-Quarter Profile</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="mood">Aesthetic & Mood</label>
+                    <div class="select-wrapper">
+                        <select id="mood">
+                            <option value="luxury, high-end commercial editorial, hyper-realistic, 8k resolution">Luxury Editorial</option>
+                            <option value="raw, organic, earthy minimalist style, authentic textures">Earthy Minimalist</option>
+                            <option value="sleek, futuristic, technological, hyper-polished, pristine clean">Sleek Futuristic</option>
+                            <option value="vintage, nostalgic film grain, warm analog color palette">Vintage Analog</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="btn-primary" onclick="generatePromptCard()">Generate Prompt Card</button>
+            </div>
+
+            <div class="output-header" id="output-section" style="display: none;">
+                <h2 style="font-size: 1rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;">Generated Prompt Card</h2>
+            </div>
+
+            <div class="prompt-card" id="prompt-card" style="display: none;">
+                <div class="card-title-area">
+                    <div class="card-title" id="card-product-title">Product Shot</div>
+                </div>
+                
+                <div class="chip-container" id="chip-container">
+                    </div>
+
+                <div class="warning-box" id="warning-box">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    <span id="warning-text">Low contrast warning: Dark object on dark surface might reduce readability.</span>
+                </div>
+
+                <textarea class="prompt-editable" id="prompt-text" spellcheck="false"></textarea>
+
+                <div class="card-actions">
+                    <button class="btn-action btn-copy" onclick="copyPrompt()">Copy Prompt</button>
+                    <button class="btn-action btn-export" onclick="exportCardAsJSON()">Export Data</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="toast" id="toast">Copied to clipboard!</div>
+
+    <script>
+        function generatePromptCard() {
+            const product = document.getElementById('product').value.trim() || "Product";
+            const surface = document.getElementById('surface').value;
+            const lighting = document.getElementById('lighting').value;
+            const angle = document.getElementById('angle').value;
+            const mood = document.getElementById('mood').value;
+
+            // Generate composition tags for chips
+            const surfaceName = document.getElementById('surface').options[document.getElementById('surface').selectedIndex].text;
+            const lightingName = document.getElementById('lighting').options[document.getElementById('lighting').selectedIndex].text;
+            const angleName = document.getElementById('angle').options[document.getElementById('angle').selectedIndex].text;
+
+            const chips = [angleName, surfaceName, lightingName];
+            const chipContainer = document.getElementById('chip-container');
+            chipContainer.innerHTML = '';
+            chips.forEach(chipText => {
+                const span = document.createElement('span');
+                span.className = 'chip';
+                span.innerText = chipText;
+                chipContainer.appendChild(span);
+            });
+
+            // Construct prompt sentence
+            const prompt = `${angle}, featuring a ${product}. The product is positioned elegantly on a ${surface}. Illuminated by ${lighting}. Atmosphere is ${mood} --ar 4:5 --v 6.0`;
+            
+            document.getElementById('prompt-text').value = prompt;
+            document.getElementById('card-product-title').innerText = product;
+
+            // Contrast check logic
+            const warningBox = document.getElementById('warning-box');
+            const isDarkProduct = /dark|black|navy|charcoal|chocolate|slate/i.test(product);
+            const isLightProduct = /light|white|cream|beige|silver|pastel/i.test(product);
+            const isDarkSurface = /dark|marble|pool/i.test(surface);
+            const isLightSurface = /concrete|oak|sand/i.test(surface);
+
+            if (isDarkProduct && isDarkSurface) {
+                document.getElementById('warning-text').innerText = "Contrast Warning: Dark object on dark surface detected. Consider using backlighting or rim light adjustment to keep product distinct.";
+                warningBox.classList.add('visible');
+            } else if (isLightProduct && isLightSurface) {
+                document.getElementById('warning-text').innerText = "Contrast Warning: Light object on light surface detected. Separation shadows or negative fill might be required to ensure clean edge definition.";
+                warningBox.classList.add('visible');
+            } else {
+                warningBox.classList.remove('visible');
+            }
+
+            // Reveal prompt card elements
+            document.getElementById('output-section').style.display = 'flex';
+            document.getElementById('prompt-card').style.display = 'block';
+            
+            // Smooth scroll to view
+            document.getElementById('prompt-card').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function copyPrompt() {
+            const promptText = document.getElementById('prompt-text').value;
+            navigator.clipboard.writeText(promptText).then(() => {
+                showToast("Prompt copied!");
+            });
+        }
+
+        function exportCardAsJSON() {
+            const data = {
+                product: document.getElementById('card-product-title').innerText,
+                prompt: document.getElementById('prompt-text').value,
+                timestamp: new Date().toISOString()
+            };
+            const jsonString = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", jsonString);
+            downloadAnchor.setAttribute("download", `${data.product.toLowerCase().replace(/\s+/g, '-')}-prompt.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
+

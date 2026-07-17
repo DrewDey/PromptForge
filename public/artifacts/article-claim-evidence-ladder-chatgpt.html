@@ -1,0 +1,1644 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Article Claim Readiness Board</title>
+  <style>
+    :root {
+      --bg: #f6f3ee;
+      --panel: #fffaf2;
+      --panel-2: #ffffff;
+      --ink: #1f2933;
+      --muted: #667085;
+      --line: #d8d0c3;
+      --soft: #eee7da;
+      --accent: #355c4a;
+      --accent-2: #e7f0ea;
+      --warn: #8a5a00;
+      --warn-bg: #fff2c7;
+      --bad: #9f2f2f;
+      --bad-bg: #ffe3e3;
+      --good: #226a45;
+      --good-bg: #dff3e8;
+      --weak: #805b10;
+      --weak-bg: #fff3d6;
+      --shadow: 0 8px 24px rgba(31, 41, 51, .08);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      min-height: 100%;
+      overflow-x: hidden;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.45;
+    }
+
+    body {
+      padding: 14px;
+    }
+
+    button, input, textarea, select {
+      font: inherit;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: grid;
+      gap: 8px;
+      margin: 4px 0 14px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.45rem, 6vw, 2.35rem);
+      line-height: 1.05;
+      letter-spacing: -.04em;
+    }
+
+    .sub {
+      margin: 0;
+      color: var(--muted);
+      font-size: .98rem;
+      max-width: 68ch;
+    }
+
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    @media (min-width: 820px) {
+      .grid.two {
+        grid-template-columns: minmax(0, 1.05fr) minmax(280px, .7fr);
+        align-items: start;
+      }
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+      min-width: 0;
+    }
+
+    .panel.white {
+      background: var(--panel-2);
+    }
+
+    .panel h2 {
+      margin: 0 0 10px;
+      font-size: 1.03rem;
+      letter-spacing: -.02em;
+    }
+
+    label {
+      display: block;
+      font-weight: 750;
+      font-size: .88rem;
+      margin-bottom: 6px;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: .82rem;
+      margin-top: 5px;
+    }
+
+    input[type="text"],
+    textarea,
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      color: var(--ink);
+      padding: 11px 12px;
+      outline: none;
+      min-width: 0;
+    }
+
+    textarea {
+      min-height: 155px;
+      resize: vertical;
+    }
+
+    textarea.small {
+      min-height: 64px;
+    }
+
+    textarea.claim-text {
+      min-height: 92px;
+      font-weight: 650;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(53, 92, 74, .16);
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .row > * {
+      min-width: 0;
+    }
+
+    .field-row {
+      display: grid;
+      gap: 10px;
+    }
+
+    @media (min-width: 620px) {
+      .field-row {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      }
+    }
+
+    .btn {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 10px 12px;
+      cursor: pointer;
+      min-height: 42px;
+      min-width: 0;
+      touch-action: manipulation;
+      font-weight: 750;
+    }
+
+    .btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .btn.soft {
+      background: var(--accent-2);
+      border-color: #cbded2;
+      color: #1f4d39;
+    }
+
+    .btn.danger {
+      background: var(--bad-bg);
+      border-color: #efb5b5;
+      color: var(--bad);
+    }
+
+    .btn.small {
+      padding: 8px 10px;
+      min-height: 36px;
+      font-size: .86rem;
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    .button-row .btn {
+      flex: 1 1 138px;
+    }
+
+    @media (max-width: 430px) {
+      body {
+        padding: 10px;
+      }
+
+      .panel {
+        padding: 12px;
+        border-radius: 16px;
+      }
+
+      .button-row .btn {
+        flex-basis: calc(50% - 5px);
+        padding-left: 8px;
+        padding-right: 8px;
+        font-size: .88rem;
+      }
+
+      .button-row .btn.wide {
+        flex-basis: 100%;
+      }
+    }
+
+    .score-card {
+      display: grid;
+      gap: 12px;
+    }
+
+    .score-top {
+      display: grid;
+      grid-template-columns: 104px minmax(0, 1fr);
+      gap: 12px;
+      align-items: center;
+    }
+
+    .score-ring {
+      width: 104px;
+      height: 104px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: conic-gradient(var(--accent) 0deg, var(--soft) 0deg);
+      position: relative;
+      flex: 0 0 auto;
+    }
+
+    .score-ring::after {
+      content: "";
+      position: absolute;
+      inset: 10px;
+      border-radius: 50%;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+    }
+
+    .score-number {
+      position: relative;
+      z-index: 1;
+      font-size: 1.55rem;
+      font-weight: 900;
+      letter-spacing: -.04em;
+    }
+
+    .score-label {
+      margin: 0;
+      font-weight: 850;
+      font-size: 1.03rem;
+    }
+
+    .score-copy {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: .88rem;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      padding: 10px;
+      min-width: 0;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 1.25rem;
+      line-height: 1;
+      letter-spacing: -.04em;
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: .76rem;
+    }
+
+    .bars {
+      display: grid;
+      gap: 8px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 88px minmax(0, 1fr) 38px;
+      gap: 8px;
+      align-items: center;
+      font-size: .82rem;
+      color: var(--muted);
+    }
+
+    .bar {
+      height: 9px;
+      background: var(--soft);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      border-radius: inherit;
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      max-width: 100%;
+      overflow: hidden;
+    }
+
+    .filter-btn {
+      flex: 1 1 auto;
+      min-width: 88px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 8px 9px;
+      font-size: .83rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .filter-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    @media (max-width: 430px) {
+      .filters {
+        gap: 6px;
+      }
+
+      .filter-btn {
+        min-width: 0;
+        flex: 1 1 calc(50% - 4px);
+        padding: 8px 6px;
+        font-size: .8rem;
+      }
+    }
+
+    .claim-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .empty {
+      border: 1px dashed var(--line);
+      background: rgba(255,255,255,.6);
+      border-radius: 16px;
+      padding: 16px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .claim-card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fff;
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .claim-card.unsupported {
+      border-color: #eab0b0;
+      background: linear-gradient(0deg, rgba(255,227,227,.42), rgba(255,255,255,1) 42%);
+    }
+
+    .claim-card.weak {
+      border-color: #ecd18c;
+      background: linear-gradient(0deg, rgba(255,243,214,.55), rgba(255,255,255,1) 42%);
+    }
+
+    .claim-card.cited {
+      border-color: #b8ddc7;
+      background: linear-gradient(0deg, rgba(223,243,232,.5), rgba(255,255,255,1) 42%);
+    }
+
+    .claim-head {
+      display: grid;
+      gap: 8px;
+    }
+
+    @media (min-width: 620px) {
+      .claim-head {
+        grid-template-columns: minmax(0, 1fr) 150px;
+      }
+    }
+
+    .status-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .status-btn {
+      flex: 1 1 95px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--ink);
+      padding: 8px 8px;
+      font-size: .82rem;
+      font-weight: 850;
+      cursor: pointer;
+    }
+
+    .status-btn[data-status="cited"].active {
+      background: var(--good-bg);
+      border-color: #a8d8bc;
+      color: var(--good);
+    }
+
+    .status-btn[data-status="weak"].active {
+      background: var(--weak-bg);
+      border-color: #e7ca85;
+      color: var(--weak);
+    }
+
+    .status-btn[data-status="unsupported"].active {
+      background: var(--bad-bg);
+      border-color: #efb5b5;
+      color: var(--bad);
+    }
+
+    .mini-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      color: var(--muted);
+      font-size: .78rem;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 999px;
+      padding: 4px 8px;
+      max-width: 100%;
+    }
+
+    .pill.bad {
+      background: var(--bad-bg);
+      border-color: #efb5b5;
+      color: var(--bad);
+    }
+
+    .pill.warn {
+      background: var(--warn-bg);
+      border-color: #e7c875;
+      color: var(--warn);
+    }
+
+    .pill.good {
+      background: var(--good-bg);
+      border-color: #a8d8bc;
+      color: var(--good);
+    }
+
+    .brief-box {
+      width: 100%;
+      min-height: 260px;
+      white-space: pre-wrap;
+    }
+
+    .footer-note {
+      color: var(--muted);
+      font-size: .8rem;
+      text-align: center;
+      margin: 14px 0 4px;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 14px;
+      transform: translateX(-50%);
+      background: #1f2933;
+      color: #fff;
+      padding: 10px 13px;
+      border-radius: 999px;
+      box-shadow: var(--shadow);
+      font-weight: 800;
+      font-size: .88rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s ease, transform .18s ease;
+      max-width: calc(100vw - 24px);
+      text-align: center;
+      z-index: 20;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-4px);
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Article Claim Readiness Board</h1>
+      <p class="sub">Paste a draft, extract likely claims, mark each claim as cited or unsupported, and copy a revision brief before publishing.</p>
+    </header>
+
+    <main class="grid two">
+      <section class="grid">
+        <div class="panel">
+          <h2>Draft input</h2>
+
+          <label for="articleTitle">Article title</label>
+          <input id="articleTitle" type="text" placeholder="Example: 7 Ways Small Teams Can Improve Content QA">
+
+          <div style="height:10px"></div>
+
+          <label for="draftInput">Paste draft sections, paragraphs, or claim bullets</label>
+          <textarea id="draftInput" placeholder="Paste the article draft here. Headings are used as section names. Sentences with numbers, comparisons, recommendations, cause/effect, or strong promises are pulled as likely claims."></textarea>
+          <p class="hint">Tip: Markdown headings like “## Pricing” or short standalone lines are treated as section names.</p>
+
+          <div style="height:10px"></div>
+
+          <div class="row button-row">
+            <button class="btn primary wide" id="extractBtn" type="button">Extract likely claims</button>
+            <button class="btn soft" id="sampleBtn" type="button">Load sample</button>
+            <button class="btn" id="saveBtn" type="button">Save</button>
+            <button class="btn danger" id="clearBtn" type="button">Clear</button>
+          </div>
+        </div>
+
+        <div class="panel white">
+          <h2>Add a claim manually</h2>
+          <div class="field-row">
+            <div>
+              <label for="manualSection">Section</label>
+              <input id="manualSection" type="text" placeholder="Intro, Benefits, Pricing...">
+            </div>
+            <div>
+              <label for="manualRisk">Risk level</label>
+              <select id="manualRisk">
+                <option value="low">Low risk</option>
+                <option value="medium">Medium risk</option>
+                <option value="high">High risk</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="height:10px"></div>
+
+          <label for="manualClaim">Claim</label>
+          <textarea class="small" id="manualClaim" placeholder="Paste one claim that needs citation checking."></textarea>
+
+          <div style="height:10px"></div>
+
+          <label for="manualEvidence">Citation or evidence note</label>
+          <textarea class="small" id="manualEvidence" placeholder="Source name, URL reminder, study, internal data, expert quote, or leave blank."></textarea>
+
+          <div style="height:10px"></div>
+
+          <div class="row button-row">
+            <button class="btn primary wide" id="addClaimBtn" type="button">Add claim</button>
+            <button class="btn" id="addUnsupportedBtn" type="button">Add unsupported</button>
+          </div>
+        </div>
+
+        <div class="panel white">
+          <h2>Claim board</h2>
+          <div class="filters" id="filters" aria-label="Claim filters">
+            <button class="filter-btn active" type="button" data-filter="all">All</button>
+            <button class="filter-btn" type="button" data-filter="unsupported">Unsupported</button>
+            <button class="filter-btn" type="button" data-filter="weak">Weak</button>
+            <button class="filter-btn" type="button" data-filter="cited">Cited</button>
+            <button class="filter-btn" type="button" data-filter="high">High risk</button>
+          </div>
+
+          <div style="height:12px"></div>
+          <div class="claim-list" id="claimList"></div>
+        </div>
+      </section>
+
+      <aside class="grid">
+        <div class="panel white score-card">
+          <h2>Readiness score</h2>
+          <div class="score-top">
+            <div class="score-ring" id="scoreRing">
+              <div class="score-number" id="scoreNumber">0%</div>
+            </div>
+            <div>
+              <p class="score-label" id="scoreLabel">No claims checked yet</p>
+              <p class="score-copy" id="scoreCopy">Extract or add claims to begin.</p>
+            </div>
+          </div>
+
+          <div class="stat-grid">
+            <div class="stat">
+              <strong id="totalStat">0</strong>
+              <span>Total claims</span>
+            </div>
+            <div class="stat">
+              <strong id="citedStat">0</strong>
+              <span>Cited</span>
+            </div>
+            <div class="stat">
+              <strong id="weakStat">0</strong>
+              <span>Weak / partial</span>
+            </div>
+            <div class="stat">
+              <strong id="unsupportedStat">0</strong>
+              <span>Unsupported</span>
+            </div>
+          </div>
+
+          <div class="bars">
+            <div class="bar-row">
+              <span>Citation</span>
+              <div class="bar"><span id="citationBar"></span></div>
+              <span id="citationPct">0%</span>
+            </div>
+            <div class="bar-row">
+              <span>Risk</span>
+              <div class="bar"><span id="riskBar"></span></div>
+              <span id="riskPct">0%</span>
+            </div>
+            <div class="bar-row">
+              <span>Coverage</span>
+              <div class="bar"><span id="coverageBar"></span></div>
+              <span id="coveragePct">0%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel white">
+          <h2>Revision brief</h2>
+          <textarea id="briefOutput" class="brief-box" readonly></textarea>
+          <div style="height:10px"></div>
+          <div class="row button-row">
+            <button class="btn primary" id="copyBriefBtn" type="button">Copy brief</button>
+            <button class="btn" id="downloadBriefBtn" type="button">Download .txt</button>
+            <button class="btn soft" id="copyClaimsBtn" type="button">Copy claim list</button>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <p class="footer-note">Runs locally in your browser. No external assets, APIs, libraries, or logins.</p>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      const storeKey = "article-claim-readiness-board-v1";
+
+      const state = {
+        title: "",
+        draft: "",
+        filter: "all",
+        claims: []
+      };
+
+      const el = {
+        articleTitle: document.getElementById("articleTitle"),
+        draftInput: document.getElementById("draftInput"),
+        extractBtn: document.getElementById("extractBtn"),
+        sampleBtn: document.getElementById("sampleBtn"),
+        saveBtn: document.getElementById("saveBtn"),
+        clearBtn: document.getElementById("clearBtn"),
+        manualSection: document.getElementById("manualSection"),
+        manualRisk: document.getElementById("manualRisk"),
+        manualClaim: document.getElementById("manualClaim"),
+        manualEvidence: document.getElementById("manualEvidence"),
+        addClaimBtn: document.getElementById("addClaimBtn"),
+        addUnsupportedBtn: document.getElementById("addUnsupportedBtn"),
+        filters: document.getElementById("filters"),
+        claimList: document.getElementById("claimList"),
+        scoreRing: document.getElementById("scoreRing"),
+        scoreNumber: document.getElementById("scoreNumber"),
+        scoreLabel: document.getElementById("scoreLabel"),
+        scoreCopy: document.getElementById("scoreCopy"),
+        totalStat: document.getElementById("totalStat"),
+        citedStat: document.getElementById("citedStat"),
+        weakStat: document.getElementById("weakStat"),
+        unsupportedStat: document.getElementById("unsupportedStat"),
+        citationBar: document.getElementById("citationBar"),
+        riskBar: document.getElementById("riskBar"),
+        coverageBar: document.getElementById("coverageBar"),
+        citationPct: document.getElementById("citationPct"),
+        riskPct: document.getElementById("riskPct"),
+        coveragePct: document.getElementById("coveragePct"),
+        briefOutput: document.getElementById("briefOutput"),
+        copyBriefBtn: document.getElementById("copyBriefBtn"),
+        downloadBriefBtn: document.getElementById("downloadBriefBtn"),
+        copyClaimsBtn: document.getElementById("copyClaimsBtn"),
+        toast: document.getElementById("toast")
+      };
+
+      function uid() {
+        return "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+      }
+
+      function clamp(n, min, max) {
+        return Math.max(min, Math.min(max, n));
+      }
+
+      function cleanText(text) {
+        return String(text || "")
+          .replace(/\s+/g, " ")
+          .replace(/[“”]/g, '"')
+          .replace(/[‘’]/g, "'")
+          .trim();
+      }
+
+      function normalizeClaim(text) {
+        return cleanText(text)
+          .toLowerCase()
+          .replace(/[^a-z0-9%$]+/g, " ")
+          .trim();
+      }
+
+      function showToast(message) {
+        el.toast.textContent = message;
+        el.toast.classList.add("show");
+        window.clearTimeout(showToast.timer);
+        showToast.timer = window.setTimeout(function () {
+          el.toast.classList.remove("show");
+        }, 1600);
+      }
+
+      function saveState(silent) {
+        state.title = el.articleTitle.value;
+        state.draft = el.draftInput.value;
+        try {
+          localStorage.setItem(storeKey, JSON.stringify(state));
+          if (!silent) showToast("Saved locally");
+        } catch (err) {
+          showToast("Could not save locally");
+        }
+      }
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(storeKey);
+          if (!raw) return;
+          const saved = JSON.parse(raw);
+          state.title = saved.title || "";
+          state.draft = saved.draft || "";
+          state.filter = saved.filter || "all";
+          state.claims = Array.isArray(saved.claims) ? saved.claims : [];
+          el.articleTitle.value = state.title;
+          el.draftInput.value = state.draft;
+        } catch (err) {
+          state.claims = [];
+        }
+      }
+
+      function splitSentences(text) {
+        const rough = String(text || "")
+          .replace(/\s+/g, " ")
+          .split(/(?<=[.!?])\s+(?=[A-Z0-9"'])/);
+
+        if (rough.length <= 1) {
+          return String(text || "")
+            .split(/[.;]\s+/)
+            .map(cleanText)
+            .filter(Boolean);
+        }
+
+        return rough.map(cleanText).filter(Boolean);
+      }
+
+      function looksLikeHeading(line) {
+        const t = cleanText(line).replace(/^#{1,6}\s*/, "");
+        if (!t) return false;
+        if (/^#{1,6}\s+/.test(line)) return true;
+        if (t.length <= 64 && !/[.!?]$/.test(t) && /[A-Za-z]/.test(t)) return true;
+        return false;
+      }
+
+      function riskFromClaim(text) {
+        const t = text.toLowerCase();
+        let score = 0;
+
+        if (/\b(always|never|guarantee|guaranteed|proven|best|only|must|everyone|no one)\b/.test(t)) score += 2;
+        if (/\b(increase|decrease|reduce|improve|boost|prevent|cause|lead to|because|therefore|results in)\b/.test(t)) score += 1;
+        if (/(\d+|%|\$|million|billion|x\b|times)/i.test(text)) score += 1;
+        if (/\b(health|legal|tax|investment|financial|medical|safety|compliance)\b/.test(t)) score += 2;
+        if (/\b(202[0-9]|19[0-9]{2}|20[0-9]{2})\b/.test(t)) score += 1;
+
+        if (score >= 3) return "high";
+        if (score >= 1) return "medium";
+        return "low";
+      }
+
+      function isClaimLike(sentence) {
+        const t = sentence.toLowerCase();
+        if (sentence.length < 42) return false;
+
+        const patterns = [
+          /\d/,
+          /%|\$|x\b/,
+          /\b(best|largest|smallest|fastest|most|least|better|worse|higher|lower)\b/,
+          /\b(can|could|will|would|should|must|need to|helps|allows|prevents|reduces|improves|increases|decreases|drives)\b/,
+          /\b(because|therefore|as a result|leads to|causes|means that|so that)\b/,
+          /\b(research|study|survey|data|according to|experts|customers|users|teams)\b/,
+          /\b(health|legal|tax|investment|financial|medical|safety|compliance)\b/
+        ];
+
+        return patterns.some(function (rx) {
+          return rx.test(t);
+        });
+      }
+
+      function parseDraftForClaims(text) {
+        const lines = String(text || "").split(/\n+/);
+        let currentSection = "Unsectioned";
+        const paragraphs = [];
+        let buffer = [];
+
+        function flush() {
+          const paragraph = cleanText(buffer.join(" "));
+          if (paragraph) paragraphs.push({ section: currentSection, text: paragraph });
+          buffer = [];
+        }
+
+        lines.forEach(function (rawLine) {
+          const line = rawLine.trim();
+          if (!line) {
+            flush();
+            return;
+          }
+
+          if (looksLikeHeading(line)) {
+            flush();
+            currentSection = cleanText(line.replace(/^#{1,6}\s*/, ""));
+            return;
+          }
+
+          const bullet = line.match(/^[-*•]\s+(.*)$/);
+          const numbered = line.match(/^\d+[.)]\s+(.*)$/);
+          if (bullet || numbered) {
+            flush();
+            paragraphs.push({
+              section: currentSection,
+              text: cleanText((bullet && bullet[1]) || (numbered && numbered[1]) || line)
+            });
+            return;
+          }
+
+          buffer.push(line);
+        });
+
+        flush();
+
+        const candidates = [];
+        paragraphs.forEach(function (p) {
+          const sentences = splitSentences(p.text);
+          sentences.forEach(function (sentence) {
+            if (isClaimLike(sentence)) {
+              candidates.push({
+                section: p.section,
+                text: sentence,
+                status: "unsupported",
+                evidence: "",
+                risk: riskFromClaim(sentence),
+                note: ""
+              });
+            }
+          });
+        });
+
+        if (candidates.length === 0) {
+          paragraphs.slice(0, 12).forEach(function (p) {
+            splitSentences(p.text).slice(0, 2).forEach(function (sentence) {
+              if (sentence.length > 38) {
+                candidates.push({
+                  section: p.section,
+                  text: sentence,
+                  status: "unsupported",
+                  evidence: "",
+                  risk: riskFromClaim(sentence),
+                  note: ""
+                });
+              }
+            });
+          });
+        }
+
+        const seen = new Set();
+        return candidates.filter(function (item) {
+          const key = normalizeClaim(item.text);
+          if (!key || seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        }).slice(0, 80);
+      }
+
+      function addClaimsFromDraft() {
+        const found = parseDraftForClaims(el.draftInput.value);
+        if (!found.length) {
+          showToast("No likely claims found");
+          return;
+        }
+
+        const existing = new Set(state.claims.map(function (claim) {
+          return normalizeClaim(claim.text);
+        }));
+
+        let added = 0;
+        found.forEach(function (claim) {
+          const key = normalizeClaim(claim.text);
+          if (existing.has(key)) return;
+          existing.add(key);
+          state.claims.push({
+            id: uid(),
+            section: claim.section || "Unsectioned",
+            text: claim.text,
+            status: claim.status,
+            evidence: claim.evidence,
+            risk: claim.risk,
+            note: claim.note
+          });
+          added += 1;
+        });
+
+        render();
+        saveState(true);
+        showToast(added ? "Added " + added + " claims" : "No new claims added");
+      }
+
+      function addManualClaim(forceUnsupported) {
+        const text = cleanText(el.manualClaim.value);
+        if (!text) {
+          showToast("Add claim text first");
+          return;
+        }
+
+        state.claims.unshift({
+          id: uid(),
+          section: cleanText(el.manualSection.value) || "Manual",
+          text: text,
+          status: forceUnsupported ? "unsupported" : (cleanText(el.manualEvidence.value) ? "cited" : "unsupported"),
+          evidence: cleanText(el.manualEvidence.value),
+          risk: el.manualRisk.value || riskFromClaim(text),
+          note: ""
+        });
+
+        el.manualClaim.value = "";
+        el.manualEvidence.value = "";
+        render();
+        saveState(true);
+        showToast("Claim added");
+      }
+
+      function duplicateClaim(id) {
+        const original = state.claims.find(function (claim) {
+          return claim.id === id;
+        });
+        if (!original) return;
+
+        state.claims.unshift({
+          id: uid(),
+          section: original.section,
+          text: original.text,
+          status: original.status,
+          evidence: original.evidence,
+          risk: original.risk,
+          note: original.note
+        });
+
+        render();
+        saveState(true);
+      }
+
+      function removeClaim(id) {
+        state.claims = state.claims.filter(function (claim) {
+          return claim.id !== id;
+        });
+        render();
+        saveState(true);
+      }
+
+      function updateClaim(id, patch) {
+        const claim = state.claims.find(function (item) {
+          return item.id === id;
+        });
+        if (!claim) return;
+        Object.keys(patch).forEach(function (key) {
+          claim[key] = patch[key];
+        });
+        renderScoreAndBrief();
+        saveState(true);
+      }
+
+      function getMetrics() {
+        const total = state.claims.length;
+        const cited = state.claims.filter(function (c) { return c.status === "cited"; }).length;
+        const weak = state.claims.filter(function (c) { return c.status === "weak"; }).length;
+        const unsupported = state.claims.filter(function (c) { return c.status === "unsupported"; }).length;
+        const highRisk = state.claims.filter(function (c) { return c.risk === "high"; }).length;
+        const highUnsupported = state.claims.filter(function (c) {
+          return c.risk === "high" && c.status !== "cited";
+        }).length;
+        const sections = new Set(state.claims.map(function (c) {
+          return cleanText(c.section || "Unsectioned").toLowerCase();
+        })).size;
+
+        if (!total) {
+          return {
+            total, cited, weak, unsupported, highRisk, highUnsupported,
+            citationScore: 0, riskScore: 0, coverageScore: 0, readiness: 0
+          };
+        }
+
+        let statusPoints = 0;
+        state.claims.forEach(function (claim) {
+          if (claim.status === "cited") {
+            statusPoints += cleanText(claim.evidence).length ? 1 : 0.78;
+          } else if (claim.status === "weak") {
+            statusPoints += 0.52;
+          } else {
+            statusPoints += 0.08;
+          }
+        });
+
+        const citationScore = clamp(statusPoints / total, 0, 1);
+        const riskPenalty = state.claims.reduce(function (sum, claim) {
+          if (claim.risk === "high" && claim.status === "unsupported") return sum + 0.23;
+          if (claim.risk === "high" && claim.status === "weak") return sum + 0.14;
+          if (claim.risk === "medium" && claim.status === "unsupported") return sum + 0.08;
+          return sum;
+        }, 0) / total;
+        const riskScore = clamp(1 - riskPenalty, 0, 1);
+        const targetSections = Math.min(4, Math.max(1, total));
+        const coverageScore = clamp(sections / targetSections, 0, 1);
+        const readiness = Math.round((citationScore * 72) + (riskScore * 20) + (coverageScore * 8));
+
+        return {
+          total, cited, weak, unsupported, highRisk, highUnsupported,
+          citationScore, riskScore, coverageScore, readiness
+        };
+      }
+
+      function readinessLabel(score, total) {
+        if (!total) return ["No claims checked yet", "Extract or add claims to begin."];
+        if (score >= 88) return ["Publish check looks strong", "Mostly cited, with limited claim risk."];
+        if (score >= 72) return ["Close, but review weak spots", "Tighten unsupported or partial claims before publishing."];
+        if (score >= 50) return ["Needs source cleanup", "Several claims need evidence, softening, or removal."];
+        return ["Not ready yet", "Unsupported claims are carrying too much of the article."];
+      }
+
+      function pct(n) {
+        return Math.round(n * 100) + "%";
+      }
+
+      function buildBrief() {
+        const m = getMetrics();
+        const title = cleanText(el.articleTitle.value) || "Untitled article";
+
+        const unsupported = state.claims.filter(function (c) {
+          return c.status === "unsupported";
+        });
+        const weak = state.claims.filter(function (c) {
+          return c.status === "weak";
+        });
+        const citedMissingDetail = state.claims.filter(function (c) {
+          return c.status === "cited" && !cleanText(c.evidence);
+        });
+        const highRiskOpen = state.claims.filter(function (c) {
+          return c.risk === "high" && c.status !== "cited";
+        });
+
+        const lines = [];
+        lines.push("Article Claim Revision Brief");
+        lines.push("");
+        lines.push("Title: " + title);
+        lines.push("Readiness score: " + m.readiness + "%");
+        lines.push("");
+        lines.push("Claim status");
+        lines.push("- Total claims checked: " + m.total);
+        lines.push("- Cited: " + m.cited);
+        lines.push("- Weak / partial support: " + m.weak);
+        lines.push("- Unsupported: " + m.unsupported);
+        lines.push("- High-risk open claims: " + m.highUnsupported);
+        lines.push("");
+
+        if (!m.total) {
+          lines.push("Next action: paste the draft and extract likely claims, or add claims manually.");
+          return lines.join("\n");
+        }
+
+        lines.push("Priority fixes");
+        if (highRiskOpen.length) {
+          lines.push("1. Resolve high-risk unsupported or weak claims first.");
+          highRiskOpen.slice(0, 8).forEach(function (claim) {
+            lines.push("   - [" + claim.section + "] " + claim.text);
+          });
+        } else {
+          lines.push("1. No open high-risk claims found.");
+        }
+
+        if (unsupported.length) {
+          lines.push("");
+          lines.push("2. Add citations, soften language, or remove unsupported claims.");
+          unsupported.slice(0, 12).forEach(function (claim) {
+            lines.push("   - [" + claim.section + "] " + claim.text);
+          });
+        } else {
+          lines.push("");
+          lines.push("2. No unsupported claims remain.");
+        }
+
+        if (weak.length) {
+          lines.push("");
+          lines.push("3. Upgrade weak or partial support.");
+          weak.slice(0, 12).forEach(function (claim) {
+            const evidence = cleanText(claim.evidence);
+            lines.push("   - [" + claim.section + "] " + claim.text);
+            if (evidence) lines.push("     Evidence note: " + evidence);
+          });
+        }
+
+        if (citedMissingDetail.length) {
+          lines.push("");
+          lines.push("Citation detail cleanup");
+          citedMissingDetail.slice(0, 8).forEach(function (claim) {
+            lines.push("- [" + claim.section + "] Marked cited but has no source note: " + claim.text);
+          });
+        }
+
+        const notes = state.claims.filter(function (c) {
+          return cleanText(c.note);
+        });
+
+        if (notes.length) {
+          lines.push("");
+          lines.push("Editor notes");
+          notes.slice(0, 12).forEach(function (claim) {
+            lines.push("- [" + claim.section + "] " + claim.note);
+          });
+        }
+
+        lines.push("");
+        lines.push("Suggested publish gate");
+        if (m.readiness >= 88) {
+          lines.push("- Final pass: verify links, source dates, quotes, and section balance.");
+        } else if (m.readiness >= 72) {
+          lines.push("- Publish after fixing unsupported high-risk claims and upgrading weak citations.");
+        } else {
+          lines.push("- Do not publish until unsupported claims are cited, softened, or cut.");
+        }
+
+        return lines.join("\n");
+      }
+
+      function buildClaimListText() {
+        const title = cleanText(el.articleTitle.value) || "Untitled article";
+        const lines = ["Claim list: " + title, ""];
+
+        if (!state.claims.length) {
+          lines.push("No claims added yet.");
+          return lines.join("\n");
+        }
+
+        state.claims.forEach(function (claim, index) {
+          lines.push((index + 1) + ". [" + claim.status.toUpperCase() + " | " + claim.risk + " risk | " + claim.section + "]");
+          lines.push(claim.text);
+          if (cleanText(claim.evidence)) lines.push("Evidence: " + claim.evidence);
+          if (cleanText(claim.note)) lines.push("Note: " + claim.note);
+          lines.push("");
+        });
+
+        return lines.join("\n");
+      }
+
+      function renderScoreAndBrief() {
+        const m = getMetrics();
+        const labels = readinessLabel(m.readiness, m.total);
+        const deg = Math.round((m.readiness / 100) * 360);
+
+        el.scoreRing.style.background = "conic-gradient(var(--accent) " + deg + "deg, var(--soft) " + deg + "deg)";
+        el.scoreNumber.textContent = m.readiness + "%";
+        el.scoreLabel.textContent = labels[0];
+        el.scoreCopy.textContent = labels[1];
+
+        el.totalStat.textContent = String(m.total);
+        el.citedStat.textContent = String(m.cited);
+        el.weakStat.textContent = String(m.weak);
+        el.unsupportedStat.textContent = String(m.unsupported);
+
+        el.citationBar.style.width = pct(m.citationScore);
+        el.riskBar.style.width = pct(m.riskScore);
+        el.coverageBar.style.width = pct(m.coverageScore);
+
+        el.citationPct.textContent = pct(m.citationScore);
+        el.riskPct.textContent = pct(m.riskScore);
+        el.coveragePct.textContent = pct(m.coverageScore);
+
+        el.briefOutput.value = buildBrief();
+      }
+
+      function passesFilter(claim) {
+        if (state.filter === "all") return true;
+        if (state.filter === "high") return claim.risk === "high";
+        return claim.status === state.filter;
+      }
+
+      function riskPillClass(risk) {
+        if (risk === "high") return "bad";
+        if (risk === "medium") return "warn";
+        return "good";
+      }
+
+      function statusLabel(status) {
+        if (status === "cited") return "Cited";
+        if (status === "weak") return "Weak";
+        return "Unsupported";
+      }
+
+      function makeTextNode(text) {
+        return document.createTextNode(text);
+      }
+
+      function makeButton(label, className, onClick) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = className || "btn";
+        button.textContent = label;
+        button.addEventListener("click", onClick);
+        return button;
+      }
+
+      function renderClaimCard(claim) {
+        const card = document.createElement("article");
+        card.className = "claim-card " + claim.status;
+
+        const head = document.createElement("div");
+        head.className = "claim-head";
+
+        const sectionWrap = document.createElement("div");
+        const sectionLabel = document.createElement("label");
+        sectionLabel.textContent = "Section";
+        sectionLabel.setAttribute("for", "section-" + claim.id);
+        const sectionInput = document.createElement("input");
+        sectionInput.id = "section-" + claim.id;
+        sectionInput.type = "text";
+        sectionInput.value = claim.section || "Unsectioned";
+        sectionInput.addEventListener("input", function () {
+          updateClaim(claim.id, { section: sectionInput.value });
+        });
+        sectionWrap.appendChild(sectionLabel);
+        sectionWrap.appendChild(sectionInput);
+
+        const riskWrap = document.createElement("div");
+        const riskLabel = document.createElement("label");
+        riskLabel.textContent = "Risk";
+        riskLabel.setAttribute("for", "risk-" + claim.id);
+        const riskSelect = document.createElement("select");
+        riskSelect.id = "risk-" + claim.id;
+
+        ["low", "medium", "high"].forEach(function (risk) {
+          const option = document.createElement("option");
+          option.value = risk;
+          option.textContent = risk.charAt(0).toUpperCase() + risk.slice(1) + " risk";
+          if (claim.risk === risk) option.selected = true;
+          riskSelect.appendChild(option);
+        });
+
+        riskSelect.addEventListener("change", function () {
+          updateClaim(claim.id, { risk: riskSelect.value });
+          render();
+        });
+
+        riskWrap.appendChild(riskLabel);
+        riskWrap.appendChild(riskSelect);
+
+        head.appendChild(sectionWrap);
+        head.appendChild(riskWrap);
+        card.appendChild(head);
+
+        const claimLabel = document.createElement("label");
+        claimLabel.textContent = "Claim text";
+        claimLabel.setAttribute("for", "claim-" + claim.id);
+        const claimText = document.createElement("textarea");
+        claimText.id = "claim-" + claim.id;
+        claimText.className = "claim-text";
+        claimText.value = claim.text || "";
+        claimText.addEventListener("input", function () {
+          updateClaim(claim.id, {
+            text: claimText.value,
+            risk: claim.risk || riskFromClaim(claimText.value)
+          });
+        });
+        card.appendChild(claimLabel);
+        card.appendChild(claimText);
+
+        const statusRow = document.createElement("div");
+        statusRow.className = "status-row";
+        [
+          { value: "cited", label: "Cited" },
+          { value: "weak", label: "Weak / partial" },
+          { value: "unsupported", label: "Unsupported" }
+        ].forEach(function (item) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "status-btn" + (claim.status === item.value ? " active" : "");
+          button.dataset.status = item.value;
+          button.textContent = item.label;
+          button.addEventListener("click", function () {
+            claim.status = item.value;
+            render();
+            saveState(true);
+          });
+          statusRow.appendChild(button);
+        });
+        card.appendChild(statusRow);
+
+        const evidenceLabel = document.createElement("label");
+        evidenceLabel.textContent = "Citation or evidence note";
+        evidenceLabel.setAttribute("for", "evidence-" + claim.id);
+        const evidence = document.createElement("textarea");
+        evidence.id = "evidence-" + claim.id;
+        evidence.className = "small";
+        evidence.value = claim.evidence || "";
+        evidence.placeholder = "Source, study, internal data, quote, URL reminder, or reason support is weak.";
+        evidence.addEventListener("input", function () {
+          updateClaim(claim.id, { evidence: evidence.value });
+        });
+        card.appendChild(evidenceLabel);
+        card.appendChild(evidence);
+
+        const noteLabel = document.createElement("label");
+        noteLabel.textContent = "Revision note";
+        noteLabel.setAttribute("for", "note-" + claim.id);
+        const note = document.createElement("textarea");
+        note.id = "note-" + claim.id;
+        note.className = "small";
+        note.value = claim.note || "";
+        note.placeholder = "Example: soften to “may help,” add primary source, remove exact percentage.";
+        note.addEventListener("input", function () {
+          updateClaim(claim.id, { note: note.value });
+        });
+        card.appendChild(noteLabel);
+        card.appendChild(note);
+
+        const meta = document.createElement("div");
+        meta.className = "mini-meta";
+
+        const statusPill = document.createElement("span");
+        statusPill.className = "pill " + (claim.status === "cited" ? "good" : claim.status === "weak" ? "warn" : "bad");
+        statusPill.appendChild(makeTextNode(statusLabel(claim.status)));
+
+        const riskPill = document.createElement("span");
+        riskPill.className = "pill " + riskPillClass(claim.risk);
+        riskPill.appendChild(makeTextNode((claim.risk || "low") + " risk"));
+
+        const evidencePill = document.createElement("span");
+        evidencePill.className = "pill " + (cleanText(claim.evidence) ? "good" : "warn");
+        evidencePill.appendChild(makeTextNode(cleanText(claim.evidence) ? "Evidence noted" : "No evidence note"));
+
+        meta.appendChild(statusPill);
+        meta.appendChild(riskPill);
+        meta.appendChild(evidencePill);
+        card.appendChild(meta);
+
+        const actions = document.createElement("div");
+        actions.className = "row";
+        actions.appendChild(makeButton("Duplicate", "btn small", function () {
+          duplicateClaim(claim.id);
+        }));
+        actions.appendChild(makeButton("Remove", "btn small danger", function () {
+          removeClaim(claim.id);
+        }));
+        card.appendChild(actions);
+
+        return card;
+      }
+
+      function renderClaimList() {
+        el.claimList.textContent = "";
+
+        const visible = state.claims.filter(passesFilter);
+
+        if (!visible.length) {
+          const empty = document.createElement("div");
+          empty.className = "empty";
+          if (!state.claims.length) {
+            empty.textContent = "No claims yet. Paste a draft and extract likely claims, or add one manually.";
+          } else {
+            empty.textContent = "No claims match this filter.";
+          }
+          el.claimList.appendChild(empty);
+          return;
+        }
+
+        visible.forEach(function (claim) {
+          el.claimList.appendChild(renderClaimCard(claim));
+        });
+      }
+
+      function renderFilters() {
+        const buttons = el.filters.querySelectorAll(".filter-btn");
+        buttons.forEach(function (button) {
+          button.classList.toggle("active", button.dataset.filter === state.filter);
+        });
+      }
+
+      function render() {
+        renderFilters();
+        renderClaimList();
+        renderScoreAndBrief();
+      }
+
+      function copyText(text, successMessage) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(function () {
+            showToast(successMessage);
+          }).catch(function () {
+            fallbackCopy(text, successMessage);
+          });
+        } else {
+          fallbackCopy(text, successMessage);
+        }
+      }
+
+      function fallbackCopy(text, successMessage) {
+        const area = document.createElement("textarea");
+        area.value = text;
+        area.setAttribute("readonly", "");
+        area.style.position = "fixed";
+        area.style.left = "-9999px";
+        document.body.appendChild(area);
+        area.select();
+        try {
+          document.execCommand("copy");
+          showToast(successMessage);
+        } catch (err) {
+          showToast("Copy failed");
+        }
+        document.body.removeChild(area);
+      }
+
+      function downloadText(filename, text) {
+        const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.setTimeout(function () {
+          URL.revokeObjectURL(url);
+        }, 300);
+      }
+
+      function loadSample() {
+        el.articleTitle.value = "How Small Teams Can Improve Article QA";
+        el.draftInput.value = [
+          "Intro",
+          "Small content teams can improve article quality by checking claims before editing for style. A structured claim review reduces rework and helps teams catch unsupported statements earlier.",
+          "",
+          "Common risks",
+          "Unsupported statistics are one of the fastest ways to weaken reader trust. Teams should treat numbers, superlatives, and cause-effect statements as claims until a source is attached.",
+          "",
+          "Workflow",
+          "A simple claim board can help editors separate cited claims from unsupported claims. This approach may reduce last-minute revisions because evidence gaps are visible before final review."
+        ].join("\n");
+
+        state.claims = [
+          {
+            id: uid(),
+            section: "Intro",
+            text: "A structured claim review reduces rework and helps teams catch unsupported statements earlier.",
+            status: "weak",
+            evidence: "Need internal workflow example or editor quote.",
+            risk: "medium",
+            note: "Either cite internal results or soften to “can reduce.”"
+          },
+          {
+            id: uid(),
+            section: "Common risks",
+            text: "Unsupported statistics are one of the fastest ways to weaken reader trust.",
+            status: "unsupported",
+            evidence: "",
+            risk: "high",
+            note: "Needs source or softer phrasing."
+          },
+          {
+            id: uid(),
+            section: "Workflow",
+            text: "A simple claim board can help editors separate cited claims from unsupported claims.",
+            status: "cited",
+            evidence: "Based on article workflow described in this draft.",
+            risk: "low",
+            note: ""
+          }
+        ];
+
+        render();
+        saveState(true);
+        showToast("Sample loaded");
+      }
+
+      el.extractBtn.addEventListener("click", addClaimsFromDraft);
+      el.sampleBtn.addEventListener("click", loadSample);
+      el.saveBtn.addEventListener("click", function () {
+        saveState(false);
+      });
+
+      el.clearBtn.addEventListener("click", function () {
+        const ok = window.confirm("Clear the draft, claims, and saved local data?");
+        if (!ok) return;
+        state.title = "";
+        state.draft = "";
+        state.claims = [];
+        state.filter = "all";
+        el.articleTitle.value = "";
+        el.draftInput.value = "";
+        el.manualSection.value = "";
+        el.manualClaim.value = "";
+        el.manualEvidence.value = "";
+        try {
+          localStorage.removeItem(storeKey);
+        } catch (err) {}
+        render();
+        showToast("Cleared");
+      });
+
+      el.addClaimBtn.addEventListener("click", function () {
+        addManualClaim(false);
+      });
+
+      el.addUnsupportedBtn.addEventListener("click", function () {
+        addManualClaim(true);
+      });
+
+      el.filters.addEventListener("click", function (event) {
+        const target = event.target;
+        if (!target || !target.matches(".filter-btn")) return;
+        state.filter = target.dataset.filter || "all";
+        render();
+        saveState(true);
+      });
+
+      el.copyBriefBtn.addEventListener("click", function () {
+        copyText(el.briefOutput.value, "Brief copied");
+      });
+
+      el.copyClaimsBtn.addEventListener("click", function () {
+        copyText(buildClaimListText(), "Claim list copied");
+      });
+
+      el.downloadBriefBtn.addEventListener("click", function () {
+        const title = cleanText(el.articleTitle.value) || "article";
+        const safe = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 50) || "article";
+        downloadText(safe + "-revision-brief.txt", el.briefOutput.value);
+        showToast("Brief downloaded");
+      });
+
+      el.articleTitle.addEventListener("input", function () {
+        renderScoreAndBrief();
+        saveState(true);
+      });
+
+      el.draftInput.addEventListener("input", function () {
+        saveState(true);
+      });
+
+      loadState();
+      render();
+    })();
+  </script>
+</body>
+</html>

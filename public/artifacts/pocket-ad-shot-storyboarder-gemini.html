@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pocket Storyboarder</title>
+    <style>
+        /* Modern CSS Reset & Variable Framework */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        :root {
+            --bg-main: #09090b;
+            --bg-card: #18181b;
+            --bg-input: #27272a;
+            --border-color: #3f3f46;
+            --text-main: #fafafa;
+            --text-muted: #a1a1aa;
+            --text-dark: #52525b;
+            --accent: #ffffff;
+            --accent-text: #09090b;
+        }
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            letter-spacing: -0.01em;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        /* Mobile Frame Constraints */
+        .app-container {
+            width: 100%;
+            max-width: 440px;
+            background-color: #121214;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            border-left: 1px solid var(--bg-card);
+            border-right: 1px solid var(--bg-card);
+            padding-bottom: 40px;
+        }
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background-color: rgba(18, 18, 20, 0.9);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        h1 {
+            text-transform: uppercase;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+        }
+        .actions-cluster {
+            display: flex;
+            gap: 8px;
+        }
+        .btn-primary {
+            background-color: var(--accent);
+            color: var(--accent-text);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 6px 14px;
+            border: none;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+        .btn-primary:active {
+            transform: scale(0.96);
+        }
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 500;
+            padding: 6px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 9999px;
+            cursor: pointer;
+        }
+        .btn-secondary:active {
+            background-color: var(--bg-card);
+        }
+        main {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .label-style {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+        }
+        /* Subject Grid Controls */
+        .subject-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        .subject-btn {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 12px 4px;
+            font-size: 12px;
+            font-weight: 500;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            text-align: center;
+        }
+        .subject-btn.active {
+            background-color: var(--accent);
+            color: var(--accent-text);
+            border-color: transparent;
+        }
+        /* Form Field Components */
+        input[type="text"], select {
+            width: 100%;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 10px 12px;
+            font-size: 14px;
+            border-radius: 12px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23a1a1aa'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 14px;
+            padding-right: 36px;
+        }
+        input[type="text"]:focus, select:focus {
+            border-color: #71717a;
+        }
+        .parameter-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        .split-row {
+            display: grid;
+            grid-template-cols: 1fr 1fr;
+            gap: 8px;
+        }
+        hr {
+            border: none;
+            border-top: 1px solid #27272a;
+            margin: 4px 0;
+        }
+        /* Generated Output Architecture */
+        .hidden {
+            display: none !important;
+        }
+        .output-group {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        .output-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .meta-hint {
+            font-size: 10px;
+            color: var(--text-dark);
+        }
+        .cards-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .shot-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .card-meta-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #27272a;
+            padding-bottom: 8px;
+        }
+        .card-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+        .card-badge {
+            font-family: monospace;
+            font-size: 10px;
+            background-color: var(--bg-main);
+            border: 1px solid var(--border-color);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--text-muted);
+        }
+        .card-field-block {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .field-label {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-dark);
+        }
+        .editable-area {
+            font-size: 14px;
+            color: var(--text-main);
+            outline: none;
+            min-height: 20px;
+            line-height: 1.4;
+        }
+        .editable-area[contenteditable="true"]:focus {
+            background-color: rgba(255,255,255,0.03);
+            border-radius: 4px;
+        }
+        /* Checklist Container Layout */
+        .checklist-panel {
+            background-color: rgba(39, 39, 42, 0.3);
+            border: 1px solid #27272a;
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .check-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 13px;
+            color: #d4d4d8;
+            line-height: 1.4;
+            cursor: pointer;
+        }
+        .check-item input[type="checkbox"] {
+            margin-top: 3px;
+            width: 15px;
+            height: 15px;
+            accent-color: var(--accent);
+        }
+        /* Brief Presentation Block */
+        .control-links {
+            display: flex;
+            gap: 12px;
+        }
+        .text-action-link {
+            font-size: 11px;
+            color: var(--text-muted);
+            background: none;
+            border: none;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        pre {
+            background-color: var(--bg-main);
+            border: 1px solid #27272a;
+            border-radius: 12px;
+            padding: 12px;
+            font-family: monospace;
+            font-size: 11px;
+            line-height: 1.5;
+            color: #d4d4d8;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <header>
+            <h1>Pocket Storyboarder</h1>
+            <div class="actions-cluster">
+                <button type="button" onclick="resetWorkspace()" class="btn-secondary">Reset</button>
+                <button type="button" onclick="buildStoryboard()" class="btn-primary">Build Board</button>
+            </div>
+        </header>
+
+        <main>
+            
+            <section>
+                <div class="label-style">Core Subject</div>
+                <div class="subject-grid">
+                    <button type="button" id="type-Product" onclick="selectSubjectType('Product')" class="subject-btn">📦 Product</button>
+                    <button type="button" id="type-Person" onclick="selectSubjectType('Person')" class="subject-btn">👤 Person</button>
+                    <button type="button" id="type-Place" onclick="selectSubjectType('Place')" class="subject-btn">📍 Place</button>
+                </div>
+                <input type="text" id="input-detail" placeholder="Specific descriptions (e.g., Cold cold brew bottle)">
+            </section>
+
+            <section class="parameter-grid">
+                <div class="card-field-block">
+                    <div class="label-style">Mood / Tone</div>
+                    <select id="select-mood">
+                        <option>Cinematic / Moody</option>
+                        <option>Clean / Minimalist</option>
+                        <option>High-Octane / Edgy</option>
+                        <option>Luxury / Premium</option>
+                        <option>Warm / Nostalgic</option>
+                    </select>
+                </div>
+                <div class="card-field-block">
+                    <div class="label-style">Lighting Map</div>
+                    <select id="select-lighting">
+                        <option>High Contrast Chiaroscuro</option>
+                        <option>Soft Diffused Studio</option>
+                        <option>Golden Hour Natural</option>
+                        <option>Cyberpunk Neon Accent</option>
+                        <option>Harsh Direct Sunlight</option>
+                    </select>
+                </div>
+                <div class="card-field-block">
+                    <div class="label-style">Default Angle</div>
+                    <select id="select-angle">
+                        <option>Extreme Close-Up (Macro)</option>
+                        <option>Low Angle (Hero Shot)</option>
+                        <option>Eye-Level Clean</option>
+                        <option>Bird's Eye Top-Down</option>
+                        <option>Dutch Angle Dynamic</option>
+                    </select>
+                </div>
+                <div class="card-field-block">
+                    <div class="label-style">Pacing / Motion</div>
+                    <select id="select-motion">
+                        <option>Slow Motion Whip Pan</option>
+                        <option>Static Locked-Off</option>
+                        <option>Fast Push-In Tracking</option>
+                        <option>Smooth Orbit Jib</option>
+                        <option>Handheld Kinetic Shake</option>
+                    </select>
+                </div>
+            </section>
+
+            <section>
+                <div class="label-style">Constraints & Ratio Mapping</div>
+                <div class="split-row">
+                    <select id="select-ratio">
+                        <option>9:16 (Vertical Short-form)</option>
+                        <option>16:9 (Horizontal Widescreen)</option>
+                        <option>1:1 (Square Feed)</option>
+                    </select>
+                    <input type="text" id="input-constraint" placeholder="e.g., Under 5s runtime, no branding splash">
+                </div>
+            </section>
+
+            <hr>
+
+            <div id="output-workspace" class="output-group hidden">
+                
+                <section>
+                    <div class="output-header-row">
+                        <div class="label-style">Shot Cards (Editable)</div>
+                        <div class="meta-hint">Tap fields directly to re-write specifications</div>
+                    </div>
+                    <div class="cards-stack" id="cards-insertion-point"></div>
+                </section>
+
+                <section>
+                    <div class="checklist-panel" id="checklist-insertion-point"></div>
+                </section>
+
+                <section>
+                    <div class="output-header-row">
+                        <div class="label-style">Unified Shot Brief</div>
+                        <div class="control-links">
+                            <button type="button" onclick="copyBriefText()" class="text-action-link">Copy Clean Text</button>
+                            <button type="button" onclick="exportBriefFile()" class="text-action-link">Download File</button>
+                        </div>
+                    </div>
+                    <pre id="raw-brief-block"></pre>
+                </section>
+
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        let operationalSubjectType = '';
+
+        // Safe DOM Structuring Definitions
+        const sequentialArchetypes = {
+            Product: [
+                { id: "01", name: "01. Hook / Scale", setup: "Extreme Close-Up (Macro)", action: "Establishing macro texture, framing, or critical branding feature." },
+                { id: "02", name: "02. Context / Identity", setup: "", action: "Interactions with nearby assets under selected environment values." },
+                { id: "03", name: "03. Kinetic Flow", setup: "Dynamic Framing", action: "Capturing mechanical function or environmental fluid responses." },
+                { id: "04", name: "04. Hero Outro", setup: "Low Angle (Hero Shot)", action: "Locking focal length cleanly across complete silhouette package layout." }
+            ],
+            Person: [
+                { id: "01", name: "01. Int. Character", setup: "Close-Up Profile", action: "Capturing primary expressions or local posture setups." },
+                { id: "02", name: "02. Physical Kinesthetics", setup: "", action: "Tracking bodily motion elements safely through immediate sets." },
+                { id: "03", name: "03. Deep Environmental", setup: "Wide Tracking View", action: "Isolating subject scales directly against structural backgrounds." },
+                { id: "04", name: "04. Clean Resolution", setup: "Eye-Level Portrait", action: "Subject locks gaze alignment directly with focal axis line." }
+            ],
+            Place: [
+                { id: "01", name: "01. Spatial Anchor", setup: "Bird's Eye Top-Down", action: "Establishing total layout boundaries and geometric footprints." },
+                { id: "02", name: "02. Architectural Texture", setup: "", action: "Isolating surface material parameters across geometric lines." },
+                { id: "03", name: "03. Internal Sweep", setup: "Wide Angle Jib", action: "Drawing structural dimension directly into interior frame planes." },
+                { id: "04", name: "04. Abstract Vignette", setup: "Geometric Silhouette", action: "Reducing complex patterns down to high-contrast spatial graphics." }
+            ]
+        };
+
+        function selectSubjectType(type) {
+            operationalSubjectType = type;
+            const buttons = document.querySelectorAll('.subject-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`type-${type}`).classList.add('active');
+        }
+
+        function clearCardContainer() {
+            const container = document.getElementById('cards-insertion-point');
+            while (container.firstChild) {
+                container.removeChild(container.firstChild);
+            }
+        }
+
+        function clearChecklistContainer() {
+            const container = document.getElementById('checklist-insertion-point');
+            while (container.firstChild) {
+                container.removeChild(container.firstChild);
+            }
+        }
+
+        function createShotCardNode(shotData, index, displayRatio, defaultAngle, alternateLighting, baseMotion) {
+            const cardEl = document.createElement('div');
+            cardEl.className = 'shot-card';
+
+            // Top Header Banner Node
+            const headerRow = document.createElement('div');
+            headerRow.className = 'card-meta-line';
+            
+            const titleSpan = document.createElement('span');
+            titleSpan.className = 'card-title';
+            titleSpan.textContent = shotData.name;
+            
+            const badgeSpan = document.createElement('span');
+            badgeSpan.className = 'card-badge';
+            badgeSpan.textContent = displayRatio.split(' ')[0];
+            
+            headerRow.appendChild(titleSpan);
+            headerRow.appendChild(badgeSpan);
+            cardEl.appendChild(headerRow);
+
+            // Framing Parameter Field Input Node
+            const setupBlock = document.createElement('div');
+            setupBlock.className = 'card-field-block';
+            
+            const setupLabel = document.createElement('div');
+            setupLabel.className = 'field-label';
+            setupLabel.textContent = 'Framing / Setup';
+            
+            const setupEditable = document.createElement('div');
+            setupEditable.className = 'editable-area';
+            setupEditable.contentEditable = 'true';
+            setupEditable.id = `editable-setup-${index}`;
+            setupEditable.textContent = shotData.setup || defaultAngle;
+            
+            setupBlock.appendChild(setupLabel);
+            setupBlock.appendChild(setupEditable);
+            cardEl.appendChild(setupBlock);
+
+            // Narrative Action Field Input Node
+            const actionBlock = document.createElement('div');
+            actionBlock.className = 'card-field-block';
+            
+            const actionLabel = document.createElement('div');
+            actionLabel.className = 'field-label';
+            actionLabel.textContent = 'Action / Manifestation';
+            
+            const actionEditable = document.createElement('div');
+            actionEditable.className = 'editable-area';
+            actionEditable.contentEditable = 'true';
+            actionEditable.id = `editable-action-${index}`;
+            
+            // Clean injection construction if standard fallback context strings are required
+            if (!shotData.setup) {
+                actionEditable.textContent = `Tracking subject transformations under ${alternateLighting.toLowerCase()} rules. ${baseMotion}.`;
+            } else {
+                actionEditable.textContent = shotData.action;
+            }
+
+            actionBlock.appendChild(actionLabel);
+            actionBlock.appendChild(actionEditable);
+            cardEl.appendChild(actionBlock);
+
+            // Event Listeners for Automatic Text Synthesis Realignment
+            setupEditable.addEventListener('input', updateStructuredBriefOutput);
+            actionEditable.addEventListener('input', updateStructuredBriefOutput);
+
+            return cardEl;
+        }
+
+        function appendChecklistItem(textString) {
+            const container = document.getElementById('checklist-insertion-point');
+            
+            const labelNode = document.createElement('label');
+            labelNode.className = 'check-item';
+            
+            const inputNode = document.createElement('input');
+            inputNode.type = 'checkbox';
+            
+            const labelText = document.createElement('span');
+            labelText.textContent = textString;
+            
+            labelNode.appendChild(inputNode);
+            labelNode.appendChild(labelText);
+            container.appendChild(labelNode);
+        }
+
+        function buildStoryboard() {
+            const subjectKind = operationalSubjectType || 'Product';
+            const textDescriptor = document.getElementById('input-detail').value.trim() || `Unspecified ${subjectKind}`;
+            const selectedMood = document.getElementById('select-mood').value;
+            const selectedLighting = document.getElementById('select-lighting').value;
+            const chosenAngle = document.getElementById('select-angle').value;
+            const chosenMotion = document.getElementById('select-motion').value;
+            const activeRatio = document.getElementById('select-ratio').value;
+            const constraintsText = document.getElementById('input-constraint').value.trim() || 'None';
+
+            clearCardContainer();
+            clearChecklistContainer();
+
+            // Construct 4 Card Component Nodes sequentially using safe DOM APIs
+            const sequenceBlueprint = sequentialArchetypes[subjectKind];
+            const cardsTarget = document.getElementById('cards-insertion-point');
+            
+            sequenceBlueprint.forEach((shotUnit, idx) => {
+                const builtCard = createShotCardNode(shotUnit, idx, activeRatio, chosenAngle, selectedLighting, chosenMotion);
+                cardsTarget.appendChild(builtCard);
+            });
+
+            // Construct System Safety Checklist Groups safely
+            const titleLabel = document.createElement('div');
+            titleLabel.className = 'label-style';
+            titleLabel.style.marginBottom = '6px';
+            titleLabel.textContent = 'Production Checklist';
+            document.getElementById('checklist-insertion-point').appendChild(titleLabel);
+
+            appendChecklistItem(`Verify framing boundary safely matches ${activeRatio.split(' ')[0]} lines.`);
+            appendChecklistItem(`Confirm spatial environment supports ${selectedLighting.toLowerCase()} parameters.`);
+            appendChecklistItem(`Verify hardware rigs allow clean execution of: ${chosenMotion.toLowerCase()}.`);
+            appendChecklistItem(`Enforce target constraint parameter: ${constraintsText}.`);
+
+            // Expose structural component panel grouping to screen interface layout
+            document.getElementById('output-workspace').classList.remove('hidden');
+            updateStructuredBriefOutput();
+
+            // Smooth scroll interface adjustment for mobile viewing parameters
+            document.getElementById('output-workspace').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function updateStructuredBriefOutput() {
+            const typeValue = operationalSubjectType || 'Product';
+            const detailValue = document.getElementById('input-detail').value.trim() || `Unspecified ${typeValue}`;
+            const moodValue = document.getElementById('select-mood').value;
+            const lightingValue = document.getElementById('select-lighting').value;
+            const ratioValue = document.getElementById('select-ratio').value;
+            const constraintValue = document.getElementById('input-constraint').value.trim() || 'None';
+
+            let trackingDocument = `=== PRODUCTION SHOT BRIEF ===\n`;
+            trackingDocument += `SUBJECT: ${detailValue} (${typeValue})\n`;
+            trackingDocument += `MOOD PROFILE: ${moodValue}\n`;
+            trackingDocument += `LIGHTING MAP: ${lightingValue}\n`;
+            trackingDocument += `ASPECT RATIO: ${ratioValue}\n`;
+            trackingDocument += `PRODUCTION LIMITS: ${constraintValue}\n\n`;
+            trackingDocument += `--- RUN OF SHOTS ---\n`;
+
+            for (let i = 0; i < 4; i++) {
+                const targetSetupNode = document.getElementById(`editable-setup-${i}`);
+                const targetActionNode = document.getElementById(`editable-action-${i}`);
+                
+                if (targetSetupNode && targetActionNode) {
+                    trackingDocument += `SHOT 0${i + 1}:\n`;
+                    trackingDocument += `  Setup:  ${targetSetupNode.textContent.trim()}\n`;
+                    trackingDocument += `  Action: ${targetActionNode.textContent.trim()}\n\n`;
+                }
+            }
+
+            document.getElementById('raw-brief-block').textContent = trackingDocument;
+        }
+
+        function copyBriefText() {
+            const textSource = document.getElementById('raw-brief-block').textContent;
+            navigator.clipboard.writeText(textSource).then(() => {
+                alert('Brief copied to clipboard.');
+            }).catch(() => {
+                alert('Unable to write text automatically to copy track.');
+            });
+        }
+
+        function exportBriefFile() {
+            const textSource = document.getElementById('raw-brief-block').textContent;
+            if (!textSource) {
+                alert('No compiled content available to export.');
+                return;
+            }
+            
+            const typeValue = operationalSubjectType || 'Product';
+            const detailValue = document.getElementById('input-detail').value.trim() || `Unspecified_${typeValue}`;
+            // Sanitize string to create a safe file name layout
+            const safeName = detailValue.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+            const fileName = `shot_brief_${safeName}.txt`;
+            
+            const blob = new Blob([textSource], { type: 'text/plain;charset=utf-8;' });
+            const link = document.createElement('a');
+            
+            if (navigator.msSaveBlob) { // IE 10+ Fallback
+                navigator.msSaveBlob(blob, fileName);
+            } else {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', fileName);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }
+        }
+
+        function resetWorkspace() {
+            document.getElementById('input-detail').value = '';
+            document.getElementById('input-constraint').value = '';
+            document.getElementById('select-mood').selectedIndex = 0;
+            document.getElementById('select-lighting').selectedIndex = 0;
+            document.getElementById('select-angle').selectedIndex = 0;
+            document.getElementById('select-motion').selectedIndex = 0;
+            document.getElementById('select-ratio').selectedIndex = 0;
+            
+            clearCardContainer();
+            clearChecklistContainer();
+            document.getElementById('raw-brief-block').textContent = '';
+            document.getElementById('output-workspace').classList.add('hidden');
+            
+            selectSubjectType('Product');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Run default profile registration on execution mount
+        selectSubjectType('Product');
+    </script>
+</body>
+</html>

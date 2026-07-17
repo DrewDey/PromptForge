@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Cover Brief Studio</title>
+<style>
+  :root {
+    --ink: #0F0E0D;
+    --paper: #EDE8DF;
+    --gold: #C8A84B;
+    --slate: #4A6B8A;
+    --coral: #D4725A;
+    --mid: #4A4844;
+    --dim: #2A2826;
+    --surface: #1A1816;
+    --radius: 4px;
+    --mono: 'Courier New', Courier, monospace;
+    --serif: Georgia, 'Times New Roman', serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.5;
+    min-height: 100dvh;
+    padding-bottom: 40px;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid #333;
+    padding: 14px 16px 10px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .header h1 {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: normal;
+  }
+  .header span {
+    font-size: 10px;
+    color: var(--mid);
+    letter-spacing: 0.1em;
+  }
+
+  /* ── SECTIONS ── */
+  .section {
+    border-bottom: 1px solid #222;
+    padding: 16px;
+  }
+  .section-label {
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--mid);
+    margin-bottom: 12px;
+  }
+
+  /* ── LIVE CANVAS ── */
+  #canvas-wrap {
+    padding: 16px;
+    border-bottom: 1px solid #222;
+  }
+  #canvas {
+    width: 100%;
+    aspect-ratio: 1;
+    background: #111;
+    border-radius: var(--radius);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+  }
+  .canvas-bg   { position: absolute; inset: 0; transition: background 0.4s; }
+  .canvas-shapes { position: absolute; inset: 0; pointer-events: none; }
+  .canvas-safe   { position: absolute; inset: 0; pointer-events: none; }
+  .safe-ring {
+    position: absolute;
+    border: 1px dashed rgba(255,255,255,0.18);
+    border-radius: 2px;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .safe-ring.bleed      { inset: 0; }
+  .safe-ring.title-safe { inset: 7%; }
+  .safe-ring.core-safe  { inset: 14%; }
+  .canvas-text {
+    position: absolute;
+    width: 86%;
+    text-align: center;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .canvas-title {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(16px, 5.5vw, 38px);
+    line-height: 1.1;
+    word-break: break-word;
+    color: #fff;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.6);
+    transition: color 0.3s;
+  }
+  .canvas-artist {
+    font-family: var(--mono);
+    font-size: clamp(8px, 2.5vw, 16px);
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.72);
+    margin-top: 6px;
+    transition: color 0.3s;
+  }
+  .canvas-mood-bar {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    display: flex;
+    height: 4px;
+  }
+  .mood-seg { flex: 1; transition: background 0.4s; }
+  .canvas-shape-indicator {
+    position: absolute;
+    opacity: 0.5;
+    pointer-events: none;
+    transition: all 0.4s;
+    line-height: 1;
+  }
+
+  /* ── FORM FIELDS ── */
+  .field-row  { display: flex; flex-direction: column; gap: 10px; }
+  .field-group { display: flex; flex-direction: column; gap: 5px; }
+  .field-group label {
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--mid);
+  }
+  input[type="text"], select, textarea {
+    background: var(--dim);
+    border: 1px solid #333;
+    border-radius: var(--radius);
+    color: var(--paper);
+    font-family: var(--mono);
+    font-size: 14px;
+    padding: 9px 11px;
+    width: 100%;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  input[type="text"]:focus, select:focus, textarea:focus { border-color: var(--gold); }
+  select option { background: #1a1a1a; }
+  textarea { resize: vertical; min-height: 64px; }
+
+  /* ── MOOD CHIPS ── */
+  .chips-grid { display: flex; flex-wrap: wrap; gap: 7px; }
+  .chip {
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid #444;
+    background: var(--dim);
+    color: #aaa;
+    font-family: var(--mono);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    letter-spacing: 0.06em;
+  }
+  .chip.active { border-color: var(--gold); background: rgba(200,168,75,0.15); color: var(--gold); }
+  .chip-custom-row { display: flex; gap: 7px; margin-top: 8px; }
+  .chip-custom-row input { flex: 1; font-size: 12px; padding: 6px 10px; }
+  .btn-small {
+    background: var(--dim);
+    border: 1px solid #444;
+    border-radius: var(--radius);
+    color: var(--paper);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 6px 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .btn-small:active { background: #333; }
+  .btn-small.gold { border-color: var(--gold); color: var(--gold); }
+
+  /* ── PALETTE ── */
+  .palette-swatches { display: flex; flex-direction: column; gap: 10px; }
+  .swatch-row { display: flex; gap: 8px; align-items: center; }
+  .swatch-preview {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 2px solid #444;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: border-color 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .swatch-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+  .swatch-role { font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--mid); }
+  .swatch-hex  { font-size: 13px; letter-spacing: 0.1em; color: var(--paper); }
+  .swatch-remove {
+    background: none; border: none; color: #555;
+    font-size: 18px; cursor: pointer; padding: 4px 6px; line-height: 1;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .swatch-remove:active { color: var(--coral); }
+  .color-picker-row { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+  input[type="color"] {
+    width: 44px; height: 36px;
+    border: 1px solid #444; border-radius: var(--radius);
+    background: var(--dim); cursor: pointer; padding: 2px;
+    -webkit-appearance: none; appearance: none;
+    flex-shrink: 0;
+  }
+  .color-role-select { flex: 1; font-size: 12px; padding: 7px 10px; }
+
+  /* ── FOCAL SHAPES ── */
+  .shapes-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .shape-btn {
+    aspect-ratio: 1;
+    background: var(--dim);
+    border: 1px solid #333;
+    border-radius: var(--radius);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 6px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .shape-btn.active { border-color: var(--slate); background: rgba(74,107,138,0.18); }
+  .shape-icon  { font-size: 22px; line-height: 1; }
+  .shape-label { font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; color: #777; text-align: center; }
+  .shape-btn.active .shape-label { color: var(--slate); }
+  .shape-position-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .pos-btn {
+    flex: 1; min-width: 60px;
+    padding: 8px 4px;
+    background: var(--dim); border: 1px solid #333; border-radius: var(--radius);
+    color: #888; font-family: var(--mono); font-size: 9px;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    cursor: pointer; text-align: center;
+    -webkit-tap-highlight-color: transparent;
+    transition: all 0.15s;
+  }
+  .pos-btn.active { border-color: var(--slate); color: var(--slate); background: rgba(74,107,138,0.15); }
+
+  /* ── CROP ZONES ── */
+  .zone-rows { display: flex; flex-direction: column; gap: 8px; }
+  .zone-row  { display: flex; align-items: center; gap: 10px; }
+  .zone-toggle { position: relative; width: 38px; height: 22px; flex-shrink: 0; }
+  .zone-toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .zone-toggle-track {
+    position: absolute; inset: 0;
+    background: #333; border-radius: 11px; cursor: pointer; transition: background 0.2s;
+  }
+  .zone-toggle input:checked + .zone-toggle-track { background: var(--slate); }
+  .zone-toggle-thumb {
+    position: absolute; top: 3px; left: 3px;
+    width: 16px; height: 16px;
+    background: #aaa; border-radius: 50%;
+    transition: transform 0.2s, background 0.2s;
+    pointer-events: none;
+  }
+  .zone-toggle input:checked ~ .zone-toggle-thumb { transform: translateX(16px); background: #fff; }
+  .zone-label { font-size: 12px; color: #bbb; }
+  .zone-sub   { font-size: 10px; color: #555; }
+
+  /* ── BRIEF OUTPUT ── */
+  .brief-box {
+    background: var(--dim);
+    border: 1px solid #333;
+    border-radius: var(--radius);
+    padding: 14px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.7;
+    color: #ccc;
+    white-space: pre-wrap;
+    min-height: 120px;
+    word-break: break-word;
+  }
+
+  /* ── ACTION BUTTONS ── */
+  .brief-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  /* Copy — full gold, top-left cell */
+  .btn-copy {
+    grid-column: 1;
+    grid-row: 1;
+    padding: 13px 6px;
+    background: var(--gold);
+    border: none;
+    border-radius: var(--radius);
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-weight: bold;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: opacity 0.15s, background 0.2s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .btn-copy:active { opacity: 0.8; }
+  .btn-copy.ok { background: #5a9e5a; color: #fff; }
+  .btn-copy.fail { background: var(--coral); color: #fff; }
+
+  /* Download — outlined slate, top-right cell */
+  .btn-dl {
+    grid-column: 2;
+    grid-row: 1;
+    padding: 13px 6px;
+    background: transparent;
+    border: 1px solid var(--slate);
+    border-radius: var(--radius);
+    color: var(--slate);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .btn-dl:active { background: rgba(74,107,138,0.18); }
+  .btn-dl.ok { border-color: #5a9e5a; color: #5a9e5a; }
+
+  /* Reset — quiet, full-width second row */
+  .btn-reset {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    padding: 10px 14px;
+    background: transparent;
+    border: 1px solid #444;
+    border-radius: var(--radius);
+    color: #666;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-reset:active { color: var(--coral); border-color: var(--coral); }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: #111; }
+  ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Cover Brief Studio</h1>
+  <span>no images &mdash; pure brief</span>
+</div>
+
+<!-- LIVE CANVAS -->
+<div id="canvas-wrap">
+  <div class="section-label" style="padding:0 0 10px 0;">Live Preview</div>
+  <div id="canvas">
+    <div class="canvas-bg"     id="canvasBg"></div>
+    <div class="canvas-shapes" id="canvasShapes"></div>
+    <div class="canvas-safe"   id="canvasSafe">
+      <div class="safe-ring bleed"      id="safeBleed"></div>
+      <div class="safe-ring title-safe" id="safeTitleSafe" style="opacity:0"></div>
+      <div class="safe-ring core-safe"  id="safeCoreSafe"  style="opacity:0"></div>
+    </div>
+    <div class="canvas-text" id="canvasTextBlock">
+      <div class="canvas-title"  id="canvasTitle">Album Title</div>
+      <div class="canvas-artist" id="canvasArtist">Artist Name</div>
+    </div>
+    <div class="canvas-mood-bar" id="canvasMoodBar"></div>
+  </div>
+</div>
+
+<!-- TITLE + ARTIST -->
+<div class="section">
+  <div class="section-label">Title &amp; Artist</div>
+  <div class="field-row">
+    <div class="field-group">
+      <label for="inputTitle">Album Title</label>
+      <input type="text" id="inputTitle" placeholder="e.g. Glass Half-Life" maxlength="60">
+    </div>
+    <div class="field-group">
+      <label for="inputArtist">Artist / Act</label>
+      <input type="text" id="inputArtist" placeholder="e.g. Mira Voss" maxlength="50">
+    </div>
+    <div class="field-group">
+      <label for="inputGenre">Genre / Subgenre</label>
+      <input type="text" id="inputGenre" placeholder="e.g. ambient post-rock" maxlength="60">
+    </div>
+    <div class="field-group">
+      <label for="selectTextLayout">Text Layout</label>
+      <select id="selectTextLayout">
+        <option value="center-mid">Center — Middle</option>
+        <option value="center-top">Center — Top</option>
+        <option value="center-bottom">Center — Bottom</option>
+        <option value="left-top">Left — Top</option>
+        <option value="left-bottom">Left — Bottom</option>
+        <option value="right-top">Right — Top</option>
+        <option value="right-bottom">Right — Bottom</option>
+        <option value="split">Split (Title top, Artist bottom)</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- MOOD CHIPS -->
+<div class="section">
+  <div class="section-label">Mood &amp; Feeling</div>
+  <div class="chips-grid" id="moodChips"></div>
+  <div class="chip-custom-row">
+    <input type="text" id="customMoodInput" placeholder="add your own mood..." maxlength="24">
+    <button class="btn-small" id="addCustomMood">+ Add</button>
+  </div>
+</div>
+
+<!-- PALETTE -->
+<div class="section">
+  <div class="section-label">Colour Palette</div>
+  <div class="palette-swatches" id="paletteSwatches"></div>
+  <div class="color-picker-row">
+    <input type="color" id="colorPicker" value="#4A6B8A">
+    <select id="colorRole" class="color-role-select">
+      <option value="Background">Background</option>
+      <option value="Dominant">Dominant</option>
+      <option value="Accent">Accent</option>
+      <option value="Text / Lettering">Text / Lettering</option>
+      <option value="Shadow / Depth">Shadow / Depth</option>
+      <option value="Highlight">Highlight</option>
+    </select>
+    <button class="btn-small gold" id="addSwatch">+ Add</button>
+  </div>
+</div>
+
+<!-- FOCAL SHAPES -->
+<div class="section">
+  <div class="section-label">Focal Shape / Subject</div>
+  <div class="shapes-grid" id="shapesGrid"></div>
+  <div class="shape-position-row" id="shapePositionRow"></div>
+</div>
+
+<!-- CROP SAFE ZONES -->
+<div class="section">
+  <div class="section-label">Show Crop-Safe Zones</div>
+  <div class="zone-rows">
+    <div class="zone-row">
+      <label class="zone-toggle">
+        <input type="checkbox" id="zoneBleed" checked>
+        <div class="zone-toggle-track"></div>
+        <div class="zone-toggle-thumb"></div>
+      </label>
+      <div>
+        <div class="zone-label">Full Bleed</div>
+        <div class="zone-sub">Outer edge — nothing critical here</div>
+      </div>
+    </div>
+    <div class="zone-row">
+      <label class="zone-toggle">
+        <input type="checkbox" id="zoneTitleSafe">
+        <div class="zone-toggle-track"></div>
+        <div class="zone-toggle-thumb"></div>
+      </label>
+      <div>
+        <div class="zone-label">Title Safe (7% inset)</div>
+        <div class="zone-sub">Streaming thumbnail crop boundary</div>
+      </div>
+    </div>
+    <div class="zone-row">
+      <label class="zone-toggle">
+        <input type="checkbox" id="zoneCoreSafe">
+        <div class="zone-toggle-track"></div>
+        <div class="zone-toggle-thumb"></div>
+      </label>
+      <div>
+        <div class="zone-label">Core Safe (14% inset)</div>
+        <div class="zone-sub">Always-visible zone — focal subject here</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- REFERENCE NOTES -->
+<div class="section">
+  <div class="section-label">Reference Notes</div>
+  <textarea id="inputNotes" placeholder="Inspirations, reference artists, era, texture notes, what to avoid..."></textarea>
+</div>
+
+<!-- BRIEF OUTPUT -->
+<div class="section">
+  <div class="section-label">Visual Brief</div>
+  <div class="brief-box" id="briefOutput" aria-label="Generated visual brief" role="region"></div>
+  <div class="brief-actions">
+    <button class="btn-copy" id="copyBtn">Copy Brief</button>
+    <button class="btn-dl"   id="dlBtn">Download .txt</button>
+    <button class="btn-reset" id="resetBtn">Reset</button>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+var MOOD_PRESETS = [
+  'Melancholic','Euphoric','Haunted','Raw','Crystalline','Warm','Cold','Dreamy',
+  'Abrasive','Tender','Psychedelic','Sparse','Dense','Nostalgic','Futuristic',
+  'Intimate','Vast','Fractured','Cinematic','Underground'
+];
+
+var SHAPES = [
+  { id:'circle',   icon:'◯',  label:'Circle'   },
+  { id:'triangle', icon:'△',  label:'Triangle' },
+  { id:'square',   icon:'▭',  label:'Rectangle'},
+  { id:'arc',      icon:'⌒',  label:'Arc'      },
+  { id:'figure',   icon:'♟',  label:'Figure'   },
+  { id:'horizon',  icon:'━',  label:'Horizon'  },
+  { id:'scatter',  icon:'⁘',  label:'Scatter'  },
+  { id:'void',     icon:'◉',  label:'Void'     },
+  { id:'organic',  icon:'❋',  label:'Organic'  },
+  { id:'grid',     icon:'⊞',  label:'Grid'     },
+  { id:'spiral',   icon:'◍',  label:'Spiral'   },
+  { id:'none',     icon:'—',  label:'No Shape' }
+];
+
+var POSITIONS = [
+  'Top-Left','Top-Center','Top-Right',
+  'Center',
+  'Bottom-Left','Bottom-Center','Bottom-Right'
+];
+
+var MOOD_COLORS = ['#C8A84B','#4A6B8A','#D4725A','#7A6B8A','#6BAA6B','#8A4A4A'];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+var state = {
+  title:'', artist:'', genre:'',
+  textLayout:'center-mid',
+  moods:[],
+  palette:[],
+  activeShape: null,
+  shapePos: 'Center',
+  zones: { bleed:true, titleSafe:false, coreSafe:false },
+  notes:''
+};
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function hexAlpha(hex, alpha) {
+  var r = parseInt(hex.slice(1,3),16);
+  var g = parseInt(hex.slice(3,5),16);
+  var b = parseInt(hex.slice(5,7),16);
+  return 'rgba('+r+','+g+','+b+','+alpha+')';
+}
+
+function esc(str) {
+  // Returns plain text — used for textContent only, so XSS is not a concern,
+  // but we strip control chars to keep the .txt download clean.
+  return String(str).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
+}
+
+// ── BRIEF TEXT ────────────────────────────────────────────────────────────────
+function buildBriefText() {
+  var L = [];
+  L.push('=== ALBUM COVER VISUAL BRIEF ===');
+  L.push('');
+
+  if (state.title)  L.push('TITLE    ' + state.title);
+  if (state.artist) L.push('ARTIST   ' + state.artist);
+  if (state.genre)  L.push('GENRE    ' + state.genre);
+  if (state.title || state.artist || state.genre) L.push('');
+
+  if (state.moods.length > 0) {
+    L.push('MOOD     ' + state.moods.join(' · '));
+    L.push('');
+  }
+
+  if (state.palette.length > 0) {
+    L.push('PALETTE');
+    state.palette.forEach(function(sw) {
+      var role = sw.role;
+      while (role.length < 20) role += ' ';
+      L.push('  ' + role + ' ' + sw.hex.toUpperCase());
+    });
+    L.push('');
+  }
+
+  if (state.activeShape && state.activeShape !== 'none') {
+    var sh = SHAPES.filter(function(s){ return s.id === state.activeShape; })[0];
+    L.push('FOCAL SHAPE   ' + (sh ? sh.label : state.activeShape));
+    L.push('POSITION      ' + state.shapePos);
+    L.push('');
+  }
+
+  var textLabels = {
+    'center-mid':    'Center · Vertical middle',
+    'center-top':    'Center · Top',
+    'center-bottom': 'Center · Bottom',
+    'left-top':      'Left-aligned · Top',
+    'left-bottom':   'Left-aligned · Bottom',
+    'right-top':     'Right-aligned · Top',
+    'right-bottom':  'Right-aligned · Bottom',
+    'split':         'Split — title top, artist bottom'
+  };
+  L.push('TEXT LAYOUT   ' + (textLabels[state.textLayout] || state.textLayout));
+  L.push('');
+
+  var zones = [];
+  if (state.zones.bleed)     zones.push('Full bleed');
+  if (state.zones.titleSafe) zones.push('Title safe (7% inset — streaming thumbnail)');
+  if (state.zones.coreSafe)  zones.push('Core safe (14% inset — focal content here)');
+  if (zones.length > 0) {
+    L.push('CROP ZONES');
+    zones.forEach(function(z){ L.push('  · ' + z); });
+    L.push('');
+  }
+
+  if (state.notes.trim()) {
+    L.push('NOTES');
+    state.notes.trim().split('\n').forEach(function(l){ L.push('  ' + l); });
+    L.push('');
+  }
+
+  L.push('================================');
+  return L.join('\n');
+}
+
+// ── UPDATE BRIEF DISPLAY ──────────────────────────────────────────────────────
+function updateBrief() {
+  document.getElementById('briefOutput').textContent = buildBriefText();
+}
+
+// ── COPY ──────────────────────────────────────────────────────────────────────
+document.getElementById('copyBtn').addEventListener('click', function() {
+  var btn = this;
+  var text = buildBriefText();
+
+  function flash(ok) {
+    btn.textContent = ok ? 'Copied \u2713' : 'Select & copy';
+    btn.classList.add(ok ? 'ok' : 'fail');
+    setTimeout(function() {
+      btn.textContent = 'Copy Brief';
+      btn.classList.remove('ok', 'fail');
+    }, 2000);
+  }
+
+  // Method 1: Clipboard API (requires secure context: https or localhost)
+  if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+    navigator.clipboard.writeText(text).then(function() {
+      flash(true);
+    }).catch(function() {
+      legacyCopy(text, flash);
+    });
+    return;
+  }
+
+  // Method 2: execCommand fallback (works on file://, older Safari, non-secure)
+  legacyCopy(text, flash);
+});
+
+function legacyCopy(text, callback) {
+  // Element must be rendered and have non-zero dimensions for mobile browsers
+  // to honour the selection. We keep it in the viewport, barely visible.
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.cssText = [
+    'position:fixed',
+    'top:0',
+    'left:0',
+    'width:2px',
+    'height:2px',
+    'padding:0',
+    'border:none',
+    'outline:none',
+    'box-shadow:none',
+    'background:transparent',
+    'opacity:0.01',           // visible enough for browser engine, invisible to user
+    'font-size:16px',         // prevents iOS auto-zoom
+    'z-index:9999'
+  ].join(';');
+  document.body.appendChild(ta);
+
+  // iOS Safari requires a specific dance: blur focus, select, copy
+  var prevFocus = document.activeElement;
+  ta.focus();
+  ta.select();
+  ta.setSelectionRange(0, text.length); // belt-and-braces for mobile
+
+  var ok = false;
+  try {
+    ok = document.execCommand('copy');
+  } catch(e) {
+    ok = false;
+  }
+
+  document.body.removeChild(ta);
+  if (prevFocus && typeof prevFocus.focus === 'function') { try { prevFocus.focus(); } catch(e){} }
+
+  callback(ok);
+}
+
+// ── DOWNLOAD ─────────────────────────────────────────────────────────────────
+document.getElementById('dlBtn').addEventListener('click', function() {
+  var btn = this;
+  var text = buildBriefText();
+
+  // Build a filename from title/artist, falling back gracefully
+  var base = ((state.title || 'cover') + (state.artist ? '-' + state.artist : ''))
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 48) || 'cover-brief';
+  var filename = base + '-brief.txt';
+
+  try {
+    var blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href     = url;
+    a.download = filename;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    // Slight delay before cleanup so mobile browsers have time to initiate download
+    setTimeout(function() {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 1000);
+    btn.textContent = 'Saved \u2713';
+    btn.classList.add('ok');
+    setTimeout(function() {
+      btn.textContent = 'Download .txt';
+      btn.classList.remove('ok');
+    }, 2000);
+  } catch(e) {
+    // Last-resort: open in new tab so user can Save As
+    var w = window.open('', '_blank');
+    if (w) {
+      w.document.write('<pre style="font-family:monospace;white-space:pre-wrap">' +
+        text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') +
+        '</pre>');
+      w.document.close();
+    }
+  }
+});
+
+// ── MOOD CHIPS ────────────────────────────────────────────────────────────────
+function renderMoodChips() {
+  var container = document.getElementById('moodChips');
+  container.innerHTML = '';
+  var custom = state.moods.filter(function(m){ return MOOD_PRESETS.indexOf(m) === -1; });
+  var all = MOOD_PRESETS.concat(custom);
+  all.forEach(function(mood) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'chip' + (state.moods.indexOf(mood) !== -1 ? ' active' : '');
+    btn.textContent = mood;          // textContent: user data stays inert
+    btn.addEventListener('click', function(){ toggleMood(mood); });
+    container.appendChild(btn);
+  });
+}
+
+function toggleMood(mood) {
+  var idx = state.moods.indexOf(mood);
+  if (idx !== -1) { state.moods.splice(idx, 1); }
+  else { state.moods.push(mood); }
+  renderMoodChips();
+  updateAll();
+}
+
+document.getElementById('addCustomMood').addEventListener('click', function() {
+  var val = document.getElementById('customMoodInput').value.trim();
+  if (val && state.moods.indexOf(val) === -1) {
+    state.moods.push(val);
+    renderMoodChips();
+    updateAll();
+  }
+  document.getElementById('customMoodInput').value = '';
+});
+document.getElementById('customMoodInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); document.getElementById('addCustomMood').click(); }
+});
+
+// ── PALETTE ───────────────────────────────────────────────────────────────────
+function renderPalette() {
+  var container = document.getElementById('paletteSwatches');
+  container.innerHTML = '';
+  state.palette.forEach(function(sw, i) {
+    var row = document.createElement('div');
+    row.className = 'swatch-row';
+
+    var dot = document.createElement('div');
+    dot.className = 'swatch-preview';
+    dot.style.background = sw.hex;
+    dot.title = 'Preview as background';
+    dot.addEventListener('click', function() {
+      if (sw.role === 'Background') {
+        document.getElementById('canvasBg').style.background = sw.hex;
+      }
+    });
+
+    var info = document.createElement('div');
+    info.className = 'swatch-info';
+    var roleEl = document.createElement('div');
+    roleEl.className = 'swatch-role';
+    roleEl.textContent = sw.role;          // textContent
+    var hexEl = document.createElement('div');
+    hexEl.className = 'swatch-hex';
+    hexEl.textContent = sw.hex.toUpperCase(); // textContent
+    info.appendChild(roleEl);
+    info.appendChild(hexEl);
+
+    var rm = document.createElement('button');
+    rm.type = 'button';
+    rm.className = 'swatch-remove';
+    rm.textContent = '\u00d7';
+    rm.setAttribute('aria-label', 'Remove ' + sw.role + ' swatch');
+    rm.addEventListener('click', function() {
+      state.palette.splice(i, 1);
+      renderPalette(); updateCanvas(); updateBrief();
+    });
+
+    row.appendChild(dot);
+    row.appendChild(info);
+    row.appendChild(rm);
+    container.appendChild(row);
+  });
+}
+
+document.getElementById('addSwatch').addEventListener('click', function() {
+  state.palette.push({
+    hex:  document.getElementById('colorPicker').value,
+    role: document.getElementById('colorRole').value
+  });
+  renderPalette(); updateCanvas(); updateBrief();
+});
+
+// ── SHAPES ────────────────────────────────────────────────────────────────────
+function renderShapes() {
+  var grid = document.getElementById('shapesGrid');
+  grid.innerHTML = '';
+  SHAPES.forEach(function(s) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'shape-btn' + (state.activeShape === s.id ? ' active' : '');
+    var icon = document.createElement('span');
+    icon.className = 'shape-icon';
+    icon.textContent = s.icon;
+    var lbl = document.createElement('span');
+    lbl.className = 'shape-label';
+    lbl.textContent = s.label;
+    btn.appendChild(icon);
+    btn.appendChild(lbl);
+    btn.addEventListener('click', function() {
+      state.activeShape = (state.activeShape === s.id) ? null : s.id;
+      renderShapes(); updateCanvas(); updateBrief();
+    });
+    grid.appendChild(btn);
+  });
+
+  var posRow = document.getElementById('shapePositionRow');
+  posRow.innerHTML = '';
+  POSITIONS.forEach(function(p) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'pos-btn' + (state.shapePos === p ? ' active' : '');
+    btn.textContent = p;
+    btn.addEventListener('click', function() {
+      state.shapePos = p;
+      renderShapes(); updateCanvas(); updateBrief();
+    });
+    posRow.appendChild(btn);
+  });
+}
+
+// ── ZONES ─────────────────────────────────────────────────────────────────────
+['zoneBleed','zoneTitleSafe','zoneCoreSafe'].forEach(function(id) {
+  document.getElementById(id).addEventListener('change', function() {
+    var map = { zoneBleed:'bleed', zoneTitleSafe:'titleSafe', zoneCoreSafe:'coreSafe' };
+    state.zones[map[id]] = this.checked;
+    updateZones();
+  });
+});
+
+function updateZones() {
+  document.getElementById('safeBleed').style.opacity     = state.zones.bleed     ? 1 : 0;
+  document.getElementById('safeTitleSafe').style.opacity = state.zones.titleSafe ? 1 : 0;
+  document.getElementById('safeCoreSafe').style.opacity  = state.zones.coreSafe  ? 1 : 0;
+}
+
+// ── TEXT INPUTS ───────────────────────────────────────────────────────────────
+['inputTitle','inputArtist','inputGenre'].forEach(function(id) {
+  var keyMap = { inputTitle:'title', inputArtist:'artist', inputGenre:'genre' };
+  document.getElementById(id).addEventListener('input', function() {
+    state[keyMap[id]] = this.value;
+    updateAll();
+  });
+});
+document.getElementById('selectTextLayout').addEventListener('change', function() {
+  state.textLayout = this.value;
+  updateCanvas(); updateBrief();
+});
+document.getElementById('inputNotes').addEventListener('input', function() {
+  state.notes = this.value;
+  updateBrief();
+});
+
+// ── CANVAS UPDATE ─────────────────────────────────────────────────────────────
+function updateCanvas() {
+  // Background
+  var bgSwatch = state.palette.filter(function(s){ return s.role === 'Background'; })[0];
+  var bg = document.getElementById('canvasBg');
+  bg.style.background = bgSwatch ? bgSwatch.hex
+    : (state.palette.length ? state.palette[0].hex : '#111');
+
+  // Text
+  var textSwatch = state.palette.filter(function(s){ return s.role === 'Text / Lettering'; })[0];
+  var ctEl = document.getElementById('canvasTitle');
+  var caEl = document.getElementById('canvasArtist');
+  ctEl.style.color = textSwatch ? textSwatch.hex : '#fff';
+  caEl.style.color = textSwatch ? hexAlpha(textSwatch.hex, 0.72) : 'rgba(255,255,255,0.72)';
+  ctEl.textContent = state.title  || 'Album Title';    // textContent: inert
+  caEl.textContent = state.artist || 'Artist Name';    // textContent: inert
+
+  // Text layout
+  var tb = document.getElementById('canvasTextBlock');
+  // Reset inline styles then re-apply
+  tb.removeAttribute('style');
+  tb.style.position      = 'absolute';
+  tb.style.zIndex        = '10';
+  tb.style.pointerEvents = 'none';
+  tb.style.width         = '86%';
+  tb.style.textAlign     = 'center';
+  caEl.style.position    = '';  // reset split leftover
+
+  var L = state.textLayout;
+  if (L === 'center-mid')    { tb.style.top='50%'; tb.style.left='50%'; tb.style.transform='translate(-50%,-50%)'; }
+  else if (L === 'center-top')    { tb.style.top='8%'; tb.style.left='50%'; tb.style.transform='translateX(-50%)'; }
+  else if (L === 'center-bottom') { tb.style.bottom='8%'; tb.style.left='50%'; tb.style.transform='translateX(-50%)'; }
+  else if (L === 'left-top')      { tb.style.top='8%'; tb.style.left='7%'; tb.style.textAlign='left'; tb.style.width='80%'; }
+  else if (L === 'left-bottom')   { tb.style.bottom='8%'; tb.style.left='7%'; tb.style.textAlign='left'; tb.style.width='80%'; }
+  else if (L === 'right-top')     { tb.style.top='8%'; tb.style.right='7%'; tb.style.textAlign='right'; tb.style.width='80%'; }
+  else if (L === 'right-bottom')  { tb.style.bottom='8%'; tb.style.right='7%'; tb.style.textAlign='right'; tb.style.width='80%'; }
+  else if (L === 'split') {
+    tb.style.top='8%'; tb.style.left='50%'; tb.style.transform='translateX(-50%)';
+    // Artist floats to bottom independently
+    caEl.style.position = 'fixed'; // will be overridden by canvas overflow:hidden
+  }
+
+  // Shape indicator
+  var sc = document.getElementById('canvasShapes');
+  sc.innerHTML = '';
+  if (state.activeShape && state.activeShape !== 'none') {
+    var sh = SHAPES.filter(function(s){ return s.id === state.activeShape; })[0];
+    if (sh) {
+      var ind = document.createElement('div');
+      ind.className = 'canvas-shape-indicator';
+      ind.style.fontSize = 'clamp(44px, 18vw, 110px)';
+
+      var posMap = {
+        'Top-Left':      { top:'8%',   left:'8%' },
+        'Top-Center':    { top:'8%',   left:'50%',  transform:'translateX(-50%)' },
+        'Top-Right':     { top:'8%',   right:'8%' },
+        'Center':        { top:'50%',  left:'50%',  transform:'translate(-50%,-50%)' },
+        'Bottom-Left':   { bottom:'12%', left:'8%' },
+        'Bottom-Center': { bottom:'12%', left:'50%', transform:'translateX(-50%)' },
+        'Bottom-Right':  { bottom:'12%', right:'8%' }
+      };
+      var pos = posMap[state.shapePos] || posMap['Center'];
+      Object.keys(pos).forEach(function(k){ ind.style[k] = pos[k]; });
+
+      var acc = state.palette.filter(function(s){ return s.role==='Accent'; })[0]
+             || state.palette.filter(function(s){ return s.role==='Dominant'; })[0];
+      ind.style.color = acc ? hexAlpha(acc.hex, 0.45) : 'rgba(255,255,255,0.22)';
+      ind.textContent = sh.icon;      // textContent
+      sc.appendChild(ind);
+    }
+  }
+
+  // Mood bar
+  var mb = document.getElementById('canvasMoodBar');
+  mb.innerHTML = '';
+  if (state.moods.length > 0) {
+    state.moods.slice(0,6).forEach(function(m, i) {
+      var seg = document.createElement('div');
+      seg.className = 'mood-seg';
+      seg.style.background = MOOD_COLORS[i % MOOD_COLORS.length];
+      mb.appendChild(seg);
+    });
+  }
+}
+
+// ── RESET ─────────────────────────────────────────────────────────────────────
+document.getElementById('resetBtn').addEventListener('click', function() {
+  if (!confirm('Reset everything?')) return;
+  state = {
+    title:'', artist:'', genre:'',
+    textLayout:'center-mid',
+    moods:[], palette:[],
+    activeShape: null, shapePos: 'Center',
+    zones: { bleed:true, titleSafe:false, coreSafe:false },
+    notes:''
+  };
+  document.getElementById('inputTitle').value         = '';
+  document.getElementById('inputArtist').value        = '';
+  document.getElementById('inputGenre').value         = '';
+  document.getElementById('inputNotes').value         = '';
+  document.getElementById('selectTextLayout').value   = 'center-mid';
+  document.getElementById('zoneBleed').checked        = true;
+  document.getElementById('zoneTitleSafe').checked    = false;
+  document.getElementById('zoneCoreSafe').checked     = false;
+  init();
+});
+
+// ── COMBINED UPDATE ───────────────────────────────────────────────────────────
+function updateAll() { updateCanvas(); updateBrief(); }
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+function init() {
+  renderMoodChips();
+  renderPalette();
+  renderShapes();
+  updateAll();
+  updateZones();
+}
+
+init();
+</script>
+</body>
+</html>

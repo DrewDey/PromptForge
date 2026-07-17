@@ -1,0 +1,1247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Product Shot List Planner</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #172033;
+    --panel-2: #1d2942;
+    --card: #f8fafc;
+    --ink: #101827;
+    --muted: #667085;
+    --line: #d7deea;
+    --soft: #edf2f8;
+    --accent: #3b82f6;
+    --accent-2: #14b8a6;
+    --warn: #f59e0b;
+    --danger: #ef4444;
+    --good: #10b981;
+    --shadow: 0 18px 40px rgba(3, 7, 18, .28);
+    --radius: 22px;
+    --radius-sm: 14px;
+    --font: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    min-width: 0;
+  }
+
+  body {
+    margin: 0;
+    min-width: 0;
+    background:
+      radial-gradient(circle at top left, rgba(20, 184, 166, .24), transparent 30rem),
+      radial-gradient(circle at top right, rgba(59, 130, 246, .24), transparent 28rem),
+      var(--bg);
+    color: var(--card);
+    font-family: var(--font);
+    line-height: 1.45;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  .app {
+    width: min(1180px, 100%);
+    margin: 0 auto;
+    padding: 18px;
+  }
+
+  .hero {
+    display: grid;
+    gap: 14px;
+    padding: 24px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    background: rgba(15, 23, 42, .66);
+    backdrop-filter: blur(10px);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+
+  .kicker {
+    width: fit-content;
+    max-width: 100%;
+    padding: 7px 11px;
+    border-radius: 999px;
+    color: #dffcff;
+    background: rgba(20, 184, 166, .16);
+    border: 1px solid rgba(20, 184, 166, .35);
+    font-size: .82rem;
+    overflow-wrap: anywhere;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(2rem, 6vw, 4.6rem);
+    line-height: .94;
+    letter-spacing: normal;
+  }
+
+  h1 span {
+    display: block;
+  }
+
+  .hero p {
+    max-width: 760px;
+    margin: 0;
+    color: #cbd5e1;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 18px;
+    margin-top: 18px;
+    align-items: start;
+  }
+
+  .panel {
+    min-width: 0;
+    border-radius: var(--radius);
+    border: 1px solid rgba(255, 255, 255, .12);
+    background: rgba(248, 250, 252, .98);
+    color: var(--ink);
+    box-shadow: var(--shadow);
+  }
+
+  .panel.dark {
+    background: rgba(23, 32, 51, .9);
+    color: var(--card);
+  }
+
+  .panel-header {
+    display: grid;
+    gap: 6px;
+    padding: 18px 18px 0;
+  }
+
+  .panel-header h2 {
+    margin: 0;
+    font-size: 1.18rem;
+  }
+
+  .panel-header p {
+    margin: 0;
+    color: var(--muted);
+    font-size: .94rem;
+  }
+
+  .dark .panel-header p {
+    color: #cbd5e1;
+  }
+
+  .body {
+    display: grid;
+    gap: 14px;
+    padding: 18px;
+  }
+
+  .field {
+    display: grid;
+    gap: 7px;
+    min-width: 0;
+  }
+
+  label {
+    font-size: .82rem;
+    color: #475467;
+    font-weight: 750;
+  }
+
+  .dark label {
+    color: #dbeafe;
+  }
+
+  input,
+  textarea,
+  select {
+    width: 100%;
+    max-width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 12px 13px;
+    background: #fff;
+    color: var(--ink);
+    outline: none;
+    min-width: 0;
+  }
+
+  textarea {
+    min-height: 86px;
+    resize: vertical;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #98a2b3;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    border-color: rgba(59, 130, 246, .78);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, .13);
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .btn {
+    border: 0;
+    border-radius: 14px;
+    padding: 11px 13px;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 780;
+    min-width: 0;
+  }
+
+  .btn.secondary {
+    background: #e2e8f0;
+    color: #172033;
+  }
+
+  .btn.teal {
+    background: var(--accent-2);
+  }
+
+  .btn.warn {
+    background: var(--warn);
+    color: #172033;
+  }
+
+  .btn.danger {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .btn.ghost {
+    background: transparent;
+    color: inherit;
+    border: 1px solid currentColor;
+  }
+
+  .btn:active {
+    transform: translateY(1px);
+  }
+
+  .workspace {
+    display: grid;
+    gap: 18px;
+    min-width: 0;
+  }
+
+  .toolbar {
+    display: grid;
+    gap: 12px;
+    padding: 14px;
+    border-radius: var(--radius);
+    border: 1px solid rgba(255, 255, 255, .12);
+    background: rgba(23, 32, 51, .9);
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+
+  .stat {
+    min-width: 0;
+    padding: 12px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, .08);
+    border: 1px solid rgba(255, 255, 255, .1);
+  }
+
+  .stat .num {
+    display: block;
+    font-size: 1.45rem;
+    font-weight: 850;
+  }
+
+  .stat .txt {
+    color: #cbd5e1;
+    font-size: .82rem;
+    overflow-wrap: anywhere;
+  }
+
+  .shot-board {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .empty {
+    padding: 24px;
+    border: 1px dashed rgba(255, 255, 255, .35);
+    color: #cbd5e1;
+    border-radius: var(--radius);
+    text-align: center;
+  }
+
+  .tile {
+    min-width: 0;
+    display: grid;
+    gap: 12px;
+    padding: 15px;
+    border-radius: var(--radius);
+    background: var(--card);
+    color: var(--ink);
+    border: 1px solid rgba(226, 232, 240, .96);
+    box-shadow: 0 12px 28px rgba(2, 6, 23, .18);
+  }
+
+  .tile.dragging {
+    opacity: .55;
+    transform: scale(.995);
+  }
+
+  .tile.over {
+    outline: 3px solid rgba(20, 184, 166, .55);
+  }
+
+  .tile-top {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 10px;
+    align-items: start;
+    min-width: 0;
+  }
+
+  .drag-handle {
+    width: 38px;
+    min-width: 38px;
+    min-height: 38px;
+    border: 1px solid #d7deea;
+    background: #f1f5f9;
+    color: #475467;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    font-weight: 900;
+  }
+
+  .tile-title {
+    min-width: 0;
+  }
+
+  .tile-title h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    overflow-wrap: anywhere;
+  }
+
+  .tile-title p {
+    margin: 3px 0 0;
+    color: var(--muted);
+    font-size: .88rem;
+    overflow-wrap: anywhere;
+  }
+
+  .priority-pill {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: center;
+    padding: 8px 10px;
+    border-radius: 999px;
+    color: #0f172a;
+    font-weight: 850;
+    background: #dbeafe;
+    font-size: .78rem;
+  }
+
+  .priority-high {
+    background: #ccfbf1;
+  }
+
+  .priority-med {
+    background: #fef3c7;
+  }
+
+  .priority-low {
+    background: #e2e8f0;
+  }
+
+  .grid-meta {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 9px;
+    min-width: 0;
+  }
+
+  .meta {
+    min-width: 0;
+    padding: 10px;
+    border-radius: 14px;
+    background: var(--soft);
+    border: 1px solid #e2e8f0;
+  }
+
+  .meta span {
+    display: block;
+    font-size: .72rem;
+    color: #64748b;
+    font-weight: 800;
+    margin-bottom: 3px;
+  }
+
+  .meta div {
+    overflow-wrap: anywhere;
+    color: #172033;
+  }
+
+  .risk {
+    min-width: 0;
+    display: grid;
+    gap: 7px;
+    padding: 11px;
+    border-radius: 14px;
+    border: 1px solid #fed7aa;
+    background: #fff7ed;
+  }
+
+  .risk.safe {
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+  }
+
+  .risk-label {
+    font-size: .78rem;
+    color: #9a3412;
+    font-weight: 850;
+  }
+
+  .risk.safe .risk-label {
+    color: #166534;
+  }
+
+  .risk-text {
+    overflow-wrap: anywhere;
+    color: #172033;
+  }
+
+  .tile-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto auto;
+    gap: 8px;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .tile-controls select,
+  .tile-controls button {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .mini {
+    border: 1px solid #d7deea;
+    background: #fff;
+    color: #172033;
+    border-radius: 12px;
+    padding: 9px 10px;
+    font-weight: 760;
+  }
+
+  .brief-box {
+    min-height: 230px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    padding: 15px;
+    border-radius: var(--radius);
+    background: #0b1220;
+    color: #dbeafe;
+    border: 1px solid rgba(255, 255, 255, .12);
+  }
+
+  .note {
+    font-size: .84rem;
+    color: #cbd5e1;
+  }
+
+  .toast {
+    position: fixed;
+    left: 18px;
+    right: 18px;
+    bottom: 18px;
+    max-width: 560px;
+    margin: 0 auto;
+    border-radius: 16px;
+    padding: 12px 14px;
+    background: #052e2b;
+    color: #ccfbf1;
+    border: 1px solid rgba(45, 212, 191, .45);
+    box-shadow: var(--shadow);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(10px);
+    transition: opacity .18s ease, transform .18s ease;
+    overflow-wrap: anywhere;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @media (max-width: 860px) {
+    .layout {
+      grid-template-columns: 1fr;
+    }
+
+    .stats {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .app {
+      padding: 12px;
+    }
+
+    .hero {
+      padding: 18px;
+    }
+
+    .row,
+    .grid-meta,
+    .stats,
+    .tile-controls,
+    .tile-top {
+      grid-template-columns: 1fr;
+    }
+
+    .priority-pill {
+      width: fit-content;
+      max-width: 100%;
+    }
+
+    .drag-handle {
+      width: 100%;
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr;
+    }
+
+    .btn,
+    .mini {
+      width: 100%;
+      white-space: normal;
+    }
+  }
+</style>
+</head>
+<body>
+  <main class="app">
+    <section class="hero">
+      <div class="kicker">Offline product photo shot-list planner</div>
+      <h1>
+        <span>Stop wasting</span>
+        <span>photo credits.</span>
+      </h1>
+      <p>Build draggable listing-shot tiles from the details that actually matter: product, mood, angle, prop, background, priority, and risk note. Sort the list, then copy or download a production brief before shooting or generating.</p>
+    </section>
+
+    <section class="layout">
+      <aside class="panel">
+        <div class="panel-header">
+          <h2>Create a shot tile</h2>
+          <p>Each tile becomes one usable production instruction.</p>
+        </div>
+
+        <div class="body">
+          <div class="field">
+            <label for="product">Product</label>
+            <input id="product" type="text" placeholder="Example: ceramic travel mug with silicone lid">
+          </div>
+
+          <div class="row">
+            <div class="field">
+              <label for="mood">Mood</label>
+              <input id="mood" type="text" placeholder="Clean, cozy, premium, playful">
+            </div>
+            <div class="field">
+              <label for="angle">Camera angle</label>
+              <input id="angle" type="text" placeholder="Three-quarter front, top-down, macro detail">
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="field">
+              <label for="prop">Prop</label>
+              <input id="prop" type="text" placeholder="Coffee beans, linen cloth, hand model">
+            </div>
+            <div class="field">
+              <label for="background">Background</label>
+              <input id="background" type="text" placeholder="Warm kitchen counter, plain white, slate surface">
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="field">
+              <label for="priority">Priority</label>
+              <select id="priority">
+                <option value="5">5 — hero listing image</option>
+                <option value="4">4 — must-have support shot</option>
+                <option value="3" selected>3 — useful if time allows</option>
+                <option value="2">2 — optional variation</option>
+                <option value="1">1 — cut first</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="shotType">Shot type</label>
+              <select id="shotType">
+                <option>Hero</option>
+                <option>Lifestyle</option>
+                <option>Scale</option>
+                <option>Detail</option>
+                <option>Bundle</option>
+                <option>Problem / solution</option>
+                <option>Before / after</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="risk">Risk note</label>
+            <textarea id="risk" placeholder="Example: lid color must match product; avoid props that imply dishwasher safe if not proven"></textarea>
+          </div>
+
+          <div class="actions">
+            <button class="btn" id="addShot" type="button">Add shot tile</button>
+            <div class="button-row">
+              <button class="btn secondary" id="sampleShots" type="button">Load sample</button>
+              <button class="btn danger" id="clearShots" type="button">Clear list</button>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <section class="workspace">
+        <div class="toolbar">
+          <div class="stats" aria-live="polite">
+            <div class="stat">
+              <span class="num" id="statCount">0</span>
+              <span class="txt">tiles</span>
+            </div>
+            <div class="stat">
+              <span class="num" id="statHigh">0</span>
+              <span class="txt">high priority</span>
+            </div>
+            <div class="stat">
+              <span class="num" id="statRisk">0</span>
+              <span class="txt">risk notes</span>
+            </div>
+            <div class="stat">
+              <span class="num" id="statScore">0%</span>
+              <span class="txt">brief readiness</span>
+            </div>
+          </div>
+
+          <div class="button-row">
+            <button class="btn teal" id="sortShots" type="button">Sort by priority</button>
+            <button class="btn secondary" id="copyBrief" type="button">Copy brief</button>
+            <button class="btn warn" id="downloadBrief" type="button">Download brief</button>
+          </div>
+          <div class="note">Drag tiles to reorder. On phones, use the move buttons inside each tile.</div>
+        </div>
+
+        <div class="shot-board" id="shotBoard" aria-label="Shot list"></div>
+
+        <section class="panel dark">
+          <div class="panel-header">
+            <h2>Production brief</h2>
+            <p>Generated from your ordered shot list.</p>
+          </div>
+          <div class="body">
+            <div class="brief-box" id="briefBox"></div>
+          </div>
+        </section>
+      </section>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var shots = [];
+  var dragId = null;
+
+  var els = {
+    product: document.getElementById("product"),
+    mood: document.getElementById("mood"),
+    angle: document.getElementById("angle"),
+    prop: document.getElementById("prop"),
+    background: document.getElementById("background"),
+    risk: document.getElementById("risk"),
+    priority: document.getElementById("priority"),
+    shotType: document.getElementById("shotType"),
+    addShot: document.getElementById("addShot"),
+    sampleShots: document.getElementById("sampleShots"),
+    clearShots: document.getElementById("clearShots"),
+    sortShots: document.getElementById("sortShots"),
+    copyBrief: document.getElementById("copyBrief"),
+    downloadBrief: document.getElementById("downloadBrief"),
+    shotBoard: document.getElementById("shotBoard"),
+    briefBox: document.getElementById("briefBox"),
+    toast: document.getElementById("toast"),
+    statCount: document.getElementById("statCount"),
+    statHigh: document.getElementById("statHigh"),
+    statRisk: document.getElementById("statRisk"),
+    statScore: document.getElementById("statScore")
+  };
+
+  function uid() {
+    return "shot-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
+  }
+
+  function clean(value) {
+    return String(value || "").trim().replace(/\s+/g, " ");
+  }
+
+  function getPriorityLabel(priority) {
+    var n = Number(priority);
+    if (n >= 5) return "P5 hero";
+    if (n === 4) return "P4 must-have";
+    if (n === 3) return "P3 useful";
+    if (n === 2) return "P2 optional";
+    return "P1 cut first";
+  }
+
+  function getPriorityClass(priority) {
+    var n = Number(priority);
+    if (n >= 4) return "priority-high";
+    if (n === 3) return "priority-med";
+    return "priority-low";
+  }
+
+  function showToast(message) {
+    els.toast.textContent = message;
+    els.toast.classList.add("show");
+    window.setTimeout(function () {
+      els.toast.classList.remove("show");
+    }, 1800);
+  }
+
+  function save() {
+    try {
+      localStorage.setItem("productShotListPlanner.v1", JSON.stringify(shots));
+    } catch (err) {
+      showToast("Could not save locally in this browser.");
+    }
+  }
+
+  function load() {
+    try {
+      var raw = localStorage.getItem("productShotListPlanner.v1");
+      if (!raw) return;
+      var parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        shots = parsed.map(function (item) {
+          return {
+            id: item.id || uid(),
+            product: clean(item.product),
+            mood: clean(item.mood),
+            angle: clean(item.angle),
+            prop: clean(item.prop),
+            background: clean(item.background),
+            risk: clean(item.risk),
+            priority: String(item.priority || "3"),
+            shotType: clean(item.shotType || "Hero")
+          };
+        });
+      }
+    } catch (err) {
+      shots = [];
+    }
+  }
+
+  function makeEl(tag, className, text) {
+    var node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function meta(label, value) {
+    var box = makeEl("div", "meta");
+    var top = makeEl("span", "", label);
+    var val = makeEl("div", "", value || "Not specified");
+    box.appendChild(top);
+    box.appendChild(val);
+    return box;
+  }
+
+  function findIndex(id) {
+    return shots.findIndex(function (shot) {
+      return shot.id === id;
+    });
+  }
+
+  function moveShot(id, direction) {
+    var index = findIndex(id);
+    if (index < 0) return;
+    var target = index + direction;
+    if (target < 0 || target >= shots.length) return;
+    var temp = shots[index];
+    shots[index] = shots[target];
+    shots[target] = temp;
+    save();
+    render();
+  }
+
+  function removeShot(id) {
+    shots = shots.filter(function (shot) {
+      return shot.id !== id;
+    });
+    save();
+    render();
+  }
+
+  function updateShot(id, key, value) {
+    var index = findIndex(id);
+    if (index < 0) return;
+    shots[index][key] = clean(value);
+    save();
+    renderBriefOnly();
+    updateStats();
+    render();
+  }
+
+  function renderShot(shot, index) {
+    var tile = makeEl("article", "tile");
+    tile.setAttribute("draggable", "true");
+    tile.dataset.id = shot.id;
+
+    tile.addEventListener("dragstart", function () {
+      dragId = shot.id;
+      tile.classList.add("dragging");
+    });
+
+    tile.addEventListener("dragend", function () {
+      dragId = null;
+      tile.classList.remove("dragging");
+      tile.classList.remove("over");
+    });
+
+    tile.addEventListener("dragover", function (event) {
+      event.preventDefault();
+      if (dragId && dragId !== shot.id) tile.classList.add("over");
+    });
+
+    tile.addEventListener("dragleave", function () {
+      tile.classList.remove("over");
+    });
+
+    tile.addEventListener("drop", function (event) {
+      event.preventDefault();
+      tile.classList.remove("over");
+      if (!dragId || dragId === shot.id) return;
+
+      var from = findIndex(dragId);
+      var to = findIndex(shot.id);
+      if (from < 0 || to < 0) return;
+
+      var moved = shots.splice(from, 1)[0];
+      shots.splice(to, 0, moved);
+      save();
+      render();
+    });
+
+    var top = makeEl("div", "tile-top");
+
+    var handle = makeEl("button", "drag-handle", "↕");
+    handle.type = "button";
+    handle.title = "Drag to reorder";
+    handle.setAttribute("aria-label", "Drag to reorder");
+
+    var title = makeEl("div", "tile-title");
+    var h3 = makeEl("h3", "", shot.product || "Untitled product");
+    var sub = makeEl("p", "", "Shot " + (index + 1) + " · " + (shot.shotType || "Shot"));
+    title.appendChild(h3);
+    title.appendChild(sub);
+
+    var pill = makeEl("div", "priority-pill " + getPriorityClass(shot.priority), getPriorityLabel(shot.priority));
+
+    top.appendChild(handle);
+    top.appendChild(title);
+    top.appendChild(pill);
+
+    var grid = makeEl("div", "grid-meta");
+    grid.appendChild(meta("Mood", shot.mood));
+    grid.appendChild(meta("Camera angle", shot.angle));
+    grid.appendChild(meta("Prop", shot.prop));
+    grid.appendChild(meta("Background", shot.background));
+
+    var risk = makeEl("div", shot.risk ? "risk" : "risk safe");
+    risk.appendChild(makeEl("div", "risk-label", shot.risk ? "Risk to control" : "Risk note missing"));
+    risk.appendChild(makeEl("div", "risk-text", shot.risk || "Add a risk note before final production so the shot does not imply unsupported claims, wrong size, wrong color, or unavailable props."));
+
+    var controls = makeEl("div", "tile-controls");
+
+    var prioritySelect = document.createElement("select");
+    [
+      ["5", "5 — hero"],
+      ["4", "4 — must-have"],
+      ["3", "3 — useful"],
+      ["2", "2 — optional"],
+      ["1", "1 — cut first"]
+    ].forEach(function (pair) {
+      var opt = document.createElement("option");
+      opt.value = pair[0];
+      opt.textContent = pair[1];
+      if (String(shot.priority) === pair[0]) opt.selected = true;
+      prioritySelect.appendChild(opt);
+    });
+    prioritySelect.addEventListener("change", function () {
+      updateShot(shot.id, "priority", prioritySelect.value);
+    });
+
+    var typeSelect = document.createElement("select");
+    ["Hero", "Lifestyle", "Scale", "Detail", "Bundle", "Problem / solution", "Before / after"].forEach(function (name) {
+      var opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      if (shot.shotType === name) opt.selected = true;
+      typeSelect.appendChild(opt);
+    });
+    typeSelect.addEventListener("change", function () {
+      updateShot(shot.id, "shotType", typeSelect.value);
+    });
+
+    var up = makeEl("button", "mini", "Move up");
+    up.type = "button";
+    up.addEventListener("click", function () {
+      moveShot(shot.id, -1);
+    });
+
+    var down = makeEl("button", "mini", "Move down");
+    down.type = "button";
+    down.addEventListener("click", function () {
+      moveShot(shot.id, 1);
+    });
+
+    var del = makeEl("button", "mini", "Delete");
+    del.type = "button";
+    del.addEventListener("click", function () {
+      removeShot(shot.id);
+    });
+
+    controls.appendChild(prioritySelect);
+    controls.appendChild(typeSelect);
+    controls.appendChild(up);
+    controls.appendChild(down);
+    controls.appendChild(del);
+
+    tile.appendChild(top);
+    tile.appendChild(grid);
+    tile.appendChild(risk);
+    tile.appendChild(controls);
+
+    return tile;
+  }
+
+  function getReadiness() {
+    if (!shots.length) return 0;
+
+    var fields = 0;
+    var possible = shots.length * 6;
+
+    shots.forEach(function (shot) {
+      if (shot.product) fields++;
+      if (shot.mood) fields++;
+      if (shot.angle) fields++;
+      if (shot.prop) fields++;
+      if (shot.background) fields++;
+      if (shot.risk) fields++;
+    });
+
+    var score = Math.round((fields / possible) * 100);
+    return Math.max(0, Math.min(100, score));
+  }
+
+  function buildBrief() {
+    if (!shots.length) {
+      return "Add shot tiles to generate a production brief.";
+    }
+
+    var high = shots.filter(function (shot) {
+      return Number(shot.priority) >= 4;
+    }).length;
+
+    var missingRisk = shots.filter(function (shot) {
+      return !shot.risk;
+    }).length;
+
+    var lines = [];
+    lines.push("PRODUCT PHOTO PRODUCTION BRIEF");
+    lines.push("");
+    lines.push("Total shots: " + shots.length);
+    lines.push("High-priority shots: " + high);
+    lines.push("Brief readiness: " + getReadiness() + "%");
+    lines.push(missingRisk ? "Risk notes still needed: " + missingRisk : "Risk notes: complete");
+    lines.push("");
+    lines.push("ORDERED SHOT LIST");
+
+    shots.forEach(function (shot, index) {
+      lines.push("");
+      lines.push((index + 1) + ". " + (shot.product || "Untitled product"));
+      lines.push("   Priority: " + getPriorityLabel(shot.priority));
+      lines.push("   Shot type: " + (shot.shotType || "Shot"));
+      lines.push("   Mood: " + (shot.mood || "Not specified"));
+      lines.push("   Camera angle: " + (shot.angle || "Not specified"));
+      lines.push("   Prop: " + (shot.prop || "Not specified"));
+      lines.push("   Background: " + (shot.background || "Not specified"));
+      lines.push("   Risk to control: " + (shot.risk || "Missing. Add before production."));
+      lines.push("   Production instruction: Capture " + (shot.product || "the product") + " in a " + (shot.mood || "clear") + " mood from a " + (shot.angle || "listing-safe") + " angle, using " + (shot.prop || "minimal props") + " on " + (shot.background || "a simple background") + ".");
+    });
+
+    lines.push("");
+    lines.push("PRE-SHOOT CHECK");
+    lines.push("1. Confirm every prop is available and does not imply unsupported product claims.");
+    lines.push("2. Confirm color, size, packaging, quantity, and included accessories match the listing.");
+    lines.push("3. Shoot P5 and P4 tiles first.");
+    lines.push("4. Keep background and lighting consistent across the listing set.");
+    lines.push("5. Cut or revise any tile with a missing risk note.");
+
+    return lines.join("\n");
+  }
+
+  function renderBriefOnly() {
+    els.briefBox.textContent = buildBrief();
+  }
+
+  function updateStats() {
+    els.statCount.textContent = String(shots.length);
+    els.statHigh.textContent = String(shots.filter(function (shot) {
+      return Number(shot.priority) >= 4;
+    }).length);
+    els.statRisk.textContent = String(shots.filter(function (shot) {
+      return shot.risk;
+    }).length);
+    els.statScore.textContent = getReadiness() + "%";
+  }
+
+  function render() {
+    while (els.shotBoard.firstChild) {
+      els.shotBoard.removeChild(els.shotBoard.firstChild);
+    }
+
+    if (!shots.length) {
+      var empty = makeEl("div", "empty", "No shot tiles yet. Add one manually or load the sample set.");
+      els.shotBoard.appendChild(empty);
+    } else {
+      shots.forEach(function (shot, index) {
+        els.shotBoard.appendChild(renderShot(shot, index));
+      });
+    }
+
+    renderBriefOnly();
+    updateStats();
+  }
+
+  function addShotFromForm() {
+    var shot = {
+      id: uid(),
+      product: clean(els.product.value),
+      mood: clean(els.mood.value),
+      angle: clean(els.angle.value),
+      prop: clean(els.prop.value),
+      background: clean(els.background.value),
+      risk: clean(els.risk.value),
+      priority: String(els.priority.value || "3"),
+      shotType: clean(els.shotType.value || "Hero")
+    };
+
+    if (!shot.product && !shot.mood && !shot.angle && !shot.prop && !shot.background && !shot.risk) {
+      showToast("Add at least one shot detail first.");
+      return;
+    }
+
+    shots.push(shot);
+    save();
+    render();
+
+    els.product.value = "";
+    els.mood.value = "";
+    els.angle.value = "";
+    els.prop.value = "";
+    els.background.value = "";
+    els.risk.value = "";
+    els.priority.value = "3";
+    els.shotType.value = "Hero";
+
+    showToast("Shot tile added.");
+  }
+
+  function loadSample() {
+    shots = [
+      {
+        id: uid(),
+        product: "Matte black desk timer",
+        mood: "Focused, minimal, premium",
+        angle: "Three-quarter front at desk height",
+        prop: "Notebook, pen, soft desk lamp",
+        background: "Deep blue desktop with clean negative space",
+        risk: "Do not show app screens or imply smart connectivity if the product is analog.",
+        priority: "5",
+        shotType: "Hero"
+      },
+      {
+        id: uid(),
+        product: "Matte black desk timer",
+        mood: "Practical workspace setup",
+        angle: "Top-down scale shot",
+        prop: "Hand, keyboard edge, sticky notes",
+        background: "Neutral office desk",
+        risk: "Make the size obvious without making the timer look larger than it is.",
+        priority: "4",
+        shotType: "Scale"
+      },
+      {
+        id: uid(),
+        product: "Matte black desk timer",
+        mood: "Detail-focused and tactile",
+        angle: "Macro close-up on dial and texture",
+        prop: "None, product only",
+        background: "Soft gray sweep",
+        risk: "Keep markings legible; avoid glare that hides the dial.",
+        priority: "4",
+        shotType: "Detail"
+      },
+      {
+        id: uid(),
+        product: "Matte black desk timer",
+        mood: "Calm evening productivity",
+        angle: "Side angle with warm rim light",
+        prop: "Mug and closed book",
+        background: "Warm wood surface",
+        risk: "Avoid clutter that makes the listing feel like a lifestyle ad instead of a product shot.",
+        priority: "3",
+        shotType: "Lifestyle"
+      }
+    ];
+
+    save();
+    render();
+    showToast("Sample shot list loaded.");
+  }
+
+  function sortShots() {
+    shots.sort(function (a, b) {
+      return Number(b.priority) - Number(a.priority);
+    });
+    save();
+    render();
+    showToast("Sorted by priority.");
+  }
+
+  function copyBrief() {
+    var text = buildBrief();
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        showToast("Brief copied.");
+      }).catch(function () {
+        fallbackCopy(text);
+      });
+    } else {
+      fallbackCopy(text);
+    }
+  }
+
+  function fallbackCopy(text) {
+    var area = document.createElement("textarea");
+    area.value = text;
+    area.setAttribute("readonly", "readonly");
+    area.style.position = "fixed";
+    area.style.left = "-9999px";
+    document.body.appendChild(area);
+    area.select();
+
+    try {
+      document.execCommand("copy");
+      showToast("Brief copied.");
+    } catch (err) {
+      showToast("Copy failed. Select the brief text manually.");
+    }
+
+    document.body.removeChild(area);
+  }
+
+  function downloadBrief() {
+    var text = buildBrief();
+    var blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    var date = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = "product-shot-production-brief-" + date + ".txt";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast("Brief downloaded.");
+  }
+
+  function clearShots() {
+    shots = [];
+    save();
+    render();
+    showToast("Shot list cleared.");
+  }
+
+  els.addShot.addEventListener("click", addShotFromForm);
+  els.sampleShots.addEventListener("click", loadSample);
+  els.clearShots.addEventListener("click", clearShots);
+  els.sortShots.addEventListener("click", sortShots);
+  els.copyBrief.addEventListener("click", copyBrief);
+  els.downloadBrief.addEventListener("click", downloadBrief);
+
+  load();
+  render();
+})();
+</script>
+</body>
+</html>

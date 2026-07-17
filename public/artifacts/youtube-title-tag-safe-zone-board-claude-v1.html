@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>YT Upload Board</title>
+<style>
+  :root {
+    --bg: #111118;
+    --surface: #1C1C28;
+    --surface2: #252535;
+    --border: #2E2E42;
+    --accent: #FF0033;
+    --amber: #FFBE00;
+    --green: #00C27C;
+    --blue: #4A9EFF;
+    --text: #E8ECF0;
+    --text2: #9499AA;
+    --text3: #5A5F6E;
+    --mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    --r: 10px;
+    --r-sm: 6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    max-width: 480px;
+    margin: 0 auto;
+    padding-bottom: 80px;
+  }
+
+  /* ── Header ── */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: -0.3px;
+  }
+  .logo-icon {
+    width: 28px; height: 20px;
+    background: var(--accent);
+    border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    color: #fff;
+    font-weight: 900;
+  }
+  .header-status {
+    font-size: 12px;
+    color: var(--text3);
+    font-family: var(--mono);
+  }
+  .header-status span {
+    color: var(--amber);
+    font-weight: 600;
+  }
+
+  /* ── Nav tabs ── */
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex: none;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text3);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: color .15s, border-color .15s;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tab.active {
+    color: var(--text);
+    border-bottom-color: var(--accent);
+  }
+
+  /* ── Panels ── */
+  .panel { display: none; padding: 16px; }
+  .panel.active { display: block; }
+
+  /* ── Section cards ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .card-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 10px;
+  }
+
+  /* ── Inputs ── */
+  textarea, input[type="text"] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 15px;
+    padding: 10px 12px;
+    resize: none;
+    outline: none;
+    transition: border-color .15s;
+    -webkit-appearance: none;
+  }
+  textarea:focus, input[type="text"]:focus {
+    border-color: var(--blue);
+  }
+  textarea::placeholder, input::placeholder {
+    color: var(--text3);
+  }
+
+  /* ── Meter ── */
+  .meter-wrap {
+    margin-top: 8px;
+  }
+  .meter-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 5px;
+  }
+  .meter-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width .2s, background .2s;
+    background: var(--green);
+  }
+  .meter-labels {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+  }
+  .meter-count { color: var(--text2); font-weight: 600; }
+
+  /* Safe-zone preview */
+  .safezone-wrap {
+    margin-top: 12px;
+    background: var(--surface2);
+    border-radius: var(--r-sm);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .safezone-label-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 10px;
+    font-size: 11px;
+    color: var(--text3);
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+  }
+  .safezone-preview {
+    padding: 10px 10px 10px;
+    position: relative;
+  }
+  .sz-title {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .sz-safe { color: var(--text); }
+  .sz-warn { color: var(--amber); }
+  .sz-cut { color: var(--accent); text-decoration: line-through; opacity: .6; }
+
+  .cut-badge {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 10px;
+    font-family: var(--mono);
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+
+  /* Variant chips */
+  .variants {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .variant-row {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .variant-input {
+    flex: 1;
+    font-size: 14px;
+    padding: 8px 10px;
+    min-height: unset;
+  }
+  .variant-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    color: var(--text3);
+    padding: 0 10px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background .1s, color .1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .variant-btn:active { background: var(--surface2); }
+  .variant-btn.use-btn {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .3px;
+    color: var(--blue);
+    border-color: color-mix(in srgb, var(--blue) 30%, transparent);
+    padding: 0 10px;
+  }
+  .variant-btn.use-btn.active {
+    background: color-mix(in srgb, var(--blue) 15%, transparent);
+    color: var(--blue);
+  }
+  .add-variant-btn {
+    width: 100%;
+    margin-top: 6px;
+    background: none;
+    border: 1px dashed var(--border);
+    border-radius: var(--r-sm);
+    color: var(--text3);
+    font-size: 13px;
+    padding: 8px;
+    cursor: pointer;
+    transition: border-color .15s, color .15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .add-variant-btn:active { border-color: var(--blue); color: var(--blue); }
+
+  /* ── Tags ── */
+  .tag-input-row {
+    display: flex;
+    gap: 8px;
+  }
+  .tag-input-row input {
+    flex: 1;
+    font-size: 14px;
+  }
+  .add-tag-btn {
+    background: var(--accent);
+    border: none;
+    border-radius: var(--r-sm);
+    color: #fff;
+    font-weight: 700;
+    font-size: 15px;
+    padding: 0 16px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    flex-shrink: 0;
+  }
+
+  .tag-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+    min-height: 32px;
+  }
+  .tag-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 10px 4px 10px;
+    font-size: 12px;
+    color: var(--text2);
+    cursor: default;
+    transition: background .1s;
+    position: relative;
+  }
+  .tag-chip.cluster-0 { border-color: color-mix(in srgb, #4A9EFF 50%, transparent); }
+  .tag-chip.cluster-1 { border-color: color-mix(in srgb, #00C27C 50%, transparent); }
+  .tag-chip.cluster-2 { border-color: color-mix(in srgb, #A855F7 50%, transparent); }
+  .tag-chip.cluster-3 { border-color: color-mix(in srgb, #FFBE00 50%, transparent); }
+  .tag-chip.cluster-4 { border-color: color-mix(in srgb, #FF6B35 50%, transparent); }
+  .tag-chip.warn { border-color: var(--amber); background: color-mix(in srgb, var(--amber) 8%, transparent); }
+  .tag-chip.error { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+  .tag-remove {
+    background: none; border: none; color: var(--text3); cursor: pointer;
+    font-size: 13px; padding: 0; line-height: 1;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tag-remove:active { color: var(--accent); }
+
+  /* Tag stats row */
+  .tag-stats {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+  .stat-pill {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text3);
+  }
+  .stat-pill.ok { color: var(--green); border-color: color-mix(in srgb, var(--green) 30%, transparent); }
+  .stat-pill.warn { color: var(--amber); border-color: color-mix(in srgb, var(--amber) 30%, transparent); }
+  .stat-pill.err { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
+
+  /* Tag cluster legend */
+  .cluster-legend {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .cluster-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text2);
+  }
+  .cluster-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+  .cluster-tags { color: var(--text3); font-family: var(--mono); font-size: 11px; }
+
+  /* Issue list */
+  .issues {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .issue {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text2);
+    background: var(--surface2);
+    border-radius: var(--r-sm);
+    padding: 8px 10px;
+    border-left: 3px solid var(--border);
+  }
+  .issue.warn { border-left-color: var(--amber); }
+  .issue.err { border-left-color: var(--accent); }
+  .issue-icon { flex-shrink: 0; font-size: 14px; }
+
+  /* Description */
+  .desc-textarea { min-height: 120px; font-size: 14px; line-height: 1.6; }
+  .hook-preview {
+    margin-top: 8px;
+    background: var(--surface2);
+    border-radius: var(--r-sm);
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.5;
+  }
+  .hook-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 4px;
+    font-family: var(--mono);
+  }
+  .hook-text { color: var(--text); }
+  .hook-rest { color: var(--text3); }
+
+  /* Handoff */
+  .handoff-section { margin-bottom: 12px; }
+  .handoff-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .6px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 4px;
+    font-family: var(--mono);
+  }
+  .handoff-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    padding: 12px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: var(--mono);
+    min-height: 40px;
+  }
+  .copy-btn {
+    width: 100%;
+    margin-top: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    color: var(--text2);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px;
+    cursor: pointer;
+    transition: background .1s, color .1s, border-color .1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .copy-btn:active { background: var(--green); color: #fff; border-color: var(--green); }
+  .copy-btn.copied { background: color-mix(in srgb, var(--green) 15%, transparent); color: var(--green); border-color: color-mix(in srgb, var(--green) 40%, transparent); }
+
+  .copy-all-btn {
+    width: 100%;
+    background: var(--accent);
+    border: none;
+    border-radius: var(--r);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    padding: 14px;
+    cursor: pointer;
+    margin-top: 6px;
+    letter-spacing: .2px;
+    -webkit-tap-highlight-color: transparent;
+    transition: opacity .1s;
+  }
+  .copy-all-btn:active { opacity: .8; }
+
+  /* Score ring on handoff */
+  .readiness-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .score-circle {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px;
+    font-weight: 800;
+    font-family: var(--mono);
+    background: conic-gradient(var(--green) 0%, var(--border) 0%);
+    position: relative;
+  }
+  .score-inner {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: var(--surface);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--text);
+  }
+  .readiness-info { flex: 1; }
+  .readiness-title { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
+  .readiness-sub { font-size: 12px; color: var(--text3); }
+  .check-list { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+  .check-item {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--text3);
+  }
+  .check-item.ok { color: var(--green); }
+  .check-item.fail { color: var(--text3); }
+  .check-dot { font-size: 12px; }
+
+  /* Hint text */
+  .hint { font-size: 11px; color: var(--text3); margin-top: 5px; }
+
+  /* Empty state */
+  .empty-state { text-align: center; padding: 24px 0; color: var(--text3); font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">
+    <div class="logo-icon">▶</div>
+    Upload Board
+  </div>
+  <div class="header-status">Score: <span id="header-score">–</span></div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="title">Title</div>
+  <div class="tab" data-tab="tags">Tags</div>
+  <div class="tab" data-tab="desc">Description</div>
+  <div class="tab" data-tab="handoff">Handoff</div>
+</div>
+
+<!-- ════════════════ TITLE PANEL ════════════════ -->
+<div class="panel active" id="panel-title">
+
+  <div class="card">
+    <div class="card-label">Active Title</div>
+    <textarea id="active-title" rows="2" placeholder="Type your main title…" oninput="updateTitle()"></textarea>
+    <div class="meter-wrap">
+      <div class="meter-bar"><div class="meter-fill" id="title-fill"></div></div>
+      <div class="meter-labels">
+        <span>0</span>
+        <span id="title-count" class="meter-count">0 / 100</span>
+        <span>100</span>
+      </div>
+    </div>
+    <div class="hint">YouTube max: 100 chars · Safe (no clip): ≤ 60 · Search snippet: ≤ 70</div>
+  </div>
+
+  <!-- Safe-zone preview -->
+  <div class="card">
+    <div class="card-label">Safe-Zone Preview</div>
+    <div class="safezone-wrap">
+      <div class="safezone-label-row">
+        <span>📺 Desktop title</span>
+        <span id="sz-desktop-label">— chars shown</span>
+      </div>
+      <div class="safezone-preview">
+        <div class="sz-title" id="sz-desktop"></div>
+        <div id="sz-desktop-badge"></div>
+      </div>
+      <div class="safezone-label-row" style="border-top:1px solid var(--border);">
+        <span>📱 Mobile / Search</span>
+        <span id="sz-mobile-label">— chars shown</span>
+      </div>
+      <div class="safezone-preview">
+        <div class="sz-title" id="sz-mobile"></div>
+        <div id="sz-mobile-badge"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Title variants -->
+  <div class="card">
+    <div class="card-label">Draft Variants</div>
+    <div class="variants" id="title-variants"></div>
+    <button class="add-variant-btn" onclick="addTitleVariant()">+ Add title variant</button>
+  </div>
+
+</div>
+
+<!-- ════════════════ TAGS PANEL ════════════════ -->
+<div class="panel" id="panel-tags">
+
+  <div class="card">
+    <div class="card-label">Add Tags</div>
+    <div class="tag-input-row">
+      <input type="text" id="tag-input" placeholder="Type a tag, press Add or Enter…" onkeydown="tagKeydown(event)">
+      <button class="add-tag-btn" onclick="addTag()">Add</button>
+    </div>
+    <div class="hint">YouTube allows up to 500 chars total across all tags.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Tag Cloud</div>
+    <div class="tag-cloud" id="tag-cloud">
+      <div class="empty-state">No tags yet — add some above</div>
+    </div>
+    <div class="tag-stats" id="tag-stats"></div>
+  </div>
+
+  <div class="card" id="cluster-card" style="display:none">
+    <div class="card-label">Cluster Balance</div>
+    <div class="cluster-legend" id="cluster-legend"></div>
+    <div class="hint" style="margin-top:8px;">Each color group = related words. Aim for 3–5 clusters, not all one topic.</div>
+  </div>
+
+  <div class="card" id="issues-card" style="display:none">
+    <div class="card-label">Issues</div>
+    <div class="issues" id="issues-list"></div>
+  </div>
+
+</div>
+
+<!-- ════════════════ DESCRIPTION PANEL ════════════════ -->
+<div class="panel" id="panel-desc">
+
+  <div class="card">
+    <div class="card-label">Description</div>
+    <textarea class="desc-textarea" id="desc-main" placeholder="Write your video description…&#10;&#10;Keywords, links, timestamps, and CTAs go here." oninput="updateDesc()"></textarea>
+    <div class="meter-wrap">
+      <div class="meter-bar"><div class="meter-fill" id="desc-fill"></div></div>
+      <div class="meter-labels">
+        <span>0</span>
+        <span id="desc-count" class="meter-count">0 / 5000</span>
+        <span>5000</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Above-The-Fold Hook (first ~157 chars shown)</div>
+    <div class="hook-preview">
+      <div class="hook-label">What viewers see without clicking "Show more"</div>
+      <div id="hook-text"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Description Variants</div>
+    <div class="variants" id="desc-variants"></div>
+    <button class="add-variant-btn" onclick="addDescVariant()">+ Add description variant</button>
+  </div>
+
+</div>
+
+<!-- ════════════════ HANDOFF PANEL ════════════════ -->
+<div class="panel" id="panel-handoff">
+
+  <div class="readiness-bar">
+    <div class="score-circle" id="score-ring">
+      <div class="score-inner" id="score-num">–</div>
+    </div>
+    <div class="readiness-info">
+      <div class="readiness-title" id="readiness-title">Not started</div>
+      <div class="readiness-sub" id="readiness-sub">Fill in Title, Tags & Description</div>
+    </div>
+  </div>
+
+  <div class="check-list" id="check-list" style="margin-bottom:14px; padding: 0 2px;"></div>
+
+  <div class="handoff-section">
+    <div class="handoff-title">Title</div>
+    <div class="handoff-box" id="ho-title">—</div>
+    <button class="copy-btn" onclick="copySection('ho-title', this)">Copy title</button>
+  </div>
+
+  <div class="handoff-section">
+    <div class="handoff-title">Tags (comma-separated)</div>
+    <div class="handoff-box" id="ho-tags">—</div>
+    <button class="copy-btn" onclick="copySection('ho-tags', this)">Copy tags</button>
+  </div>
+
+  <div class="handoff-section">
+    <div class="handoff-title">Description</div>
+    <div class="handoff-box" id="ho-desc">—</div>
+    <button class="copy-btn" onclick="copySection('ho-desc', this)">Copy description</button>
+  </div>
+
+  <button class="copy-all-btn" onclick="copyAll()">⬆ Copy Full Upload Package</button>
+
+</div>
+
+<script>
+// ════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════
+let tags = [];
+let titleVariants = [];
+let descVariants = [];
+
+const DESKTOP_LIMIT = 60;
+const MOBILE_LIMIT  = 47;
+const DESC_HOOK     = 157;
+const TAG_CHAR_MAX  = 500;
+
+// ── Colors for clusters ──
+const CLUSTER_COLORS = ['#4A9EFF','#00C27C','#A855F7','#FFBE00','#FF6B35'];
+const CLUSTER_NAMES  = ['Topic core','Audience terms','Format/style','Discovery long-tail','Related niche'];
+
+// ════════════════════════════════════════════════
+//  TABS
+// ════════════════════════════════════════════════
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+    if (tab.dataset.tab === 'handoff') updateHandoff();
+  });
+});
+
+// ════════════════════════════════════════════════
+//  TITLE
+// ════════════════════════════════════════════════
+function updateTitle() {
+  const val = document.getElementById('active-title').value;
+  const len = val.length;
+  const pct = Math.min(len / 100 * 100, 100);
+
+  // bar color
+  let color = 'var(--green)';
+  if (len > 100) color = 'var(--accent)';
+  else if (len > 70) color = 'var(--amber)';
+  else if (len < 20) color = 'var(--text3)';
+
+  document.getElementById('title-fill').style.width = pct + '%';
+  document.getElementById('title-fill').style.background = color;
+  document.getElementById('title-count').textContent = len + ' / 100';
+  document.getElementById('title-count').style.color = len > 100 ? 'var(--accent)' : len > 70 ? 'var(--amber)' : 'var(--text2)';
+
+  updateSafezone(val);
+  updateScore();
+}
+
+function updateSafezone(val) {
+  renderSafezone('sz-desktop', 'sz-desktop-label', 'sz-desktop-badge', val, DESKTOP_LIMIT);
+  renderSafezone('sz-mobile',  'sz-mobile-label',  'sz-mobile-badge',  val, MOBILE_LIMIT);
+}
+
+function renderSafezone(elId, labelId, badgeId, val, limit) {
+  const el    = document.getElementById(elId);
+  const label = document.getElementById(labelId);
+  const badge = document.getElementById(badgeId);
+
+  if (!val) {
+    el.innerHTML = '<span style="color:var(--text3)">Title preview will appear here…</span>';
+    label.textContent = '— chars shown';
+    badge.innerHTML = '';
+    return;
+  }
+
+  const safe = val.slice(0, limit);
+  const rest = val.slice(limit);
+  label.textContent = Math.min(val.length, limit) + ' / ' + limit + ' chars shown';
+
+  if (!rest) {
+    el.innerHTML = `<span class="sz-safe">${esc(safe)}</span>`;
+    badge.innerHTML = '';
+  } else {
+    const warnStart = Math.floor(limit * .85);
+    const safePart  = val.slice(0, warnStart);
+    const warnPart  = val.slice(warnStart, limit);
+    el.innerHTML = `<span class="sz-safe">${esc(safePart)}</span><span class="sz-warn">${esc(warnPart)}</span><span class="sz-cut">${esc(rest)}</span>`;
+    badge.innerHTML = `<div class="cut-badge">✂ ${rest.length} char${rest.length !== 1 ? 's' : ''} clipped</div>`;
+  }
+}
+
+// ── Title Variants ──
+function addTitleVariant() {
+  titleVariants.push({ text: '', active: false });
+  renderTitleVariants();
+}
+
+function renderTitleVariants() {
+  const wrap = document.getElementById('title-variants');
+  if (!titleVariants.length) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = titleVariants.map((v, i) => `
+    <div class="variant-row">
+      <input type="text" class="variant-input" placeholder="Title option ${i+1}…"
+        value="${esc(v.text)}"
+        oninput="titleVariants[${i}].text = this.value"
+        onblur="renderTitleVariants()">
+      <button class="variant-btn use-btn ${v.active ? 'active' : ''}" onclick="useTitleVariant(${i})">USE</button>
+      <button class="variant-btn" onclick="removeTitleVariant(${i})">✕</button>
+    </div>
+  `).join('');
+}
+
+function useTitleVariant(i) {
+  titleVariants.forEach((v, j) => v.active = j === i);
+  document.getElementById('active-title').value = titleVariants[i].text;
+  updateTitle();
+  renderTitleVariants();
+}
+
+function removeTitleVariant(i) {
+  titleVariants.splice(i, 1);
+  renderTitleVariants();
+}
+
+// ════════════════════════════════════════════════
+//  TAGS
+// ════════════════════════════════════════════════
+function tagKeydown(e) {
+  if (e.key === 'Enter') { e.preventDefault(); addTag(); }
+}
+
+function addTag() {
+  const input = document.getElementById('tag-input');
+  let raw = input.value.trim();
+  if (!raw) return;
+  // allow comma-separated bulk add
+  raw.split(',').forEach(t => {
+    const tag = t.trim().toLowerCase().replace(/\s+/g, ' ');
+    if (tag && !tags.includes(tag) && tag.length <= 100) tags.push(tag);
+  });
+  input.value = '';
+  renderTags();
+}
+
+function removeTag(i) {
+  tags.splice(i, 1);
+  renderTags();
+}
+
+function renderTags() {
+  const cloud  = document.getElementById('tag-cloud');
+  const statsEl = document.getElementById('tag-stats');
+  const issuesCard = document.getElementById('issues-card');
+  const clusterCard = document.getElementById('cluster-card');
+
+  if (!tags.length) {
+    cloud.innerHTML = '<div class="empty-state">No tags yet — add some above</div>';
+    statsEl.innerHTML = '';
+    issuesCard.style.display = 'none';
+    clusterCard.style.display = 'none';
+    updateScore();
+    return;
+  }
+
+  const issues   = analyzeTagIssues();
+  const clusters = clusterTags();
+  const tagIssueMap = {};
+  issues.forEach(iss => { if (iss.tag) tagIssueMap[iss.tag] = iss.level; });
+
+  // assign cluster index per tag
+  const tagCluster = {};
+  clusters.forEach((cl, ci) => cl.forEach(t => tagCluster[t] = ci));
+
+  cloud.innerHTML = tags.map((t, i) => {
+    const issLevel = tagIssueMap[t];
+    const cls = issLevel ? issLevel : ('cluster-' + (tagCluster[t] ?? 0));
+    return `<div class="tag-chip ${cls}">${esc(t)}<button class="tag-remove" onclick="removeTag(${i})">✕</button></div>`;
+  }).join('');
+
+  // stats
+  const totalChars = tags.join('').length + Math.max(0, tags.length - 1);
+  const pct = Math.min(totalChars / TAG_CHAR_MAX * 100, 100);
+  const charClass = totalChars > TAG_CHAR_MAX ? 'err' : totalChars > 400 ? 'warn' : 'ok';
+  statsEl.innerHTML = `
+    <div class="stat-pill ${charClass}">${totalChars}/${TAG_CHAR_MAX} chars</div>
+    <div class="stat-pill">${tags.length} tags</div>
+    ${issues.filter(x=>x.level==='error').length ? `<div class="stat-pill err">${issues.filter(x=>x.level==='error').length} errors</div>` : ''}
+    ${issues.filter(x=>x.level==='warn').length  ? `<div class="stat-pill warn">${issues.filter(x=>x.level==='warn').length} warnings</div>` : ''}
+    ${!issues.length ? '<div class="stat-pill ok">✓ All clear</div>' : ''}
+  `;
+
+  // clusters
+  if (clusters.length > 1) {
+    clusterCard.style.display = '';
+    document.getElementById('cluster-legend').innerHTML = clusters.map((cl, ci) => `
+      <div class="cluster-row">
+        <div class="cluster-dot" style="background:${CLUSTER_COLORS[ci % CLUSTER_COLORS.length]}"></div>
+        <div>
+          <div style="font-weight:600;font-size:12px;color:var(--text2)">${CLUSTER_NAMES[ci % CLUSTER_NAMES.length]}</div>
+          <div class="cluster-tags">${cl.map(esc).join(', ')}</div>
+        </div>
+      </div>
+    `).join('');
+  } else { clusterCard.style.display = 'none'; }
+
+  // issues
+  if (issues.length) {
+    issuesCard.style.display = '';
+    document.getElementById('issues-list').innerHTML = issues.map(iss => `
+      <div class="issue ${iss.level}">
+        <div class="issue-icon">${iss.level === 'err' || iss.level === 'error' ? '🚫' : '⚠️'}</div>
+        <div>${esc(iss.msg)}</div>
+      </div>
+    `).join('');
+  } else { issuesCard.style.display = 'none'; }
+
+  updateScore();
+}
+
+function analyzeTagIssues() {
+  const issues = [];
+  const seen   = new Set();
+  const totalChars = tags.join('').length + Math.max(0, tags.length - 1);
+
+  if (totalChars > TAG_CHAR_MAX) {
+    issues.push({ level:'error', msg:`Tag character limit exceeded (${totalChars}/${TAG_CHAR_MAX}). Remove some tags.` });
+  }
+
+  tags.forEach((tag, i) => {
+    if (seen.has(tag)) {
+      issues.push({ level:'error', tag, msg:`Duplicate tag: "${tag}"` });
+    }
+    seen.add(tag);
+
+    // keyword stuffing: a single tag has > 4 significant words
+    const words = tag.split(' ').filter(w => w.length > 2);
+    if (words.length > 5) {
+      issues.push({ level:'warn', tag, msg:`Tag "${tag}" looks keyword-stuffed (${words.length} words). YouTube may discount it.` });
+    }
+
+    // very long individual tag
+    if (tag.length > 60) {
+      issues.push({ level:'warn', tag, msg:`Tag "${tag}" is unusually long (${tag.length} chars).` });
+    }
+
+    // check near-duplicate (edit distance proxy: one tag starts with another)
+    tags.forEach((other, j) => {
+      if (i >= j) return;
+      if (tag !== other && (tag.startsWith(other + ' ') || other.startsWith(tag + ' '))) {
+        issues.push({ level:'warn', msg:`Near-duplicate tags: "${tag}" and "${other}" — the shorter one may be redundant.` });
+      }
+    });
+  });
+
+  if (tags.length < 5) issues.push({ level:'warn', msg:`Only ${tags.length} tags. Aim for at least 8–15 for better discovery.` });
+  if (tags.length > 30) issues.push({ level:'warn', msg:`${tags.length} tags is high — YouTube recommends 5–15 well-chosen tags.` });
+
+  return issues;
+}
+
+function clusterTags() {
+  // Simple stem-based clustering: group tags that share a common leading word
+  if (!tags.length) return [];
+  const groups = {};
+  tags.forEach(tag => {
+    const lead = tag.split(' ')[0];
+    if (!groups[lead]) groups[lead] = [];
+    groups[lead].push(tag);
+  });
+
+  // merge singleton groups into a misc bucket
+  const clusters = [];
+  const misc = [];
+  Object.values(groups).forEach(grp => {
+    if (grp.length >= 2) clusters.push(grp);
+    else misc.push(...grp);
+  });
+  if (misc.length) clusters.push(misc);
+  return clusters.slice(0, 5);
+}
+
+// ════════════════════════════════════════════════
+//  DESCRIPTION
+// ════════════════════════════════════════════════
+function updateDesc() {
+  const val = document.getElementById('desc-main').value;
+  const len = val.length;
+  const pct = Math.min(len / 5000 * 100, 100);
+
+  let color = 'var(--green)';
+  if (len > 5000) color = 'var(--accent)';
+  else if (len > 4500) color = 'var(--amber)';
+
+  document.getElementById('desc-fill').style.width = pct + '%';
+  document.getElementById('desc-fill').style.background = color;
+  document.getElementById('desc-count').textContent = len + ' / 5000';
+  document.getElementById('desc-count').style.color = len > 5000 ? 'var(--accent)' : len > 4500 ? 'var(--amber)' : 'var(--text2)';
+
+  // hook preview
+  const hook = document.getElementById('hook-text');
+  if (!val) {
+    hook.innerHTML = '<span style="color:var(--text3)">Description preview will appear here…</span>';
+  } else {
+    const visible = val.slice(0, DESC_HOOK);
+    const hidden  = val.length > DESC_HOOK;
+    hook.innerHTML = `<span class="hook-text">${esc(visible)}</span>${hidden ? '<span class="hook-rest">… <strong>SHOW MORE</strong></span>' : ''}`;
+  }
+
+  updateScore();
+}
+
+// ── Desc Variants ──
+function addDescVariant() {
+  descVariants.push({ text: '', active: false });
+  renderDescVariants();
+}
+
+function renderDescVariants() {
+  const wrap = document.getElementById('desc-variants');
+  if (!descVariants.length) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = descVariants.map((v, i) => `
+    <div class="variant-row">
+      <textarea class="variant-input" rows="2" placeholder="Description option ${i+1}…"
+        oninput="descVariants[${i}].text = this.value"
+        onblur="renderDescVariants()">${esc(v.text)}</textarea>
+      <button class="variant-btn use-btn ${v.active ? 'active' : ''}" onclick="useDescVariant(${i})">USE</button>
+      <button class="variant-btn" onclick="removeDescVariant(${i})">✕</button>
+    </div>
+  `).join('');
+}
+
+function useDescVariant(i) {
+  descVariants.forEach((v, j) => v.active = j === i);
+  document.getElementById('desc-main').value = descVariants[i].text;
+  updateDesc();
+  renderDescVariants();
+}
+
+function removeDescVariant(i) {
+  descVariants.splice(i, 1);
+  renderDescVariants();
+}
+
+// ════════════════════════════════════════════════
+//  SCORE & HANDOFF
+// ════════════════════════════════════════════════
+function updateScore() {
+  const score = calcScore();
+  document.getElementById('header-score').textContent = score + '%';
+  // update ring on handoff if visible
+  updateHandoffScore(score);
+}
+
+function calcScore() {
+  let pts = 0, total = 0;
+  const title = document.getElementById('active-title').value;
+  const desc  = document.getElementById('desc-main').value;
+
+  // Title: 30pts
+  total += 30;
+  if (title.length >= 20 && title.length <= 70) pts += 30;
+  else if (title.length > 0) pts += 15;
+
+  // Tags: 35pts
+  total += 35;
+  const issues = tags.length ? analyzeTagIssues() : [];
+  const errors = issues.filter(x => x.level === 'error').length;
+  const warns  = issues.filter(x => x.level === 'warn').length;
+  if (tags.length >= 8 && !errors) pts += 35;
+  else if (tags.length >= 5 && errors < 2) pts += 20;
+  else if (tags.length > 0) pts += 8;
+
+  // Desc: 35pts
+  total += 35;
+  if (desc.length >= 100 && desc.length <= 5000) pts += 35;
+  else if (desc.length > 0) pts += 15;
+
+  return Math.round(pts / total * 100);
+}
+
+function updateHandoffScore(score) {
+  const ring = document.getElementById('score-ring');
+  const num  = document.getElementById('score-num');
+  const rtitle = document.getElementById('readiness-title');
+  const rsub   = document.getElementById('readiness-sub');
+  if (!ring) return;
+
+  num.textContent = score + '%';
+
+  let color = 'var(--accent)';
+  let label = 'Needs work';
+  let sub   = 'Add title, tags, and description to improve.';
+  if (score >= 90) { color = 'var(--green)'; label = 'Upload ready'; sub = 'All sections look good. Copy and go!'; }
+  else if (score >= 70) { color = 'var(--blue)'; label = 'Almost there'; sub = 'A few things left to tighten up.'; }
+  else if (score >= 40) { color = 'var(--amber)'; label = 'In progress'; sub = 'Keep going — you\'re building something.'; }
+
+  ring.style.background = `conic-gradient(${color} ${score}%, var(--border) 0%)`;
+  rtitle.textContent = label;
+  rsub.textContent   = sub;
+}
+
+function updateHandoff() {
+  const title = document.getElementById('active-title').value;
+  const desc  = document.getElementById('desc-main').value;
+  const score = calcScore();
+
+  document.getElementById('ho-title').textContent = title || '—';
+  document.getElementById('ho-tags').textContent  = tags.length ? tags.join(', ') : '—';
+  document.getElementById('ho-desc').textContent  = desc || '—';
+
+  updateHandoffScore(score);
+  renderChecklist();
+}
+
+function renderChecklist() {
+  const title = document.getElementById('active-title').value;
+  const desc  = document.getElementById('desc-main').value;
+  const issues = tags.length ? analyzeTagIssues() : [];
+  const errors  = issues.filter(x => x.level === 'error').length;
+
+  const checks = [
+    { label: 'Title under 60 chars (no clipping)', ok: title.length > 0 && title.length <= 60 },
+    { label: 'Title 20–100 chars', ok: title.length >= 20 && title.length <= 100 },
+    { label: '8+ tags added', ok: tags.length >= 8 },
+    { label: 'No duplicate or stuffed tags', ok: tags.length > 0 && errors === 0 },
+    { label: 'Tags under 500 char limit', ok: (tags.join('').length + Math.max(0, tags.length-1)) <= TAG_CHAR_MAX },
+    { label: 'Description has 100+ chars', ok: desc.length >= 100 },
+    { label: 'Description under 5000 chars', ok: desc.length <= 5000 },
+    { label: 'Hook visible in first 157 chars', ok: desc.length > 0 },
+  ];
+
+  document.getElementById('check-list').innerHTML = checks.map(c => `
+    <div class="check-item ${c.ok ? 'ok' : 'fail'}">
+      <span class="check-dot">${c.ok ? '✓' : '○'}</span>
+      <span>${c.label}</span>
+    </div>
+  `).join('');
+}
+
+// ════════════════════════════════════════════════
+//  COPY
+// ════════════════════════════════════════════════
+function copySection(elId, btn) {
+  const text = document.getElementById(elId).textContent;
+  if (text === '—') return;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.textContent = 'Copy ' + (elId.includes('title') ? 'title' : elId.includes('tags') ? 'tags' : 'description');
+    }, 2000);
+  });
+}
+
+function copyAll() {
+  const title = document.getElementById('active-title').value;
+  const desc  = document.getElementById('desc-main').value;
+  const tagStr = tags.join(', ');
+  const out = [
+    '── TITLE ──',
+    title || '(empty)',
+    '',
+    '── TAGS ──',
+    tagStr || '(empty)',
+    '',
+    '── DESCRIPTION ──',
+    desc || '(empty)',
+  ].join('\n');
+  navigator.clipboard.writeText(out).then(() => {
+    const btn = document.querySelector('.copy-all-btn');
+    btn.textContent = '✓ Full Package Copied!';
+    setTimeout(() => { btn.textContent = '⬆ Copy Full Upload Package'; }, 2500);
+  });
+}
+
+// ════════════════════════════════════════════════
+//  UTILS
+// ════════════════════════════════════════════════
+function esc(str) {
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+// ── Init ──
+updateTitle();
+updateDesc();
+renderTags();
+updateScore();
+</script>
+</body>
+</html>

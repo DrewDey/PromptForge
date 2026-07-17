@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Launch Board</title>
+    <style>
+        :root {
+            --bg: #fafafa;
+            --card: #ffffff;
+            --text: #2d3748;
+            --text-light: #718096;
+            --accent: #3182ce;
+            --border: #e2e8f0;
+            --success: #38a169;
+            --warning: #dd6b20;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 16px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        h2 {
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            color: var(--text);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 6px;
+        }
+
+        .input-group {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text-light);
+        }
+
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            background: #fff;
+        }
+
+        textarea {
+            height: 80px;
+            resize: none;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent);
+        }
+
+        .status-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            gap: 8px;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .status-ready { background: #c6f6d5; color: #22543d; }
+        .status-pending { background: #feebc8; color: #744210; }
+
+        .score-display {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .issue-item {
+            font-size: 0.9rem;
+            color: var(--warning);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .success-msg {
+            color: var(--success);
+            font-size: 0.9rem;
+        }
+
+        .btn {
+            width: 100%;
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        .btn:active {
+            background: #2b6cb0;
+        }
+
+        .output-box {
+            background: #f7fafc;
+            border: 1px dashed var(--border);
+            padding: 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            margin-top: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Recipe Launch Board</h1>
+    </header>
+
+    <div class="card">
+        <h2>Recipe Details</h2>
+        <div class="input-group">
+            <label for="recipeName">Recipe Name</label>
+            <input type="text" id="recipeName" placeholder="e.g., Lemon Blueberry Loaf">
+        </div>
+        <div class="input-group">
+            <label for="recipeBody">Recipe/Method Highlights</label>
+            <textarea id="recipeBody" placeholder="Paste ingredients or key steps here..."></textarea>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Promo Assets Needed</h2>
+        <div class="checkbox-group">
+            <label class="checkbox-label"><input type="checkbox" id="assetTitle" class="tracker"> Title Setup</label>
+            <label class="checkbox-label"><input type="checkbox" id="assetCaption" class="tracker"> Caption Drafted</label>
+            <label class="checkbox-label"><input type="checkbox" id="assetHashtags" class="tracker"> Hashtags Researched</label>
+            <label class="checkbox-label"><input type="checkbox" id="assetAllergens" class="tracker"> Allergen Notes Flagged</label>
+            <label class="checkbox-label"><input type="checkbox" id="assetChannels" class="tracker"> Channel Formats Checked</label>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Readiness Status</h2>
+        <div class="status-container">
+            <div id="statusBadge" class="status-badge status-pending">Pending Assets</div>
+            <div id="scoreDisplay" class="score-display">0%</div>
+        </div>
+        
+        <div id="issuesList"></div>
+        
+        <button id="copyBtn" class="btn">Copy Launch Checklist</button>
+        <div id="outputPreview" class="output-box"></div>
+    </div>
+</div>
+
+<script>
+    const inputs = document.querySelectorAll('#recipeName, #recipeBody, .tracker');
+    const copyBtn = document.getElementById('copyBtn');
+    
+    inputs.forEach(input => {
+        input.addEventListener('input', updateBoard);
+    });
+
+    copyBtn.addEventListener('click', copyChecklist);
+
+    function updateBoard() {
+        const name = document.getElementById('recipeName').value.trim();
+        const body = document.getElementById('recipeBody').value.trim();
+        
+        const assets = {
+            'Title': document.getElementById('assetTitle').checked,
+            'Caption': document.getElementById('assetCaption').checked,
+            'Hashtags': document.getElementById('assetHashtags').checked,
+            'Allergen Notes': document.getElementById('assetAllergens').checked,
+            'Channel Checks': document.getElementById('assetChannels').checked
+        };
+
+        const issuesList = document.getElementById('issuesList');
+        const statusBadge = document.getElementById('statusBadge');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const outputPreview = document.getElementById('outputPreview');
+
+        let totalItems = 7;
+        let completedItems = 0;
+        let issues = [];
+
+        if (name) { completedItems++; } else { issues.push("Missing recipe name"); }
+        if (body) { completedItems++; } else { issues.push("Missing recipe content"); }
+        
+        Object.keys(assets).forEach(asset => {
+            if (assets[asset]) {
+                completedItems++;
+            } else {
+                issues.push(`Missing ${asset}`);
+            }
+        });
+
+        const scorePercent = Math.round((completedItems / totalItems) * 100);
+        scoreDisplay.textContent = `${scorePercent}%`;
+
+        issuesList.textContent = '';
+        
+        if (issues.length > 0) {
+            statusBadge.textContent = 'Pending Assets';
+            statusBadge.className = 'status-badge status-pending';
+            
+            issues.forEach(issue => {
+                const item = document.createElement('div');
+                item.className = 'issue-item';
+                item.textContent = `⚠️ ${issue}`;
+                issuesList.appendChild(item);
+            });
+        } else {
+            statusBadge.textContent = 'Ready for Launch';
+            statusBadge.className = 'status-badge status-ready';
+            
+            const successMsg = document.createElement('div');
+            successMsg.className = 'success-msg';
+            successMsg.textContent = '✨ Everything looks good to go!';
+            issuesList.appendChild(successMsg);
+        }
+
+        let checklistText = `LAUNCH CHECKLIST: ${name || 'Untitled Recipe'}\n`;
+        checklistText += `==================================\n\n`;
+        checklistText += `[${name ? 'X' : ' '}] Recipe Name Confirmed\n`;
+        checklistText += `[${body ? 'X' : ' '}] Recipe Content Ready\n`;
+        checklistText += `[${assets['Title'] ? 'X' : ' '}] Title Setup\n`;
+        checklistText += `[${assets['Caption'] ? 'X' : ' '}] Caption Drafted\n`;
+        checklistText += `[${assets['Hashtags'] ? 'X' : ' '}] Hashtags Researched\n`;
+        checklistText += `[${assets['Allergen Notes'] ? 'X' : ' '}] Allergen Notes Flagged\n`;
+        checklistText += `[${assets['Channel Checks'] ? 'X' : ' '}] Channel Formats Checked\n\n`;
+        checklistText += `Readiness Score: ${scorePercent}%\n`;
+        checklistText += `Status: ${issues.length === 0 ? 'READY' : 'INCOMPLETE'}`;
+
+        outputPreview.textContent = checklistText;
+    }
+
+    function copyChecklist() {
+        const text = document.getElementById('outputPreview').textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            const originalText = copyBtn.textContent;
+            copyBtn.textContent = 'Copied!';
+            copyBtn.style.background = 'var(--success)';
+            setTimeout(() => {
+                copyBtn.textContent = originalText;
+                copyBtn.style.background = 'var(--accent)';
+            }, 1500);
+        });
+    }
+
+    updateBoard();
+</script>
+
+</body>
+</html>

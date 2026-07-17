@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campaign Caption Ingredient Mixer</title>
+    <style>
+        :root {
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --border: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --accent: #f43f5e;
+            --accent-bg: rgba(244, 63, 94, 0.1);
+            --success: #10b981;
+            --radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            padding: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        header {
+            margin-bottom: 16px;
+            padding: 8px 4px;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+
+        h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .grid-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--text-muted);
+        }
+
+        select, input {
+            width: 100%;
+            background-color: var(--bg-main);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+            -webkit-appearance: none;
+        }
+
+        select {
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 16px;
+            padding-right: 36px;
+        }
+
+        select:focus, input:focus {
+            border-color: var(--primary);
+        }
+
+        .ingredients-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .ingredient-card {
+            background-color: var(--bg-main);
+            border-left: 4px solid var(--primary);
+            padding: 12px;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .ingredient-card.warning {
+            border-left-color: var(--accent);
+            background-color: var(--accent-bg);
+        }
+
+        .ing-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .ing-title {
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--text-main);
+        }
+
+        .ing-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .warning-box {
+            background-color: var(--accent-bg);
+            border: 1px dashed var(--accent);
+            border-radius: var(--radius);
+            padding: 12px;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .warning-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--accent);
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+
+        .warning-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .brief-box {
+            background-color: var(--bg-main);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 250px;
+            overflow-y: auto;
+            color: #cbd5e1;
+        }
+
+        .btn {
+            width: 100%;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 12px;
+            transition: background-color 0.2s;
+        }
+
+        .btn:active {
+            background-color: var(--primary-hover);
+        }
+
+        .btn.copied {
+            background-color: var(--success);
+        }
+
+        .pill-group {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 4px;
+        }
+
+        .pill {
+            background-color: var(--bg-main);
+            border: 1px solid var(--border);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .placeholder-text {
+            color: var(--text-muted);
+            text-align: center;
+            padding: 20px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Campaign Caption Mixer</h1>
+    </header>
+
+    <div class="grid-layout">
+        
+        <section class="card">
+            <h2>Campaign Controls</h2>
+            
+            <div class="form-group">
+                <label for="goal">Campaign Goal</label>
+                <select id="goal">
+                    <option value="">-- Select Goal --</option>
+                    <option value="conversion">Conversion / Sales</option>
+                    <option value="engagement">Community Engagement</option>
+                    <option value="education">Value / Education</option>
+                    <option value="brand">Brand Awareness</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="audience">Target Audience</label>
+                <select id="audience">
+                    <option value="">-- Select Audience --</option>
+                    <option value="cold">Cold (Unaware / Problem Aware)</option>
+                    <option value="warm">Warm (Solution Aware / Retargeting)</option>
+                    <option value="hot">Hot (Existing Customers / Fans)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="asset">Creative Asset Type</label>
+                <select id="asset">
+                    <option value="">-- Select Asset --</option>
+                    <option value="video">Short-Form Video (Reel/TikTok)</option>
+                    <option value="carousel">Carousel / Info-graphic</option>
+                    <option value="image">Static Image / Photo</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="cta">Primary Call To Action</label>
+                <select id="cta">
+                    <option value="">-- Select CTA --</option>
+                    <option value="link">Click Link in Bio / Description</option>
+                    <option value="comment">Comment Specific Keyword</option>
+                    <option value="save">Save / Share this Post</option>
+                    <option value="dm">Send a Direct Message</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="freshness">Freshness Limit (Days Live)</label>
+                <input type="number" id="freshness" min="1" max="90" value="7">
+            </div>
+        </section>
+
+        <div id="warningBox" class="warning-box"></div>
+
+        <section class="card">
+            <h2>Caption Ingredients</h2>
+            <div id="ingredientsContainer" class="ingredients-container"></div>
+        </section>
+
+        <section class="card">
+            <h2>Offline Brief Blueprint</h2>
+            <div id="briefBox" class="brief-box"></div>
+            <button class="btn" id="copyBtn">Copy Brief to Clipboard</button>
+        </section>
+    </div>
+
+    <script>
+        const matrix = {
+            goal: {
+                conversion: { hook: "The Hard Truth", body: "Direct problem-solution transformation presentation.", structural: "Scarcity or incentive anchor" },
+                engagement: { hook: "Unpopular Opinion / Question", body: "Relatable storytelling or interactive debate prompt.", structural: "Open-ended loop closure" },
+                education: { hook: "The Step-by-Step Breakdown", body: "Actionable, value-first insights stripped of fluff.", structural: "Bullet-point formatting priority" },
+                brand: { hook: "Behind the Curtain", body: "Core values, origin insights, or high-level philosophy.", structural: "Core identity positioning statement" }
+            },
+            audience: {
+                cold: { tone: "Problem-Agitating & Clear", depth: "Low-context baseline; clear definitions, high readability." },
+                warm: { tone: "Trust-Building & Credible", depth: "Mid-context calibration; presumes solution familiarity." },
+                hot: { tone: "Direct & Community-Driven", depth: "High-context shorthand; rewards loyalty, immediate value." }
+            },
+            asset: {
+                video: { sync: "Visual Handshake", requirement: "First 3 seconds must map directly to the text hook line." },
+                carousel: { sync: "Pacing Continuation", requirement: "Caption expands on slide data rather than repeating it." },
+                image: { sync: "Context Anchoring", requirement: "Caption does the heavy lifting; structural depth required." }
+            },
+            cta: {
+                link: { anchor: "Bio Navigation Direction", phrasing: "Tap the link in bio to secure yours." },
+                comment: { anchor: "Automation Trigger Phrase", phrasing: "Comment [KEYWORD] below and check your DMs." },
+                save: { anchor: "Value Retention Reminder", phrasing: "Save this post so you can reference it later." },
+                dm: { anchor: "Conversational Bridge", phrasing: "Send me a DM with the word [START] to chat." }
+            }
+        };
+
+        const selectGoal = document.getElementById('goal');
+        const selectAudience = document.getElementById('audience');
+        const selectAsset = document.getElementById('asset');
+        const selectCta = document.getElementById('cta');
+        const inputFreshness = document.getElementById('freshness');
+
+        const warningBox = document.getElementById('warningBox');
+        const ingredientsContainer = document.getElementById('ingredientsContainer');
+        const briefBox = document.getElementById('briefBox');
+        const copyBtn = document.getElementById('copyBtn');
+
+        function createIngredientCard(layerName, typeValue, titleText, descText, pillText = null, isWarning = false) {
+            const card = document.createElement('div');
+            card.className = isWarning ? 'ingredient-card warning' : 'ingredient-card';
+
+            const header = document.createElement('div');
+            header.className = 'ing-header';
+            
+            const spanLayer = document.createElement('span');
+            spanLayer.textContent = layerName;
+            
+            const spanType = document.createElement('span');
+            spanType.textContent = typeValue;
+            
+            header.appendChild(spanLayer);
+            header.appendChild(spanType);
+
+            const title = document.createElement('div');
+            title.className = 'ing-title';
+            title.textContent = titleText;
+
+            const desc = document.createElement('div');
+            desc.className = 'ing-desc';
+            desc.textContent = descText;
+
+            card.appendChild(header);
+            card.appendChild(title);
+            card.appendChild(desc);
+
+            if (pillText) {
+                const pillGroup = document.createElement('div');
+                pillGroup.className = 'pill-group';
+                const pill = document.createElement('span');
+                pill.className = 'pill';
+                pill.textContent = pillText;
+                pillGroup.appendChild(pill);
+                card.appendChild(pillGroup);
+            }
+
+            return card;
+        }
+
+        function createWarningItem(text) {
+            const item = document.createElement('div');
+            item.className = 'warning-item';
+            item.textContent = `⚠ ${text}`;
+            return item;
+        }
+
+        function mixIngredients() {
+            const goal = selectGoal.value;
+            const audience = selectAudience.value;
+            const asset = selectAsset.value;
+            const cta = selectCta.value;
+            const freshness = parseInt(inputFreshness.value, 10) || 7;
+
+            // Clean previous nodes
+            warningBox.textContent = '';
+            ingredientsContainer.textContent = '';
+            briefBox.textContent = '';
+
+            let missingPieces = 0;
+
+            if (!goal) { warningBox.appendChild(createWarningItem('Missing Campaign Goal')); missingPieces++; }
+            if (!audience) { warningBox.appendChild(createWarningItem('Missing Target Audience')); missingPieces++; }
+            if (!asset) { warningBox.appendChild(createWarningItem('Missing Creative Asset Type')); missingPieces++; }
+            if (!cta) { warningBox.appendChild(createWarningItem('Missing Call To Action')); missingPieces++; }
+
+            if (missingPieces > 0) {
+                warningBox.style.display = 'block';
+            } else {
+                warningBox.style.display = 'none';
+            }
+
+            if (missingPieces === 4) {
+                const placeholder = document.createElement('p');
+                placeholder.className = 'placeholder-text';
+                placeholder.textContent = 'Select criteria above to generate ingredients.';
+                ingredientsContainer.appendChild(placeholder);
+                briefBox.textContent = 'Select all controls to generate the structured campaign brief blueprint.';
+                return;
+            }
+
+            if (goal) {
+                const gData = matrix.goal[goal];
+                ingredientsContainer.appendChild(createIngredientCard('Goal Strategy', goal, `${gData.hook} Hook`, gData.body, `Structural: ${gData.structural}`));
+            }
+
+            if (audience) {
+                const aData = matrix.audience[audience];
+                ingredientsContainer.appendChild(createIngredientCard('Audience Layer', audience, aData.tone, `Depth Configuration: ${aData.depth}`));
+            }
+
+            if (asset) {
+                const asData = matrix.asset[asset];
+                ingredientsContainer.appendChild(createIngredientCard('Asset Sync', asset, asData.sync, asData.requirement));
+            }
+
+            if (cta) {
+                const cData = matrix.cta[cta];
+                ingredientsContainer.appendChild(createIngredientCard('CTA Mechanics', cta, cData.anchor, `Execution Phrasing: "${cData.phrasing}"`));
+            }
+
+            if (freshness > 14) {
+                ingredientsContainer.appendChild(createIngredientCard('Freshness Alert', `${freshness} Days`, 'High Fatigue Risk', 'Content live for over 14 days requires dynamic comment monitoring or alternate angle variants to prevent performance degradation.', null, true));
+            }
+
+            if (missingPieces === 0) {
+                const g = matrix.goal[goal];
+                const a = matrix.audience[audience];
+                const ast = matrix.asset[asset];
+                const c = matrix.cta[cta];
+
+                briefBox.textContent = 
+`=== CAMPAIGN CAPTION BRIEF BLUEPRINT ===
+Generated On: ${new Date().toLocaleDateString()}
+Campaign Lifecycle: ${freshness} Days Limit
+
+[CONTROLS ARCHITECTURE]
+• Goal: ${goal.toUpperCase()} -> Strategy: ${g.hook}
+• Audience: ${audience.toUpperCase()} -> Tone: ${a.tone}
+• Asset Structure: ${asset.toUpperCase()} -> Matrix Requirement: ${ast.sync}
+• CTA Strategy: ${cta.toUpperCase()} -> Action: ${c.anchor}
+
+[INGREDIENT BLUEPRINT MIX]
+1. HOOK COMPONENT:
+   Focus: ${g.hook}
+   Guideline: Must match the asset's "${ast.sync}" principle.
+
+2. BODY COMPONENT:
+   Framework: ${g.body}
+   Context Depth: ${a.depth}
+
+3. STRUCTURAL ANCHOR:
+   Requirement: ${g.structural}
+
+4. TERMINAL ACTION (CTA):
+   Execution Phrasing: "${c.phrasing}"
+
+[OFFLINE QUALITY CHECKLIST]
+[ ] Caption length matches asset type guidelines.
+[ ] Asset payload delivers on the primary text hook within 3 seconds.
+[ ] CTA matches terminal objective exactly.
+======================================`;
+            } else {
+                briefBox.textContent = 'Awaiting all controls execution to compile the unified brief blueprint...';
+            }
+        }
+
+        function copyBrief() {
+            if (!selectGoal.value || !selectAudience.value || !selectAsset.value || !selectCta.value) return;
+
+            navigator.clipboard.writeText(briefBox.textContent).then(() => {
+                copyBtn.classList.add('copied');
+                copyBtn.textContent = 'Brief Copied!';
+                
+                setTimeout(() => {
+                    copyBtn.classList.remove('copied');
+                    copyBtn.textContent = 'Copy Brief to Clipboard';
+                }, 2000);
+            });
+        }
+
+        selectGoal.addEventListener('change', mixIngredients);
+        selectAudience.addEventListener('change', mixIngredients);
+        selectAsset.addEventListener('change', mixIngredients);
+        selectCta.addEventListener('change', mixIngredients);
+        inputFreshness.addEventListener('input', mixIngredients);
+        copyBtn.addEventListener('click', copyBrief);
+
+        // Run baseline render pass on boot
+        mixIngredients();
+    </script>
+</body>
+</html>

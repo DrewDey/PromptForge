@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Copy compliance & Shelf Tool</title>
+    <style>
+        :root {
+            --bg-main: #121214;
+            --bg-card: #1a1a1e;
+            --border: #2c2c35;
+            --text-main: #e4e4e7;
+            --text-muted: #a1a1aa;
+            --primary: #3b82f6;
+            --success: #22c55e;
+            --warning: #eab308;
+            --danger: #ef4444;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            padding: 12px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .container { max-width: 500px; margin: 0 auto; }
+        h2 { font-size: 16px; margin-bottom: 12px; color: #fff; font-weight: 600; }
+        .section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+        label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 4px; font-weight: 700; }
+        input, textarea {
+            width: 100%;
+            background: #222227;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: #fff;
+            padding: 8px;
+            font-size: 13px;
+            margin-bottom: 10px;
+            font-family: inherit;
+            resize: vertical;
+        }
+        textarea:focus, input:focus { border-color: var(--primary); outline: none; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .badge-neutral { background: #2c2c35; color: var(--text-main); }
+        .badge-success { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4); }
+        .badge-warning { background: rgba(234, 179, 8, 0.2); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.4); }
+        .badge-danger { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+        
+        .metric-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .progress-bar { background: #2c2c35; height: 6px; border-radius: 3px; overflow: hidden; width: 100%; margin-top: 4px; }
+        .progress-fill { height: 100%; width: 0%; transition: width 0.2s ease; }
+        
+        .alert-item { padding: 6px 8px; border-radius: 4px; font-size: 12px; margin-bottom: 4px; border-left: 3px solid; }
+        .alert-warning { background: rgba(234, 179, 8, 0.1); border-left-color: var(--warning); color: #facc15; }
+        .alert-danger { background: rgba(239, 68, 68, 0.1); border-left-color: var(--danger); color: #f87171; }
+        
+        .check-item { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; font-size: 12px; }
+        .check-item input { width: auto; margin-top: 2px; margin-bottom: 0; }
+        
+        .btn {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+        }
+        .btn:active { opacity: 0.9; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="section">
+        <h2>Input Details</h2>
+        <label>Product Name</label>
+        <input type="text" id="prodName" placeholder="e.g., Titanium Flask X">
+        
+        <label>Verified Features & Specs (One per line)</label>
+        <textarea id="specs" rows="3" placeholder="Grade 5 Titanium&#10;8oz capacity&#10;Leak-proof cap"></textarea>
+        
+        <label>Draft Copy / Claims</label>
+        <textarea id="claims" rows="4" placeholder="Paste your draft copy or product shelf claims here..."></textarea>
+    </div>
+
+    <div class="section">
+        <h2>Readiness & Metrics</h2>
+        <div class="metric-row">
+            <div>
+                <span style="font-size: 12px; font-weight:600;">Shelf-Card Readiness</span>
+                <div class="progress-bar"><div id="readinessFill" class="progress-fill" style="background: var(--primary);"></div></div>
+            </div>
+            <span id="readinessScore" style="font-size: 18px; font-weight:700;">0%</span>
+        </div>
+        
+        <div class="metric-row" style="margin-top: 12px;">
+            <span style="font-size: 12px; font-weight:600;">Copy Balance</span>
+            <span id="balanceBadge" class="badge badge-neutral">Balanced</span>
+        </div>
+        <div style="font-size: 11px; color: var(--text-muted); display:flex; justify-content:space-between;">
+            <span id="specCount">Specs: 0</span>
+            <span id="benefitCount">Benefits: 0</span>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Tone Badges</h2>
+        <div id="toneContainer" style="display: flex; flex-wrap: wrap; gap: 6px;">
+            <span class="badge badge-neutral">No Copy</span>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Validation Warnings</h2>
+        <div id="warningsContainer">
+            <div style="font-size: 12px; color: var(--text-muted);">Enter data to verify claims.</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Launch Checklist</h2>
+        <div id="checklistContainer"></div>
+        <button class="btn" style="margin-top: 10px;" onclick="downloadChecklist()">Download Manifest</button>
+    </div>
+</div>
+
+<script>
+    const inputs = ['prodName', 'specs', 'claims'];
+    inputs.forEach(id => document.getElementById(id).addEventListener('input', analyze));
+
+    function analyze() {
+        const name = document.getElementById('prodName').value.trim();
+        const specsText = document.getElementById('specs').value.trim();
+        const claimsText = document.getElementById('claims').value.trim();
+        
+        const specs = specsText.split('\n').map(s => s.trim().toLowerCase()).filter(s => s.length > 0);
+        
+        let warnings = [];
+        let toneBadges = [];
+        
+        // 1. Tone Analysis
+        if (claimsText) {
+            const toneMap = {
+                'hype': /guaranteed|revolutionary|best|ultimate|perfect|magic|miracle/i,
+                'urgent': /limited|buy now|urgent|today only|selling fast/i,
+                'technical': /mm|oz|grade|v|hz|certified|engineered|alloy|pure/i,
+                'emotional': /love|feel|peace|worry|beautiful|elegant|perfect/i
+            };
+            
+            if (toneMap.hype.test(claimsText)) toneBadges.push({text: 'High Hype', type: 'badge-danger'});
+            if (toneMap.urgent.test(claimsText)) toneBadges.push({text: 'Urgent', type: 'badge-warning'});
+            if (toneMap.technical.test(claimsText)) toneBadges.push({text: 'Technical', type: 'badge-success'});
+            if (toneMap.emotional.test(claimsText)) toneBadges.push({text: 'Emotional', type: 'badge-neutral'});
+            
+            if (toneBadges.length === 0) toneBadges.push({text: 'Neutral/Direct', type: 'badge-neutral'});
+        } else {
+            toneBadges.push({text: 'No Copy', type: 'badge-neutral'});
+        }
+
+        // 2. Spec vs Benefit Balance
+        const specKeywords = /\b(lbs|oz|g|kg|mm|cm|inch|grade|titanium|steel|v|ah|mah|waterproof|ip67|ip68|hz|gb|tb|parts)\b/i;
+        const benefitKeywords = /\b(easy|fast|save|comfortable|protect|clean|portable|lightweight|durable|secure|peace|efficient|improved)\b/i;
+        
+        let specMatches = (claimsText.match(new RegExp(specKeywords, 'gi')) || []).length;
+        let benefitMatches = (claimsText.match(new RegExp(benefitKeywords, 'gi')) || []).length;
+        
+        let balanceText = "Balanced";
+        let balanceClass = "badge-neutral";
+        if (claimsText) {
+            if (specMatches > benefitMatches * 2) { balanceText = "Heavy Spec"; balanceClass = "badge-warning"; }
+            else if (benefitMatches > specMatches * 2) { balanceText = "Heavy Benefit"; balanceClass = "badge-warning"; }
+        }
+
+        // 3. Claim Verification
+        let unverifiedCount = 0;
+        if (claimsText && specs.length > 0) {
+            // Check for aggressive standard marketing triggers
+            const aggressiveClaims = [/100%/i, /completely/i, /always/i, /never/i, /best/i, /fastest/i];
+            aggressiveClaims.forEach(regex => {
+                if (regex.test(claimsText)) {
+                    warnings.push({text: `Absolute claim detected ("${claimsText.match(regex)[0]}"). Ensure legally defensible.`, type: 'alert-warning'});
+                }
+            });
+
+            // Rough heuristic check to see if key specs are missing from matching copy
+            specs.forEach(spec => {
+                const words = spec.split(' ').filter(w => w.length > 2);
+                let matched = false;
+                if (words.length > 0) {
+                    matched = words.some(word => claimsText.toLowerCase().includes(word));
+                }
+                if (!matched && words.length > 0) {
+                    // Spec is omitted from marketing copy
+                }
+            });
+        }
+
+        // 4. Calculate Readiness Score
+        let score = 0;
+        if (name) score += 20;
+        if (specs.length > 0) score += 30;
+        if (claimsText) score += 30;
+        if (claimsText && warnings.length === 0) score += 20;
+        if (claimsText && warnings.length > 0) score -= (warnings.length * 5);
+        score = Math.max(0, Math.min(100, score));
+
+        // Render Badges
+        const toneContainer = document.getElementById('toneContainer');
+        toneContainer.innerHTML = toneBadges.map(b => `<span class="badge ${b.type}">${b.text}</span>`).join('');
+
+        // Render Balance
+        const bBadge = document.getElementById('balanceBadge');
+        bBadge.innerText = balanceText;
+        bBadge.className = `badge ${balanceClass}`;
+        document.getElementById('specCount').innerText = `Specs: ${specMatches}`;
+        document.getElementById('benefitCount').innerText = `Benefits: ${benefitMatches}`;
+
+        // Render Score
+        document.getElementById('readinessScore').innerText = `${score}%`;
+        document.getElementById('readinessFill').style.width = `${score}%`;
+
+        // Render Warnings
+        const warningsContainer = document.getElementById('warningsContainer');
+        if (warnings.length === 0) {
+            warningsContainer.innerHTML = claimsText ? `<div class="alert-item alert-success" style="border-left-color:var(--success); color:#4ade80;">✓ Character profiles & structural claims clean.</div>` : `<div style="font-size: 12px; color: var(--text-muted);">Enter data to verify claims.</div>`;
+        } else {
+            warningsContainer.innerHTML = warnings.map(w => `<div class="alert-item ${w.type}">${w.text}</div>`).join('');
+        }
+
+        // 5. Generate Checklist dynamically
+        const checklistContainer = document.getElementById('checklistContainer');
+        const items = [
+            { id: 'chk1', text: `Verify '${name || 'Product'}' matching vendor manifests` },
+            { id: 'chk2', text: "Character count optimized for mobile shelf view (< 120 chars)" },
+            { id: 'chk3', text: `Validate all ${specs.length} verified specifications match technical data sheets` },
+            { id: 'chk4', text: "Remove or defend any absolute terminology (e.g., '100%', 'never')" }
+        ];
+        
+        checklistContainer.innerHTML = items.map(item => `
+            <div class="check-item">
+                <input type="checkbox" id="${item.id}">
+                <label for="${item.id}" style="color:var(--text-main); font-weight:normal; text-transform:none; margin:0;">${item.text}</label>
+            </div>
+        `).join('');
+    }
+
+    function downloadChecklist() {
+        const name = document.getElementById('prodName').value || 'Product';
+        const score = document.getElementById('readinessScore').innerText;
+        const claims = document.getElementById('claims').value;
+        
+        let manifest = `LAUNCH MANIFEST: ${name.toUpperCase()}\n`;
+        manifest += `Readiness Rating: ${score}\n`;
+        manifest += `Timestamp: ${new Date().toISOString()}\n\n`;
+        manifest += `--- Copy Entry ---\n${claims}\n\n`;
+        manifest += `--- Sign-off Tasks ---\n`;
+        
+        ['chk1', 'chk2', 'chk3', 'chk4'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                const label = el.nextElementSibling.innerText;
+                manifest += `[${el.checked ? 'X' : ' '}] ${label}\n`;
+            }
+        });
+
+        const blob = new Blob([manifest], { type: 'text/plain' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${name.toLowerCase().replace(/\s+/g, '_')}_manifest.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+
+    // Initialize
+    analyze();
+</script>
+</body>
+</html>

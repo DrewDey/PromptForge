@@ -1,0 +1,880 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Backward Week Planner</title>
+<style>
+  :root{
+    --bg:#f5f3ee;
+    --panel:#fffdf8;
+    --ink:#26231f;
+    --muted:#6f695f;
+    --line:#ded8cc;
+    --soft:#eee8dc;
+    --accent:#5f7052;
+    --accent2:#c98254;
+    --danger:#a84d45;
+    --warn:#a66b2a;
+    --ok:#477052;
+    --shadow:0 10px 30px rgba(36,31,23,.08);
+    --radius:18px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  body{line-height:1.35}
+  button,input,textarea,select{font:inherit}
+  .app{width:min(100%,440px);margin:0 auto;padding:14px 12px 32px}
+  header{padding:16px 4px 10px}
+  h1{font-size:1.45rem;line-height:1.1;margin:0 0 8px;font-weight:800;letter-spacing:-.03em}
+  .sub{margin:0;color:var(--muted);font-size:.94rem}
+  .topbar{position:sticky;top:0;z-index:5;background:linear-gradient(var(--bg) 82%,rgba(245,243,238,0));padding:8px 0 14px}
+  .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  button{
+    border:0;border-radius:14px;background:var(--ink);color:#fff;padding:11px 12px;
+    min-height:44px;font-weight:750;cursor:pointer;box-shadow:var(--shadow)
+  }
+  button.secondary{background:var(--panel);color:var(--ink);border:1px solid var(--line);box-shadow:none}
+  button.ghost{background:transparent;color:var(--ink);border:1px dashed var(--line);box-shadow:none}
+  button.danger{background:#fbf1ee;color:var(--danger);border:1px solid #e8c7c1;box-shadow:none}
+  button.small{min-height:36px;padding:8px 10px;border-radius:12px;font-size:.88rem}
+  .section{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:14px;margin:12px 0;box-shadow:var(--shadow)
+  }
+  .section h2{font-size:1rem;margin:0 0 10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .section h2 span{font-weight:850}
+  .hint{font-size:.84rem;color:var(--muted);margin:0 0 12px}
+  .grid{display:grid;gap:10px}
+  .two{grid-template-columns:1fr 1fr}
+  label{display:grid;gap:5px;font-size:.78rem;color:var(--muted);font-weight:750}
+  input,textarea,select{
+    width:100%;border:1px solid var(--line);border-radius:13px;background:#fff;color:var(--ink);
+    padding:10px 11px;min-height:42px;outline:none
+  }
+  textarea{min-height:74px;resize:vertical}
+  input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(95,112,82,.14)}
+  .card{
+    background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px;margin:10px 0
+  }
+  .cardHead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+  .pill{
+    display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:5px 9px;
+    font-size:.75rem;font-weight:800;background:var(--soft);color:var(--muted);white-space:nowrap
+  }
+  .pill.ok{background:#e9f2e8;color:var(--ok)}
+  .pill.warn{background:#fff3df;color:var(--warn)}
+  .pill.bad{background:#fbecea;color:var(--danger)}
+  .pill.dark{background:#2e2a25;color:#fff}
+  .mono{font-variant-numeric:tabular-nums}
+  .rowBtns{display:flex;gap:8px;flex-wrap:wrap}
+  .muted{color:var(--muted)}
+  .tiny{font-size:.78rem}
+  .planDay{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px;margin:10px 0}
+  .dayTop{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
+  .dayTitle{font-weight:900;font-size:1rem}
+  .bar{height:9px;background:#eee5d7;border-radius:999px;overflow:hidden;margin:8px 0}
+  .bar > i{display:block;height:100%;background:var(--accent);width:0%}
+  .bar > i.warn{background:var(--warn)}
+  .bar > i.bad{background:var(--danger)}
+  .alloc{border-top:1px solid var(--line);padding-top:8px;margin-top:8px}
+  .allocItem{display:grid;gap:3px;padding:8px;border-radius:12px;background:#faf7f0;margin:6px 0}
+  .flags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .empty{padding:12px;border:1px dashed var(--line);border-radius:14px;color:var(--muted);background:#fff}
+  details{border:1px solid var(--line);border-radius:15px;background:#fff;margin:10px 0}
+  summary{padding:12px 13px;cursor:pointer;font-weight:850}
+  details .inside{padding:0 12px 12px}
+  .footerActions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+  .toast{
+    position:fixed;left:50%;bottom:18px;transform:translateX(-50%) translateY(20px);
+    background:#2b2722;color:#fff;border-radius:999px;padding:10px 14px;font-weight:800;
+    opacity:0;pointer-events:none;transition:.2s;z-index:10;width:max-content;max-width:calc(100% - 24px)
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .printOnly{display:none}
+  @media (max-width:390px){
+    .app{padding-left:10px;padding-right:10px}
+    .actions,.footerActions{grid-template-columns:1fr}
+    h1{font-size:1.32rem}
+    .two{grid-template-columns:1fr}
+  }
+  @media print{
+    body{background:#fff}
+    .app{width:100%;max-width:none;padding:0}
+    .topbar,.editorOnly,button,.toast{display:none!important}
+    .section{box-shadow:none;border-color:#bbb;break-inside:avoid}
+    .printOnly{display:block}
+    input,textarea,select{border:0;padding:0;min-height:0;background:transparent}
+    .card,.planDay{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Backward Week Planner</h1>
+    <p class="sub">Start with Friday outcomes, then map the week backward around focus blocks, energy, and constraints.</p>
+  </header>
+
+  <div class="topbar editorOnly">
+    <div class="actions">
+      <button id="buildBtn">Build week</button>
+      <button class="secondary" id="printBtn">Print</button>
+      <button class="secondary" id="copyBtn">Copy plan</button>
+      <button class="secondary" id="exportTxtBtn">Export text</button>
+    </div>
+  </div>
+
+  <section class="section">
+    <h2><span>Week setup</span><span class="pill" id="saveState">Saved locally</span></h2>
+    <p class="hint">Nothing leaves this browser. Your plan is stored with localStorage.</p>
+    <div class="grid two">
+      <label>Friday date
+        <input type="date" id="fridayDate">
+      </label>
+      <label>Buffer
+        <select id="buffer">
+          <option value="0">No buffer</option>
+          <option value="10">10%</option>
+          <option value="20">20%</option>
+          <option value="30">30%</option>
+          <option value="40">40%</option>
+        </select>
+      </label>
+      <label>Daily overload line
+        <input type="number" id="maxDayHours" min="1" max="16" step=".25">
+      </label>
+      <label>Task switch limit
+        <input type="number" id="maxTasksDay" min="1" max="12" step="1">
+      </label>
+    </div>
+  </section>
+
+  <section class="section editorOnly">
+    <h2><span>Friday outcomes</span><button class="small secondary" id="addOutcome">Add</button></h2>
+    <p class="hint">Use hours as the rough work needed before Friday. Higher priority gets placed first.</p>
+    <div id="outcomes"></div>
+  </section>
+
+  <section class="section editorOnly">
+    <h2><span>Focus blocks</span><button class="small secondary" id="addBlock">Add</button></h2>
+    <p class="hint">These are the available work containers. The planner fills them from Friday backward.</p>
+    <div id="blocks"></div>
+  </section>
+
+  <section class="section editorOnly">
+    <h2><span>Energy windows</span><button class="small secondary" id="addEnergy">Add</button></h2>
+    <p class="hint">High energy protects deep work. Low energy reduces usable capacity.</p>
+    <div id="energy"></div>
+  </section>
+
+  <section class="section editorOnly">
+    <h2><span>Constraints</span><button class="small secondary" id="addConstraint">Add</button></h2>
+    <p class="hint">Hard constraints remove time. Soft constraints cut that overlap in half.</p>
+    <div id="constraints"></div>
+  </section>
+
+  <section class="section" id="planSection">
+    <h2><span>Backward map</span><span class="pill dark mono" id="weekScore">Ready</span></h2>
+    <div id="summaryBox" class="empty">Add outcomes and focus blocks, then build the week.</div>
+    <div id="plan"></div>
+    <div class="footerActions editorOnly">
+      <button class="secondary" id="exportJsonBtn">Export JSON</button>
+      <button class="secondary" id="exportCsvBtn">Export CSV</button>
+      <button class="ghost" id="resetSampleBtn">Load sample</button>
+      <button class="danger" id="clearBtn">Clear all</button>
+    </div>
+  </section>
+
+  <section class="section printOnly">
+    <h2><span>Printed notes</span></h2>
+    <p class="muted tiny">Generated locally from your browser. No external services used.</p>
+  </section>
+</div>
+
+<div class="toast" id="toast">Done</div>
+
+<script>
+(function(){
+  const KEY = "calmBackwardWeekPlanner_v1";
+  const days = ["Mon","Tue","Wed","Thu","Fri"];
+  const dayIndex = Object.fromEntries(days.map((d,i)=>[d,i]));
+  const $ = id => document.getElementById(id);
+
+  let state = load() || sampleState();
+
+  const templates = {
+    outcome: () => ({
+      id: uid(),
+      title: "",
+      done: "",
+      hours: 2,
+      priority: "Medium",
+      energyNeed: "Medium"
+    }),
+    block: () => ({
+      id: uid(),
+      day: "Mon",
+      label: "Focus",
+      start: "09:00",
+      end: "10:30",
+      type: "Deep"
+    }),
+    energy: () => ({
+      id: uid(),
+      day: "Mon",
+      start: "09:00",
+      end: "12:00",
+      level: "High",
+      notes: ""
+    }),
+    constraint: () => ({
+      id: uid(),
+      day: "Mon",
+      label: "",
+      start: "12:00",
+      end: "13:00",
+      hardness: "Hard"
+    })
+  };
+
+  function uid(){
+    return Math.random().toString(36).slice(2,9) + Date.now().toString(36).slice(-4);
+  }
+
+  function nextFriday(){
+    const d = new Date();
+    const offset = (5 - d.getDay() + 7) % 7;
+    d.setDate(d.getDate() + offset);
+    return d.toISOString().slice(0,10);
+  }
+
+  function sampleState(){
+    return {
+      fridayDate: nextFriday(),
+      buffer: 20,
+      maxDayHours: 5,
+      maxTasksDay: 4,
+      outcomes: [
+        {id:uid(),title:"Finish client-ready draft",done:"Clean version ready to send or review",hours:3.5,priority:"High",energyNeed:"High"},
+        {id:uid(),title:"Resolve open questions",done:"Unknowns listed, answered, or assigned",hours:2,priority:"High",energyNeed:"Medium"},
+        {id:uid(),title:"Admin cleanup",done:"Loose notes, files, and follow-ups closed",hours:1.5,priority:"Medium",energyNeed:"Low"}
+      ],
+      blocks: [
+        {id:uid(),day:"Mon",label:"Deep work",start:"09:00",end:"11:00",type:"Deep"},
+        {id:uid(),day:"Tue",label:"Deep work",start:"09:00",end:"11:30",type:"Deep"},
+        {id:uid(),day:"Wed",label:"Build block",start:"13:00",end:"15:00",type:"Flexible"},
+        {id:uid(),day:"Thu",label:"Finish block",start:"09:00",end:"11:00",type:"Deep"},
+        {id:uid(),day:"Fri",label:"Final polish",start:"09:00",end:"10:30",type:"Review"}
+      ],
+      energy: [
+        {id:uid(),day:"Mon",start:"08:30",end:"11:30",level:"High",notes:"Best thinking"},
+        {id:uid(),day:"Tue",start:"09:00",end:"12:00",level:"High",notes:""},
+        {id:uid(),day:"Wed",start:"13:00",end:"16:00",level:"Medium",notes:""},
+        {id:uid(),day:"Thu",start:"09:00",end:"11:30",level:"High",notes:""},
+        {id:uid(),day:"Fri",start:"09:00",end:"12:00",level:"Medium",notes:"Keep light"}
+      ],
+      constraints: [
+        {id:uid(),day:"Wed",label:"Meetings",start:"10:00",end:"12:00",hardness:"Hard"},
+        {id:uid(),day:"Fri",label:"No new heavy work",start:"13:00",end:"17:00",hardness:"Soft"}
+      ]
+    };
+  }
+
+  function save(){
+    localStorage.setItem(KEY, JSON.stringify(state));
+    $("saveState").textContent = "Saved locally";
+  }
+
+  function load(){
+    try{
+      return JSON.parse(localStorage.getItem(KEY));
+    }catch(e){
+      return null;
+    }
+  }
+
+  function toast(msg){
+    const t = $("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(()=>t.classList.remove("show"), 1400);
+  }
+
+  function daySelect(value){
+    return days.map(d=>`<option value="${d}" ${d===value?"selected":""}>${d}</option>`).join("");
+  }
+
+  function render(){
+    $("fridayDate").value = state.fridayDate || nextFriday();
+    $("buffer").value = String(state.buffer ?? 20);
+    $("maxDayHours").value = state.maxDayHours ?? 5;
+    $("maxTasksDay").value = state.maxTasksDay ?? 4;
+
+    $("outcomes").innerHTML = state.outcomes.map((o,i)=>`
+      <div class="card" data-kind="outcomes" data-id="${o.id}">
+        <div class="cardHead">
+          <span class="pill">${i+1}</span>
+          <button class="small danger" data-delete="${o.id}" data-array="outcomes">Remove</button>
+        </div>
+        <div class="grid">
+          <label>Outcome
+            <input data-field="title" value="${esc(o.title)}" placeholder="What must be true by Friday?">
+          </label>
+          <label>Definition of done
+            <textarea data-field="done" placeholder="What counts as finished?">${esc(o.done)}</textarea>
+          </label>
+          <div class="grid two">
+            <label>Hours needed
+              <input type="number" min="0" step=".25" data-field="hours" value="${num(o.hours)}">
+            </label>
+            <label>Priority
+              <select data-field="priority">
+                ${opts(["High","Medium","Low"],o.priority)}
+              </select>
+            </label>
+            <label>Energy needed
+              <select data-field="energyNeed">
+                ${opts(["High","Medium","Low"],o.energyNeed)}
+              </select>
+            </label>
+          </div>
+        </div>
+      </div>
+    `).join("") || `<div class="empty">No outcomes yet.</div>`;
+
+    $("blocks").innerHTML = state.blocks.map(b=>`
+      <div class="card" data-kind="blocks" data-id="${b.id}">
+        <div class="cardHead">
+          <span class="pill">${b.day} ${b.start} to ${b.end}</span>
+          <button class="small danger" data-delete="${b.id}" data-array="blocks">Remove</button>
+        </div>
+        <div class="grid two">
+          <label>Day
+            <select data-field="day">${daySelect(b.day)}</select>
+          </label>
+          <label>Block label
+            <input data-field="label" value="${esc(b.label)}" placeholder="Deep work">
+          </label>
+          <label>Start
+            <input type="time" data-field="start" value="${b.start}">
+          </label>
+          <label>End
+            <input type="time" data-field="end" value="${b.end}">
+          </label>
+          <label>Type
+            <select data-field="type">${opts(["Deep","Flexible","Admin","Review"],b.type)}</select>
+          </label>
+        </div>
+      </div>
+    `).join("") || `<div class="empty">No focus blocks yet.</div>`;
+
+    $("energy").innerHTML = state.energy.map(e=>`
+      <div class="card" data-kind="energy" data-id="${e.id}">
+        <div class="cardHead">
+          <span class="pill">${e.level}</span>
+          <button class="small danger" data-delete="${e.id}" data-array="energy">Remove</button>
+        </div>
+        <div class="grid two">
+          <label>Day
+            <select data-field="day">${daySelect(e.day)}</select>
+          </label>
+          <label>Level
+            <select data-field="level">${opts(["High","Medium","Low"],e.level)}</select>
+          </label>
+          <label>Start
+            <input type="time" data-field="start" value="${e.start}">
+          </label>
+          <label>End
+            <input type="time" data-field="end" value="${e.end}">
+          </label>
+          <label style="grid-column:1/-1">Notes
+            <input data-field="notes" value="${esc(e.notes)}" placeholder="Optional">
+          </label>
+        </div>
+      </div>
+    `).join("") || `<div class="empty">No energy windows yet.</div>`;
+
+    $("constraints").innerHTML = state.constraints.map(c=>`
+      <div class="card" data-kind="constraints" data-id="${c.id}">
+        <div class="cardHead">
+          <span class="pill">${c.hardness}</span>
+          <button class="small danger" data-delete="${c.id}" data-array="constraints">Remove</button>
+        </div>
+        <div class="grid two">
+          <label>Day
+            <select data-field="day">${daySelect(c.day)}</select>
+          </label>
+          <label>Constraint
+            <input data-field="label" value="${esc(c.label)}" placeholder="Meeting, commute, hard stop">
+          </label>
+          <label>Start
+            <input type="time" data-field="start" value="${c.start}">
+          </label>
+          <label>End
+            <input type="time" data-field="end" value="${c.end}">
+          </label>
+          <label>Impact
+            <select data-field="hardness">${opts(["Hard","Soft"],c.hardness)}</select>
+          </label>
+        </div>
+      </div>
+    `).join("") || `<div class="empty">No constraints yet.</div>`;
+  }
+
+  function opts(list,current){
+    return list.map(x=>`<option value="${x}" ${x===current?"selected":""}>${x}</option>`).join("");
+  }
+
+  function esc(v){
+    return String(v ?? "").replace(/[&<>"']/g, ch => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[ch]));
+  }
+
+  function num(v){
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function timeToMin(t){
+    const parts = String(t || "00:00").split(":").map(Number);
+    return (parts[0] || 0) * 60 + (parts[1] || 0);
+  }
+
+  function minToTime(m){
+    m = Math.max(0, Math.round(m));
+    const h = Math.floor(m/60);
+    const mm = m%60;
+    const hour12 = ((h + 11) % 12) + 1;
+    const ap = h >= 12 ? "PM" : "AM";
+    return hour12 + ":" + String(mm).padStart(2,"0") + " " + ap;
+  }
+
+  function overlap(a1,a2,b1,b2){
+    return Math.max(0, Math.min(a2,b2) - Math.max(a1,b1));
+  }
+
+  function energyMultiplier(level){
+    if(level === "High") return 1;
+    if(level === "Medium") return .85;
+    if(level === "Low") return .62;
+    return .75;
+  }
+
+  function priorityRank(p){
+    return p === "High" ? 3 : p === "Medium" ? 2 : 1;
+  }
+
+  function effectiveBlock(block){
+    const start = timeToMin(block.start);
+    const end = timeToMin(block.end);
+    const raw = Math.max(0, end - start);
+    const dayEnergy = state.energy.filter(e=>e.day === block.day);
+    const dayConstraints = state.constraints.filter(c=>c.day === block.day);
+
+    let weighted = 0;
+    let covered = 0;
+    for(const e of dayEnergy){
+      const ov = overlap(start,end,timeToMin(e.start),timeToMin(e.end));
+      if(ov){
+        weighted += ov * energyMultiplier(e.level);
+        covered += ov;
+      }
+    }
+    const uncovered = Math.max(0, raw - covered);
+    weighted += uncovered * .75;
+
+    let blocked = 0;
+    for(const c of dayConstraints){
+      const ov = overlap(start,end,timeToMin(c.start),timeToMin(c.end));
+      blocked += c.hardness === "Hard" ? ov : ov * .5;
+    }
+
+    const afterConstraints = Math.max(0, weighted - blocked);
+    const afterBuffer = afterConstraints * (1 - Number(state.buffer || 0) / 100);
+
+    return {
+      ...block,
+      startMin:start,
+      endMin:end,
+      rawMin:raw,
+      capacityMin:Math.max(0, Math.floor(afterBuffer / 15) * 15),
+      constrainedMin:blocked
+    };
+  }
+
+  function buildPlan(){
+    save();
+
+    const blocks = state.blocks
+      .map(effectiveBlock)
+      .filter(b => b.endMin > b.startMin)
+      .sort((a,b) => {
+        if(dayIndex[b.day] !== dayIndex[a.day]) return dayIndex[b.day] - dayIndex[a.day];
+        return b.endMin - a.endMin;
+      });
+
+    const outcomes = state.outcomes
+      .filter(o => String(o.title || "").trim() && Number(o.hours) > 0)
+      .map(o => ({...o, remainingMin: Math.round(Number(o.hours) * 60 / 15) * 15}))
+      .sort((a,b) => priorityRank(b.priority) - priorityRank(a.priority) || Number(b.hours) - Number(a.hours));
+
+    const plan = Object.fromEntries(days.map(d=>[d,{
+      day:d,
+      capacityMin:0,
+      usedMin:0,
+      allocations:[],
+      flags:[],
+      constrainedMin:0
+    }]));
+
+    for(const b of blocks){
+      plan[b.day].capacityMin += b.capacityMin;
+      plan[b.day].constrainedMin += b.constrainedMin;
+    }
+
+    const blockRemaining = blocks.map(b=>({...b, leftMin:b.capacityMin}));
+
+    for(const outcome of outcomes){
+      for(const block of blockRemaining){
+        if(outcome.remainingMin <= 0) break;
+        if(block.leftMin <= 0) continue;
+
+        const take = Math.min(outcome.remainingMin, block.leftMin);
+        const dayPlan = plan[block.day];
+        dayPlan.usedMin += take;
+        dayPlan.allocations.push({
+          outcomeId: outcome.id,
+          title: outcome.title,
+          priority: outcome.priority,
+          energyNeed: outcome.energyNeed,
+          min: take,
+          blockLabel: block.label || block.type || "Focus",
+          blockType: block.type,
+          start: block.start,
+          end: block.end
+        });
+        outcome.remainingMin -= take;
+        block.leftMin -= take;
+      }
+    }
+
+    const totalNeed = outcomes.reduce((s,o)=>s + Math.round(Number(o.hours)*60/15)*15,0);
+    const totalCapacity = days.reduce((s,d)=>s+plan[d].capacityMin,0);
+    const totalUsed = days.reduce((s,d)=>s+plan[d].usedMin,0);
+    const unscheduled = outcomes.filter(o=>o.remainingMin > 0);
+    const maxDay = Number(state.maxDayHours || 5) * 60;
+    const maxTasks = Number(state.maxTasksDay || 4);
+
+    for(const d of days){
+      const p = plan[d];
+      const uniqueTasks = new Set(p.allocations.map(a=>a.outcomeId)).size;
+      if(p.usedMin > p.capacityMin) p.flags.push({type:"bad",text:"Over capacity"});
+      if(p.usedMin > maxDay) p.flags.push({type:"bad",text:"Above daily line"});
+      if(uniqueTasks > maxTasks) p.flags.push({type:"warn",text:"Switching risk"});
+      if(p.constrainedMin >= 60) p.flags.push({type:"warn",text:"Constraint squeeze"});
+      if(p.capacityMin === 0 && p.usedMin === 0) p.flags.push({type:"",text:"No focus block"});
+      if(p.usedMin > 0 && p.usedMin / Math.max(1,p.capacityMin) >= .9) p.flags.push({type:"warn",text:"Thin margin"});
+      if(p.usedMin > 0 && p.usedMin / Math.max(1,p.capacityMin) <= .55) p.flags.push({type:"ok",text:"Breathing room"});
+    }
+
+    const fridayShare = totalUsed ? plan.Fri.usedMin / totalUsed : 0;
+    const weekFlags = [];
+    if(unscheduled.length) weekFlags.push({type:"bad",text:`${fmtMin(unscheduled.reduce((s,o)=>s+o.remainingMin,0))} unscheduled`});
+    if(totalNeed > totalCapacity) weekFlags.push({type:"bad",text:"Week overloaded"});
+    if(fridayShare > .35) weekFlags.push({type:"warn",text:"Friday pileup"});
+    if(!outcomes.length) weekFlags.push({type:"warn",text:"No outcomes"});
+    if(!blocks.length) weekFlags.push({type:"bad",text:"No focus blocks"});
+    if(!weekFlags.length) weekFlags.push({type:"ok",text:"Load looks workable"});
+
+    renderPlan({plan,outcomes,unscheduled,totalNeed,totalCapacity,totalUsed,weekFlags});
+    toast("Week built");
+  }
+
+  function renderPlan(result){
+    const {plan,outcomes,unscheduled,totalNeed,totalCapacity,totalUsed,weekFlags} = result;
+
+    const scoreClass = weekFlags.some(f=>f.type==="bad") ? "bad" : weekFlags.some(f=>f.type==="warn") ? "warn" : "ok";
+    $("weekScore").className = "pill " + scoreClass + " mono";
+    $("weekScore").textContent = `${fmtMin(totalUsed)} placed`;
+
+    $("summaryBox").className = "card";
+    $("summaryBox").innerHTML = `
+      <div class="grid">
+        <div class="rowBtns">
+          <span class="pill mono">Need ${fmtMin(totalNeed)}</span>
+          <span class="pill mono">Capacity ${fmtMin(totalCapacity)}</span>
+          <span class="pill mono">Buffer ${state.buffer}%</span>
+        </div>
+        <div class="flags">${weekFlags.map(flagPill).join("")}</div>
+        ${unscheduled.length ? `
+          <details open>
+            <summary>Unscheduled work</summary>
+            <div class="inside">
+              ${unscheduled.map(o=>`
+                <div class="allocItem">
+                  <strong>${esc(o.title)}</strong>
+                  <span class="tiny muted mono">${fmtMin(o.remainingMin)} still needs a block</span>
+                </div>
+              `).join("")}
+            </div>
+          </details>
+        ` : `<div class="empty">All outcome hours fit into the available blocks.</div>`}
+      </div>
+    `;
+
+    $("plan").innerHTML = days.map(d=>{
+      const p = plan[d];
+      const pct = p.capacityMin ? Math.min(140, Math.round(p.usedMin / p.capacityMin * 100)) : 0;
+      const bclass = pct > 100 ? "bad" : pct >= 90 ? "warn" : "";
+      const grouped = mergeAllocations(p.allocations);
+      return `
+        <div class="planDay">
+          <div class="dayTop">
+            <div>
+              <div class="dayTitle">${d}</div>
+              <div class="tiny muted mono">${fmtMin(p.usedMin)} scheduled of ${fmtMin(p.capacityMin)} usable</div>
+            </div>
+            <span class="pill ${p.flags.some(f=>f.type==="bad")?"bad":p.flags.some(f=>f.type==="warn")?"warn":"ok"}">${pct}%</span>
+          </div>
+          <div class="bar"><i class="${bclass}" style="width:${Math.min(100,pct)}%"></i></div>
+          <div class="flags">${p.flags.map(flagPill).join("")}</div>
+          <div class="alloc">
+            ${grouped.length ? grouped.map(a=>`
+              <div class="allocItem">
+                <strong>${esc(a.title)}</strong>
+                <span class="tiny muted mono">${fmtMin(a.min)} • ${esc(a.blocks.join(", "))}</span>
+                <span class="tiny muted">${esc(a.priority)} priority • ${esc(a.energyNeed)} energy</span>
+              </div>
+            `).join("") : `<div class="empty">No planned work.</div>`}
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    window.lastPlanText = makeText(result);
+    window.lastPlanCsv = makeCsv(result);
+    window.lastPlanJson = JSON.stringify({createdAt:new Date().toISOString(),state,result:safeResult(result)},null,2);
+  }
+
+  function mergeAllocations(items){
+    const map = new Map();
+    for(const a of items){
+      const key = a.outcomeId;
+      if(!map.has(key)){
+        map.set(key,{...a,blocks:[],min:0});
+      }
+      const x = map.get(key);
+      x.min += a.min;
+      const label = `${a.blockLabel} ${a.start}-${a.end}`;
+      if(!x.blocks.includes(label)) x.blocks.push(label);
+    }
+    return Array.from(map.values()).sort((a,b)=>priorityRank(b.priority)-priorityRank(a.priority));
+  }
+
+  function flagPill(f){
+    return `<span class="pill ${f.type || ""}">${esc(f.text)}</span>`;
+  }
+
+  function fmtMin(min){
+    min = Math.round(Number(min) || 0);
+    const h = Math.floor(min/60);
+    const m = min % 60;
+    if(h && m) return `${h}h ${m}m`;
+    if(h) return `${h}h`;
+    return `${m}m`;
+  }
+
+  function makeText(result){
+    const lines = [];
+    lines.push("Backward Week Plan");
+    lines.push("Friday date " + (state.fridayDate || ""));
+    lines.push("Need " + fmtMin(result.totalNeed) + " | Capacity " + fmtMin(result.totalCapacity) + " | Placed " + fmtMin(result.totalUsed));
+    lines.push("");
+    lines.push("Flags");
+    result.weekFlags.forEach(f=>lines.push("- " + f.text));
+    lines.push("");
+
+    for(const d of days){
+      const p = result.plan[d];
+      lines.push(d + " | " + fmtMin(p.usedMin) + " of " + fmtMin(p.capacityMin));
+      if(p.flags.length) lines.push("Flags " + p.flags.map(f=>f.text).join(", "));
+      const grouped = mergeAllocations(p.allocations);
+      if(!grouped.length) lines.push("- No planned work");
+      grouped.forEach(a=>lines.push("- " + a.title + " | " + fmtMin(a.min) + " | " + a.priority + " | " + a.energyNeed));
+      lines.push("");
+    }
+
+    if(result.unscheduled.length){
+      lines.push("Unscheduled");
+      result.unscheduled.forEach(o=>lines.push("- " + o.title + " | " + fmtMin(o.remainingMin)));
+    }
+    return lines.join("\n");
+  }
+
+  function makeCsv(result){
+    const rows = [["Day","Outcome","Minutes","Hours","Priority","Energy","Blocks"]];
+    for(const d of days){
+      const grouped = mergeAllocations(result.plan[d].allocations);
+      if(!grouped.length){
+        rows.push([d,"No planned work",0,0,"","",""]);
+      }else{
+        grouped.forEach(a=>rows.push([d,a.title,a.min,(a.min/60).toFixed(2),a.priority,a.energyNeed,a.blocks.join(" | ")]));
+      }
+    }
+    return rows.map(r=>r.map(csvCell).join(",")).join("\n");
+  }
+
+  function csvCell(v){
+    v = String(v ?? "");
+    if(/[",\n]/.test(v)) return '"' + v.replace(/"/g,'""') + '"';
+    return v;
+  }
+
+  function safeResult(result){
+    return {
+      totalNeed: result.totalNeed,
+      totalCapacity: result.totalCapacity,
+      totalUsed: result.totalUsed,
+      weekFlags: result.weekFlags,
+      unscheduled: result.unscheduled.map(o=>({title:o.title,remainingMin:o.remainingMin})),
+      plan: result.plan
+    };
+  }
+
+  function download(name, text, type){
+    const blob = new Blob([text], {type:type || "text/plain"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 500);
+  }
+
+  function updateFromControls(){
+    state.fridayDate = $("fridayDate").value || nextFriday();
+    state.buffer = Number($("buffer").value || 0);
+    state.maxDayHours = Number($("maxDayHours").value || 5);
+    state.maxTasksDay = Number($("maxTasksDay").value || 4);
+    save();
+  }
+
+  document.addEventListener("input", e=>{
+    const card = e.target.closest("[data-kind][data-id]");
+    if(card && e.target.dataset.field){
+      const arr = card.dataset.kind;
+      const item = state[arr].find(x=>x.id === card.dataset.id);
+      if(item){
+        let val = e.target.value;
+        if(e.target.type === "number") val = Number(val);
+        item[e.target.dataset.field] = val;
+        save();
+      }
+      return;
+    }
+    if(["fridayDate","buffer","maxDayHours","maxTasksDay"].includes(e.target.id)){
+      updateFromControls();
+    }
+  });
+
+  document.addEventListener("change", e=>{
+    if(["fridayDate","buffer","maxDayHours","maxTasksDay"].includes(e.target.id)){
+      updateFromControls();
+    }
+  });
+
+  document.addEventListener("click", async e=>{
+    const del = e.target.dataset.delete;
+    if(del){
+      const arr = e.target.dataset.array;
+      state[arr] = state[arr].filter(x=>x.id !== del);
+      save();
+      render();
+      return;
+    }
+
+    if(e.target.id === "addOutcome"){
+      state.outcomes.push(templates.outcome());
+      save(); render(); return;
+    }
+    if(e.target.id === "addBlock"){
+      state.blocks.push(templates.block());
+      save(); render(); return;
+    }
+    if(e.target.id === "addEnergy"){
+      state.energy.push(templates.energy());
+      save(); render(); return;
+    }
+    if(e.target.id === "addConstraint"){
+      state.constraints.push(templates.constraint());
+      save(); render(); return;
+    }
+    if(e.target.id === "buildBtn"){
+      buildPlan(); return;
+    }
+    if(e.target.id === "printBtn"){
+      buildPlan();
+      setTimeout(()=>window.print(),50);
+      return;
+    }
+    if(e.target.id === "copyBtn"){
+      buildPlan();
+      try{
+        await navigator.clipboard.writeText(window.lastPlanText || "");
+        toast("Plan copied");
+      }catch(err){
+        toast("Copy blocked by browser");
+      }
+      return;
+    }
+    if(e.target.id === "exportTxtBtn"){
+      buildPlan();
+      download("backward-week-plan.txt", window.lastPlanText || "", "text/plain");
+      return;
+    }
+    if(e.target.id === "exportJsonBtn"){
+      buildPlan();
+      download("backward-week-plan.json", window.lastPlanJson || "{}", "application/json");
+      return;
+    }
+    if(e.target.id === "exportCsvBtn"){
+      buildPlan();
+      download("backward-week-plan.csv", window.lastPlanCsv || "", "text/csv");
+      return;
+    }
+    if(e.target.id === "resetSampleBtn"){
+      state = sampleState();
+      save(); render(); buildPlan(); return;
+    }
+    if(e.target.id === "clearBtn"){
+      state = {
+        fridayDate: nextFriday(),
+        buffer:20,
+        maxDayHours:5,
+        maxTasksDay:4,
+        outcomes:[],
+        blocks:[],
+        energy:[],
+        constraints:[]
+      };
+      save(); render();
+      $("summaryBox").className = "empty";
+      $("summaryBox").textContent = "Add outcomes and focus blocks, then build the week.";
+      $("plan").innerHTML = "";
+      $("weekScore").className = "pill dark mono";
+      $("weekScore").textContent = "Ready";
+      toast("Cleared");
+      return;
+    }
+  });
+
+  render();
+  buildPlan();
+})();
+</script>
+</body>
+</html>

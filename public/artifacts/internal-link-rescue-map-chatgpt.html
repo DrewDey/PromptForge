@@ -1,0 +1,1336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Internal Link Rescue Board</title>
+<style>
+  :root{
+    --bg:#f7f4ee;
+    --panel:#fffdf8;
+    --ink:#241f19;
+    --muted:#6d6357;
+    --line:#ddd3c4;
+    --soft:#eee6d8;
+    --accent:#2f6f5e;
+    --accent2:#8b5e34;
+    --danger:#9d3d2f;
+    --warn:#a86616;
+    --good:#2f6f5e;
+    --shadow:0 10px 28px rgba(42,33,23,.09);
+    --radius:18px;
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;overflow-x:hidden}
+  body{
+    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:linear-gradient(180deg,#fbf7ef 0%,var(--bg) 100%);
+    color:var(--ink);
+    line-height:1.35;
+  }
+
+  .app{
+    width:min(980px,100%);
+    margin:0 auto;
+    padding:14px;
+  }
+
+  header{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:18px;
+    margin-bottom:12px;
+  }
+
+  h1{
+    margin:0 0 8px;
+    font-size:clamp(1.35rem,5vw,2.35rem);
+    letter-spacing:-.04em;
+    line-height:1.05;
+  }
+
+  .sub{
+    color:var(--muted);
+    margin:0;
+    font-size:.96rem;
+  }
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:14px;
+    margin:12px 0;
+  }
+
+  label{
+    display:block;
+    font-weight:750;
+    font-size:.9rem;
+    margin:0 0 7px;
+  }
+
+  .hint{
+    color:var(--muted);
+    font-size:.82rem;
+    margin-top:6px;
+  }
+
+  textarea,input,select,button{
+    font:inherit;
+  }
+
+  textarea,input,select{
+    width:100%;
+    max-width:100%;
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--ink);
+    border-radius:14px;
+    padding:11px;
+    outline:none;
+  }
+
+  textarea{
+    min-height:190px;
+    resize:vertical;
+  }
+
+  textarea:focus,input:focus,select:focus{
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(47,111,94,.14);
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+
+  .grid3{
+    display:grid;
+    grid-template-columns:1.2fr .8fr .8fr;
+    gap:10px;
+  }
+
+  .row{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+
+  button{
+    border:1px solid var(--line);
+    background:var(--soft);
+    color:var(--ink);
+    border-radius:999px;
+    padding:10px 12px;
+    font-weight:750;
+    cursor:pointer;
+    min-height:42px;
+  }
+
+  button.primary{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fff;
+  }
+
+  button.danger{
+    color:#fff;
+    background:var(--danger);
+    border-color:var(--danger);
+  }
+
+  button.ghost{
+    background:#fff;
+  }
+
+  button:active{
+    transform:translateY(1px);
+  }
+
+  .filters{
+    display:flex;
+    flex-wrap:wrap;
+    gap:7px;
+    width:100%;
+    overflow:visible;
+  }
+
+  .filters button{
+    flex:1 1 88px;
+    min-width:0;
+    padding:9px 8px;
+    font-size:.86rem;
+    white-space:normal;
+    line-height:1.1;
+  }
+
+  .filters button.active{
+    background:var(--ink);
+    border-color:var(--ink);
+    color:#fff;
+  }
+
+  .stats{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:8px;
+  }
+
+  .stat{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:10px;
+    min-width:0;
+  }
+
+  .stat b{
+    display:block;
+    font-size:1.2rem;
+  }
+
+  .stat span{
+    display:block;
+    color:var(--muted);
+    font-size:.75rem;
+  }
+
+  .card{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:13px;
+    margin:10px 0;
+    overflow:hidden;
+  }
+
+  .cardTop{
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+  }
+
+  .score{
+    flex:0 0 52px;
+    width:52px;
+    height:52px;
+    border-radius:16px;
+    display:grid;
+    place-items:center;
+    color:#fff;
+    font-weight:900;
+    background:var(--accent);
+  }
+
+  .score.high{background:var(--danger)}
+  .score.mid{background:var(--warn)}
+  .score.low{background:var(--good)}
+
+  .titleBlock{
+    min-width:0;
+    flex:1;
+  }
+
+  .titleBlock h2{
+    margin:0;
+    font-size:1.02rem;
+    line-height:1.2;
+    overflow-wrap:anywhere;
+  }
+
+  .url{
+    color:var(--muted);
+    font-size:.82rem;
+    margin-top:3px;
+    overflow-wrap:anywhere;
+  }
+
+  .pills{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    margin-top:9px;
+  }
+
+  .pill{
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    background:#f5efe5;
+    border:1px solid var(--line);
+    color:var(--muted);
+    border-radius:999px;
+    padding:5px 8px;
+    font-size:.75rem;
+    font-weight:750;
+  }
+
+  .pill.hot{
+    background:#f8e7e3;
+    border-color:#e8b5aa;
+    color:#8c3027;
+  }
+
+  .pill.warn{
+    background:#fff0db;
+    border-color:#e9c38c;
+    color:#805012;
+  }
+
+  .suggestions{
+    margin-top:12px;
+    display:grid;
+    gap:8px;
+  }
+
+  .suggestion{
+    border:1px solid var(--line);
+    background:#fffcf5;
+    border-radius:15px;
+    padding:10px;
+  }
+
+  .suggestionTitle{
+    font-size:.86rem;
+    font-weight:800;
+    margin-bottom:6px;
+    overflow-wrap:anywhere;
+  }
+
+  .small{
+    font-size:.8rem;
+    color:var(--muted);
+    overflow-wrap:anywhere;
+  }
+
+  .anchorEdit{
+    margin-top:8px;
+    display:grid;
+    grid-template-columns:64px 1fr;
+    gap:7px;
+    align-items:center;
+  }
+
+  .anchorEdit span{
+    color:var(--muted);
+    font-size:.78rem;
+    font-weight:800;
+  }
+
+  .anchorEdit input{
+    padding:9px;
+    border-radius:12px;
+    font-size:.9rem;
+  }
+
+  .empty{
+    border:1px dashed var(--line);
+    border-radius:18px;
+    padding:18px;
+    color:var(--muted);
+    text-align:center;
+    background:#fffaf0;
+  }
+
+  .notice{
+    background:#fff7e8;
+    border:1px solid #ead3aa;
+    color:#6f4a14;
+    padding:10px;
+    border-radius:14px;
+    font-size:.86rem;
+    margin-top:10px;
+  }
+
+  .footerTools{
+    position:sticky;
+    bottom:0;
+    z-index:5;
+    background:rgba(247,244,238,.94);
+    backdrop-filter:blur(10px);
+    border-top:1px solid var(--line);
+    padding:10px 0 0;
+    margin-top:12px;
+  }
+
+  .toast{
+    position:fixed;
+    left:50%;
+    bottom:16px;
+    transform:translateX(-50%);
+    background:var(--ink);
+    color:#fff;
+    border-radius:999px;
+    padding:10px 14px;
+    font-weight:800;
+    font-size:.86rem;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s ease, transform .2s ease;
+    z-index:20;
+    max-width:92vw;
+    text-align:center;
+  }
+
+  .toast.show{
+    opacity:1;
+    transform:translateX(-50%) translateY(-4px);
+  }
+
+  @media (max-width:720px){
+    .app{padding:10px}
+    header,.panel{padding:13px}
+    .grid,.grid3{grid-template-columns:1fr}
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .stat:last-child{grid-column:1/-1}
+    .row button{
+      flex:1 1 130px;
+      min-width:0;
+    }
+    .cardTop{gap:9px}
+    .score{
+      flex-basis:48px;
+      width:48px;
+      height:48px;
+    }
+    .anchorEdit{
+      grid-template-columns:1fr;
+    }
+  }
+
+  @media (max-width:390px){
+    .app{padding:8px}
+    header,.panel{border-radius:16px}
+    .filters{gap:6px}
+    .filters button{
+      flex-basis:78px;
+      font-size:.8rem;
+      padding:8px 6px;
+    }
+    .stats{gap:6px}
+    .stat{padding:9px}
+    .row{gap:7px}
+    button{padding:9px 10px}
+  }
+
+  @media print{
+    body{background:#fff}
+    header,.panel,.card{box-shadow:none}
+    .footerTools,.inputPanel,.filters,button{display:none!important}
+    .app{width:100%;padding:0}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Internal Link Rescue Board</h1>
+    <p class="sub">Paste pages, score orphan or underlinked risk, then generate source pages, target pages, anchor text, and a copyable rescue plan.</p>
+  </header>
+
+  <section class="panel inputPanel">
+    <label for="batch">Page batch</label>
+    <textarea id="batch" spellcheck="false" placeholder="Title | URL | Topic | Inlinks | Outlinks&#10;Roth Conversion Checklist | /roth-conversion-checklist | retirement tax | 0 | 3"></textarea>
+    <div class="hint">Accepted formats: pipe, tab, or CSV. Best fields are title, URL, topic, inlinks, outlinks. Inlinks can be blank if unknown.</div>
+
+    <div class="grid3" style="margin-top:12px">
+      <div>
+        <label for="priorityTerms">Priority topics</label>
+        <input id="priorityTerms" placeholder="Example: retirement tax, roth, estate planning">
+      </div>
+      <div>
+        <label for="targetLinks">Target inlinks</label>
+        <select id="targetLinks">
+          <option value="3">3 links per important page</option>
+          <option value="4">4 links per important page</option>
+          <option value="5">5 links per important page</option>
+        </select>
+      </div>
+      <div>
+        <label for="maxSuggestions">Suggestions</label>
+        <select id="maxSuggestions">
+          <option value="3">Top 3 per page</option>
+          <option value="4">Top 4 per page</option>
+          <option value="5">Top 5 per page</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:12px">
+      <button class="primary" id="analyzeBtn">Analyze pages</button>
+      <button class="ghost" id="sampleBtn">Load sample</button>
+      <button class="ghost" id="saveBtn">Save locally</button>
+      <button class="danger" id="clearBtn">Clear</button>
+    </div>
+
+    <div class="notice">This tool does not crawl your site. It uses pasted counts and page similarity to create a practical internal-link rescue plan.</div>
+  </section>
+
+  <section class="panel">
+    <div class="stats" id="stats"></div>
+  </section>
+
+  <section class="panel">
+    <div class="filters" id="filters"></div>
+  </section>
+
+  <section id="results"></section>
+
+  <section class="footerTools">
+    <div class="panel" style="margin-bottom:0">
+      <div class="row">
+        <button class="primary" id="copyBtn">Copy rescue plan</button>
+        <button class="ghost" id="csvBtn">Export CSV</button>
+        <button class="ghost" id="txtBtn">Download TXT</button>
+        <button class="ghost" id="printBtn">Print</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  var els = {
+    batch: document.getElementById("batch"),
+    priorityTerms: document.getElementById("priorityTerms"),
+    targetLinks: document.getElementById("targetLinks"),
+    maxSuggestions: document.getElementById("maxSuggestions"),
+    analyzeBtn: document.getElementById("analyzeBtn"),
+    sampleBtn: document.getElementById("sampleBtn"),
+    saveBtn: document.getElementById("saveBtn"),
+    clearBtn: document.getElementById("clearBtn"),
+    stats: document.getElementById("stats"),
+    filters: document.getElementById("filters"),
+    results: document.getElementById("results"),
+    copyBtn: document.getElementById("copyBtn"),
+    csvBtn: document.getElementById("csvBtn"),
+    txtBtn: document.getElementById("txtBtn"),
+    printBtn: document.getElementById("printBtn"),
+    toast: document.getElementById("toast")
+  };
+
+  var state = {
+    pages: [],
+    filter: "all",
+    targetLinks: 3,
+    maxSuggestions: 3,
+    priorityTerms: []
+  };
+
+  var stopWords = new Set([
+    "the","and","for","with","from","into","your","you","our","are","was","were","this","that","what","when",
+    "how","why","guide","checklist","page","pages","blog","post","article","service","services","best","new",
+    "complete","ultimate","near","about","can","will","not","all","has","have","had","but","than","then","they",
+    "their","them","its","it's","a","an","to","of","in","on","by","or","as","at","is","be"
+  ]);
+
+  var sample = [
+    "Title | URL | Topic | Inlinks | Outlinks",
+    "Retirement Tax Planning Guide | /retirement-tax-planning | retirement tax | 7 | 8",
+    "Roth Conversion Checklist | /roth-conversion-checklist | retirement tax | 0 | 3",
+    "IRA Rollover Mistakes | /ira-rollover-mistakes | retirement accounts | 1 | 2",
+    "Estate Planning Basics | /estate-planning-basics | estate planning | 6 | 5",
+    "Trust Beneficiary Guide | /trust-beneficiary-guide | estate planning | 1 | 1",
+    "Medicare IRMAA Planning | /medicare-irmaa-planning | retirement tax | 2 | 3",
+    "Tax-Loss Harvesting Explained | /tax-loss-harvesting | investment tax | 4 | 4",
+    "Capital Gains Tax Planning | /capital-gains-tax-planning | investment tax | 5 | 5",
+    "Inherited IRA Rules | /inherited-ira-rules | retirement accounts | 0 | 2",
+    "Charitable Giving Tax Strategies | /charitable-giving-tax | tax planning | 2 | 2"
+  ].join("\n");
+
+  function showToast(message){
+    els.toast.textContent = message;
+    els.toast.classList.add("show");
+    window.setTimeout(function(){
+      els.toast.classList.remove("show");
+    }, 1600);
+  }
+
+  function splitRow(line){
+    if(line.indexOf("\t") !== -1){
+      return line.split("\t").map(cleanCell);
+    }
+    if(line.indexOf("|") !== -1){
+      return line.split("|").map(cleanCell);
+    }
+    return parseCsvLine(line).map(cleanCell);
+  }
+
+  function parseCsvLine(line){
+    var out = [];
+    var cur = "";
+    var quoted = false;
+    for(var i=0;i<line.length;i++){
+      var ch = line[i];
+      if(ch === '"'){
+        if(quoted && line[i+1] === '"'){
+          cur += '"';
+          i++;
+        }else{
+          quoted = !quoted;
+        }
+      }else if(ch === "," && !quoted){
+        out.push(cur);
+        cur = "";
+      }else{
+        cur += ch;
+      }
+    }
+    out.push(cur);
+    return out;
+  }
+
+  function cleanCell(value){
+    return String(value || "").trim().replace(/^"|"$/g,"").trim();
+  }
+
+  function hasHeader(fields){
+    var joined = fields.join(" ").toLowerCase();
+    return joined.indexOf("title") !== -1 && joined.indexOf("url") !== -1;
+  }
+
+  function headerMap(fields){
+    var map = {};
+    fields.forEach(function(f, i){
+      var k = f.toLowerCase().replace(/[^a-z0-9]+/g,"");
+      if(k.indexOf("title") !== -1 || k === "name") map.title = i;
+      if(k.indexOf("url") !== -1 || k.indexOf("link") !== -1 || k.indexOf("slug") !== -1) map.url = i;
+      if(k.indexOf("topic") !== -1 || k.indexOf("keyword") !== -1 || k.indexOf("category") !== -1) map.topic = i;
+      if(k.indexOf("inlink") !== -1 || k.indexOf("incoming") !== -1 || k.indexOf("internalin") !== -1) map.inlinks = i;
+      if(k.indexOf("outlink") !== -1 || k.indexOf("outgoing") !== -1 || k.indexOf("internalout") !== -1) map.outlinks = i;
+    });
+    return map;
+  }
+
+  function parseNumber(value){
+    var s = String(value || "").trim();
+    if(!s) return null;
+    var m = s.match(/-?\d+/);
+    if(!m) return null;
+    return Math.max(0, parseInt(m[0],10));
+  }
+
+  function titleFromUrl(url){
+    var s = String(url || "").split("?")[0].replace(/\/+$/,"");
+    var last = s.split("/").filter(Boolean).pop() || "Untitled page";
+    return last.replace(/[-_]+/g," ").replace(/\b\w/g,function(c){return c.toUpperCase();});
+  }
+
+  function normalizeUrl(url){
+    var s = String(url || "").trim();
+    if(!s) return "";
+    return s.replace(/\s+/g,"");
+  }
+
+  function tokenize(text){
+    return String(text || "")
+      .toLowerCase()
+      .replace(/https?:\/\/[^/\s]+/g," ")
+      .replace(/[^a-z0-9]+/g," ")
+      .split(/\s+/)
+      .filter(function(w){
+        return w.length > 2 && !stopWords.has(w);
+      });
+  }
+
+  function uniqueTokens(text){
+    var set = new Set(tokenize(text));
+    return Array.from(set);
+  }
+
+  function inferTopic(title, url){
+    var words = uniqueTokens(title + " " + titleFromUrl(url));
+    return words.slice(0,3).join(" ") || "uncategorized";
+  }
+
+  function depthOfUrl(url){
+    var s = String(url || "").replace(/^https?:\/\/[^/]+/,"").split("?")[0];
+    return s.split("/").filter(Boolean).length;
+  }
+
+  function jaccard(a,b){
+    if(!a.length || !b.length) return 0;
+    var bs = new Set(b);
+    var hit = 0;
+    a.forEach(function(x){ if(bs.has(x)) hit++; });
+    var union = new Set(a.concat(b)).size;
+    return union ? hit / union : 0;
+  }
+
+  function overlapCount(a,b){
+    var bs = new Set(b);
+    var hit = 0;
+    a.forEach(function(x){ if(bs.has(x)) hit++; });
+    return hit;
+  }
+
+  function parsePages(){
+    var lines = els.batch.value.split(/\r?\n/).map(function(l){return l.trim();}).filter(Boolean);
+    if(!lines.length) return [];
+
+    var first = splitRow(lines[0]);
+    var map = null;
+    var start = 0;
+
+    if(hasHeader(first)){
+      map = headerMap(first);
+      start = 1;
+    }
+
+    var pages = [];
+    var seen = new Set();
+
+    for(var i=start;i<lines.length;i++){
+      var fields = splitRow(lines[i]);
+      if(fields.length === 1 && fields[0].indexOf(" ") === -1 && fields[0].indexOf("/") !== -1){
+        fields = [titleFromUrl(fields[0]), fields[0], "", "", ""];
+      }
+
+      var title = map ? fields[map.title] : fields[0];
+      var url = map ? fields[map.url] : fields[1];
+      var topic = map ? fields[map.topic] : fields[2];
+      var inlinks = map ? parseNumber(fields[map.inlinks]) : parseNumber(fields[3]);
+      var outlinks = map ? parseNumber(fields[map.outlinks]) : parseNumber(fields[4]);
+
+      url = normalizeUrl(url || "");
+      title = cleanCell(title || titleFromUrl(url));
+      topic = cleanCell(topic || inferTopic(title, url));
+
+      if(!title && !url) continue;
+      if(!url) url = "/" + title.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+      var key = url.toLowerCase();
+      if(seen.has(key)) continue;
+      seen.add(key);
+
+      pages.push({
+        id: "p" + pages.length,
+        title: title || titleFromUrl(url),
+        url: url,
+        topic: topic,
+        inlinks: inlinks,
+        outlinks: outlinks,
+        tokens: uniqueTokens(title + " " + topic + " " + url),
+        suggestions: [],
+        score: 0,
+        status: "",
+        reasons: []
+      });
+    }
+
+    return pages;
+  }
+
+  function getPriorityTerms(){
+    return uniqueTokens(els.priorityTerms.value);
+  }
+
+  function topicClusterSize(page, pages){
+    var pTopic = page.topic.toLowerCase();
+    var count = 0;
+    pages.forEach(function(other){
+      if(other.id === page.id) return;
+      if(other.topic.toLowerCase() === pTopic || jaccard(page.tokens, other.tokens) >= .18) count++;
+    });
+    return count;
+  }
+
+  function scorePage(page, pages){
+    var score = 0;
+    var reasons = [];
+    var target = state.targetLinks;
+    var cluster = topicClusterSize(page, pages);
+    var priHits = overlapCount(page.tokens, state.priorityTerms);
+
+    if(page.inlinks === 0){
+      score += 52;
+      reasons.push("orphan page");
+    }else if(page.inlinks === 1){
+      score += 40;
+      reasons.push("only 1 known internal link");
+    }else if(page.inlinks !== null && page.inlinks < target){
+      score += 27;
+      reasons.push("below target inlink count");
+    }else if(page.inlinks === null){
+      score += 25;
+      reasons.push("inlinks unknown");
+    }else{
+      score += 8;
+      reasons.push("already has some internal support");
+    }
+
+    if(page.outlinks === 0){
+      score += 8;
+      reasons.push("no known outbound internal links");
+    }else if(page.outlinks === null){
+      score += 3;
+      reasons.push("outlinks unknown");
+    }
+
+    if(cluster >= 4){
+      score += 12;
+      reasons.push("many related pages available");
+    }else if(cluster >= 2){
+      score += 8;
+      reasons.push("related pages available");
+    }
+
+    if(priHits >= 2){
+      score += 14;
+      reasons.push("matches priority topics");
+    }else if(priHits === 1){
+      score += 8;
+      reasons.push("partial priority-topic match");
+    }
+
+    if(depthOfUrl(page.url) >= 3){
+      score += 5;
+      reasons.push("deeper URL path");
+    }
+
+    if(page.topic.toLowerCase() === "uncategorized"){
+      score += 5;
+      reasons.push("topic not clearly labeled");
+    }
+
+    score = Math.max(0, Math.min(100, Math.round(score)));
+
+    var status = "Monitor";
+    if(score >= 70) status = "Rescue now";
+    else if(score >= 45) status = "Add links";
+
+    page.score = score;
+    page.status = status;
+    page.reasons = reasons;
+  }
+
+  function sourceStrength(source){
+    var n = source.inlinks;
+    if(n === null) return 6;
+    if(n >= 8) return 14;
+    if(n >= 4) return 10;
+    if(n >= 2) return 6;
+    return 2;
+  }
+
+  function makeAnchor(target, index){
+    var title = target.title.replace(/\s+/g," ").trim();
+    var topic = target.topic.replace(/\s+/g," ").trim();
+
+    var cleaned = title
+      .replace(/\b(complete|ultimate|guide|checklist|explained|basics)\b/ig,"")
+      .replace(/\s+/g," ")
+      .trim();
+
+    var choices = [
+      cleaned || title,
+      topic,
+      title,
+      topic ? topic + " guide" : title,
+      cleaned ? cleaned.toLowerCase() : title.toLowerCase()
+    ].filter(Boolean);
+
+    var val = choices[index % choices.length];
+    if(val.length > 64) val = val.slice(0,61).replace(/\s+\S*$/,"") + "...";
+    return val;
+  }
+
+  function buildSuggestions(target, pages){
+    var candidates = [];
+
+    pages.forEach(function(source){
+      if(source.id === target.id) return;
+
+      var sim = jaccard(target.tokens, source.tokens);
+      var sameTopic = target.topic.toLowerCase() === source.topic.toLowerCase();
+      var shared = overlapCount(target.tokens, source.tokens);
+
+      var score = sim * 55;
+      if(sameTopic) score += 26;
+      score += Math.min(shared * 5, 20);
+      score += sourceStrength(source);
+
+      if(source.inlinks === 0) score -= 7;
+      if(source.url === target.url) score = -100;
+
+      if(score > 12){
+        candidates.push({
+          source: source,
+          rawScore: score,
+          reason: sameTopic ? "same topic cluster" : shared + " shared terms"
+        });
+      }
+    });
+
+    candidates.sort(function(a,b){return b.rawScore - a.rawScore;});
+
+    var needed;
+    if(target.inlinks === 0) needed = Math.max(3, state.maxSuggestions);
+    else if(target.inlinks === null) needed = Math.min(state.maxSuggestions, 3);
+    else needed = Math.max(1, state.targetLinks - target.inlinks);
+
+    needed = Math.min(state.maxSuggestions, needed);
+
+    return candidates.slice(0, needed).map(function(c, i){
+      return {
+        sourceTitle: c.source.title,
+        sourceUrl: c.source.url,
+        targetTitle: target.title,
+        targetUrl: target.url,
+        anchor: makeAnchor(target, i),
+        reason: c.reason,
+        priority: target.score,
+        status: target.status
+      };
+    });
+  }
+
+  function analyze(){
+    state.targetLinks = parseInt(els.targetLinks.value,10);
+    state.maxSuggestions = parseInt(els.maxSuggestions.value,10);
+    state.priorityTerms = getPriorityTerms();
+    state.pages = parsePages();
+
+    state.pages.forEach(function(page){
+      scorePage(page, state.pages);
+    });
+
+    state.pages.forEach(function(page){
+      page.suggestions = buildSuggestions(page, state.pages);
+    });
+
+    state.pages.sort(function(a,b){
+      return b.score - a.score || String(a.title).localeCompare(String(b.title));
+    });
+
+    render();
+    saveSettingsOnly();
+  }
+
+  function saveSettingsOnly(){
+    try{
+      localStorage.setItem("ilrb_settings", JSON.stringify({
+        priorityTerms: els.priorityTerms.value,
+        targetLinks: els.targetLinks.value,
+        maxSuggestions: els.maxSuggestions.value
+      }));
+    }catch(e){}
+  }
+
+  function saveAll(){
+    try{
+      localStorage.setItem("ilrb_batch", els.batch.value);
+      localStorage.setItem("ilrb_settings", JSON.stringify({
+        priorityTerms: els.priorityTerms.value,
+        targetLinks: els.targetLinks.value,
+        maxSuggestions: els.maxSuggestions.value
+      }));
+      showToast("Saved locally");
+    }catch(e){
+      showToast("Could not save locally");
+    }
+  }
+
+  function loadSaved(){
+    try{
+      var batch = localStorage.getItem("ilrb_batch");
+      var settings = JSON.parse(localStorage.getItem("ilrb_settings") || "{}");
+      if(batch) els.batch.value = batch;
+      if(settings.priorityTerms) els.priorityTerms.value = settings.priorityTerms;
+      if(settings.targetLinks) els.targetLinks.value = settings.targetLinks;
+      if(settings.maxSuggestions) els.maxSuggestions.value = settings.maxSuggestions;
+    }catch(e){}
+  }
+
+  function clearAll(){
+    els.batch.value = "";
+    els.priorityTerms.value = "";
+    state.pages = [];
+    try{
+      localStorage.removeItem("ilrb_batch");
+      localStorage.removeItem("ilrb_settings");
+    }catch(e){}
+    render();
+    showToast("Cleared");
+  }
+
+  function countStats(){
+    var total = state.pages.length;
+    var orphans = state.pages.filter(function(p){return p.inlinks === 0;}).length;
+    var unknown = state.pages.filter(function(p){return p.inlinks === null;}).length;
+    var under = state.pages.filter(function(p){
+      return p.inlinks !== null && p.inlinks > 0 && p.inlinks < state.targetLinks;
+    }).length;
+    var rescue = state.pages.filter(function(p){return p.status === "Rescue now";}).length;
+    var links = state.pages.reduce(function(sum,p){return sum + p.suggestions.length;},0);
+    return {total:total, orphans:orphans, unknown:unknown, under:under, rescue:rescue, links:links};
+  }
+
+  function addStat(label, value){
+    var box = document.createElement("div");
+    box.className = "stat";
+    var b = document.createElement("b");
+    b.textContent = value;
+    var s = document.createElement("span");
+    s.textContent = label;
+    box.appendChild(b);
+    box.appendChild(s);
+    els.stats.appendChild(box);
+  }
+
+  function renderStats(){
+    els.stats.textContent = "";
+    var s = countStats();
+    addStat("pages", s.total);
+    addStat("orphans", s.orphans);
+    addStat("underlinked", s.under);
+    addStat("unknown", s.unknown);
+    addStat("link ideas", s.links);
+  }
+
+  function renderFilters(){
+    els.filters.textContent = "";
+    var filters = [
+      ["all","All"],
+      ["rescue","Rescue now"],
+      ["add","Add links"],
+      ["orphan","Orphans"],
+      ["unknown","Unknown"]
+    ];
+
+    filters.forEach(function(f){
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = f[1];
+      if(state.filter === f[0]) btn.classList.add("active");
+      btn.addEventListener("click", function(){
+        state.filter = f[0];
+        render();
+      });
+      els.filters.appendChild(btn);
+    });
+  }
+
+  function passesFilter(page){
+    if(state.filter === "all") return true;
+    if(state.filter === "rescue") return page.status === "Rescue now";
+    if(state.filter === "add") return page.status === "Add links";
+    if(state.filter === "orphan") return page.inlinks === 0;
+    if(state.filter === "unknown") return page.inlinks === null;
+    return true;
+  }
+
+  function pill(text, cls){
+    var p = document.createElement("span");
+    p.className = "pill" + (cls ? " " + cls : "");
+    p.textContent = text;
+    return p;
+  }
+
+  function renderResults(){
+    els.results.textContent = "";
+
+    if(!state.pages.length){
+      var empty = document.createElement("div");
+      empty.className = "panel empty";
+      empty.textContent = "Paste a page batch, then analyze to build a rescue plan.";
+      els.results.appendChild(empty);
+      return;
+    }
+
+    var shown = state.pages.filter(passesFilter);
+    if(!shown.length){
+      var none = document.createElement("div");
+      none.className = "panel empty";
+      none.textContent = "No pages match this filter.";
+      els.results.appendChild(none);
+      return;
+    }
+
+    shown.forEach(function(page){
+      var card = document.createElement("article");
+      card.className = "card";
+
+      var top = document.createElement("div");
+      top.className = "cardTop";
+
+      var score = document.createElement("div");
+      score.className = "score " + (page.score >= 70 ? "high" : page.score >= 45 ? "mid" : "low");
+      score.textContent = page.score;
+
+      var titleBlock = document.createElement("div");
+      titleBlock.className = "titleBlock";
+
+      var h = document.createElement("h2");
+      h.textContent = page.title;
+
+      var url = document.createElement("div");
+      url.className = "url";
+      url.textContent = page.url;
+
+      titleBlock.appendChild(h);
+      titleBlock.appendChild(url);
+
+      top.appendChild(score);
+      top.appendChild(titleBlock);
+      card.appendChild(top);
+
+      var pills = document.createElement("div");
+      pills.className = "pills";
+      pills.appendChild(pill(page.status, page.status === "Rescue now" ? "hot" : page.status === "Add links" ? "warn" : ""));
+      pills.appendChild(pill("topic: " + page.topic));
+      pills.appendChild(pill("inlinks: " + (page.inlinks === null ? "unknown" : page.inlinks), page.inlinks === 0 ? "hot" : ""));
+      pills.appendChild(pill("outlinks: " + (page.outlinks === null ? "unknown" : page.outlinks)));
+      if(page.reasons[0]) pills.appendChild(pill(page.reasons[0]));
+      card.appendChild(pills);
+
+      var sugWrap = document.createElement("div");
+      sugWrap.className = "suggestions";
+
+      if(page.suggestions.length){
+        page.suggestions.forEach(function(sug, idx){
+          var sugBox = document.createElement("div");
+          sugBox.className = "suggestion";
+
+          var sugTitle = document.createElement("div");
+          sugTitle.className = "suggestionTitle";
+          sugTitle.textContent = "Link from “" + sug.sourceTitle + "”";
+
+          var meta = document.createElement("div");
+          meta.className = "small";
+          meta.textContent = sug.sourceUrl + " → " + sug.targetUrl + " · " + sug.reason;
+
+          var edit = document.createElement("div");
+          edit.className = "anchorEdit";
+
+          var label = document.createElement("span");
+          label.textContent = "Anchor";
+
+          var input = document.createElement("input");
+          input.value = sug.anchor;
+          input.addEventListener("input", function(){
+            sug.anchor = input.value;
+          });
+
+          edit.appendChild(label);
+          edit.appendChild(input);
+
+          sugBox.appendChild(sugTitle);
+          sugBox.appendChild(meta);
+          sugBox.appendChild(edit);
+          sugWrap.appendChild(sugBox);
+        });
+      }else{
+        var noSug = document.createElement("div");
+        noSug.className = "suggestion";
+        var t = document.createElement("div");
+        t.className = "suggestionTitle";
+        t.textContent = "No strong source found in this batch";
+        var m = document.createElement("div");
+        m.className = "small";
+        m.textContent = "Add this page to a hub, nav module, related-resources block, or paste more site pages for better matching.";
+        noSug.appendChild(t);
+        noSug.appendChild(m);
+        sugWrap.appendChild(noSug);
+      }
+
+      card.appendChild(sugWrap);
+      els.results.appendChild(card);
+    });
+  }
+
+  function render(){
+    renderStats();
+    renderFilters();
+    renderResults();
+  }
+
+  function buildPlanText(){
+    if(!state.pages.length) return "No rescue plan yet.";
+
+    var lines = [];
+    var s = countStats();
+
+    lines.push("INTERNAL LINK RESCUE PLAN");
+    lines.push("");
+    lines.push("Pages analyzed: " + s.total);
+    lines.push("Orphan pages: " + s.orphans);
+    lines.push("Underlinked pages: " + s.under);
+    lines.push("Unknown inlink pages: " + s.unknown);
+    lines.push("Suggested internal links: " + s.links);
+    lines.push("");
+
+    state.pages.forEach(function(page){
+      if(page.status === "Monitor" && page.suggestions.length === 0) return;
+
+      lines.push(page.status.toUpperCase() + " · " + page.score + "/100");
+      lines.push(page.title);
+      lines.push(page.url);
+      lines.push("Topic: " + page.topic);
+      lines.push("Known inlinks: " + (page.inlinks === null ? "unknown" : page.inlinks));
+      lines.push("Reason: " + page.reasons.join(", "));
+
+      if(page.suggestions.length){
+        lines.push("Add these links:");
+        page.suggestions.forEach(function(sug, i){
+          lines.push((i+1) + ". From: " + sug.sourceTitle);
+          lines.push("   Source URL: " + sug.sourceUrl);
+          lines.push("   Target URL: " + sug.targetUrl);
+          lines.push("   Anchor: " + sug.anchor);
+          lines.push("   Why: " + sug.reason);
+        });
+      }else{
+        lines.push("Action: Add this page to a relevant hub, navigation module, or related-resources block.");
+      }
+
+      lines.push("");
+    });
+
+    return lines.join("\n");
+  }
+
+  function csvEscape(value){
+    var s = String(value == null ? "" : value);
+    if(/[",\n]/.test(s)) return '"' + s.replace(/"/g,'""') + '"';
+    return s;
+  }
+
+  function buildCsv(){
+    var rows = [[
+      "status","priority_score","source_title","source_url","target_title","target_url","anchor_text","reason"
+    ]];
+
+    state.pages.forEach(function(page){
+      if(page.suggestions.length){
+        page.suggestions.forEach(function(sug){
+          rows.push([
+            page.status,
+            page.score,
+            sug.sourceTitle,
+            sug.sourceUrl,
+            sug.targetTitle,
+            sug.targetUrl,
+            sug.anchor,
+            sug.reason
+          ]);
+        });
+      }else if(page.status !== "Monitor"){
+        rows.push([
+          page.status,
+          page.score,
+          "",
+          "",
+          page.title,
+          page.url,
+          "",
+          "No strong source found in pasted batch"
+        ]);
+      }
+    });
+
+    return rows.map(function(row){
+      return row.map(csvEscape).join(",");
+    }).join("\n");
+  }
+
+  function copyText(text){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){
+        showToast("Copied");
+      }).catch(function(){
+        fallbackCopy(text);
+      });
+    }else{
+      fallbackCopy(text);
+    }
+  }
+
+  function fallbackCopy(text){
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.left = "-9999px";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try{
+      document.execCommand("copy");
+      showToast("Copied");
+    }catch(e){
+      showToast("Copy failed");
+    }
+    document.body.removeChild(ta);
+  }
+
+  function downloadFile(name, content, type){
+    var blob = new Blob([content], {type:type});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.setTimeout(function(){
+      URL.revokeObjectURL(url);
+    }, 300);
+  }
+
+  els.analyzeBtn.addEventListener("click", analyze);
+
+  els.sampleBtn.addEventListener("click", function(){
+    els.batch.value = sample;
+    els.priorityTerms.value = "retirement tax, roth, estate planning";
+    analyze();
+    showToast("Sample loaded");
+  });
+
+  els.saveBtn.addEventListener("click", saveAll);
+  els.clearBtn.addEventListener("click", clearAll);
+
+  els.copyBtn.addEventListener("click", function(){
+    copyText(buildPlanText());
+  });
+
+  els.csvBtn.addEventListener("click", function(){
+    if(!state.pages.length) analyze();
+    downloadFile("internal-link-rescue-plan.csv", buildCsv(), "text/csv;charset=utf-8");
+  });
+
+  els.txtBtn.addEventListener("click", function(){
+    if(!state.pages.length) analyze();
+    downloadFile("internal-link-rescue-plan.txt", buildPlanText(), "text/plain;charset=utf-8");
+  });
+
+  els.printBtn.addEventListener("click", function(){
+    window.print();
+  });
+
+  ["priorityTerms","targetLinks","maxSuggestions"].forEach(function(id){
+    els[id].addEventListener("change", function(){
+      if(state.pages.length) analyze();
+      else saveSettingsOnly();
+    });
+  });
+
+  loadSaved();
+  render();
+
+  if(els.batch.value.trim()){
+    analyze();
+  }
+})();
+</script>
+</body>
+</html>

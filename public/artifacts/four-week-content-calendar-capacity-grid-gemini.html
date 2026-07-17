@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Mobile Content Planner</title>
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #0f172a;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --border: #e2e8f0;
+            --warn: #ef4444;
+            --warn-bg: #fee2e2;
+            --success: #10b981;
+            --success-bg: #d1fae5;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 12px; font-size: 14px; line-height: 1.4; }
+        h1, h2 { font-size: 1.2rem; margin-bottom: 12px; color: var(--primary); }
+        .section { background: var(--card); border-radius: 8px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border); }
+        label { display: block; font-weight: 600; margin: 8px 0 4px; }
+        input, textarea, select { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; background: #fff; color: var(--text); }
+        
+        .grid-mobile-stack { display: flex; flex-direction: column; gap: 8px; }
+        
+        /* Week Container Layout */
+        .week-block { border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 16px; background: #ffffff; }
+        .week-header { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; font-weight: bold; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+        .theme-indicator { font-weight: normal; color: #64748b; font-size: 13px; margin-bottom: 8px; font-style: italic; word-break: break-word; }
+        
+        /* Badges */
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; width: 100%; text-align: center; }
+        .status-ok { background: var(--success-bg); color: #065f46; }
+        .status-over { background: var(--warn-bg); color: #991b1b; border: 1px solid var(--warn); }
+        
+        /* Strict Single Column Content Flow */
+        .days-grid { display: flex; flex-direction: column; gap: 8px; }
+        .day-card { background: #fafafa; border: 1px solid var(--border); border-radius: 6px; padding: 8px; }
+        .day-name { font-weight: 600; color: #64748b; margin-bottom: 6px; font-size: 12px; text-transform: uppercase; }
+        
+        /* Slots styling */
+        .slot { background: #eef2ff; border-left: 3px solid var(--primary); padding: 6px; margin-bottom: 6px; border-radius: 0 4px 4px 0; font-size: 12px; cursor: pointer; word-break: break-word; }
+        .slot:hover { background: #e0e7ff; }
+        
+        /* Interface Modals */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); padding: 16px; align-items: center; justify-content: center; z-index: 100; }
+        .modal-content { background: #fff; padding: 16px; border-radius: 8px; width: 100%; max-width: 400px; max-height: 90vh; overflow-y: auto; }
+        .btn-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        button { flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px; }
+        .btn-pri { background: var(--primary); color: #fff; width: 100%; }
+        .btn-pri:hover { background: var(--primary-hover); }
+        .btn-sec { background: var(--border); color: var(--text); }
+        .btn-danger { background: var(--warn); color: #fff; }
+        
+        .add-btn { background: transparent; border: 1px dashed var(--border); color: #64748b; padding: 4px; font-size: 12px; width: 100%; margin-top: 6px; }
+        .add-btn:hover { background: #f1f5f9; border-color: #cbd5e1; }
+    </style>
+</head>
+<body>
+
+    <div class="section">
+        <h1>Setup & Strategy</h1>
+        <div class="grid-mobile-stack">
+            <div>
+                <label for="channelsInput">Channels (comma separated)</label>
+                <input type="text" id="channelsInput" value="Instagram, LinkedIn, Newsletter">
+            </div>
+            <div>
+                <label for="weeklyLimitInput">Weekly Max Limit</label>
+                <input type="number" id="weeklyLimitInput" value="4">
+            </div>
+        </div>
+        <label for="themesInput">Campaign Themes (One line per week)</label>
+        <textarea id="themesInput" rows="4" placeholder="Week 1: Launch Week&#10;Week 2: Social Proof&#10;Week 3: Core Values&#10;Week 4: Offer Details"></textarea>
+        <button id="refreshBtn" class="btn-pri" style="margin-top: 12px;">Apply Layout & Setup Settings</button>
+    </div>
+
+    <div class="section">
+        <h2>4-Week Content Framework</h2>
+        <div id="calendarContainer"></div>
+    </div>
+
+    <div id="briefModal" class="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Edit Plan Details</h3>
+            
+            <label for="modalChannel">Target Channel</label>
+            <select id="modalChannel"></select>
+            
+            <label for="modalPostTitle">Brief Title / Headline Hook</label>
+            <input type="text" id="modalPostTitle">
+            
+            <label for="modalCopy">Caption Narrative Copy / Creative Brief</label>
+            <textarea id="modalCopy" rows="6"></textarea>
+            
+            <div class="btn-group">
+                <button id="saveBtn" class="btn-pri">Save Post</button>
+                <button id="deleteBtn" class="btn-danger">Delete</button>
+                <button id="closeBtn" class="btn-sec">Close</button>
+            </div>
+            <div class="btn-group">
+                <button id="copyBtn" class="btn-sec">📋 Copy Brief</button>
+                <button id="downloadBtn" class="btn-sec">💾 Download Brief</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        
+        let plannerData = JSON.parse(localStorage.getItem('secure_planner_data_v5')) || {
+            limit: 4,
+            themes: ["Week 1: Launch Week", "Week 2: Social Proof", "Week 3: Core Values", "Week 4: Offer Details"],
+            slots: []
+        };
+
+        let currentSlotId = null;
+        let targetWeek = null;
+        let targetDay = null;
+
+        const container = document.getElementById('calendarContainer');
+        const modal = document.getElementById('briefModal');
+        const modalChannel = document.getElementById('modalChannel');
+        const modalPostTitle = document.getElementById('modalPostTitle');
+        const modalCopy = document.getElementById('modalCopy');
+        const themesInput = document.getElementById('themesInput');
+        const weeklyLimitInput = document.getElementById('weeklyLimitInput');
+        const channelsInput = document.getElementById('channelsInput');
+
+        function init() {
+            weeklyLimitInput.value = plannerData.limit;
+            themesInput.value = (plannerData.themes || []).join('\n');
+            
+            document.getElementById('refreshBtn').addEventListener('click', handleSettingsSync);
+            document.getElementById('saveBtn').addEventListener('click', saveActiveSlot);
+            document.getElementById('deleteBtn').addEventListener('click', removeActiveSlot);
+            document.getElementById('closeBtn').addEventListener('click', hideModalOverlay);
+            document.getElementById('copyBtn').addEventListener('click', executeClipboardCopy);
+            document.getElementById('downloadBtn').addEventListener('click', executeTextDownload);
+            
+            renderWorkspaceMatrix();
+        }
+
+        function handleSettingsSync() {
+            plannerData.limit = parseInt(weeklyLimitInput.value) || 4;
+            plannerData.themes = themesInput.value.split('\n');
+            persistState();
+            renderWorkspaceMatrix();
+        }
+
+        function persistState() {
+            localStorage.setItem('secure_planner_data_v5', JSON.stringify(plannerData));
+        }
+
+        function renderWorkspaceMatrix() {
+            container.textContent = '';
+            const activeLimit = plannerData.limit;
+
+            for (let w = 1; w <= 4; w++) {
+                const globalWeekSlots = plannerData.slots.filter(s => s.week === w);
+                const weekTotal = globalWeekSlots.length;
+                const allocationExceeded = weekTotal > activeLimit;
+
+                const weekBlock = document.createElement('div');
+                weekBlock.classList.add('week-block');
+
+                const weekHeader = document.createElement('div');
+                weekHeader.classList.add('week-header');
+
+                const labelSpan = document.createElement('span');
+                labelSpan.textContent = `Week ${w}`;
+                weekHeader.appendChild(labelSpan);
+
+                const statusBadge = document.createElement('span');
+                statusBadge.classList.add('status-badge');
+                if (allocationExceeded) {
+                    statusBadge.classList.add('status-over');
+                    statusBadge.textContent = `${weekTotal} / ${activeLimit} Posts — Overload Warning`;
+                } else {
+                    statusBadge.classList.add('status-ok');
+                    statusBadge.textContent = `${weekTotal} / ${activeLimit} Posts Active`;
+                }
+                weekHeader.appendChild(statusBadge);
+                weekBlock.appendChild(weekHeader);
+
+                if (plannerData.themes && plannerData.themes[w - 1]) {
+                    const themeBar = document.createElement('div');
+                    themeBar.classList.add('theme-indicator');
+                    themeBar.textContent = plannerData.themes[w - 1];
+                    weekBlock.appendChild(themeBar);
+                }
+
+                const singleColumnContainer = document.createElement('div');
+                singleColumnContainer.classList.add('days-grid');
+
+                DAYS.forEach(day => {
+                    const dayCard = document.createElement('div');
+                    dayCard.classList.add('day-card');
+
+                    const titleNode = document.createElement('div');
+                    titleNode.classList.add('day-name');
+                    titleNode.textContent = day;
+                    dayCard.appendChild(titleNode);
+
+                    const dayTargetSlots = globalWeekSlots.filter(s => s.day === day);
+                    dayTargetSlots.forEach(slot => {
+                        const cellNode = document.createElement('div');
+                        cellNode.classList.add('slot');
+                        cellNode.textContent = `[${slot.channel}] ${slot.title || '(Untitled)'}`;
+                        cellNode.addEventListener('click', () => triggerSlotModification(slot.id));
+                        dayCard.appendChild(cellNode);
+                    });
+
+                    const appendBtn = document.createElement('button');
+                    appendBtn.classList.add('add-btn');
+                    appendBtn.textContent = '+ Add Item';
+                    appendBtn.addEventListener('click', () => triggerSlotCreation(w, day));
+                    
+                    dayCard.appendChild(appendBtn);
+                    singleColumnContainer.appendChild(dayCard);
+                });
+
+                weekBlock.appendChild(singleColumnContainer);
+                container.appendChild(weekBlock);
+            }
+        }
+
+        function populateChannelSelector() {
+            modalChannel.textContent = '';
+            const channelArray = channelsInput.value.split(',').map(c => c.trim()).filter(Boolean);
+            channelArray.forEach(chan => {
+                const optNode = document.createElement('option');
+                optNode.value = chan;
+                optNode.textContent = chan;
+                modalChannel.appendChild(optNode);
+            });
+        }
+
+        function triggerSlotCreation(week, day) {
+            currentSlotId = null;
+            targetWeek = week;
+            targetDay = day;
+            
+            populateChannelSelector();
+            document.getElementById('modalTitle').textContent = `New Block: Week ${week} - ${day}`;
+            modalPostTitle.value = '';
+            modalCopy.value = '';
+            modal.style.display = 'flex';
+        }
+
+        function triggerSlotModification(id) {
+            currentSlotId = id;
+            const targetObject = plannerData.slots.find(s => s.id === id);
+            if (!targetObject) return;
+
+            populateChannelSelector();
+            document.getElementById('modalTitle').textContent = `Modify Block: Week ${targetObject.week} - ${targetObject.day}`;
+            modalChannel.value = targetObject.channel;
+            modalPostTitle.value = targetObject.title || '';
+            modalCopy.value = targetObject.copy || '';
+            modal.style.display = 'flex';
+        }
+
+        function hideModalOverlay() {
+            modal.style.display = 'none';
+        }
+
+        function saveActiveSlot() {
+            const chosenChannel = modalChannel.value || 'General';
+            const chosenTitle = modalPostTitle.value;
+            const chosenCopy = modalCopy.value;
+
+            if (currentSlotId) {
+                const record = plannerData.slots.find(s => s.id === currentSlotId);
+                if (record) {
+                    record.channel = chosenChannel;
+                    record.title = chosenTitle;
+                    record.copy = chosenCopy;
+                }
+            } else {
+                plannerData.slots.push({
+                    id: Date.now(),
+                    week: targetWeek,
+                    day: targetDay,
+                    channel: chosenChannel,
+                    title: chosenTitle,
+                    copy: chosenCopy
+                });
+            }
+
+            persistState();
+            hideModalOverlay();
+            renderWorkspaceMatrix();
+        }
+
+        function removeActiveSlot() {
+            if (currentSlotId) {
+                plannerData.slots = plannerData.slots.filter(s => s.id !== currentSlotId);
+                persistState();
+                hideModalOverlay();
+                renderWorkspaceMatrix();
+            }
+        }
+
+        function serializeBriefString() {
+            const rawChannel = modalChannel.value || 'N/A';
+            const rawTitle = modalPostTitle.value || 'Untitled Post';
+            const rawCopy = modalCopy.value || '';
+            return `CHANNEL: ${rawChannel}\nTITLE/HOOK: ${rawTitle}\n\nCONTENT DICTION:\n${rawCopy}`;
+        }
+
+        function executeClipboardCopy() {
+            const formattedOutputText = serializeBriefString();
+            
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(formattedOutputText)
+                    .then(() => alert('Brief metadata saved to operational clipboard.'))
+                    .catch(() => fallbackClipboardEngine(formattedOutputText));
+            } else {
+                fallbackClipboardEngine(formattedOutputText);
+            }
+        }
+
+        function fallbackClipboardEngine(text) {
+            const shadowTextArea = document.createElement('textarea');
+            shadowTextArea.value = text;
+            shadowTextArea.style.position = 'fixed';
+            shadowTextArea.style.top = '-9999px';
+            document.body.appendChild(shadowTextArea);
+            
+            shadowTextArea.focus();
+            shadowTextArea.select();
+            
+            try {
+                const operationalStatus = document.execCommand('copy');
+                if (operationalStatus) {
+                    alert('Brief metadata copied via device terminal allocation.');
+                } else {
+                    alert('Action refused. Please select and copy input values manually.');
+                }
+            } catch (err) {
+                alert('Action execution fault. Please handle input details manually.');
+            }
+            
+            document.body.removeChild(shadowTextArea);
+        }
+
+        function executeTextDownload() {
+            const outputStringPayload = serializeBriefString();
+            const matchingHook = modalPostTitle.value || 'content_brief';
+            const cleanIdentifier = matchingHook.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+            
+            const standardBlob = new Blob([outputStringPayload], { type: 'text/plain;charset=utf-8' });
+            const dynamicLinkNode = document.createElement('a');
+            
+            dynamicLinkNode.download = `${cleanIdentifier}_brief.txt`;
+            dynamicLinkNode.href = window.URL.createObjectURL(standardBlob);
+            dynamicLinkNode.style.display = 'none';
+            
+            document.body.appendChild(dynamicLinkNode);
+            dynamicLinkNode.click();
+            
+            window.URL.revokeObjectURL(dynamicLinkNode.href);
+            document.body.removeChild(dynamicLinkNode);
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

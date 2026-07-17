@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pop-Up Menu Hub</title>
+    <style>
+        :root {
+            --bg: #f3f4f6;
+            --card-bg: #ffffff;
+            --text: #1f2937;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --border: #e5e7eb;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --warning-bg: #fffbeb;
+            --warning-border: #fef3c7;
+            --warning-text: #b45309;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 10px; max-width: 800px; margin: 0 auto; padding-bottom: 60px; }
+        
+        .no-print h1 { font-size: 1.6rem; text-align: center; margin: 15px 0; color: #111827; }
+        .section { background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 15px; }
+        
+        .btn { background: var(--primary); color: white; border: none; padding: 12px; font-size: 1rem; font-weight: bold; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-bottom: 15px; }
+        .btn:hover { background: var(--primary-hover); }
+        .btn-danger { background: var(--danger); }
+        .btn-secondary { background: #4b5563; }
+        .btn-print { background: #059669; }
+        
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .dish-manager-card { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+        .dish-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+        
+        .form-group { margin-bottom: 10px; }
+        label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; color: #4b5563; }
+        input, textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; background: #f9fafb; }
+        textarea { resize: vertical; height: 50px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+        
+        .dish-metrics { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 8px; border-radius: 6px; margin-top: 10px; font-size: 0.8rem; text-align: center; }
+        .dish-metrics div span { font-weight: bold; color: var(--success); display: block; font-size: 0.9rem; }
+        
+        .margin-warning { background: var(--warning-bg); border: 1px solid var(--warning-border); color: var(--warning-text); padding: 8px; border-radius: 6px; margin-top: 10px; font-size: 0.8rem; text-align: center; font-weight: 600; }
+
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #eff6ff; border: 1px solid #bfdbfe; padding: 12px; border-radius: 8px; margin-bottom: 15px; text-align: center; }
+        .dashboard-item span { display: block; font-size: 1.3rem; font-weight: bold; color: var(--primary); }
+
+        .menu-cards-container { display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 15px; }
+        @media (min-width: 600px) { .menu-cards-container { grid-template-columns: 1fr 1fr; } }
+
+        .menu-card { border: 2px dashed #9ca3af; padding: 25px 20px; text-align: center; background: #fffdf9; border-radius: 4px; display: flex; flex-direction: column; justify-content: center; min-height: 180px; }
+        .menu-title { font-family: Georgia, serif; font-size: 1.35rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #111827; margin-bottom: 6px; }
+        .menu-hook { font-style: italic; color: #4b5563; margin-bottom: 12px; font-size: 0.9rem; line-height: 1.3; }
+        .menu-price { font-weight: bold; font-size: 1.15rem; color: #000; margin-bottom: 10px; }
+        .menu-allergens { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; color: #7f1d1d; background: #fef2f2; display: inline-block; padding: 2px 8px; border-radius: 4px; align-self: center; font-weight: 600; }
+
+        .brief-box { background: #1e293b; color: #f8fafc; padding: 12px; font-family: monospace; font-size: 0.8rem; white-space: pre-wrap; max-height: 200px; overflow-y: auto; border-radius: 6px; }
+
+        @media print {
+            body { background: #fff; padding: 0; color: #000; }
+            .no-print { display: none !important; }
+            .menu-cards-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+            .menu-card { page-break-inside: avoid; border: 1px solid #000; box-shadow: none; background: #fff; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="no-print">
+        <h1>Pop-Up Menu Hub</h1>
+        
+        <div class="dashboard">
+            <div class="dashboard-item">Total Menu Items<span id="globalCount">0</span></div>
+            <div class="dashboard-item">Total Est. Profit<span id="globalProfit">$0.00</span></div>
+        </div>
+
+        <button class="btn" id="addDishBtn">+ Add New Dish</button>
+        <div id="editorContainer"></div>
+    </div>
+
+    <div class="section">
+        <h2 class="no-print" style="margin-bottom:15px; font-size:1.2rem;">Live Menu Cards</h2>
+        <div class="menu-cards-container" id="cardsContainer"></div>
+        <div class="action-grid no-print">
+            <button class="btn btn-print" id="printBtn">Print Cards</button>
+            <button class="btn btn-secondary" id="copyBriefBtn">Copy Master Brief</button>
+        </div>
+    </div>
+
+    <div class="section no-print">
+        <h2 style="margin-bottom:10px; font-size:1.2rem;">Master Text Brief</h2>
+        <div class="brief-box" id="masterBriefText">No items added yet.</div>
+    </div>
+
+    <script>
+        let menuItems = [
+            {
+                id: 1,
+                name: 'Crispy Pork Belly Bao',
+                hook: '24-hour braised pork, pickled cucumber, and hoisin drizzle in a fluffy steamed bun.',
+                servings: 30,
+                allergens: 'Gluten, Soy, Sesame',
+                cost: 2.25,
+                price: 8.50
+            },
+            {
+                id: 2,
+                name: 'Spicy Dan Dan Noodles',
+                hook: 'Szechuan pepper minced beef, preserved vegetables, and house chili oil over wheat noodles.',
+                servings: 25,
+                allergens: 'Gluten, Peanuts, Soy',
+                cost: 4.50,
+                price: 10.00
+            }
+        ];
+
+        document.getElementById('addDishBtn').addEventListener('click', addDish);
+        document.getElementById('printBtn').addEventListener('click', () => window.print());
+        document.getElementById('copyBriefBtn').addEventListener('click', copyAllBriefs);
+
+        function safeNum(val) {
+            const parsed = parseFloat(val);
+            return isNaN(parsed) || parsed < 0 ? 0 : parsed;
+        }
+
+        function addDish() {
+            const newId = Date.now();
+            menuItems.push({
+                id: newId,
+                name: '',
+                hook: '',
+                servings: 20,
+                allergens: '',
+                cost: 0,
+                price: 0
+            });
+            render();
+        }
+
+        function removeDish(id) {
+            menuItems = menuItems.filter(item => item.id !== id);
+            render();
+        }
+
+        function updateField(id, field, value) {
+            const item = menuItems.find(item => item.id === id);
+            if (item) {
+                if (['servings', 'cost', 'price'].includes(field)) {
+                    item[field] = safeNum(value);
+                } else {
+                    item[field] = value;
+                }
+                renderCalculationsAndPreviews();
+            }
+        }
+
+        function renderCalculationsAndPreviews() {
+            let totalMenuProfit = 0;
+            let masterBrief = "";
+
+            menuItems.forEach(item => {
+                const costPct = item.price > 0 ? (item.cost / item.price) * 100 : 0;
+                const profitPer = Math.max(0, item.price - item.cost);
+                const itemTotalProfit = profitPer * item.servings;
+                totalMenuProfit += itemTotalProfit;
+
+                // Update Editor Metrics Inline
+                const costPctEl = document.getElementById(`calc-pct-${item.id}`);
+                const profPerEl = document.getElementById(`calc-per-${item.id}`);
+                const totalProfEl = document.getElementById(`calc-tot-${item.id}`);
+                const warningEl = document.getElementById(`warning-${item.id}`);
+                
+                if (costPctEl) costPctEl.textContent = `${costPct.toFixed(1)}%`;
+                if (profPerEl) profPerEl.textContent = `$${profitPer.toFixed(2)}`;
+                if (totalProfEl) totalProfEl.textContent = `$${itemTotalProfit.toFixed(2)}`;
+
+                // Threshold: Display warning if food cost exceeds 35%
+                if (warningEl) {
+                    if (costPct > 35) {
+                        warningEl.textContent = `⚠️ High Food Cost Warning (${costPct.toFixed(1)}%)`;
+                        warningEl.style.display = 'block';
+                    } else {
+                        warningEl.style.display = 'none';
+                    }
+                }
+
+                // Update Preview Cards
+                const cardName = document.getElementById(`card-name-${item.id}`);
+                const cardHook = document.getElementById(`card-hook-${item.id}`);
+                const cardPrice = document.getElementById(`card-price-${item.id}`);
+                const cardAllergens = document.getElementById(`card-allergens-${item.id}`);
+
+                if (cardName) cardName.textContent = item.name || 'Untitled Dish';
+                if (cardHook) cardHook.textContent = item.hook || 'No description provided.';
+                if (cardPrice) cardPrice.textContent = `$${item.price.toFixed(2)}`;
+                
+                if (cardAllergens) {
+                    if (item.allergens.trim()) {
+                        cardAllergens.textContent = `Contains: ${item.allergens}`;
+                        cardAllergens.style.display = 'inline-block';
+                    } else {
+                        cardAllergens.style.display = 'none';
+                    }
+                }
+
+                // Append to Master text brief layout
+                masterBrief += `DISH: ${item.name || 'Untitled'}\n`;
+                masterBrief += `PRICE: $${item.price.toFixed(2)}\n`;
+                masterBrief += `HOOK: ${item.hook || 'N/A'}\n`;
+                masterBrief += `ALLERGENS: ${item.allergens || 'None declared'}\n`;
+                masterBrief += `--- PROFIT METRICS ---\n`;
+                masterBrief += `Food Cost: ${costPct.toFixed(1)}% ($${item.cost.toFixed(2)}/serv)\n`;
+                masterBrief += `Margin/Serv: $${profitPer.toFixed(2)}\n`;
+                masterBrief += `Est. Profit (${item.servings} serv): $${itemTotalProfit.toFixed(2)}\n`;
+                if (costPct > 35) masterBrief += `⚠️ WARNING: High food cost profile!\n`;
+                masterBrief += `========================================\n\n`;
+            });
+
+            document.getElementById('globalCount').textContent = menuItems.length;
+            document.getElementById('globalProfit').textContent = `$${totalMenuProfit.toFixed(2)}`;
+            document.getElementById('masterBriefText').textContent = masterBrief.trim() || "No items added yet.";
+        }
+
+        function copyAllBriefs() {
+            const text = document.getElementById('masterBriefText').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Master brief copied to clipboard!');
+            }).catch(() => {
+                alert('Copy failed. Please manually select the text box below.');
+            });
+        }
+
+        function createFormGroup(labelText, inputElement) {
+            const group = document.createElement('div');
+            group.className = 'form-group';
+            const label = document.createElement('label');
+            label.textContent = labelText;
+            group.appendChild(label);
+            group.appendChild(inputElement);
+            return group;
+        }
+
+        function render() {
+            const editorContainer = document.getElementById('editorContainer');
+            const cardsContainer = document.getElementById('cardsContainer');
+            
+            // Purge existing elements explicitly to prevent residual trace bindings
+            while (editorContainer.firstChild) editorContainer.removeChild(editorContainer.firstChild);
+            while (cardsContainer.firstChild) cardsContainer.removeChild(cardsContainer.firstChild);
+
+            menuItems.forEach((item, index) => {
+                // --- BUILD EDITOR CARD ELEMENT ---
+                const managerCard = document.createElement('div');
+                managerCard.className = 'dish-manager-card';
+
+                const header = document.createElement('div');
+                header.className = 'dish-header';
+                const h3 = document.createElement('h3');
+                h3.textContent = `Dish #${index + 1} Editor`;
+                const remBtn = document.createElement('button');
+                remBtn.className = 'btn btn-danger';
+                remBtn.style.width = 'auto'; remBtn.style.padding = '4px 10px'; remBtn.style.fontSize = '0.8rem'; remBtn.style.margin = '0';
+                remBtn.textContent = 'Remove';
+                remBtn.addEventListener('click', () => removeDish(item.id));
+                header.appendChild(h3);
+                header.appendChild(remBtn);
+                managerCard.appendChild(header);
+
+                // Dish Name Input
+                const nameInp = document.createElement('input');
+                nameInp.type = 'text';
+                nameInp.value = item.name;
+                nameInp.placeholder = 'e.g., Crispy Pork Belly Bao';
+                nameInp.addEventListener('input', (e) => updateField(item.id, 'name', e.target.value));
+                managerCard.appendChild(createFormGroup('Dish Name', nameInp));
+
+                // Hook Textarea
+                const hookTxt = document.createElement('textarea');
+                hookTxt.value = item.hook;
+                hookTxt.placeholder = 'Short sensory description...';
+                hookTxt.addEventListener('input', (e) => updateField(item.id, 'hook', e.target.value));
+                managerCard.appendChild(createFormGroup('The Hook (Short Description)', hookTxt));
+
+                // Financial Numeric Grid Inputs
+                const grid3 = document.createElement('div');
+                grid3.className = 'grid-3';
+
+                const servingsInp = document.createElement('input');
+                servingsInp.type = 'number'; servingsInp.value = item.servings; servingsInp.min = '0';
+                servingsInp.addEventListener('input', (e) => updateField(item.id, 'servings', e.target.value));
+                grid3.appendChild(createFormGroup('Servings', servingsInp));
+
+                const costInp = document.createElement('input');
+                costInp.type = 'number'; costInp.step = '0.01'; costInp.value = item.cost; costInp.min = '0';
+                costInp.addEventListener('input', (e) => updateField(item.id, 'cost', e.target.value));
+                grid3.appendChild(createFormGroup('Cost ($)', costInp));
+
+                const priceInp = document.createElement('input');
+                priceInp.type = 'number'; priceInp.step = '0.01'; priceInp.value = item.price; priceInp.min = '0';
+                priceInp.addEventListener('input', (e) => updateField(item.id, 'price', e.target.value));
+                grid3.appendChild(createFormGroup('Price ($)', priceInp));
+
+                managerCard.appendChild(grid3);
+
+                // Allergen Input
+                const allergenInp = document.createElement('input');
+                allergenInp.type = 'text';
+                allergenInp.value = item.allergens;
+                allergenInp.placeholder = 'e.g., Nuts, Gluten';
+                allergenInp.addEventListener('input', (e) => updateField(item.id, 'allergens', e.target.value));
+                managerCard.appendChild(createFormGroup('Allergens', allergenInp));
+
+                // Dashboard Component Metrics Row
+                const metricsRow = document.createElement('div');
+                metricsRow.className = 'dish-metrics';
+                
+                const metricLabels = ['Cost Pct', 'Profit/Serv', 'Total Profit'];
+                const metricIds = ['pct', 'per', 'tot'];
+                
+                metricLabels.forEach((label, idx) => {
+                    const block = document.createElement('div');
+                    block.textContent = label;
+                    const valSpan = document.createElement('span');
+                    valSpan.id = `calc-${metricIds[idx]}-${item.id}`;
+                    valSpan.textContent = idx === 0 ? '0%' : '$0.00';
+                    block.appendChild(valSpan);
+                    metricsRow.appendChild(block);
+                });
+                managerCard.appendChild(metricsRow);
+
+                // Margin Notification Alert Block
+                const warningDiv = document.createElement('div');
+                warningDiv.className = 'margin-warning';
+                warningDiv.id = `warning-${item.id}`;
+                warningDiv.style.display = 'none';
+                managerCard.appendChild(warningDiv);
+
+                editorContainer.appendChild(managerCard);
+
+                // --- BUILD DISPLAY CARD NODE ---
+                const menuCard = document.createElement('div');
+                menuCard.className = 'menu-card';
+                menuCard.id = `card-${item.id}`;
+
+                const cardTitle = document.createElement('div');
+                cardTitle.className = 'menu-title';
+                cardTitle.id = `card-name-${item.id}`;
+
+                const cardHook = document.createElement('div');
+                cardHook.className = 'menu-hook';
+                cardHook.id = `card-hook-${item.id}`;
+
+                const cardPrice = document.createElement('div');
+                cardPrice.className = 'menu-price';
+                cardPrice.id = `card-price-${item.id}`;
+
+                const cardAllergens = document.createElement('div');
+                cardAllergens.className = 'menu-allergens';
+                cardAllergens.id = `card-allergens-${item.id}`;
+                cardAllergens.style.display = 'none';
+
+                menuCard.appendChild(cardTitle);
+                menuCard.appendChild(cardHook);
+                menuCard.appendChild(cardPrice);
+                menuCard.appendChild(cardAllergens);
+
+                cardsContainer.appendChild(menuCard);
+            });
+
+            renderCalculationsAndPreviews();
+        }
+
+        // Initialize display app setup safely
+        render();
+    </script>
+</body>
+</html>

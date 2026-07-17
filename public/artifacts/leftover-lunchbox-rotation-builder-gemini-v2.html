@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lunchbox Builder</title>
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --border: #e2e8f0;
+            --primary: #2563eb;
+            --accent: #f1f5f9;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 8px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .container {
+            max-width: 390px;
+            margin: 0 auto;
+        }
+        h2 {
+            font-size: 1.1rem;
+            margin: 12px 0 6px 0;
+            color: #1e293b;
+        }
+        textarea, select {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 14px;
+            background: var(--card-bg);
+        }
+        textarea {
+            height: 55px;
+            resize: none;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+        .checkbox-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: space-around;
+        }
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            user-select: none;
+            font-size: 13px;
+        }
+        button {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:active {
+            opacity: 0.9;
+        }
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 6px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .card-title {
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 4px;
+            border-bottom: 1px solid var(--accent);
+            padding-bottom: 2px;
+        }
+        .note-area {
+            background: #fef08a;
+            color: #854d0e;
+            border: 1px solid #fef08a;
+        }
+        .note-area .card-title {
+            color: #854d0e;
+            border-bottom: 1px solid #fde047;
+        }
+        .copy-btn {
+            background: none;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            padding: 4px 6px;
+            font-size: 11px;
+            width: auto;
+            margin-top: 4px;
+            float: right;
+        }
+        .clearfix::after {
+            content: "";
+            clear: both;
+            display: table;
+        }
+        @media print {
+            body { background: white; }
+            button, .inputs { display: none; }
+            .card { page-break-inside: avoid; border: 1px solid #000; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="inputs">
+        <h2>Items (Comma separated)</h2>
+        <div class="grid-2">
+            <div>
+                <label style="font-size:11px; font-weight:bold; display:block; margin-bottom:2px;">Leftovers / Mains</label>
+                <textarea id="leftovers" placeholder="Chicken breast, Chili, Roasted tofu, Tuna salad"></textarea>
+            </div>
+            <div>
+                <label style="font-size:11px; font-weight:bold; display:block; margin-bottom:2px;">Staples / Sides</label>
+                <textarea id="staples" placeholder="Rice, Spinach, Carrots, Almonds, Apples, Boiled eggs"></textarea>
+            </div>
+        </div>
+
+        <h2>Constraints & Days</h2>
+        <div class="grid-2">
+            <div>
+                <select id="daysCount">
+                    <option value="3">3 Days</option>
+                    <option value="5" selected>5 Days</option>
+                </select>
+            </div>
+            <div class="checkbox-group">
+                <label class="checkbox-label"><input type="checkbox" id="vegetarian"> Veg</label>
+                <label class="checkbox-label"><input type="checkbox" id="noReheat"> Cold</label>
+            </div>
+        </div>
+
+        <button onclick="generatePlan()">Generate Lunchboxes</button>
+    </div>
+
+    <div id="output" style="margin-top: 12px;"></div>
+</div>
+
+<script>
+    const nonVegKeywords = ['chicken', 'beef', 'pork', 'turkey', 'fish', 'tuna', 'salmon', 'steak', 'meat'];
+    const hotKeywords = ['chili', 'soup', 'stew', 'lasagna', 'rice', 'pasta'];
+
+    function isVeg(item) {
+        return !nonVegKeywords.some(kw => item.toLowerCase().includes(kw));
+    }
+
+    function isColdFriendly(item) {
+        return !hotKeywords.some(kw => item.toLowerCase().includes(kw));
+    }
+
+    function generatePlan() {
+        const leftoversInput = document.getElementById('leftovers').value;
+        const staplesInput = document.getElementById('staples').value;
+        const daysCount = parseInt(document.getElementById('daysCount').value);
+        const vegFilter = document.getElementById('vegetarian').checked;
+        const coldFilter = document.getElementById('noReheat').checked;
+
+        const defaultLeftovers = ['Chicken breast', 'Chili', 'Roasted tofu', 'Tuna salad', 'Turkey slices'];
+        const defaultStaples = ['Rice', 'Spinach', 'Carrots', 'Almonds', 'Apples', 'Boiled eggs', 'Berries', 'Cucumber'];
+
+        let mains = leftoversInput ? leftoversInput.split(',').map(s => s.trim()) : defaultLeftovers;
+        let sides = staplesInput ? staplesInput.split(',').map(s => s.trim()) : defaultStaples;
+
+        mains = mains.filter(item => item.length > 0);
+        sides = sides.filter(item => item.length > 0);
+
+        if (vegFilter) {
+            mains = mains.filter(isVeg);
+            sides = sides.filter(isVeg);
+        }
+        if (coldFilter) {
+            mains = mains.filter(isColdFriendly);
+            sides = sides.filter(isColdFriendly);
+        }
+
+        const output = document.getElementById('output');
+        output.innerHTML = '';
+
+        if (mains.length === 0) {
+            const errorCard = document.createElement('div');
+            errorCard.className = 'card';
+            errorCard.textContent = 'No items match your selected filters.';
+            output.appendChild(errorCard);
+            return;
+        }
+
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+        let noteItems = new Set();
+        let planText = '';
+
+        // Temporary card container for days to sort insertion order easily
+        const dayCardsContainer = document.createDocumentFragment();
+
+        for (let i = 0; i < daysCount; i++) {
+            const dayName = days[i];
+            const mainItem = mains[i % mains.length] || 'Assorted Staples';
+            
+            let selectedSides = [];
+            let sidePool = [...sides];
+            let sideCount = Math.min(3, sidePool.length);
+            
+            for (let j = 0; j < sideCount; j++) {
+                const index = (i + j) % sidePool.length;
+                selectedSides.push(sidePool[index]);
+                noteItems.add(sidePool[index]);
+            }
+            if (mainItem !== 'Assorted Staples') {
+                noteItems.add(mainItem);
+            }
+
+            const sidesString = selectedSides.join(', ');
+            planText += `${dayName}:\n- Main: ${mainItem}\n- Sides: ${sidesString}\n\n`;
+
+            const card = document.createElement('div');
+            card.className = 'card';
+
+            const cardTitle = document.createElement('div');
+            cardTitle.className = 'card-title';
+            cardTitle.textContent = `${dayName} Lunchbox`;
+
+            const mainDiv = document.createElement('div');
+            const mainLabel = document.createElement('strong');
+            mainLabel.textContent = 'Main: ';
+            mainDiv.appendChild(mainLabel);
+            mainDiv.appendChild(document.createTextNode(mainItem));
+
+            const sidesDiv = document.createElement('div');
+            const sidesLabel = document.createElement('strong');
+            sidesLabel.textContent = 'Sides: ';
+            sidesDiv.appendChild(sidesLabel);
+            sidesDiv.appendChild(document.createTextNode(sidesString));
+
+            card.appendChild(cardTitle);
+            card.appendChild(mainDiv);
+            card.appendChild(sidesDiv);
+            dayCardsContainer.appendChild(card);
+        }
+
+        const prepList = Array.from(noteItems).join(', ');
+        planText += `Prep / Shopping Summary:\n${prepList}`;
+
+        const summaryCard = document.createElement('div');
+        summaryCard.className = 'card note-area clearfix';
+
+        const summaryTitle = document.createElement('div');
+        summaryTitle.className = 'card-title';
+        summaryTitle.textContent = 'Prep & Shopping Notes';
+
+        const summaryContent = document.createElement('div');
+        summaryContent.textContent = prepList;
+
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'copy-btn';
+        copyBtn.textContent = 'Copy Note';
+        copyBtn.onclick = function() {
+            navigator.clipboard.writeText(planText).then(() => {
+                alert('Plan copied to clipboard');
+            });
+        };
+
+        summaryCard.appendChild(summaryTitle);
+        summaryCard.appendChild(summaryContent);
+        summaryCard.appendChild(copyBtn);
+
+        output.appendChild(summaryCard);
+        output.appendChild(dayCardsContainer);
+    }
+
+    window.onload = generatePlan;
+</script>
+
+</body>
+</html>

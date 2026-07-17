@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Contact Sheet — Moodboard Planner</title>
+<style>
+/* ── FONTS: fully local system stacks, no network calls ── */
+:root {
+  --ink: #0F0F14;
+  --ink-mid: #1C1C24;
+  --ink-soft: #2A2A36;
+  --parchment: #F2EBD9;
+  --parchment-dim: #C8BFAB;
+  --sage: #7A9E87;
+  --sage-dim: #4D6B58;
+  --rose: #C4847A;
+  --amber: #D4A847;
+  --frame-border: #3A3A48;
+  --frame-hole: #0A0A0F;
+  /* serif: Georgia ships on every OS and reads well at display sizes */
+  --serif: Georgia, 'Times New Roman', serif;
+  /* mono: Menlo/Consolas/Courier cover Mac/Win/fallback */
+  --mono: Menlo, Consolas, 'Courier New', monospace;
+  /* sans: system-ui cascade */
+  --sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  background: var(--ink);
+  color: var(--parchment);
+  font-family: var(--sans);
+  font-size: 14px;
+  overscroll-behavior: none;
+}
+
+/* ── LAYOUT ── */
+#app {
+  display: grid;
+  grid-template-rows: 52px 1fr 52px;
+  grid-template-columns: 1fr 320px;
+  height: 100dvh;
+  overflow: hidden;
+  max-width: 100%;
+}
+@media (max-width: 700px) {
+  #app { grid-template-columns: 1fr; grid-template-rows: 52px 1fr 52px; }
+  #sidebar { display: none; }
+  #sidebar.open { display: flex; position: fixed; inset: 0; z-index: 50; padding-top: 0; }
+  #mobile-tabs { display: flex !important; }
+}
+
+/* ── TOPBAR ── */
+#topbar {
+  grid-column: 1 / -1;
+  background: var(--ink-mid);
+  border-bottom: 1px solid var(--frame-border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 12px;
+  position: relative;
+  z-index: 10;
+  /* prevent any child from blowing past viewport */
+  min-width: 0;
+  overflow: hidden;
+}
+#sheet-title-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--frame-border);
+  color: var(--parchment);
+  font-family: var(--serif);
+  font-size: 17px;
+  flex: 1;
+  min-width: 0;
+  outline: none;
+  padding: 2px 0;
+}
+#sheet-title-input::placeholder { color: var(--frame-border); }
+.tb-btn {
+  background: none;
+  border: 1px solid var(--frame-border);
+  color: var(--parchment-dim);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+/* Mobile: tighter topbar — shrink button text and padding */
+@media (max-width: 480px) {
+  #topbar { padding: 0 8px; gap: 6px; }
+  .tb-btn { font-size: 10px; padding: 5px 7px; }
+}
+.tb-btn:hover { border-color: var(--sage); color: var(--sage); }
+
+/* ── MAIN CANVAS ── */
+#canvas {
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--ink);
+  padding: 20px;
+  /* canvas must not exceed its grid cell */
+  min-width: 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--frame-border) transparent;
+}
+@media (max-width: 480px) {
+  #canvas { padding: 10px; }
+}
+
+/* ── FILM STRIP ── */
+.film-strip {
+  display: flex;
+  height: 18px;
+  margin-bottom: 8px;
+  overflow: hidden;
+  /* must not widen its containing block */
+  width: 100%;
+  max-width: 100%;
+}
+.film-hole {
+  width: 12px; height: 12px;
+  background: var(--frame-hole);
+  border: 1px solid var(--frame-border);
+  border-radius: 2px;
+  margin: 3px 4px;
+  flex-shrink: 0;
+}
+
+/* ── CONTACT GRID ── */
+#contact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 3px;
+  background: var(--frame-border);
+  border: 2px solid var(--frame-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+@media (max-width: 500px) {
+  #contact-grid { grid-template-columns: 1fr; }
+}
+/* Grid must respect its column and never contribute to horizontal scroll */
+#contact-grid {
+  min-width: 0;
+  width: 100%;
+}
+
+/* ── SHOT SLOT ── */
+.shot-slot {
+  background: var(--ink-mid);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: background .1s;
+}
+.shot-slot:hover { background: var(--ink-soft); }
+
+.slot-number {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--sage);
+  padding: 5px 7px 0;
+  letter-spacing: .08em;
+  user-select: none;
+}
+
+/* ratio-padded frame wrapper */
+.slot-frame-outer {
+  position: relative;
+  margin: 4px 7px;
+  border: 1px solid var(--frame-border);
+  overflow: hidden;
+  background: #09090E;
+  cursor: pointer;
+  /* prevent padding-top percentage from being calculated against a
+     wider-than-slot ancestor; width must be explicit here */
+  width: calc(100% - 14px);
+}
+.slot-frame-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.slot-thumb-placeholder {
+  text-align: center;
+  opacity: .25;
+  pointer-events: none;
+  user-select: none;
+  font-family: var(--mono);
+  font-size: 10px;
+  line-height: 1.8;
+}
+.slot-img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* safe area overlays — built via JS */
+.safe-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.safe-line-h, .safe-line-v {
+  position: absolute;
+}
+.safe-line-h { left: 0; right: 0; height: 1px; }
+.safe-line-v { top: 0; bottom: 0; width: 1px; }
+.safe-rect {
+  position: absolute;
+  border-style: dashed;
+  border-width: 1px;
+}
+.safe-tag {
+  position: absolute;
+  font-family: var(--mono);
+  font-size: 8px;
+  padding: 1px 3px;
+  background: rgba(15,15,20,.75);
+}
+
+/* slot metadata below frame */
+.slot-meta {
+  padding: 5px 7px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.slot-field {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid transparent;
+  color: var(--parchment);
+  font-family: var(--mono);
+  font-size: 10px;
+  width: 100%;
+  outline: none;
+  padding: 2px 0;
+  resize: none;
+  transition: border-color .15s;
+  line-height: 1.4;
+}
+.slot-field::placeholder { color: var(--sage-dim); opacity: .7; }
+.slot-field:focus { border-bottom-color: var(--sage); }
+.slot-field.desc { font-size: 11px; color: var(--parchment-dim); min-height: 36px; }
+
+/* tags */
+.slot-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  padding: 3px 7px;
+}
+.tag {
+  font-family: var(--mono);
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 2px;
+  border: 1px solid var(--sage-dim);
+  color: var(--sage);
+  cursor: pointer;
+  background: none;
+  transition: all .1s;
+}
+.tag:hover { background: var(--sage-dim); color: var(--parchment); }
+.tag-add {
+  font-family: var(--mono);
+  font-size: 9px;
+  padding: 2px 6px;
+  background: none;
+  border: 1px dashed var(--frame-border);
+  color: var(--parchment-dim);
+  border-radius: 2px;
+  cursor: pointer;
+}
+.tag-add:hover { border-color: var(--parchment-dim); }
+
+/* slot action buttons */
+.slot-actions {
+  display: flex;
+  gap: 4px;
+  padding: 0 7px 8px;
+}
+.slot-act-btn {
+  font-family: var(--mono);
+  font-size: 9px;
+  padding: 3px 6px;
+  border: 1px solid var(--frame-border);
+  background: none;
+  color: var(--parchment-dim);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all .12s;
+  flex: 1;
+}
+.slot-act-btn:hover { border-color: var(--amber); color: var(--amber); }
+.slot-act-btn.copy-btn { color: var(--sage); border-color: var(--sage-dim); }
+.slot-act-btn.copy-btn:hover { background: var(--sage-dim); color: var(--parchment); }
+.slot-act-btn.del-btn:hover { border-color: var(--rose); color: var(--rose); }
+
+/* add-slot button */
+.add-slot-btn {
+  background: var(--ink-mid);
+  border: none;
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--parchment-dim);
+  gap: 8px;
+  transition: background .1s;
+}
+.add-slot-btn:hover { background: var(--ink-soft); }
+.add-slot-btn .plus { font-size: 28px; opacity: .4; }
+.add-slot-btn .lbl { font-family: var(--mono); font-size: 10px; opacity: .5; }
+
+/* ── SIDEBAR ── */
+#sidebar {
+  grid-row: 2;
+  background: var(--ink-mid);
+  border-left: 1px solid var(--frame-border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+#sidebar-close {
+  display: none;
+  position: absolute;
+  top: 10px; right: 10px;
+  background: none;
+  border: 1px solid var(--frame-border);
+  color: var(--parchment-dim);
+  font-size: 14px;
+  width: 28px; height: 28px;
+  border-radius: 3px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+@media (max-width: 700px) { #sidebar-close { display: flex; } }
+
+#sidebar-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--frame-border);
+  flex-shrink: 0;
+}
+.stab {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 10px 4px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--parchment-dim);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all .12s;
+  letter-spacing: .03em;
+}
+.stab.active { color: var(--amber); border-bottom-color: var(--amber); }
+.stab:hover:not(.active) { color: var(--parchment); }
+
+.sidebar-panel {
+  display: none;
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+  flex-direction: column;
+  gap: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--frame-border) transparent;
+}
+.sidebar-panel.active { display: flex; }
+
+.panel-section-title {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--sage-dim);
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--frame-border);
+}
+.st-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--sage);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+.st-field {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--frame-border);
+  color: var(--parchment);
+  font-family: var(--mono);
+  font-size: 11px;
+  width: 100%;
+  padding: 4px 0;
+  outline: none;
+  transition: border-color .12s;
+  resize: none;
+  line-height: 1.5;
+}
+.st-field:focus { border-bottom-color: var(--amber); }
+.st-field::placeholder { color: var(--sage-dim); opacity: .7; }
+.st-field.block {
+  border: 1px solid var(--frame-border);
+  border-radius: 3px;
+  padding: 6px 8px;
+  background: var(--ink);
+}
+
+/* palette swatches */
+.swatch-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: flex-start;
+}
+.swatch-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+}
+.swatch {
+  width: 36px; height: 36px;
+  border-radius: 4px;
+  border: 1px solid var(--frame-border);
+  transition: transform .1s;
+}
+.swatch-wrap:hover .swatch { transform: scale(1.1); }
+.swatch-name {
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--parchment-dim);
+  max-width: 40px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+.add-swatch-btn {
+  width: 36px; height: 36px;
+  border: 1px dashed var(--frame-border);
+  border-radius: 4px;
+  background: none;
+  color: var(--parchment-dim);
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color .12s;
+  align-self: flex-start;
+}
+.add-swatch-btn:hover { border-color: var(--amber); color: var(--amber); }
+
+/* compiled brief */
+.brief-box {
+  background: var(--ink);
+  border: 1px solid var(--frame-border);
+  border-radius: 4px;
+  padding: 10px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--parchment-dim);
+  line-height: 1.7;
+  min-height: 70px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.copy-brief-btn {
+  align-self: flex-end;
+  background: none;
+  border: 1px solid var(--sage-dim);
+  color: var(--sage);
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 5px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all .12s;
+}
+.copy-brief-btn:hover { background: var(--sage-dim); color: var(--parchment); }
+.copy-brief-btn.copied { border-color: var(--amber); color: var(--amber); }
+
+/* ratio grid */
+.ratio-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.ratio-btn {
+  background: var(--ink);
+  border: 1px solid var(--frame-border);
+  color: var(--parchment-dim);
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 7px 4px;
+  border-radius: 3px;
+  cursor: pointer;
+  text-align: center;
+  line-height: 1.5;
+  transition: all .1s;
+}
+.ratio-btn:hover { border-color: var(--sage); color: var(--sage); }
+.ratio-btn.active { border-color: var(--amber); color: var(--amber); background: rgba(212,168,71,.08); }
+
+.safe-options { display: flex; flex-direction: column; gap: 7px; }
+.safe-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.safe-opt input[type=checkbox] { accent-color: var(--amber); width: 14px; height: 14px; flex-shrink: 0; }
+.safe-opt span { font-family: var(--mono); font-size: 11px; color: var(--parchment-dim); }
+
+/* ── MOBILE BOTTOM TABS ── */
+#mobile-tabs {
+  display: none;
+  grid-column: 1 / -1;
+  background: var(--ink-mid);
+  border-top: 1px solid var(--frame-border);
+}
+.mob-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--parchment-dim);
+  font-family: var(--mono);
+  font-size: 9px;
+  padding: 7px 0 5px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  transition: color .12s;
+  letter-spacing: .04em;
+}
+.mob-tab .micon { font-size: 17px; }
+.mob-tab.active { color: var(--amber); }
+
+/* ── MODAL ── */
+#modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(10,10,15,.85);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+#modal-overlay.open { display: flex; }
+#modal {
+  background: var(--ink-mid);
+  border: 1px solid var(--frame-border);
+  border-radius: 6px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 88dvh;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--frame-border) transparent;
+}
+#modal-heading {
+  font-family: var(--serif);
+  font-size: 17px;
+  color: var(--parchment);
+  font-style: italic;
+}
+.mf-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--sage);
+  letter-spacing: .07em;
+  margin-bottom: 4px;
+}
+.mf-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.mf-row > div { flex: 1; min-width: 120px; }
+.m-input, .m-textarea {
+  background: var(--ink);
+  border: 1px solid var(--frame-border);
+  border-radius: 3px;
+  color: var(--parchment);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 8px;
+  width: 100%;
+  outline: none;
+  transition: border-color .12s;
+}
+.m-textarea { resize: vertical; min-height: 68px; }
+.m-input:focus, .m-textarea:focus { border-color: var(--amber); }
+.m-input::placeholder, .m-textarea::placeholder { color: var(--sage-dim); opacity: .7; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.modal-btn {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 7px 14px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all .12s;
+}
+.modal-btn.cancel { background: none; border: 1px solid var(--frame-border); color: var(--parchment-dim); }
+.modal-btn.cancel:hover { border-color: var(--rose); color: var(--rose); }
+.modal-btn.confirm { background: var(--amber); border: 1px solid var(--amber); color: var(--ink); font-weight: 700; }
+.modal-btn.confirm:hover { background: #E8B94F; }
+
+/* ── TOAST ── */
+#toast {
+  position: fixed;
+  bottom: 68px;
+  left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  background: var(--sage);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 7px 16px;
+  border-radius: 20px;
+  opacity: 0;
+  transition: opacity .2s, transform .2s;
+  pointer-events: none;
+  z-index: 200;
+  white-space: nowrap;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* scrollbars */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--frame-border); border-radius: 3px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- TOPBAR -->
+  <header id="topbar">
+    <input id="sheet-title-input" type="text" placeholder="Untitled Sheet" spellcheck="false" autocomplete="off">
+    <button class="tb-btn" id="btn-add-shot">+ Shot</button>
+    <button class="tb-btn" id="btn-export">Export</button>
+    <button class="tb-btn" id="btn-import">Import</button>
+    <input type="file" id="import-file" accept=".json" style="display:none">
+  </header>
+
+  <!-- CANVAS -->
+  <main id="canvas">
+    <div class="film-strip" id="film-strip"></div>
+    <div id="contact-grid">
+      <!-- slots injected by JS -->
+      <button class="add-slot-btn" id="btn-add-slot-grid">
+        <span class="plus">⊕</span>
+        <span class="lbl">New Shot</span>
+      </button>
+    </div>
+  </main>
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <button id="sidebar-close" aria-label="Close panel">✕</button>
+    <div id="sidebar-tabs">
+      <button class="stab active" data-panel="style">Style</button>
+      <button class="stab" data-panel="palette">Palette</button>
+      <button class="stab" data-panel="brief">Brief</button>
+      <button class="stab" data-panel="frame">Frame</button>
+    </div>
+
+    <!-- STYLE TILE -->
+    <div class="sidebar-panel active" id="panel-style">
+      <div class="panel-section-title">Style Tile</div>
+      <div class="st-label">Direction</div>
+      <input class="st-field" id="st-direction" placeholder="e.g. cinematic noir, golden hour lifestyle…" data-key="direction">
+      <div class="st-label">Lighting</div>
+      <input class="st-field" id="st-lighting" placeholder="e.g. hard side-light, overcast diffuse…" data-key="lighting">
+      <div class="st-label">Tone / Grade</div>
+      <input class="st-field" id="st-grade" placeholder="e.g. desaturated teals, warm film grain…" data-key="grade">
+      <div class="st-label">Camera / Lens</div>
+      <input class="st-field" id="st-camera" placeholder="e.g. 35mm f/1.4, wide-angle drone…" data-key="camera">
+      <div class="st-label">References</div>
+      <textarea class="st-field" id="st-refs" placeholder="e.g. Gordon Parks, Roger Deakins…" rows="2" data-key="refs"></textarea>
+      <div class="st-label">Mood Keywords</div>
+      <textarea class="st-field" id="st-mood" placeholder="e.g. melancholy, gritty, intimate…" rows="2" data-key="mood"></textarea>
+    </div>
+
+    <!-- PALETTE -->
+    <div class="sidebar-panel" id="panel-palette">
+      <div class="panel-section-title">Color Swatches</div>
+      <div class="swatch-row" id="swatch-row"></div>
+      <button class="add-swatch-btn" id="btn-add-swatch" title="Add color">+</button>
+      <div class="panel-section-title">Notes</div>
+      <textarea class="st-field block" id="palette-notes" placeholder="Palette rationale, usage rules, avoidances…" rows="3"></textarea>
+    </div>
+
+    <!-- BRIEF -->
+    <div class="sidebar-panel" id="panel-brief">
+      <div class="panel-section-title">Global Prompt Brief</div>
+      <div class="st-label">Scene / Concept</div>
+      <textarea class="st-field" id="brief-concept" placeholder="The main idea or scene description…" rows="3" data-bkey="concept"></textarea>
+      <div class="st-label">Subject</div>
+      <input class="st-field" id="brief-subject" placeholder="Who or what is the main subject?" data-bkey="subject">
+      <div class="st-label">Environment</div>
+      <input class="st-field" id="brief-env" placeholder="Setting, location, time of day…" data-bkey="env">
+      <div class="st-label">Style Tags</div>
+      <input class="st-field" id="brief-style-tags" placeholder="photography, cinematic, editorial, …" data-bkey="styleTags">
+      <div class="st-label">Technical</div>
+      <input class="st-field" id="brief-tech" placeholder="Resolution, film stock, render engine…" data-bkey="tech">
+      <div class="panel-section-title">Compiled Brief</div>
+      <div class="brief-box" id="compiled-brief">Fill fields above to generate brief…</div>
+      <button class="copy-brief-btn" id="btn-copy-brief">⎘ Copy Brief</button>
+    </div>
+
+    <!-- FRAME -->
+    <div class="sidebar-panel" id="panel-frame">
+      <div class="panel-section-title">Aspect Ratio</div>
+      <div class="ratio-grid" id="ratio-grid">
+        <button class="ratio-btn active" data-ratio="1:1">1 : 1<br><small>Square</small></button>
+        <button class="ratio-btn" data-ratio="4:3">4 : 3<br><small>Classic</small></button>
+        <button class="ratio-btn" data-ratio="3:2">3 : 2<br><small>35mm</small></button>
+        <button class="ratio-btn" data-ratio="16:9">16 : 9<br><small>Widescreen</small></button>
+        <button class="ratio-btn" data-ratio="2.35:1">2.35 : 1<br><small>Scope</small></button>
+        <button class="ratio-btn" data-ratio="9:16">9 : 16<br><small>Vertical</small></button>
+        <button class="ratio-btn" data-ratio="4:5">4 : 5<br><small>Portrait</small></button>
+        <button class="ratio-btn" data-ratio="custom">Custom…</button>
+      </div>
+      <input class="m-input" id="custom-ratio-input" placeholder="e.g. 2.76:1" style="margin-top:6px;display:none;">
+
+      <div class="panel-section-title" style="margin-top:12px;">Safe Areas</div>
+      <div class="safe-options" id="safe-options">
+        <label class="safe-opt">
+          <input type="checkbox" value="action">
+          <span>Action safe (90%)</span>
+        </label>
+        <label class="safe-opt">
+          <input type="checkbox" value="title">
+          <span>Title safe (80%)</span>
+        </label>
+        <label class="safe-opt">
+          <input type="checkbox" value="thirds">
+          <span>Rule of thirds</span>
+        </label>
+        <label class="safe-opt">
+          <input type="checkbox" value="center">
+          <span>Center cross</span>
+        </label>
+      </div>
+
+      <div class="panel-section-title" style="margin-top:12px;">Crop / Delivery Note</div>
+      <textarea class="st-field block" id="crop-note" placeholder="Delivery crop instructions, bleed notes…" rows="3"></textarea>
+    </div>
+  </aside>
+
+  <!-- MOBILE BOTTOM TABS -->
+  <nav id="mobile-tabs">
+    <button class="mob-tab active" data-mtab="shots">
+      <span class="micon">◫</span>SHOTS
+    </button>
+    <button class="mob-tab" data-mtab="style">
+      <span class="micon">◈</span>STYLE
+    </button>
+    <button class="mob-tab" data-mtab="palette">
+      <span class="micon">◉</span>PALETTE
+    </button>
+    <button class="mob-tab" data-mtab="brief">
+      <span class="micon">◎</span>BRIEF
+    </button>
+    <button class="mob-tab" data-mtab="frame">
+      <span class="micon">⬚</span>FRAME
+    </button>
+  </nav>
+</div>
+
+<!-- MODAL -->
+<div id="modal-overlay" role="dialog" aria-modal="true">
+  <div id="modal">
+    <div id="modal-heading">Edit Shot</div>
+    <div>
+      <div class="mf-label">Shot Title</div>
+      <input class="m-input" id="m-title" placeholder="e.g. Opening wide reveal">
+    </div>
+    <div>
+      <div class="mf-label">Description / Scene Notes</div>
+      <textarea class="m-textarea" id="m-desc" placeholder="What's happening in this frame?"></textarea>
+    </div>
+    <div class="mf-row">
+      <div>
+        <div class="mf-label">Ratio Override</div>
+        <input class="m-input" id="m-ratio" placeholder="e.g. 16:9 (blank = global)">
+      </div>
+      <div>
+        <div class="mf-label">Camera / Lens</div>
+        <input class="m-input" id="m-cam" placeholder="e.g. 50mm f/2">
+      </div>
+    </div>
+    <div>
+      <div class="mf-label">Lighting Notes</div>
+      <input class="m-input" id="m-light" placeholder="e.g. Practical window, golden hour…">
+    </div>
+    <div>
+      <div class="mf-label">Crop / Safe Area Note</div>
+      <input class="m-input" id="m-crop" placeholder="e.g. Keep subject above action safe">
+    </div>
+    <div>
+      <div class="mf-label">Tags (comma-separated)</div>
+      <input class="m-input" id="m-tags" placeholder="e.g. hero, establishing, close-up">
+    </div>
+    <div>
+      <div class="mf-label">Prompt Fragment (this shot)</div>
+      <textarea class="m-textarea" id="m-prompt" placeholder="Shot-specific prompt additions…"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn cancel" id="btn-modal-cancel">Cancel</button>
+      <button class="modal-btn confirm" id="btn-modal-save">Save Shot</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ══════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════ */
+let state = {
+  title: '',
+  shots: [],
+  styleTile: { direction:'', lighting:'', grade:'', camera:'', refs:'', mood:'' },
+  palette: [],
+  paletteNotes: '',
+  briefFields: { concept:'', subject:'', env:'', styleTags:'', tech:'' },
+  globalRatio: '1:1',
+  safeAreas: [],
+  cropNote: ''
+};
+let nextId = 1;
+let editingSlotId = null;
+
+/* ══════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════ */
+function init() {
+  const saved = localStorage.getItem('moodboard-v2');
+  if (saved) {
+    try {
+      state = JSON.parse(saved);
+      nextId = state.shots.length
+        ? Math.max(...state.shots.map(s => s.id)) + 1
+        : 1;
+    } catch (_) {}
+  } else {
+    // seed examples
+    seedShot('Opening Wide',  'Establishing shot — full environment visible.', 'wide establishing shot, full environment reveal', ['establishing','wide']);
+    seedShot('Hero Close-Up', 'Subject fills frame, emotion reads clearly.',    'close-up portrait, shallow DOF, subject sharp',   ['hero','close-up']);
+    seedShot('Detail Insert',  'Tactile prop or product texture.',               'macro detail shot, texture emphasis',             ['insert','detail']);
+  }
+  renderAll();
+  bindEvents();
+}
+
+function seedShot(title, desc, prompt, tags) {
+  state.shots.push({ id: nextId++, title, desc, prompt, tags,
+    ratioOverride:'', cam:'', light:'', crop:'', imageData:null });
+}
+
+/* ══════════════════════════════════════════════
+   RENDER — top-level
+══════════════════════════════════════════════ */
+function renderAll() {
+  renderFilmStrip();
+  renderGrid();
+  renderStyleTile();
+  renderPalette();
+  renderBrief();
+  renderFramePanel();
+  document.getElementById('sheet-title-input').value = state.title || '';
+}
+
+/* ── film strip ── */
+function renderFilmStrip() {
+  const strip = document.getElementById('film-strip');
+  strip.innerHTML = '';
+  const count = Math.ceil(window.innerWidth / 20) + 4;
+  for (let i = 0; i < count; i++) {
+    const hole = document.createElement('div');
+    hole.className = 'film-hole';
+    strip.appendChild(hole);
+  }
+}
+
+/* ── contact grid ── */
+function renderGrid() {
+  const grid = document.getElementById('contact-grid');
+  const addBtn = document.getElementById('btn-add-slot-grid');
+  // remove old slots (everything before the add button)
+  Array.from(grid.children).forEach(child => {
+    if (child !== addBtn) child.remove();
+  });
+  state.shots.forEach(shot => {
+    grid.insertBefore(buildSlotEl(shot), addBtn);
+  });
+}
+
+/* ── build a single slot element — NO innerHTML for user data ── */
+function buildSlotEl(shot) {
+  const slot = el('div', 'shot-slot');
+  slot.dataset.id = shot.id;
+
+  // number + ratio label
+  const numEl = el('div', 'slot-number');
+  const ratio = shot.ratioOverride || state.globalRatio;
+  numEl.textContent = pad2(shot.id) + ' / ' + ratio;
+  slot.appendChild(numEl);
+
+  // frame with aspect-ratio padding trick
+  const [rw, rh] = parseRatio(ratio);
+  const pct = (rh / rw * 100).toFixed(2);
+  const frameOuter = el('div', 'slot-frame-outer');
+  frameOuter.style.paddingTop = pct + '%';
+  const frameInner = el('div', 'slot-frame-inner');
+
+  if (shot.imageData) {
+    const img = el('img', 'slot-img');
+    img.src = shot.imageData;
+    img.alt = '';
+    frameInner.appendChild(img);
+  } else {
+    const ph = el('div', 'slot-thumb-placeholder');
+    ph.textContent = '▭\nclick to upload';
+    ph.style.whiteSpace = 'pre';
+    frameInner.appendChild(ph);
+  }
+
+  // safe area overlay
+  if (state.safeAreas.length) {
+    frameInner.appendChild(buildSafeOverlay());
+  }
+
+  frameOuter.appendChild(frameInner);
+  // upload on frame click
+  frameOuter.addEventListener('click', () => uploadImage(shot.id));
+  slot.appendChild(frameOuter);
+
+  // title field
+  const meta = el('div', 'slot-meta');
+  const titleInput = el('input', 'slot-field');
+  titleInput.type = 'text';
+  titleInput.placeholder = 'Shot title…';
+  titleInput.value = shot.title || '';
+  titleInput.addEventListener('input', e => { updateShot(shot.id, 'title', e.target.value); });
+  meta.appendChild(titleInput);
+
+  // desc textarea
+  const descTA = el('textarea', 'slot-field desc');
+  descTA.placeholder = 'Scene description…';
+  descTA.rows = 2;
+  descTA.value = shot.desc || '';
+  descTA.addEventListener('input', e => { updateShot(shot.id, 'desc', e.target.value); });
+  meta.appendChild(descTA);
+  slot.appendChild(meta);
+
+  // tags row — all built with textContent
+  const tagsRow = el('div', 'slot-tags');
+  (shot.tags || []).forEach(tag => {
+    const btn = el('button', 'tag');
+    btn.textContent = tag + ' ✕';
+    btn.addEventListener('click', e => { e.stopPropagation(); removeTag(shot.id, tag); });
+    tagsRow.appendChild(btn);
+  });
+  const addTagBtn = el('button', 'tag-add');
+  addTagBtn.textContent = '+ tag';
+  addTagBtn.addEventListener('click', e => { e.stopPropagation(); addTag(shot.id); });
+  tagsRow.appendChild(addTagBtn);
+  slot.appendChild(tagsRow);
+
+  // action buttons
+  const actions = el('div', 'slot-actions');
+
+  const editBtn = el('button', 'slot-act-btn');
+  editBtn.textContent = '✏ Edit';
+  editBtn.addEventListener('click', e => { e.stopPropagation(); openModal(shot.id); });
+
+  const copyBtn = el('button', 'slot-act-btn copy-btn');
+  copyBtn.textContent = '⎘ Copy';
+  copyBtn.addEventListener('click', e => { e.stopPropagation(); copySlotBrief(shot.id, copyBtn); });
+
+  const delBtn = el('button', 'slot-act-btn del-btn');
+  delBtn.textContent = '✕';
+  delBtn.addEventListener('click', e => { e.stopPropagation(); deleteShot(shot.id); });
+
+  actions.appendChild(editBtn);
+  actions.appendChild(copyBtn);
+  actions.appendChild(delBtn);
+  slot.appendChild(actions);
+
+  return slot;
+}
+
+/* ── safe area overlay — pure DOM ── */
+function buildSafeOverlay() {
+  const ov = el('div', 'safe-overlay');
+
+  function addRect(insetPct, color, label) {
+    const r = el('div', 'safe-rect');
+    r.style.cssText = `top:${insetPct}%;left:${insetPct}%;right:${insetPct}%;bottom:${insetPct}%;border-color:${color};`;
+    ov.appendChild(r);
+    if (label) {
+      const t = el('span', 'safe-tag');
+      t.style.cssText = `top:${insetPct}%;left:${insetPct}%;color:${color};`;
+      t.textContent = label;
+      ov.appendChild(t);
+    }
+  }
+
+  function addLine(axis, pos, color) {
+    const ln = el('div', axis === 'h' ? 'safe-line-h' : 'safe-line-v');
+    ln.style.background = color;
+    if (axis === 'h') ln.style.top = pos;
+    else ln.style.left = pos;
+    ov.appendChild(ln);
+  }
+
+  if (state.safeAreas.includes('action')) addRect(5, 'rgba(212,168,71,.65)', 'Action');
+  if (state.safeAreas.includes('title'))  addRect(10,'rgba(122,158,135,.65)','Title');
+  if (state.safeAreas.includes('thirds')) {
+    addLine('h','33.33%','rgba(196,132,122,.35)');
+    addLine('h','66.66%','rgba(196,132,122,.35)');
+    addLine('v','33.33%','rgba(196,132,122,.35)');
+    addLine('v','66.66%','rgba(196,132,122,.35)');
+  }
+  if (state.safeAreas.includes('center')) {
+    addLine('h','50%','rgba(212,168,71,.3)');
+    addLine('v','50%','rgba(212,168,71,.3)');
+  }
+  return ov;
+}
+
+/* ── style tile ── */
+function renderStyleTile() {
+  ['direction','lighting','grade','camera','refs','mood'].forEach(k => {
+    const el = document.getElementById('st-' + k);
+    if (el) el.value = state.styleTile[k] || '';
+  });
+}
+
+/* ── palette — all DOM, no innerHTML for user values ── */
+function renderPalette() {
+  const row = document.getElementById('swatch-row');
+  row.innerHTML = ''; // safe — we rebuild from state, no user strings go into innerHTML
+  (state.palette || []).forEach((sw, i) => {
+    const wrap = el('div', 'swatch-wrap');
+    wrap.title = sw.hex;
+
+    const swatch = el('div', 'swatch');
+    swatch.style.background = sw.hex;
+
+    const nameEl = el('div', 'swatch-name');
+    nameEl.textContent = sw.name || sw.hex; // textContent — safe
+
+    wrap.appendChild(swatch);
+    wrap.appendChild(nameEl);
+    wrap.addEventListener('click', () => editSwatch(i));
+    row.appendChild(wrap);
+  });
+  document.getElementById('palette-notes').value = state.paletteNotes || '';
+}
+
+/* ── brief ── */
+function renderBrief() {
+  const f = state.briefFields || {};
+  const map = { concept:'brief-concept', subject:'brief-subject', env:'brief-env', styleTags:'brief-style-tags', tech:'brief-tech' };
+  Object.entries(map).forEach(([k, id]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = f[k] || '';
+  });
+  updateCompiledBrief();
+}
+
+function updateCompiledBrief() {
+  const f = state.briefFields || {};
+  const st = state.styleTile || {};
+  const parts = [
+    f.concept,
+    f.subject   && 'Subject: '    + f.subject,
+    f.env       && 'Setting: '    + f.env,
+    st.direction && 'Style: '     + st.direction,
+    st.lighting  && 'Lighting: '  + st.lighting,
+    st.grade     && 'Grade: '     + st.grade,
+    st.camera    && 'Camera: '    + st.camera,
+    st.mood      && 'Mood: '      + st.mood,
+    f.styleTags,
+    f.tech,
+    st.refs      && '—ref: '      + st.refs
+  ].filter(Boolean);
+  // textContent assignment — safe regardless of what users typed
+  document.getElementById('compiled-brief').textContent =
+    parts.length ? parts.join(', ') : 'Fill in Style Tile and Brief fields above…';
+}
+
+/* ── frame panel ── */
+function renderFramePanel() {
+  document.querySelectorAll('.ratio-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.ratio === state.globalRatio);
+  });
+  document.querySelectorAll('#safe-options input[type=checkbox]').forEach(cb => {
+    cb.checked = state.safeAreas.includes(cb.value);
+  });
+  document.getElementById('crop-note').value = state.cropNote || '';
+}
+
+/* ══════════════════════════════════════════════
+   SHOTS
+══════════════════════════════════════════════ */
+function addShot() {
+  state.shots.push({ id: nextId++, title:'', desc:'', prompt:'', tags:[],
+    ratioOverride:'', cam:'', light:'', crop:'', imageData:null });
+  renderGrid(); save();
+}
+
+function deleteShot(id) {
+  state.shots = state.shots.filter(s => s.id !== id);
+  renderGrid(); save();
+}
+
+function updateShot(id, key, value) {
+  const shot = state.shots.find(s => s.id === id);
+  if (shot) { shot[key] = value; save(); }
+}
+
+function uploadImage(id) {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*';
+  inp.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => { updateShot(id, 'imageData', ev.target.result); renderGrid(); };
+    reader.readAsDataURL(file);
+  });
+  inp.click();
+}
+
+function addTag(id) {
+  const tag = prompt('New tag:');
+  if (!tag || !tag.trim()) return;
+  const shot = state.shots.find(s => s.id === id);
+  if (shot) { shot.tags = [...(shot.tags||[]), tag.trim()]; renderGrid(); save(); }
+}
+
+function removeTag(id, tag) {
+  const shot = state.shots.find(s => s.id === id);
+  if (shot) { shot.tags = (shot.tags||[]).filter(t => t !== tag); renderGrid(); save(); }
+}
+
+/* ══════════════════════════════════════════════
+   PALETTE
+══════════════════════════════════════════════ */
+function addSwatch() {
+  const name = prompt('Swatch name (optional):') || '';
+  state.palette = [...(state.palette||[]), { hex:'#888888', name }];
+  renderPalette(); save();
+  editSwatch(state.palette.length - 1);
+}
+
+function editSwatch(i) {
+  const sw = state.palette[i];
+  const inp = document.createElement('input');
+  inp.type = 'color';
+  inp.value = sw.hex;
+  inp.style.cssText = 'position:fixed;opacity:0;pointer-events:none;width:0;height:0;';
+  document.body.appendChild(inp);
+  inp.addEventListener('input', e => {
+    state.palette[i].hex = e.target.value;
+    renderPalette(); save();
+  });
+  inp.addEventListener('change', () => {
+    document.body.removeChild(inp);
+    const newName = prompt('Rename swatch (blank to keep current):', sw.name);
+    if (newName !== null) state.palette[i].name = newName;
+    renderPalette(); save();
+  });
+  inp.click();
+}
+
+/* ══════════════════════════════════════════════
+   MODAL
+══════════════════════════════════════════════ */
+function openModal(id) {
+  const shot = state.shots.find(s => s.id === id);
+  if (!shot) return;
+  editingSlotId = id;
+  document.getElementById('modal-heading').textContent = 'Edit Shot ' + pad2(id);
+  document.getElementById('m-title').value  = shot.title || '';
+  document.getElementById('m-desc').value   = shot.desc  || '';
+  document.getElementById('m-ratio').value  = shot.ratioOverride || '';
+  document.getElementById('m-cam').value    = shot.cam   || '';
+  document.getElementById('m-light').value  = shot.light || '';
+  document.getElementById('m-crop').value   = shot.crop  || '';
+  document.getElementById('m-tags').value   = (shot.tags||[]).join(', ');
+  document.getElementById('m-prompt').value = shot.prompt|| '';
+  document.getElementById('modal-overlay').classList.add('open');
+  document.getElementById('m-title').focus();
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  editingSlotId = null;
+}
+
+function saveModal() {
+  if (!editingSlotId) return;
+  const shot = state.shots.find(s => s.id === editingSlotId);
+  if (!shot) return;
+  shot.title         = document.getElementById('m-title').value;
+  shot.desc          = document.getElementById('m-desc').value;
+  shot.ratioOverride = document.getElementById('m-ratio').value.trim();
+  shot.cam           = document.getElementById('m-cam').value;
+  shot.light         = document.getElementById('m-light').value;
+  shot.crop          = document.getElementById('m-crop').value;
+  shot.prompt        = document.getElementById('m-prompt').value;
+  const raw = document.getElementById('m-tags').value;
+  shot.tags = raw ? raw.split(',').map(t => t.trim()).filter(Boolean) : [];
+  closeModal();
+  renderGrid(); save();
+}
+
+/* ══════════════════════════════════════════════
+   COPY BRIEFS
+══════════════════════════════════════════════ */
+function copySlotBrief(id, btn) {
+  const shot = state.shots.find(s => s.id === id);
+  if (!shot) return;
+
+  // Flush any in-progress inline edits from the live DOM into state before
+  // assembling the brief. Guards against mobile tap-to-copy before blur fires.
+  const slotEl = document.querySelector('.shot-slot[data-id="' + id + '"]');
+  if (slotEl) {
+    slotEl.querySelectorAll('.slot-field').forEach(f => {
+      if (f.classList.contains('desc')) shot.desc  = f.value;
+      else                               shot.title = f.value;
+    });
+    save();
+  }
+
+  const st = state.styleTile || {};
+  const bf = state.briefFields || {};
+  const parts = [
+    shot.title,
+    shot.desc,
+    shot.prompt,
+    st.direction && 'Style: '    + st.direction,
+    (shot.cam || st.camera)         && 'Camera: '   + (shot.cam || st.camera),
+    (shot.light || st.lighting)     && 'Lighting: ' + (shot.light || st.lighting),
+    st.grade  && 'Grade: '  + st.grade,
+    st.mood   && 'Mood: '   + st.mood,
+    shot.tags?.length && shot.tags.join(', '),
+    st.refs   && 'ref: '    + st.refs,
+    bf.tech
+  ].filter(Boolean);
+  copyText(parts.join(', '), btn, '⎘ Copy', '✓ Copied');
+}
+
+function copyGlobalBrief() {
+  const text = document.getElementById('compiled-brief').textContent;
+  const btn = document.getElementById('btn-copy-brief');
+  copyText(text, btn, '⎘ Copy Brief', '✓ Copied!');
+}
+
+function copyText(text, btn, original, confirmation) {
+  navigator.clipboard.writeText(text).then(() => {
+    if (btn) { btn.textContent = confirmation; btn.classList.add('copied'); }
+    setTimeout(() => { if (btn) { btn.textContent = original; btn.classList.remove('copied'); } }, 2000);
+    toast('Copied!');
+  }).catch(() => toast('Copy failed'));
+}
+
+/* ══════════════════════════════════════════════
+   EXPORT / IMPORT
+══════════════════════════════════════════════ */
+function exportJSON() {
+  const clean = JSON.parse(JSON.stringify(state));
+  // strip embedded image blobs to keep file small; re-import won't have thumbnails
+  clean.shots.forEach(s => { if (s.imageData) s.imageData = null; });
+  const blob = new Blob([JSON.stringify(clean, null, 2)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (state.title || 'moodboard') + '.json';
+  a.click();
+  toast('Exported!');
+}
+
+function importJSON(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      state = data;
+      nextId = state.shots?.length
+        ? Math.max(...state.shots.map(s => s.id)) + 1
+        : 1;
+      renderAll(); save();
+      toast('Imported!');
+    } catch (_) { toast('Invalid JSON file'); }
+  };
+  reader.readAsText(file);
+}
+
+/* ══════════════════════════════════════════════
+   PERSISTENCE
+══════════════════════════════════════════════ */
+function save() {
+  try { localStorage.setItem('moodboard-v2', JSON.stringify(state)); } catch (_) {}
+}
+
+/* ══════════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════════ */
+let toastTimer = null;
+function toast(msg, dur = 1800) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;   // textContent — safe
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), dur);
+}
+
+/* ══════════════════════════════════════════════
+   HELPERS
+══════════════════════════════════════════════ */
+function el(tag, classes) {
+  const node = document.createElement(tag);
+  if (classes) node.className = classes;
+  return node;
+}
+function pad2(n) { return String(n).padStart(2, '0'); }
+function parseRatio(str) {
+  const parts = String(str).split(':').map(Number);
+  const w = parts[0] || 1, h = parts[1] || 1;
+  return [w || 1, h || 1];
+}
+
+/* ══════════════════════════════════════════════
+   BIND ALL EVENTS
+══════════════════════════════════════════════ */
+function bindEvents() {
+  // topbar
+  document.getElementById('btn-add-shot').addEventListener('click', addShot);
+  document.getElementById('btn-export').addEventListener('click', exportJSON);
+  document.getElementById('btn-import').addEventListener('click', () => document.getElementById('import-file').click());
+  document.getElementById('import-file').addEventListener('change', e => { if (e.target.files[0]) importJSON(e.target.files[0]); });
+  document.getElementById('sheet-title-input').addEventListener('input', e => { state.title = e.target.value; save(); });
+
+  // add-slot grid button
+  document.getElementById('btn-add-slot-grid').addEventListener('click', addShot);
+
+  // sidebar tabs
+  document.querySelectorAll('.stab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.stab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.sidebar-panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('panel-' + tab.dataset.panel).classList.add('active');
+    });
+  });
+
+  // style tile fields
+  document.querySelectorAll('[data-key]').forEach(input => {
+    input.addEventListener('input', () => {
+      state.styleTile[input.dataset.key] = input.value;
+      updateCompiledBrief(); save();
+    });
+  });
+
+  // brief fields
+  document.querySelectorAll('[data-bkey]').forEach(input => {
+    input.addEventListener('input', () => {
+      if (!state.briefFields) state.briefFields = {};
+      state.briefFields[input.dataset.bkey] = input.value;
+      updateCompiledBrief(); save();
+    });
+  });
+
+  // palette
+  document.getElementById('btn-add-swatch').addEventListener('click', addSwatch);
+  document.getElementById('palette-notes').addEventListener('input', e => { state.paletteNotes = e.target.value; save(); });
+
+  // brief copy
+  document.getElementById('btn-copy-brief').addEventListener('click', copyGlobalBrief);
+
+  // ratio buttons
+  document.querySelectorAll('.ratio-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const r = btn.dataset.ratio;
+      const customInput = document.getElementById('custom-ratio-input');
+      if (r === 'custom') { customInput.style.display = 'block'; customInput.focus(); return; }
+      state.globalRatio = r;
+      customInput.style.display = 'none';
+      renderFramePanel(); renderGrid(); save();
+    });
+  });
+  document.getElementById('custom-ratio-input').addEventListener('change', e => {
+    const val = e.target.value.trim();
+    if (/^\d+\.?\d*:\d+\.?\d*$/.test(val)) {
+      state.globalRatio = val;
+      renderGrid(); renderFramePanel(); save();
+      toast('Ratio: ' + val);
+    } else { toast('Use format like 2.35:1'); }
+  });
+
+  // safe area checkboxes
+  document.querySelectorAll('#safe-options input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      state.safeAreas = Array.from(
+        document.querySelectorAll('#safe-options input:checked')
+      ).map(c => c.value);
+      renderGrid(); save();
+    });
+  });
+
+  // crop note
+  document.getElementById('crop-note').addEventListener('input', e => { state.cropNote = e.target.value; save(); });
+
+  // modal buttons
+  document.getElementById('btn-modal-cancel').addEventListener('click', closeModal);
+  document.getElementById('btn-modal-save').addEventListener('click', saveModal);
+  document.getElementById('modal-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('modal-overlay')) closeModal();
+  });
+
+  // sidebar close (mobile)
+  document.getElementById('sidebar-close').addEventListener('click', closeSidebar);
+
+  // mobile bottom tabs
+  document.querySelectorAll('.mob-tab').forEach(tab => {
+    tab.addEventListener('click', () => switchMobileTab(tab.dataset.mtab, tab));
+  });
+
+  // keyboard
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal();
+    if (e.key === 'n' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); addShot(); }
+  });
+
+  window.addEventListener('resize', renderFilmStrip);
+}
+
+/* ══════════════════════════════════════════════
+   MOBILE TABS
+══════════════════════════════════════════════ */
+function switchMobileTab(tab, tabEl) {
+  document.querySelectorAll('.mob-tab').forEach(t => t.classList.remove('active'));
+  if (tabEl) tabEl.classList.add('active');
+  const sidebar = document.getElementById('sidebar');
+  if (tab === 'shots') {
+    sidebar.classList.remove('open');
+  } else {
+    sidebar.classList.add('open');
+    document.querySelectorAll('.stab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.sidebar-panel').forEach(p => p.classList.remove('active'));
+    const matchTab = document.querySelector('.stab[data-panel="' + tab + '"]');
+    const matchPanel = document.getElementById('panel-' + tab);
+    if (matchTab) matchTab.classList.add('active');
+    if (matchPanel) matchPanel.classList.add('active');
+  }
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.querySelectorAll('.mob-tab').forEach(t => t.classList.remove('active'));
+  const shotsTab = document.querySelector('.mob-tab[data-mtab="shots"]');
+  if (shotsTab) shotsTab.classList.add('active');
+}
+
+/* ── GO ── */
+init();
+</script>
+</body>
+</html>

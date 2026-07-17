@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blurb Beat Mapper</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Inter:wght@400;500;600&family=Courier+Prime&display=swap');
+
+  :root {
+    --ink: #1a1714;
+    --paper: #f7f4ef;
+    --aged: #e8e2d9;
+    --red-mark: #c0392b;
+    --blue-mark: #2c5f8a;
+    --gold: #b8943a;
+    --mid: #6b6560;
+    --light: #d4cfc8;
+    --score-low: #c0392b;
+    --score-mid: #d4820a;
+    --score-high: #2e7d52;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 20px 20px 18px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 3px solid var(--gold);
+  }
+
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    line-height: 1.2;
+  }
+
+  header p {
+    font-size: 0.72rem;
+    color: var(--light);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  /* ── Layout ── */
+  main {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 24px 16px 60px;
+  }
+
+  /* ── Section divider ── */
+  .section-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 28px 0 12px;
+  }
+
+  .section-label span.num {
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.68rem;
+    color: var(--red-mark);
+    border: 1px solid var(--red-mark);
+    padding: 1px 5px;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+
+  .section-label span.title {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--mid);
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--light);
+  }
+
+  /* ── Beat fields ── */
+  .beat-card {
+    background: white;
+    border: 1px solid var(--aged);
+    border-left: 3px solid var(--blue-mark);
+    border-radius: 2px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+
+  .beat-card label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--blue-mark);
+    margin-bottom: 6px;
+  }
+
+  .beat-card .hint {
+    font-size: 0.76rem;
+    color: var(--mid);
+    margin-bottom: 8px;
+    font-style: italic;
+  }
+
+  textarea, input[type="text"] {
+    width: 100%;
+    background: var(--paper);
+    border: 1px solid var(--light);
+    border-radius: 2px;
+    padding: 9px 11px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.88rem;
+    color: var(--ink);
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  textarea:focus, input[type="text"]:focus {
+    border-color: var(--blue-mark);
+    background: white;
+  }
+
+  textarea { min-height: 70px; }
+  textarea.short { min-height: 52px; }
+
+  /* ── Clarity scoring ── */
+  .score-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .score-item {
+    background: white;
+    border: 1px solid var(--aged);
+    border-radius: 2px;
+    padding: 12px 14px;
+  }
+
+  .score-item label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--mid);
+    margin-bottom: 8px;
+  }
+
+  .slider-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 3px;
+    background: var(--light);
+    border-radius: 2px;
+    outline: none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--blue-mark);
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+
+  .score-val {
+    font-family: 'Courier Prime', monospace;
+    font-size: 1rem;
+    font-weight: bold;
+    min-width: 24px;
+    text-align: right;
+  }
+
+  .score-avg-bar {
+    background: white;
+    border: 1px solid var(--aged);
+    padding: 14px 16px;
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 12px;
+  }
+
+  .score-avg-bar .avg-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--mid);
+    white-space: nowrap;
+  }
+
+  .avg-track {
+    flex: 1;
+    height: 8px;
+    background: var(--aged);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .avg-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s, background 0.3s;
+    background: var(--score-high);
+  }
+
+  .avg-num {
+    font-family: 'Courier Prime', monospace;
+    font-size: 1.1rem;
+    font-weight: bold;
+    min-width: 32px;
+    text-align: right;
+  }
+
+  /* ── Generate button ── */
+  .gen-btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 2px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    margin: 24px 0 0;
+    transition: background 0.15s;
+    position: relative;
+  }
+
+  .gen-btn:hover { background: var(--blue-mark); }
+  .gen-btn:disabled { background: var(--mid); cursor: not-allowed; }
+
+  .gen-btn .spinner {
+    display: none;
+    width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    position: absolute;
+    right: 18px; top: 50%;
+    transform: translateY(-50%);
+  }
+  .gen-btn.loading .spinner { display: block; }
+
+  @keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
+
+  /* ── Blurb variants ── */
+  .variants-section { margin-top: 8px; }
+
+  .variant-card {
+    background: white;
+    border: 1px solid var(--aged);
+    border-radius: 2px;
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+
+  .variant-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .variant-header .v-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .variant-header .v-tone {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 0.82rem;
+    color: var(--gold);
+  }
+
+  .copy-btn {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.3);
+    color: var(--paper);
+    padding: 4px 10px;
+    font-size: 0.68rem;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .copy-btn:hover { background: rgba(255,255,255,0.15); }
+  .copy-btn.copied { border-color: var(--gold); color: var(--gold); }
+
+  .variant-body {
+    padding: 16px;
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.9rem;
+    line-height: 1.75;
+    color: var(--ink);
+    white-space: pre-wrap;
+    min-height: 80px;
+  }
+
+  .variant-body.empty {
+    color: var(--light);
+    font-style: italic;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+  }
+
+  /* ── Error ── */
+  .error-msg {
+    background: #fdf2f2;
+    border: 1px solid #f5c6c6;
+    border-left: 3px solid var(--red-mark);
+    padding: 12px 14px;
+    border-radius: 2px;
+    font-size: 0.82rem;
+    color: var(--red-mark);
+    margin-top: 12px;
+    display: none;
+  }
+
+  /* ── Comparables ── */
+  .comp-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .comp-input {
+    flex: 1;
+    min-width: 140px;
+  }
+
+  /* ── Footer note ── */
+  .foot-note {
+    text-align: center;
+    font-size: 0.7rem;
+    color: var(--light);
+    margin-top: 40px;
+    font-family: 'Courier Prime', monospace;
+    letter-spacing: 0.05em;
+  }
+
+  @media (max-width: 420px) {
+    .score-row { grid-template-columns: 1fr; }
+    .comp-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Blurb Beat Mapper</h1>
+  <p>Back-cover copy builder &nbsp;·&nbsp; Nonfiction</p>
+</header>
+
+<main>
+
+  <!-- BEAT 1: Audience -->
+  <div class="section-label"><span class="num">01</span><span class="title">Audience</span></div>
+  <div class="beat-card">
+    <label for="audience">Primary Reader</label>
+    <div class="hint">Who picks this book up? Be specific — job, mindset, problem they're standing in.</div>
+    <textarea id="audience" class="short" placeholder="e.g. Mid-career product managers who feel like they're executing but not leading — smart, frustrated, busy."></textarea>
+  </div>
+
+  <!-- BEAT 2: Hook -->
+  <div class="section-label"><span class="num">02</span><span class="title">Hook</span></div>
+  <div class="beat-card">
+    <label for="hook">Opening Provocation</label>
+    <div class="hint">The one sentence that makes someone flip it over. A tension, a counterintuitive claim, a dangerous question.</div>
+    <textarea id="hook" class="short" placeholder="e.g. Every leadership book tells you to communicate more. None of them tell you what to stop saying."></textarea>
+  </div>
+
+  <!-- BEAT 3: Stakes -->
+  <div class="section-label"><span class="num">03</span><span class="title">Stakes</span></div>
+  <div class="beat-card">
+    <label for="stakes">What's Actually at Risk</label>
+    <div class="hint">If the reader doesn't read this book, what do they lose, miss, or remain? Make the cost of not reading visceral.</div>
+    <textarea id="stakes" placeholder="e.g. Without this, leaders keep solving the wrong problems faster. Teams burn out. Talented people leave. And the leader never understands why."></textarea>
+  </div>
+
+  <!-- BEAT 4: Credibility -->
+  <div class="section-label"><span class="num">04</span><span class="title">Credibility</span></div>
+  <div class="beat-card">
+    <label for="cred">Why You / Why This Book</label>
+    <div class="hint">Not your resume. The specific experience or insight that makes your take uniquely earned. One sentence if possible.</div>
+    <textarea id="cred" class="short" placeholder="e.g. Based on 200+ executive interviews and a decade coaching Fortune 500 teams through leadership transitions."></textarea>
+  </div>
+
+  <!-- BEAT 5: Comps -->
+  <div class="section-label"><span class="num">05</span><span class="title">Comparable Shelf</span></div>
+  <div class="beat-card">
+    <label>Books This Sits Between</label>
+    <div class="hint">Two titles — one it resembles in audience, one in tone or form. Helps the AI nail the register.</div>
+    <div class="comp-row">
+      <div class="comp-input">
+        <input type="text" id="comp1" placeholder="Audience comp (e.g. Think Again)">
+      </div>
+      <div class="comp-input">
+        <input type="text" id="comp2" placeholder="Tone comp (e.g. The Hard Thing About Hard Things)">
+      </div>
+    </div>
+  </div>
+
+  <!-- BEAT 6: Clarity Scores -->
+  <div class="section-label"><span class="num">06</span><span class="title">Clarity Score</span></div>
+
+  <div class="score-row">
+    <div class="score-item">
+      <label>Hook Sharpness</label>
+      <div class="slider-wrap">
+        <input type="range" min="1" max="10" value="5" id="s-hook" oninput="updateScore(this)">
+        <span class="score-val" id="sv-hook" style="color:var(--score-mid)">5</span>
+      </div>
+    </div>
+    <div class="score-item">
+      <label>Stakes Clarity</label>
+      <div class="slider-wrap">
+        <input type="range" min="1" max="10" value="5" id="s-stakes" oninput="updateScore(this)">
+        <span class="score-val" id="sv-stakes" style="color:var(--score-mid)">5</span>
+      </div>
+    </div>
+    <div class="score-item">
+      <label>Audience Specificity</label>
+      <div class="slider-wrap">
+        <input type="range" min="1" max="10" value="5" id="s-audience" oninput="updateScore(this)">
+        <span class="score-val" id="sv-audience" style="color:var(--score-mid)">5</span>
+      </div>
+    </div>
+    <div class="score-item">
+      <label>Credibility Fit</label>
+      <div class="slider-wrap">
+        <input type="range" min="1" max="10" value="5" id="s-cred" oninput="updateScore(this)">
+        <span class="score-val" id="sv-cred" style="color:var(--score-mid)">5</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="score-avg-bar">
+    <span class="avg-label">Beat Avg</span>
+    <div class="avg-track"><div class="avg-fill" id="avg-fill" style="width:50%"></div></div>
+    <span class="avg-num" id="avg-num" style="color:var(--score-mid)">5.0</span>
+  </div>
+
+  <!-- Generate -->
+  <button class="gen-btn" id="gen-btn" onclick="generateBlurbs()">
+    Generate Three Blurb Variants
+    <div class="spinner"></div>
+  </button>
+
+  <div class="error-msg" id="error-msg"></div>
+
+  <!-- Variants -->
+  <div class="section-label" style="margin-top:32px"><span class="num">07</span><span class="title">Blurb Variants</span></div>
+
+  <div class="variants-section" id="variants-section">
+    <div class="variant-card" id="v1">
+      <div class="variant-header">
+        <span class="v-label">Variant A</span>
+        <span class="v-tone" id="v1-tone">Urgency-driven</span>
+        <button class="copy-btn" onclick="copyVariant('v1-body', this)">Copy</button>
+      </div>
+      <div class="variant-body empty" id="v1-body">Fill the beats above and generate.</div>
+    </div>
+    <div class="variant-card" id="v2">
+      <div class="variant-header">
+        <span class="v-label">Variant B</span>
+        <span class="v-tone" id="v2-tone">Curiosity-driven</span>
+        <button class="copy-btn" onclick="copyVariant('v2-body', this)">Copy</button>
+      </div>
+      <div class="variant-body empty" id="v2-body">Fill the beats above and generate.</div>
+    </div>
+    <div class="variant-card" id="v3">
+      <div class="variant-header">
+        <span class="v-label">Variant C</span>
+        <span class="v-tone" id="v3-tone">Credibility-led</span>
+        <button class="copy-btn" onclick="copyVariant('v3-body', this)">Copy</button>
+      </div>
+      <div class="variant-body empty" id="v3-body">Fill the beats above and generate.</div>
+    </div>
+  </div>
+
+  <p class="foot-note">— powered by Claude Sonnet 4.6 —</p>
+
+</main>
+
+<script>
+  // ── Score logic ──
+  const scoreIds = ['s-hook','s-stakes','s-audience','s-cred'];
+  const valIds   = ['sv-hook','sv-stakes','sv-audience','sv-cred'];
+
+  function scoreColor(v) {
+    if (v <= 3) return 'var(--score-low)';
+    if (v <= 6) return 'var(--score-mid)';
+    return 'var(--score-high)';
+  }
+
+  function updateScore(el) {
+    const v = parseInt(el.value);
+    const idx = scoreIds.indexOf(el.id);
+    const valEl = document.getElementById(valIds[idx]);
+    valEl.textContent = v;
+    valEl.style.color = scoreColor(v);
+    updateAvg();
+  }
+
+  function updateAvg() {
+    const vals = scoreIds.map(id => parseInt(document.getElementById(id).value));
+    const avg = vals.reduce((a,b) => a+b, 0) / vals.length;
+    const avgRound = Math.round(avg * 10) / 10;
+    const fill = document.getElementById('avg-fill');
+    const num  = document.getElementById('avg-num');
+    fill.style.width = (avg / 10 * 100) + '%';
+    fill.style.background = scoreColor(avg);
+    num.textContent = avgRound.toFixed(1);
+    num.style.color = scoreColor(avg);
+  }
+
+  // ── Generate ──
+  async function generateBlurbs() {
+    const audience = document.getElementById('audience').value.trim();
+    const hook     = document.getElementById('hook').value.trim();
+    const stakes   = document.getElementById('stakes').value.trim();
+    const cred     = document.getElementById('cred').value.trim();
+    const comp1    = document.getElementById('comp1').value.trim();
+    const comp2    = document.getElementById('comp2').value.trim();
+
+    const scores = {
+      hook:     document.getElementById('s-hook').value,
+      stakes:   document.getElementById('s-stakes').value,
+      audience: document.getElementById('s-audience').value,
+      cred:     document.getElementById('s-cred').value,
+    };
+
+    const btn = document.getElementById('gen-btn');
+    const errEl = document.getElementById('error-msg');
+    errEl.style.display = 'none';
+
+    if (!audience && !hook && !stakes) {
+      showError('Fill in at least Audience, Hook, and Stakes before generating.');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.classList.add('loading');
+
+    const prompt = `You are a skilled nonfiction book publicist writing back-cover copy.
+
+Given these raw beats from the author, write THREE distinct back-cover blurb variants. Each should be 80–120 words, punchy, present-tense, written for a general trade audience.
+
+BEATS:
+- Audience: ${audience || '(not specified)'}
+- Hook: ${hook || '(not specified)'}
+- Stakes: ${stakes || '(not specified)'}
+- Credibility: ${cred || '(not specified)'}
+- Comparable shelf: ${comp1 || '(not specified)'} and ${comp2 || '(not specified)'}
+
+SELF-ASSESSMENT SCORES (1–10, use to diagnose weak beats and compensate):
+- Hook sharpness: ${scores.hook}/10
+- Stakes clarity: ${scores.stakes}/10
+- Audience specificity: ${scores.audience}/10
+- Credibility fit: ${scores.cred}/10
+
+Write three variants:
+A) URGENCY-DRIVEN — opens with the cost of inaction, urgent tone
+B) CURIOSITY-DRIVEN — opens with a provocation or question, draws the reader in with intrigue
+C) CREDIBILITY-LED — opens by establishing the author's authority, then builds to the promise
+
+Respond ONLY with a JSON object, no markdown, no extra keys:
+{
+  "a_tone": "short 2–3 word descriptor of Variant A's register",
+  "b_tone": "short 2–3 word descriptor of Variant B's register",
+  "c_tone": "short 2–3 word descriptor of Variant C's register",
+  "a": "full text of Variant A",
+  "b": "full text of Variant B",
+  "c": "full text of Variant C"
+}`;
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error?.message || `API error ${res.status}`);
+      }
+
+      const data = await res.json();
+      const raw = data.content?.find(b => b.type === 'text')?.text || '';
+      const clean = raw.replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(clean);
+
+      setVariant('v1-body', 'v1-tone', parsed.a, parsed.a_tone);
+      setVariant('v2-body', 'v2-tone', parsed.b, parsed.b_tone);
+      setVariant('v3-body', 'v3-tone', parsed.c, parsed.c_tone);
+
+    } catch (e) {
+      showError('Generation failed: ' + e.message);
+    } finally {
+      btn.disabled = false;
+      btn.classList.remove('loading');
+    }
+  }
+
+  function setVariant(bodyId, toneId, text, tone) {
+    const bodyEl = document.getElementById(bodyId);
+    const toneEl = document.getElementById(toneId);
+    bodyEl.textContent = text;
+    bodyEl.classList.remove('empty');
+    if (tone) toneEl.textContent = tone;
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('error-msg');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  // ── Copy ──
+  async function copyVariant(bodyId, btn) {
+    const text = document.getElementById(bodyId).textContent;
+    if (!text || document.getElementById(bodyId).classList.contains('empty')) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      btn.textContent = 'Copied ✓';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2200);
+    } catch {
+      btn.textContent = 'Failed';
+      setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+    }
+  }
+
+  // init
+  updateAvg();
+</script>
+</body>
+</html>

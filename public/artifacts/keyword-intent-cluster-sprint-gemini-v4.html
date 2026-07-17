@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEO Mobile Sprint Planner</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --panel: #1e293b;
+            --border: #334155;
+            --text: #f8fafc;
+            --muted: #94a3b8;
+            --accent: #38bdf8;
+            --accent-hover: #0ea5e9;
+            --warn: #f59e0b;
+            --info: #3b82f6;
+            --success: #10b981;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding: 12px; font-size: 14px; }
+        
+        .card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+        label { display: block; font-weight: 600; margin-bottom: 8px; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; }
+        textarea { width: 100%; height: 120px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 12px; font-family: monospace; font-size: 0.85rem; resize: vertical; }
+        
+        button { background: var(--accent); color: var(--bg); border: none; padding: 12px; border-radius: 6px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 8px; }
+        button.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+        
+        /* Mobile-Stacking Matrix Cards */
+        .kw-card { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 8px; }
+        .kw-card input, .kw-card select { width: 100%; background: var(--panel); border: 1px solid var(--border); color: var(--text); padding: 6px; margin-top: 4px; border-radius: 4px; }
+        .grid-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+        
+        .hidden { display: none !important; }
+        .section-title { font-size: 0.9rem; font-weight: 700; margin: 16px 0 8px; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+        
+        .alert { background: rgba(245, 158, 11, 0.1); border-left: 4px solid var(--warn); padding: 10px; border-radius: 4px; margin-bottom: 8px; font-size: 0.85rem; }
+        .brief-output { background: var(--bg); border: 1px solid var(--border); padding: 10px; font-family: monospace; font-size: 0.75rem; white-space: pre-wrap; overflow-x: auto; border-radius: 6px; }
+    </style>
+</head>
+<body>
+
+    <h1>SEO Mobile Planner</h1>
+    <div class="card">
+        <label for="kwInput">Keywords</label>
+        <textarea id="kwInput" placeholder="Enter keywords..."></textarea>
+        <button id="btnRun">Parse &amp; Plan</button>
+        <button id="btnSample" class="secondary">Load Sample</button>
+    </div>
+
+    <div id="outputContainer" class="hidden">
+        <div class="section-title">Matrix Planner</div>
+        <div id="matrixContainer"></div>
+        <button id="btnRefresh" class="secondary">Re-Analyze Clusters</button>
+        
+        <div class="section-title">Gaps</div>
+        <div id="gapAlerts"></div>
+        
+        <div class="section-title">Brief</div>
+        <div class="grid-row">
+            <button id="btnCopy" class="secondary">Copy</button>
+            <button id="btnDownload" class="secondary">Save</button>
+        </div>
+        <pre id="briefBlock" class="brief-output" style="margin-top: 10px;"></pre>
+    </div>
+
+    <script>
+        const kwInput = document.getElementById('kwInput');
+        const matrixContainer = document.getElementById('matrixContainer');
+        const gapAlerts = document.getElementById('gapAlerts');
+        const briefBlock = document.getElementById('briefBlock');
+        let keywordsState = [];
+
+        document.getElementById('btnRun').addEventListener('click', parseInput);
+        document.getElementById('btnSample').addEventListener('click', () => {
+            kwInput.value = "best running shoes\nrunning shoes for flat feet\nbuy running shoes\nhow to choose running shoes";
+            parseInput();
+        });
+        document.getElementById('btnRefresh').addEventListener('click', runAnalysis);
+
+        function parseInput() {
+            const lines = kwInput.value.split('\n').filter(l => l.trim());
+            keywordsState = lines.map(l => ({ phrase: l.trim(), intent: 'Informational', stage: 'TOFU', diff: 'Medium' }));
+            document.getElementById('outputContainer').classList.remove('hidden');
+            renderMatrix();
+            runAnalysis();
+        }
+
+        function renderMatrix() {
+            matrixContainer.textContent = '';
+            keywordsState.forEach((item, i) => {
+                const div = document.createElement('div');
+                div.className = 'kw-card';
+                
+                const inp = document.createElement('input');
+                inp.value = item.phrase;
+                inp.addEventListener('change', (e) => keywordsState[i].phrase = e.target.value);
+                div.appendChild(inp);
+
+                const row = document.createElement('div');
+                row.className = 'grid-row';
+                
+                const sel = (key, options) => {
+                    const s = document.createElement('select');
+                    options.forEach(o => {
+                        const opt = document.createElement('option');
+                        opt.textContent = o;
+                        if(o === item[key]) opt.selected = true;
+                        s.appendChild(opt);
+                    });
+                    s.addEventListener('change', (e) => keywordsState[i][key] = e.target.value);
+                    return s;
+                };
+
+                row.appendChild(sel('intent', ['Informational', 'Transactional', 'Investigational']));
+                row.appendChild(sel('stage', ['TOFU', 'MOFU', 'BOFU']));
+                div.appendChild(row);
+                matrixContainer.appendChild(div);
+            });
+        }
+
+        function runAnalysis() {
+            gapAlerts.textContent = '';
+            const transMissing = !keywordsState.some(i => i.intent === 'Transactional');
+            if (transMissing) {
+                const al = document.createElement('div');
+                al.className = 'alert';
+                al.textContent = '⚠️ Add transactional keywords for better conversion.';
+                gapAlerts.appendChild(al);
+            }
+            briefBlock.textContent = "SEO Sprint Brief:\n" + keywordsState.map(i => `- ${i.phrase} (${i.intent})`).join('\n');
+        }
+
+        document.getElementById('btnCopy').addEventListener('click', () => navigator.clipboard.writeText(briefBlock.textContent));
+        document.getElementById('btnDownload').addEventListener('click', () => {
+            const blob = new Blob([briefBlock.textContent], {type: 'text/plain'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'brief.txt';
+            a.click();
+        });
+    </script>
+</body>
+</html>

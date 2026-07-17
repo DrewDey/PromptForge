@@ -1,0 +1,1370 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Homepage Claim Triage Board</title>
+  <style>
+    :root{
+      --bg:#f6f4ef;
+      --panel:#fffdf8;
+      --ink:#22211f;
+      --muted:#6f6a62;
+      --line:#ded7ca;
+      --soft:#f0e9dc;
+      --keep:#dff4e6;
+      --soften:#fff0cc;
+      --prove:#ffe0dc;
+      --accent:#2f5d50;
+      --danger:#9c382f;
+      --shadow:0 10px 26px rgba(42,35,22,.08);
+      --radius:18px;
+      --tap:44px;
+    }
+
+    *{box-sizing:border-box}
+
+    html,body{
+      margin:0;
+      min-height:100%;
+      background:var(--bg);
+      color:var(--ink);
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      -webkit-text-size-adjust:100%;
+    }
+
+    body{
+      max-width:760px;
+      margin:0 auto;
+      padding:14px;
+      padding-bottom:90px;
+    }
+
+    header{
+      position:sticky;
+      top:0;
+      z-index:10;
+      margin:-14px -14px 14px;
+      padding:14px;
+      background:linear-gradient(180deg,var(--bg) 78%,rgba(246,244,239,.72));
+      backdrop-filter:blur(8px);
+    }
+
+    .hero{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:24px;
+      padding:14px;
+      box-shadow:var(--shadow);
+    }
+
+    h1{
+      margin:0 0 6px;
+      font-size:1.18rem;
+      line-height:1.15;
+      letter-spacing:-.02em;
+    }
+
+    .sub{
+      color:var(--muted);
+      font-size:.88rem;
+      line-height:1.35;
+      margin:0;
+    }
+
+    .grid{
+      display:grid;
+      gap:10px;
+    }
+
+    .two{
+      grid-template-columns:1fr;
+    }
+
+    label{
+      display:block;
+      font-size:.78rem;
+      color:var(--muted);
+      margin:0 0 5px;
+      font-weight:700;
+    }
+
+    input,textarea,select,button{
+      font:inherit;
+    }
+
+    input,textarea,select{
+      width:100%;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:#fffefa;
+      color:var(--ink);
+      padding:11px 12px;
+      outline:none;
+    }
+
+    textarea{
+      min-height:94px;
+      resize:vertical;
+      line-height:1.38;
+    }
+
+    input:focus,textarea:focus,select:focus{
+      border-color:var(--accent);
+      box-shadow:0 0 0 3px rgba(47,93,80,.13);
+    }
+
+    button{
+      min-height:var(--tap);
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:#fffefa;
+      color:var(--ink);
+      padding:10px 12px;
+      cursor:pointer;
+      font-weight:800;
+      touch-action:manipulation;
+    }
+
+    button:active{
+      transform:translateY(1px);
+    }
+
+    .primary{
+      background:var(--accent);
+      border-color:var(--accent);
+      color:white;
+    }
+
+    .danger{
+      color:var(--danger);
+    }
+
+    .ghost{
+      background:transparent;
+    }
+
+    .tiny{
+      min-height:34px;
+      padding:7px 9px;
+      border-radius:999px;
+      font-size:.78rem;
+    }
+
+    .row{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    .bar{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+      margin-top:10px;
+    }
+
+    .bar button{
+      min-width:0;
+    }
+
+    .full{
+      grid-column:1/-1;
+    }
+
+    .panel{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:12px;
+      box-shadow:var(--shadow);
+      margin-bottom:12px;
+    }
+
+    .panel h2{
+      margin:0 0 8px;
+      font-size:1rem;
+      letter-spacing:-.01em;
+    }
+
+    .help{
+      color:var(--muted);
+      font-size:.84rem;
+      line-height:1.35;
+      margin:6px 0 0;
+    }
+
+    .mini-stat{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      color:var(--muted);
+      font-size:.82rem;
+      border-top:1px solid var(--line);
+      padding-top:9px;
+      margin-top:10px;
+    }
+
+    .lane{
+      border:1px solid var(--line);
+      border-radius:20px;
+      margin-bottom:13px;
+      overflow:hidden;
+      background:rgba(255,253,248,.74);
+    }
+
+    .lane-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding:10px 12px;
+      border-bottom:1px solid var(--line);
+    }
+
+    .lane-title{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-weight:900;
+    }
+
+    .dot{
+      width:12px;
+      height:12px;
+      border-radius:50%;
+      border:1px solid rgba(0,0,0,.08);
+    }
+
+    .dot.keep{background:#68bd7d}
+    .dot.soften{background:#e5ad33}
+    .dot.prove{background:#e6786b}
+
+    .count{
+      color:var(--muted);
+      font-size:.82rem;
+      font-weight:800;
+    }
+
+    .lane-body{
+      padding:10px;
+      display:grid;
+      gap:10px;
+    }
+
+    .empty{
+      color:var(--muted);
+      font-size:.86rem;
+      padding:12px;
+      border:1px dashed var(--line);
+      border-radius:14px;
+      background:rgba(255,255,255,.46);
+    }
+
+    .card{
+      background:#fffefa;
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:11px;
+      box-shadow:0 6px 16px rgba(42,35,22,.06);
+    }
+
+    .card.keep{border-left:7px solid #68bd7d}
+    .card.soften{border-left:7px solid #e5ad33}
+    .card.prove{border-left:7px solid #e6786b}
+
+    .card-top{
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      align-items:flex-start;
+      margin-bottom:8px;
+    }
+
+    .card-title{
+      font-size:.78rem;
+      color:var(--muted);
+      font-weight:900;
+      padding-top:4px;
+    }
+
+    .claim-box{
+      min-height:74px;
+    }
+
+    .lane-buttons{
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:6px;
+      margin-top:8px;
+    }
+
+    .lane-buttons button{
+      min-height:38px;
+      padding:7px 5px;
+      font-size:.8rem;
+    }
+
+    .lane-buttons button.active{
+      box-shadow:inset 0 0 0 2px rgba(0,0,0,.1);
+    }
+
+    .lane-buttons button[data-lane="keep"].active{background:var(--keep)}
+    .lane-buttons button[data-lane="soften"].active{background:var(--soften)}
+    .lane-buttons button[data-lane="prove"].active{background:var(--prove)}
+
+    .chips{
+      display:flex;
+      flex-wrap:wrap;
+      gap:7px;
+      margin-top:8px;
+    }
+
+    .chip{
+      min-height:34px;
+      padding:7px 10px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:#fffefa;
+      color:var(--muted);
+      font-size:.78rem;
+      font-weight:850;
+    }
+
+    .chip.on{
+      background:var(--soft);
+      color:var(--ink);
+      border-color:#bdb3a1;
+    }
+
+    .custom-evidence{
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:7px;
+      margin-top:8px;
+    }
+
+    .score-row{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:7px;
+      margin-top:9px;
+    }
+
+    .score{
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:8px;
+      background:#fbf7ef;
+    }
+
+    .score span{
+      display:block;
+      font-size:.72rem;
+      color:var(--muted);
+      font-weight:800;
+      margin-bottom:2px;
+    }
+
+    .score strong{
+      font-size:.95rem;
+    }
+
+    .rewrite{
+      margin-top:9px;
+    }
+
+    .rewrite textarea{
+      min-height:72px;
+    }
+
+    .actions{
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      margin-top:9px;
+      flex-wrap:wrap;
+    }
+
+    .brief-box{
+      min-height:230px;
+      white-space:pre-wrap;
+    }
+
+    .footer-tools{
+      position:fixed;
+      left:0;
+      right:0;
+      bottom:0;
+      z-index:20;
+      background:rgba(246,244,239,.92);
+      backdrop-filter:blur(10px);
+      border-top:1px solid var(--line);
+      padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+    }
+
+    .footer-inner{
+      max-width:760px;
+      margin:0 auto;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+    }
+
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom:78px;
+      transform:translateX(-50%);
+      background:#23211f;
+      color:white;
+      padding:10px 13px;
+      border-radius:999px;
+      font-size:.86rem;
+      box-shadow:var(--shadow);
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .18s ease, transform .18s ease;
+      z-index:30;
+      max-width:90vw;
+      text-align:center;
+    }
+
+    .toast.show{
+      opacity:1;
+      transform:translateX(-50%) translateY(-4px);
+    }
+
+    .hidden{
+      display:none;
+    }
+
+    @media (min-width:620px){
+      .two{
+        grid-template-columns:1fr 1fr;
+      }
+      .bar{
+        grid-template-columns:repeat(4,1fr);
+      }
+      .footer-inner{
+        grid-template-columns:1fr 1fr 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <section class="hero">
+      <h1>Homepage Claim Triage Board</h1>
+      <p class="sub">Paste claims, attach proof chips, sort into keep, soften, or prove, then copy a rewrite brief.</p>
+      <div class="mini-stat">
+        <span id="saveStatus">Saved locally</span>
+        <span id="claimCount">0 claims</span>
+      </div>
+    </section>
+  </header>
+
+  <main>
+    <section class="panel grid">
+      <div class="two grid">
+        <div>
+          <label for="pageName">Page or product</label>
+          <input id="pageName" placeholder="Example: PathForge homepage">
+        </div>
+        <div>
+          <label for="audience">Audience</label>
+          <input id="audience" placeholder="Example: new AI builders">
+        </div>
+      </div>
+
+      <div>
+        <label for="bulkClaims">Paste homepage claims</label>
+        <textarea id="bulkClaims" placeholder="Paste one claim per line, or paste a paragraph and split into cards."></textarea>
+        <p class="help">Tip: paste hero lines, subheads, feature promises, proof blurbs, CTA claims, and pricing claims.</p>
+      </div>
+
+      <div class="bar">
+        <button class="primary" id="splitLines">Make cards</button>
+        <button id="splitSentences">Split sentences</button>
+        <button id="addBlank">Add blank</button>
+        <button class="danger" id="clearAll">Clear</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Board</h2>
+      <div id="lanes"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Rewrite brief</h2>
+      <textarea id="brief" class="brief-box" readonly></textarea>
+      <div class="bar">
+        <button class="primary" id="copyBrief">Copy brief</button>
+        <button id="refreshBrief">Refresh</button>
+        <button id="exportJson">Export JSON</button>
+        <button id="importJsonBtn">Import JSON</button>
+      </div>
+      <input class="hidden" id="importJson" type="file" accept="application/json">
+    </section>
+  </main>
+
+  <div class="footer-tools">
+    <div class="footer-inner">
+      <button class="primary" id="quickCopy">Copy brief</button>
+      <button id="jumpBoard">Board</button>
+      <button id="jumpBrief">Brief</button>
+      <button id="quickAdd">Add claim</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (function(){
+      "use strict";
+
+      const STORAGE_KEY = "homepageClaimTriageBoard.v1";
+
+      const lanes = [
+        {
+          id: "keep",
+          title: "Keep",
+          hint: "Clear, supportable, low-risk claims that already have useful evidence."
+        },
+        {
+          id: "soften",
+          title: "Soften",
+          hint: "Claims with useful direction but language that is too absolute, broad, or punchy."
+        },
+        {
+          id: "prove",
+          title: "Prove",
+          hint: "Claims that need stronger evidence before they should stay on the homepage."
+        }
+      ];
+
+      const builtInEvidence = [
+        "Metric",
+        "Customer quote",
+        "Case study",
+        "Screenshot",
+        "Demo proof",
+        "Product docs",
+        "Third-party source",
+        "Founder note",
+        "Analytics",
+        "Support logs"
+      ];
+
+      const riskyWords = [
+        "best",
+        "guarantee",
+        "guaranteed",
+        "always",
+        "never",
+        "only",
+        "number one",
+        "#1",
+        "eliminate",
+        "instant",
+        "perfect",
+        "proven",
+        "all",
+        "everyone",
+        "nobody",
+        "fastest",
+        "easiest",
+        "ultimate",
+        "revolutionary"
+      ];
+
+      const proofWeights = {
+        "Metric": 3,
+        "Customer quote": 2,
+        "Case study": 3,
+        "Screenshot": 2,
+        "Demo proof": 2,
+        "Product docs": 2,
+        "Third-party source": 3,
+        "Founder note": 1,
+        "Analytics": 3,
+        "Support logs": 2
+      };
+
+      let state = loadState();
+
+      const els = {
+        pageName: document.getElementById("pageName"),
+        audience: document.getElementById("audience"),
+        bulkClaims: document.getElementById("bulkClaims"),
+        splitLines: document.getElementById("splitLines"),
+        splitSentences: document.getElementById("splitSentences"),
+        addBlank: document.getElementById("addBlank"),
+        clearAll: document.getElementById("clearAll"),
+        lanes: document.getElementById("lanes"),
+        brief: document.getElementById("brief"),
+        copyBrief: document.getElementById("copyBrief"),
+        refreshBrief: document.getElementById("refreshBrief"),
+        exportJson: document.getElementById("exportJson"),
+        importJsonBtn: document.getElementById("importJsonBtn"),
+        importJson: document.getElementById("importJson"),
+        quickCopy: document.getElementById("quickCopy"),
+        jumpBoard: document.getElementById("jumpBoard"),
+        jumpBrief: document.getElementById("jumpBrief"),
+        quickAdd: document.getElementById("quickAdd"),
+        saveStatus: document.getElementById("saveStatus"),
+        claimCount: document.getElementById("claimCount"),
+        toast: document.getElementById("toast")
+      };
+
+      function defaultState(){
+        return {
+          pageName: "",
+          audience: "",
+          claims: []
+        };
+      }
+
+      function loadState(){
+        try{
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if(!raw) return defaultState();
+          const parsed = JSON.parse(raw);
+          if(!parsed || !Array.isArray(parsed.claims)) return defaultState();
+          return {
+            pageName: parsed.pageName || "",
+            audience: parsed.audience || "",
+            claims: parsed.claims.map(normalizeClaim)
+          };
+        }catch(err){
+          return defaultState();
+        }
+      }
+
+      function normalizeClaim(claim){
+        return {
+          id: claim.id || makeId(),
+          text: claim.text || "",
+          lane: ["keep","soften","prove"].includes(claim.lane) ? claim.lane : "prove",
+          evidence: Array.isArray(claim.evidence) ? claim.evidence : [],
+          customEvidence: Array.isArray(claim.customEvidence) ? claim.customEvidence : [],
+          note: claim.note || "",
+          rewrite: claim.rewrite || ""
+        };
+      }
+
+      function saveState(){
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        els.saveStatus.textContent = "Saved locally";
+        window.clearTimeout(saveState.timer);
+        saveState.timer = window.setTimeout(function(){
+          els.saveStatus.textContent = "Autosaved";
+        }, 650);
+      }
+
+      function makeId(){
+        return "c" + Math.random().toString(36).slice(2,9) + Date.now().toString(36).slice(-4);
+      }
+
+      function makeEl(tag, attrs, children){
+        const node = document.createElement(tag);
+        if(attrs){
+          Object.keys(attrs).forEach(function(key){
+            const val = attrs[key];
+            if(key === "className") node.className = val;
+            else if(key === "text") node.textContent = val;
+            else if(key === "value") node.value = val;
+            else if(key === "type") node.type = val;
+            else if(key === "placeholder") node.placeholder = val;
+            else if(key === "ariaLabel") node.setAttribute("aria-label", val);
+            else if(key === "dataset"){
+              Object.keys(val).forEach(function(dataKey){
+                node.dataset[dataKey] = val[dataKey];
+              });
+            }else if(key === "readOnly") node.readOnly = Boolean(val);
+            else if(key === "for") node.setAttribute("for", val);
+            else if(key === "title") node.title = val;
+          });
+        }
+        if(children){
+          children.forEach(function(child){
+            if(typeof child === "string"){
+              node.appendChild(document.createTextNode(child));
+            }else if(child){
+              node.appendChild(child);
+            }
+          });
+        }
+        return node;
+      }
+
+      function claimRisk(text){
+        const lower = text.toLowerCase();
+        let score = 0;
+        riskyWords.forEach(function(word){
+          if(lower.includes(word)) score += 2;
+        });
+        if(/\d/.test(text)) score += 1;
+        if(/[!]{1,}/.test(text)) score += 1;
+        if(text.length > 140) score += 1;
+        return Math.min(10, score);
+      }
+
+      function proofScore(claim){
+        let score = 0;
+        claim.evidence.forEach(function(item){
+          score += proofWeights[item] || 1;
+        });
+        score += claim.customEvidence.length;
+        return Math.min(10, score);
+      }
+
+      function proofLabel(score){
+        if(score >= 7) return "Strong";
+        if(score >= 4) return "Okay";
+        if(score >= 1) return "Thin";
+        return "None";
+      }
+
+      function riskLabel(score){
+        if(score >= 7) return "High";
+        if(score >= 4) return "Medium";
+        if(score >= 1) return "Low";
+        return "Clean";
+      }
+
+      function recommendLane(text){
+        const risk = claimRisk(text);
+        if(risk >= 5) return "prove";
+        if(risk >= 2) return "soften";
+        return "keep";
+      }
+
+      function cleanClaimInput(text){
+        return text
+          .replace(/^[\s\-•*–—]+/gm,"")
+          .replace(/\s+/g," ")
+          .trim();
+      }
+
+      function splitByLines(text){
+        return text
+          .split(/\n+/)
+          .map(cleanClaimInput)
+          .filter(Boolean);
+      }
+
+      function splitBySentences(text){
+        const cleaned = text.replace(/\n+/g," ").replace(/\s+/g," ").trim();
+        if(!cleaned) return [];
+        return cleaned
+          .split(/(?<=[.!?])\s+(?=[A-Z0-9"“])/)
+          .map(cleanClaimInput)
+          .filter(Boolean);
+      }
+
+      function addClaimsFromList(list){
+        const existing = new Set(state.claims.map(function(c){ return c.text.toLowerCase().trim(); }));
+        let added = 0;
+
+        list.forEach(function(text){
+          const key = text.toLowerCase().trim();
+          if(!key || existing.has(key)) return;
+          existing.add(key);
+          state.claims.push({
+            id: makeId(),
+            text: text,
+            lane: recommendLane(text),
+            evidence: [],
+            customEvidence: [],
+            note: "",
+            rewrite: ""
+          });
+          added += 1;
+        });
+
+        if(added){
+          els.bulkClaims.value = "";
+          render();
+          saveState();
+          showToast(added + " card" + (added === 1 ? "" : "s") + " added");
+        }else{
+          showToast("No new claims found");
+        }
+      }
+
+      function conservativeRewrite(text){
+        let output = text.trim();
+
+        const replacements = [
+          [/\bguaranteed\b/gi, "designed to help"],
+          [/\bguarantee\b/gi, "aim to help"],
+          [/\balways\b/gi, "can"],
+          [/\bnever\b/gi, "is less likely to"],
+          [/\bonly\b/gi, "focused"],
+          [/\bthe best\b/gi, "a strong"],
+          [/\bbest\b/gi, "strong"],
+          [/\bfastest\b/gi, "faster"],
+          [/\beasiest\b/gi, "simpler"],
+          [/\bultimate\b/gi, "practical"],
+          [/\brevolutionary\b/gi, "new"],
+          [/\beliminate\b/gi, "reduce"],
+          [/\bperfect\b/gi, "polished"],
+          [/\bproven\b/gi, "supported"],
+          [/\beveryone\b/gi, "more teams"],
+          [/\bnobody\b/gi, "fewer teams"],
+          [/\ball\b/gi, "many"]
+        ];
+
+        replacements.forEach(function(pair){
+          output = output.replace(pair[0], pair[1]);
+        });
+
+        output = output.replace(/\s+/g," ").trim();
+        if(!output) output = text.trim();
+
+        if(/[.!?]$/.test(output)) return output;
+        return output + ".";
+      }
+
+      function suggestionFor(claim){
+        const text = claim.text.trim();
+        if(!text) return "";
+
+        const evidenceText = allEvidence(claim).join(", ");
+        const softened = conservativeRewrite(text);
+
+        if(claim.lane === "keep"){
+          if(evidenceText){
+            return softened + " Keep this claim near visible proof such as " + evidenceText + ".";
+          }
+          return softened + " Keep it if it reflects the actual product experience.";
+        }
+
+        if(claim.lane === "soften"){
+          if(evidenceText){
+            return softened + " Pair it with " + evidenceText + " instead of making the claim broader.";
+          }
+          return softened + " Add one concrete example or source before publishing.";
+        }
+
+        if(evidenceText){
+          return softened + " Do not run the stronger version unless the page shows " + evidenceText + ".";
+        }
+
+        return softened + " Add proof before publishing, ideally a metric, screenshot, case study, or customer quote.";
+      }
+
+      function allEvidence(claim){
+        return claim.evidence.concat(claim.customEvidence).filter(Boolean);
+      }
+
+      function render(){
+        els.pageName.value = state.pageName;
+        els.audience.value = state.audience;
+        els.claimCount.textContent = state.claims.length + " claim" + (state.claims.length === 1 ? "" : "s");
+
+        while(els.lanes.firstChild){
+          els.lanes.removeChild(els.lanes.firstChild);
+        }
+
+        lanes.forEach(function(lane){
+          const laneClaims = state.claims.filter(function(claim){
+            return claim.lane === lane.id;
+          });
+
+          const laneEl = makeEl("section", {className:"lane"});
+          const head = makeEl("div", {className:"lane-head"});
+
+          const titleWrap = makeEl("div", {className:"lane-title"});
+          titleWrap.appendChild(makeEl("span", {className:"dot " + lane.id}));
+          titleWrap.appendChild(makeEl("span", {text:lane.title}));
+
+          const count = makeEl("span", {
+            className:"count",
+            text:laneClaims.length + " card" + (laneClaims.length === 1 ? "" : "s")
+          });
+
+          head.appendChild(titleWrap);
+          head.appendChild(count);
+
+          const body = makeEl("div", {className:"lane-body"});
+
+          if(laneClaims.length === 0){
+            body.appendChild(makeEl("div", {className:"empty", text:lane.hint}));
+          }else{
+            laneClaims.forEach(function(claim){
+              body.appendChild(renderCard(claim));
+            });
+          }
+
+          laneEl.appendChild(head);
+          laneEl.appendChild(body);
+          els.lanes.appendChild(laneEl);
+        });
+
+        refreshBrief();
+      }
+
+      function renderCard(claim){
+        const card = makeEl("article", {className:"card " + claim.lane});
+
+        const top = makeEl("div", {className:"card-top"});
+        top.appendChild(makeEl("div", {className:"card-title", text:"Claim card"}));
+
+        const remove = makeEl("button", {
+          className:"tiny ghost danger",
+          type:"button",
+          text:"Delete",
+          ariaLabel:"Delete claim"
+        });
+        remove.addEventListener("click", function(){
+          state.claims = state.claims.filter(function(item){ return item.id !== claim.id; });
+          render();
+          saveState();
+          showToast("Card deleted");
+        });
+        top.appendChild(remove);
+        card.appendChild(top);
+
+        const claimBox = makeEl("textarea", {
+          className:"claim-box",
+          value:claim.text,
+          placeholder:"Homepage claim"
+        });
+        claimBox.addEventListener("input", function(){
+          claim.text = claimBox.value;
+          saveState();
+          refreshBrief();
+          updateCardScores(card, claim);
+        });
+        card.appendChild(claimBox);
+
+        const laneButtons = makeEl("div", {className:"lane-buttons"});
+        lanes.forEach(function(lane){
+          const button = makeEl("button", {
+            type:"button",
+            text:lane.title,
+            dataset:{lane:lane.id},
+            className:claim.lane === lane.id ? "active" : ""
+          });
+          button.addEventListener("click", function(){
+            claim.lane = lane.id;
+            render();
+            saveState();
+          });
+          laneButtons.appendChild(button);
+        });
+        card.appendChild(laneButtons);
+
+        const evidenceLabel = makeEl("label", {text:"Evidence chips"});
+        evidenceLabel.style.marginTop = "10px";
+        card.appendChild(evidenceLabel);
+
+        const chips = makeEl("div", {className:"chips"});
+        builtInEvidence.forEach(function(label){
+          const chip = makeEl("button", {
+            type:"button",
+            className:claim.evidence.includes(label) ? "chip on" : "chip",
+            text:label
+          });
+          chip.addEventListener("click", function(){
+            toggleEvidence(claim, label);
+            render();
+            saveState();
+          });
+          chips.appendChild(chip);
+        });
+        card.appendChild(chips);
+
+        if(claim.customEvidence.length){
+          const customChips = makeEl("div", {className:"chips"});
+          claim.customEvidence.forEach(function(label){
+            const chip = makeEl("button", {
+              type:"button",
+              className:"chip on",
+              text:label + " ×",
+              title:"Remove custom evidence"
+            });
+            chip.addEventListener("click", function(){
+              claim.customEvidence = claim.customEvidence.filter(function(item){
+                return item !== label;
+              });
+              render();
+              saveState();
+            });
+            customChips.appendChild(chip);
+          });
+          card.appendChild(customChips);
+        }
+
+        const custom = makeEl("div", {className:"custom-evidence"});
+        const customInput = makeEl("input", {
+          placeholder:"Custom evidence chip"
+        });
+        const customButton = makeEl("button", {
+          type:"button",
+          text:"Add"
+        });
+        customButton.addEventListener("click", function(){
+          const value = customInput.value.trim();
+          if(!value) return;
+          if(!claim.customEvidence.includes(value)){
+            claim.customEvidence.push(value);
+          }
+          customInput.value = "";
+          render();
+          saveState();
+        });
+        customInput.addEventListener("keydown", function(event){
+          if(event.key === "Enter"){
+            event.preventDefault();
+            customButton.click();
+          }
+        });
+        custom.appendChild(customInput);
+        custom.appendChild(customButton);
+        card.appendChild(custom);
+
+        const scoreRow = makeEl("div", {className:"score-row"});
+        const proof = makeEl("div", {className:"score proof-score"});
+        const proofSmall = makeEl("span", {text:"Proof"});
+        const proofStrong = makeEl("strong", {text:proofLabel(proofScore(claim))});
+        proof.appendChild(proofSmall);
+        proof.appendChild(proofStrong);
+
+        const risk = makeEl("div", {className:"score risk-score"});
+        const riskSmall = makeEl("span", {text:"Risk"});
+        const riskStrong = makeEl("strong", {text:riskLabel(claimRisk(claim.text))});
+        risk.appendChild(riskSmall);
+        risk.appendChild(riskStrong);
+
+        scoreRow.appendChild(proof);
+        scoreRow.appendChild(risk);
+        card.appendChild(scoreRow);
+
+        const noteWrap = makeEl("div", {className:"rewrite"});
+        const noteLabel = makeEl("label", {text:"Rewrite note"});
+        const noteBox = makeEl("textarea", {
+          value:claim.note,
+          placeholder:"Example: Replace biggest claim with a narrower version and add the screenshot nearby."
+        });
+        noteBox.addEventListener("input", function(){
+          claim.note = noteBox.value;
+          saveState();
+          refreshBrief();
+        });
+        noteWrap.appendChild(noteLabel);
+        noteWrap.appendChild(noteBox);
+        card.appendChild(noteWrap);
+
+        const rewriteWrap = makeEl("div", {className:"rewrite"});
+        const rewriteLabel = makeEl("label", {text:"Edited rewrite"});
+        const rewriteBox = makeEl("textarea", {
+          value:claim.rewrite,
+          placeholder:suggestionFor(claim)
+        });
+        rewriteBox.addEventListener("input", function(){
+          claim.rewrite = rewriteBox.value;
+          saveState();
+          refreshBrief();
+        });
+        rewriteWrap.appendChild(rewriteLabel);
+        rewriteWrap.appendChild(rewriteBox);
+        card.appendChild(rewriteWrap);
+
+        const actions = makeEl("div", {className:"actions"});
+        const useSuggestion = makeEl("button", {
+          type:"button",
+          className:"tiny",
+          text:"Use suggestion"
+        });
+        useSuggestion.addEventListener("click", function(){
+          claim.rewrite = suggestionFor(claim);
+          render();
+          saveState();
+          showToast("Suggestion added");
+        });
+
+        const duplicate = makeEl("button", {
+          type:"button",
+          className:"tiny",
+          text:"Duplicate"
+        });
+        duplicate.addEventListener("click", function(){
+          const clone = normalizeClaim(JSON.parse(JSON.stringify(claim)));
+          clone.id = makeId();
+          state.claims.push(clone);
+          render();
+          saveState();
+          showToast("Card duplicated");
+        });
+
+        actions.appendChild(useSuggestion);
+        actions.appendChild(duplicate);
+        card.appendChild(actions);
+
+        return card;
+      }
+
+      function updateCardScores(card, claim){
+        const proofStrong = card.querySelector(".proof-score strong");
+        const riskStrong = card.querySelector(".risk-score strong");
+        if(proofStrong) proofStrong.textContent = proofLabel(proofScore(claim));
+        if(riskStrong) riskStrong.textContent = riskLabel(claimRisk(claim.text));
+      }
+
+      function toggleEvidence(claim, label){
+        if(claim.evidence.includes(label)){
+          claim.evidence = claim.evidence.filter(function(item){
+            return item !== label;
+          });
+        }else{
+          claim.evidence.push(label);
+        }
+      }
+
+      function refreshBrief(){
+        const brief = buildBrief();
+        els.brief.value = brief;
+      }
+
+      function buildBrief(){
+        const lines = [];
+        const page = state.pageName.trim();
+        const audience = state.audience.trim();
+
+        lines.push("Homepage claim rewrite brief");
+        if(page) lines.push("Page or product: " + page);
+        if(audience) lines.push("Audience: " + audience);
+        lines.push("Claims reviewed: " + state.claims.length);
+        lines.push("");
+
+        lanes.forEach(function(lane){
+          const laneClaims = state.claims.filter(function(claim){
+            return claim.lane === lane.id;
+          });
+
+          lines.push(lane.title.toUpperCase() + " (" + laneClaims.length + ")");
+
+          if(!laneClaims.length){
+            lines.push("None.");
+            lines.push("");
+            return;
+          }
+
+          laneClaims.forEach(function(claim, index){
+            const text = claim.text.trim() || "[blank claim]";
+            const evidence = allEvidence(claim);
+            const rewrite = claim.rewrite.trim() || suggestionFor(claim);
+            const note = claim.note.trim();
+
+            lines.push((index + 1) + ". Current: " + text);
+
+            if(evidence.length){
+              lines.push("   Evidence: " + evidence.join(", "));
+            }else{
+              lines.push("   Evidence: none attached");
+            }
+
+            lines.push("   Proof: " + proofLabel(proofScore(claim)) + " | Risk: " + riskLabel(claimRisk(text)));
+
+            if(lane.id === "keep"){
+              lines.push("   Action: keep, but keep proof close to the claim.");
+            }else if(lane.id === "soften"){
+              lines.push("   Action: soften the language and avoid absolute wording.");
+            }else{
+              lines.push("   Action: prove before publishing or use the safer rewrite.");
+            }
+
+            if(rewrite){
+              lines.push("   Rewrite: " + rewrite);
+            }
+
+            if(note){
+              lines.push("   Note: " + note);
+            }
+
+            lines.push("");
+          });
+        });
+
+        lines.push("Rewrite priorities");
+        const proveCount = state.claims.filter(function(c){ return c.lane === "prove"; }).length;
+        const softenCount = state.claims.filter(function(c){ return c.lane === "soften"; }).length;
+        const noEvidence = state.claims.filter(function(c){ return allEvidence(c).length === 0; }).length;
+
+        lines.push("1. Replace or support the " + proveCount + " prove claim" + (proveCount === 1 ? "" : "s") + ".");
+        lines.push("2. Tighten the " + softenCount + " soften claim" + (softenCount === 1 ? "" : "s") + " so the homepage sounds credible.");
+        lines.push("3. Add proof to " + noEvidence + " claim" + (noEvidence === 1 ? "" : "s") + " with no attached evidence.");
+
+        return lines.join("\n");
+      }
+
+      function copyText(text){
+        if(navigator.clipboard && navigator.clipboard.writeText){
+          return navigator.clipboard.writeText(text);
+        }
+
+        return new Promise(function(resolve, reject){
+          const temp = document.createElement("textarea");
+          temp.value = text;
+          temp.setAttribute("readonly", "");
+          temp.style.position = "fixed";
+          temp.style.left = "-9999px";
+          document.body.appendChild(temp);
+          temp.select();
+
+          try{
+            document.execCommand("copy");
+            document.body.removeChild(temp);
+            resolve();
+          }catch(err){
+            document.body.removeChild(temp);
+            reject(err);
+          }
+        });
+      }
+
+      function showToast(message){
+        els.toast.textContent = message;
+        els.toast.classList.add("show");
+        window.clearTimeout(showToast.timer);
+        showToast.timer = window.setTimeout(function(){
+          els.toast.classList.remove("show");
+        }, 1400);
+      }
+
+      function exportJson(){
+        const payload = JSON.stringify(state, null, 2);
+        const blob = new Blob([payload], {type:"application/json"});
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        const stamp = new Date().toISOString().slice(0,10);
+        link.href = url;
+        link.download = "homepage-claim-triage-" + stamp + ".json";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        showToast("Exported");
+      }
+
+      function importJson(file){
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = function(){
+          try{
+            const imported = JSON.parse(String(reader.result || ""));
+            if(!imported || !Array.isArray(imported.claims)){
+              showToast("Invalid board file");
+              return;
+            }
+            state = {
+              pageName: imported.pageName || "",
+              audience: imported.audience || "",
+              claims: imported.claims.map(normalizeClaim)
+            };
+            render();
+            saveState();
+            showToast("Imported");
+          }catch(err){
+            showToast("Could not import file");
+          }
+        };
+        reader.readAsText(file);
+      }
+
+      els.pageName.addEventListener("input", function(){
+        state.pageName = els.pageName.value;
+        saveState();
+        refreshBrief();
+      });
+
+      els.audience.addEventListener("input", function(){
+        state.audience = els.audience.value;
+        saveState();
+        refreshBrief();
+      });
+
+      els.splitLines.addEventListener("click", function(){
+        addClaimsFromList(splitByLines(els.bulkClaims.value));
+      });
+
+      els.splitSentences.addEventListener("click", function(){
+        addClaimsFromList(splitBySentences(els.bulkClaims.value));
+      });
+
+      els.addBlank.addEventListener("click", function(){
+        state.claims.push({
+          id: makeId(),
+          text: "",
+          lane: "prove",
+          evidence: [],
+          customEvidence: [],
+          note: "",
+          rewrite: ""
+        });
+        render();
+        saveState();
+        showToast("Blank card added");
+      });
+
+      els.clearAll.addEventListener("click", function(){
+        const ok = window.confirm("Clear all cards and page fields from this board?");
+        if(!ok) return;
+        state = defaultState();
+        els.bulkClaims.value = "";
+        render();
+        saveState();
+        showToast("Board cleared");
+      });
+
+      els.copyBrief.addEventListener("click", function(){
+        refreshBrief();
+        copyText(els.brief.value).then(function(){
+          showToast("Brief copied");
+        }).catch(function(){
+          showToast("Copy failed");
+        });
+      });
+
+      els.quickCopy.addEventListener("click", function(){
+        els.copyBrief.click();
+      });
+
+      els.refreshBrief.addEventListener("click", function(){
+        refreshBrief();
+        showToast("Brief refreshed");
+      });
+
+      els.exportJson.addEventListener("click", exportJson);
+
+      els.importJsonBtn.addEventListener("click", function(){
+        els.importJson.click();
+      });
+
+      els.importJson.addEventListener("change", function(){
+        importJson(els.importJson.files[0]);
+        els.importJson.value = "";
+      });
+
+      els.jumpBoard.addEventListener("click", function(){
+        els.lanes.scrollIntoView({behavior:"smooth", block:"start"});
+      });
+
+      els.jumpBrief.addEventListener("click", function(){
+        els.brief.scrollIntoView({behavior:"smooth", block:"center"});
+      });
+
+      els.quickAdd.addEventListener("click", function(){
+        els.addBlank.click();
+      });
+
+      render();
+    })();
+  </script>
+</body>
+</html>

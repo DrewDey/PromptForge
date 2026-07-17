@@ -1,0 +1,1846 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>YouTube B-roll Coverage Dealer</title>
+  <style>
+    :root {
+      --bg: #101418;
+      --panel: #182028;
+      --panel-2: #1f2a34;
+      --text: #f3f7fb;
+      --muted: #aebac6;
+      --line: #324251;
+      --accent: #8dd7ff;
+      --accent-2: #bff0c2;
+      --warn: #ffd18a;
+      --bad: #ff9e9e;
+      --shadow: 0 18px 42px rgba(0,0,0,.28);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+      min-width: 0;
+    }
+
+    html {
+      width: 100%;
+    }
+
+    body {
+      margin: 0;
+      width: 100%;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(141,215,255,.18), transparent 34rem),
+        linear-gradient(180deg, #101418, #0c1014 70%);
+      color: var(--text);
+      line-height: 1.45;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+      max-width: 100%;
+    }
+
+    button {
+      border: 0;
+      border-radius: 14px;
+      padding: .82rem .92rem;
+      background: var(--accent);
+      color: #071018;
+      font-weight: 750;
+      cursor: pointer;
+      width: 100%;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      touch-action: manipulation;
+    }
+
+    button.secondary {
+      background: #263543;
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    button.ghost {
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid rgba(141,215,255,.5);
+    }
+
+    button.danger {
+      background: #3a2429;
+      color: #ffd3d3;
+      border: 1px solid #70414b;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: #0f151b;
+      color: var(--text);
+      border-radius: 14px;
+      padding: .82rem .88rem;
+      outline: none;
+    }
+
+    textarea {
+      min-height: 108px;
+      resize: vertical;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: #7f8b96;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    label,
+    .field {
+      display: grid;
+      gap: .42rem;
+      color: var(--muted);
+      font-size: .92rem;
+    }
+
+    .field span {
+      overflow-wrap: anywhere;
+    }
+
+    .wrap {
+      width: 100%;
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 14px;
+    }
+
+    .hero {
+      padding: 18px 14px 10px;
+    }
+
+    .hero-inner {
+      width: 100%;
+      max-width: 920px;
+      margin: 0 auto;
+      display: grid;
+      gap: 12px;
+    }
+
+    .badge {
+      display: block;
+      width: fit-content;
+      max-width: 100%;
+      border: 1px solid rgba(141,215,255,.45);
+      color: var(--accent);
+      border-radius: 999px;
+      padding: .42rem .66rem;
+      font-size: .8rem;
+      overflow-wrap: anywhere;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 13vw, 4.6rem);
+      line-height: .94;
+      letter-spacing: -.06em;
+      overflow-wrap: anywhere;
+    }
+
+    h1 span {
+      display: block;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 1.08rem;
+      letter-spacing: -.01em;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+
+    .panel {
+      background: rgba(24,32,40,.94);
+      border: 1px solid rgba(255,255,255,.08);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin: 12px 0;
+      display: grid;
+      gap: 14px;
+    }
+
+    .panel-head {
+      display: grid;
+      gap: 6px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .mini-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .status-bar {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      border-radius: 16px;
+      background: #111820;
+      border: 1px solid var(--line);
+    }
+
+    .score-line {
+      display: grid;
+      gap: 6px;
+    }
+
+    progress {
+      width: 100%;
+      height: 18px;
+      border: 0;
+      border-radius: 999px;
+      overflow: hidden;
+      background: #0c1116;
+    }
+
+    progress::-webkit-progress-bar {
+      background: #0c1116;
+      border-radius: 999px;
+    }
+
+    progress::-webkit-progress-value {
+      background: linear-gradient(90deg, var(--bad), var(--warn), var(--accent-2));
+      border-radius: 999px;
+    }
+
+    progress::-moz-progress-bar {
+      background: linear-gradient(90deg, var(--bad), var(--warn), var(--accent-2));
+      border-radius: 999px;
+    }
+
+    .pill-list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .pill {
+      display: block;
+      width: 100%;
+      border-radius: 14px;
+      padding: .72rem .78rem;
+      background: #111820;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+
+    .pill.good {
+      color: #dfffe2;
+      border-color: rgba(191,240,194,.45);
+      background: rgba(40,79,44,.35);
+    }
+
+    .pill.warn {
+      color: #ffe6b8;
+      border-color: rgba(255,209,138,.55);
+      background: rgba(88,65,25,.35);
+    }
+
+    .pill.bad {
+      color: #ffd4d4;
+      border-color: rgba(255,158,158,.55);
+      background: rgba(88,34,42,.35);
+    }
+
+    .item-list,
+    .slot-stack {
+      display: grid;
+      gap: 10px;
+    }
+
+    .item-card,
+    .shot-card,
+    .slot-card {
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      border-radius: 16px;
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+      overflow-wrap: anywhere;
+    }
+
+    .slot-card {
+      background: rgba(31,42,52,.78);
+    }
+
+    .slot-head {
+      display: grid;
+      gap: 4px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+
+    .slot-title {
+      font-weight: 850;
+      font-size: 1.02rem;
+    }
+
+    .slot-hint {
+      color: var(--muted);
+      font-size: .88rem;
+    }
+
+    .meta-line {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+      color: var(--muted);
+      font-size: .88rem;
+    }
+
+    .tag {
+      display: block;
+      width: fit-content;
+      max-width: 100%;
+      padding: .34rem .55rem;
+      border-radius: 999px;
+      background: #111820;
+      border: 1px solid var(--line);
+      color: var(--accent);
+      font-size: .78rem;
+      font-weight: 750;
+      overflow-wrap: anywhere;
+    }
+
+    .tag.claim {
+      color: var(--warn);
+    }
+
+    .tag.scene {
+      color: var(--accent-2);
+    }
+
+    .tag.critical {
+      color: #ffd4d4;
+      border-color: rgba(255,158,158,.5);
+    }
+
+    .empty {
+      border: 1px dashed var(--line);
+      color: var(--muted);
+      border-radius: 16px;
+      padding: 14px;
+      background: rgba(15,21,27,.5);
+      overflow-wrap: anywhere;
+    }
+
+    .check-preview {
+      min-height: 240px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .86rem;
+      color: #d8e4ee;
+      background: #0c1116;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 12px;
+    }
+
+    .toast {
+      position: fixed;
+      left: 14px;
+      right: 14px;
+      bottom: 14px;
+      background: #e9fbff;
+      color: #071018;
+      padding: .9rem 1rem;
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      font-weight: 800;
+      display: none;
+      overflow-wrap: anywhere;
+      z-index: 5;
+    }
+
+    .toast.show {
+      display: block;
+    }
+
+    @media (min-width: 740px) {
+      .wrap,
+      .hero {
+        padding-left: 22px;
+        padding-right: 22px;
+      }
+
+      .grid.two {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .grid.three {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .button-row {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .mini-row {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .slots-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <span class="badge">offline · local only · phone-first</span>
+      <h1>
+        <span>YouTube</span>
+        <span>B-roll</span>
+        <span>Coverage Dealer</span>
+      </h1>
+      <p>Turn a loose premise into scenes, claims, B-roll cards, coverage warnings, and a copyable shoot checklist.</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="panel" aria-labelledby="setup-title">
+      <div class="panel-head">
+        <h2 id="setup-title">1. Premise</h2>
+        <p>Keep it rough. The board uses this to seed hook, texture, proof, and CTA shots.</p>
+      </div>
+
+      <div class="grid two">
+        <label class="field">
+          <span>Loose video premise</span>
+          <textarea id="premise" placeholder="Example: I tried planning my week backward from Friday outcomes, and it exposed where I was overloading each day."></textarea>
+        </label>
+
+        <div class="grid">
+          <label class="field">
+            <span>Audience or viewer problem</span>
+            <input id="audience" placeholder="Example: solo creators who forget pickup shots">
+          </label>
+
+          <label class="field">
+            <span>Video style</span>
+            <select id="style">
+              <option value="practical">Practical explainer</option>
+              <option value="story">Story or vlog</option>
+              <option value="review">Review or comparison</option>
+              <option value="essay">Video essay</option>
+              <option value="tutorial">Tutorial</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Main viewer action</span>
+            <input id="action" placeholder="Example: copy the checklist, try the method, watch next video">
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="scene-title">
+      <div class="panel-head">
+        <h2 id="scene-title">2. Scenes and claims</h2>
+        <p>Add the beats that need visual support. Claims with weak evidence will be flagged.</p>
+      </div>
+
+      <div class="grid two">
+        <div class="grid">
+          <div class="grid two">
+            <label class="field">
+              <span>Type</span>
+              <select id="itemKind">
+                <option value="scene">Scene</option>
+                <option value="claim">Claim</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Priority</span>
+              <select id="itemPriority">
+                <option value="normal">Normal</option>
+                <option value="key">Key coverage</option>
+              </select>
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Scene or claim title</span>
+            <input id="itemTitle" placeholder="Example: Show the messy starting point">
+          </label>
+
+          <label class="field">
+            <span>Notes</span>
+            <textarea id="itemNotes" placeholder="What needs to be seen, understood, or believed?"></textarea>
+          </label>
+
+          <label class="field">
+            <span>Evidence note, especially for claims</span>
+            <textarea id="itemEvidence" placeholder="Example: screen recording, data point, receipt, side-by-side, quote, before/after"></textarea>
+          </label>
+
+          <div class="button-row">
+            <button id="addItem">Add scene or claim</button>
+            <button id="shotForLast" class="secondary">Add and make shots</button>
+            <button id="clearItemFields" class="ghost">Clear fields</button>
+          </div>
+        </div>
+
+        <div class="grid">
+          <label class="field">
+            <span>Bulk add, one per line</span>
+            <textarea id="bulkItems" placeholder="scene: cold open problem&#10;claim: creators miss B-roll because they outline words, not visuals&#10;scene: proof example with timeline"></textarea>
+          </label>
+
+          <div class="button-row">
+            <button id="importItems" class="secondary">Import lines</button>
+            <button id="sampleBoard" class="ghost">Load sample</button>
+            <button id="resetBoard" class="danger">Reset board</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="items" class="item-list" aria-live="polite"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="shots-title">
+      <div class="panel-head">
+        <h2 id="shots-title">3. B-roll card dealer</h2>
+        <p>Generate cards, then deal them into intro, body, proof, and CTA. You can edit every card.</p>
+      </div>
+
+      <div class="button-row">
+        <button id="generateShots">Build missing B-roll cards</button>
+        <button id="dealShots" class="secondary">Deal cards into slots</button>
+        <button id="clearShots" class="danger">Clear shot cards</button>
+      </div>
+
+      <div class="grid two">
+        <label class="field">
+          <span>Manual shot card</span>
+          <input id="manualShotLabel" placeholder="Example: close-up of checklist being marked">
+        </label>
+
+        <label class="field">
+          <span>Manual slot</span>
+          <select id="manualShotSlot">
+            <option value="pool">Undealt pool</option>
+            <option value="intro">Intro</option>
+            <option value="body">Body</option>
+            <option value="proof">Proof</option>
+            <option value="cta">CTA</option>
+          </select>
+        </label>
+      </div>
+
+      <label class="field">
+        <span>Manual shot detail</span>
+        <textarea id="manualShotDetail" placeholder="Frame, prop, screen, motion, or pickup detail."></textarea>
+      </label>
+
+      <div class="button-row">
+        <button id="addManualShot" class="secondary">Add manual shot</button>
+        <button id="markAllNeeded" class="ghost">Mark all as needed</button>
+        <button id="markDealtShot" class="ghost">Mark dealt as shot</button>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="coverage-title">
+      <div class="panel-head">
+        <h2 id="coverage-title">4. Coverage check</h2>
+        <p>Use this as the pickup warning system before filming or editing.</p>
+      </div>
+
+      <div id="coverage" class="status-bar"></div>
+      <div id="issueList" class="pill-list"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="slot-title">
+      <div class="panel-head">
+        <h2 id="slot-title">5. Slot board</h2>
+        <p>Tap a card’s slot menu to move it. Use status to separate needed, shot, and skipped footage.</p>
+      </div>
+
+      <div id="slots" class="slots-grid slot-stack"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="checklist-title">
+      <div class="panel-head">
+        <h2 id="checklist-title">6. Shoot checklist</h2>
+        <p>Copy this into notes before shooting or download it as a text file.</p>
+      </div>
+
+      <div class="button-row">
+        <button id="copyChecklist">Copy checklist</button>
+        <button id="downloadChecklist" class="secondary">Download .txt</button>
+        <button id="downloadJson" class="ghost">Download board data</button>
+      </div>
+
+      <pre id="checklist" class="check-preview"></pre>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var STORE_KEY = "youtube-broll-coverage-dealer-v1";
+
+      var slotDefs = [
+        { id: "pool", name: "Undealt pool", hint: "Cards not placed yet." },
+        { id: "intro", name: "Intro", hint: "Hook, problem texture, setup, stakes." },
+        { id: "body", name: "Body", hint: "Process, scenes, transitions, examples." },
+        { id: "proof", name: "Proof", hint: "Receipts, screen captures, data, before/after." },
+        { id: "cta", name: "CTA", hint: "Result, next step, subscribe, watch next." }
+      ];
+
+      var state = {
+        premise: "",
+        audience: "",
+        style: "practical",
+        action: "",
+        items: [],
+        shots: []
+      };
+
+      var ids = {};
+
+      function byId(id) {
+        return document.getElementById(id);
+      }
+
+      function uid(prefix) {
+        return prefix + "_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7);
+      }
+
+      function clean(value) {
+        return String(value || "").trim();
+      }
+
+      function oneLine(value) {
+        return clean(value).replace(/\s+/g, " ");
+      }
+
+      function node(tag, attrs) {
+        var el = document.createElement(tag);
+        attrs = attrs || {};
+
+        Object.keys(attrs).forEach(function (key) {
+          var value = attrs[key];
+
+          if (key === "class") {
+            el.className = value;
+          } else if (key === "text") {
+            el.textContent = value;
+          } else if (key === "value") {
+            el.value = value;
+          } else if (key === "type") {
+            el.type = value;
+          } else if (key === "placeholder") {
+            el.placeholder = value;
+          } else if (key === "ariaLabel") {
+            el.setAttribute("aria-label", value);
+          } else if (key.indexOf("on") === 0 && typeof value === "function") {
+            el.addEventListener(key.slice(2).toLowerCase(), value);
+          } else {
+            el.setAttribute(key, value);
+          }
+        });
+
+        for (var i = 2; i < arguments.length; i += 1) {
+          appendChild(el, arguments[i]);
+        }
+
+        return el;
+      }
+
+      function appendChild(parent, child) {
+        if (Array.isArray(child)) {
+          child.forEach(function (part) {
+            appendChild(parent, part);
+          });
+          return;
+        }
+
+        if (child === null || child === undefined) {
+          return;
+        }
+
+        if (child.nodeType) {
+          parent.appendChild(child);
+          return;
+        }
+
+        parent.appendChild(document.createTextNode(String(child)));
+      }
+
+      function option(value, text) {
+        var opt = document.createElement("option");
+        opt.value = value;
+        opt.textContent = text;
+        return opt;
+      }
+
+      function makeSelect(currentValue, choices, onChange) {
+        var select = node("select");
+        choices.forEach(function (choice) {
+          select.appendChild(option(choice.value, choice.text));
+        });
+        select.value = currentValue;
+        select.addEventListener("change", function () {
+          onChange(select.value);
+        });
+        return select;
+      }
+
+      function labeled(labelText, control) {
+        var wrap = node("label", { class: "field" });
+        wrap.appendChild(node("span", { text: labelText }));
+        wrap.appendChild(control);
+        return wrap;
+      }
+
+      function load() {
+        try {
+          var raw = localStorage.getItem(STORE_KEY);
+          if (!raw) {
+            return;
+          }
+
+          var saved = JSON.parse(raw);
+          if (saved && typeof saved === "object") {
+            state.premise = saved.premise || "";
+            state.audience = saved.audience || "";
+            state.style = saved.style || "practical";
+            state.action = saved.action || "";
+            state.items = Array.isArray(saved.items) ? saved.items : [];
+            state.shots = Array.isArray(saved.shots) ? saved.shots : [];
+          }
+        } catch (err) {
+          showToast("Saved data could not be loaded.");
+        }
+      }
+
+      function save() {
+        try {
+          localStorage.setItem(STORE_KEY, JSON.stringify(state));
+        } catch (err) {
+          showToast("Local save failed in this browser.");
+        }
+      }
+
+      function syncSetupFields() {
+        ids.premise.value = state.premise;
+        ids.audience.value = state.audience;
+        ids.style.value = state.style;
+        ids.action.value = state.action;
+      }
+
+      function bindSetup() {
+        ids.premise.addEventListener("input", function () {
+          state.premise = ids.premise.value;
+          save();
+          renderAnalysisOnly();
+        });
+
+        ids.audience.addEventListener("input", function () {
+          state.audience = ids.audience.value;
+          save();
+          renderAnalysisOnly();
+        });
+
+        ids.style.addEventListener("change", function () {
+          state.style = ids.style.value;
+          save();
+          renderAnalysisOnly();
+        });
+
+        ids.action.addEventListener("input", function () {
+          state.action = ids.action.value;
+          save();
+          renderAnalysisOnly();
+        });
+      }
+
+      function readItemFields() {
+        return {
+          kind: ids.itemKind.value,
+          priority: ids.itemPriority.value,
+          title: clean(ids.itemTitle.value),
+          notes: ids.itemNotes.value.trim(),
+          evidence: ids.itemEvidence.value.trim()
+        };
+      }
+
+      function clearItemFields() {
+        ids.itemKind.value = "scene";
+        ids.itemPriority.value = "normal";
+        ids.itemTitle.value = "";
+        ids.itemNotes.value = "";
+        ids.itemEvidence.value = "";
+      }
+
+      function addItemFromFields(makeShots) {
+        var data = readItemFields();
+
+        if (!data.title && !data.notes && !data.evidence) {
+          showToast("Add a title, note, or evidence first.");
+          return null;
+        }
+
+        if (!data.title) {
+          data.title = data.kind === "claim" ? "Untitled claim" : "Untitled scene";
+        }
+
+        var item = {
+          id: uid("item"),
+          kind: data.kind,
+          priority: data.priority,
+          title: data.title,
+          notes: data.notes,
+          evidence: data.evidence
+        };
+
+        state.items.push(item);
+        clearItemFields();
+
+        if (makeShots) {
+          generateShotsForItem(item);
+        }
+
+        save();
+        renderAll();
+        return item;
+      }
+
+      function importBulkItems() {
+        var raw = ids.bulkItems.value;
+        var lines = raw.split(/\r?\n/).map(clean).filter(Boolean);
+
+        if (!lines.length) {
+          showToast("Paste one scene or claim per line first.");
+          return;
+        }
+
+        lines.forEach(function (line) {
+          var kind = "scene";
+          var title = line;
+          var notes = "";
+
+          var typed = line.match(/^(scene|claim)\s*[:\-]\s*(.+)$/i);
+          if (typed) {
+            kind = typed[1].toLowerCase();
+            title = typed[2].trim();
+          } else if (/prove|evidence|claim|because|data|stat|receipt|source/i.test(line)) {
+            kind = "claim";
+          }
+
+          if (title.length > 92) {
+            notes = title;
+            title = title.slice(0, 92).trim();
+          }
+
+          state.items.push({
+            id: uid("item"),
+            kind: kind,
+            priority: kind === "claim" ? "key" : "normal",
+            title: title,
+            notes: notes,
+            evidence: ""
+          });
+        });
+
+        ids.bulkItems.value = "";
+        save();
+        renderAll();
+        showToast("Imported " + lines.length + " scenes or claims.");
+      }
+
+      function removeItem(itemId) {
+        state.items = state.items.filter(function (item) {
+          return item.id !== itemId;
+        });
+        state.shots = state.shots.filter(function (shot) {
+          return shot.sourceId !== itemId;
+        });
+        save();
+        renderAll();
+      }
+
+      function getItem(itemId) {
+        return state.items.find(function (item) {
+          return item.id === itemId;
+        });
+      }
+
+      function sourceTitle(sourceId) {
+        if (sourceId === "premise") {
+          return "Premise";
+        }
+
+        if (sourceId === "manual") {
+          return "Manual card";
+        }
+
+        var item = getItem(sourceId);
+        return item ? item.title : "Removed source";
+      }
+
+      function addShot(sourceId, type, label, detail, slot, critical) {
+        var duplicate = state.shots.some(function (shot) {
+          return shot.sourceId === sourceId && shot.type === type && shot.label === label;
+        });
+
+        if (duplicate) {
+          return null;
+        }
+
+        var shot = {
+          id: uid("shot"),
+          sourceId: sourceId,
+          type: type,
+          label: label,
+          detail: detail,
+          slot: slot || "pool",
+          status: "needed",
+          critical: Boolean(critical)
+        };
+
+        state.shots.push(shot);
+        return shot;
+      }
+
+      function generatePremiseShots() {
+        var premise = oneLine(state.premise) || "the video premise";
+        var action = oneLine(state.action) || "the next viewer action";
+
+        addShot(
+          "premise",
+          "hook",
+          "Cold-open problem visual",
+          "Show the visible friction behind " + premise + ". Use a fast, readable shot before the first explanation.",
+          "intro",
+          true
+        );
+
+        addShot(
+          "premise",
+          "texture",
+          "Premise texture cutaways",
+          "Capture 3 small visual details that make the premise feel real: screen, hands, notes, environment, object, or reaction.",
+          "body",
+          false
+        );
+
+        addShot(
+          "premise",
+          "cta",
+          "End-frame next step",
+          "Film or screen-record a simple visual that supports the viewer action: " + action + ".",
+          "cta",
+          true
+        );
+      }
+
+      function generateShotsForItem(item) {
+        if (!item) {
+          return;
+        }
+
+        var title = oneLine(item.title);
+        var notes = oneLine(item.notes);
+        var evidence = oneLine(item.evidence);
+
+        if (item.kind === "claim") {
+          addShot(
+            item.id,
+            "proof",
+            "Proof insert for claim",
+            "Capture the receipt for “" + title + "”: " + (evidence || "screen, source, before/after, comparison, or concrete example needed."),
+            "proof",
+            true
+          );
+
+          addShot(
+            item.id,
+            "explain",
+            "Visual explanation cutaway",
+            "Show the claim without repeating the narration. Use a simple object, screen flow, timeline, side-by-side, or marked-up note.",
+            "body",
+            item.priority === "key"
+          );
+
+          addShot(
+            item.id,
+            "trust",
+            "Trust-building detail",
+            "Grab one extra detail that makes this claim less abstract: close-up, timestamp, file name, chart label, real setting, or practical result.",
+            "proof",
+            false
+          );
+        } else {
+          addShot(
+            item.id,
+            "establish",
+            "Establishing shot for scene",
+            "Show where this beat happens: " + title + ". " + (notes || "Capture a wide or medium shot that orients the viewer."),
+            "body",
+            item.priority === "key"
+          );
+
+          addShot(
+            item.id,
+            "action",
+            "Action detail shot",
+            "Film the hands, screen, prop, movement, or decision that makes this scene visible.",
+            "body",
+            item.priority === "key"
+          );
+
+          addShot(
+            item.id,
+            "transition",
+            "Transition or pickup cutaway",
+            "Capture a flexible insert that can hide an edit: notes, cursor move, walk-in, object close-up, page turn, timeline, or reaction.",
+            "body",
+            false
+          );
+        }
+      }
+
+      function generateAllMissingShots() {
+        var before = state.shots.length;
+
+        generatePremiseShots();
+
+        state.items.forEach(function (item) {
+          generateShotsForItem(item);
+        });
+
+        save();
+        renderAll();
+
+        var made = state.shots.length - before;
+        showToast(made ? "Built " + made + " B-roll cards." : "No new cards needed.");
+      }
+
+      function dealShots() {
+        if (!state.shots.length) {
+          generateAllMissingShots();
+        }
+
+        state.shots.forEach(function (shot) {
+          if (shot.status === "skip") {
+            return;
+          }
+
+          var hay = (shot.type + " " + shot.label + " " + shot.detail).toLowerCase();
+
+          if (/cta|end-frame|next step|subscribe|watch next|viewer action/.test(hay)) {
+            shot.slot = "cta";
+          } else if (/proof|trust|evidence|receipt|source|data|screen|comparison|before\/after|chart/.test(hay)) {
+            shot.slot = "proof";
+          } else if (/hook|cold|problem|opening|stakes/.test(hay)) {
+            shot.slot = "intro";
+          } else {
+            shot.slot = "body";
+          }
+        });
+
+        save();
+        renderAll();
+        showToast("Cards dealt into slots.");
+      }
+
+      function addManualShot() {
+        var label = clean(ids.manualShotLabel.value);
+        var detail = clean(ids.manualShotDetail.value);
+        var slot = ids.manualShotSlot.value;
+
+        if (!label && !detail) {
+          showToast("Add a manual shot label or detail first.");
+          return;
+        }
+
+        addShot(
+          "manual",
+          "manual",
+          label || "Manual B-roll shot",
+          detail || "Capture this pickup shot.",
+          slot || "pool",
+          false
+        );
+
+        ids.manualShotLabel.value = "";
+        ids.manualShotDetail.value = "";
+        ids.manualShotSlot.value = "pool";
+
+        save();
+        renderAll();
+      }
+
+      function clearShots() {
+        state.shots = [];
+        save();
+        renderAll();
+        showToast("Shot cards cleared.");
+      }
+
+      function markAllNeeded() {
+        state.shots.forEach(function (shot) {
+          if (shot.status !== "skip") {
+            shot.status = "needed";
+          }
+        });
+        save();
+        renderAll();
+      }
+
+      function markDealtShot() {
+        state.shots.forEach(function (shot) {
+          if (shot.slot !== "pool" && shot.status !== "skip") {
+            shot.status = "shot";
+          }
+        });
+        save();
+        renderAll();
+      }
+
+      function loadSample() {
+        state.premise = "I keep outlining YouTube videos as talking points, then realize in the edit that I have no B-roll for the moments that need proof or texture.";
+        state.audience = "solo YouTube creators planning from a loose premise";
+        state.style = "practical";
+        state.action = "use the checklist before recording";
+        state.items = [
+          {
+            id: uid("item"),
+            kind: "scene",
+            priority: "key",
+            title: "Cold open with empty timeline",
+            notes: "Show the pain quickly before explaining the system.",
+            evidence: ""
+          },
+          {
+            id: uid("item"),
+            kind: "claim",
+            priority: "key",
+            title: "Missing B-roll usually comes from planning words instead of visuals",
+            notes: "This needs a concrete side-by-side.",
+            evidence: "Show script outline beside a shot checklist with gaps marked."
+          },
+          {
+            id: uid("item"),
+            kind: "scene",
+            priority: "normal",
+            title: "Deal cards into intro, body, proof, and CTA",
+            notes: "Make the workflow visible on screen.",
+            evidence: ""
+          },
+          {
+            id: uid("item"),
+            kind: "claim",
+            priority: "normal",
+            title: "Proof slots prevent vague unsupported claims",
+            notes: "Use a visual example of a claim being backed by a screenshot.",
+            evidence: "Screen capture or before/after of claim card with proof insert."
+          }
+        ];
+        state.shots = [];
+        syncSetupFields();
+        generateAllMissingShots();
+        dealShots();
+      }
+
+      function resetBoard() {
+        state.premise = "";
+        state.audience = "";
+        state.style = "practical";
+        state.action = "";
+        state.items = [];
+        state.shots = [];
+        syncSetupFields();
+        clearItemFields();
+        ids.bulkItems.value = "";
+        save();
+        renderAll();
+        showToast("Board reset.");
+      }
+
+      function renderItems() {
+        var mount = ids.items;
+        mount.replaceChildren();
+
+        if (!state.items.length) {
+          mount.appendChild(node("div", { class: "empty", text: "No scenes or claims yet. Add a few beats, then build B-roll cards." }));
+          return;
+        }
+
+        state.items.forEach(function (item, index) {
+          var card = node("article", { class: "item-card" });
+
+          var meta = node("div", { class: "meta-line" });
+          meta.appendChild(node("span", {
+            class: "tag " + item.kind,
+            text: (index + 1) + ". " + item.kind
+          }));
+          meta.appendChild(node("span", {
+            class: item.priority === "key" ? "tag critical" : "tag",
+            text: item.priority === "key" ? "key coverage" : "normal"
+          }));
+          card.appendChild(meta);
+
+          var kindSelect = makeSelect(item.kind, [
+            { value: "scene", text: "Scene" },
+            { value: "claim", text: "Claim" }
+          ], function (value) {
+            item.kind = value;
+            save();
+            renderAll();
+          });
+
+          var prioritySelect = makeSelect(item.priority, [
+            { value: "normal", text: "Normal" },
+            { value: "key", text: "Key coverage" }
+          ], function (value) {
+            item.priority = value;
+            save();
+            renderAnalysisOnly();
+          });
+
+          var titleInput = node("input", { value: item.title, placeholder: "Scene or claim title" });
+          titleInput.addEventListener("input", function () {
+            item.title = titleInput.value;
+            save();
+            renderAnalysisOnly();
+          });
+
+          var notesArea = node("textarea", { value: item.notes || "", placeholder: "Notes for this beat" });
+          notesArea.addEventListener("input", function () {
+            item.notes = notesArea.value;
+            save();
+            renderAnalysisOnly();
+          });
+
+          var evidenceArea = node("textarea", { value: item.evidence || "", placeholder: "Evidence note" });
+          evidenceArea.addEventListener("input", function () {
+            item.evidence = evidenceArea.value;
+            save();
+            renderAnalysisOnly();
+          });
+
+          card.appendChild(node("div", { class: "grid two" },
+            labeled("Type", kindSelect),
+            labeled("Priority", prioritySelect)
+          ));
+
+          card.appendChild(labeled("Title", titleInput));
+          card.appendChild(labeled("Notes", notesArea));
+          card.appendChild(labeled("Evidence", evidenceArea));
+
+          var actions = node("div", { class: "button-row" });
+
+          actions.appendChild(node("button", {
+            class: "secondary",
+            type: "button",
+            text: "Make shots",
+            onclick: function () {
+              var before = state.shots.length;
+              generateShotsForItem(item);
+              save();
+              renderAll();
+              showToast((state.shots.length - before) + " cards added.");
+            }
+          }));
+
+          actions.appendChild(node("button", {
+            class: "ghost",
+            type: "button",
+            text: "Duplicate",
+            onclick: function () {
+              state.items.splice(index + 1, 0, {
+                id: uid("item"),
+                kind: item.kind,
+                priority: item.priority,
+                title: item.title + " copy",
+                notes: item.notes,
+                evidence: item.evidence
+              });
+              save();
+              renderAll();
+            }
+          }));
+
+          actions.appendChild(node("button", {
+            class: "danger",
+            type: "button",
+            text: "Remove",
+            onclick: function () {
+              removeItem(item.id);
+            }
+          }));
+
+          card.appendChild(actions);
+          mount.appendChild(card);
+        });
+      }
+
+      function renderSlots() {
+        var mount = ids.slots;
+        mount.replaceChildren();
+
+        slotDefs.forEach(function (slot) {
+          var card = node("section", { class: "slot-card" });
+          var head = node("div", { class: "slot-head" });
+          head.appendChild(node("div", { class: "slot-title", text: slot.name }));
+          head.appendChild(node("div", { class: "slot-hint", text: slot.hint }));
+          card.appendChild(head);
+
+          var shots = state.shots.filter(function (shot) {
+            return shot.slot === slot.id;
+          });
+
+          if (!shots.length) {
+            card.appendChild(node("div", { class: "empty", text: "No cards here." }));
+          } else {
+            shots.forEach(function (shot) {
+              card.appendChild(renderShotCard(shot));
+            });
+          }
+
+          mount.appendChild(card);
+        });
+      }
+
+      function renderShotCard(shot) {
+        var card = node("article", { class: "shot-card" });
+
+        var meta = node("div", { class: "meta-line" });
+        meta.appendChild(node("span", { class: shot.critical ? "tag critical" : "tag", text: shot.critical ? "critical" : shot.type }));
+        meta.appendChild(node("span", { text: "Source: " + sourceTitle(shot.sourceId) }));
+        card.appendChild(meta);
+
+        var labelInput = node("input", { value: shot.label, placeholder: "Shot label" });
+        labelInput.addEventListener("input", function () {
+          shot.label = labelInput.value;
+          save();
+          renderAnalysisOnly();
+        });
+
+        var detailArea = node("textarea", { value: shot.detail, placeholder: "Shot detail" });
+        detailArea.addEventListener("input", function () {
+          shot.detail = detailArea.value;
+          save();
+          renderAnalysisOnly();
+        });
+
+        var slotSelect = makeSelect(shot.slot, [
+          { value: "pool", text: "Undealt pool" },
+          { value: "intro", text: "Intro" },
+          { value: "body", text: "Body" },
+          { value: "proof", text: "Proof" },
+          { value: "cta", text: "CTA" }
+        ], function (value) {
+          shot.slot = value;
+          save();
+          renderAll();
+        });
+
+        var statusSelect = makeSelect(shot.status, [
+          { value: "needed", text: "Needed" },
+          { value: "shot", text: "Shot" },
+          { value: "skip", text: "Skip" }
+        ], function (value) {
+          shot.status = value;
+          save();
+          renderAll();
+        });
+
+        var criticalSelect = makeSelect(shot.critical ? "yes" : "no", [
+          { value: "no", text: "Normal" },
+          { value: "yes", text: "Critical" }
+        ], function (value) {
+          shot.critical = value === "yes";
+          save();
+          renderAll();
+        });
+
+        card.appendChild(labeled("Shot label", labelInput));
+        card.appendChild(labeled("Shot detail", detailArea));
+
+        card.appendChild(node("div", { class: "grid three" },
+          labeled("Slot", slotSelect),
+          labeled("Status", statusSelect),
+          labeled("Importance", criticalSelect)
+        ));
+
+        var actions = node("div", { class: "button-row" });
+
+        actions.appendChild(node("button", {
+          class: "secondary",
+          type: "button",
+          text: "Duplicate",
+          onclick: function () {
+            state.shots.push({
+              id: uid("shot"),
+              sourceId: shot.sourceId,
+              type: shot.type,
+              label: shot.label + " copy",
+              detail: shot.detail,
+              slot: shot.slot,
+              status: "needed",
+              critical: shot.critical
+            });
+            save();
+            renderAll();
+          }
+        }));
+
+        actions.appendChild(node("button", {
+          class: "ghost",
+          type: "button",
+          text: shot.status === "shot" ? "Mark needed" : "Mark shot",
+          onclick: function () {
+            shot.status = shot.status === "shot" ? "needed" : "shot";
+            save();
+            renderAll();
+          }
+        }));
+
+        actions.appendChild(node("button", {
+          class: "danger",
+          type: "button",
+          text: "Remove",
+          onclick: function () {
+            state.shots = state.shots.filter(function (candidate) {
+              return candidate.id !== shot.id;
+            });
+            save();
+            renderAll();
+          }
+        }));
+
+        card.appendChild(actions);
+
+        return card;
+      }
+
+      function getSlotCounts() {
+        var counts = {};
+        slotDefs.forEach(function (slot) {
+          counts[slot.id] = 0;
+        });
+
+        state.shots.forEach(function (shot) {
+          if (shot.status !== "skip" && counts.hasOwnProperty(shot.slot)) {
+            counts[shot.slot] += 1;
+          }
+        });
+
+        return counts;
+      }
+
+      function analyze() {
+        var issues = [];
+        var score = 100;
+        var counts = getSlotCounts();
+        var active = state.shots.filter(function (shot) {
+          return shot.status !== "skip";
+        });
+
+        function addIssue(text, severity) {
+          issues.push({ text: text, severity: severity });
+          if (severity === "bad") {
+            score -= 13;
+          } else if (severity === "warn") {
+            score -= 8;
+          } else {
+            score -= 4;
+          }
+        }
+
+        if (!clean(state.premise)) {
+          addIssue("Premise is empty, so hook and CTA shots are generic.", "bad");
+        }
+
+        if (!state.items.length) {
+          addIssue("No scenes or claims have been added.", "bad");
+        }
+
+        if (!state.shots.length) {
+          addIssue("No B-roll cards exist yet.", "bad");
+        }
+
+        ["intro", "body", "proof", "cta"].forEach(function (slotId) {
+          if (!counts[slotId]) {
+            addIssue(slotName(slotId) + " slot has no active B-roll cards.", slotId === "proof" ? "bad" : "warn");
+          }
+        });
+
+        if (counts.pool > 0) {
+          addIssue(counts.pool + " active card" + (counts.pool === 1 ? " is" : "s are") + " still undealt.", "warn");
+        }
+
+        var claims = state.items.filter(function (item) {
+          return item.kind === "claim";
+        });
+
+        claims.forEach(function (claim) {
+          if (!clean(claim.evidence)) {
+            addIssue("Claim needs an evidence note: " + claim.title, "bad");
+          }
+        });
+
+        state.items.forEach(function (item) {
+          var hasAssignedShot = active.some(function (shot) {
+            return shot.sourceId === item.id && shot.slot !== "pool";
+          });
+
+          if (!hasAssignedShot) {
+            addIssue(item.kind.charAt(0).toUpperCase() + item.kind.slice(1) + " has no assigned B-roll: " + item.title, item.priority === "key" ? "bad" : "warn");
+          }
+        });
+
+        var criticalUndealt = active.filter(function (shot) {
+          return shot.critical && shot.slot === "pool";
+        });
+
+        if (criticalUndealt.length) {
+          addIssue(criticalUndealt.length + " critical card" + (criticalUndealt.length === 1 ? " is" : "s are") + " still undealt.", "bad");
+        }
+
+        var neededCritical = active.filter(function (shot) {
+          return shot.critical && shot.status === "needed";
+        });
+
+        if (neededCritical.length) {
+          addIssue(neededCritical.length + " critical card" + (neededCritical.length === 1 ? " still needs" : "s still need") + " to be shot.", "warn");
+        }
+
+        score = Math.max(0, Math.min(100, score));
+
+        return {
+          score: score,
+          issues: issues,
+          counts: counts
+        };
+      }
+
+      function slotName(slotId) {
+        var found = slotDefs.find(function (slot) {
+          return slot.id === slotId;
+        });
+        return found ? found.name : slotId;
+      }
+
+      function renderCoverage() {
+        var result = analyze();
+        var mount = ids.coverage;
+        mount.replaceChildren();
+
+        var scoreText = "Coverage score: " + result.score + "/100";
+        var line = node("div", { class: "score-line" });
+        line.appendChild(node("div", { text: scoreText }));
+        line.appendChild(node("progress", { value: String(result.score), max: "100", ariaLabel: scoreText }));
+        mount.appendChild(line);
+
+        var counts = node("div", { class: "pill-list" });
+        counts.appendChild(node("span", { class: result.counts.intro ? "pill good" : "pill warn", text: "Intro cards: " + result.counts.intro }));
+        counts.appendChild(node("span", { class: result.counts.body ? "pill good" : "pill warn", text: "Body cards: " + result.counts.body }));
+        counts.appendChild(node("span", { class: result.counts.proof ? "pill good" : "pill bad", text: "Proof cards: " + result.counts.proof }));
+        counts.appendChild(node("span", { class: result.counts.cta ? "pill good" : "pill warn", text: "CTA cards: " + result.counts.cta }));
+        mount.appendChild(counts);
+
+        var issueMount = ids.issueList;
+        issueMount.replaceChildren();
+
+        if (!result.issues.length) {
+          issueMount.appendChild(node("div", { class: "pill good", text: "Coverage looks usable. Shoot anything still marked needed." }));
+          return;
+        }
+
+        result.issues.forEach(function (issue) {
+          issueMount.appendChild(node("div", { class: "pill " + issue.severity, text: issue.text }));
+        });
+      }
+
+      function buildChecklist() {
+        var result = analyze();
+        var lines = [];
+        var today = new Date();
+
+        lines.push("YOUTUBE B-ROLL SHOOT CHECKLIST");
+        lines.push("Generated: " + today.toLocaleString());
+        lines.push("");
+        lines.push("PREMISE");
+        lines.push(clean(state.premise) || "[add premise]");
+        lines.push("");
+        lines.push("AUDIENCE / VIEWER PROBLEM");
+        lines.push(clean(state.audience) || "[add audience]");
+        lines.push("");
+        lines.push("VIDEO STYLE");
+        lines.push(state.style || "practical");
+        lines.push("");
+        lines.push("VIEWER ACTION");
+        lines.push(clean(state.action) || "[add viewer action]");
+        lines.push("");
+        lines.push("COVERAGE SCORE");
+        lines.push(String(result.score) + "/100");
+        lines.push("");
+
+        lines.push("MISSING COVERAGE / PICKUPS");
+        if (result.issues.length) {
+          result.issues.forEach(function (issue) {
+            lines.push("- " + issue.text);
+          });
+        } else {
+          lines.push("- No major coverage gaps flagged.");
+        }
+        lines.push("");
+
+        ["intro", "body", "proof", "cta"].forEach(function (slotId) {
+          var slotShots = state.shots.filter(function (shot) {
+            return shot.slot === slotId && shot.status !== "skip";
+          });
+
+          lines.push(slotName(slotId).toUpperCase());
+
+          if (!slotShots.length) {
+            lines.push("- [ ] Missing cards for this slot.");
+          } else {
+            slotShots.forEach(function (shot) {
+              var box = shot.status === "shot" ? "[x]" : "[ ]";
+              var critical = shot.critical ? " CRITICAL" : "";
+              lines.push("- " + box + critical + " " + oneLine(shot.label));
+              lines.push("  Detail: " + (oneLine(shot.detail) || "[add detail]"));
+              lines.push("  Source: " + sourceTitle(shot.sourceId));
+            });
+          }
+
+          lines.push("");
+        });
+
+        var poolShots = state.shots.filter(function (shot) {
+          return shot.slot === "pool" && shot.status !== "skip";
+        });
+
+        lines.push("UNDEALT CARDS");
+        if (!poolShots.length) {
+          lines.push("- None.");
+        } else {
+          poolShots.forEach(function (shot) {
+            lines.push("- [ ] " + oneLine(shot.label) + " — " + sourceTitle(shot.sourceId));
+          });
+        }
+        lines.push("");
+
+        lines.push("SCENES AND CLAIMS");
+        if (!state.items.length) {
+          lines.push("- [ ] Add scenes or claims.");
+        } else {
+          state.items.forEach(function (item) {
+            lines.push("- " + item.kind.toUpperCase() + ": " + oneLine(item.title));
+            lines.push("  Priority: " + item.priority);
+            lines.push("  Notes: " + (oneLine(item.notes) || "[none]"));
+            lines.push("  Evidence: " + (oneLine(item.evidence) || "[missing]"));
+          });
+        }
+
+        return lines.join("\n");
+      }
+
+      function renderChecklist() {
+        ids.checklist.textContent = buildChecklist();
+      }
+
+      function renderAnalysisOnly() {
+        renderCoverage();
+        renderChecklist();
+      }
+
+      function renderAll() {
+        renderItems();
+        renderCoverage();
+        renderSlots();
+        renderChecklist();
+      }
+
+      async function copyChecklist() {
+        var text = buildChecklist();
+
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text);
+          } else {
+            fallbackCopy(text);
+          }
+          showToast("Checklist copied.");
+        } catch (err) {
+          fallbackCopy(text);
+          showToast("Checklist copied.");
+        }
+      }
+
+      function fallbackCopy(text) {
+        var area = document.createElement("textarea");
+        area.value = text;
+        area.setAttribute("readonly", "");
+        area.style.position = "fixed";
+        area.style.left = "-9999px";
+        document.body.appendChild(area);
+        area.select();
+        document.execCommand("copy");
+        document.body.removeChild(area);
+      }
+
+      function downloadText(filename, text, type) {
+        var blob = new Blob([text], { type: type || "text/plain" });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      function showToast(message) {
+        ids.toast.textContent = message;
+        ids.toast.classList.add("show");
+
+        window.clearTimeout(showToast.timer);
+        showToast.timer = window.setTimeout(function () {
+          ids.toast.classList.remove("show");
+        }, 1800);
+      }
+
+      function cacheIds() {
+        [
+          "premise",
+          "audience",
+          "style",
+          "action",
+          "itemKind",
+          "itemPriority",
+          "itemTitle",
+          "itemNotes",
+          "itemEvidence",
+          "addItem",
+          "shotForLast",
+          "clearItemFields",
+          "bulkItems",
+          "importItems",
+          "sampleBoard",
+          "resetBoard",
+          "items",
+          "generateShots",
+          "dealShots",
+          "clearShots",
+          "manualShotLabel",
+          "manualShotDetail",
+          "manualShotSlot",
+          "addManualShot",
+          "markAllNeeded",
+          "markDealtShot",
+          "coverage",
+          "issueList",
+          "slots",
+          "copyChecklist",
+          "downloadChecklist",
+          "downloadJson",
+          "checklist",
+          "toast"
+        ].forEach(function (id) {
+          ids[id] = byId(id);
+        });
+      }
+
+      function bindButtons() {
+        ids.addItem.addEventListener("click", function () {
+          addItemFromFields(false);
+        });
+
+        ids.shotForLast.addEventListener("click", function () {
+          addItemFromFields(true);
+        });
+
+        ids.clearItemFields.addEventListener("click", clearItemFields);
+        ids.importItems.addEventListener("click", importBulkItems);
+        ids.sampleBoard.addEventListener("click", loadSample);
+        ids.resetBoard.addEventListener("click", resetBoard);
+        ids.generateShots.addEventListener("click", generateAllMissingShots);
+        ids.dealShots.addEventListener("click", dealShots);
+        ids.clearShots.addEventListener("click", clearShots);
+        ids.addManualShot.addEventListener("click", addManualShot);
+        ids.markAllNeeded.addEventListener("click", markAllNeeded);
+        ids.markDealtShot.addEventListener("click", markDealtShot);
+        ids.copyChecklist.addEventListener("click", copyChecklist);
+
+        ids.downloadChecklist.addEventListener("click", function () {
+          downloadText("youtube-broll-shoot-checklist.txt", buildChecklist(), "text/plain");
+        });
+
+        ids.downloadJson.addEventListener("click", function () {
+          downloadText("youtube-broll-board-data.json", JSON.stringify(state, null, 2), "application/json");
+        });
+      }
+
+      function init() {
+        cacheIds();
+        load();
+        syncSetupFields();
+        bindSetup();
+        bindButtons();
+        renderAll();
+      }
+
+      init();
+    }());
+  </script>
+</body>
+</html>

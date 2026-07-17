@@ -1,0 +1,995 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SEO Proof Sort Board</title>
+  <style>
+    :root {
+      --bg: #f6f1e8;
+      --card: #fffaf1;
+      --ink: #171512;
+      --muted: #61594f;
+      --line: #d8cabb;
+      --soft: #efe3d2;
+      --strong: #d8f3dc;
+      --needs: #fff3bf;
+      --cut: #ffd6d6;
+      --accent: #2f5d50;
+      --danger: #9d2c2c;
+      --shadow: 0 10px 24px rgba(35, 28, 20, .08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-width: 0;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.45;
+    }
+
+    .wrap {
+      width: 100%;
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 14px;
+      display: grid;
+      gap: 14px;
+    }
+
+    header {
+      display: grid;
+      gap: 8px;
+      padding: 18px 14px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(180deg, #fffaf1, #f3e6d2);
+      box-shadow: var(--shadow);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.65rem, 8vw, 2.6rem);
+      line-height: .98;
+      letter-spacing: -.04em;
+      overflow-wrap: anywhere;
+    }
+
+    h1 span {
+      display: block;
+    }
+
+    .sub {
+      margin: 0;
+      color: var(--muted);
+      font-size: .98rem;
+      overflow-wrap: anywhere;
+    }
+
+    .card {
+      width: 100%;
+      min-width: 0;
+      display: grid;
+      gap: 12px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .section-title {
+      margin: 0;
+      font-size: 1.05rem;
+      letter-spacing: -.02em;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      font-size: .9rem;
+      font-weight: 700;
+      color: var(--ink);
+      min-width: 0;
+    }
+
+    input,
+    textarea,
+    button {
+      font: inherit;
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fffdf8;
+      color: var(--ink);
+      padding: 11px 12px;
+      outline: none;
+      resize: vertical;
+      overflow-wrap: anywhere;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      white-space: normal;
+      color: #8a7d6c;
+      opacity: 1;
+    }
+
+    textarea {
+      min-height: 96px;
+    }
+
+    .tiny {
+      color: var(--muted);
+      font-size: .82rem;
+      font-weight: 500;
+      overflow-wrap: anywhere;
+    }
+
+    .button-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      width: 100%;
+      min-width: 0;
+    }
+
+    button {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: #fffdf8;
+      color: var(--ink);
+      border-radius: 14px;
+      padding: 11px 12px;
+      font-weight: 800;
+      cursor: pointer;
+      touch-action: manipulation;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    button.primary {
+      background: var(--accent);
+      color: #fffdf8;
+      border-color: var(--accent);
+    }
+
+    button.warn {
+      background: #fff4f4;
+      color: var(--danger);
+      border-color: #efb2b2;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .score-wrap {
+      display: grid;
+      gap: 10px;
+    }
+
+    .score-top {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .score-number {
+      font-size: 2.3rem;
+      font-weight: 900;
+      letter-spacing: -.05em;
+    }
+
+    .meter {
+      height: 16px;
+      border-radius: 999px;
+      background: #eadcc8;
+      overflow: hidden;
+      border: 1px solid var(--line);
+    }
+
+    .meter-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      transition: width .2s ease;
+    }
+
+    .chips {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .chip {
+      display: block;
+      width: 100%;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      padding: 8px 10px;
+      background: #fffdf8;
+      font-size: .86rem;
+      font-weight: 800;
+      overflow-wrap: anywhere;
+    }
+
+    .chip.strong {
+      background: var(--strong);
+    }
+
+    .chip.needs {
+      background: var(--needs);
+    }
+
+    .chip.cut {
+      background: var(--cut);
+    }
+
+    .claim-card {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fffdf8;
+      min-width: 0;
+    }
+
+    .claim-head {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      align-items: start;
+    }
+
+    .claim-title {
+      font-weight: 900;
+      overflow-wrap: anywhere;
+    }
+
+    .status-buttons {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 7px;
+    }
+
+    .status-buttons button {
+      padding: 9px 10px;
+      font-size: .9rem;
+    }
+
+    .status-buttons button.active-strong {
+      background: var(--strong);
+      border-color: #8cc79c;
+    }
+
+    .status-buttons button.active-needs {
+      background: var(--needs);
+      border-color: #d8b946;
+    }
+
+    .status-buttons button.active-cut {
+      background: var(--cut);
+      border-color: #e28b8b;
+    }
+
+    .warnings {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .warnings li {
+      border: 1px solid #efc0a8;
+      background: #fff1e8;
+      color: #5d2613;
+      border-radius: 14px;
+      padding: 10px 11px;
+      overflow-wrap: anywhere;
+    }
+
+    .output {
+      min-height: 180px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .86rem;
+    }
+
+    .footer-note {
+      text-align: center;
+      color: var(--muted);
+      font-size: .8rem;
+      padding: 8px 0 20px;
+      overflow-wrap: anywhere;
+    }
+
+    @media (min-width: 680px) {
+      .button-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .score-top {
+        grid-template-columns: auto 1fr;
+      }
+
+      .chips {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .claim-head {
+        grid-template-columns: 1fr auto;
+      }
+
+      .status-buttons {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <h1>
+        <span>SEO Proof</span>
+        <span>Sort Board</span>
+      </h1>
+      <p class="sub">Paste a headline, reader promise, and 3-6 claims. Sort every claim into strong proof, needs source, or cut. Then copy a revision checklist.</p>
+    </header>
+
+    <section class="card">
+      <h2 class="section-title">Article promise</h2>
+
+      <label>
+        Headline
+        <input id="headline" type="text" placeholder="Example: Best Budget Standing Desks for Small Apartments">
+      </label>
+
+      <label>
+        Reader promise
+        <textarea id="promise" placeholder="What does the article promise the reader will learn, compare, avoid, prove, or decide?"></textarea>
+      </label>
+
+      <label>
+        Paste 3-6 supporting claims, one per real line
+        <textarea id="bulkClaims" placeholder="Claim 1&#10;Claim 2&#10;Claim 3"></textarea>
+        <span class="tiny">After building cards, add evidence notes and sort each claim.</span>
+      </label>
+
+      <div class="button-grid">
+        <button class="primary" id="buildBtn" type="button">Build claim cards</button>
+        <button id="sampleBtn" type="button">Load sample content</button>
+        <button id="addBtn" type="button">Add blank claim</button>
+        <button class="warn" id="clearBtn" type="button">Clear board</button>
+      </div>
+    </section>
+
+    <section class="card score-wrap">
+      <h2 class="section-title">Proof score</h2>
+      <div class="score-top">
+        <div class="score-number"><span id="score">0</span>/100</div>
+        <div class="meter" aria-label="Proof score meter">
+          <div class="meter-fill" id="meterFill"></div>
+        </div>
+      </div>
+      <div class="chips">
+        <span class="chip strong" id="strongCount">Strong proof: 0</span>
+        <span class="chip needs" id="needsCount">Needs source: 0</span>
+        <span class="chip cut" id="cutCount">Cut: 0</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="section-title">Claim cards</h2>
+      <div id="claimsList"></div>
+      <p class="tiny" id="claimHelp">No claim cards yet.</p>
+    </section>
+
+    <section class="card">
+      <h2 class="section-title">Unsupported-claim warnings</h2>
+      <ul class="warnings" id="warnings"></ul>
+    </section>
+
+    <section class="card">
+      <h2 class="section-title">Revision checklist</h2>
+      <textarea class="output" id="checklist" readonly placeholder="Your revision checklist will appear here after you build or edit claim cards."></textarea>
+      <div class="button-grid">
+        <button class="primary" id="copyBtn" type="button">Copy checklist</button>
+        <button id="downloadBtn" type="button">Download checklist</button>
+      </div>
+      <p class="tiny" id="copyStatus" aria-live="polite"></p>
+    </section>
+
+    <div class="footer-note">Offline one-file tool. Autosaves in this browser only.</div>
+  </main>
+
+  <script>
+    const headlineEl = document.getElementById("headline");
+    const promiseEl = document.getElementById("promise");
+    const bulkClaimsEl = document.getElementById("bulkClaims");
+    const buildBtn = document.getElementById("buildBtn");
+    const sampleBtn = document.getElementById("sampleBtn");
+    const addBtn = document.getElementById("addBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const claimsListEl = document.getElementById("claimsList");
+    const claimHelpEl = document.getElementById("claimHelp");
+    const scoreEl = document.getElementById("score");
+    const meterFillEl = document.getElementById("meterFill");
+    const strongCountEl = document.getElementById("strongCount");
+    const needsCountEl = document.getElementById("needsCount");
+    const cutCountEl = document.getElementById("cutCount");
+    const warningsEl = document.getElementById("warnings");
+    const checklistEl = document.getElementById("checklist");
+    const copyBtn = document.getElementById("copyBtn");
+    const downloadBtn = document.getElementById("downloadBtn");
+    const copyStatusEl = document.getElementById("copyStatus");
+
+    const STORE_KEY = "seo-proof-sort-board-v1";
+
+    let claims = [];
+
+    function makeId() {
+      return "claim-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
+    }
+
+    function cleanLines(text) {
+      return text
+        .split(/\r?\n/)
+        .map(line => line.trim())
+        .filter(Boolean)
+        .slice(0, 6);
+    }
+
+    function statusLabel(status) {
+      if (status === "strong") return "Strong proof";
+      if (status === "needs") return "Needs source";
+      if (status === "cut") return "Cut";
+      return "Needs source";
+    }
+
+    function statusRank(status) {
+      if (status === "strong") return 1;
+      if (status === "needs") return 2;
+      if (status === "cut") return 3;
+      return 4;
+    }
+
+    function updateStateFromInputs() {
+      headlineEl.value = headlineEl.value.trimStart();
+      promiseEl.value = promiseEl.value.trimStart();
+      saveState();
+      analyze();
+    }
+
+    function saveState() {
+      const payload = {
+        headline: headlineEl.value,
+        promise: promiseEl.value,
+        bulkClaims: bulkClaimsEl.value,
+        claims: claims
+      };
+      localStorage.setItem(STORE_KEY, JSON.stringify(payload));
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORE_KEY);
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        headlineEl.value = data.headline || "";
+        promiseEl.value = data.promise || "";
+        bulkClaimsEl.value = data.bulkClaims || "";
+        claims = Array.isArray(data.claims) ? data.claims.slice(0, 6) : [];
+      } catch (err) {
+        claims = [];
+      }
+    }
+
+    function setClaimStatus(id, status) {
+      claims = claims.map(claim => {
+        if (claim.id !== id) return claim;
+        return {
+          id: claim.id,
+          text: claim.text,
+          note: claim.note,
+          status: status
+        };
+      });
+      renderClaims();
+      saveState();
+      analyze();
+    }
+
+    function removeClaim(id) {
+      claims = claims.filter(claim => claim.id !== id);
+      renderClaims();
+      saveState();
+      analyze();
+    }
+
+    function updateClaim(id, field, value) {
+      claims = claims.map(claim => {
+        if (claim.id !== id) return claim;
+        return {
+          id: claim.id,
+          text: field === "text" ? value : claim.text,
+          note: field === "note" ? value : claim.note,
+          status: claim.status
+        };
+      });
+      saveState();
+      analyze();
+    }
+
+    function renderClaims() {
+      claimsListEl.textContent = "";
+
+      if (!claims.length) {
+        claimHelpEl.textContent = "No claim cards yet.";
+        return;
+      }
+
+      claimHelpEl.textContent = "Cards are shown by proof status. Use the buttons on each card to sort.";
+
+      const sortedClaims = claims.slice().sort((a, b) => {
+        const rankDiff = statusRank(a.status) - statusRank(b.status);
+        if (rankDiff !== 0) return rankDiff;
+        return claims.indexOf(a) - claims.indexOf(b);
+      });
+
+      const container = document.createElement("div");
+      container.style.display = "grid";
+      container.style.gap = "10px";
+
+      sortedClaims.forEach((claim, index) => {
+        const card = document.createElement("article");
+        card.className = "claim-card";
+
+        const head = document.createElement("div");
+        head.className = "claim-head";
+
+        const title = document.createElement("div");
+        title.className = "claim-title";
+        title.textContent = "Claim " + (index + 1) + " · " + statusLabel(claim.status);
+
+        const removeButton = document.createElement("button");
+        removeButton.type = "button";
+        removeButton.className = "warn";
+        removeButton.textContent = "Remove";
+        removeButton.addEventListener("click", () => removeClaim(claim.id));
+
+        head.appendChild(title);
+        head.appendChild(removeButton);
+
+        const claimLabel = document.createElement("label");
+        claimLabel.textContent = "Claim text";
+
+        const claimText = document.createElement("textarea");
+        claimText.value = claim.text || "";
+        claimText.placeholder = "Write the claim the article makes.";
+        claimText.addEventListener("input", event => updateClaim(claim.id, "text", event.target.value));
+
+        claimLabel.appendChild(claimText);
+
+        const noteLabel = document.createElement("label");
+        noteLabel.textContent = "Evidence or source note";
+
+        const noteText = document.createElement("textarea");
+        noteText.value = claim.note || "";
+        noteText.placeholder = "Add citation, data point, product test, expert quote, screenshot, internal doc, or reason this should be cut.";
+        noteText.addEventListener("input", event => updateClaim(claim.id, "note", event.target.value));
+
+        noteLabel.appendChild(noteText);
+
+        const statusRow = document.createElement("div");
+        statusRow.className = "status-buttons";
+
+        const strongButton = document.createElement("button");
+        strongButton.type = "button";
+        strongButton.textContent = "Strong proof";
+        if (claim.status === "strong") strongButton.className = "active-strong";
+        strongButton.addEventListener("click", () => setClaimStatus(claim.id, "strong"));
+
+        const needsButton = document.createElement("button");
+        needsButton.type = "button";
+        needsButton.textContent = "Needs source";
+        if (claim.status === "needs") needsButton.className = "active-needs";
+        needsButton.addEventListener("click", () => setClaimStatus(claim.id, "needs"));
+
+        const cutButton = document.createElement("button");
+        cutButton.type = "button";
+        cutButton.textContent = "Cut";
+        if (claim.status === "cut") cutButton.className = "active-cut";
+        cutButton.addEventListener("click", () => setClaimStatus(claim.id, "cut"));
+
+        statusRow.appendChild(strongButton);
+        statusRow.appendChild(needsButton);
+        statusRow.appendChild(cutButton);
+
+        card.appendChild(head);
+        card.appendChild(claimLabel);
+        card.appendChild(noteLabel);
+        card.appendChild(statusRow);
+        container.appendChild(card);
+      });
+
+      claimsListEl.appendChild(container);
+    }
+
+    function buildCardsFromBulk() {
+      const lines = cleanLines(bulkClaimsEl.value);
+      claims = lines.map(line => ({
+        id: makeId(),
+        text: line,
+        note: "",
+        status: "needs"
+      }));
+      renderClaims();
+      saveState();
+      analyze();
+    }
+
+    function addBlankClaim() {
+      if (claims.length >= 6) {
+        copyStatusEl.textContent = "Limit is 6 claims.";
+        return;
+      }
+
+      claims.push({
+        id: makeId(),
+        text: "",
+        note: "",
+        status: "needs"
+      });
+
+      renderClaims();
+      saveState();
+      analyze();
+    }
+
+    function loadSample() {
+      headlineEl.value = "Best Budget Standing Desks for Small Apartments";
+      promiseEl.value = "A practical guide to compact, reliable standing desks under $300, with tradeoffs backed by measurements, user feedback, and warranty details.";
+      bulkClaimsEl.value = [
+        "Compact standing desks can fit in rooms under 100 square feet.",
+        "Most budget standing desks under $300 use two-stage legs.",
+        "Dual-motor desks are always more stable than single-motor desks.",
+        "Warranty length is a useful proxy for expected durability.",
+        "Desktop depth matters more than width for laptop-only setups."
+      ].join("\n");
+
+      claims = [
+        {
+          id: makeId(),
+          text: "Compact standing desks can fit in rooms under 100 square feet.",
+          note: "Use desk footprint measurements and room-layout example.",
+          status: "strong"
+        },
+        {
+          id: makeId(),
+          text: "Most budget standing desks under $300 use two-stage legs.",
+          note: "Needs current product comparison source.",
+          status: "needs"
+        },
+        {
+          id: makeId(),
+          text: "Dual-motor desks are always more stable than single-motor desks.",
+          note: "Too absolute. Stability also depends on frame geometry, weight load, and desktop size.",
+          status: "cut"
+        },
+        {
+          id: makeId(),
+          text: "Warranty length is a useful proxy for expected durability.",
+          note: "Support with warranty table and note limitations.",
+          status: "strong"
+        },
+        {
+          id: makeId(),
+          text: "Desktop depth matters more than width for laptop-only setups.",
+          note: "Needs ergonomic source or soften to a practical buying tip.",
+          status: "needs"
+        }
+      ];
+
+      renderClaims();
+      saveState();
+      analyze();
+    }
+
+    function clearBoard() {
+      headlineEl.value = "";
+      promiseEl.value = "";
+      bulkClaimsEl.value = "";
+      claims = [];
+      renderClaims();
+      saveState();
+      analyze();
+      copyStatusEl.textContent = "Board cleared.";
+    }
+
+    function countWords(text) {
+      return (text.trim().match(/\b[\w'-]+\b/g) || []).length;
+    }
+
+    function hasSourceCue(note) {
+      return /\b(source|cite|citation|study|survey|test|data|measurement|screenshot|quote|expert|interview|report|paper|table|warranty|review|manual|documentation|link|url|according)\b/i.test(note);
+    }
+
+    function hasAbsoluteLanguage(text) {
+      return /\b(always|never|guaranteed|proven|best|only|all|none|every|must|cannot|undeniable|perfect|ultimate)\b/i.test(text);
+    }
+
+    function hasNumber(text) {
+      return /\d/.test(text);
+    }
+
+    function getWarnings() {
+      const warnings = [];
+      const validClaims = claims.filter(claim => claim.text.trim());
+      const strongClaims = validClaims.filter(claim => claim.status === "strong");
+      const needsClaims = validClaims.filter(claim => claim.status === "needs");
+      const cutClaims = validClaims.filter(claim => claim.status === "cut");
+
+      if (!headlineEl.value.trim()) {
+        warnings.push("Add a headline before judging the proof burden.");
+      }
+
+      if (!promiseEl.value.trim()) {
+        warnings.push("Add the reader promise so each claim can be checked against what the article is selling.");
+      }
+
+      if (validClaims.length < 3) {
+        warnings.push("Use at least 3 supporting claims. Fewer than 3 makes the promise hard to validate.");
+      }
+
+      if (validClaims.length > 6) {
+        warnings.push("Use no more than 6 claims for this quick board. Merge minor claims or cut low-value ones.");
+      }
+
+      if (needsClaims.length) {
+        warnings.push(needsClaims.length + " claim(s) still need a source before publishing.");
+      }
+
+      if (cutClaims.length) {
+        warnings.push(cutClaims.length + " claim(s) are marked cut. Remove them or rewrite them as softer, sourced statements.");
+      }
+
+      if (strongClaims.length < 2 && validClaims.length >= 3) {
+        warnings.push("The article has fewer than 2 strong-proof claims. The promise may feel thin.");
+      }
+
+      validClaims.forEach((claim, index) => {
+        const label = "Claim " + (index + 1);
+        const text = claim.text.trim();
+        const note = claim.note.trim();
+
+        if (claim.status === "strong" && !note) {
+          warnings.push(label + " is marked strong proof but has no evidence note.");
+        }
+
+        if (claim.status === "strong" && note && !hasSourceCue(note) && countWords(note) < 8) {
+          warnings.push(label + " may need a more specific proof note.");
+        }
+
+        if (claim.status !== "cut" && hasAbsoluteLanguage(text) && !hasNumber(text)) {
+          warnings.push(label + " uses absolute or high-risk language. Add proof or soften it.");
+        }
+
+        if (claim.status === "needs" && hasAbsoluteLanguage(text)) {
+          warnings.push(label + " combines unsupported status with absolute language.");
+        }
+      });
+
+      const promiseText = promiseEl.value.toLowerCase();
+      if (promiseText.includes("best") && strongClaims.length < 3) {
+        warnings.push("A “best” style promise usually needs stronger comparison evidence.");
+      }
+
+      if (promiseText.includes("data") && strongClaims.length < 2) {
+        warnings.push("A data-backed promise needs multiple claims with concrete evidence.");
+      }
+
+      return warnings;
+    }
+
+    function getScore() {
+      const validClaims = claims.filter(claim => claim.text.trim());
+      if (!validClaims.length) return 0;
+
+      let points = 0;
+
+      validClaims.forEach(claim => {
+        const note = claim.note.trim();
+        if (claim.status === "strong") {
+          points += note ? 100 : 82;
+        } else if (claim.status === "needs") {
+          points += 38;
+        } else if (claim.status === "cut") {
+          points += 10;
+        }
+      });
+
+      let score = Math.round(points / validClaims.length);
+
+      if (!headlineEl.value.trim()) score -= 8;
+      if (!promiseEl.value.trim()) score -= 10;
+      if (validClaims.length < 3) score -= 12;
+      if (validClaims.length > 6) score -= 8;
+
+      const warnings = getWarnings();
+      score -= Math.min(18, warnings.length * 2);
+
+      return Math.max(0, Math.min(100, score));
+    }
+
+    function makeChecklist() {
+      const validClaims = claims.filter(claim => claim.text.trim());
+      const strong = validClaims.filter(claim => claim.status === "strong");
+      const needs = validClaims.filter(claim => claim.status === "needs");
+      const cut = validClaims.filter(claim => claim.status === "cut");
+      const warnings = getWarnings();
+      const score = getScore();
+
+      const lines = [];
+
+      lines.push("SEO Proof Revision Checklist");
+      lines.push("");
+      lines.push("Headline:");
+      lines.push(headlineEl.value.trim() || "[Add headline]");
+      lines.push("");
+      lines.push("Reader promise:");
+      lines.push(promiseEl.value.trim() || "[Add reader promise]");
+      lines.push("");
+      lines.push("Proof score: " + score + "/100");
+      lines.push("");
+
+      lines.push("Keep as strong proof:");
+      if (strong.length) {
+        strong.forEach(claim => {
+          lines.push("- " + claim.text.trim());
+          lines.push("  Evidence note: " + (claim.note.trim() || "[Add exact source, test, quote, data point, or screenshot.]"));
+        });
+      } else {
+        lines.push("- None yet.");
+      }
+      lines.push("");
+
+      lines.push("Needs source before publish:");
+      if (needs.length) {
+        needs.forEach(claim => {
+          lines.push("- " + claim.text.trim());
+          lines.push("  Source needed: " + (claim.note.trim() || "[Find source or soften the claim.]"));
+        });
+      } else {
+        lines.push("- None.");
+      }
+      lines.push("");
+
+      lines.push("Cut or rewrite:");
+      if (cut.length) {
+        cut.forEach(claim => {
+          lines.push("- " + claim.text.trim());
+          lines.push("  Reason: " + (claim.note.trim() || "[Unsupported, too broad, redundant, or not tied to the promise.]"));
+        });
+      } else {
+        lines.push("- None.");
+      }
+      lines.push("");
+
+      lines.push("Warnings:");
+      if (warnings.length) {
+        warnings.forEach(warning => lines.push("- " + warning));
+      } else {
+        lines.push("- No major proof warnings.");
+      }
+      lines.push("");
+
+      lines.push("Next edit pass:");
+      lines.push("1. Remove or soften every cut claim.");
+      lines.push("2. Add citations or concrete evidence for every needs-source claim.");
+      lines.push("3. Keep the headline promise only as strong as the proof allows.");
+      lines.push("4. Make sure the intro does not promise more than the claim set can support.");
+      lines.push("5. Re-run this board after revisions and publish only when weak claims are resolved.");
+
+      return lines.join("\n");
+    }
+
+    function analyze() {
+      const validClaims = claims.filter(claim => claim.text.trim());
+      const strong = validClaims.filter(claim => claim.status === "strong").length;
+      const needs = validClaims.filter(claim => claim.status === "needs").length;
+      const cut = validClaims.filter(claim => claim.status === "cut").length;
+      const score = getScore();
+      const warnings = getWarnings();
+
+      scoreEl.textContent = String(score);
+      meterFillEl.style.width = score + "%";
+      strongCountEl.textContent = "Strong proof: " + strong;
+      needsCountEl.textContent = "Needs source: " + needs;
+      cutCountEl.textContent = "Cut: " + cut;
+
+      warningsEl.textContent = "";
+      if (warnings.length) {
+        warnings.forEach(warning => {
+          const li = document.createElement("li");
+          li.textContent = warning;
+          warningsEl.appendChild(li);
+        });
+      } else {
+        const li = document.createElement("li");
+        li.textContent = "No major proof warnings yet.";
+        warningsEl.appendChild(li);
+      }
+
+      checklistEl.value = makeChecklist();
+    }
+
+    async function copyChecklist() {
+      const text = checklistEl.value || makeChecklist();
+
+      try {
+        await navigator.clipboard.writeText(text);
+        copyStatusEl.textContent = "Checklist copied.";
+      } catch (err) {
+        checklistEl.focus();
+        checklistEl.select();
+        document.execCommand("copy");
+        copyStatusEl.textContent = "Checklist selected and copied if your browser allowed it.";
+      }
+    }
+
+    function downloadChecklist() {
+      const text = checklistEl.value || makeChecklist();
+      const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const base = headlineEl.value.trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "")
+        .slice(0, 48) || "seo-proof-checklist";
+
+      a.href = url;
+      a.download = base + ".txt";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      copyStatusEl.textContent = "Checklist downloaded.";
+    }
+
+    buildBtn.addEventListener("click", buildCardsFromBulk);
+    sampleBtn.addEventListener("click", loadSample);
+    addBtn.addEventListener("click", addBlankClaim);
+    clearBtn.addEventListener("click", clearBoard);
+    copyBtn.addEventListener("click", copyChecklist);
+    downloadBtn.addEventListener("click", downloadChecklist);
+
+    headlineEl.addEventListener("input", updateStateFromInputs);
+    promiseEl.addEventListener("input", updateStateFromInputs);
+    bulkClaimsEl.addEventListener("input", saveState);
+
+    loadState();
+    renderClaims();
+    analyze();
+  </script>
+</body>
+</html>

@@ -1,0 +1,2393 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Reference Fidelity Review Board</title>
+
+    <style>
+
+        :root {
+
+            --bg: #0f0f1a;
+
+            --surface: #1a1a2e;
+
+            --surface-2: #21213a;
+
+            --surface-3: #282845;
+
+            --border: #2a2a45;
+
+            --text: #e0e0e8;
+
+            --text-secondary: #a0a0b8;
+
+            --text-muted: #6b6b80;
+
+            --accent: #4fc3f7;
+
+            --accent-glow: rgba(79, 195, 247, 0.25);
+
+            --red: #ef5350;
+
+            --orange: #ff9800;
+
+            --yellow: #ffc107;
+
+            --lime: #aed581;
+
+            --green: #4caf50;
+
+            --red-bg: rgba(239, 83, 80, 0.12);
+
+            --orange-bg: rgba(255, 152, 0, 0.12);
+
+            --yellow-bg: rgba(255, 193, 7, 0.12);
+
+            --lime-bg: rgba(174, 213, 129, 0.12);
+
+            --green-bg: rgba(76, 175, 80, 0.12);
+
+            --radius-sm: 8px;
+
+            --radius: 12px;
+
+            --radius-lg: 16px;
+
+            --shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+
+            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+            --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+
+            --font-mono: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Fira Code', monospace;
+
+        }
+
+
+
+        * {
+
+            margin: 0;
+
+            padding: 0;
+
+            box-sizing: border-box;
+
+        }
+
+
+
+        html {
+
+            font-size: 15px;
+
+            scroll-behavior: smooth;
+
+        }
+
+
+
+        body {
+
+            font-family: var(--font);
+
+            background: var(--bg);
+
+            color: var(--text);
+
+            min-height: 100vh;
+
+            line-height: 1.5;
+
+            -webkit-font-smoothing: antialiased;
+
+            background-image:
+
+                radial-gradient(ellipse at 20% 10%, rgba(79, 195, 247, 0.04) 0%, transparent 60%),
+
+                radial-gradient(ellipse at 80% 90%, rgba(139, 92, 246, 0.04) 0%, transparent 60%);
+
+        }
+
+
+
+        .header {
+
+            background: var(--surface);
+
+            border-bottom: 1px solid var(--border);
+
+            padding: 0.9rem 1.5rem;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            gap: 1rem;
+
+            flex-wrap: wrap;
+
+            position: sticky;
+
+            top: 0;
+
+            z-index: 50;
+
+            backdrop-filter: blur(12px);
+
+            -webkit-backdrop-filter: blur(12px);
+
+            box-shadow: 0 1px 20px rgba(0, 0, 0, 0.25);
+
+        }
+
+        .header-brand {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 0.6rem;
+
+            font-weight: 700;
+
+            font-size: 1.2rem;
+
+            letter-spacing: 0;
+
+            color: #fff;
+
+        }
+
+        .header-brand .icon {
+
+            width: 36px;
+
+            height: 36px;
+
+            border-radius: 10px;
+
+            background: linear-gradient(135deg, var(--accent), #7c4dff);
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            font-size: 1.2rem;
+
+            box-shadow: 0 4px 16px var(--accent-glow);
+
+        }
+
+        .header-actions {
+
+            display: flex;
+
+            gap: 0.5rem;
+
+            flex-wrap: wrap;
+
+            align-items: center;
+
+        }
+
+        .btn {
+
+            padding: 0.5rem 1rem;
+
+            border-radius: 8px;
+
+            border: 1px solid var(--border);
+
+            background: var(--surface-3);
+
+            color: var(--text);
+
+            cursor: pointer;
+
+            font-size: 0.85rem;
+
+            font-weight: 500;
+
+            transition: var(--transition);
+
+            white-space: nowrap;
+
+            font-family: var(--font);
+
+            display: inline-flex;
+
+            align-items: center;
+
+            gap: 0.4rem;
+
+            user-select: none;
+
+        }
+
+        .btn:hover {
+
+            background: var(--surface-2);
+
+            border-color: #4a4a6a;
+
+            transform: translateY(-1px);
+
+        }
+
+        .btn:active {
+
+            transform: scale(0.97);
+
+            transition: 0.08s;
+
+        }
+
+        .btn.primary {
+
+            background: var(--accent);
+
+            color: #0a0a18;
+
+            border-color: var(--accent);
+
+            font-weight: 600;
+
+            box-shadow: 0 4px 18px var(--accent-glow);
+
+        }
+
+        .btn.primary:hover {
+
+            background: #5ecbf7;
+
+            box-shadow: 0 6px 24px rgba(79, 195, 247, 0.35);
+
+        }
+
+        .btn.ghost {
+
+            background: transparent;
+
+            border-color: transparent;
+
+            color: var(--text-secondary);
+
+        }
+
+        .btn.ghost:hover {
+
+            background: rgba(255, 255, 255, 0.04);
+
+            border-color: transparent;
+
+            color: var(--text);
+
+        }
+
+        .btn.danger-ghost {
+
+            background: transparent;
+
+            border-color: transparent;
+
+            color: #ef5350;
+
+            opacity: 0.7;
+
+        }
+
+        .btn.danger-ghost:hover {
+
+            opacity: 1;
+
+            background: rgba(239, 83, 80, 0.08);
+
+        }
+
+        .save-indicator {
+
+            font-size: 0.75rem;
+
+            color: var(--text-muted);
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 0.35rem;
+
+            padding: 0.4rem 0.7rem;
+
+            border-radius: 20px;
+
+            background: var(--surface-2);
+
+            transition: var(--transition);
+
+        }
+
+        .save-indicator.saved {
+
+            color: #aed581;
+
+        }
+
+        .save-dot {
+
+            width: 7px;
+
+            height: 7px;
+
+            border-radius: 50%;
+
+            background: currentColor;
+
+            transition: var(--transition);
+
+        }
+
+
+
+        .main-container {
+
+            display: grid;
+
+            grid-template-columns: 1fr 1fr;
+
+            gap: 1.25rem;
+
+            padding: 1.25rem;
+
+            max-width: 1500px;
+
+            margin: 0 auto;
+
+        }
+
+        @media (max-width: 1100px) {
+
+            .main-container {
+
+                grid-template-columns: 1fr;
+
+                max-width: 700px;
+
+            }
+
+        }
+
+        @media (max-width: 500px) {
+
+            .main-container {
+
+                padding: 0.75rem;
+
+                gap: 0.75rem;
+
+            }
+
+            .header {
+
+                padding: 0.7rem 0.8rem;
+
+            }
+
+            .header-brand {
+
+                font-size: 1rem;
+
+            }
+
+            .btn {
+
+                padding: 0.4rem 0.7rem;
+
+                font-size: 0.78rem;
+
+            }
+
+        }
+
+
+
+        .panel {
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 1rem;
+
+        }
+
+        .card {
+
+            background: var(--surface);
+
+            border: 1px solid var(--border);
+
+            border-radius: var(--radius-lg);
+
+            padding: 1.2rem 1.3rem;
+
+            box-shadow: var(--shadow);
+
+            transition: var(--transition);
+
+        }
+
+        .card:hover {
+
+            box-shadow: var(--shadow-lg);
+
+        }
+
+        .card-header {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 0.5rem;
+
+            margin-bottom: 0.85rem;
+
+            font-weight: 600;
+
+            font-size: 0.9rem;
+
+            letter-spacing: 0.02em;
+
+            color: var(--text-secondary);
+
+            text-transform: uppercase;
+
+        }
+
+        .card-header .dot {
+
+            width: 9px;
+
+            height: 9px;
+
+            border-radius: 50%;
+
+            flex-shrink: 0;
+
+        }
+
+        .card-header .dot.accent {
+
+            background: var(--accent);
+
+            box-shadow: 0 0 8px var(--accent-glow);
+
+        }
+
+        .card-header .dot.purple {
+
+            background: #b388ff;
+
+            box-shadow: 0 0 8px rgba(179, 136, 255, 0.3);
+
+        }
+
+        .card-header .dot.pink {
+
+            background: #f48fb1;
+
+            box-shadow: 0 0 8px rgba(244, 143, 177, 0.3);
+
+        }
+
+
+
+        textarea,
+
+        input[type="text"] {
+
+            width: 100%;
+
+            background: var(--surface-2);
+
+            border: 1px solid var(--border);
+
+            border-radius: var(--radius);
+
+            padding: 0.75rem 0.85rem;
+
+            color: var(--text);
+
+            font-family: var(--font);
+
+            font-size: 0.9rem;
+
+            resize: vertical;
+
+            transition: var(--transition);
+
+            line-height: 1.5;
+
+        }
+
+        textarea:focus,
+
+        input[type="text"]:focus {
+
+            outline: none;
+
+            border-color: var(--accent);
+
+            box-shadow: 0 0 0 3px rgba(79, 195, 247, 0.08);
+
+            background: #1e1e38;
+
+        }
+
+        textarea::placeholder,
+
+        input[type="text"]::placeholder {
+
+            color: var(--text-muted);
+
+            opacity: 0.6;
+
+        }
+
+        textarea {
+
+            min-height: 90px;
+
+        }
+
+        textarea.tall {
+
+            min-height: 130px;
+
+        }
+
+        textarea.short {
+
+            min-height: 60px;
+
+        }
+
+        label {
+
+            font-size: 0.8rem;
+
+            font-weight: 600;
+
+            color: var(--text-secondary);
+
+            margin-bottom: 0.35rem;
+
+            display: block;
+
+            letter-spacing: 0.02em;
+
+        }
+
+
+
+        .score-tiles {
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 0.7rem;
+
+        }
+
+        .score-tile {
+
+            background: var(--surface);
+
+            border: 1px solid var(--border);
+
+            border-radius: var(--radius);
+
+            padding: 1rem 1.15rem;
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 1rem;
+
+            transition: var(--transition);
+
+            cursor: default;
+
+            position: relative;
+
+            overflow: hidden;
+
+        }
+
+        .score-tile::before {
+
+            content: '';
+
+            position: absolute;
+
+            left: 0;
+
+            top: 0;
+
+            bottom: 0;
+
+            width: 4px;
+
+            border-radius: 0 3px 3px 0;
+
+            transition: var(--transition);
+
+        }
+
+        .score-tile.score-0::before {
+
+            background: var(--border);
+
+        }
+
+        .score-tile.score-1::before {
+
+            background: var(--red);
+
+            box-shadow: 0 0 10px rgba(239, 83, 80, 0.4);
+
+        }
+
+        .score-tile.score-2::before {
+
+            background: var(--orange);
+
+            box-shadow: 0 0 10px rgba(255, 152, 0, 0.4);
+
+        }
+
+        .score-tile.score-3::before {
+
+            background: var(--yellow);
+
+            box-shadow: 0 0 10px rgba(255, 193, 7, 0.4);
+
+        }
+
+        .score-tile.score-4::before {
+
+            background: var(--lime);
+
+            box-shadow: 0 0 10px rgba(174, 213, 129, 0.4);
+
+        }
+
+        .score-tile.score-5::before {
+
+            background: var(--green);
+
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.4);
+
+        }
+
+        .score-tile-info {
+
+            flex: 1;
+
+            min-width: 0;
+
+        }
+
+        .score-tile-label {
+
+            font-weight: 700;
+
+            font-size: 0.9rem;
+
+            letter-spacing: 0.01em;
+
+            color: #fff;
+
+        }
+
+        .score-tile-sub {
+
+            font-size: 0.72rem;
+
+            color: var(--text-muted);
+
+            margin-top: 0.15rem;
+
+        }
+
+        .score-dots {
+
+            display: flex;
+
+            gap: 0.45rem;
+
+            flex-shrink: 0;
+
+        }
+
+        .score-dot {
+
+            width: 28px;
+
+            height: 28px;
+
+            border-radius: 50%;
+
+            border: 2px solid var(--border);
+
+            background: var(--surface-2);
+
+            cursor: pointer;
+
+            transition: var(--transition);
+
+            position: relative;
+
+            flex-shrink: 0;
+
+        }
+
+        .score-dot:hover {
+
+            border-color: #6a6a8a;
+
+            transform: scale(1.1);
+
+        }
+
+        .score-dot:active {
+
+            transform: scale(0.9);
+
+            transition: 0.06s;
+
+        }
+
+        .score-dot.active {
+
+            border-color: transparent;
+
+            transform: scale(1.05);
+
+        }
+
+        .score-dot.active.lvl-1 {
+
+            background: var(--red);
+
+            box-shadow: 0 0 12px rgba(239, 83, 80, 0.5);
+
+        }
+
+        .score-dot.active.lvl-2 {
+
+            background: var(--orange);
+
+            box-shadow: 0 0 12px rgba(255, 152, 0, 0.5);
+
+        }
+
+        .score-dot.active.lvl-3 {
+
+            background: var(--yellow);
+
+            box-shadow: 0 0 12px rgba(255, 193, 7, 0.5);
+
+        }
+
+        .score-dot.active.lvl-4 {
+
+            background: var(--lime);
+
+            box-shadow: 0 0 12px rgba(174, 213, 129, 0.5);
+
+        }
+
+        .score-dot.active.lvl-5 {
+
+            background: var(--green);
+
+            box-shadow: 0 0 12px rgba(76, 175, 80, 0.5);
+
+        }
+
+        .score-value-badge {
+
+            font-weight: 800;
+
+            font-size: 1.3rem;
+
+            min-width: 38px;
+
+            text-align: center;
+
+            color: #fff;
+
+            flex-shrink: 0;
+
+        }
+
+
+
+        .constraint-grid {
+
+            display: grid;
+
+            grid-template-columns: 1fr 1fr;
+
+            gap: 0.75rem;
+
+        }
+
+        @media (max-width: 500px) {
+
+            .constraint-grid {
+
+                grid-template-columns: 1fr;
+
+            }
+
+        }
+
+
+
+        .checklist {
+
+            display: grid;
+
+            grid-template-columns: 1fr 1fr;
+
+            gap: 0.4rem 1rem;
+
+        }
+
+        @media (max-width: 600px) {
+
+            .checklist {
+
+                grid-template-columns: 1fr;
+
+            }
+
+        }
+
+        .checklist-item {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 0.55rem;
+
+            padding: 0.5rem 0.65rem;
+
+            border-radius: 8px;
+
+            cursor: pointer;
+
+            transition: var(--transition);
+
+            user-select: none;
+
+            background: var(--surface-2);
+
+            border: 1px solid transparent;
+
+        }
+
+        .checklist-item:hover {
+
+            background: var(--surface-3);
+
+            border-color: var(--border);
+
+        }
+
+        .checklist-item.checked {
+
+            background: rgba(76, 175, 80, 0.08);
+
+            border-color: rgba(76, 175, 80, 0.2);
+
+        }
+
+        .check-box {
+
+            width: 22px;
+
+            height: 22px;
+
+            border-radius: 6px;
+
+            border: 2px solid var(--border);
+
+            flex-shrink: 0;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            transition: var(--transition);
+
+            font-size: 0.7rem;
+
+            background: var(--surface-3);
+
+        }
+
+        .checklist-item.checked .check-box {
+
+            background: var(--green);
+
+            border-color: var(--green);
+
+            color: #0a0a18;
+
+        }
+
+        .checklist-label {
+
+            font-size: 0.83rem;
+
+            color: var(--text);
+
+            transition: var(--transition);
+
+        }
+
+        .checklist-item.checked .checklist-label {
+
+            color: #c8e6c9;
+
+        }
+
+
+
+        .handoff-output {
+
+            background: #0a0a16;
+
+            border: 1px solid var(--border);
+
+            border-radius: var(--radius);
+
+            padding: 1rem 1.2rem;
+
+            font-family: var(--font-mono);
+
+            font-size: 0.78rem;
+
+            color: #c0c0d0;
+
+            white-space: pre-wrap;
+
+            max-height: 420px;
+
+            overflow-y: auto;
+
+            line-height: 1.6;
+
+            min-height: 80px;
+
+            letter-spacing: 0.01em;
+
+            tab-size: 2;
+
+        }
+
+        .handoff-output:empty::after {
+
+            content: 'Your compiled handoff will appear here...';
+
+            color: var(--text-muted);
+
+            font-style: italic;
+
+        }
+
+
+
+        .toast {
+
+            position: fixed;
+
+            bottom: 2rem;
+
+            left: 50%;
+
+            transform: translateX(-50%) translateY(120px);
+
+            background: #2e2e48;
+
+            color: #fff;
+
+            padding: 0.7rem 1.4rem;
+
+            border-radius: 30px;
+
+            font-weight: 600;
+
+            font-size: 0.85rem;
+
+            z-index: 999;
+
+            pointer-events: none;
+
+            transition: transform 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
+
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+
+            border: 1px solid var(--border);
+
+        }
+
+        .toast.show {
+
+            transform: translateX(-50%) translateY(0);
+
+        }
+
+        .toast.success {
+
+            background: #1b3a2d;
+
+            border-color: #4caf50;
+
+            color: #a5d6a7;
+
+        }
+
+
+
+        ::-webkit-scrollbar {
+
+            width: 6px;
+
+            height: 6px;
+
+        }
+
+        ::-webkit-scrollbar-track {
+
+            background: transparent;
+
+        }
+
+        ::-webkit-scrollbar-thumb {
+
+            background: #3a3a55;
+
+            border-radius: 10px;
+
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+
+            background: #4a4a65;
+
+        }
+
+
+
+        .divider {
+
+            border: none;
+
+            border-top: 1px solid var(--border);
+
+            margin: 0.3rem 0;
+
+        }
+
+        .overall-badge {
+
+            display: inline-flex;
+
+            align-items: center;
+
+            gap: 0.4rem;
+
+            padding: 0.5rem 1rem;
+
+            border-radius: 20px;
+
+            font-weight: 700;
+
+            font-size: 0.9rem;
+
+            background: var(--surface-3);
+
+            border: 1px solid var(--border);
+
+        }
+
+        .overall-badge.good {
+
+            border-color: #4caf50;
+
+            color: #a5d6a7;
+
+            background: rgba(76, 175, 80, 0.1);
+
+        }
+
+        .overall-badge.okay {
+
+            border-color: #ff9800;
+
+            color: #ffcc80;
+
+            background: rgba(255, 152, 0, 0.1);
+
+        }
+
+        .overall-badge.poor {
+
+            border-color: #ef5350;
+
+            color: #ef9a9a;
+
+            background: rgba(239, 83, 80, 0.1);
+
+        }
+
+        .brief-fields-container {
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 0.6rem;
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+
+
+    <header class="header">
+
+        <div class="header-brand">
+
+            <div class="icon">🔍</div>
+
+            <span>Fidelity Review Board</span>
+
+        </div>
+
+        <div class="header-actions">
+
+            <span class="save-indicator" id="saveIndicator">
+
+                <span class="save-dot"></span>
+
+                <span id="saveText">Ready</span>
+
+            </span>
+
+            <button class="btn ghost" id="btnPreview">📋 Preview</button>
+
+            <button class="btn primary" id="btnCopy">📤 Copy Handoff</button>
+
+            <button class="btn danger-ghost" id="btnReset">🗑 Reset</button>
+
+        </div>
+
+    </header>
+
+
+
+    <div class="main-container" id="mainContainer">
+
+        <div class="panel" id="leftPanel">
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <span class="dot accent"></span> Reference Photo / Prompt
+
+                </div>
+
+                <label for="refPrompt">Paste your reference photo description or prompt here</label>
+
+                <textarea class="tall" id="refPrompt" placeholder="Paste or type the reference photo prompt / description here…&#10;&#10;e.g. 'A woman with auburn hair in a red dress, standing by a sunlit window, soft golden hour light, bookshelf background, shallow depth of field…'"></textarea>
+
+            </div>
+
+
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <span class="dot purple"></span> Brief Fields
+
+                </div>
+
+                <label>Pasteable brief fields for quick reference notes</label>
+
+                <div class="brief-fields-container" id="briefFieldsContainer"></div>
+
+                <button class="btn ghost" style="margin-top:0.5rem;font-size:0.75rem;" id="btnAddBrief">＋ Add Brief Field</button>
+
+            </div>
+
+
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <span class="dot pink"></span> Before / After Constraint Notes
+
+                </div>
+
+                <div class="constraint-grid">
+
+                    <div>
+
+                        <label for="beforeNotes">📌 BEFORE — Constraints identified pre-generation</label>
+
+                        <textarea class="short" id="beforeNotes" placeholder="e.g. Must keep hair color exact, no changes to jewelry, keep background blur consistent…"></textarea>
+
+                    </div>
+
+                    <div>
+
+                        <label for="afterNotes">🔍 AFTER — What actually happened / drift observed</label>
+
+                        <textarea class="short" id="afterNotes" placeholder="e.g. Hair shifted slightly warmer, necklace changed, background elements drifted…"></textarea>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="panel" id="rightPanel">
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <span class="dot accent"></span> Fidelity Score Tiles
+
+                </div>
+
+                <div class="score-tiles" id="scoreTilesContainer"></div>
+
+                <div style="margin-top:0.8rem;display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+
+                    <span style="font-size:0.78rem;color:var(--text-muted);">Overall:</span>
+
+                    <span class="overall-badge" id="overallBadge">— / 25</span>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <span class="dot purple"></span> No-Drift Anchor Locks
+
+                </div>
+
+                <label>Elements that MUST NOT change across iterations</label>
+
+                <textarea class="short" id="noDriftNotes" placeholder="e.g. Face shape locked, eye color locked, specific prop must remain identical, tattoo on left arm must stay…"></textarea>
+
+                <div style="margin-top:0.6rem;display:flex;gap:0.5rem;flex-wrap:wrap;" id="driftTagContainer"></div>
+
+                <button class="btn ghost" style="margin-top:0.5rem;font-size:0.75rem;" id="btnAddDrift">＋ Pin a Drift Lock</button>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="panel" style="grid-column: 1 / -1;" id="bottomPanel">
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <span class="dot accent"></span> Fidelity Checklist
+
+                </div>
+
+                <div class="checklist" id="checklistContainer"></div>
+
+            </div>
+
+
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <span class="dot purple"></span> Copyable Handoff Summary
+
+                </div>
+
+                <div class="handoff-output" id="handoffOutput"></div>
+
+                <div style="margin-top:0.8rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
+
+                    <button class="btn primary" id="btnCopy2">📤 Copy to Clipboard</button>
+
+                    <button class="btn ghost" id="btnRefreshPreview">🔄 Refresh Preview</button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="toast" id="toast"></div>
+
+
+
+    <script>
+
+        (function() {
+
+            // ─── STATE ──────────────────────────
+
+            const DEFAULT_CHECKLIST = [
+
+                { id: 'face_match', label: 'Face matches reference', checked: false },
+
+                { id: 'body_proportions', label: 'Body proportions correct', checked: false },
+
+                { id: 'lighting_direction', label: 'Lighting direction matches', checked: false },
+
+                { id: 'color_temp', label: 'Color temperature accurate', checked: false },
+
+                { id: 'bg_elements', label: 'Background elements present', checked: false },
+
+                { id: 'no_artifacts', label: 'No unwanted artifacts', checked: false },
+
+                { id: 'clothing_match', label: 'Clothing / outfit matches', checked: false },
+
+                { id: 'expression_match', label: 'Expression matches reference', checked: false },
+
+                { id: 'camera_angle', label: 'Camera angle matches', checked: false },
+
+                { id: 'dof_match', label: 'Depth of field matches', checked: false },
+
+                { id: 'hair_match', label: 'Hair style & color match', checked: false },
+
+                { id: 'skin_tone', label: 'Skin tone consistent', checked: false },
+
+            ];
+
+
+
+            const SCORE_CATEGORIES = [
+
+                { key: 'identity', label: 'Identity', sub: 'Face, features, character recognition', icon: '👤' },
+
+                { key: 'pose', label: 'Pose', sub: 'Body position, gesture, angle', icon: '🧍' },
+
+                { key: 'lighting', label: 'Lighting', sub: 'Direction, quality, color of light', icon: '💡' },
+
+                { key: 'background', label: 'Background', sub: 'Setting, environment, props', icon: '🖼' },
+
+                { key: 'nodrift', label: 'No-Drift', sub: 'Consistency, locked elements preserved', icon: '🔒' },
+
+            ];
+
+
+
+            let state = {
+
+                refPrompt: '',
+
+                briefFields: ['', '', ''],
+
+                beforeNotes: '',
+
+                afterNotes: '',
+
+                noDriftNotes: '',
+
+                driftTags: [],
+
+                scores: {
+
+                    identity: 0,
+
+                    pose: 0,
+
+                    lighting: 0,
+
+                    background: 0,
+
+                    nodrift: 0,
+
+                },
+
+                checklist: JSON.parse(JSON.stringify(DEFAULT_CHECKLIST)),
+
+            };
+
+
+
+            // ─── DOM ELEMENTS ──────────────────
+
+            const $refPrompt = document.getElementById('refPrompt');
+
+            const $beforeNotes = document.getElementById('beforeNotes');
+
+            const $afterNotes = document.getElementById('afterNotes');
+
+            const $noDriftNotes = document.getElementById('noDriftNotes');
+
+            const $briefFieldsContainer = document.getElementById('briefFieldsContainer');
+
+            const $scoreTilesContainer = document.getElementById('scoreTilesContainer');
+
+            const $checklistContainer = document.getElementById('checklistContainer');
+
+            const $handoffOutput = document.getElementById('handoffOutput');
+
+            const $overallBadge = document.getElementById('overallBadge');
+
+            const $saveIndicator = document.getElementById('saveIndicator');
+
+            const $saveText = document.getElementById('saveText');
+
+            const $toast = document.getElementById('toast');
+
+            const $driftTagContainer = document.getElementById('driftTagContainer');
+
+
+
+            // ─── LOCAL STORAGE ──────────────────
+
+            function loadState() {
+
+                try {
+
+                    const raw = localStorage.getItem('fidelity-review-board-state');
+
+                    if (raw) {
+
+                        const parsed = JSON.parse(raw);
+
+                        state.refPrompt = parsed.refPrompt || '';
+
+                        state.briefFields = Array.isArray(parsed.briefFields) ? parsed.briefFields : ['', '', ''];
+
+                        state.beforeNotes = parsed.beforeNotes || '';
+
+                        state.afterNotes = parsed.afterNotes || '';
+
+                        state.noDriftNotes = parsed.noDriftNotes || '';
+
+                        state.driftTags = Array.isArray(parsed.driftTags) ? parsed.driftTags : [];
+
+                        if (parsed.scores && typeof parsed.scores === 'object') {
+
+                            for (const cat of SCORE_CATEGORIES) {
+
+                                state.scores[cat.key] = typeof parsed.scores[cat.key] === 'number' ?
+
+                                    Math.max(0, Math.min(5, parsed.scores[cat.key])) : 0;
+
+                            }
+
+                        }
+
+                        if (Array.isArray(parsed.checklist)) {
+
+                            const savedMap = {};
+
+                            parsed.checklist.forEach(item => { savedMap[item.id] = item.checked; });
+
+                            state.checklist = DEFAULT_CHECKLIST.map(item => ({
+
+                                ...item,
+
+                                checked: savedMap[item.id] === true,
+
+                            }));
+
+                        }
+
+                    }
+
+                } catch (e) {
+
+                    console.warn('Failed to load state:', e);
+
+                }
+
+            }
+
+
+
+            function saveState() {
+
+                try {
+
+                    const toSave = {
+
+                        refPrompt: state.refPrompt,
+
+                        briefFields: state.briefFields,
+
+                        beforeNotes: state.beforeNotes,
+
+                        afterNotes: state.afterNotes,
+
+                        noDriftNotes: state.noDriftNotes,
+
+                        driftTags: state.driftTags,
+
+                        scores: state.scores,
+
+                        checklist: state.checklist,
+
+                        savedAt: new Date().toISOString(),
+
+                    };
+
+                    localStorage.setItem('fidelity-review-board-state', JSON.stringify(toSave));
+
+                    showSaveIndicator(true);
+
+                    return true;
+
+                } catch (e) {
+
+                    showSaveIndicator(false);
+
+                    return false;
+
+                }
+
+            }
+
+
+
+            function showSaveIndicator(saved) {
+
+                if (saved) {
+
+                    $saveIndicator.classList.add('saved');
+
+                    $saveText.textContent = 'Saved';
+
+                    setTimeout(() => {
+
+                        $saveIndicator.classList.remove('saved');
+
+                        $saveText.textContent = 'Ready';
+
+                    }, 1800);
+
+                } else {
+
+                    $saveIndicator.classList.remove('saved');
+
+                    $saveText.textContent = 'Storage full';
+
+                }
+
+            }
+
+
+
+            // ─── SAFE DOM HELPERS ──────────────
+
+            function createElement(tag, classes, attrs, text) {
+
+                const el = document.createElement(tag);
+
+                if (classes) el.className = classes;
+
+                if (attrs) {
+
+                    for (const [k, v] of Object.entries(attrs)) {
+
+                        if (k === 'style' && typeof v === 'string') el.style.cssText = v;
+
+                        else if (k.startsWith('data-')) el.setAttribute(k, v);
+
+                        else el.setAttribute(k, v);
+
+                    }
+
+                }
+
+                if (text !== undefined && text !== null) el.textContent = text;
+
+                return el;
+
+            }
+
+
+
+            // ─── BUILD UI ──────────────────────
+
+            function buildScoreTiles() {
+
+                $scoreTilesContainer.innerHTML = ''; // clear existing (safe, no user data)
+
+                SCORE_CATEGORIES.forEach(cat => {
+
+                    const score = state.scores[cat.key] || 0;
+
+                    const tile = createElement('div', `score-tile score-${score}`);
+
+                    // left bar is painted via ::before pseudo, so we just set class
+
+
+
+                    const infoDiv = createElement('div', 'score-tile-info');
+
+                    const labelDiv = createElement('div', 'score-tile-label', null, `${cat.icon} ${cat.label}`);
+
+                    const subDiv = createElement('div', 'score-tile-sub', null, cat.sub);
+
+                    infoDiv.appendChild(labelDiv);
+
+                    infoDiv.appendChild(subDiv);
+
+
+
+                    const dotsWrapper = createElement('div', 'score-dots', { 'data-category': cat.key });
+
+                    for (let n = 1; n <= 5; n++) {
+
+                        const dot = createElement('div', `score-dot ${n <= score ? 'active lvl-'+n : ''}`, { 'data-value': n, 'title': `Score ${n}/5` });
+
+                        dot.addEventListener('click', function(e) {
+
+                            e.stopPropagation();
+
+                            const value = parseInt(this.getAttribute('data-value'));
+
+                            const category = this.closest('.score-dots').getAttribute('data-category');
+
+                            if (category && value >= 1 && value <= 5) {
+
+                                if (state.scores[category] === value) {
+
+                                    state.scores[category] = 0;
+
+                                } else {
+
+                                    state.scores[category] = value;
+
+                                }
+
+                                buildScoreTiles();
+
+                                updateOverallBadge();
+
+                                saveState();
+
+                                updateHandoffOutput();
+
+                            }
+
+                        });
+
+                        dotsWrapper.appendChild(dot);
+
+                    }
+
+
+
+                    const badge = createElement('div', 'score-value-badge', null, score > 0 ? score + '/5' : '—');
+
+
+
+                    tile.appendChild(infoDiv);
+
+                    tile.appendChild(dotsWrapper);
+
+                    tile.appendChild(badge);
+
+                    $scoreTilesContainer.appendChild(tile);
+
+                });
+
+            }
+
+
+
+            function buildChecklist() {
+
+                $checklistContainer.innerHTML = '';
+
+                state.checklist.forEach((item, index) => {
+
+                    const itemDiv = createElement('div', `checklist-item ${item.checked ? 'checked' : ''}`);
+
+                    const box = createElement('div', 'check-box', null, item.checked ? '✓' : '');
+
+                    const label = createElement('span', 'checklist-label', null, item.label);
+
+                    itemDiv.appendChild(box);
+
+                    itemDiv.appendChild(label);
+
+                    itemDiv.addEventListener('click', () => {
+
+                        state.checklist[index].checked = !state.checklist[index].checked;
+
+                        buildChecklist();
+
+                        saveState();
+
+                        updateHandoffOutput();
+
+                    });
+
+                    $checklistContainer.appendChild(itemDiv);
+
+                });
+
+            }
+
+
+
+            function buildBriefFields() {
+
+                $briefFieldsContainer.innerHTML = '';
+
+                state.briefFields.forEach((val, i) => {
+
+                    const wrapper = createElement('div', '', { style: 'display:flex; gap:0.4rem; align-items:center;' });
+
+                    const input = createElement('input', 'brief-field', { type: 'text', placeholder: `Brief field #${i + 1}`, 'data-brief-index': i });
+
+                    input.value = val;
+
+                    input.addEventListener('input', function() {
+
+                        const idx = parseInt(this.getAttribute('data-brief-index'));
+
+                        if (!isNaN(idx) && idx >= 0 && idx < state.briefFields.length) {
+
+                            state.briefFields[idx] = this.value;
+
+                            saveState();
+
+                            updateHandoffOutput();
+
+                        }
+
+                    });
+
+                    wrapper.appendChild(input);
+
+
+
+                    if (i >= 3) {
+
+                        const removeBtn = createElement('button', 'btn danger-ghost', { style: 'padding:0.25rem 0.5rem; font-size:0.7rem;' }, '✕');
+
+                        removeBtn.addEventListener('click', () => {
+
+                            state.briefFields.splice(i, 1);
+
+                            buildBriefFields();
+
+                            saveState();
+
+                            updateHandoffOutput();
+
+                        });
+
+                        wrapper.appendChild(removeBtn);
+
+                    }
+
+                    $briefFieldsContainer.appendChild(wrapper);
+
+                });
+
+            }
+
+
+
+            function buildDriftTags() {
+
+                $driftTagContainer.innerHTML = '';
+
+                state.driftTags.forEach((tag, i) => {
+
+                    const tagEl = createElement('span', '', { style: 'display:inline-flex;align-items:center;gap:0.35rem;padding:0.35rem 0.7rem;border-radius:20px;background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.3);font-size:0.78rem;color:#d1c4e9;font-weight:500;' });
+
+                    const textNode = document.createTextNode(`🔒 ${tag} `);
+
+                    const removeSpan = createElement('span', '', { style: 'cursor:pointer;opacity:0.6;font-weight:700;' }, '✕');
+
+                    removeSpan.addEventListener('click', (e) => {
+
+                        e.stopPropagation();
+
+                        state.driftTags.splice(i, 1);
+
+                        buildDriftTags();
+
+                        saveState();
+
+                        updateHandoffOutput();
+
+                    });
+
+                    tagEl.appendChild(textNode);
+
+                    tagEl.appendChild(removeSpan);
+
+                    $driftTagContainer.appendChild(tagEl);
+
+                });
+
+            }
+
+
+
+            function updateOverallBadge() {
+
+                let total = 0;
+
+                SCORE_CATEGORIES.forEach(cat => { total += state.scores[cat.key] || 0; });
+
+                const max = SCORE_CATEGORIES.length * 5;
+
+                const pct = max > 0 ? Math.round((total / max) * 100) : 0;
+
+                $overallBadge.textContent = `${total} / ${max}  (${pct}%)`;
+
+                $overallBadge.classList.remove('good', 'okay', 'poor');
+
+                if (pct >= 70) $overallBadge.classList.add('good');
+
+                else if (pct >= 40) $overallBadge.classList.add('okay');
+
+                else if (total > 0) $overallBadge.classList.add('poor');
+
+            }
+
+
+
+            function updateHandoffOutput() {
+
+                const text = generateHandoffText();
+
+                $handoffOutput.textContent = text;
+
+            }
+
+
+
+            // ─── HANGOFF TEXT ──────────────────
+
+            function generateHandoffText() {
+
+                const lines = [];
+
+                lines.push('═══════════════════════════════════');
+
+                lines.push('  REFERENCE FIDELITY REVIEW HANDOFF');
+
+                lines.push('═══════════════════════════════════');
+
+                lines.push('');
+
+                const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+
+                const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+                lines.push(`📅 Date: ${dateStr}`);
+
+                lines.push(`🕐 Time: ${timeStr}`);
+
+                lines.push('');
+
+
+
+                if (state.refPrompt.trim()) {
+
+                    lines.push('─── REFERENCE PROMPT ───');
+
+                    lines.push(state.refPrompt.trim());
+
+                    lines.push('');
+
+                }
+
+
+
+                const filledBriefs = state.briefFields.filter(f => f.trim());
+
+                if (filledBriefs.length > 0) {
+
+                    lines.push('─── BRIEF FIELDS ───');
+
+                    filledBriefs.forEach((f, i) => {
+
+                        lines.push(`  [${i + 1}] ${f.trim()}`);
+
+                    });
+
+                    lines.push('');
+
+                }
+
+
+
+                lines.push('─── FIDELITY SCORES ───');
+
+                let totalScore = 0;
+
+                const maxScore = SCORE_CATEGORIES.length * 5;
+
+                SCORE_CATEGORIES.forEach(cat => {
+
+                    const s = state.scores[cat.key] || 0;
+
+                    totalScore += s;
+
+                    const bar = '█'.repeat(s) + '░'.repeat(5 - s);
+
+                    lines.push(`  ${cat.icon} ${cat.label.padEnd(14)} [${bar}]  ${s}/5`);
+
+                });
+
+                const pct = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
+
+                lines.push(`  ═══════════════════════════`);
+
+                lines.push(`  OVERALL: ${totalScore}/${maxScore}  (${pct}%)  ${pct >= 70 ? '✅' : pct >= 40 ? '⚠️' : '❌'}`);
+
+                lines.push('');
+
+
+
+                if (state.noDriftNotes.trim() || state.driftTags.length > 0) {
+
+                    lines.push('─── NO-DRIFT ANCHOR LOCKS ───');
+
+                    if (state.noDriftNotes.trim()) {
+
+                        lines.push(`  Notes: ${state.noDriftNotes.trim()}`);
+
+                    }
+
+                    if (state.driftTags.length > 0) {
+
+                        lines.push('  Pinned Locks:');
+
+                        state.driftTags.forEach(tag => { lines.push(`    🔒 ${tag}`); });
+
+                    }
+
+                    lines.push('');
+
+                }
+
+
+
+                if (state.beforeNotes.trim() || state.afterNotes.trim()) {
+
+                    lines.push('─── CONSTRAINT NOTES ───');
+
+                    if (state.beforeNotes.trim()) {
+
+                        lines.push(`  📌 BEFORE: ${state.beforeNotes.trim()}`);
+
+                    }
+
+                    if (state.afterNotes.trim()) {
+
+                        lines.push(`  🔍 AFTER:  ${state.afterNotes.trim()}`);
+
+                    }
+
+                    lines.push('');
+
+                }
+
+
+
+                lines.push('─── FIDELITY CHECKLIST ───');
+
+                state.checklist.forEach(item => {
+
+                    const icon = item.checked ? '✅' : '⬜';
+
+                    lines.push(`  ${icon}  ${item.label}`);
+
+                });
+
+                const checkedCount = state.checklist.filter(i => i.checked).length;
+
+                const totalItems = state.checklist.length;
+
+                lines.push(`  ─────────────────────────`);
+
+                lines.push(`  ${checkedCount}/${totalItems} items passed`);
+
+                lines.push('');
+
+
+
+                lines.push('═══════════════════════════════════');
+
+                lines.push('  END OF HANDOFF');
+
+                lines.push('═══════════════════════════════════');
+
+
+
+                return lines.join('\n');
+
+            }
+
+
+
+            async function copyHandoffToClipboard() {
+
+                const text = generateHandoffText();
+
+                try {
+
+                    await navigator.clipboard.writeText(text);
+
+                    showToast('✅ Handoff copied to clipboard!', 'success');
+
+                } catch (err) {
+
+                    const ta = document.createElement('textarea');
+
+                    ta.value = text;
+
+                    ta.style.position = 'fixed';
+
+                    ta.style.opacity = '0';
+
+                    document.body.appendChild(ta);
+
+                    ta.select();
+
+                    try {
+
+                        document.execCommand('copy');
+
+                        showToast('✅ Handoff copied!', 'success');
+
+                    } catch (e) {
+
+                        showToast('⚠️ Failed to copy. Please select the text manually.', '');
+
+                    }
+
+                    document.body.removeChild(ta);
+
+                }
+
+            }
+
+
+
+            // ─── TOAST ─────────────────────────
+
+            let toastTimeout;
+
+            function showToast(msg, type) {
+
+                clearTimeout(toastTimeout);
+
+                $toast.textContent = msg;
+
+                $toast.className = 'toast ' + (type || '');
+
+                requestAnimationFrame(() => {
+
+                    $toast.classList.add('show');
+
+                });
+
+                toastTimeout = setTimeout(() => {
+
+                    $toast.classList.remove('show');
+
+                }, 2200);
+
+            }
+
+
+
+            // ─── USER ACTIONS ──────────────────
+
+            function addBriefField() {
+
+                state.briefFields.push('');
+
+                buildBriefFields();
+
+                saveState();
+
+                updateHandoffOutput();
+
+                const inputs = $briefFieldsContainer.querySelectorAll('input.brief-field');
+
+                if (inputs.length > 0) inputs[inputs.length - 1].focus();
+
+            }
+
+
+
+            function addDriftTag() {
+
+                const tag = prompt('Enter a drift-lock tag (e.g. "Face shape", "Eye color", "Tattoo placement"):');
+
+                if (tag && tag.trim()) {
+
+                    state.driftTags.push(tag.trim());
+
+                    buildDriftTags();
+
+                    saveState();
+
+                    updateHandoffOutput();
+
+                }
+
+            }
+
+
+
+            function resetAll() {
+
+                if (confirm('Are you sure you want to reset ALL data?\n\nThis will clear all scores, notes, checklist items, and brief fields. This cannot be undone.')) {
+
+                    state = {
+
+                        refPrompt: '',
+
+                        briefFields: ['', '', ''],
+
+                        beforeNotes: '',
+
+                        afterNotes: '',
+
+                        noDriftNotes: '',
+
+                        driftTags: [],
+
+                        scores: {
+
+                            identity: 0,
+
+                            pose: 0,
+
+                            lighting: 0,
+
+                            background: 0,
+
+                            nodrift: 0,
+
+                        },
+
+                        checklist: JSON.parse(JSON.stringify(DEFAULT_CHECKLIST)),
+
+                    };
+
+                    syncAllUI();
+
+                    saveState();
+
+                    updateHandoffOutput();
+
+                    showToast('🔄 All data has been reset.', '');
+
+                }
+
+            }
+
+
+
+            function syncAllUI() {
+
+                $refPrompt.value = state.refPrompt;
+
+                $beforeNotes.value = state.beforeNotes;
+
+                $afterNotes.value = state.afterNotes;
+
+                $noDriftNotes.value = state.noDriftNotes;
+
+                buildBriefFields();
+
+                buildScoreTiles();
+
+                buildChecklist();
+
+                buildDriftTags();
+
+                updateOverallBadge();
+
+                updateHandoffOutput();
+
+            }
+
+
+
+            // ─── EVENT LISTENERS (no inline handlers) ───
+
+            document.getElementById('btnPreview').addEventListener('click', updateHandoffOutput);
+
+            document.getElementById('btnCopy').addEventListener('click', copyHandoffToClipboard);
+
+            document.getElementById('btnCopy2').addEventListener('click', copyHandoffToClipboard);
+
+            document.getElementById('btnRefreshPreview').addEventListener('click', updateHandoffOutput);
+
+            document.getElementById('btnReset').addEventListener('click', resetAll);
+
+            document.getElementById('btnAddBrief').addEventListener('click', addBriefField);
+
+            document.getElementById('btnAddDrift').addEventListener('click', addDriftTag);
+
+
+
+            $refPrompt.addEventListener('input', function() {
+
+                state.refPrompt = this.value;
+
+                saveState();
+
+                updateHandoffOutput();
+
+            });
+
+            $beforeNotes.addEventListener('input', function() {
+
+                state.beforeNotes = this.value;
+
+                saveState();
+
+                updateHandoffOutput();
+
+            });
+
+            $afterNotes.addEventListener('input', function() {
+
+                state.afterNotes = this.value;
+
+                saveState();
+
+                updateHandoffOutput();
+
+            });
+
+            $noDriftNotes.addEventListener('input', function() {
+
+                state.noDriftNotes = this.value;
+
+                saveState();
+
+                updateHandoffOutput();
+
+            });
+
+
+
+            // Keyboard shortcut Ctrl+Shift+C
+
+            document.addEventListener('keydown', function(e) {
+
+                if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+
+                    e.preventDefault();
+
+                    copyHandoffToClipboard();
+
+                }
+
+            });
+
+
+
+            window.addEventListener('beforeunload', () => {
+
+                saveState();
+
+            });
+
+
+
+            // ─── INIT ──────────────────────────
+
+            function init() {
+
+                loadState();
+
+                syncAllUI();
+
+                saveState();
+
+                console.log('✅ Fidelity Review Board initialized. Press Ctrl+Shift+C to copy handoff.');
+
+            }
+
+
+
+            init();
+
+        })();
+
+    </script>
+
+</body>
+
+</html>

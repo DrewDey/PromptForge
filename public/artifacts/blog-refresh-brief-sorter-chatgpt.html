@@ -1,0 +1,1607 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tiny Refresh Brief Builder</title>
+<style>
+  :root {
+    --bg: #f7f3ea;
+    --panel: #fffaf0;
+    --panel2: #f0eadc;
+    --ink: #25231f;
+    --muted: #6f695d;
+    --line: #d9cfba;
+    --chip: #ebe1cf;
+    --accent: #2f5d50;
+    --accent2: #d97736;
+    --danger: #9d3d35;
+    --good: #2e6b47;
+    --shadow: 0 10px 28px rgba(48, 39, 26, .10);
+    --radius: 18px;
+    --small: 12px;
+  }
+
+  * {
+    box-sizing: border-box;
+    max-width: 100%;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    overflow-x: hidden;
+  }
+
+  body {
+    min-height: 100vh;
+  }
+
+  .app {
+    width: min(980px, 100%);
+    margin: 0 auto;
+    padding: 14px;
+  }
+
+  header {
+    background: linear-gradient(135deg, #fffaf0, #efe5d0);
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    box-shadow: var(--shadow);
+    padding: 18px;
+    margin-bottom: 12px;
+  }
+
+  h1 {
+    font-size: clamp(24px, 8vw, 42px);
+    line-height: .98;
+    margin: 0 0 8px;
+    letter-spacing: -1.1px;
+  }
+
+  .sub {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.35;
+    margin: 0;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 14px;
+    margin: 12px 0;
+  }
+
+  .grid {
+    display: grid;
+    gap: 10px;
+  }
+
+  @media (min-width: 760px) {
+    .grid.two {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .grid.three {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .02em;
+    color: #413b31;
+    margin: 0 0 6px;
+  }
+
+  input, textarea, select, button {
+    font: inherit;
+  }
+
+  input, textarea, select {
+    width: 100%;
+    border: 1px solid var(--line);
+    background: #fffdf7;
+    color: var(--ink);
+    border-radius: 14px;
+    padding: 11px;
+    outline: none;
+  }
+
+  textarea {
+    min-height: 108px;
+    resize: vertical;
+    line-height: 1.35;
+  }
+
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(47, 93, 80, .13);
+  }
+
+  .toolbar, .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  button {
+    border: 1px solid var(--line);
+    background: var(--chip);
+    color: var(--ink);
+    border-radius: 999px;
+    padding: 10px 12px;
+    min-height: 42px;
+    cursor: pointer;
+    font-weight: 800;
+    min-width: 0;
+    white-space: normal;
+  }
+
+  button.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
+  button.warn {
+    background: #f3dbc4;
+    border-color: #e5b985;
+    color: #6b3512;
+  }
+
+  button.danger {
+    background: #f2dad6;
+    border-color: #dfaaa1;
+    color: #743029;
+  }
+
+  button.active {
+    background: var(--ink);
+    color: white;
+    border-color: var(--ink);
+  }
+
+  .toolbar button {
+    flex: 1 1 138px;
+  }
+
+  .filters button {
+    flex: 1 1 auto;
+    font-size: 12px;
+    padding: 8px 9px;
+    min-height: 36px;
+  }
+
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  @media (min-width: 640px) {
+    .summary {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  .stat {
+    background: var(--panel2);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 11px;
+  }
+
+  .stat b {
+    display: block;
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .stat span {
+    display: block;
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 5px;
+  }
+
+  .board {
+    display: grid;
+    gap: 12px;
+  }
+
+  @media (min-width: 820px) {
+    .board {
+      grid-template-columns: repeat(3, 1fr);
+      align-items: start;
+    }
+  }
+
+  .lane {
+    background: rgba(255, 250, 240, .72);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 10px;
+    min-width: 0;
+  }
+
+  .lane-title {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    align-items: center;
+    margin: 0 0 10px;
+  }
+
+  .lane-title h2 {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.1;
+  }
+
+  .count {
+    background: var(--chip);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 4px 8px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 800;
+    flex: 0 0 auto;
+  }
+
+  .card {
+    background: #fffdf8;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 11px;
+    box-shadow: 0 6px 16px rgba(48, 39, 26, .07);
+    margin: 0 0 10px;
+  }
+
+  .card-head {
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    background: var(--chip);
+    color: #453d31;
+    border: 1px solid var(--line);
+    padding: 5px 8px;
+    font-size: 11px;
+    font-weight: 900;
+    line-height: 1;
+  }
+
+  .score {
+    font-size: 28px;
+    line-height: .9;
+    font-weight: 950;
+    letter-spacing: -1px;
+  }
+
+  .score.good {
+    color: var(--good);
+  }
+
+  .score.mid {
+    color: var(--accent2);
+  }
+
+  .score.high {
+    color: var(--danger);
+  }
+
+  .card textarea {
+    min-height: 74px;
+    margin-bottom: 8px;
+    background: #fffdfa;
+  }
+
+  .action {
+    min-height: 58px;
+  }
+
+  .meters {
+    display: grid;
+    gap: 8px;
+    margin: 8px 0;
+  }
+
+  .meter-row {
+    display: grid;
+    grid-template-columns: 86px 1fr 30px;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .meter-row span {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 800;
+  }
+
+  input[type="range"] {
+    padding: 0;
+    accent-color: var(--accent);
+  }
+
+  .mini-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .mini-actions button {
+    flex: 1 1 92px;
+    font-size: 12px;
+    min-height: 34px;
+    padding: 7px 8px;
+  }
+
+  .brief {
+    white-space: pre-wrap;
+    background: #fffdf8;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 12px;
+    color: #27231d;
+    font-size: 13px;
+    line-height: 1.45;
+    min-height: 140px;
+    overflow-wrap: anywhere;
+  }
+
+  .muted {
+    color: var(--muted);
+  }
+
+  .tiny {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .footer-space {
+    height: 24px;
+  }
+
+  .toast {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    background: #24211d;
+    color: #fff8ea;
+    padding: 12px 14px;
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    transform: translateY(120%);
+    transition: transform .22s ease;
+    z-index: 20;
+    text-align: center;
+    font-weight: 850;
+  }
+
+  .toast.show {
+    transform: translateY(0);
+  }
+
+  @media (max-width: 420px) {
+    .app {
+      padding: 10px;
+    }
+
+    header, .panel {
+      border-radius: 18px;
+      padding: 12px;
+    }
+
+    .toolbar button {
+      flex-basis: 44%;
+      padding-left: 9px;
+      padding-right: 9px;
+      font-size: 13px;
+    }
+
+    .filters {
+      gap: 6px;
+    }
+
+    .filters button {
+      flex: 1 1 30%;
+      font-size: 11px;
+      padding: 7px 6px;
+    }
+
+    .summary {
+      gap: 6px;
+    }
+
+    .stat {
+      padding: 9px;
+    }
+
+    .meter-row {
+      grid-template-columns: 75px 1fr 24px;
+    }
+  }
+
+  @media print {
+    body {
+      background: white;
+    }
+
+    header, .panel, .lane, .card {
+      box-shadow: none;
+    }
+
+    .input-panel, .filters, .toolbar, .mini-actions, select, button {
+      display: none !important;
+    }
+
+    .board {
+      display: block;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Tiny Refresh Brief Builder</h1>
+    <p class="sub">Paste messy SEO inputs. Get a prioritized refresh board with scores, FAQ gaps, snippet promises, and a copyable brief. Runs fully offline.</p>
+  </header>
+
+  <section class="panel input-panel">
+    <div class="grid two">
+      <div>
+        <label for="topic">Topic or page</label>
+        <input id="topic" placeholder="Example: retirement tax planning article">
+      </div>
+      <div>
+        <label for="audience">Audience</label>
+        <input id="audience" placeholder="Example: pre-retirees with taxable brokerage assets">
+      </div>
+    </div>
+
+    <div class="grid two" style="margin-top:10px">
+      <div>
+        <label for="keywords">Target keywords</label>
+        <textarea id="keywords" placeholder="One per line or comma separated&#10;roth conversion strategy&#10;retirement tax planning&#10;capital gains in retirement"></textarea>
+      </div>
+      <div>
+        <label for="titles">Current or pasted blog titles</label>
+        <textarea id="titles" placeholder="Paste titles, one per line"></textarea>
+      </div>
+      <div>
+        <label for="claims">Stale claims or risky statements</label>
+        <textarea id="claims" placeholder="Paste claims that may need proof, updating, or softening"></textarea>
+      </div>
+      <div>
+        <label for="angles">Competitor angles</label>
+        <textarea id="angles" placeholder="Paste competitor titles, SERP angles, or content promises"></textarea>
+      </div>
+    </div>
+
+    <div style="margin-top:10px">
+      <label for="proof">Evidence notes available</label>
+      <textarea id="proof" placeholder="Sources, data, screenshots, SMEs, case examples, policies, studies, client questions, or internal proof points"></textarea>
+    </div>
+
+    <div class="toolbar" style="margin-top:12px">
+      <button class="primary" id="buildBtn">Build board</button>
+      <button id="copyBtn">Copy brief</button>
+      <button id="txtBtn">Export text</button>
+      <button id="jsonBtn">Export JSON</button>
+      <button id="sampleBtn" class="warn">Load example</button>
+      <button id="clearBtn" class="danger">Clear</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="summary" id="summary"></div>
+  </section>
+
+  <section class="panel">
+    <div class="grid two">
+      <div>
+        <label>Filter cards</label>
+        <div class="filters" id="filters"></div>
+      </div>
+      <div>
+        <label for="sortMode">Sort</label>
+        <select id="sortMode">
+          <option value="priority">Highest priority</option>
+          <option value="evidence">Most proof needed</option>
+          <option value="faq">Biggest FAQ gap</option>
+          <option value="promise">Best search promise</option>
+          <option value="freshness">Most stale</option>
+          <option value="original">Original order</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <main class="board" id="board"></main>
+
+  <section class="panel">
+    <div class="toolbar">
+      <button id="refreshBriefBtn" class="primary">Refresh brief text</button>
+      <button id="copyBriefBtn">Copy visible brief</button>
+      <button id="printBtn">Print</button>
+    </div>
+    <div style="height:10px"></div>
+    <label>Copyable refresh brief</label>
+    <div class="brief" id="brief"></div>
+  </section>
+
+  <div class="footer-space"></div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var CURRENT_YEAR = new Date().getFullYear();
+  var storageKey = "tiny-refresh-brief-builder-v1";
+
+  var state = {
+    filter: "All",
+    sortMode: "priority",
+    inputs: {
+      topic: "",
+      audience: "",
+      keywords: "",
+      titles: "",
+      claims: "",
+      angles: "",
+      proof: ""
+    },
+    cards: []
+  };
+
+  var els = {
+    topic: document.getElementById("topic"),
+    audience: document.getElementById("audience"),
+    keywords: document.getElementById("keywords"),
+    titles: document.getElementById("titles"),
+    claims: document.getElementById("claims"),
+    angles: document.getElementById("angles"),
+    proof: document.getElementById("proof"),
+    buildBtn: document.getElementById("buildBtn"),
+    copyBtn: document.getElementById("copyBtn"),
+    txtBtn: document.getElementById("txtBtn"),
+    jsonBtn: document.getElementById("jsonBtn"),
+    sampleBtn: document.getElementById("sampleBtn"),
+    clearBtn: document.getElementById("clearBtn"),
+    filters: document.getElementById("filters"),
+    sortMode: document.getElementById("sortMode"),
+    summary: document.getElementById("summary"),
+    board: document.getElementById("board"),
+    brief: document.getElementById("brief"),
+    refreshBriefBtn: document.getElementById("refreshBriefBtn"),
+    copyBriefBtn: document.getElementById("copyBriefBtn"),
+    printBtn: document.getElementById("printBtn"),
+    toast: document.getElementById("toast")
+  };
+
+  var cardTypes = [
+    "All",
+    "Title Refresh",
+    "Claim Update",
+    "Angle Gap",
+    "Keyword Push",
+    "FAQ Gap",
+    "Snippet Promise"
+  ];
+
+  function clamp(n, min, max) {
+    return Math.max(min, Math.min(max, Math.round(n)));
+  }
+
+  function uid() {
+    return "c_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
+  }
+
+  function text(v) {
+    return String(v || "").trim();
+  }
+
+  function lower(v) {
+    return text(v).toLowerCase();
+  }
+
+  function parseLines(raw, splitCommas) {
+    var source = String(raw || "");
+    var pieces = source.split(/\n+/);
+    if (splitCommas) {
+      pieces = source.split(/[\n,]+/);
+    }
+    var seen = {};
+    var out = [];
+    pieces.forEach(function (item) {
+      var clean = item.replace(/\s+/g, " ").trim();
+      var key = clean.toLowerCase();
+      if (clean && !seen[key]) {
+        seen[key] = true;
+        out.push(clean);
+      }
+    });
+    return out;
+  }
+
+  function wordCount(s) {
+    return text(s).split(/\s+/).filter(Boolean).length;
+  }
+
+  function containsAny(s, arr) {
+    var l = lower(s);
+    return arr.some(function (term) {
+      return l.indexOf(term) !== -1;
+    });
+  }
+
+  function countMatches(s, arr) {
+    var l = lower(s);
+    var n = 0;
+    arr.forEach(function (term) {
+      if (term && l.indexOf(lower(term)) !== -1) {
+        n++;
+      }
+    });
+    return n;
+  }
+
+  function hasNumber(s) {
+    return /\d/.test(s);
+  }
+
+  function keywordScore(s, keywords) {
+    if (!keywords.length) {
+      return 38;
+    }
+    var hits = countMatches(s, keywords);
+    return clamp(24 + hits * 24 + Math.min(18, wordCount(s)), 20, 96);
+  }
+
+  function searchPromiseScore(s, keywords) {
+    var score = 30;
+    if (keywords.length) {
+      score += countMatches(s, keywords) * 16;
+    }
+    if (hasNumber(s)) {
+      score += 10;
+    }
+    if (containsAny(s, ["how", "what", "why", "best", "vs", "versus", "compare", "cost", "price", "checklist", "template", "guide", "examples", "mistakes", "steps"])) {
+      score += 16;
+    }
+    if (wordCount(s) >= 7) {
+      score += 10;
+    }
+    if (containsAny(s, ["ultimate", "complete guide", "everything you need"])) {
+      score -= 8;
+    }
+    return clamp(score, 12, 98);
+  }
+
+  function evidenceNeedScore(s) {
+    var score = 20;
+    if (containsAny(s, ["always", "never", "guaranteed", "proven", "best", "only", "everyone", "no one", "must", "will"])) {
+      score += 20;
+    }
+    if (containsAny(s, ["study", "data", "research", "statistics", "survey", "report", "according to", "%", "percent", "increase", "decrease", "saves", "reduces"])) {
+      score += 20;
+    }
+    if (containsAny(s, ["current", "latest", "today", "now", "new", "updated", "recent"])) {
+      score += 14;
+    }
+    if (/\b20(1[6-9]|2[0-5])\b/.test(s) && !String(s).includes(String(CURRENT_YEAR))) {
+      score += 18;
+    }
+    if (hasNumber(s)) {
+      score += 8;
+    }
+    return clamp(score, 10, 98);
+  }
+
+  function freshnessScore(s) {
+    var score = 25;
+    var years = String(s).match(/\b20\d{2}\b/g) || [];
+    years.forEach(function (y) {
+      var yr = parseInt(y, 10);
+      if (yr < CURRENT_YEAR) {
+        score += Math.min(34, (CURRENT_YEAR - yr) * 8);
+      }
+      if (yr === CURRENT_YEAR) {
+        score += 8;
+      }
+    });
+    if (containsAny(s, ["latest", "current", "new", "now", "today", "updated", "recent", "this year"])) {
+      score += 18;
+    }
+    if (containsAny(s, ["rules", "rates", "law", "tax", "price", "cost", "data", "statistics", "benchmark", "ranking"])) {
+      score += 18;
+    }
+    return clamp(score, 10, 98);
+  }
+
+  function faqGapScore(s) {
+    var score = 28;
+    if (containsAny(s, ["how", "what", "why", "when", "who", "where", "can", "should", "is it", "does", "?"])) {
+      score += 22;
+    }
+    if (containsAny(s, ["cost", "price", "best", "vs", "versus", "compare", "difference", "examples", "mistakes", "risk", "requirements", "eligibility"])) {
+      score += 24;
+    }
+    if (wordCount(s) <= 4) {
+      score += 12;
+    }
+    if (hasNumber(s)) {
+      score += 6;
+    }
+    return clamp(score, 12, 98);
+  }
+
+  function originalityScore(s, allAngles) {
+    var score = 58;
+    var l = lower(s);
+    if (containsAny(s, ["for beginners", "ultimate guide", "complete guide", "everything you need", "top tips"])) {
+      score -= 18;
+    }
+    if (containsAny(s, ["case study", "examples", "calculator", "framework", "checklist", "before and after", "mistakes", "decision tree", "templates"])) {
+      score += 20;
+    }
+    if (wordCount(s) >= 9) {
+      score += 8;
+    }
+    var duplicateish = 0;
+    allAngles.forEach(function (a) {
+      var al = lower(a);
+      if (al !== l && (al.indexOf(l) !== -1 || l.indexOf(al) !== -1)) {
+        duplicateish++;
+      }
+    });
+    score -= duplicateish * 12;
+    return clamp(score, 10, 98);
+  }
+
+  function priorityScore(scores) {
+    return clamp(
+      scores.promise * 0.26 +
+      scores.evidence * 0.22 +
+      scores.faq * 0.18 +
+      scores.freshness * 0.20 +
+      scores.originality * 0.14,
+      1,
+      100
+    );
+  }
+
+  function laneFor(card) {
+    if (card.priority >= 76) {
+      return "Prioritize Now";
+    }
+    if (card.priority >= 51) {
+      return "Needs Proof";
+    }
+    return "Later";
+  }
+
+  function makeCard(type, source, action, scores, extra) {
+    var priority = priorityScore(scores);
+    return {
+      id: uid(),
+      type: type,
+      source: source,
+      action: action,
+      promise: clamp(scores.promise || 0, 0, 100),
+      evidence: clamp(scores.evidence || 0, 0, 100),
+      faq: clamp(scores.faq || 0, 0, 100),
+      freshness: clamp(scores.freshness || 0, 0, 100),
+      originality: clamp(scores.originality || 0, 0, 100),
+      priority: priority,
+      createdOrder: state.cards.length + Math.random(),
+      extra: extra || ""
+    };
+  }
+
+  function readInputs() {
+    state.inputs.topic = text(els.topic.value);
+    state.inputs.audience = text(els.audience.value);
+    state.inputs.keywords = text(els.keywords.value);
+    state.inputs.titles = text(els.titles.value);
+    state.inputs.claims = text(els.claims.value);
+    state.inputs.angles = text(els.angles.value);
+    state.inputs.proof = text(els.proof.value);
+  }
+
+  function writeInputs() {
+    els.topic.value = state.inputs.topic || "";
+    els.audience.value = state.inputs.audience || "";
+    els.keywords.value = state.inputs.keywords || "";
+    els.titles.value = state.inputs.titles || "";
+    els.claims.value = state.inputs.claims || "";
+    els.angles.value = state.inputs.angles || "";
+    els.proof.value = state.inputs.proof || "";
+    els.sortMode.value = state.sortMode || "priority";
+  }
+
+  function buildCards() {
+    readInputs();
+
+    var keywords = parseLines(state.inputs.keywords, true);
+    var titles = parseLines(state.inputs.titles, false);
+    var claims = parseLines(state.inputs.claims, false);
+    var angles = parseLines(state.inputs.angles, false);
+    var proof = state.inputs.proof;
+    var cards = [];
+
+    titles.forEach(function (title) {
+      var scores = {
+        promise: searchPromiseScore(title, keywords),
+        evidence: evidenceNeedScore(title) * 0.55,
+        faq: faqGapScore(title),
+        freshness: freshnessScore(title),
+        originality: originalityScore(title, titles.concat(angles))
+      };
+      cards.push(makeCard(
+        "Title Refresh",
+        title,
+        "Refresh the title, intro, and H2 promise so the page answers the current search intent faster. Add the strongest keyword naturally.",
+        scores,
+        "Title likely needs sharper promise, current-year framing, or stronger keyword alignment."
+      ));
+    });
+
+    claims.forEach(function (claim) {
+      var ev = evidenceNeedScore(claim);
+      if (proof.length > 40) {
+        ev -= 10;
+      }
+      var scores = {
+        promise: searchPromiseScore(claim, keywords) * 0.7,
+        evidence: ev,
+        faq: faqGapScore(claim),
+        freshness: freshnessScore(claim),
+        originality: 46
+      };
+      cards.push(makeCard(
+        "Claim Update",
+        claim,
+        "Verify with current evidence, cite the source, or soften the language. Replace stale numbers and absolute wording.",
+        scores,
+        "Risky claim. Treat as prove, update, or soften before publishing."
+      ));
+    });
+
+    angles.forEach(function (angle) {
+      var scores = {
+        promise: searchPromiseScore(angle, keywords),
+        evidence: evidenceNeedScore(angle) * 0.7,
+        faq: faqGapScore(angle),
+        freshness: freshnessScore(angle) * 0.7,
+        originality: 100 - originalityScore(angle, angles)
+      };
+      scores.originality = clamp(scores.originality + 20, 20, 95);
+      cards.push(makeCard(
+        "Angle Gap",
+        angle,
+        "Beat this competitor angle with narrower audience fit, stronger proof, better FAQs, and a clearer snippet promise.",
+        scores,
+        "Competitor angle to cover, counter, or out-specific."
+      ));
+    });
+
+    keywords.forEach(function (kw) {
+      var scores = {
+        promise: keywordScore(kw, keywords),
+        evidence: containsAny(kw, ["best", "cost", "price", "tax", "law", "rules", "rate"]) ? 72 : 46,
+        faq: faqGapScore(kw),
+        freshness: containsAny(kw, ["2026", "current", "latest", "tax", "rules", "rates"]) ? 82 : 44,
+        originality: wordCount(kw) >= 3 ? 72 : 48
+      };
+      cards.push(makeCard(
+        "Keyword Push",
+        kw,
+        "Add or refresh a section that answers this keyword directly, then support it with examples, comparison language, and a concise FAQ.",
+        scores,
+        "Target keyword opportunity."
+      ));
+    });
+
+    generateFaqCards(keywords, claims, angles).forEach(function (q) {
+      var scores = {
+        promise: searchPromiseScore(q, keywords),
+        evidence: evidenceNeedScore(q) * 0.65,
+        faq: 92,
+        freshness: freshnessScore(q),
+        originality: 70
+      };
+      cards.push(makeCard(
+        "FAQ Gap",
+        q,
+        "Answer in 45 to 90 words. Put the direct answer first, then add one proof point or decision rule.",
+        scores,
+        "Likely FAQ gap for the refreshed page."
+      ));
+    });
+
+    generateSnippetPromises(keywords, titles, angles).forEach(function (promise) {
+      var scores = {
+        promise: 90,
+        evidence: evidenceNeedScore(promise) * 0.45,
+        faq: faqGapScore(promise) * 0.75,
+        freshness: freshnessScore(promise),
+        originality: originalityScore(promise, angles.concat(titles))
+      };
+      cards.push(makeCard(
+        "Snippet Promise",
+        promise,
+        "Use as a title, meta description, intro hook, or search-result promise. Keep it specific and provable.",
+        scores,
+        "Candidate snippet promise."
+      ));
+    });
+
+    if (!cards.length) {
+      cards.push(makeCard(
+        "Keyword Push",
+        "Add inputs above, then build the board.",
+        "Paste at least one keyword, title, claim, or competitor angle. This card is a placeholder.",
+        { promise: 35, evidence: 25, faq: 35, freshness: 25, originality: 35 },
+        "Placeholder"
+      ));
+    }
+
+    state.cards = cards.map(function (card, index) {
+      card.createdOrder = index;
+      card.priority = priorityScore(card);
+      return card;
+    });
+
+    save();
+    render();
+    showToast("Board built");
+  }
+
+  function generateFaqCards(keywords, claims, angles) {
+    var topic = state.inputs.topic || "this topic";
+    var audience = state.inputs.audience || "readers";
+    var out = [];
+
+    keywords.slice(0, 6).forEach(function (kw) {
+      out.push("What should " + audience + " know about " + kw + " in " + CURRENT_YEAR + "?");
+      if (containsAny(kw, ["cost", "price", "tax", "rules", "rate", "law"])) {
+        out.push("What changed for " + kw + " this year?");
+      }
+      if (containsAny(kw, ["best", "vs", "compare", "difference"])) {
+        out.push("How should readers compare options for " + kw + "?");
+      }
+    });
+
+    claims.slice(0, 4).forEach(function (claim) {
+      out.push("What evidence supports the claim that " + shorten(claim, 70) + "?");
+    });
+
+    angles.slice(0, 4).forEach(function (angle) {
+      out.push("What does the competitor angle miss about " + shorten(angle, 70) + "?");
+    });
+
+    if (!out.length) {
+      out.push("What is the fastest useful answer for " + topic + "?");
+      out.push("What proof should a reader see before trusting this page?");
+      out.push("What changed recently that makes the old article feel stale?");
+    }
+
+    return unique(out).slice(0, 10);
+  }
+
+  function generateSnippetPromises(keywords, titles, angles) {
+    var topic = state.inputs.topic || "the topic";
+    var audience = state.inputs.audience || "readers";
+    var mainKw = keywords[0] || topic;
+    var out = [];
+
+    out.push("Updated " + mainKw + " guide for " + audience + " with proof, FAQs, and next steps.");
+    out.push("Before you trust old advice on " + mainKw + ", check what changed in " + CURRENT_YEAR + ".");
+    out.push("A clearer way to compare " + mainKw + " options, risks, and common mistakes.");
+
+    keywords.slice(1, 5).forEach(function (kw) {
+      out.push("Get a practical answer to " + kw + " with examples, evidence, and decision points.");
+    });
+
+    titles.slice(0, 2).forEach(function (title) {
+      out.push("Refresh angle: " + shorten(title, 92) + " with current proof and sharper search intent.");
+    });
+
+    angles.slice(0, 2).forEach(function (angle) {
+      out.push("Stronger than competitor angle: " + shorten(angle, 86) + " because it adds proof and FAQs.");
+    });
+
+    return unique(out).slice(0, 8);
+  }
+
+  function unique(arr) {
+    var seen = {};
+    var out = [];
+    arr.forEach(function (item) {
+      var clean = text(item);
+      var key = lower(clean);
+      if (clean && !seen[key]) {
+        seen[key] = true;
+        out.push(clean);
+      }
+    });
+    return out;
+  }
+
+  function shorten(s, max) {
+    var clean = text(s);
+    if (clean.length <= max) {
+      return clean;
+    }
+    return clean.slice(0, max - 1).trim() + "…";
+  }
+
+  function clearNode(node) {
+    while (node.firstChild) {
+      node.removeChild(node.firstChild);
+    }
+  }
+
+  function el(tag, className, txt) {
+    var node = document.createElement(tag);
+    if (className) {
+      node.className = className;
+    }
+    if (txt !== undefined) {
+      node.textContent = txt;
+    }
+    return node;
+  }
+
+  function render() {
+    readInputs();
+    renderSummary();
+    renderFilters();
+    renderBoard();
+    renderBrief();
+    save();
+  }
+
+  function renderSummary() {
+    clearNode(els.summary);
+    var total = state.cards.length;
+    var high = state.cards.filter(function (c) { return c.priority >= 76; }).length;
+    var proof = state.cards.filter(function (c) { return c.evidence >= 70; }).length;
+    var faq = state.cards.filter(function (c) { return c.type === "FAQ Gap" || c.faq >= 75; }).length;
+
+    addStat("Cards", total);
+    addStat("Do first", high);
+    addStat("Proof needed", proof);
+    addStat("FAQ gaps", faq);
+  }
+
+  function addStat(label, value) {
+    var box = el("div", "stat");
+    var b = el("b", "", String(value));
+    var span = el("span", "", label);
+    box.appendChild(b);
+    box.appendChild(span);
+    els.summary.appendChild(box);
+  }
+
+  function renderFilters() {
+    clearNode(els.filters);
+    cardTypes.forEach(function (type) {
+      var btn = el("button", type === state.filter ? "active" : "", type);
+      btn.type = "button";
+      btn.addEventListener("click", function () {
+        state.filter = type;
+        render();
+      });
+      els.filters.appendChild(btn);
+    });
+  }
+
+  function sortedCards() {
+    var cards = state.cards.slice();
+    if (state.filter !== "All") {
+      cards = cards.filter(function (card) {
+        return card.type === state.filter;
+      });
+    }
+
+    var mode = state.sortMode;
+    cards.sort(function (a, b) {
+      if (mode === "evidence") return b.evidence - a.evidence;
+      if (mode === "faq") return b.faq - a.faq;
+      if (mode === "promise") return b.promise - a.promise;
+      if (mode === "freshness") return b.freshness - a.freshness;
+      if (mode === "original") return a.createdOrder - b.createdOrder;
+      return b.priority - a.priority;
+    });
+    return cards;
+  }
+
+  function renderBoard() {
+    clearNode(els.board);
+    var lanes = ["Prioritize Now", "Needs Proof", "Later"];
+    var byLane = {
+      "Prioritize Now": [],
+      "Needs Proof": [],
+      "Later": []
+    };
+
+    sortedCards().forEach(function (card) {
+      byLane[laneFor(card)].push(card);
+    });
+
+    lanes.forEach(function (lane) {
+      var laneNode = el("section", "lane");
+      var head = el("div", "lane-title");
+      var title = el("h2", "", lane);
+      var count = el("span", "count", String(byLane[lane].length));
+      head.appendChild(title);
+      head.appendChild(count);
+      laneNode.appendChild(head);
+
+      if (!byLane[lane].length) {
+        laneNode.appendChild(el("p", "muted tiny", "No cards here."));
+      } else {
+        byLane[lane].forEach(function (card) {
+          laneNode.appendChild(renderCard(card));
+        });
+      }
+
+      els.board.appendChild(laneNode);
+    });
+  }
+
+  function renderCard(card) {
+    var node = el("article", "card");
+
+    var head = el("div", "card-head");
+    var left = el("div");
+    left.appendChild(el("span", "tag", card.type));
+    if (card.extra) {
+      var small = el("div", "muted tiny", card.extra);
+      small.style.marginTop = "6px";
+      left.appendChild(small);
+    }
+    var score = el("div", "score " + scoreClass(card.priority), String(card.priority));
+    head.appendChild(left);
+    head.appendChild(score);
+    node.appendChild(head);
+
+    var sourceLabel = el("label", "", "Card text");
+    var sourceArea = document.createElement("textarea");
+    sourceArea.value = card.source;
+    sourceArea.addEventListener("input", function () {
+      card.source = sourceArea.value;
+      saveSoft();
+    });
+    node.appendChild(sourceLabel);
+    node.appendChild(sourceArea);
+
+    var actionLabel = el("label", "", "Refresh action");
+    var actionArea = document.createElement("textarea");
+    actionArea.className = "action";
+    actionArea.value = card.action;
+    actionArea.addEventListener("input", function () {
+      card.action = actionArea.value;
+      saveSoft();
+    });
+    node.appendChild(actionLabel);
+    node.appendChild(actionArea);
+
+    var meters = el("div", "meters");
+    [
+      ["promise", "Promise"],
+      ["evidence", "Evidence"],
+      ["faq", "FAQ gap"],
+      ["freshness", "Stale"],
+      ["originality", "Original"]
+    ].forEach(function (pair) {
+      meters.appendChild(rangeRow(card, pair[0], pair[1]));
+    });
+    node.appendChild(meters);
+
+    var actions = el("div", "mini-actions");
+    var copy = el("button", "", "Copy card");
+    copy.type = "button";
+    copy.addEventListener("click", function () {
+      copyText(cardToText(card));
+    });
+
+    var up = el("button", "", "+5");
+    up.type = "button";
+    up.addEventListener("click", function () {
+      bumpCard(card, 5);
+    });
+
+    var down = el("button", "", "-5");
+    down.type = "button";
+    down.addEventListener("click", function () {
+      bumpCard(card, -5);
+    });
+
+    var del = el("button", "danger", "Delete");
+    del.type = "button";
+    del.addEventListener("click", function () {
+      state.cards = state.cards.filter(function (c) { return c.id !== card.id; });
+      render();
+      showToast("Card deleted");
+    });
+
+    actions.appendChild(copy);
+    actions.appendChild(up);
+    actions.appendChild(down);
+    actions.appendChild(del);
+    node.appendChild(actions);
+
+    return node;
+  }
+
+  function rangeRow(card, key, labelText) {
+    var row = el("div", "meter-row");
+    var label = el("span", "", labelText);
+    var range = document.createElement("input");
+    range.type = "range";
+    range.min = "0";
+    range.max = "100";
+    range.value = String(card[key]);
+    var value = el("span", "", String(card[key]));
+
+    range.addEventListener("input", function () {
+      card[key] = clamp(range.value, 0, 100);
+      card.priority = priorityScore(card);
+      value.textContent = String(card[key]);
+      renderBoard();
+      renderSummary();
+      renderBrief();
+      saveSoft();
+    });
+
+    row.appendChild(label);
+    row.appendChild(range);
+    row.appendChild(value);
+    return row;
+  }
+
+  function scoreClass(n) {
+    if (n >= 76) return "high";
+    if (n >= 51) return "mid";
+    return "good";
+  }
+
+  function bumpCard(card, delta) {
+    card.promise = clamp(card.promise + delta, 0, 100);
+    card.evidence = clamp(card.evidence + delta, 0, 100);
+    card.faq = clamp(card.faq + delta, 0, 100);
+    card.freshness = clamp(card.freshness + delta, 0, 100);
+    card.originality = clamp(card.originality + delta, 0, 100);
+    card.priority = priorityScore(card);
+    render();
+  }
+
+  function renderBrief() {
+    els.brief.textContent = buildBrief();
+  }
+
+  function buildBrief() {
+    readInputs();
+    var cards = state.cards.slice().sort(function (a, b) {
+      return b.priority - a.priority;
+    });
+
+    var top = cards.slice(0, 7);
+    var proofCards = cards.filter(function (c) { return c.evidence >= 70; }).slice(0, 7);
+    var faqs = cards.filter(function (c) { return c.type === "FAQ Gap"; }).slice(0, 10);
+    var snippets = cards.filter(function (c) { return c.type === "Snippet Promise"; }).slice(0, 8);
+    var now = cards.filter(function (c) { return laneFor(c) === "Prioritize Now"; }).slice(0, 8);
+
+    var lines = [];
+    lines.push("REFRESH BRIEF");
+    lines.push("");
+    lines.push("Topic or page");
+    lines.push(state.inputs.topic || "Not set");
+    lines.push("");
+    lines.push("Audience");
+    lines.push(state.inputs.audience || "Not set");
+    lines.push("");
+    lines.push("Target keywords");
+    parseLines(state.inputs.keywords, true).slice(0, 12).forEach(function (kw) {
+      lines.push("- " + kw);
+    });
+    if (!parseLines(state.inputs.keywords, true).length) {
+      lines.push("- Not set");
+    }
+    lines.push("");
+
+    lines.push("Priority refresh moves");
+    if (!top.length) {
+      lines.push("- Build the board first.");
+    }
+    top.forEach(function (card, index) {
+      lines.push((index + 1) + ". [" + card.priority + "] " + card.type + " - " + oneLine(card.source));
+      lines.push("   Action: " + oneLine(card.action));
+      lines.push("   Scores: promise " + card.promise + ", evidence " + card.evidence + ", FAQ " + card.faq + ", stale " + card.freshness + ", originality " + card.originality);
+    });
+    lines.push("");
+
+    lines.push("Next 5 actions");
+    now.slice(0, 5).forEach(function (card, index) {
+      lines.push((index + 1) + ". " + oneLine(card.action) + " [" + oneLine(card.source) + "]");
+    });
+    if (!now.length) {
+      top.slice(0, 5).forEach(function (card, index) {
+        lines.push((index + 1) + ". " + oneLine(card.action) + " [" + oneLine(card.source) + "]");
+      });
+    }
+    lines.push("");
+
+    lines.push("Claims to prove, update, or soften");
+    if (!proofCards.length) {
+      lines.push("- No high-risk claim cards yet.");
+    }
+    proofCards.forEach(function (card) {
+      lines.push("- [" + card.evidence + "] " + oneLine(card.source));
+    });
+    lines.push("");
+
+    lines.push("FAQ gaps");
+    if (!faqs.length) {
+      lines.push("- No FAQ gaps generated yet.");
+    }
+    faqs.forEach(function (card) {
+      lines.push("- " + oneLine(card.source));
+    });
+    lines.push("");
+
+    lines.push("Snippet promises");
+    if (!snippets.length) {
+      lines.push("- No snippet promises generated yet.");
+    }
+    snippets.forEach(function (card) {
+      lines.push("- " + oneLine(card.source));
+    });
+    lines.push("");
+
+    lines.push("Suggested structure");
+    lines.push("1. Lead with the updated answer and who it is for.");
+    lines.push("2. Replace stale or absolute claims with current, cited wording.");
+    lines.push("3. Add the highest-priority keyword section.");
+    lines.push("4. Add FAQ answers for comparison, cost, proof, risk, and freshness.");
+    lines.push("5. Use one snippet promise as title or meta direction.");
+    lines.push("");
+
+    lines.push("Evidence notes");
+    lines.push(state.inputs.proof || "No evidence notes added yet.");
+
+    return lines.join("\n");
+  }
+
+  function oneLine(s) {
+    return text(s).replace(/\s+/g, " ");
+  }
+
+  function cardToText(card) {
+    return [
+      card.type + " [" + card.priority + "]",
+      "Text: " + oneLine(card.source),
+      "Action: " + oneLine(card.action),
+      "Scores: promise " + card.promise + ", evidence " + card.evidence + ", FAQ " + card.faq + ", stale " + card.freshness + ", originality " + card.originality
+    ].join("\n");
+  }
+
+  function copyText(value) {
+    var content = String(value || "");
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(content).then(function () {
+        showToast("Copied");
+      }).catch(function () {
+        fallbackCopy(content);
+      });
+    } else {
+      fallbackCopy(content);
+    }
+  }
+
+  function fallbackCopy(content) {
+    var area = document.createElement("textarea");
+    area.value = content;
+    area.setAttribute("readonly", "readonly");
+    area.style.position = "fixed";
+    area.style.left = "-9999px";
+    document.body.appendChild(area);
+    area.select();
+    try {
+      document.execCommand("copy");
+      showToast("Copied");
+    } catch (e) {
+      showToast("Copy failed. Select the brief manually.");
+    }
+    document.body.removeChild(area);
+  }
+
+  function downloadFile(name, content, type) {
+    var blob = new Blob([content], { type: type || "text/plain" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 0);
+  }
+
+  function saveSoft() {
+    readInputs();
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(state));
+    } catch (e) {}
+  }
+
+  function save() {
+    saveSoft();
+  }
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(storageKey);
+      if (!raw) {
+        return;
+      }
+      var parsed = JSON.parse(raw);
+      if (parsed && parsed.inputs) {
+        state = parsed;
+      }
+    } catch (e) {}
+  }
+
+  function showToast(message) {
+    els.toast.textContent = message;
+    els.toast.classList.add("show");
+    setTimeout(function () {
+      els.toast.classList.remove("show");
+    }, 1500);
+  }
+
+  function loadExample() {
+    state.inputs = {
+      topic: "Retirement tax planning article refresh",
+      audience: "People 55 to 70 with IRAs, brokerage assets, and questions about Roth conversions",
+      keywords: [
+        "retirement tax planning",
+        "roth conversion strategy",
+        "capital gains in retirement",
+        "tax efficient withdrawal strategy",
+        "ira roth conversion 2026"
+      ].join("\n"),
+      titles: [
+        "The Complete Guide to Retirement Tax Planning",
+        "How Roth Conversions Can Save You Money",
+        "Best Withdrawal Strategy for Retirees"
+      ].join("\n"),
+      claims: [
+        "Roth conversions always reduce lifetime taxes.",
+        "Retirees should withdraw from taxable accounts first, then tax-deferred accounts.",
+        "The tax rules changed in 2024 and most retirees need to update their plan."
+      ].join("\n"),
+      angles: [
+        "Competitor focuses on Roth conversion basics for beginners",
+        "Competitor ranks withdrawal strategies without showing tax bracket examples",
+        "Competitor has FAQ section but no current-year tax caveats or proof"
+      ].join("\n"),
+      proof: "Use current tax brackets, IRMAA thresholds, Secure Act 2.0 notes, client example ranges, and CPA-reviewed caveats."
+    };
+    state.cards = [];
+    writeInputs();
+    buildCards();
+  }
+
+  function clearAll() {
+    state = {
+      filter: "All",
+      sortMode: "priority",
+      inputs: {
+        topic: "",
+        audience: "",
+        keywords: "",
+        titles: "",
+        claims: "",
+        angles: "",
+        proof: ""
+      },
+      cards: []
+    };
+    try {
+      localStorage.removeItem(storageKey);
+    } catch (e) {}
+    writeInputs();
+    render();
+    showToast("Cleared");
+  }
+
+  function bind() {
+    [
+      els.topic,
+      els.audience,
+      els.keywords,
+      els.titles,
+      els.claims,
+      els.angles,
+      els.proof
+    ].forEach(function (input) {
+      input.addEventListener("input", saveSoft);
+    });
+
+    els.buildBtn.addEventListener("click", buildCards);
+    els.copyBtn.addEventListener("click", function () {
+      renderBrief();
+      copyText(buildBrief());
+    });
+    els.copyBriefBtn.addEventListener("click", function () {
+      copyText(els.brief.textContent);
+    });
+    els.txtBtn.addEventListener("click", function () {
+      renderBrief();
+      downloadFile("refresh-brief.txt", buildBrief(), "text/plain");
+      showToast("Text exported");
+    });
+    els.jsonBtn.addEventListener("click", function () {
+      readInputs();
+      downloadFile("refresh-board.json", JSON.stringify(state, null, 2), "application/json");
+      showToast("JSON exported");
+    });
+    els.sampleBtn.addEventListener("click", loadExample);
+    els.clearBtn.addEventListener("click", clearAll);
+    els.refreshBriefBtn.addEventListener("click", function () {
+      renderBrief();
+      showToast("Brief refreshed");
+    });
+    els.printBtn.addEventListener("click", function () {
+      window.print();
+    });
+    els.sortMode.addEventListener("change", function () {
+      state.sortMode = els.sortMode.value;
+      render();
+    });
+  }
+
+  bind();
+  load();
+  writeInputs();
+
+  if (!state.cards || !state.cards.length) {
+    state.cards = [];
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>

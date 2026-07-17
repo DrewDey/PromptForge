@@ -4,9 +4,10 @@ import { getPromptModelLabel } from './prompt-comparisons'
 import { getProjectModelProfileSummary } from './project-model-profile-summaries'
 import {
   calculateDiscoveryActivity,
+  countDistinctVerifiedModels,
   compareActiveDiscoveryItems,
   compareForkDiscoveryItems,
-  compareModelRunDiscoveryItems,
+  compareMultiModelDiscoveryItems,
 } from './discovery-activity.mjs'
 import type { Category, PromptWithRelations } from './types'
 
@@ -44,6 +45,7 @@ export type BuildPathDiscoveryItem = {
   promptCount: number
   comparisonCount: number
   modelRunCount: number
+  verifiedModelCount: number
   artifactPath: string | null
   hasWorkingArtifact: boolean
   hasFork: boolean
@@ -231,6 +233,9 @@ export function buildPathDiscoveryCatalog(
     ].filter((label) => label !== 'Unknown model'))]
     const comparisonCount = Math.max(1, modelLabels.length)
     const modelRunCount = variantSummary.length
+    const verifiedModelCount = countDistinctVerifiedModels(
+      variantSummary.map((variant) => variant.modelLabel),
+    )
     const preview = previewForPrompt(prompt)
     const artifactPath = prepared?.artifactPath ?? null
     const hasWorkingArtifact = Boolean(artifactPath)
@@ -286,6 +291,7 @@ export function buildPathDiscoveryCatalog(
       promptCount,
       comparisonCount,
       modelRunCount,
+      verifiedModelCount,
       artifactPath,
       hasWorkingArtifact,
       hasFork,
@@ -326,8 +332,8 @@ export function forkCountOrder(items: BuildPathDiscoveryItem[]) {
   return [...items].sort(compareForkDiscoveryItems)
 }
 
-export function modelRunCountOrder(items: BuildPathDiscoveryItem[]) {
-  return [...items].sort(compareModelRunDiscoveryItems)
+export function multiModelOrder(items: BuildPathDiscoveryItem[]) {
+  return [...items].sort(compareMultiModelDiscoveryItems)
 }
 
 export function selectCuratedItems(

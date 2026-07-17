@@ -12,6 +12,19 @@ function timestamp(value) {
 }
 
 /**
+ * Counts distinct verified model labels for one canonical project. Repeated
+ * runs from the same model stay one model so the multi-model sort cannot be
+ * inflated by reruns.
+ *
+ * @param {string[]} modelLabels
+ */
+export function countDistinctVerifiedModels(modelLabels) {
+  return new Set(modelLabels
+    .map((label) => label.trim().toLowerCase())
+    .filter(Boolean)).size
+}
+
+/**
  * Durable activity and cheap engagement are deliberately separate. A project
  * cannot earn Active from votes or saves alone, and every signal is capped so
  * one large count cannot dominate the library.
@@ -91,11 +104,12 @@ export function compareForkDiscoveryItems(left, right) {
 }
 
 /**
- * @param {{ activityScore: number, modelRunCount: number, forkCount: number, latestActivityAt: string | null, createdAt: string, title: string, id: string }} left
- * @param {{ activityScore: number, modelRunCount: number, forkCount: number, latestActivityAt: string | null, createdAt: string, title: string, id: string }} right
+ * @param {{ activityScore: number, verifiedModelCount: number, modelRunCount: number, forkCount: number, latestActivityAt: string | null, createdAt: string, title: string, id: string }} left
+ * @param {{ activityScore: number, verifiedModelCount: number, modelRunCount: number, forkCount: number, latestActivityAt: string | null, createdAt: string, title: string, id: string }} right
  */
-export function compareModelRunDiscoveryItems(left, right) {
+export function compareMultiModelDiscoveryItems(left, right) {
   return (
+    right.verifiedModelCount - left.verifiedModelCount ||
     right.modelRunCount - left.modelRunCount ||
     right.forkCount - left.forkCount ||
     right.activityScore - left.activityScore ||

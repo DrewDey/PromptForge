@@ -7,8 +7,15 @@ import {
   calculateDiscoveryActivity,
   compareActiveDiscoveryItems,
   compareForkDiscoveryItems,
-  compareModelRunDiscoveryItems,
+  compareMultiModelDiscoveryItems,
+  countDistinctVerifiedModels,
 } from '../src/lib/discovery-activity.mjs'
+
+assert.equal(
+  countDistinctVerifiedModels(['GPT-5.6 Luna', 'gpt-5.6 luna', ' Gemini 3.1 Pro ', '']),
+  2,
+  'reruns from the same model should not inflate the distinct model count',
+)
 
 const twoRuns = calculateDiscoveryActivity({
   modelRunCount: 2,
@@ -75,6 +82,7 @@ function item(overrides = {}) {
     title: 'Alpha',
     isActive: false,
     activityScore: 0,
+    verifiedModelCount: 0,
     modelRunCount: 0,
     forkCount: 0,
     latestActivityAt: null,
@@ -103,17 +111,18 @@ assert.deepEqual(
 )
 
 const countItems = [
-  item({ id: 'one', modelRunCount: 3, forkCount: 1, activityScore: 8 }),
-  item({ id: 'two', modelRunCount: 2, forkCount: 4, activityScore: 10 }),
-  item({ id: 'three', modelRunCount: 2, forkCount: 2, activityScore: 8 }),
+  item({ id: 'many-reruns', verifiedModelCount: 1, modelRunCount: 5, forkCount: 1, activityScore: 8 }),
+  item({ id: 'three-models', verifiedModelCount: 3, modelRunCount: 3, forkCount: 1, activityScore: 8 }),
+  item({ id: 'two-models', verifiedModelCount: 2, modelRunCount: 4, forkCount: 4, activityScore: 10 }),
 ]
 assert.deepEqual(
   countItems.toSorted(compareForkDiscoveryItems).map((entry) => entry.id),
-  ['two', 'three', 'one'],
+  ['two-models', 'many-reruns', 'three-models'],
 )
 assert.deepEqual(
-  countItems.toSorted(compareModelRunDiscoveryItems).map((entry) => entry.id),
-  ['one', 'two', 'three'],
+  countItems.toSorted(compareMultiModelDiscoveryItems).map((entry) => entry.id),
+  ['three-models', 'two-models', 'many-reruns'],
+  'multiple distinct models should outrank repeated runs from one model',
 )
 
 assert.match(ACTIVE_PROJECT_EXPLANATION, /2 points per verified run \(maximum 6\)/)
@@ -124,27 +133,35 @@ const cardSource = readFileSync('src/components/discovery/BuildPathCard.tsx', 'u
 const catalogSource = readFileSync('src/lib/path-discovery.ts', 'utf8')
 const summaries = JSON.parse(readFileSync('src/lib/project-model-profile-summaries.json', 'utf8'))
 
-for (const sortValue of ['active', 'forks', 'model-runs', 'newest']) {
+for (const sortValue of ['active', 'forks', 'models', 'newest']) {
   assert.match(discoverySource, new RegExp(`value: '${sortValue}'`))
 }
+assert.match(discoverySource, /value: 'models', label: 'Multiple models'/)
+assert.match(discoverySource, /rawSort === 'model-runs' \? 'models'/)
 assert.match(discoverySource, /name="sort" value=\{activeSort\}/)
 assert.match(discoverySource, /getPrompts\(\{ sort: 'newest' \}\)/)
 assert.doesNotMatch(discoverySource, /getPrompts\(\{ sort: 'newest', limit:/)
 assert.match(discoverySource, /activeOrder\(filtered\)/)
 assert.match(discoverySource, /forkCountOrder\(filtered\)/)
-assert.match(discoverySource, /modelRunCountOrder\(filtered\)/)
+assert.match(discoverySource, /multiModelOrder\(filtered\)/)
+assert.match(discoverySource, /item\.verifiedModelCount < 2/)
 assert.match(discoverySource, /What “Active” means/)
 assert.match(cardSource, /item\.isActive/)
-assert.match(cardSource, /item\.modelRunCount/)
+assert.match(cardSource, /item\.verifiedModelCount/)
 assert.match(cardSource, /item\.forkCount/)
 assert.match(catalogSource, /getProjectModelProfileSummary/)
 assert.match(catalogSource, /fork_source_project_id/)
 assert.match(catalogSource, /calculateDiscoveryActivity/)
 
 for (const runs of Object.values(summaries)) {
+  assert.equal(
+    countDistinctVerifiedModels(runs.map((run) => run.modelLabel)),
+    runs.length,
+    'published model-selector summaries should contain distinct verified models',
+  )
   for (const run of runs) {
     assert.equal(Number.isFinite(Date.parse(run.capturedAt)), true)
   }
 }
 
-console.log('Discovery activity score, stable ordering, and sort-control guard passed.')
+console.log('Discovery activity, distinct-model ordering, and sort-control guard passed.')

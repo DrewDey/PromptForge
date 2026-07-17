@@ -17,7 +17,7 @@ import {
   buildPathDiscoveryCatalog,
   forkCountOrder,
   itemMatchesIntent,
-  modelRunCountOrder,
+  multiModelOrder,
   newestOrder,
   recommendedOrder,
   type BuildPathDiscoveryItem,
@@ -54,7 +54,7 @@ type BuildPathsUrlParams = {
   compare?: 'models'
   artifact?: 'working'
   fork?: 'available'
-  sort?: 'active' | 'forks' | 'model-runs' | 'newest'
+  sort?: 'active' | 'forks' | 'models' | 'newest'
   page?: string
   panel?: 'open'
 }
@@ -64,7 +64,7 @@ const DISCOVERY_SORT_OPTIONS = [
   { value: 'recommended', label: 'Recommended' },
   { value: 'active', label: 'Active' },
   { value: 'forks', label: 'Forks' },
-  { value: 'model-runs', label: 'Model runs' },
+  { value: 'models', label: 'Multiple models' },
   { value: 'newest', label: 'Newest' },
 ] as const
 type DiscoverySort = typeof DISCOVERY_SORT_OPTIONS[number]['value']
@@ -139,8 +139,9 @@ export async function BuildPathsDiscovery({
   const activeCompare = rawCompare === 'models'
   const activeArtifact = rawArtifact === 'working'
   const activeFork = rawFork === 'available'
-  const activeSort = DISCOVERY_SORT_OPTIONS.some((option) => option.value === rawSort)
-    ? rawSort as DiscoverySort
+  const normalizedSort = rawSort === 'model-runs' ? 'models' : rawSort
+  const activeSort = DISCOVERY_SORT_OPTIONS.some((option) => option.value === normalizedSort)
+    ? normalizedSort as DiscoverySort
     : 'recommended'
   const requestedPage = Math.max(1, Number.parseInt(firstParam(params.page) || '1', 10) || 1)
 
@@ -189,7 +190,7 @@ export async function BuildPathsDiscovery({
     if (activeDomain && getPromptBroadDomain(item.prompt, categories)?.slug !== activeDomain) return false
     if (activeDifficulty && item.difficulty !== activeDifficulty) return false
     if (activeModel && !item.modelLabels.some((label) => publicModelFilterMatchesLabel(activeModel, label))) return false
-    if (activeCompare && item.comparisonCount < 2) return false
+    if (activeCompare && item.verifiedModelCount < 2) return false
     if (activeArtifact && !item.hasWorkingArtifact) return false
     if (activeFork && !item.hasFork) return false
     return true
@@ -198,8 +199,8 @@ export async function BuildPathsDiscovery({
     ? activeOrder(filtered)
     : activeSort === 'forks'
       ? forkCountOrder(filtered)
-      : activeSort === 'model-runs'
-        ? modelRunCountOrder(filtered)
+      : activeSort === 'models'
+        ? multiModelOrder(filtered)
         : activeSort === 'newest'
           ? newestOrder(filtered)
           : recommendedOrder(filtered)
@@ -207,7 +208,7 @@ export async function BuildPathsDiscovery({
   const activePage = Math.min(requestedPage, totalPages)
   const pageItems = ordered.slice((activePage - 1) * PAGE_SIZE, activePage * PAGE_SIZE)
   const isFiltered = Boolean(
-    rawPanel === 'open' || activeSort === 'newest' || query || activeIntent || activeDomain || activeDifficulty || activeModel || activeCompare || activeArtifact || activeFork,
+    rawPanel === 'open' || activeSort !== 'recommended' || query || activeIntent || activeDomain || activeDifficulty || activeModel || activeCompare || activeArtifact || activeFork,
   )
 
   const modelCounts = new Map<string, { label: string; count: number }>()

@@ -20,8 +20,8 @@ type BuildPathCardProps = {
 function PathAnatomy({ item }: { item: BuildPathDiscoveryItem }) {
   const parts = [
     `${item.promptCount || 1} ${item.promptCount === 1 ? 'prompt' : 'prompts'}`,
-    item.modelRunCount > 0
-      ? `${item.modelRunCount} model ${item.modelRunCount === 1 ? 'run' : 'runs'}`
+    item.verifiedModelCount > 0
+      ? `${item.verifiedModelCount} verified ${item.verifiedModelCount === 1 ? 'model' : 'models'}`
       : item.comparisonCount > 1
         ? `${item.comparisonCount} models`
         : item.modelLabel,

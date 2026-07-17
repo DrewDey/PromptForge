@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import {
   ArrowRight,
+  ArrowDownWideNarrow,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -12,13 +13,17 @@ import { BROAD_DOMAINS, getPromptBroadDomain } from '@/lib/broad-domains'
 import { getCategories, getPrompts, getUserVotesAndBookmarks } from '@/lib/data'
 import {
   DISCOVERY_INTENTS,
+  activeOrder,
   buildPathDiscoveryCatalog,
+  forkCountOrder,
   itemMatchesIntent,
+  multiModelOrder,
   newestOrder,
   recommendedOrder,
   type BuildPathDiscoveryItem,
   type DiscoveryIntent,
 } from '@/lib/path-discovery'
+import { ACTIVE_PROJECT_EXPLANATION } from '@/lib/discovery-activity.mjs'
 import { getPublicModelFacetValue, getPublicModelLabel, publicModelFilterMatchesLabel } from '@/lib/public-model-labels'
 import { isPersistableProjectId } from '@/lib/project-engagement'
 import { BuildPathCard } from './BuildPathCard'
@@ -49,12 +54,20 @@ type BuildPathsUrlParams = {
   compare?: 'models'
   artifact?: 'working'
   fork?: 'available'
-  sort?: 'newest'
+  sort?: 'active' | 'forks' | 'models' | 'newest'
   page?: string
   panel?: 'open'
 }
 
 const PAGE_SIZE = 12
+const DISCOVERY_SORT_OPTIONS = [
+  { value: 'recommended', label: 'Recommended' },
+  { value: 'active', label: 'Active' },
+  { value: 'forks', label: 'Forks' },
+  { value: 'models', label: 'Multiple models' },
+  { value: 'newest', label: 'Newest' },
+] as const
+type DiscoverySort = typeof DISCOVERY_SORT_OPTIONS[number]['value']
 
 function firstParam(value: SearchParamValue) {
   if (Array.isArray(value)) return value[0] ?? ''
@@ -126,7 +139,10 @@ export async function BuildPathsDiscovery({
   const activeCompare = rawCompare === 'models'
   const activeArtifact = rawArtifact === 'working'
   const activeFork = rawFork === 'available'
-  const activeSort = rawSort === 'newest' ? 'newest' : 'recommended'
+  const normalizedSort = rawSort === 'model-runs' ? 'models' : rawSort
+  const activeSort = DISCOVERY_SORT_OPTIONS.some((option) => option.value === normalizedSort)
+    ? normalizedSort as DiscoverySort
+    : 'recommended'
   const requestedPage = Math.max(1, Number.parseInt(firstParam(params.page) || '1', 10) || 1)
 
   if (rawCategory && !rawDomain) {
@@ -139,12 +155,13 @@ export async function BuildPathsDiscovery({
     if (activeCompare) legacyParams.set('compare', 'models')
     if (activeArtifact) legacyParams.set('artifact', 'working')
     if (activeFork) legacyParams.set('fork', 'available')
+    if (activeSort !== 'recommended') legacyParams.set('sort', activeSort)
     redirect(`/paths?${legacyParams.toString()}`)
   }
 
   const [categories, prompts] = await Promise.all([
     getCategories(),
-    getPrompts({ sort: 'newest', limit: 300 }),
+    getPrompts({ sort: 'newest' }),
   ])
   const catalog = buildPathDiscoveryCatalog(prompts, categories)
   let isLoggedIn = false
@@ -173,17 +190,25 @@ export async function BuildPathsDiscovery({
     if (activeDomain && getPromptBroadDomain(item.prompt, categories)?.slug !== activeDomain) return false
     if (activeDifficulty && item.difficulty !== activeDifficulty) return false
     if (activeModel && !item.modelLabels.some((label) => publicModelFilterMatchesLabel(activeModel, label))) return false
-    if (activeCompare && item.comparisonCount < 2) return false
+    if (activeCompare && item.verifiedModelCount < 2) return false
     if (activeArtifact && !item.hasWorkingArtifact) return false
     if (activeFork && !item.hasFork) return false
     return true
   })
-  const ordered = activeSort === 'newest' ? newestOrder(filtered) : recommendedOrder(filtered)
+  const ordered = activeSort === 'active'
+    ? activeOrder(filtered)
+    : activeSort === 'forks'
+      ? forkCountOrder(filtered)
+      : activeSort === 'models'
+        ? multiModelOrder(filtered)
+        : activeSort === 'newest'
+          ? newestOrder(filtered)
+          : recommendedOrder(filtered)
   const totalPages = Math.max(1, Math.ceil(ordered.length / PAGE_SIZE))
   const activePage = Math.min(requestedPage, totalPages)
   const pageItems = ordered.slice((activePage - 1) * PAGE_SIZE, activePage * PAGE_SIZE)
   const isFiltered = Boolean(
-    rawPanel === 'open' || activeSort === 'newest' || query || activeIntent || activeDomain || activeDifficulty || activeModel || activeCompare || activeArtifact || activeFork,
+    rawPanel === 'open' || activeSort !== 'recommended' || query || activeIntent || activeDomain || activeDifficulty || activeModel || activeCompare || activeArtifact || activeFork,
   )
 
   const modelCounts = new Map<string, { label: string; count: number }>()
@@ -212,7 +237,7 @@ export async function BuildPathsDiscovery({
       compare: activeCompare ? 'models' : undefined,
       artifact: activeArtifact ? 'working' : undefined,
       fork: activeFork ? 'available' : undefined,
-      sort: activeSort === 'newest' ? 'newest' : undefined,
+      sort: activeSort === 'recommended' ? undefined : activeSort,
       page: activePage > 1 ? String(activePage) : undefined,
       panel: rawPanel === 'open' ? 'open' : undefined,
       ...Object.fromEntries(Object.entries(overrides).map(([key, value]) => [key, value === undefined ? undefined : String(value)])),
@@ -268,6 +293,7 @@ export async function BuildPathsDiscovery({
             {activeCompare && <input type="hidden" name="compare" value="models" />}
             {activeArtifact && <input type="hidden" name="artifact" value="working" />}
             {activeFork && <input type="hidden" name="fork" value="available" />}
+            {activeSort !== 'recommended' && <input type="hidden" name="sort" value={activeSort} />}
             <button type="submit">Find paths <ArrowRight aria-hidden="true" /></button>
           </form>
 
@@ -368,13 +394,35 @@ export async function BuildPathsDiscovery({
                 </div>
               </details>
 
-              <div className="path-sort" aria-label="Sort build paths">
-                <span>Sort</span>
-                <Link href={buildUrl({ sort: undefined, page: undefined })} className={activeSort === 'recommended' ? 'is-active' : ''}>Recommended</Link>
-                <Link href={buildUrl({ sort: 'newest', page: undefined })} className={activeSort === 'newest' ? 'is-active' : ''}>Newest</Link>
-              </div>
+              <details className="path-sort-menu">
+                <summary aria-label="Sort build paths">
+                  <ArrowDownWideNarrow aria-hidden="true" />
+                  <span>Sort</span>
+                  <strong>{DISCOVERY_SORT_OPTIONS.find((option) => option.value === activeSort)?.label}</strong>
+                </summary>
+                <div className="path-sort-popover">
+                  {DISCOVERY_SORT_OPTIONS.map((option) => (
+                    <Link
+                      key={option.value}
+                      href={buildUrl({
+                        sort: option.value === 'recommended' ? undefined : option.value,
+                        page: undefined,
+                      })}
+                      className={activeSort === option.value ? 'is-active' : ''}
+                      aria-current={activeSort === option.value ? 'true' : undefined}
+                    >
+                      {option.label}
+                    </Link>
+                  ))}
+                </div>
+              </details>
             </div>
           </div>
+
+          <details className="path-activity-explainer">
+            <summary>What “Active” means</summary>
+            <p>{ACTIVE_PROJECT_EXPLANATION}</p>
+          </details>
 
           {activeFilterCount > 0 && (
             <div className="path-active-filter-bar">

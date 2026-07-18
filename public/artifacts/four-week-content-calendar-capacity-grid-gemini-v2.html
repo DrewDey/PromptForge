@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Content Planner</title>
+    <style>
+        :root { --bg: #f8fafc; --card: #ffffff; --text: #0f172a; --primary: #4f46e5; --border: #e2e8f0; --warn: #ef4444; --success: #10b981; }
+        body { background: var(--bg); color: var(--text); padding: 12px; font-family: sans-serif; font-size: 14px; }
+        .section { background: var(--card); border-radius: 8px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border); }
+        h1, h2 { font-size: 1.2rem; color: var(--primary); margin-bottom: 12px; }
+        label { display: block; font-weight: 600; margin: 8px 0 4px; }
+        input, textarea, select { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; }
+        .week-block { border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 12px; }
+        .week-header { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+        .days-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+        .day-card { border: 1px solid var(--border); border-radius: 4px; padding: 8px; }
+        .slot { background: #f1f5f9; border-left: 3px solid var(--primary); padding: 6px; margin-bottom: 6px; cursor: pointer; font-size: 12px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+        .modal-content { background: #fff; padding: 16px; border-radius: 8px; width: 100%; max-width: 400px; }
+        button { padding: 10px; border: none; border-radius: 6px; cursor: pointer; margin-top: 8px; font-weight: 600; width: 100%; }
+        .btn-pri { background: var(--primary); color: #fff; }
+    </style>
+</head>
+<body>
+
+<div class="section">
+    <h1>Setup</h1>
+    <label>Channels (comma separated)</label>
+    <input type="text" id="channelsInput" value="Instagram, LinkedIn, Newsletter">
+    <label>Weekly Limit</label>
+    <input type="number" id="limitInput" value="5">
+    <button class="btn-pri" id="renderBtn">Refresh Calendar</button>
+</div>
+
+<div class="section">
+    <h2>Calendar</h2>
+    <div id="calendar"></div>
+</div>
+
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <h3 id="modalTitle">Edit Post</h3>
+        <select id="modalChannel"></select>
+        <input type="text" id="modalTitleIn" placeholder="Title">
+        <textarea id="modalCopy" rows="4" placeholder="Brief..."></textarea>
+        <button id="saveBtn" class="btn-pri">Save</button>
+        <button id="closeBtn">Close</button>
+    </div>
+</div>
+
+<script>
+    const state = JSON.parse(localStorage.getItem('planner')) || { limit: 5, slots: [] };
+    const calendar = document.getElementById('calendar');
+    const modal = document.getElementById('modal');
+    let activeSlot = null;
+
+    function render() {
+        calendar.textContent = '';
+        state.limit = parseInt(document.getElementById('limitInput').value);
+        localStorage.setItem('planner', JSON.stringify(state));
+
+        for (let w = 1; w <= 4; w++) {
+            const week = document.createElement('div');
+            week.className = 'week-block';
+            const head = document.createElement('div');
+            head.className = 'week-header';
+            const count = state.slots.filter(s => s.week === w).length;
+            head.textContent = `Week ${w} (${count}/${state.limit})`;
+            week.appendChild(head);
+
+            const grid = document.createElement('div');
+            grid.className = 'days-grid';
+            ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].forEach(day => {
+                const card = document.createElement('div');
+                card.className = 'day-card';
+                const label = document.createElement('div');
+                label.textContent = day;
+                card.appendChild(label);
+                
+                state.slots.filter(s => s.week === w && s.day === day).forEach(s => {
+                    const div = document.createElement('div');
+                    div.className = 'slot';
+                    div.textContent = s.title;
+                    div.addEventListener('click', () => openModal(s));
+                    card.appendChild(div);
+                });
+
+                const add = document.createElement('button');
+                add.textContent = '+';
+                add.addEventListener('click', () => openModal({week: w, day: day}));
+                card.appendChild(add);
+                grid.appendChild(card);
+            });
+            week.appendChild(grid);
+            calendar.appendChild(week);
+        }
+    }
+
+    function openModal(slot) {
+        activeSlot = slot;
+        document.getElementById('modalTitle').textContent = `Edit W${slot.week} ${slot.day}`;
+        const chan = document.getElementById('modalChannel');
+        chan.textContent = '';
+        document.getElementById('channelsInput').value.split(',').forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = opt.textContent = c.trim();
+            if (c.trim() === slot.channel) opt.selected = true;
+            chan.appendChild(opt);
+        });
+        document.getElementById('modalTitleIn').value = slot.title || '';
+        document.getElementById('modalCopy').value = slot.copy || '';
+        modal.style.display = 'flex';
+    }
+
+    document.getElementById('saveBtn').addEventListener('click', () => {
+        if (!activeSlot.id) {
+            activeSlot.id = Date.now();
+            state.slots.push(activeSlot);
+        }
+        activeSlot.channel = document.getElementById('modalChannel').value;
+        activeSlot.title = document.getElementById('modalTitleIn').value;
+        activeSlot.copy = document.getElementById('modalCopy').value;
+        modal.style.display = 'none';
+        render();
+    });
+
+    document.getElementById('closeBtn').addEventListener('click', () => modal.style.display = 'none');
+    document.getElementById('renderBtn').addEventListener('click', render);
+    render();
+</script>
+</body>
+</html>

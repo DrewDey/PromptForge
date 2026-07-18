@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Visual Consistency Board</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1A1433;
+    --surface: #241D45;
+    --card: #2D2555;
+    --rail: #F7F5F0;
+    --amber: #F5A623;
+    --coral: #E8715A;
+    --mint: #5EC689;
+    --slate: #7B8FA1;
+    --white: #F7F5F0;
+    --muted: #9B8FC4;
+    --border: rgba(255,255,255,0.08);
+    --font-display: 'DM Serif Display', Georgia, serif;
+    --font-ui: 'Inter', system-ui, sans-serif;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+ 
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+  body {
+    background: var(--bg);
+    color: var(--white);
+    font-family: var(--font-ui);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+    padding-bottom: 80px;
+  }
+ 
+  /* ── TOP BAR ── */
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 16px 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .topbar-title {
+    font-family: var(--font-display);
+    font-size: 17px;
+    letter-spacing: 0.01em;
+    color: var(--white);
+    white-space: nowrap;
+  }
+  .topbar-sub {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    display: block;
+    margin-top: 1px;
+  }
+  .save-pill {
+    background: var(--amber);
+    color: #1A1433;
+    border: none;
+    border-radius: 20px;
+    padding: 7px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: var(--font-ui);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+  }
+  .save-pill:hover { opacity: 0.88; }
+  .save-pill.saved { background: var(--mint); }
+ 
+  /* ── SECTION LABELS ── */
+  .section { padding: 0 16px; margin-top: 22px; }
+  .section-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+ 
+  /* ── BRIEF ── */
+  .brief-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .brief-meta {
+    display: flex;
+    gap: 8px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .brief-field {
+    flex: 1;
+  }
+  .brief-field label {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 3px;
+  }
+  .brief-field input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--white);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 500;
+    width: 100%;
+  }
+  .brief-field input::placeholder { color: var(--slate); }
+  .brief-body {
+    padding: 10px 12px;
+  }
+  .brief-body label {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 5px;
+  }
+  .brief-body textarea {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--white);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    line-height: 1.6;
+    width: 100%;
+    resize: none;
+    min-height: 70px;
+  }
+  .brief-body textarea::placeholder { color: var(--slate); }
+ 
+  /* ── CONSTRAINT RAIL ── */
+  .constraint-rail {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .constraint-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .constraint-header span {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--amber);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .add-btn {
+    background: rgba(245,166,35,0.12);
+    border: 1px solid rgba(245,166,35,0.3);
+    color: var(--amber);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: var(--font-ui);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .add-btn:hover { background: rgba(245,166,35,0.2); }
+ 
+  .constraint-list { padding: 8px 12px; }
+  .constraint-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .constraint-item:last-child { border-bottom: none; }
+  .constraint-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--amber);
+    flex-shrink: 0;
+  }
+  .constraint-item input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--white);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    flex: 1;
+    min-width: 0;
+  }
+  .constraint-item input::placeholder { color: var(--slate); }
+  .del-btn {
+    background: none;
+    border: none;
+    color: var(--slate);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0 2px;
+    line-height: 1;
+    transition: color 0.15s;
+    flex-shrink: 0;
+  }
+  .del-btn:hover { color: var(--coral); }
+ 
+  /* ── WARNING BANNER ── */
+  .warning-banner {
+    background: rgba(232,113,90,0.12);
+    border: 1px solid rgba(232,113,90,0.3);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--coral);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    transition: opacity 0.3s;
+  }
+  .warning-banner.hidden { display: none; }
+  .warning-banner .icon { flex-shrink: 0; font-size: 14px; margin-top: 1px; }
+  .warning-banner .txt { line-height: 1.5; }
+ 
+  /* ── STYLE CARDS ── */
+  .style-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .style-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .style-card.has-conflict { border-color: rgba(232,113,90,0.5); }
+  .style-card.all-clear { border-color: rgba(94,198,137,0.3); }
+ 
+  .card-header {
+    display: flex;
+    align-items: stretch;
+    cursor: pointer;
+    user-select: none;
+  }
+  .card-swatch {
+    width: 6px;
+    flex-shrink: 0;
+    border-radius: 0;
+  }
+  .card-header-inner {
+    flex: 1;
+    padding: 12px 12px 12px 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card-name-wrap { flex: 1; min-width: 0; }
+  .card-direction-label {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 2px;
+  }
+  .card-name {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--white);
+    font-family: var(--font-display);
+    font-size: 15px;
+    width: 100%;
+  }
+  .card-name::placeholder { color: var(--slate); }
+ 
+  .card-status-dots {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+    align-items: center;
+  }
+  .status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--slate);
+    opacity: 0.4;
+    flex-shrink: 0;
+  }
+  .status-dot.pass { background: var(--mint); opacity: 1; }
+  .status-dot.fail { background: var(--coral); opacity: 1; }
+  .status-dot.unknown { background: var(--slate); opacity: 0.5; }
+ 
+  .card-toggle {
+    color: var(--muted);
+    font-size: 12px;
+    flex-shrink: 0;
+    transition: transform 0.2s;
+  }
+  .card-toggle.open { transform: rotate(180deg); }
+ 
+  .card-body { padding: 0 12px 12px 16px; }
+  .card-body.collapsed { display: none; }
+ 
+  .card-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .card-field { flex: 1; }
+  .card-field label {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 3px;
+  }
+  .card-field input, .card-field textarea, .card-field select {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--white);
+    font-family: var(--font-ui);
+    font-size: 12px;
+    padding: 6px 8px;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .card-field input:focus, .card-field textarea:focus { border-color: rgba(245,166,35,0.4); }
+  .card-field textarea { resize: none; min-height: 52px; line-height: 1.5; }
+  .card-field select { cursor: pointer; }
+  .card-field select option { background: var(--surface); }
+  .card-field input::placeholder, .card-field textarea::placeholder { color: var(--slate); }
+ 
+  /* constraint check list within card */
+  .constraint-checks {
+    margin-top: 4px;
+  }
+  .constraint-checks-label {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    margin-bottom: 6px;
+    display: block;
+  }
+  .check-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+  }
+  .check-toggle {
+    display: flex;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .check-toggle button {
+    background: transparent;
+    border: none;
+    color: var(--slate);
+    font-size: 10px;
+    padding: 3px 7px;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    font-weight: 600;
+    transition: background 0.12s, color 0.12s;
+  }
+  .check-toggle button.active-pass { background: rgba(94,198,137,0.2); color: var(--mint); }
+  .check-toggle button.active-fail { background: rgba(232,113,90,0.2); color: var(--coral); }
+  .check-text {
+    font-size: 12px;
+    color: var(--white);
+    flex: 1;
+    opacity: 0.85;
+  }
+  .check-text.fail-label { color: var(--coral); opacity: 1; text-decoration: line-through; }
+ 
+  /* ── CHECKLIST ── */
+  .checklist-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .checklist-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    gap: 8px;
+  }
+  .checklist-toolbar span {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .checklist-actions { display: flex; gap: 6px; }
+  .icon-btn {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    color: var(--white);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: var(--font-ui);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .icon-btn:hover { background: rgba(255,255,255,0.12); }
+ 
+  .checklist-body { padding: 10px 12px; }
+ 
+  .shot-group { margin-bottom: 14px; }
+  .shot-group-title {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--amber);
+    margin-bottom: 6px;
+  }
+  .shot-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .shot-cb {
+    width: 14px; height: 14px;
+    border: 1.5px solid var(--muted);
+    border-radius: 3px;
+    flex-shrink: 0;
+    cursor: pointer;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1px;
+    transition: background 0.12s, border-color 0.12s;
+  }
+  .shot-cb.checked { background: var(--mint); border-color: var(--mint); }
+  .shot-cb.checked::after { content: '✓'; font-size: 9px; color: #1A1433; font-weight: 900; }
+  .shot-label {
+    font-size: 12px;
+    line-height: 1.45;
+    flex: 1;
+    transition: color 0.12s, opacity 0.12s;
+    cursor: pointer;
+  }
+  .shot-label.done { text-decoration: line-through; color: var(--slate); }
+ 
+  .add-shot-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .add-shot-input {
+    flex: 1;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--white);
+    font-family: var(--font-ui);
+    font-size: 12px;
+    padding: 7px 10px;
+    outline: none;
+  }
+  .add-shot-input::placeholder { color: var(--slate); }
+  .add-shot-input:focus { border-color: rgba(245,166,35,0.4); }
+  .add-shot-btn {
+    background: rgba(245,166,35,0.15);
+    border: 1px solid rgba(245,166,35,0.3);
+    color: var(--amber);
+    border-radius: 6px;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: var(--font-ui);
+    cursor: pointer;
+  }
+ 
+  /* progress bar */
+  .progress-bar-wrap {
+    height: 3px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 2px;
+    margin: 0 12px 10px;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--mint);
+    border-radius: 2px;
+    transition: width 0.3s;
+  }
+ 
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: var(--mint);
+    color: #1A1433;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 9px 18px;
+    border-radius: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s, transform 0.25s;
+    z-index: 200;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+ 
+  /* ── MISC ── */
+  .spacer { height: 6px; }
+  
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+ 
+<!-- TOP BAR -->
+<div class="topbar">
+  <div>
+    <span class="topbar-title">&#9632; Visual Board</span>
+    <span class="topbar-sub">Campaign Consistency</span>
+  </div>
+  <button class="save-pill" id="saveBtn" onclick="saveAll()">&#8595; Save</button>
+</div>
+ 
+<!-- BRIEF -->
+<div class="section">
+  <div class="section-label">&#9474; Campaign Brief</div>
+  <div class="brief-wrap">
+    <div class="brief-meta">
+      <div class="brief-field">
+        <label>Product / Campaign</label>
+        <input type="text" id="briefProduct" placeholder="e.g. Nova Skincare — Launch '25" />
+      </div>
+      <div class="brief-field">
+        <label>Target Audience</label>
+        <input type="text" id="briefAudience" placeholder="e.g. Women 25–40" />
+      </div>
+    </div>
+    <div class="brief-body">
+      <label>Brief</label>
+      <textarea id="briefText" placeholder="Describe the campaign goal, mood, messaging priorities, and any non-negotiables for the overall visual direction..."></textarea>
+    </div>
+  </div>
+</div>
+ 
+<!-- CONSTRAINTS -->
+<div class="section">
+  <div class="section-label">&#9632; Must-Keep Constraints</div>
+  <div class="constraint-rail">
+    <div class="constraint-header">
+      <span>&#9888; Locked rules</span>
+      <button class="add-btn" onclick="addConstraint()">+ Add</button>
+    </div>
+    <div class="constraint-list" id="constraintList"></div>
+  </div>
+</div>
+ 
+<!-- WARNING BANNER -->
+<div class="section" id="warningSection">
+  <div class="warning-banner hidden" id="warningBanner">
+    <span class="icon">&#9888;</span>
+    <span class="txt" id="warningText"></span>
+  </div>
+</div>
+ 
+<!-- STYLE DIRECTIONS -->
+<div class="section">
+  <div class="section-label">&#9632; Style Directions</div>
+  <div class="style-grid" id="styleGrid"></div>
+</div>
+ 
+<!-- SHOT CHECKLIST -->
+<div class="section">
+  <div class="section-label">&#9632; Shot Checklist</div>
+  <div class="checklist-wrap">
+    <div class="checklist-toolbar">
+      <span>&#9776; Shots</span>
+      <div class="checklist-actions">
+        <button class="icon-btn" onclick="copyChecklist()">Copy</button>
+        <button class="icon-btn" onclick="downloadChecklist()">&#8595; CSV</button>
+      </div>
+    </div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="checklist-body">
+      <div id="shotGroups"></div>
+      <div class="add-shot-row">
+        <input class="add-shot-input" id="newShotInput" placeholder="Add a shot or deliverable…" onkeydown="if(event.key==='Enter')addShot()" />
+        <button class="add-shot-btn" onclick="addShot()">Add</button>
+      </div>
+    </div>
+  </div>
+</div>
+ 
+<div class="spacer"></div>
+<div class="toast" id="toast"></div>
+ 
+<script>
+// ── STATE ──────────────────────────────────────────────────────────
+const STORAGE_KEY = 'vcb_v1';
+ 
+let state = {
+  brief: { product: '', audience: '', text: '' },
+  constraints: [
+    { id: 'c1', text: 'Brand color palette only (no off-brand grays)' },
+    { id: 'c2', text: 'No lifestyle models — product-only imagery' },
+    { id: 'c3', text: 'Minimum 50% white space per frame' },
+    { id: 'c4', text: 'Logo always top-left, never rotated' },
+  ],
+  styles: [
+    {
+      id: 's1', name: 'Clean Geometry', mood: 'minimal', palette: '#FFFFFF, #1A1A2E, #E8715A',
+      tone: 'Cool, precise, editorial', notes: 'Hard shadows, flat lay, geometric props',
+      checks: {}
+    },
+    {
+      id: 's2', name: 'Warm Organic', mood: 'lifestyle', palette: '#F5E6D3, #8B4513, #E8C49A',
+      tone: 'Tactile, earthy, intimate', notes: 'Natural light, linen textures, macro detail',
+      checks: {}
+    },
+    {
+      id: 's3', name: 'High Contrast', mood: 'bold', palette: '#000000, #F5A623, #FFFFFF',
+      tone: 'Punchy, graphic, modern', notes: 'Studio black backdrop, dramatic rim light',
+      checks: {}
+    },
+    {
+      id: 's4', name: 'Pastel Studio', mood: 'soft', palette: '#FAD4E0, #D4E8FA, #FAF0D4',
+      tone: 'Gentle, playful, approachable', notes: 'Seamless paper, pastel props, diffused fill',
+      checks: {}
+    },
+  ],
+  shots: [
+    { id: 'sh1', group: 'Hero', label: 'Full product on white — hero frame', done: false },
+    { id: 'sh2', group: 'Hero', label: 'Overhead flat lay — styled scene', done: false },
+    { id: 'sh3', group: 'Detail', label: 'Texture close-up (cap / lid / label)', done: false },
+    { id: 'sh4', group: 'Detail', label: 'In-use application shot', done: false },
+    { id: 'sh5', group: 'Social', label: '1:1 crop — Instagram feed', done: false },
+    { id: 'sh6', group: 'Social', label: '9:16 crop — Stories / Reels', done: false },
+    { id: 'sh7', group: 'Print', label: 'Full-bleed horizontal — OOH / banner', done: false },
+  ],
+  openCards: { s1: true, s2: false, s3: false, s4: false },
+};
+ 
+// Card swatch colors
+const SWATCHES = ['#E8715A', '#F5A623', '#5EC689', '#9B8FC4'];
+ 
+// ── LOAD / SAVE ────────────────────────────────────────────────────
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const saved = JSON.parse(raw);
+      // Merge carefully
+      state.brief = { ...state.brief, ...saved.brief };
+      if (saved.constraints?.length) state.constraints = saved.constraints;
+      if (saved.styles?.length) state.styles = saved.styles;
+      if (saved.shots?.length) state.shots = saved.shots;
+      if (saved.openCards) state.openCards = saved.openCards;
+    }
+  } catch(e) {}
+}
+ 
+function saveAll() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    const btn = document.getElementById('saveBtn');
+    btn.textContent = '✓ Saved';
+    btn.classList.add('saved');
+    showToast('Board saved to this browser ✓');
+    setTimeout(() => { btn.textContent = '↓ Save'; btn.classList.remove('saved'); }, 2000);
+  } catch(e) {
+    showToast('Save failed — check storage');
+  }
+}
+ 
+// ── RENDER BRIEF ──────────────────────────────────────────────────
+function renderBrief() {
+  document.getElementById('briefProduct').value = state.brief.product;
+  document.getElementById('briefAudience').value = state.brief.audience;
+  document.getElementById('briefText').value = state.brief.text;
+}
+ 
+function bindBrief() {
+  document.getElementById('briefProduct').addEventListener('input', e => { state.brief.product = e.target.value; });
+  document.getElementById('briefAudience').addEventListener('input', e => { state.brief.audience = e.target.value; });
+  document.getElementById('briefText').addEventListener('input', e => { state.brief.text = e.target.value; });
+}
+ 
+// ── CONSTRAINTS ───────────────────────────────────────────────────
+function renderConstraints() {
+  const list = document.getElementById('constraintList');
+  list.innerHTML = '';
+  state.constraints.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'constraint-item';
+    div.dataset.id = c.id;
+    div.innerHTML = `
+      <div class="constraint-dot"></div>
+      <input type="text" value="${escHtml(c.text)}" placeholder="Add a constraint…" data-cid="${c.id}" />
+      <button class="del-btn" onclick="deleteConstraint('${c.id}')" title="Remove">×</button>
+    `;
+    div.querySelector('input').addEventListener('input', e => {
+      const con = state.constraints.find(x => x.id === e.target.dataset.cid);
+      if (con) { con.text = e.target.value; refreshStyleCards(); updateWarnings(); }
+    });
+    list.appendChild(div);
+  });
+  refreshStyleCards();
+  updateWarnings();
+}
+ 
+function addConstraint() {
+  state.constraints.push({ id: uid(), text: '' });
+  renderConstraints();
+  // Focus last input
+  setTimeout(() => {
+    const inputs = document.querySelectorAll('#constraintList input');
+    if (inputs.length) inputs[inputs.length - 1].focus();
+  }, 50);
+}
+ 
+function deleteConstraint(id) {
+  state.constraints = state.constraints.filter(c => c.id !== id);
+  // Remove checks referencing this constraint from all styles
+  state.styles.forEach(s => { delete s.checks[id]; });
+  renderConstraints();
+  refreshStyleCards();
+}
+ 
+// ── STYLE CARDS ───────────────────────────────────────────────────
+function renderStyleCards() {
+  const grid = document.getElementById('styleGrid');
+  grid.innerHTML = '';
+  state.styles.forEach((s, idx) => {
+    const card = document.createElement('div');
+    card.className = 'style-card';
+    card.id = `card_${s.id}`;
+    card.innerHTML = buildCardHTML(s, idx);
+    grid.appendChild(card);
+    bindCardEvents(s, card);
+  });
+  refreshStyleCards();
+}
+ 
+function buildCardHTML(s, idx) {
+  const swatch = SWATCHES[idx % SWATCHES.length];
+  const open = state.openCards[s.id];
+  return `
+    <div class="card-header" onclick="toggleCard('${s.id}')">
+      <div class="card-swatch" style="background:${swatch}"></div>
+      <div class="card-header-inner">
+        <div class="card-name-wrap">
+          <span class="card-direction-label">Direction ${idx + 1}</span>
+          <input class="card-name" type="text" value="${escHtml(s.name)}" placeholder="Name this direction" onclick="event.stopPropagation()" data-sid="${s.id}" data-field="name" />
+        </div>
+        <div class="card-status-dots" id="dots_${s.id}"></div>
+        <span class="card-toggle ${open ? 'open' : ''}" id="toggle_${s.id}">▼</span>
+      </div>
+    </div>
+    <div class="card-body ${open ? '' : 'collapsed'}" id="body_${s.id}">
+      <div class="card-row" style="margin-top:10px">
+        <div class="card-field">
+          <label>Mood / Vibe</label>
+          <select data-sid="${s.id}" data-field="mood">
+            ${['minimal','lifestyle','bold','soft','dramatic','playful','editorial','luxury'].map(m =>
+              `<option value="${m}" ${s.mood===m?'selected':''}>${m}</option>`
+            ).join('')}
+          </select>
+        </div>
+        <div class="card-field">
+          <label>Key Palette</label>
+          <input type="text" placeholder="#HEX, #HEX…" value="${escHtml(s.palette)}" data-sid="${s.id}" data-field="palette" />
+        </div>
+      </div>
+      <div class="card-row">
+        <div class="card-field">
+          <label>Tone / Feel</label>
+          <input type="text" placeholder="e.g. Cool, editorial, precise" value="${escHtml(s.tone)}" data-sid="${s.id}" data-field="tone" />
+        </div>
+      </div>
+      <div class="card-row">
+        <div class="card-field">
+          <label>Shot Notes</label>
+          <textarea placeholder="Props, lighting, framing notes…" data-sid="${s.id}" data-field="notes">${escHtml(s.notes)}</textarea>
+        </div>
+      </div>
+      <div class="constraint-checks">
+        <span class="constraint-checks-label">&#9632; Constraint Check</span>
+        <div id="checks_${s.id}"></div>
+      </div>
+    </div>
+  `;
+}
+ 
+function bindCardEvents(s, card) {
+  // Input / select events
+  card.querySelectorAll('[data-field]').forEach(el => {
+    const ev = el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' ? 'input' : 'input';
+    el.addEventListener(ev, e => {
+      const sty = state.styles.find(x => x.id === e.target.dataset.sid);
+      if (sty) {
+        sty[e.target.dataset.field] = e.target.value;
+        if (e.target.dataset.field === 'name') {
+          // No full re-render needed
+        }
+        updateWarnings();
+      }
+    });
+  });
+}
+ 
+function toggleCard(id) {
+  state.openCards[id] = !state.openCards[id];
+  const body = document.getElementById(`body_${id}`);
+  const tog = document.getElementById(`toggle_${id}`);
+  if (state.openCards[id]) {
+    body.classList.remove('collapsed');
+    tog.classList.add('open');
+  } else {
+    body.classList.add('collapsed');
+    tog.classList.remove('open');
+  }
+}
+ 
+function refreshStyleCards() {
+  state.styles.forEach(s => {
+    renderChecks(s);
+    renderDots(s);
+    updateCardBorder(s);
+  });
+  updateWarnings();
+}
+ 
+function renderChecks(s) {
+  const container = document.getElementById(`checks_${s.id}`);
+  if (!container) return;
+  container.innerHTML = '';
+  if (!state.constraints.length) {
+    container.innerHTML = `<div style="font-size:12px;color:var(--slate);padding:4px 0">No constraints defined yet.</div>`;
+    return;
+  }
+  state.constraints.forEach(c => {
+    const status = s.checks[c.id] || 'unknown';
+    const row = document.createElement('div');
+    row.className = 'check-row';
+    row.innerHTML = `
+      <div class="check-toggle">
+        <button class="${status === 'pass' ? 'active-pass' : ''}" data-sid="${s.id}" data-cid="${c.id}" data-val="pass">✓</button>
+        <button class="${status === 'fail' ? 'active-fail' : ''}" data-sid="${s.id}" data-cid="${c.id}" data-val="fail">✕</button>
+      </div>
+      <span class="check-text ${status === 'fail' ? 'fail-label' : ''}">${escHtml(c.text || '(unnamed constraint)')}</span>
+    `;
+    row.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const sty = state.styles.find(x => x.id === btn.dataset.sid);
+        if (!sty) return;
+        // Toggle off if already selected
+        if (sty.checks[btn.dataset.cid] === btn.dataset.val) {
+          delete sty.checks[btn.dataset.cid];
+        } else {
+          sty.checks[btn.dataset.cid] = btn.dataset.val;
+        }
+        refreshStyleCards();
+      });
+    });
+    container.appendChild(row);
+  });
+}
+ 
+function renderDots(s) {
+  const dotsEl = document.getElementById(`dots_${s.id}`);
+  if (!dotsEl) return;
+  dotsEl.innerHTML = '';
+  state.constraints.forEach(c => {
+    const status = s.checks[c.id] || 'unknown';
+    const d = document.createElement('div');
+    d.className = `status-dot ${status}`;
+    d.title = `${c.text || 'constraint'}: ${status}`;
+    dotsEl.appendChild(d);
+  });
+}
+ 
+function updateCardBorder(s) {
+  const card = document.getElementById(`card_${s.id}`);
+  if (!card) return;
+  const vals = Object.values(s.checks);
+  const hasFail = vals.includes('fail');
+  const anyConstraint = state.constraints.length > 0;
+  const allPass = anyConstraint && state.constraints.every(c => s.checks[c.id] === 'pass');
+  card.classList.toggle('has-conflict', hasFail);
+  card.classList.toggle('all-clear', allPass && !hasFail);
+}
+ 
+// ── WARNINGS ─────────────────────────────────────────────────────
+function updateWarnings() {
+  const banner = document.getElementById('warningBanner');
+  const txt = document.getElementById('warningText');
+  const warnings = [];
+ 
+  state.styles.forEach(s => {
+    const fails = state.constraints.filter(c => s.checks[c.id] === 'fail');
+    if (fails.length) {
+      const styleName = s.name || 'Unnamed direction';
+      fails.forEach(f => {
+        warnings.push(`"${styleName}" conflicts with: ${f.text || 'unnamed constraint'}`);
+      });
+    }
+  });
+ 
+  // Check for unchecked constraints across all styles
+  const totalUnchecked = state.styles.reduce((acc, s) => {
+    return acc + state.constraints.filter(c => !s.checks[c.id]).length;
+  }, 0);
+  if (totalUnchecked > 0 && state.constraints.length > 0) {
+    warnings.push(`${totalUnchecked} constraint check${totalUnchecked > 1 ? 's' : ''} still unreviewed across directions.`);
+  }
+ 
+  if (warnings.length) {
+    banner.classList.remove('hidden');
+    txt.innerHTML = warnings.join('<br>');
+  } else {
+    banner.classList.add('hidden');
+  }
+}
+ 
+// ── CHECKLIST ────────────────────────────────────────────────────
+function renderShots() {
+  const container = document.getElementById('shotGroups');
+  container.innerHTML = '';
+ 
+  // Group shots
+  const groups = {};
+  state.shots.forEach(sh => {
+    if (!groups[sh.group]) groups[sh.group] = [];
+    groups[sh.group].push(sh);
+  });
+ 
+  Object.keys(groups).forEach(grp => {
+    const groupDiv = document.createElement('div');
+    groupDiv.className = 'shot-group';
+    groupDiv.innerHTML = `<div class="shot-group-title">${escHtml(grp)}</div>`;
+    groups[grp].forEach(sh => {
+      const item = document.createElement('div');
+      item.className = 'shot-item';
+      item.innerHTML = `
+        <div class="shot-cb ${sh.done ? 'checked' : ''}" id="cb_${sh.id}" onclick="toggleShot('${sh.id}')"></div>
+        <span class="shot-label ${sh.done ? 'done' : ''}" id="lbl_${sh.id}" onclick="toggleShot('${sh.id}')">${escHtml(sh.label)}</span>
+        <button class="del-btn" onclick="deleteShot('${sh.id}')" style="margin-top:1px">×</button>
+      `;
+      groupDiv.appendChild(item);
+    });
+    container.appendChild(groupDiv);
+  });
+ 
+  updateProgress();
+}
+ 
+function toggleShot(id) {
+  const sh = state.shots.find(x => x.id === id);
+  if (!sh) return;
+  sh.done = !sh.done;
+  const cb = document.getElementById(`cb_${id}`);
+  const lbl = document.getElementById(`lbl_${id}`);
+  if (cb) cb.className = `shot-cb ${sh.done ? 'checked' : ''}`;
+  if (lbl) lbl.className = `shot-label ${sh.done ? 'done' : ''}`;
+  updateProgress();
+}
+ 
+function deleteShot(id) {
+  state.shots = state.shots.filter(x => x.id !== id);
+  renderShots();
+}
+ 
+function addShot() {
+  const input = document.getElementById('newShotInput');
+  const val = input.value.trim();
+  if (!val) return;
+  // Try to detect group prefix: "Hero: ..." or just add to "Custom"
+  let group = 'Custom', label = val;
+  const colonIdx = val.indexOf(':');
+  if (colonIdx > 0 && colonIdx < 20) {
+    group = val.slice(0, colonIdx).trim();
+    label = val.slice(colonIdx + 1).trim();
+  }
+  state.shots.push({ id: uid(), group, label, done: false });
+  input.value = '';
+  renderShots();
+}
+ 
+function updateProgress() {
+  const total = state.shots.length;
+  const done = state.shots.filter(s => s.done).length;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+ 
+function copyChecklist() {
+  const lines = [];
+  lines.push(`Shot Checklist — ${state.brief.product || 'Campaign'}`);
+  lines.push('');
+  const groups = {};
+  state.shots.forEach(sh => {
+    if (!groups[sh.group]) groups[sh.group] = [];
+    groups[sh.group].push(sh);
+  });
+  Object.keys(groups).forEach(grp => {
+    lines.push(`[ ${grp} ]`);
+    groups[grp].forEach(sh => {
+      lines.push(`  ${sh.done ? '[x]' : '[ ]'} ${sh.label}`);
+    });
+    lines.push('');
+  });
+  navigator.clipboard?.writeText(lines.join('\n'))
+    .then(() => showToast('Checklist copied ✓'))
+    .catch(() => showToast('Copy failed — try Download'));
+}
+ 
+function downloadChecklist() {
+  const rows = ['Group,Shot,Done'];
+  state.shots.forEach(sh => {
+    rows.push(`"${escCsv(sh.group)}","${escCsv(sh.label)}","${sh.done ? 'Yes' : 'No'}"`);
+  });
+  const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `shot-checklist-${Date.now()}.csv`;
+  a.click();
+  showToast('CSV downloaded ✓');
+}
+ 
+// ── UTILITIES ────────────────────────────────────────────────────
+let _uidc = 0;
+function uid() { return 'x' + Date.now() + (++_uidc); }
+ 
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escCsv(s) { return String(s || '').replace(/"/g,'""'); }
+ 
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+ 
+// ── INIT ─────────────────────────────────────────────────────────
+loadState();
+renderBrief();
+bindBrief();
+renderConstraints();
+renderStyleCards();
+renderShots();
+updateWarnings();
+</script>
+</body>
+</html>

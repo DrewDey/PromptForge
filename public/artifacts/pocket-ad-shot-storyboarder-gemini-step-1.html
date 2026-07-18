@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pocket Storyboarder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { -webkit-tap-highlight-color: transparent; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-zinc-950 text-zinc-50 font-sans antialiased selection:bg-zinc-800">
+
+    <!-- App Wrapper -->
+    <div class="max-w-md mx-auto min-h-screen flex flex-col bg-zinc-900 shadow-2xl pb-12">
+        
+        <!-- Header -->
+        <header class="sticky top-0 z-50 bg-zinc-900/90 backdrop-blur border-b border-zinc-800 px-4 py-3 flex items-center justify-between">
+            <h1 class="text-sm font-bold tracking-wider uppercase text-zinc-400">Pocket Storyboarder</h1>
+            <button onclick="generateStoryboard()" class="bg-zinc-50 hover:bg-zinc-200 text-zinc-950 text-xs font-semibold px-3 py-1.5 rounded-full transition-all active:scale-95">
+                Build Board
+            </button>
+        </header>
+
+        <!-- Main Content (Scrollable Container) -->
+        <main class="flex-1 px-4 py-4 space-y-6 overflow-y-auto">
+            
+            <!-- Context Selection -->
+            <section class="space-y-2">
+                <label class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Core Subject</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="setSubject('Product')" id="btn-Product" class="subject-btn py-3 px-2 bg-zinc-800 border border-zinc-700 rounded-xl text-xs font-medium text-center transition-all active:scale-95">
+                        📦 Product
+                    </button>
+                    <button onclick="setSubject('Person')" id="btn-Person" class="subject-btn py-3 px-2 bg-zinc-800 border border-zinc-700 rounded-xl text-xs font-medium text-center transition-all active:scale-95">
+                        👤 Person
+                    </button>
+                    <button onclick="setSubject('Place')" id="btn-Place" class="subject-btn py-3 px-2 bg-zinc-800 border border-zinc-700 rounded-xl text-xs font-medium text-center transition-all active:scale-95">
+                        📍 Place
+                    </button>
+                </div>
+                <input type="text" id="subject-detail" placeholder="Specific details (e.g., Matte black energy drink can)" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-500">
+            </section>
+
+            <!-- Parameters Grid -->
+            <section class="grid grid-cols-2 gap-4">
+                <!-- Mood -->
+                <div class="space-y-1.5">
+                    <label class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Mood / Tone</label>
+                    <select id="param-mood" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-2.5 py-2 text-sm text-zinc-200 focus:outline-none focus:border-zinc-500">
+                        <option>Cinematic / Moody</option>
+                        <option>Clean / Minimalist</option>
+                        <option>High-Octane / Edgy</option>
+                        <option>Luxury / Premium</option>
+                        <option>Warm / Nostalgic</option>
+                    </select>
+                </div>
+
+                <!-- Lighting -->
+                <div class="space-y-1.5">
+                    <label class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Lighting</label>
+                    <select id="param-lighting" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-2.5 py-2 text-sm text-zinc-200 focus:outline-none focus:border-zinc-500">
+                        <option>High Contrast Chiaroscuro</option>
+                        <option>Soft Diffused Studio</option>
+                        <option>Golden Hour Natural</option>
+                        <option>Cyberpunk Neon Accent</option>
+                        <option>Harsh Direct Sunlight</option>
+                    </select>
+                </div>
+
+                <!-- Camera Angle -->
+                <div class="space-y-1.5">
+                    <label class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Default Angle</label>
+                    <select id="param-angle" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-2.5 py-2 text-sm text-zinc-200 focus:outline-none focus:border-zinc-500">
+                        <option>Extreme Close-Up (Macro)</option>
+                        <option>Low Angle (Hero Shot)</option>
+                        <option>Eye-Level Clean</option>
+                        <option>Bird's Eye Top-Down</option>
+                        <option>Dutch Angle Dynamic</option>
+                    </select>
+                </div>
+
+                <!-- Motion -->
+                <div class="space-y-1.5">
+                    <label class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Pacing / Motion</label>
+                    <select id="param-motion" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-2.5 py-2 text-sm text-zinc-200 focus:outline-none focus:border-zinc-500">
+                        <option>Slow Motion Whip Pan</option>
+                        <option>Static Locked-Off</option>
+                        <option>Fast Push-In Tracking</option>
+                        <option>Smooth Orbit Jib</option>
+                        <option>Handheld Kinetic Shake</option>
+                    </select>
+                </div>
+            </section>
+
+            <!-- Constraints -->
+            <section class="space-y-1.5">
+                <label class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Constraints & Aspect Ratio</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <select id="param-ratio" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-2.5 py-2 text-sm text-zinc-200 focus:outline-none focus:border-zinc-500">
+                        <option>9:16 (Vertical Short-form)</option>
+                        <option>16:9 (Horizontal Widescreen)</option>
+                        <option>1:1 (Square Feed)</option>
+                    </select>
+                    <input type="text" id="param-custom-constraint" placeholder="e.g., No water, under 5s" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-500">
+                </div>
+            </section>
+
+            <hr class="border-zinc-800">
+
+            <!-- Output Workspace -->
+            <div id="output-workspace" class="hidden space-y-6">
+                
+                <!-- Storyboard Cards -->
+                <section class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Shot Cards (Editable)</label>
+                        <span class="text-[10px] text-zinc-500">Tap text to edit specs</span>
+                    </div>
+                    
+                    <div class="space-y-3" id="shot-cards-container">
+                        <!-- Output generated via JS -->
+                    </div>
+                </section>
+
+                <!-- Checklists -->
+                <section class="space-y-2 bg-zinc-800/50 border border-zinc-800 rounded-xl p-4">
+                    <label class="text-xs font-semibold uppercase tracking-wider text-zinc-400 block mb-2">Production Checklist</label>
+                    <div class="space-y-2" id="checklist-container">
+                        <!-- Output generated via JS -->
+                    </div>
+                </section>
+
+                <!-- Copyable Brief -->
+                <section class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Unified Shot Brief</label>
+                        <button onclick="copyBrief()" class="text-xs text-zinc-400 hover:text-zinc-50 hover:underline">Copy Clean Text</button>
+                    </div>
+                    <pre id="brief-block" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs text-zinc-300 font-mono overflow-x-auto whitespace-pre-wrap leading-relaxed"></pre>
+                </section>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Scripting Logic -->
+    <script>
+        let selectedSubjectType = '';
+
+        function setSubject(type) {
+            selectedSubjectType = type;
+            document.querySelectorAll('.subject-btn').forEach(btn => {
+                btn.classList.remove('bg-zinc-50', 'text-zinc-950', 'border-transparent');
+                btn.classList.add('bg-zinc-800', 'text-zinc-50', 'border-zinc-700');
+            });
+            const activeBtn = document.getElementById(`btn-${type}`);
+            activeBtn.classList.remove('bg-zinc-800', 'text-zinc-50', 'border-zinc-700');
+            activeBtn.classList.add('bg-zinc-50', 'text-zinc-950', 'border-transparent');
+        }
+
+        function generateStoryboard() {
+            const subjectType = selectedSubjectType || 'Product';
+            const subjectDetail = document.getElementById('subject-detail').value || `Unspecified ${subjectType}`;
+            const mood = document.getElementById('param-mood').value;
+            const lighting = document.getElementById('param-lighting').value;
+            const defaultAngle = document.getElementById('param-angle').value;
+            const motion = document.getElementById('param-motion').value;
+            const ratio = document.getElementById('param-ratio').value;
+            const customConstraint = document.getElementById('param-custom-constraint').value || 'None';
+
+            // Archetypal frameworks based on selection
+            const framingTemplates = {
+                Product: [
+                    { name: "01. Hook / Scale", angle: "Extreme Close-Up (Macro)", action: "Establishing texture, branding, or key micro-feature." },
+                    { name: "02. Context / Identity", angle: defaultAngle, action: `Interacting with environment under ${lighting} conditions.` },
+                    { name: "03. Kinetic Flow", angle: "Dynamic Framing", action: `${motion}. Capturing operational shape or liquid/material physics.` },
+                    { name: "04. Hero Outro", angle: "Low Angle (Hero Shot)", action: "Locking frame on complete package layout with active branding." }
+                ],
+                Person: [
+                    { name: "01. Int. Character", angle: "Close-Up Face / Profile", action: "Capturing direct expression or immediate psychological posture." },
+                    { name: "02. Physical Kinesthetics", angle: defaultAngle, action: `Tracking motion path through space using ${lighting}.` },
+                    { name: "03. Deep Environmental", angle: "Wide Tracking View", action: `${motion}. Isolating character inside the setting context.` },
+                    { name: "04. Clean Resolution", angle: "Eye-Level Portrait", action: "Subject locks framing alignment directly with lens focus." }
+                ],
+                Place: [
+                    { name: "01. Spatial Anchor", angle: "Bird's Eye Top-Down", action: "Mapping the architectural boundaries and scale layout." },
+                    { name: "02. Architectural Texture", angle: defaultAngle, action: `Gleaning textures across surface geometric lines under ${lighting}.` },
+                    { name: "03. Internal Sweep", angle: "Wide Angle Jib", action: `${motion}. Drawing viewer depth straight into the local environment.` },
+                    { name: "04. Abstract Vignette", angle: "Geometric Silhouette", action: "Compressing depth down to a graphic form layout." }
+                ]
+            };
+
+            const selectedSequence = framingTemplates[subjectType];
+            const cardsContainer = document.getElementById('shot-cards-container');
+            cardsContainer.innerHTML = '';
+
+            selectedSequence.forEach((shot, idx) => {
+                const card = document.createElement('div');
+                card.className = "bg-zinc-800 border border-zinc-700 rounded-xl p-4 space-y-2.5 transition-all";
+                card.innerHTML = `
+                    <div class="flex justify-between items-center border-b border-zinc-700/50 pb-1.5">
+                        <span class="text-xs font-bold text-zinc-400 uppercase tracking-wide">${shot.name}</span>
+                        <span class="text-[10px] px-2 py-0.5 rounded bg-zinc-900 border border-zinc-700 font-mono text-zinc-400">${ratio.split(' ')[0]}</span>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Framing / Setup</div>
+                        <div class="text-sm font-medium text-zinc-200 focus:outline-none" contenteditable="true" id="card-angle-${idx}">${shot.angle}</div>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Action / Manifestation</div>
+                        <div class="text-sm text-zinc-300 leading-relaxed focus:outline-none" contenteditable="true" id="card-action-${idx}">${shot.action}</div>
+                    </div>
+                `;
+                // Auto-refresh brief block whenever text inside changes
+                card.querySelectorAll('[contenteditable]').forEach(el => {
+                    el.addEventListener('input', updateBriefBlock);
+                });
+                cardsContainer.appendChild(card);
+            });
+
+            // Production Checklist Generation
+            const checklistContainer = document.getElementById('checklist-container');
+            const checklistItems = [
+                `Verify framing boundary safely matches ${ratio.split(' ')[0]} target lines.`,
+                `Confirm lighting layout achieves ${lighting.toLowerCase()} standards.`,
+                `Format framing rig to support clean execution of: ${motion.toLowerCase()}.`,
+                `Validate custom set parameters: ${customConstraint}.`
+            ];
+            
+            checklistContainer.innerHTML = '';
+            checklistItems.forEach((item, idx) => {
+                const checkRow = document.createElement('label');
+                checkRow.className = "flex items-start gap-3 text-xs text-zinc-300 py-0.5 select-none active:opacity-70";
+                checkRow.innerHTML = `
+                    <input type="checkbox" class="mt-0.5 rounded border-zinc-700 bg-zinc-900 text-zinc-50 focus:ring-0 focus:ring-offset-0 w-4 h-4">
+                    <span>${item}</span>
+                `;
+                checklistContainer.appendChild(checkRow);
+            });
+
+            document.getElementById('output-workspace').classList.remove('hidden');
+            updateBriefBlock();
+            
+            // Scroll to view output smoothly on mobile
+            document.getElementById('output-workspace').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function updateBriefBlock() {
+            const subjectType = selectedSubjectType || 'Product';
+            const subjectDetail = document.getElementById('subject-detail').value || `Unspecified ${subjectType}`;
+            const mood = document.getElementById('param-mood').value;
+            const lighting = document.getElementById('param-lighting').value;
+            const ratio = document.getElementById('param-ratio').value;
+            const customConstraint = document.getElementById('param-custom-constraint').value || 'None';
+
+            let briefText = `=== PRODUCTION SHOT BRIEF ===\n`;
+            briefText += `SUBJECT: ${subjectDetail} (${subjectType})\n`;
+            briefText += `MOOD PROFILE: ${mood}\n`;
+            briefText += `LIGHTING MAP: ${lighting}\n`;
+            briefText += `ASPECT RATIO: ${ratio}\n`;
+            briefText += `PRODUCTION LIMITS: ${customConstraint}\n\n`;
+            briefText += `--- RUN OF SHOTS ---\n`;
+
+            for (let i = 0; i < 4; i++) {
+                const angleEl = document.getElementById(`card-angle-${i}`);
+                const actionEl = document.getElementById(`card-action-${i}`);
+                if (angleEl && actionEl) {
+                    briefText += `SHOT 0${i+1}:\n`;
+                    briefText += `  Setup:  ${angleEl.innerText.trim()}\n`;
+                    briefText += `  Action: ${actionEl.innerText.trim()}\n\n`;
+                }
+            }
+
+            document.getElementById('brief-block').innerText = briefText;
+        }
+
+        function copyBrief() {
+            const text = document.getElementById('brief-block').innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Brief copied to clipboard.');
+            }).catch(err => {
+                alert('Failed to auto-copy text.');
+            });
+        }
+
+        // Initialize state defaults
+        setSubject('Product');
+    </script>
+</body>
+</html>

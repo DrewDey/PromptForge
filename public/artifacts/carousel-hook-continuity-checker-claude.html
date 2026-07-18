@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Carousel Planner</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+  :root {
+    --bg:      #0F0F0F;
+    --surface: #1A1A1A;
+    --border:  #2A2A2A;
+    --text:    #F0F0F0;
+    --muted:   #888;
+    --accent:  #FF5C5C;
+    --ok:      #A8FF78;
+    --warn:    #FFD166;
+    --purple:  #9b8cff;
+    --tag-bg:  #222;
+    --display: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --body:    system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+ 
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 15px;
+    line-height: 1.5;
+    min-height: 100dvh;
+  }
+ 
+  /* ── Layout ── */
+  .app { display: flex; flex-direction: column; min-height: 100dvh; padding-bottom: 148px; }
+ 
+  header {
+    padding: 20px 16px 12px;
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 10;
+    background: var(--bg);
+  }
+  header h1 {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 1.1rem;
+    letter-spacing: -0.02em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .pill {
+    font-family: var(--body);
+    font-size: 0.62rem;
+    font-weight: 700;
+    background: var(--accent);
+    color: #000;
+    padding: 2px 7px;
+    border-radius: 99px;
+    letter-spacing: 0.05em;
+  }
+ 
+  .topic-row {
+    padding: 14px 16px 0;
+    display: flex; gap: 8px; align-items: center;
+  }
+  .topic-row label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  #topicInput {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 0.9rem;
+    padding: 9px 12px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  #topicInput:focus { border-color: var(--muted); }
+ 
+  /* ── Slides header ── */
+  .slides-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 20px 16px 10px;
+  }
+  .slides-header h2 {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+  }
+  .btn-add {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--body);
+    font-weight: 700;
+    font-size: 0.8rem;
+    padding: 7px 14px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .btn-add:active { opacity: 0.7; }
+ 
+  /* ── Slide list ── */
+  #slidesList { padding: 0 16px; display: flex; flex-direction: column; gap: 10px; }
+ 
+  /* ── Empty state ── */
+  .empty-state {
+    text-align: center;
+    padding: 48px 32px;
+    color: var(--muted);
+  }
+  .empty-icon { font-size: 2.4rem; margin-bottom: 12px; }
+  .empty-state p { font-size: 0.85rem; line-height: 1.7; }
+ 
+  /* ── Slide card ── */
+  .slide-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    cursor: grab;
+  }
+  .slide-card.dragging  { opacity: 0.4; border-color: var(--accent); }
+  .slide-card.drag-over { border-color: var(--ok); box-shadow: 0 0 0 2px var(--ok); }
+ 
+  .card-stripe {
+    height: 3px;
+    background: var(--border);
+    transition: background 0.25s;
+  }
+ 
+  .card-top {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 12px 8px;
+  }
+ 
+  .slide-num {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: var(--muted);
+    min-width: 26px;
+    line-height: 1;
+    padding-top: 2px;
+    transition: color 0.2s;
+  }
+  .slide-num.is-first { color: var(--accent); }
+ 
+  .card-fields { flex: 1; display: flex; flex-direction: column; gap: 7px; }
+ 
+  .field-group { display: flex; flex-direction: column; gap: 3px; }
+  .field-label {
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+  .field-group textarea,
+  .field-group input[type="text"] {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 0.88rem;
+    line-height: 1.45;
+    width: 100%;
+    outline: none;
+    resize: none;
+    padding: 3px 0 5px;
+    transition: border-color 0.15s;
+  }
+  .field-group textarea:focus,
+  .field-group input[type="text"]:focus { border-color: var(--muted); }
+ 
+  .card-meta {
+    padding: 8px 12px 12px;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  }
+  .hook-meter {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+  .hook-dots { display: flex; gap: 3px; }
+  .hook-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--border);
+    transition: background 0.2s;
+  }
+ 
+  .role-select {
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    padding: 3px 8px;
+    border-radius: 99px;
+    background: var(--tag-bg);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    cursor: pointer;
+    outline: none;
+  }
+  .role-select.r-hook   { color: var(--accent); border-color: var(--accent); }
+  .role-select.r-value  { color: var(--ok);     border-color: var(--ok); }
+  .role-select.r-cta    { color: var(--warn);   border-color: var(--warn); }
+  .role-select.r-bridge { color: var(--purple); border-color: var(--purple); }
+ 
+  .btn-del {
+    background: none; border: none;
+    color: var(--border);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 4px;
+    transition: color 0.15s;
+    flex-shrink: 0;
+  }
+  .btn-del:active { color: var(--accent); }
+ 
+  /* ── Analysis bar ── */
+  .analysis-bar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: #111;
+    border-top: 1px solid var(--border);
+    z-index: 20;
+    padding: 12px 16px 20px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+ 
+  .bar-scores {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .score-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 10px 12px;
+    display: flex; flex-direction: column; gap: 3px;
+    position: relative;
+    overflow: hidden;
+  }
+  .score-fill {
+    position: absolute;
+    bottom: 0; left: 0;
+    height: 3px;
+    width: 0%;
+    transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .score-label {
+    font-size: 0.58rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+  .score-val {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 1.3rem;
+    line-height: 1;
+  }
+ 
+  #alertsBox {
+    display: flex; flex-direction: column; gap: 5px;
+    max-height: 60px;
+    overflow-y: auto;
+  }
+  .alert-item {
+    font-size: 0.72rem;
+    line-height: 1.4;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: var(--tag-bg);
+    border-left: 3px solid var(--muted);
+    color: var(--text);
+  }
+  .alert-item.warn { border-left-color: var(--warn); }
+  .alert-item.bad  { border-left-color: var(--accent); }
+  .alert-item.ok   { border-left-color: var(--ok); }
+ 
+  .bar-copy { display: flex; gap: 8px; align-items: center; }
+  #slideCountBadge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  #btnCopy {
+    flex: 1;
+    background: var(--ok);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--body);
+    font-weight: 700;
+    font-size: 0.82rem;
+    padding: 10px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    text-align: center;
+  }
+  #btnCopy:active  { opacity: 0.7; }
+  #btnCopy.copied  { background: var(--muted); }
+ 
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+ 
+<div class="app">
+  <header>
+    <h1 id="appTitle"></h1>
+  </header>
+  <div class="topic-row">
+    <label for="topicInput">Topic</label>
+    <input type="text" id="topicInput" placeholder="e.g. 5 habits that kill your sleep"
+           autocomplete="off" spellcheck="true">
+  </div>
+  <div class="slides-header">
+    <h2>Slides</h2>
+    <button class="btn-add" id="btnAdd">+ Add Slide</button>
+  </div>
+  <div id="slidesList"></div>
+</div>
+ 
+<div class="analysis-bar">
+  <div class="bar-scores">
+    <div class="score-block" id="scoreHook">
+      <span class="score-label">Hook</span>
+      <span class="score-val" id="valHook" style="color:var(--accent)">—</span>
+      <div class="score-fill" id="fillHook" style="background:var(--accent)"></div>
+    </div>
+    <div class="score-block" id="scoreCont">
+      <span class="score-label">Flow</span>
+      <span class="score-val" id="valCont" style="color:var(--ok)">—</span>
+      <div class="score-fill" id="fillCont" style="background:var(--ok)"></div>
+    </div>
+    <div class="score-block" id="scoreCta">
+      <span class="score-label">CTA</span>
+      <span class="score-val" id="valCta" style="color:var(--warn)">—</span>
+      <div class="score-fill" id="fillCta" style="background:var(--warn)"></div>
+    </div>
+  </div>
+  <div id="alertsBox"></div>
+  <div class="bar-copy">
+    <span id="slideCountBadge">0 slides</span>
+    <button id="btnCopy">&#128203; Copy Brief</button>
+  </div>
+</div>
+ 
+<script>
+'use strict';
+ 
+// ── State ────────────────────────────────────────────────────────────────────
+let slides = [];
+let dragSrcIdx = null;
+ 
+const ROLES = ['hook', 'value', 'bridge', 'cta'];
+const ROLE_LABELS = { hook: 'Hook', value: 'Value', bridge: 'Bridge', cta: 'CTA' };
+ 
+// ── Init static text (avoids any innerHTML for user-visible strings) ─────────
+(function initStaticText() {
+  const h1 = document.getElementById('appTitle');
+  h1.appendChild(document.createTextNode('\u25BA Carousel Planner\u00A0'));
+  const pill = document.createElement('span');
+  pill.className = 'pill';
+  pill.textContent = 'OFFLINE';
+  h1.appendChild(pill);
+})();
+ 
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function uid() { return Math.random().toString(36).slice(2, 9); }
+function makeSlide() { return { id: uid(), headline: '', body: '', cta: '', role: 'value' }; }
+ 
+// ── Hook scoring ─────────────────────────────────────────────────────────────
+const POWER_WORDS = [
+  'why','how','secret','mistake','truth','stop','never','always','hack',
+  'steal','dead','wrong','real','hidden','cheat','broke','fix','toxic',
+  'nobody','everyone','instant','free','fail','earn','save','lose','win',
+  'brutally','honestly','warning','proof','finally','this','here','look',
+  'you','your','most','best','worst','revealed','shocking','actually'
+];
+const RX_Q    = /\?/;
+const RX_NUM  = /\b\d+\b/;
+const RX_CAPS = /[A-Z]{2,}/;
+ 
+function scoreHook(text) {
+  if (!text.trim()) return 0;
+  let s = 0;
+  const lower = text.toLowerCase();
+  for (const w of POWER_WORDS) { if (lower.includes(w)) s += 0.5; }
+  if (RX_Q.test(text))    s += 1.5;
+  if (RX_NUM.test(text))  s += 1;
+  if (RX_CAPS.test(text)) s += 0.5;
+  if (text.split(/\s+/).length <= 8) s += 1;
+  if (text.length > 5) s += 0.5;
+  return Math.min(5, Math.round(s * 10) / 10);
+}
+ 
+function hookColor(score) {
+  if (score >= 4)   return 'var(--ok)';
+  if (score >= 2.5) return 'var(--warn)';
+  if (score > 0)    return 'var(--accent)';
+  return 'var(--border)';
+}
+ 
+// ── Continuity analysis ──────────────────────────────────────────────────────
+function analyzeFlow(list) {
+  if (list.length < 2) return { score: null, gaps: [] };
+  const gaps = [];
+  for (let i = 1; i < list.length; i++) {
+    const prevWords = new Set((list[i-1].headline + ' ' + list[i-1].body).toLowerCase().split(/\W+/).filter(w => w.length > 3));
+    const currWords = new Set((list[i].headline   + ' ' + list[i].body  ).toLowerCase().split(/\W+/).filter(w => w.length > 3));
+    let shared = 0;
+    prevWords.forEach(w => { if (currWords.has(w)) shared++; });
+    const overlap = shared / Math.max(prevWords.size, currWords.size, 1);
+    if (overlap < 0.08 && prevWords.size > 2 && currWords.size > 2) gaps.push(i);
+  }
+  const score = Math.max(0, Math.round((1 - gaps.length / (list.length - 1)) * 100));
+  return { score, gaps };
+}
+ 
+// ── CTA analysis ─────────────────────────────────────────────────────────────
+function analyzeCta(list) {
+  if (!list.length) return { score: null, issues: [] };
+  const issues = [];
+  const last = list[list.length - 1];
+  const ctaText = (last.cta || '').trim();
+  if (last.role !== 'cta') issues.push({ type: 'warn', msg: "Last slide isn't tagged CTA." });
+  if (!ctaText) {
+    issues.push({ type: 'bad', msg: 'No CTA text on last slide.' });
+  } else {
+    const hasAction = ['follow','save','share','comment','link','dm','click','tap',
+      'buy','join','grab','get','read','watch','subscribe','sign','like']
+      .some(v => ctaText.toLowerCase().includes(v));
+    if (!hasAction) issues.push({ type: 'warn', msg: 'CTA may lack a clear action verb.' });
+  }
+  const ctaCount = list.filter(s => s.role === 'cta').length;
+  if (ctaCount > 1) issues.push({ type: 'warn', msg: ctaCount + ' slides tagged CTA \u2014 usually just one.' });
+  const hasBad = issues.some(i => i.type === 'bad');
+  const hasWarn = issues.some(i => i.type === 'warn');
+  const score = hasBad ? 20 : hasWarn ? 55 : 100;
+  return { score, issues };
+}
+ 
+// ── DOM helpers ──────────────────────────────────────────────────────────────
+function el(tag, props, ...children) {
+  const node = document.createElement(tag);
+  if (props) {
+    for (const [k, v] of Object.entries(props)) {
+      if (k === 'cls') { node.className = v; }
+      else if (k === 'style') { node.style.cssText = v; }
+      else if (k === 'attrs') { for (const [a, b] of Object.entries(v)) node.setAttribute(a, b); }
+      else { node[k] = v; }
+    }
+  }
+  for (const child of children) {
+    if (child == null) continue;
+    node.appendChild(typeof child === 'string' ? document.createTextNode(child) : child);
+  }
+  return node;
+}
+ 
+// ── Build one slide card via DOM (no innerHTML) ──────────────────────────────
+function buildCard(s, i) {
+  const hs    = scoreHook(s.headline);
+  const color = hookColor(hs);
+ 
+  const card = el('div', { cls: 'slide-card', attrs: { draggable: 'true', 'data-id': s.id, 'data-pos': String(i) } });
+ 
+  // stripe (color bar at top)
+  const stripe = el('div', { cls: 'card-stripe', style: 'background:' + color });
+  card.appendChild(stripe);
+ 
+  // card-top
+  const cardTop = el('div', { cls: 'card-top' });
+ 
+  const numEl = el('div', { cls: 'slide-num' + (i === 0 ? ' is-first' : '') }, String(i + 1));
+  cardTop.appendChild(numEl);
+ 
+  const fields = el('div', { cls: 'card-fields' });
+ 
+  function makeField(labelText, tag, fieldName, rows) {
+    const group  = el('div', { cls: 'field-group' });
+    const lbl    = el('span', { cls: 'field-label' }, labelText);
+    let input;
+    if (tag === 'textarea') {
+      input = el('textarea', { rows: rows || 2, spellcheck: true, attrs: { 'data-field': fieldName, 'data-id': s.id } });
+      input.value = s[fieldName];
+    } else {
+      input = el('input', { type: 'text', spellcheck: true, attrs: { 'data-field': fieldName, 'data-id': s.id } });
+      input.value = s[fieldName];
+    }
+    group.appendChild(lbl);
+    group.appendChild(input);
+    return { group, input };
+  }
+ 
+  const { group: hGroup, input: hInput } = makeField('Headline',            'textarea', 'headline', 2);
+  const { group: bGroup, input: bInput } = makeField('Body / Key Points',   'textarea', 'body',     2);
+  const { group: cGroup, input: cInput } = makeField('CTA / Transition',    'input',    'cta');
+  fields.appendChild(hGroup);
+  fields.appendChild(bGroup);
+  fields.appendChild(cGroup);
+ 
+  // delete button
+  const delBtn = el('button', { cls: 'btn-del', title: 'Remove', attrs: { 'data-del': s.id } }, '\u00D7');
+ 
+  cardTop.appendChild(fields);
+  cardTop.appendChild(delBtn);
+  card.appendChild(cardTop);
+ 
+  // card-meta
+  const meta = el('div', { cls: 'card-meta' });
+ 
+  // hook dots
+  const meter = el('div', { cls: 'hook-meter' });
+  const dotsWrap = el('div', { cls: 'hook-dots' });
+  for (let d = 1; d <= 5; d++) {
+    const dot = el('span', { cls: 'hook-dot' });
+    dot.style.background = hs >= d ? color : 'var(--border)';
+    dotsWrap.appendChild(dot);
+  }
+  const hookLabel = el('span', {}, 'Hook ' + hs);
+  meter.appendChild(dotsWrap);
+  meter.appendChild(hookLabel);
+ 
+  // role select
+  const sel = el('select', { cls: 'role-select r-' + s.role, attrs: { 'data-role': s.id } });
+  for (const r of ROLES) {
+    const opt = el('option', { value: r }, ROLE_LABELS[r]);
+    if (s.role === r) opt.selected = true;
+    sel.appendChild(opt);
+  }
+ 
+  meta.appendChild(meter);
+  meta.appendChild(sel);
+  card.appendChild(meta);
+ 
+  // ── inline event wiring ──────────────────────────────────────────────────
+  function onFieldInput(e) {
+    const fieldName = e.target.dataset.field;
+    const sid       = e.target.dataset.id;
+    const slide     = slides.find(x => x.id === sid);
+    if (!slide) return;
+    slide[fieldName] = e.target.value;
+    if (fieldName === 'headline') {
+      const newHs    = scoreHook(e.target.value);
+      const newColor = hookColor(newHs);
+      stripe.style.background = newColor;
+      const allDots = dotsWrap.querySelectorAll('.hook-dot');
+      allDots.forEach((dot, di) => { dot.style.background = newHs >= di + 1 ? newColor : 'var(--border)'; });
+      hookLabel.textContent = 'Hook ' + newHs;
+    }
+    updateAnalysis();
+  }
+  function autoResize(ta) {
+    ta.style.height = 'auto';
+    ta.style.height = ta.scrollHeight + 'px';
+  }
+  hInput.addEventListener('input', e => { onFieldInput(e); autoResize(hInput); });
+  bInput.addEventListener('input', e => { onFieldInput(e); autoResize(bInput); });
+  cInput.addEventListener('input', onFieldInput);
+ 
+  sel.addEventListener('change', () => {
+    const slide = slides.find(x => x.id === s.id);
+    if (slide) {
+      slide.role = sel.value;
+      sel.className = 'role-select r-' + slide.role;
+      updateAnalysis();
+    }
+  });
+ 
+  delBtn.addEventListener('click', () => {
+    slides = slides.filter(x => x.id !== s.id);
+    renderList();
+  });
+ 
+  // ── drag ──────────────────────────────────────────────────────────────────
+  card.addEventListener('dragstart', e => {
+    dragSrcIdx = i;
+    setTimeout(() => card.classList.add('dragging'), 0);
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  card.addEventListener('dragend', () => {
+    card.classList.remove('dragging');
+    document.querySelectorAll('.slide-card').forEach(c => c.classList.remove('drag-over'));
+  });
+  card.addEventListener('dragover', e => {
+    e.preventDefault();
+    document.querySelectorAll('.slide-card').forEach(c => c.classList.remove('drag-over'));
+    card.classList.add('drag-over');
+  });
+  card.addEventListener('drop', e => {
+    e.preventDefault();
+    if (dragSrcIdx !== null && dragSrcIdx !== i) {
+      const [moved] = slides.splice(dragSrcIdx, 1);
+      slides.splice(i, 0, moved);
+      dragSrcIdx = null;
+      renderList();
+    }
+  });
+ 
+  // touch reorder
+  let touchY = 0, touchActive = false;
+  card.addEventListener('touchstart', e => {
+    touchActive = true;
+    touchY = e.touches[0].clientY;
+  }, { passive: true });
+  card.addEventListener('touchmove', e => {
+    if (!touchActive) return;
+    const dy = e.touches[0].clientY - touchY;
+    if (Math.abs(dy) > 56) {
+      const dir    = dy > 0 ? 1 : -1;
+      const newIdx = i + dir;
+      if (newIdx >= 0 && newIdx < slides.length) {
+        const [moved] = slides.splice(i, 1);
+        slides.splice(newIdx, 0, moved);
+        touchY = e.touches[0].clientY;
+        touchActive = false;
+        renderList();
+      }
+    }
+  }, { passive: true });
+  card.addEventListener('touchend', () => { touchActive = false; });
+ 
+  return card;
+}
+ 
+// ── Render slide list ────────────────────────────────────────────────────────
+function renderList() {
+  const list = document.getElementById('slidesList');
+  // clear
+  while (list.firstChild) list.removeChild(list.firstChild);
+ 
+  if (!slides.length) {
+    const empty = el('div', { cls: 'empty-state' });
+    const icon  = el('div', { cls: 'empty-icon' }, '\u2630');
+    const p     = el('p', {}, 'Add slides above to start planning your carousel. Drag to reorder. Scores update live at the bottom.');
+    empty.appendChild(icon);
+    empty.appendChild(p);
+    list.appendChild(empty);
+  } else {
+    slides.forEach((s, i) => list.appendChild(buildCard(s, i)));
+  }
+  updateAnalysis();
+}
+ 
+// ── Update analysis bar ──────────────────────────────────────────────────────
+function updateAnalysis() {
+  const n = slides.length;
+  document.getElementById('slideCountBadge').textContent = n + ' slide' + (n !== 1 ? 's' : '');
+ 
+  if (!n) {
+    document.getElementById('valHook').textContent = '—';
+    document.getElementById('valCont').textContent = '—';
+    document.getElementById('valCta').textContent  = '—';
+    document.getElementById('fillHook').style.width = '0%';
+    document.getElementById('fillCont').style.width = '0%';
+    document.getElementById('fillCta').style.width  = '0%';
+    clearAlerts();
+    return;
+  }
+ 
+  const hs = scoreHook(slides[0].headline);
+  document.getElementById('valHook').textContent  = hs.toFixed(1);
+  document.getElementById('fillHook').style.width = (hs / 5 * 100) + '%';
+ 
+  const { score: flowScore, gaps } = analyzeFlow(slides);
+  document.getElementById('valCont').textContent  = flowScore !== null ? flowScore + '%' : '—';
+  document.getElementById('fillCont').style.width = (flowScore || 0) + '%';
+ 
+  const { score: ctaScore, issues: ctaIssues } = analyzeCta(slides);
+  document.getElementById('valCta').textContent  = ctaScore !== null ? ctaScore + '%' : '—';
+  document.getElementById('fillCta').style.width = (ctaScore || 0) + '%';
+ 
+  // Rebuild alerts via DOM only
+  const alerts = [];
+  if (hs < 2 && slides[0].headline)  alerts.push({ type: 'warn', msg: 'Slide 1 hook is weak \u2014 try a question, number, or power word.' });
+  if (hs >= 4)                        alerts.push({ type: 'ok',   msg: 'Strong opening hook \u2713' });
+  gaps.forEach(gi => alerts.push({ type: 'warn', msg: 'Slide ' + gi + '\u2192' + (gi + 1) + ': topic jump may lose readers.' }));
+  ctaIssues.forEach(a => alerts.push(a));
+  if (!alerts.length) alerts.push({ type: 'ok', msg: 'Looking good \u2014 no major issues detected.' });
+ 
+  clearAlerts();
+  const box = document.getElementById('alertsBox');
+  for (const a of alerts) {
+    const item = el('div', { cls: 'alert-item ' + a.type }, a.msg);
+    box.appendChild(item);
+  }
+}
+ 
+function clearAlerts() {
+  const box = document.getElementById('alertsBox');
+  while (box.firstChild) box.removeChild(box.firstChild);
+}
+ 
+// ── Add slide ────────────────────────────────────────────────────────────────
+document.getElementById('btnAdd').addEventListener('click', () => {
+  slides.push(makeSlide());
+  renderList();
+  setTimeout(() => {
+    const cards = document.querySelectorAll('.slide-card');
+    cards[cards.length - 1]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 50);
+});
+ 
+// ── Copy brief ───────────────────────────────────────────────────────────────
+document.getElementById('btnCopy').addEventListener('click', () => {
+  if (!slides.length) return;
+  const topic     = document.getElementById('topicInput').value.trim() || '(no topic)';
+  const { score: flowScore } = analyzeFlow(slides);
+  const { score: ctaScore  } = analyzeCta(slides);
+  const hs = scoreHook(slides[0].headline);
+ 
+  const lines = [
+    'CAROUSEL BRIEF',
+    'Topic: ' + topic,
+    'Slides: ' + slides.length + '  |  Hook: ' + hs + '/5  |  Flow: ' + (flowScore ?? '\u2014') + '%  |  CTA: ' + (ctaScore ?? '\u2014') + '%',
+    '\u2500'.repeat(42)
+  ];
+  slides.forEach((s, i) => {
+    lines.push('');
+    lines.push('[' + (i + 1) + '] ' + ROLE_LABELS[s.role].toUpperCase());
+    if (s.headline) lines.push('  Headline: ' + s.headline);
+    if (s.body)     lines.push('  Body: '     + s.body);
+    if (s.cta)      lines.push('  CTA: '      + s.cta);
+  });
+  const brief = lines.join('\n');
+ 
+  const btn = document.getElementById('btnCopy');
+  navigator.clipboard.writeText(brief).then(() => {
+    btn.textContent = '\u2713 Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '\uD83D\uDCCB Copy Brief'; btn.classList.remove('copied'); }, 1800);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = brief;
+    Object.assign(ta.style, { position: 'fixed', opacity: '0', top: '0', left: '0' });
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.textContent = '\u2713 Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '\uD83D\uDCCB Copy Brief'; btn.classList.remove('copied'); }, 1800);
+  });
+});
+ 
+// ── Boot ─────────────────────────────────────────────────────────────────────
+renderList();
+</script>
+</body>
+</html>
+ 

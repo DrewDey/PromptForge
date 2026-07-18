@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Landing Claim Worksheet</title>
+<style>
+  :root{
+    --bg:#0f172a;
+    --card:#111827;
+    --border:#1f2937;
+    --text:#e5e7eb;
+    --muted:#9ca3af;
+    --accent:#22c55e;
+    --warn:#f59e0b;
+    --danger:#ef4444;
+  }
+
+  *{box-sizing:border-box;}
+
+  body{
+    margin:0;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto;
+    background:var(--bg);
+    color:var(--text);
+    padding:16px;
+  }
+
+  h1{
+    font-size:22px;
+    line-height:1.2;
+    margin:0 0 12px 0;
+  }
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:12px;
+    margin-bottom:12px;
+  }
+
+  textarea{
+    width:100%;
+    min-height:110px;
+    background:#020617;
+    color:var(--text);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:8px;
+    resize:vertical;
+  }
+
+  button{
+    background:#1f2937;
+    color:var(--text);
+    border:1px solid var(--border);
+    padding:8px 10px;
+    border-radius:8px;
+    cursor:pointer;
+  }
+
+  button:hover{background:#374151;}
+
+  .row{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+
+  .claim{
+    border:1px solid var(--border);
+    padding:8px;
+    border-radius:8px;
+    background:#020617;
+  }
+
+  select{
+    width:100%;
+    margin-top:6px;
+    background:#020617;
+    color:var(--text);
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:4px;
+  }
+
+  .status{
+    font-size:12px;
+    color:var(--muted);
+    min-height:16px;
+  }
+
+  .score{
+    font-size:14px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Landing Claim Sorter</h1>
+
+<div class="card">
+  <div>Paste claims (one per line)</div>
+  <textarea id="input"></textarea>
+  <div style="margin-top:8px;">
+    <button id="buildBtn">Build Cards</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="score" id="score"></div>
+  <div class="status" id="status"></div>
+</div>
+
+<div id="cards" class="row"></div>
+
+<div class="card">
+  <button id="copyBtn">Copy Brief</button>
+  <button id="downloadBtn">Download .txt</button>
+</div>
+
+<script>
+(function(){
+  const input = document.getElementById("input");
+  const buildBtn = document.getElementById("buildBtn");
+  const cardsDiv = document.getElementById("cards");
+  const scoreDiv = document.getElementById("score");
+  const statusDiv = document.getElementById("status");
+  const copyBtn = document.getElementById("copyBtn");
+  const downloadBtn = document.getElementById("downloadBtn");
+
+  function createTextNodeSafe(text){
+    return document.createTextNode(text);
+  }
+
+  function buildCards(){
+    const lines = input.value
+      .split("\n")
+      .map(l => l.trim())
+      .filter(l => l.length > 0);
+
+    cardsDiv.replaceChildren();
+
+    lines.forEach(line => {
+      const wrap = document.createElement("div");
+      wrap.className = "claim";
+
+      const textDiv = document.createElement("div");
+      textDiv.appendChild(createTextNodeSafe(line));
+
+      const select = document.createElement("select");
+
+      ["Promise","Proof","Risk","Rewrite"].forEach(type=>{
+        const opt = document.createElement("option");
+        opt.value = type;
+        opt.textContent = type;
+        select.appendChild(opt);
+      });
+
+      select.addEventListener("change", updateScore);
+
+      wrap.appendChild(textDiv);
+      wrap.appendChild(select);
+
+      cardsDiv.appendChild(wrap);
+    });
+
+    updateScore();
+  }
+
+  function updateScore(){
+    const selects = cardsDiv.querySelectorAll("select");
+
+    const counts = {
+      Promise:0,
+      Proof:0,
+      Risk:0,
+      Rewrite:0
+    };
+
+    selects.forEach(s=>{
+      counts[s.value] += 1;
+    });
+
+    const issues = [];
+
+    if(counts.Promise > counts.Proof){
+      issues.push("Too many promises vs proof");
+    }
+    if(counts.Risk === 0){
+      issues.push("No risks identified");
+    }
+
+    scoreDiv.textContent =
+      "Promises: " + counts.Promise +
+      " | Proof: " + counts.Proof +
+      " | Risk: " + counts.Risk +
+      " | Rewrite: " + counts.Rewrite;
+
+    statusDiv.textContent = issues.join(" | ");
+  }
+
+  function buildBrief(){
+    const nodes = cardsDiv.querySelectorAll(".claim");
+
+    const sections = {
+      Promise:[],
+      Proof:[],
+      Risk:[],
+      Rewrite:[]
+    };
+
+    nodes.forEach(node=>{
+      const text = node.firstChild.textContent;
+      const type = node.querySelector("select").value;
+      sections[type].push(text);
+    });
+
+    const out = [];
+
+    Object.keys(sections).forEach(key=>{
+      out.push("=== " + key.toUpperCase() + " ===");
+      sections[key].forEach(item=>{
+        out.push("- " + item);
+      });
+      out.push("");
+    });
+
+    return out.join("\n");
+  }
+
+  async function copyBrief(){
+    const text = buildBrief();
+
+    try{
+      await navigator.clipboard.writeText(text);
+      const verify = await navigator.clipboard.readText();
+      if(verify === text){
+        statusDiv.textContent = "Copied to clipboard";
+        return;
+      }
+    }catch(e){}
+
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    statusDiv.textContent = "Press Cmd+C to copy";
+  }
+
+  function downloadBrief(){
+    const blob = new Blob([buildBrief()], {type:"text/plain"});
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "launch-brief.txt";
+
+    document.body.appendChild(a);
+    a.click();
+
+    URL.revokeObjectURL(url);
+    a.remove();
+  }
+
+  buildBtn.addEventListener("click", buildCards);
+  copyBtn.addEventListener("click", copyBrief);
+  downloadBtn.addEventListener("click", downloadBrief);
+
+})();
+</script>
+
+</body>
+</html>

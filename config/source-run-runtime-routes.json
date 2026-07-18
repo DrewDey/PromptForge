@@ -3,6 +3,7 @@
   "/prompt/\\[id\\]",
   "/my-forge",
   "/my-forge/builds/*",
+  "/recovered-source-runs/\\[slug\\]",
   "/airlock-zero-blackout-shift-fork-demo",
   "/airlock-zero-hull-breach-fork-demo",
   "/airlock-zero-reactor-run-demo",

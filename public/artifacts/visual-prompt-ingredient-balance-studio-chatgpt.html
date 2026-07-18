@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visual Prompt Ingredient Studio</title>
+<style>
+  :root {
+    --bg: #111318;
+    --panel: #1b1f28;
+    --panel-soft: #202532;
+    --field: #252b39;
+    --text: #f5f7fc;
+    --muted: #aeb6c8;
+    --line: #394253;
+    --accent: #9fc7ff;
+    --accent-strong: #c6dcff;
+    --good: #a8ffc9;
+    --warn: #ffd99c;
+    --danger: #ffb0aa;
+    --shadow: 0 16px 44px rgba(0, 0, 0, 0.34);
+    --radius: 18px;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    width: 100%;
+  }
+
+  body {
+    width: 100%;
+    margin: 0;
+    color: var(--text);
+    background:
+      radial-gradient(circle at 0% 0%, rgba(159, 199, 255, 0.16), transparent 320px),
+      radial-gradient(circle at 100% 100%, rgba(255, 217, 156, 0.12), transparent 300px),
+      var(--bg);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    line-height: 1.42;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  .wrap {
+    width: 100%;
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 14px;
+  }
+
+  header {
+    padding: 14px 0 12px;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(1.72rem, 8vw, 3rem);
+    line-height: 1.04;
+    letter-spacing: 0;
+  }
+
+  h1 span {
+    display: block;
+    overflow-wrap: anywhere;
+  }
+
+  .sub {
+    max-width: 680px;
+    margin: 12px 0 0;
+    color: var(--muted);
+    font-size: 0.98rem;
+    overflow-wrap: anywhere;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    width: 100%;
+  }
+
+  .card {
+    width: 100%;
+    min-width: 0;
+    padding: 15px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.015)),
+      var(--panel);
+    box-shadow: var(--shadow);
+  }
+
+  .card h2 {
+    margin: 0 0 12px;
+    font-size: 1rem;
+    letter-spacing: 0.01em;
+  }
+
+  label {
+    display: block;
+    margin: 13px 0 7px;
+    color: var(--muted);
+    font-size: 0.9rem;
+    font-weight: 750;
+    overflow-wrap: anywhere;
+  }
+
+  input,
+  textarea,
+  select {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 12px;
+    color: var(--text);
+    background: var(--field);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    outline: none;
+  }
+
+  textarea {
+    min-height: 86px;
+    resize: vertical;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #8993a8;
+    opacity: 1;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(159, 199, 255, 0.16);
+  }
+
+  .chips {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .chip {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 10px 12px;
+    text-align: left;
+    color: var(--text);
+    background: var(--panel-soft);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    cursor: pointer;
+    overflow-wrap: anywhere;
+  }
+
+  .chip.active {
+    color: var(--accent-strong);
+    background: rgba(159, 199, 255, 0.13);
+    border-color: var(--accent);
+  }
+
+  .sliderBlock {
+    width: 100%;
+    min-width: 0;
+    margin-top: 14px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+  }
+
+  .sliderTop {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .sliderTop strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 42px;
+    padding: 4px 9px;
+    color: var(--accent);
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 850;
+    white-space: nowrap;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    padding: 0;
+    accent-color: var(--accent);
+  }
+
+  .hint,
+  .mini {
+    color: var(--muted);
+    font-size: 0.82rem;
+    overflow-wrap: anywhere;
+  }
+
+  .hint {
+    margin-top: 7px;
+  }
+
+  .preview {
+    position: static;
+  }
+
+  .ingredientCard {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+    min-height: 330px;
+    padding: 15px;
+    overflow: hidden;
+    background:
+      linear-gradient(135deg, rgba(159, 199, 255, 0.25), transparent 35%),
+      linear-gradient(315deg, rgba(255, 217, 156, 0.16), transparent 40%),
+      #171b24;
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    border-radius: 22px;
+  }
+
+  .visualBox {
+    display: grid;
+    place-items: center;
+    flex: 1;
+    min-height: 170px;
+    padding: 14px;
+    text-align: center;
+    background:
+      radial-gradient(circle at var(--compX, 50%) var(--compY, 50%), rgba(255, 255, 255, 0.2), transparent 190px),
+      linear-gradient(var(--lightAngle, 145deg), rgba(255, 255, 255, 0.17), rgba(255, 255, 255, 0.025)),
+      rgba(255, 255, 255, 0.04);
+    border: 1px dashed rgba(255, 255, 255, 0.23);
+    border-radius: 18px;
+  }
+
+  .visualBox .subject {
+    max-width: 100%;
+    font-size: clamp(1.1rem, 6vw, 2rem);
+    font-weight: 900;
+    letter-spacing: 0;
+    overflow-wrap: anywhere;
+    text-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  }
+
+  .metaRow {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .meter {
+    width: 100%;
+    height: 12px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+  }
+
+  .meterFill {
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--good));
+    border-radius: inherit;
+  }
+
+  .warnings {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .warn {
+    width: 100%;
+    min-width: 0;
+    padding: 10px;
+    color: var(--warn);
+    background: rgba(255, 217, 156, 0.08);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    font-size: 0.88rem;
+    overflow-wrap: anywhere;
+  }
+
+  .warn.ready {
+    color: var(--good);
+  }
+
+  .promptOut {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    max-height: 280px;
+    padding: 13px;
+    overflow: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    color: #eef3ff;
+    background: #0e1015;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    font-size: 0.92rem;
+  }
+
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    width: 100%;
+    margin-top: 12px;
+  }
+
+  button {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 12px 14px;
+    color: #07111f;
+    background: var(--accent);
+    border: 0;
+    border-radius: 15px;
+    font-weight: 850;
+    cursor: pointer;
+    overflow-wrap: anywhere;
+  }
+
+  button.secondary {
+    color: var(--text);
+    background: var(--panel-soft);
+    border: 1px solid var(--line);
+  }
+
+  .status {
+    margin-top: 9px;
+  }
+
+  .footerPills {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    width: 100%;
+    margin: 14px 0 4px;
+  }
+
+  .footerPills div {
+    width: 100%;
+    min-width: 0;
+    padding: 9px 12px;
+    color: var(--muted);
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    font-size: 0.86rem;
+    overflow-wrap: anywhere;
+  }
+
+  @media (min-width: 760px) {
+    .wrap {
+      padding: 18px;
+    }
+
+    .grid {
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 0.92fr);
+      align-items: start;
+    }
+
+    .preview {
+      position: sticky;
+      top: 12px;
+    }
+
+    .chips,
+    .actions,
+    .metaRow,
+    .footerPills {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>
+      <span>Visual Prompt</span>
+      <span>Ingredient Studio</span>
+    </h1>
+    <p class="sub">
+      Balance subject, lighting, style, and composition into a clean image prompt card you can copy into any image model. Everything runs locally.
+    </p>
+  </header>
+
+  <main class="grid">
+    <section class="card" aria-label="Prompt ingredient controls">
+      <h2>Prompt ingredients</h2>
+
+      <label for="subject">Subject</label>
+      <input id="subject" placeholder="Example: weathered astronaut botanist in a glass greenhouse">
+
+      <label for="scene">Scene notes</label>
+      <textarea id="scene" placeholder="Add setting, mood, important details, materials, colors, or story cues."></textarea>
+
+      <label for="style">Style base</label>
+      <select id="style">
+        <option>Cinematic realism</option>
+        <option>Editorial product photography</option>
+        <option>Painterly concept art</option>
+        <option>Minimalist poster design</option>
+        <option>Dreamlike surrealism</option>
+        <option>Retro futurism</option>
+        <option>Documentary photography</option>
+        <option>High-end fashion editorial</option>
+      </select>
+
+      <label>Fast style chips</label>
+      <div class="chips" id="chips">
+        <button type="button" class="chip" data-chip="soft film grain">soft film grain</button>
+        <button type="button" class="chip" data-chip="high detail texture">high detail texture</button>
+        <button type="button" class="chip" data-chip="muted color palette">muted color palette</button>
+        <button type="button" class="chip" data-chip="bold graphic contrast">bold graphic contrast</button>
+        <button type="button" class="chip" data-chip="premium commercial finish">premium commercial finish</button>
+        <button type="button" class="chip" data-chip="natural imperfect realism">natural imperfect realism</button>
+      </div>
+
+      <div class="sliderBlock">
+        <div class="sliderTop">
+          <strong>Subject focus</strong>
+          <span class="pill" id="subjectVal">70</span>
+        </div>
+        <input id="subjectFocus" type="range" min="0" max="100" value="70">
+        <div class="hint">Higher means the prompt centers more strongly on the main subject.</div>
+      </div>
+
+      <div class="sliderBlock">
+        <div class="sliderTop">
+          <strong>Lighting drama</strong>
+          <span class="pill" id="lightingVal">55</span>
+        </div>
+        <input id="lighting" type="range" min="0" max="100" value="55">
+        <div class="hint">Low is soft and even. High is directional, contrasty, and cinematic.</div>
+      </div>
+
+      <div class="sliderBlock">
+        <div class="sliderTop">
+          <strong>Style intensity</strong>
+          <span class="pill" id="styleVal">45</span>
+        </div>
+        <input id="styleIntensity" type="range" min="0" max="100" value="45">
+        <div class="hint">Controls whether style is subtle support or a dominant visual language.</div>
+      </div>
+
+      <div class="sliderBlock">
+        <div class="sliderTop">
+          <strong>Composition control</strong>
+          <span class="pill" id="compositionVal">60</span>
+        </div>
+        <input id="composition" type="range" min="0" max="100" value="60">
+        <div class="hint">Higher adds more specific framing, lens, and layout instructions.</div>
+      </div>
+
+      <label for="negative">Avoid / negative notes</label>
+      <textarea id="negative" placeholder="Example: avoid blurry hands, cluttered background, extra text, warped face"></textarea>
+    </section>
+
+    <section class="card preview" aria-label="Prompt ingredient preview">
+      <h2>Ingredient card preview</h2>
+
+      <div class="ingredientCard">
+        <div class="visualBox" id="visualBox">
+          <div class="subject" id="previewSubject">weathered astronaut botanist</div>
+        </div>
+
+        <div class="metaRow">
+          <div>
+            <div class="mini">Balance score</div>
+            <div class="meter" aria-hidden="true"><div class="meterFill" id="balanceMeter"></div></div>
+          </div>
+          <div>
+            <div class="mini">Prompt density</div>
+            <div class="meter" aria-hidden="true"><div class="meterFill" id="densityMeter"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="warnings" id="warnings" aria-live="polite"></div>
+
+      <label for="promptOut">Copy-ready prompt</label>
+      <div class="promptOut" id="promptOut" tabindex="0"></div>
+
+      <div class="actions">
+        <button type="button" id="copyBtn">Copy prompt</button>
+        <button type="button" class="secondary" id="downloadBtn">Download .txt</button>
+        <button type="button" class="secondary" id="sampleBtn">Load sample</button>
+        <button type="button" class="secondary" id="clearBtn">Clear</button>
+      </div>
+
+      <div class="mini status" id="status">Local only. No APIs, tracking, fonts, external assets, or remote calls.</div>
+    </section>
+  </main>
+
+  <div class="footerPills" aria-label="Tool features">
+    <div>Mobile-first layout</div>
+    <div>Offline save-friendly</div>
+    <div>Prompt balance scoring</div>
+    <div>Copy and export workflow</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var els = {
+    subject: document.getElementById("subject"),
+    scene: document.getElementById("scene"),
+    style: document.getElementById("style"),
+    negative: document.getElementById("negative"),
+    subjectFocus: document.getElementById("subjectFocus"),
+    lighting: document.getElementById("lighting"),
+    styleIntensity: document.getElementById("styleIntensity"),
+    composition: document.getElementById("composition"),
+    subjectVal: document.getElementById("subjectVal"),
+    lightingVal: document.getElementById("lightingVal"),
+    styleVal: document.getElementById("styleVal"),
+    compositionVal: document.getElementById("compositionVal"),
+    previewSubject: document.getElementById("previewSubject"),
+    visualBox: document.getElementById("visualBox"),
+    promptOut: document.getElementById("promptOut"),
+    warnings: document.getElementById("warnings"),
+    balanceMeter: document.getElementById("balanceMeter"),
+    densityMeter: document.getElementById("densityMeter"),
+    status: document.getElementById("status"),
+    copyBtn: document.getElementById("copyBtn"),
+    downloadBtn: document.getElementById("downloadBtn"),
+    sampleBtn: document.getElementById("sampleBtn"),
+    clearBtn: document.getElementById("clearBtn"),
+    chips: document.getElementById("chips")
+  };
+
+  var storageKey = "visualPromptIngredientStudio.v2";
+
+  function setText(node, value) {
+    node.textContent = String(value);
+  }
+
+  function clearNode(node) {
+    while (node.firstChild) {
+      node.removeChild(node.firstChild);
+    }
+  }
+
+  function appendWarning(text, ready) {
+    var div = document.createElement("div");
+    div.className = ready ? "warn ready" : "warn";
+    div.textContent = text;
+    els.warnings.appendChild(div);
+  }
+
+  function activeChips() {
+    return Array.prototype.slice.call(document.querySelectorAll(".chip.active")).map(function (btn) {
+      return btn.getAttribute("data-chip");
+    });
+  }
+
+  function band(value, low, mid, high) {
+    var n = Number(value);
+    if (n < 34) return low;
+    if (n < 67) return mid;
+    return high;
+  }
+
+  function lightingPhrase(value) {
+    return band(
+      value,
+      "soft diffused lighting, gentle shadows, natural exposure",
+      "controlled directional lighting, shaped highlights, moderate contrast",
+      "dramatic cinematic lighting, strong directionality, deep shadows, luminous highlights"
+    );
+  }
+
+  function subjectPhrase(value) {
+    return band(
+      value,
+      "the subject is present but integrated into the environment",
+      "clear primary subject with supporting environmental context",
+      "dominant hero subject, sharp visual priority, immediate focal point"
+    );
+  }
+
+  function stylePhrase(value, style, chips) {
+    var force = band(
+      value,
+      "subtle style influence",
+      "clear style direction",
+      "strong stylized visual identity"
+    );
+
+    var chipText = "";
+    if (chips.length > 0) {
+      chipText = ", " + chips.join(", ");
+    }
+
+    return force + ", " + style.toLowerCase() + chipText;
+  }
+
+  function compositionPhrase(value) {
+    return band(
+      value,
+      "simple centered framing, clean readable silhouette",
+      "intentional framing, balanced negative space, layered depth",
+      "precise composition, strong foreground-midground-background separation, cinematic lens feel, carefully controlled edges"
+    );
+  }
+
+  function balanceScore(values) {
+    var nums = values.map(Number);
+    var total = nums.reduce(function (a, b) {
+      return a + b;
+    }, 0);
+    var avg = total / nums.length;
+
+    var variance = nums.reduce(function (a, b) {
+      return a + Math.pow(b - avg, 2);
+    }, 0) / nums.length;
+
+    var spreadPenalty = Math.sqrt(variance) * 1.25;
+    var emptyPenalty = els.subject.value.trim() ? 0 : 18;
+    return Math.max(0, Math.min(100, Math.round(100 - spreadPenalty - emptyPenalty)));
+  }
+
+  function densityScore(text) {
+    var len = text.length;
+    if (len < 120) return 35;
+    if (len < 280) return 70;
+    if (len < 520) return 92;
+    if (len < 760) return 78;
+    return 58;
+  }
+
+  function getPrompt() {
+    var subject = els.subject.value.trim() || "weathered astronaut botanist";
+    var scene = els.scene.value.trim();
+    var style = els.style.value;
+    var negative = els.negative.value.trim();
+    var chips = activeChips();
+
+    var parts = [
+      subject + ".",
+      subjectPhrase(els.subjectFocus.value) + ".",
+      scene ? "Scene details: " + scene + "." : "",
+      "Lighting: " + lightingPhrase(els.lighting.value) + ".",
+      "Style: " + stylePhrase(els.styleIntensity.value, style, chips) + ".",
+      "Composition: " + compositionPhrase(els.composition.value) + ".",
+      "Render goal: coherent, polished, visually specific, no unnecessary clutter.",
+      negative ? "Avoid: " + negative + "." : ""
+    ];
+
+    return parts.filter(Boolean).join("\n");
+  }
+
+  function renderWarnings(prompt) {
+    var warnings = [];
+    var subject = els.subject.value.trim();
+    var scene = els.scene.value.trim();
+    var negative = els.negative.value.trim();
+
+    var values = [
+      Number(els.subjectFocus.value),
+      Number(els.lighting.value),
+      Number(els.styleIntensity.value),
+      Number(els.composition.value)
+    ];
+
+    var highCount = values.filter(function (v) {
+      return v > 80;
+    }).length;
+
+    if (!subject) {
+      warnings.push("Add a specific subject before exporting.");
+    }
+
+    if (!scene) {
+      warnings.push("Scene notes are empty. Add setting, material, color, mood, or story detail.");
+    }
+
+    if (highCount >= 3) {
+      warnings.push("Many sliders are very high. The prompt may feel over-controlled.");
+    }
+
+    if (Number(els.styleIntensity.value) > 80 && activeChips().length > 3) {
+      warnings.push("Heavy style plus many chips can make the image model chase style instead of subject.");
+    }
+
+    if (!negative) {
+      warnings.push("Consider adding avoid-notes for common failure modes.");
+    }
+
+    if (prompt.length > 760) {
+      warnings.push("Prompt is getting dense. Trim repeated adjectives before pasting.");
+    }
+
+    clearNode(els.warnings);
+
+    if (warnings.length === 0) {
+      appendWarning("✓ Balanced ingredient set. Ready to paste.", true);
+      return;
+    }
+
+    warnings.forEach(function (message) {
+      appendWarning("⚠ " + message, false);
+    });
+  }
+
+  function saveState() {
+    var state = {
+      subject: els.subject.value,
+      scene: els.scene.value,
+      style: els.style.value,
+      negative: els.negative.value,
+      subjectFocus: els.subjectFocus.value,
+      lighting: els.lighting.value,
+      styleIntensity: els.styleIntensity.value,
+      composition: els.composition.value,
+      chips: activeChips()
+    };
+
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(state));
+    } catch (err) {
+      setText(els.status, "Local save is unavailable in this browser mode.");
+    }
+  }
+
+  function loadState() {
+    try {
+      var raw = localStorage.getItem(storageKey);
+      if (!raw) return false;
+
+      var state = JSON.parse(raw);
+
+      els.subject.value = state.subject || "";
+      els.scene.value = state.scene || "";
+      els.style.value = state.style || "Cinematic realism";
+      els.negative.value = state.negative || "";
+      els.subjectFocus.value = state.subjectFocus || 70;
+      els.lighting.value = state.lighting || 55;
+      els.styleIntensity.value = state.styleIntensity || 45;
+      els.composition.value = state.composition || 60;
+
+      Array.prototype.slice.call(document.querySelectorAll(".chip")).forEach(function (btn) {
+        var chip = btn.getAttribute("data-chip");
+        btn.classList.toggle("active", (state.chips || []).indexOf(chip) !== -1);
+      });
+
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  function update() {
+    var prompt = getPrompt();
+
+    setText(els.subjectVal, els.subjectFocus.value);
+    setText(els.lightingVal, els.lighting.value);
+    setText(els.styleVal, els.styleIntensity.value);
+    setText(els.compositionVal, els.composition.value);
+
+    var subject = els.subject.value.trim() || "weathered astronaut botanist";
+    setText(els.previewSubject, subject);
+
+    var comp = Number(els.composition.value);
+    var light = Number(els.lighting.value);
+
+    els.visualBox.style.setProperty("--compX", String(50 + ((comp - 50) * 0.28)) + "%");
+    els.visualBox.style.setProperty("--compY", String(50 - ((light - 50) * 0.18)) + "%");
+    els.visualBox.style.setProperty("--lightAngle", String(170 - light) + "deg");
+
+    var balance = balanceScore([
+      els.subjectFocus.value,
+      els.lighting.value,
+      els.styleIntensity.value,
+      els.composition.value
+    ]);
+
+    var density = densityScore(prompt);
+
+    els.balanceMeter.style.width = String(balance) + "%";
+    els.densityMeter.style.width = String(density) + "%";
+
+    setText(els.promptOut, prompt);
+    renderWarnings(prompt);
+    saveState();
+  }
+
+  function setChipState(selected) {
+    Array.prototype.slice.call(document.querySelectorAll(".chip")).forEach(function (btn) {
+      var chip = btn.getAttribute("data-chip");
+      btn.classList.toggle("active", selected.indexOf(chip) !== -1);
+    });
+  }
+
+  function loadSample() {
+    els.subject.value = "weathered astronaut botanist studying a glowing alien orchid";
+    els.scene.value = "inside a cracked glass greenhouse on a quiet moon base, condensation on the windows, dust floating in the air, tiny blue roots spreading through volcanic soil";
+    els.style.value = "Cinematic realism";
+    els.negative.value = "extra limbs, unreadable text, plastic skin, cluttered background, distorted helmet reflections";
+    els.subjectFocus.value = 78;
+    els.lighting.value = 72;
+    els.styleIntensity.value = 52;
+    els.composition.value = 68;
+
+    setChipState([
+      "soft film grain",
+      "high detail texture",
+      "natural imperfect realism"
+    ]);
+
+    update();
+    setText(els.status, "Loaded sample prompt.");
+  }
+
+  function fallbackCopy(text) {
+    var temp = document.createElement("textarea");
+    temp.value = text;
+    temp.setAttribute("readonly", "readonly");
+    temp.style.position = "fixed";
+    temp.style.left = "-9999px";
+    document.body.appendChild(temp);
+    temp.select();
+
+    try {
+      document.execCommand("copy");
+      setText(els.status, "Copied prompt.");
+    } catch (err) {
+      setText(els.status, "Copy failed. Select the prompt text manually.");
+    }
+
+    document.body.removeChild(temp);
+  }
+
+  function copyPrompt() {
+    var text = els.promptOut.textContent;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        setText(els.status, "Copied prompt to clipboard.");
+      }).catch(function () {
+        fallbackCopy(text);
+      });
+      return;
+    }
+
+    fallbackCopy(text);
+  }
+
+  function downloadPrompt() {
+    var blob = new Blob([els.promptOut.textContent], { type: "text/plain;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    var safeName = (els.subject.value.trim() || "visual-prompt")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+
+    a.href = url;
+    a.download = safeName + "-ingredient-card.txt";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    setText(els.status, "Downloaded prompt text.");
+  }
+
+  function clearAll() {
+    try {
+      localStorage.removeItem(storageKey);
+    } catch (err) {}
+
+    els.subject.value = "";
+    els.scene.value = "";
+    els.style.value = "Cinematic realism";
+    els.negative.value = "";
+    els.subjectFocus.value = 70;
+    els.lighting.value = 55;
+    els.styleIntensity.value = 45;
+    els.composition.value = 60;
+
+    setChipState([]);
+    update();
+    setText(els.status, "Cleared.");
+  }
+
+  Array.prototype.slice.call(document.querySelectorAll("input, textarea, select")).forEach(function (el) {
+    el.addEventListener("input", update);
+    el.addEventListener("change", update);
+  });
+
+  els.chips.addEventListener("click", function (event) {
+    var btn = event.target.closest(".chip");
+    if (!btn) return;
+
+    btn.classList.toggle("active");
+    update();
+  });
+
+  els.copyBtn.addEventListener("click", copyPrompt);
+  els.downloadBtn.addEventListener("click", downloadPrompt);
+  els.sampleBtn.addEventListener("click", loadSample);
+  els.clearBtn.addEventListener("click", clearAll);
+
+  if (!loadState()) {
+    loadSample();
+  } else {
+    update();
+  }
+})();
+</script>
+</body>
+</html>

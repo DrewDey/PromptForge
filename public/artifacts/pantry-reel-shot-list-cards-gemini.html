@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reel Blueprint Engine</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --accent: #38bdf8;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 16px; max-width: 600px; margin: 0 auto; padding-bottom: 60px; }
+        h1, h2, h3 { color: var(--text); font-weight: 700; margin-bottom: 12px; }
+        h1 { font-size: 1.5rem; text-align: center; margin-bottom: 24px; color: var(--accent); }
+        h2 { font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-top: 24px; }
+        .section { background: var(--card-bg); padding: 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 16px; }
+        label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 600; text-transform: uppercase; }
+        input, textarea, select { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 10px; border-radius: 8px; margin-bottom: 16px; font-size: 1rem; }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+        button { width: 100%; background: var(--accent); color: var(--bg); border: none; padding: 14px; font-size: 1rem; font-weight: 700; border-radius: 8px; cursor: pointer; transition: opacity 0.2s; }
+        button:active { opacity: 0.8; }
+        .shot-card { background: var(--bg); border: 1px solid var(--border); border-left: 4px solid var(--accent); padding: 12px; border-radius: 6px; margin-bottom: 12px; }
+        .shot-header { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--accent); font-weight: bold; margin-bottom: 6px; }
+        .shot-text { font-size: 0.95rem; background: transparent; border: none; color: var(--text); resize: none; width: 100%; padding: 0; margin: 0; }
+        .checklist-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 0.95rem; }
+        .checklist-item input[type="checkbox"] { width: auto; margin-bottom: 0; }
+        .caption-box { background: var(--bg); border: 1px solid var(--border); padding: 12px; border-radius: 6px; font-size: 0.9rem; white-space: pre-wrap; position: relative; margin-bottom: 12px; }
+        .copy-btn { width: auto; padding: 4px 8px; font-size: 0.75rem; position: absolute; right: 8px; top: 8px; background: var(--border); color: var(--text); }
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+        .btn-secondary { background: var(--border); color: var(--text); }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <h1>Reel Blueprint Engine</h1>
+
+    <div class="section">
+        <label for="dish">Dish Idea</label>
+        <input type="text" id="dish" placeholder="e.g., Crispy Chili Oil Fried Rice">
+
+        <label for="ingredients">Key Pantry Ingredients</label>
+        <input type="text" id="ingredients" placeholder="e.g., Day-old rice, garlic chili crisp, scallions">
+
+        <label for="vibe">Vibe / Aesthetic</label>
+        <select id="vibe">
+            <option value="ASMR / Moody / Dark Kitchen">ASMR / Moody / Dark Kitchen</option>
+            <option value="Chaos Cooking / High Energy / Fast Cuts">Chaos Cooking / High Energy / Fast Cuts</option>
+            <option value="Clean / Minimalist / Bright Aesthetics">Clean / Minimalist / Bright Aesthetics</option>
+            <option value="Cozy / Warm / Late Night Comfort">Cozy / Warm / Late Night Comfort</option>
+        </select>
+
+        <label for="context">Serving Context</label>
+        <input type="text" id="context" placeholder="e.g., Solo midnight snack, 15-minute lazy dinner">
+
+        <button onclick="generateBlueprint()">Generate Blueprint</button>
+    </div>
+
+    <div id="outputContainer" class="hidden">
+        
+        <h2>Shot-List Cards</h2>
+        <div id="shotList"></div>
+
+        <h2>Prop Checklist</h2>
+        <div class="section" id="propChecklist"></div>
+
+        <h2>Caption Options</h2>
+        <div id="captionContainer"></div>
+
+        <h2>Export & Execution</h2>
+        <div class="section">
+            <div class="action-grid">
+                <button class="btn-secondary" onclick="copyFullPlan()">Copy Full Plan</button>
+                <button class="btn-secondary" onclick="exportJSON()">Export JSON</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Setup local storage autosave hook
+        const fields = ['dish', 'ingredients', 'vibe', 'context'];
+        fields.forEach(field => {
+            const el = document.getElementById(field);
+            el.value = localStorage.getItem(`blueprint_${field}`) || '';
+            el.addEventListener('input', () => localStorage.setItem(`blueprint_${field}`, el.value));
+        });
+
+        function generateBlueprint() {
+            const dish = document.getElementById('dish').value || 'Your Dish';
+            const ingredients = document.getElementById('ingredients').value || 'Pantry Staples';
+            const vibe = document.getElementById('vibe').value;
+            const context = document.getElementById('context').value || 'Quick meal';
+
+            const firstIngredient = ingredients.split(',')[0].trim() || 'ingredients';
+            const shortVibe = vibe.split(' / ')[0];
+
+            // 1. Core script architectures tailored to your inputs
+            let structuralShots = [];
+            if (vibe.includes("ASMR")) {
+                structuralShots = [
+                    { type: "01. HOOK", text: `Extreme close up: Sizzling hot oil hitting ${firstIngredient}. Heavy sensory audio focus.` },
+                    { type: "02. BUILD", text: `Medium shot: Rhythmic chopping of elements. Smooth, deliberate transitions.` },
+                    { type: "03. CLIMAX", text: `Close up: High-heat tossing of the ${dish} inside the pan, steam billowing.` },
+                    { type: "04. PAYOFF", text: `Slow motion macro shot: First bite or fork pull. Clean ambient audio crunch.` }
+                ];
+            } else if (vibe.includes("Chaos")) {
+                structuralShots = [
+                    { type: "01. HOOK", text: `Aggressive whip-pan directly to the completed ${dish}. On-screen text: "Stop scrolling."` },
+                    { type: "02. BUILD", text: `Rapid-fire 0.5s cuts: Aggressively tossing ingredients into the pan.` },
+                    { type: "03. CLIMAX", text: `Wide angle shot: High energy pan execution with dramatic camera movement.` },
+                    { type: "04. PAYOFF", text: `Handheld shake-cam close-up: Bringing a massive bite right to the lens.` }
+                ];
+            } else {
+                structuralShots = [
+                    { type: "01. HOOK", text: `Beautifully composed static view of the completed ${dish} with steam rising.` },
+                    { type: "02. BUILD", text: `Top-down layout display: Neatly organized ${ingredients}. Aesthetic prep work.` },
+                    { type: "03. CLIMAX", text: `Side profile track: Cooking process development, focusing on texture shifts.` },
+                    { type: "04. PAYOFF", text: `Macro shot: Placing the finalized plate directly down for its target context (${context}).` }
+                ];
+            }
+
+            // 2. Safely clear and build Shot List Cards via replaceChildren
+            const shotListDiv = document.getElementById('shotList');
+            shotListDiv.replaceChildren(); 
+
+            structuralShots.forEach((shot, i) => {
+                const card = document.createElement('div');
+                card.className = 'shot-card';
+
+                const header = document.createElement('div');
+                header.className = 'shot-header';
+                
+                const typeSpan = document.createElement('span');
+                typeSpan.textContent = shot.type;
+                const statusSpan = document.createElement('span');
+                statusSpan.textContent = 'Editable';
+                
+                header.appendChild(typeSpan);
+                header.appendChild(statusSpan);
+
+                const textarea = document.createElement('textarea');
+                textarea.className = 'shot-text';
+                textarea.rows = 2;
+                textarea.value = shot.text;
+
+                card.appendChild(header);
+                card.appendChild(textarea);
+                shotListDiv.appendChild(card);
+            });
+
+            // 3. Safely clear and build Prop Checklist via replaceChildren
+            const props = ["Smartphone/Camera", "Tripod / Overhead Mount", "Primary Skillet/Pan", "Serving Plate/Bowl", "Aesthetic Utensil", "Clean linen (for fast boundary wipe down)"];
+            const propDiv = document.getElementById('propChecklist');
+            propDiv.replaceChildren();
+
+            props.forEach((prop, i) => {
+                const item = document.createElement('div');
+                item.className = 'checklist-item';
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `prop_${i}`;
+
+                const label = document.createElement('label');
+                label.setAttribute('for', `prop_${i}`);
+                label.style.margin = '0';
+                label.style.textTransform = 'none';
+                label.style.color = 'var(--text)';
+                label.style.fontWeight = 'normal';
+                label.textContent = prop;
+
+                item.appendChild(checkbox);
+                item.appendChild(label);
+                propDiv.appendChild(item);
+            });
+
+            // 4. Safely clear and build Caption Options via replaceChildren
+            const captionTemplates = [
+`【 Hook 】The 15-minute fix you needed.
+【 Context 】When it's late, you're lazy, but you want restaurant-quality ${dish}.
+【 Blueprint 】Using just ${ingredients}. 
+#easyrecipes #foodtok #cooking`,
+
+`POV: You realized you have ${ingredients} in your kitchen right now. 
+Stop ordering takeout. Make this ${dish} instead. Perfect for a ${context}.
+Recipe details in the comments.`,
+
+`Current status: Tuning out the world with some ${shortVibe} cooking. 
+Dish: ${dish}
+Setup: ${context}
+Rate this setup 1-10.`
+            ];
+
+            const captionContainer = document.getElementById('captionContainer');
+            captionContainer.replaceChildren();
+
+            captionTemplates.forEach((captionText, i) => {
+                const box = document.createElement('div');
+                box.className = 'caption-box';
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.textContent = 'Copy';
+                copyBtn.onclick = function() {
+                    navigator.clipboard.writeText(captionText);
+                    alert('Caption snippet copied!');
+                };
+
+                const span = document.createElement('span');
+                span.textContent = captionText;
+
+                box.appendChild(copyBtn);
+                box.appendChild(span);
+                captionContainer.appendChild(box);
+            });
+
+            // Make the container visible and smoothly scroll to view
+            const outContainer = document.getElementById('outputContainer');
+            outContainer.classList.remove('hidden');
+            outContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function gatherFullPlanText() {
+            let plan = `REEL BLUEPRINT PLAN\n===================\n`;
+            plan += `Dish: ${document.getElementById('dish').value}\n`;
+            plan += `Vibe: ${document.getElementById('vibe').value}\n\n`;
+            plan += `SHOT LIST:\n`;
+            
+            const shotTexts = document.querySelectorAll('.shot-text');
+            shotTexts.forEach((textarea, i) => {
+                plan += `- Shot ${i+1}: ${textarea.value}\n`;
+            });
+
+            plan += `\nCAPTIONS:\n`;
+            const captionBoxes = document.querySelectorAll('.caption-box span');
+            captionBoxes.forEach((span, i) => {
+                plan += `\nOption ${i+1}:\n${span.textContent}\n`;
+            });
+            return plan;
+        }
+
+        function copyFullPlan() {
+            navigator.clipboard.writeText(gatherFullPlanText());
+            alert('Full workspace composition copied!');
+        }
+
+        function exportJSON() {
+            const payload = {
+                dish: document.getElementById('dish').value,
+                vibe: document.getElementById('vibe').value,
+                context: document.getElementById('context').value,
+                shots: Array.from(document.querySelectorAll('.shot-text')).map(t => t.value),
+                captions: Array.from(document.querySelectorAll('.caption-box span')).map(s => s.textContent)
+            };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "reel_blueprint.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+    </script>
+</body>
+</html>

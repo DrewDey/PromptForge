@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Launch Studio</title>
+    <style>
+        :root {
+            --bg: #121212;
+            --surface: #1e1e1e;
+            --border: #333333;
+            --text: #e0e0e0;
+            --accent: #ff9800;
+        }
+        body { background-color: var(--bg); color: var(--text); padding: 10px; font-family: sans-serif; line-height: 1.4; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .section { background: var(--surface); border: 1px solid var(--border); padding: 12px; border-radius: 6px; margin-bottom: 15px; }
+        textarea { width: 100%; height: 100px; background: #000; color: #fff; border: 1px solid var(--border); padding: 8px; }
+        button { background: var(--accent); border: none; padding: 10px; width: 100%; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .card { background: var(--surface); border: 1px solid var(--border); padding: 12px; margin-top: 10px; border-radius: 6px; }
+        .output-box { background: #000; border: 1px solid var(--border); padding: 10px; margin-top: 5px; white-space: pre-wrap; font-size: 13px; }
+        .tag { display: inline-block; background: #444; padding: 2px 8px; margin: 2px; border-radius: 10px; font-size: 12px; }
+        #launch-card-print { background: #fff; color: #000; padding: 15px; margin-top: 20px; border: 2px dashed #000; }
+        @media print { body * { visibility: hidden; } #launch-card-print, #launch-card-print * { visibility: visible; } #launch-card-print { position: absolute; left: 0; top: 0; width: 100%; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Recipe Launch Studio</h1>
+    <div class="section">
+        <textarea id="rawNotes" placeholder="Paste notes here..."></textarea>
+        <button onclick="processNotes()">Generate Studio</button>
+    </div>
+
+    <div id="outputArea" style="display:none;">
+        <div class="card"><strong>Ingredients & Directions</strong>
+            <div id="outBody" class="output-box"></div>
+        </div>
+        <div class="card"><strong>Prep Checklist</strong>
+            <div id="outChecklist" class="output-box"></div>
+        </div>
+        <div class="card"><strong>Flags</strong>
+            <div id="outFlags"></div>
+        </div>
+        <div class="card"><strong>Captions</strong>
+            <div id="outCaptions" class="output-box"></div>
+        </div>
+        <button onclick="window.print()" style="margin-top:10px;">Print / Save PDF</button>
+
+        <div id="launch-card-print">
+            <h2 id="pTitle">Launch Card</h2>
+            <div id="pContent" style="white-space: pre-wrap;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function processNotes() {
+        const raw = document.getElementById('rawNotes').value;
+        if (!raw.trim()) return;
+
+        const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+        
+        let ingredients = [], directions = [], prep = [], tags = [], captions = [];
+        
+        lines.forEach(line => {
+            const lower = line.toLowerCase();
+            if (lower.includes('keto') || lower.includes('allergy') || lower.includes('gluten')) tags.push(line);
+            else if (lower.includes('prep') || lower.includes('chop') || lower.includes('toast')) prep.push(line);
+            else if (line.startsWith('"')) captions.push(line);
+            else if (line.includes(',')) ingredients.push(line);
+            else directions.push(line);
+        });
+
+        document.getElementById('outBody').textContent = `INGREDIENTS:\n${ingredients.join('\n')}\n\nDIRECTIONS:\n${directions.join('\n')}`;
+        document.getElementById('outChecklist').textContent = prep.map(p => `[ ] ${p}`).join('\n');
+        
+        const tagContainer = document.getElementById('outFlags');
+        tagContainer.innerHTML = '';
+        tags.forEach(t => {
+            const span = document.createElement('span');
+            span.className = 'tag';
+            span.textContent = t;
+            tagContainer.appendChild(span);
+        });
+
+        document.getElementById('outCaptions').textContent = captions.join('\n\n');
+        
+        const finalCardText = `DIET/FLAGS: ${tags.join(', ')}\n\nINGREDIENTS:\n${ingredients.join('\n')}\n\nPREP & DIRECTIONS:\n${prep.join('\n')}\n${directions.join('\n')}`;
+        document.getElementById('pContent').textContent = finalCardText;
+        
+        document.getElementById('outputArea').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>

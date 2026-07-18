@@ -1,0 +1,131 @@
+{
+  "title": "Travel Poster Landmark Layer Game",
+  "slug": "travel-poster-landmark-layer-game-claude",
+  "provider": "Claude",
+  "model": "Haiku 4.5 Extended",
+  "model_settings": "Claude model picker initially showed Sonnet 4.6 Medium; menu offered Fable 5 unavailable, Opus 4.8 for complex tasks, Sonnet 4.6, and Haiku 4.5 fastest for quick answers. Haiku 4.5 was selected to avoid repeating recent Claude Opus 4.8 High and Claude Sonnet 4.6 Medium; composer then showed Haiku 4.5 Extended.",
+  "source_url": "https://claude.ai/chat/154cb803-8b44-42bb-9ee5-db7a054b2645",
+  "run_started_at": "2026-06-14T02:32:00Z",
+  "run_finished_at": "2026-06-14T02:42:15Z",
+  "chain_type": "multi-prompt repair",
+  "category": "games",
+  "difficulty": "beginner",
+  "tags": [
+    "travel poster",
+    "landmark layers",
+    "composition game",
+    "offline design studio",
+    "copy brief"
+  ],
+  "status": "submitted_pending",
+  "prompt_count": 3,
+  "source_inspiration": {
+    "primary": {
+      "url": "https://prompts.chat/",
+      "visible_evidence": "Assignment-provided source evidence: prompts.chat features \"Lost in [Country] with ChatGPT Image 2\" as an image prompt at visible position 4 with engagement count 1."
+    },
+    "secondary": {
+      "url": "https://prompthero.com/",
+      "visible_evidence": "Assignment-provided source evidence: PromptHero top-page visual prompt categories and image/video prompt counts include travel/editorial/photo prompt patterns."
+    },
+    "usage": "External evidence was treated only as demand research for travel-poster ideation; no third-party prompt text was copied."
+  },
+  "pathforge_fit_adaptation": "Translated image-generation travel poster ideation into a deterministic offline browser game/studio: users select or drag local landmark, sky, title, badge, and texture layers, inspect scoring for balance/readability/landmark coverage/clutter, randomize/reset compositions, and copy or export a poster brief without calling any image/video model, CDN, remote font, or external asset.",
+  "final_artifact_path": "public/artifacts/travel-poster-landmark-layer-game-claude.html",
+  "final_artifact_clue": "Open the studio, choose a destination/sky/landmark/badge/texture, press Randomize, then Copy Brief or Export to capture the poster composition brief.",
+  "artifact_type": "html",
+  "artifact_versions": [
+    "public/artifacts/travel-poster-landmark-layer-game-claude-v1.html",
+    "public/artifacts/travel-poster-landmark-layer-game-claude-v2.html",
+    "public/artifacts/travel-poster-landmark-layer-game-claude.html"
+  ],
+  "generated_files": [
+    "public/artifacts/travel-poster-landmark-layer-game-claude-v1.html",
+    "public/artifacts/travel-poster-landmark-layer-game-claude-v2.html",
+    "public/artifacts/travel-poster-landmark-layer-game-claude.html",
+    "seed-runs/evidence/travel-poster-landmark-layer-game-claude-prompt-1-response.md",
+    "seed-runs/evidence/travel-poster-landmark-layer-game-claude-prompt-2-response.md",
+    "seed-runs/evidence/travel-poster-landmark-layer-game-claude-prompt-3-response.md"
+  ],
+  "screenshots": [],
+  "verification_notes": [
+    "Goal tool available and real Codex goal created before workflow actions.",
+    "Required seed skill references, root repo SKILL.md, profile registry, chain realism, seed idea quality, package shape, foundation context, and automation memory were read before prompting.",
+    "Prompt 1 produced a working Claude artifact preview and downloaded HTML, preserved as v1, but static scan found inline onclick attributes and dynamic innerHTML use.",
+    "Prompt 2 repaired inline handlers and innerHTML, preserved as v2, but served-local standalone verification showed landmark glyph mojibake from missing UTF-8 metadata and the brief exposed Export only instead of copy/export.",
+    "Prompt 3 repaired UTF-8 metadata and added Copy Brief next to Export; final artifact downloaded from Claude artifact menu and saved as default final.",
+    "Final static scan found no remote http(s) dependencies except the SVG namespace string, no @import, no external script/link assets, no inline on* handlers, no innerHTML/outerHTML/insertAdjacentHTML/document.write, no eval/new Function, and no alert/confirm/prompt modal APIs.",
+    "Final script body parsed with new Function extraction: one script, 12946 characters, no syntax error.",
+    "Served final artifact locally at http://127.0.0.1:8776/public/artifacts/travel-poster-landmark-layer-game-claude.html for Chrome verification.",
+    "Chrome verification: page rendered nonblank with Paris/Sydney/Tokyo destination controls, sky/landmark/badge/texture controls, score cards, Copy Brief and Export buttons, and no console errors.",
+    "Workflow verification: selected Sydney and Dome, score cards updated, SVG text rendered as Sydney⬤TRAVEL with no mojibake, Copy Brief showed Copied to clipboard feedback, and Export downloaded sydney_poster_brief.txt containing Destination: Sydney, Landmark: Dome, scores, and design notes.",
+    "Chrome direct file:// verification was blocked by browser security policy, so the artifact was verified through a temporary localhost static server instead.",
+    "The artifact is desktop/tablet oriented; desktop served-local check showed no horizontal overflow at 1420px. No narrow mobile guarantee is claimed."
+  ],
+  "steps": [
+    {
+      "step_number": 1,
+      "prompt_exact": "Can you make me a self-contained single-file HTML game/studio I can save and open offline where I build a retro travel poster by dragging or selecting landmark, sky, title, badge, and texture layers, then it scores balance, readability, landmark coverage, and clutter with sample destinations plus reset, randomize, and copy/export of the poster brief?",
+      "response_exact": "Done. Self-contained retro travel poster builder with five destinations (Paris, Tokyo, New York, Sydney, Rome), five sky conditions, five landmark styles, four badge types, and four texture levels. Drag the landmark around in the canvas or just click buttons to swap layers.\n\n\"The scoring system evaluates:\"\n\n- Balance: how well the landmark is distributed across the canvas\n- Readability: text contrast against the sky\n- Coverage: landmark prominence (larger landmarks score higher)\n- Clarity: inverse clutter (textures and complex badges reduce clarity)\n\nClick Reset to go back to Paris + day sky + monument, Randomize to spin up a new composition, or Export Brief to download the poster spec as a text file with all the layer choices and scores.\n\nSave the HTML file and open it in any browser offline—no CDN dependencies, all state is in memory, and the SVG rendering is pure DOM. You can tinker with the color palettes and landmark icons in the script if you want to theme it differently.",
+      "response_summary": "Claude created a self-contained retro travel poster builder with destination, sky, landmark, badge, texture, scoring, reset/randomize, and export controls.",
+      "code_blocks": [
+        {
+          "language": "html",
+          "content_file": "public/artifacts/travel-poster-landmark-layer-game-claude-v1.html"
+        }
+      ],
+      "generated_files": [
+        "public/artifacts/travel-poster-landmark-layer-game-claude-v1.html"
+      ],
+      "artifact_version_path": "public/artifacts/travel-poster-landmark-layer-game-claude-v1.html",
+      "notes": "Real v1 downloaded from Claude artifact menu and preserved. Rejected as final because static scan found inline onclick attributes and dynamic innerHTML use."
+    },
+    {
+      "step_number": 2,
+      "prompt_exact": "This works, but the saved HTML has inline onclick attributes and uses innerHTML, which will fail my static review. Please revise it as one downloadable self-contained HTML file with the same poster-layer game behavior, using addEventListener plus createElement/textContent or SVG node creation instead of inline handlers or innerHTML.",
+      "response_exact": "Fixed. Refactored to use:\n\n- addEventListener() instead of inline onclick attributes\n- createElement/appendChild instead of innerHTML for all DOM building\n- createSVGElement() helper for proper SVG node creation with setAttribute\n- initializeButtons() function that builds all button DOM at startup\n- Proper closure-based event handlers capturing state\n\nAll rendering paths now use pure DOM/SVG node APIs. The HTML file is still fully self-contained, offline-capable, and passes static code review.",
+      "response_summary": "Claude repaired the artifact to remove inline handlers and innerHTML by using event listeners and DOM/SVG node creation.",
+      "code_blocks": [
+        {
+          "language": "html",
+          "content_file": "public/artifacts/travel-poster-landmark-layer-game-claude-v2.html"
+        }
+      ],
+      "generated_files": [
+        "public/artifacts/travel-poster-landmark-layer-game-claude-v2.html"
+      ],
+      "artifact_version_path": "public/artifacts/travel-poster-landmark-layer-game-claude-v2.html",
+      "continuation_reason": "v1 contained inline onclick attributes and dynamic innerHTML hard-gate defects visible in the generated HTML.",
+      "notes": "Real v2 downloaded from Claude artifact menu and preserved. It passed the handler/innerHTML static scan but was not final because standalone verification showed mojibake and missing copy brief control."
+    },
+    {
+      "step_number": 3,
+      "prompt_exact": "The standalone downloaded file now passes the handler/innerHTML scan, but when I open it outside Claude the landmark symbols render as mojibake because the file needs UTF-8 metadata, and the brief has Export only even though I need copy/export. Please revise the same self-contained HTML file by adding proper UTF-8 charset support and a Copy Brief button next to Export Brief, while keeping addEventListener-only wiring and no innerHTML.",
+      "response_exact": "Done. Added three key fixes:\n\n- `<meta charset=\"UTF-8\">` in the head — ensures all landmark symbols render correctly when opened outside Claude\n- Copy Brief button — copies the brief text to clipboard with transient \"Copied to clipboard!\" feedback\n- Split export panel — \"Copy Brief\" and \"Export\" are now separate buttons in a two-column layout\n\nThe `generateBrief()` helper function feeds both buttons the same formatted text. Copy uses `navigator.clipboard.writeText()` with fallback error handling. Everything still wires through `addEventListener()` with zero inline handlers or innerHTML.",
+      "response_summary": "Claude added UTF-8 metadata and separate Copy Brief and Export controls while preserving safe event-listener wiring.",
+      "code_blocks": [
+        {
+          "language": "html",
+          "content_file": "public/artifacts/travel-poster-landmark-layer-game-claude.html"
+        }
+      ],
+      "generated_files": [
+        "public/artifacts/travel-poster-landmark-layer-game-claude.html"
+      ],
+      "artifact_version_path": "public/artifacts/travel-poster-landmark-layer-game-claude.html",
+      "continuation_reason": "v2 rendered landmark glyphs as mojibake outside Claude due missing UTF-8 metadata and lacked the requested copy brief workflow.",
+      "notes": "Final/default artifact downloaded from Claude artifact menu and verified as accepted package-only output."
+    }
+  ],
+  "profile_registry_id_suggestion": "pathforge-seed-200",
+  "submitted_by_profile_registry_id": "pathforge-seed-200",
+  "suggested_display_name": "Rowan Moss",
+  "suggested_username": "RowanMoss",
+  "upload_recommendation": "recommend_upload_by_manager",
+  "lane_notes": "Manager retargeted the seed profile from the builder's colliding TessaVale suggestion to pathforge-seed-200 / Rowan Moss / RowanMoss, then imported the package as queued source-run intake only. No public page/vote/comment/bookmark/fork/manual submission was created.",
+  "agent_notes": "Provider: Claude\nModel used: Haiku 4.5 Extended\nModel settings: Claude model picker initially showed Sonnet 4.6 Medium; menu offered Fable 5 unavailable, Opus 4.8 for complex tasks, Sonnet 4.6, and Haiku 4.5 fastest for quick answers. Haiku 4.5 was selected to avoid repeating recent Claude Opus 4.8 High and Claude Sonnet 4.6 Medium; composer then showed Haiku 4.5 Extended.\nPrompt count: 3\nSource URL: https://claude.ai/chat/154cb803-8b44-42bb-9ee5-db7a054b2645\nSource inspiration: prompts.chat https://prompts.chat/ featured \"Lost in [Country] with ChatGPT Image 2\" at visible position 4 with engagement count 1; PromptHero https://prompthero.com/ top-page visual prompt categories and image/video prompt counts indicated travel/editorial/photo prompt demand. Evidence was assignment-provided and used only as demand signal; no outside prompt text copied.\nPathForge-fit adaptation: offline deterministic travel poster landmark layer game/studio, not a hosted image generator.\nArtifact versions: v1 preserved, v2 repaired, final default points to v3 at public/artifacts/travel-poster-landmark-layer-game-claude.html.\nVerification: final static scan clean except harmless SVG namespace string; script parses; served-local Chrome workflow verified render, layer selection, scoring, UTF-8 symbols, Copy Brief success feedback, and Export text file containing selected Sydney/Dome brief. Direct file:// was blocked by Chrome policy, so localhost static serving was used for verification.\nProfile registry ID suggestion: pathforge-seed-200 / Rowan Moss / RowanMoss.\nImported by manager as queued source-run intake pending ID 10e226ee-7783-4045-804e-2b5e837bf8e3; no public page was created.",
+  "pathforge_submission_url": "https://prompt-forge-sandy.vercel.app/admin/source-runs/10e226ee-7783-4045-804e-2b5e837bf8e3",
+  "pathforge_pending_id": "10e226ee-7783-4045-804e-2b5e837bf8e3",
+  "submitted_by_account": "Rowan Moss / RowanMoss",
+  "admin_review_status": "queued_pending_review_admin_verified"
+}

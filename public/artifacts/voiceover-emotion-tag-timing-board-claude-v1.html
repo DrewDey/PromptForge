@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>VO Beat Board</title>
+<style>
+  :root {
+    --bg: #111214;
+    --surface: #1a1c20;
+    --surface2: #22252b;
+    --border: #2e3138;
+    --amber: #e8a428;
+    --amber-dim: #9a6d1a;
+    --amber-glow: rgba(232,164,40,0.12);
+    --text: #dde0e8;
+    --text-dim: #7a7f8e;
+    --text-muted: #4a4f5e;
+    --red: #e85050;
+    --green: #4ec87a;
+    --blue: #5b9cf6;
+    --purple: #a87ff0;
+    --teal: #3ecfcf;
+    --orange: #f07840;
+
+    /* emotion stripe colors */
+    --e-neutral:   #5b7fa6;
+    --e-warm:      #e8a428;
+    --e-urgent:    #e85050;
+    --e-soft:      #a87ff0;
+    --e-excited:   #f07840;
+    --e-somber:    #3ecfcf;
+
+    --mono: 'Courier New', 'Menlo', monospace;
+    --sans: system-ui, -apple-system, sans-serif;
+
+    --radius: 6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100dvh;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  /* ── TOP BAR ── */
+  #topbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(17,18,20,0.95);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  #topbar .logo {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--amber);
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+    font-weight: bold;
+  }
+
+  #topbar .spacer { flex: 1; }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 12px;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+  .pill .val {
+    font-family: var(--mono);
+    font-weight: bold;
+    color: var(--text);
+  }
+  .pill.warn .val { color: var(--red); }
+  .pill.ok .val   { color: var(--green); }
+
+  /* ── TABS ── */
+  #tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  #tabs::-webkit-scrollbar { display: none; }
+
+  .tab {
+    padding: 10px 16px;
+    font-size: 13px;
+    color: var(--text-dim);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    user-select: none;
+    transition: color 0.15s;
+  }
+  .tab.active {
+    color: var(--amber);
+    border-bottom-color: var(--amber);
+  }
+
+  /* ── PANELS ── */
+  .panel { display: none; padding: 14px; }
+  .panel.active { display: block; }
+
+  /* ── INPUT PANEL ── */
+  #script-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.7;
+    padding: 12px;
+    resize: vertical;
+    min-height: 220px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  #script-input:focus { border-color: var(--amber-dim); }
+  #script-input::placeholder { color: var(--text-muted); }
+
+  .input-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 9px 18px;
+    border-radius: var(--radius);
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    user-select: none;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary {
+    background: var(--amber);
+    color: #111;
+  }
+  .btn-ghost {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+  .btn-danger {
+    background: transparent;
+    color: var(--red);
+    border: 1px solid var(--red);
+  }
+  .btn-success {
+    background: var(--green);
+    color: #111;
+  }
+
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+  /* ── SPLIT OPTIONS ── */
+  .split-opts {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    margin-top: 10px;
+  }
+  .split-opts label {
+    font-size: 12px;
+    color: var(--text-dim);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .split-opts select,
+  .split-opts input[type=number] {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-size: 13px;
+    padding: 5px 8px;
+    outline: none;
+  }
+  .split-opts select { width: 100%; margin-bottom: 8px; }
+
+  /* ── BEATS PANEL ── */
+  #beats-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .beat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    border-left: 4px solid var(--e-neutral);
+    overflow: hidden;
+    transition: border-left-color 0.2s;
+  }
+  .beat-card.overloaded { box-shadow: 0 0 0 1px var(--red); }
+
+  .beat-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px 4px;
+  }
+  .beat-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    min-width: 22px;
+  }
+  .beat-badges { display: flex; gap: 5px; flex-wrap: wrap; flex: 1; }
+
+  .badge {
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    cursor: pointer;
+    user-select: none;
+    transition: opacity 0.15s;
+  }
+  .badge:hover { opacity: 0.75; }
+
+  /* emotion badges */
+  .badge-neutral  { background: rgba(91,127,166,0.2);  color: #7aaee0; border: 1px solid rgba(91,127,166,0.4); }
+  .badge-warm     { background: rgba(232,164,40,0.15); color: #e8a428; border: 1px solid rgba(232,164,40,0.35); }
+  .badge-urgent   { background: rgba(232,80,80,0.15);  color: #e87070; border: 1px solid rgba(232,80,80,0.35); }
+  .badge-soft     { background: rgba(168,127,240,0.15);color: #c0a0ff; border: 1px solid rgba(168,127,240,0.35); }
+  .badge-excited  { background: rgba(240,120,64,0.15); color: #f09060; border: 1px solid rgba(240,120,64,0.35); }
+  .badge-somber   { background: rgba(62,207,207,0.15); color: #4ecece; border: 1px solid rgba(62,207,207,0.35); }
+
+  /* pace badges */
+  .badge-slow     { background: rgba(94,140,100,0.2);  color: #7ecf8e; border: 1px solid rgba(94,140,100,0.4); }
+  .badge-normal   { background: rgba(60,80,110,0.2);   color: #8098c0; border: 1px solid rgba(60,80,110,0.4); }
+  .badge-fast     { background: rgba(180,100,50,0.2);  color: #d09060; border: 1px solid rgba(180,100,50,0.4); }
+
+  /* pause badges */
+  .badge-pause-none   { display: none; }
+  .badge-beat-pause   { background: rgba(100,100,130,0.2); color: #9898c0; border: 1px solid rgba(100,100,130,0.4); }
+  .badge-short-pause  { background: rgba(80,120,160,0.2);  color: #80b0e0; border: 1px solid rgba(80,120,160,0.4); }
+  .badge-long-pause   { background: rgba(60,100,180,0.2);  color: #6090e0; border: 1px solid rgba(60,100,180,0.4); }
+
+  .overload-flag {
+    font-size: 10px;
+    color: var(--red);
+    padding: 1px 6px;
+    border-radius: 8px;
+    border: 1px solid rgba(232,80,80,0.4);
+    background: rgba(232,80,80,0.1);
+    white-space: nowrap;
+  }
+
+  .beat-time {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .beat-text {
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.65;
+    padding: 4px 10px 8px 14px;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .beat-card.overloaded .beat-text { color: #e89090; }
+
+  .beat-controls {
+    display: flex;
+    gap: 6px;
+    padding: 4px 10px 10px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .ctrl-group {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+    min-width: 90px;
+  }
+  .ctrl-group label {
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .ctrl-group select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-size: 12px;
+    padding: 4px 6px;
+    outline: none;
+  }
+
+  .beat-note {
+    width: 100%;
+    background: var(--surface2);
+    border: none;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: var(--sans);
+    font-size: 12px;
+    padding: 6px 10px;
+    outline: none;
+    resize: none;
+    min-height: 32px;
+    font-style: italic;
+  }
+  .beat-note::placeholder { color: var(--text-muted); }
+
+  .beat-actions {
+    display: flex;
+    gap: 6px;
+    padding: 0 10px 10px;
+  }
+
+  /* drag handle */
+  .drag-handle {
+    padding: 6px 4px 6px 8px;
+    color: var(--text-muted);
+    cursor: grab;
+    font-size: 14px;
+    user-select: none;
+    touch-action: none;
+  }
+  .drag-handle:active { cursor: grabbing; }
+
+  /* ── DIRECTION SHEET PANEL ── */
+  #sheet-output {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.75;
+    padding: 14px;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+    min-height: 200px;
+  }
+
+  .sheet-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+
+  /* ── EMPTY STATE ── */
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  .empty .icon { font-size: 32px; margin-bottom: 10px; }
+
+  /* ── SETTINGS PANEL ── */
+  .settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+  }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-label { font-size: 13px; color: var(--text); }
+  .settings-sub   { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+  .settings-row input[type=number],
+  .settings-row select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-size: 13px;
+    padding: 5px 8px;
+    width: 80px;
+    outline: none;
+    text-align: right;
+  }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: var(--surface2);
+    border: 1px solid var(--amber-dim);
+    color: var(--amber);
+    font-size: 13px;
+    padding: 8px 18px;
+    border-radius: 20px;
+    transition: transform 0.25s ease;
+    z-index: 999;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── PROGRESS BAR ── */
+  #readbar {
+    height: 2px;
+    background: var(--border);
+    width: 100%;
+    margin-top: 2px;
+  }
+  #readbar-fill {
+    height: 100%;
+    background: var(--amber);
+    transition: width 0.3s;
+    border-radius: 1px;
+  }
+  #readbar-fill.warn { background: var(--red); }
+
+  /* ── LEGEND ── */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 0 4px;
+  }
+
+  /* dragging state */
+  .beat-card.dragging { opacity: 0.4; }
+  .beat-card.drag-over { border-top: 2px solid var(--amber); }
+
+  section-title {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <span class="logo">&#9679; VO BOARD</span>
+  <div class="spacer"></div>
+  <span class="pill" id="pill-time"><span class="val" id="stat-time">0:00</span> read</span>
+  <span class="pill" id="pill-beats"><span class="val" id="stat-beats">0</span> beats</span>
+</div>
+<div id="readbar"><div id="readbar-fill" style="width:0%"></div></div>
+
+<!-- TABS -->
+<div id="tabs">
+  <div class="tab active" data-tab="input">&#9998; Script</div>
+  <div class="tab" data-tab="beats">&#9776; Beats</div>
+  <div class="tab" data-tab="sheet">&#9741; Direction Sheet</div>
+  <div class="tab" data-tab="settings">&#9881; Settings</div>
+</div>
+
+<!-- PANEL: INPUT -->
+<div class="panel active" id="panel-input">
+  <section-title>Paste or type your script</section-title>
+  <textarea id="script-input" placeholder="Paste your voiceover script here...
+
+Every sentence or line break can become a beat.
+You can also split on double line breaks (paragraphs)."></textarea>
+  <p class="input-hint">Tip: separate beats with blank lines, or let the tool split by sentences.</p>
+
+  <div class="split-opts">
+    <label>Split beats by</label>
+    <select id="split-mode">
+      <option value="paragraph">Blank lines (paragraphs)</option>
+      <option value="sentence">Sentences (.  !  ?)</option>
+      <option value="line">Every line break</option>
+      <option value="manual">Manual — keep as one block</option>
+    </select>
+    <label>Max comfortable words per beat</label>
+    <input type="number" id="max-words" value="25" min="5" max="100" style="width:70px">
+  </div>
+
+  <div class="row">
+    <button class="btn btn-primary" onclick="splitScript()">&#9654; Split into beats</button>
+    <button class="btn btn-ghost btn-sm" onclick="clearAll()">Clear all</button>
+  </div>
+</div>
+
+<!-- PANEL: BEATS -->
+<div class="panel" id="panel-beats">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px;">
+    <section-title style="margin:0">Beat Editor</section-title>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      <button class="btn btn-ghost btn-sm" onclick="addBeat()">+ Add beat</button>
+      <button class="btn btn-ghost btn-sm" onclick="autoTag()">&#9889; Auto-tag all</button>
+    </div>
+  </div>
+
+  <div class="legend" id="emotion-legend"></div>
+
+  <div id="beats-list"></div>
+
+  <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+    <button class="btn btn-primary btn-sm" onclick="goSheet()">&#9741; Build direction sheet</button>
+  </div>
+</div>
+
+<!-- PANEL: DIRECTION SHEET -->
+<div class="panel" id="panel-sheet">
+  <section-title>Direction Sheet</section-title>
+  <div id="sheet-output"></div>
+  <div class="sheet-actions">
+    <button class="btn btn-success" onclick="copySheet()">&#10003; Copy to clipboard</button>
+    <button class="btn btn-ghost btn-sm" onclick="buildSheet()">&#8635; Rebuild</button>
+  </div>
+</div>
+
+<!-- PANEL: SETTINGS -->
+<div class="panel" id="panel-settings">
+  <section-title>Playback & Display</section-title>
+
+  <div class="settings-row">
+    <div>
+      <div class="settings-label">Words per minute</div>
+      <div class="settings-sub">Used for read-time calculation</div>
+    </div>
+    <input type="number" id="wpm" value="150" min="80" max="300">
+  </div>
+
+  <div class="settings-row">
+    <div>
+      <div class="settings-label">Target total time (sec)</div>
+      <div class="settings-sub">Bar turns red when exceeded (0 = off)</div>
+    </div>
+    <input type="number" id="target-time" value="60" min="0" max="600">
+  </div>
+
+  <div class="settings-row">
+    <div>
+      <div class="settings-label">Pause durations (sec)</div>
+      <div class="settings-sub">Beat / Short / Long</div>
+    </div>
+    <div style="display:flex;gap:4px;">
+      <input type="number" id="pause-beat"  value="0.3" step="0.1" min="0" style="width:52px">
+      <input type="number" id="pause-short" value="0.8" step="0.1" min="0" style="width:52px">
+      <input type="number" id="pause-long"  value="2.0" step="0.1" min="0" style="width:52px">
+    </div>
+  </div>
+
+  <section-title style="margin-top:16px">Sheet Format</section-title>
+  <div class="settings-row">
+    <div>
+      <div class="settings-label">Show word counts</div>
+    </div>
+    <input type="checkbox" id="sheet-wc" checked style="width:20px;height:20px;accent-color:var(--amber)">
+  </div>
+  <div class="settings-row">
+    <div>
+      <div class="settings-label">Show beat timing</div>
+    </div>
+    <input type="checkbox" id="sheet-timing" checked style="width:20px;height:20px;accent-color:var(--amber)">
+  </div>
+  <div class="settings-row">
+    <div>
+      <div class="settings-label">Include director notes</div>
+    </div>
+    <input type="checkbox" id="sheet-notes" checked style="width:20px;height:20px;accent-color:var(--amber)">
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────
+let beats = [];  // { id, text, emotion, pace, pause, note }
+let dragSrc = null;
+
+const EMOTIONS = ['neutral','warm','urgent','soft','excited','somber'];
+const PACES    = ['slow','normal','fast'];
+const PAUSES   = ['none','beat-pause','short-pause','long-pause'];
+
+const EMOTION_LABELS = {
+  neutral:'Neutral', warm:'Warm', urgent:'Urgent',
+  soft:'Soft', excited:'Excited', somber:'Somber'
+};
+const PACE_LABELS = { slow:'Slow', normal:'Normal', fast:'Fast' };
+const PAUSE_LABELS = {
+  'none':'No pause',
+  'beat-pause':'Beat (0.3s)',
+  'short-pause':'Short (0.8s)',
+  'long-pause':'Long (2s)'
+};
+
+const EMOTION_COLORS = {
+  neutral:'var(--e-neutral)', warm:'var(--e-warm)', urgent:'var(--e-urgent)',
+  soft:'var(--e-soft)', excited:'var(--e-excited)', somber:'var(--e-somber)'
+};
+
+// ── TABS ──────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('panel-' + t.dataset.tab).classList.add('active');
+    if (t.dataset.tab === 'beats') renderBeats();
+    if (t.dataset.tab === 'sheet') buildSheet();
+  });
+});
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.tab === name);
+  });
+  document.querySelectorAll('.panel').forEach(p => {
+    p.classList.toggle('active', p.id === 'panel-' + name);
+  });
+}
+
+// ── SPLIT ────────────────────────────────────────────────────
+function splitScript() {
+  const raw = document.getElementById('script-input').value.trim();
+  if (!raw) { showToast('Paste a script first'); return; }
+
+  const mode = document.getElementById('split-mode').value;
+  let chunks = [];
+
+  if (mode === 'paragraph') {
+    chunks = raw.split(/\n{2,}/).map(s => s.replace(/\n/g,' ').trim()).filter(Boolean);
+  } else if (mode === 'sentence') {
+    // split on .!? followed by space/newline, keep delimiter
+    chunks = raw.replace(/([.!?])\s+/g, '$1\n').split('\n').map(s => s.trim()).filter(Boolean);
+  } else if (mode === 'line') {
+    chunks = raw.split('\n').map(s => s.trim()).filter(Boolean);
+  } else {
+    chunks = [raw];
+  }
+
+  beats = chunks.map((text, i) => ({
+    id: Date.now() + i,
+    text,
+    emotion: 'neutral',
+    pace: 'normal',
+    pause: 'none',
+    note: ''
+  }));
+
+  renderBeats();
+  updateStats();
+  switchTab('beats');
+  showToast(`Split into ${beats.length} beat${beats.length !== 1 ? 's' : ''}`);
+}
+
+// ── RENDER BEATS ─────────────────────────────────────────────
+function renderBeats() {
+  const list = document.getElementById('beats-list');
+
+  if (!beats.length) {
+    list.innerHTML = `<div class="empty"><div class="icon">🎙</div>No beats yet — paste a script and split it.</div>`;
+    buildLegend();
+    updateStats();
+    return;
+  }
+
+  buildLegend();
+  list.innerHTML = '';
+  beats.forEach((b, i) => list.appendChild(makeBeatCard(b, i)));
+  updateStats();
+}
+
+function makeBeatCard(b, i) {
+  const maxW = parseInt(document.getElementById('max-words').value) || 25;
+  const wc   = wordCount(b.text);
+  const over = wc > maxW;
+  const secs = beatSeconds(b);
+
+  const card = document.createElement('div');
+  card.className = 'beat-card' + (over ? ' overloaded' : '');
+  card.dataset.id = b.id;
+  card.style.borderLeftColor = EMOTION_COLORS[b.emotion] || 'var(--e-neutral)';
+  card.draggable = true;
+
+  card.innerHTML = `
+    <div class="beat-header">
+      <span class="drag-handle" title="Drag to reorder">⠿</span>
+      <span class="beat-num">#${i+1}</span>
+      <div class="beat-badges">
+        <span class="badge badge-${b.emotion}">${EMOTION_LABELS[b.emotion]}</span>
+        ${b.pace !== 'normal' ? `<span class="badge badge-${b.pace}">${PACE_LABELS[b.pace]}</span>` : ''}
+        ${b.pause !== 'none'  ? `<span class="badge badge-${b.pause}">${PAUSE_LABELS[b.pause]}</span>` : ''}
+        ${over ? `<span class="overload-flag">⚠ ${wc}w</span>` : ''}
+      </div>
+      <span class="beat-time">${formatSec(secs)}</span>
+    </div>
+    <div class="beat-text">${escHtml(b.text)}</div>
+    <div class="beat-controls">
+      <div class="ctrl-group">
+        <label>Emotion</label>
+        <select data-field="emotion" data-id="${b.id}">
+          ${EMOTIONS.map(e => `<option value="${e}" ${b.emotion===e?'selected':''}>${EMOTION_LABELS[e]}</option>`).join('')}
+        </select>
+      </div>
+      <div class="ctrl-group">
+        <label>Pace</label>
+        <select data-field="pace" data-id="${b.id}">
+          ${PACES.map(p => `<option value="${p}" ${b.pace===p?'selected':''}>${PACE_LABELS[p]}</option>`).join('')}
+        </select>
+      </div>
+      <div class="ctrl-group">
+        <label>Pause after</label>
+        <select data-field="pause" data-id="${b.id}">
+          ${PAUSES.map(p => `<option value="${p}" ${b.pause===p?'selected':''}>${PAUSE_LABELS[p]}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <textarea class="beat-note" data-id="${b.id}" placeholder="Director note…" rows="1">${escHtml(b.note)}</textarea>
+    <div class="beat-actions">
+      <button class="btn btn-ghost btn-sm" onclick="splitBeat(${b.id})">✂ Split</button>
+      <button class="btn btn-ghost btn-sm" onclick="mergeBeatDown(${b.id})">↕ Merge ↓</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteBeat(${b.id})">✕</button>
+    </div>
+  `;
+
+  // select change
+  card.querySelectorAll('select[data-field]').forEach(sel => {
+    sel.addEventListener('change', () => {
+      const beat = getBeat(parseInt(sel.dataset.id));
+      if (beat) { beat[sel.dataset.field] = sel.value; rerenderCard(beat, i); }
+    });
+  });
+
+  // note change
+  const noteEl = card.querySelector('.beat-note');
+  noteEl.addEventListener('input', () => {
+    const beat = getBeat(parseInt(noteEl.dataset.id));
+    if (beat) beat.note = noteEl.value;
+    noteEl.style.height = 'auto';
+    noteEl.style.height = noteEl.scrollHeight + 'px';
+  });
+  // auto-size on load
+  setTimeout(() => {
+    if (noteEl.value) {
+      noteEl.style.height = 'auto';
+      noteEl.style.height = noteEl.scrollHeight + 'px';
+    }
+  }, 0);
+
+  // drag events
+  card.addEventListener('dragstart', e => { dragSrc = b.id; card.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
+  card.addEventListener('dragend',   () => { card.classList.remove('dragging'); clearDragOver(); });
+  card.addEventListener('dragover',  e => { e.preventDefault(); clearDragOver(); card.classList.add('drag-over'); });
+  card.addEventListener('drop',      e => { e.preventDefault(); dropBeat(b.id); });
+
+  return card;
+}
+
+function rerenderCard(beat, i) {
+  const old = document.querySelector(`.beat-card[data-id="${beat.id}"]`);
+  if (old) old.replaceWith(makeBeatCard(beat, i));
+  updateStats();
+}
+
+// ── BEAT OPS ─────────────────────────────────────────────────
+function getBeat(id) { return beats.find(b => b.id === id); }
+function getIdx(id)  { return beats.findIndex(b => b.id === id); }
+
+function addBeat() {
+  beats.push({ id: Date.now(), text: 'New beat — tap to edit', emotion:'neutral', pace:'normal', pause:'none', note:'' });
+  renderBeats();
+}
+
+function deleteBeat(id) {
+  beats = beats.filter(b => b.id !== id);
+  renderBeats();
+}
+
+function splitBeat(id) {
+  const idx = getIdx(id);
+  if (idx < 0) return;
+  const b = beats[idx];
+  const mid = Math.ceil(b.text.length / 2);
+  const sp  = b.text.lastIndexOf(' ', mid);
+  const cut = sp > 0 ? sp : mid;
+  const t1  = b.text.slice(0, cut).trim();
+  const t2  = b.text.slice(cut).trim();
+  if (!t1 || !t2) { showToast("Can't split a single word"); return; }
+  const newB = { id: Date.now(), text: t2, emotion: b.emotion, pace: b.pace, pause: b.pause, note: '' };
+  b.text = t1;
+  beats.splice(idx + 1, 0, newB);
+  renderBeats();
+}
+
+function mergeBeatDown(id) {
+  const idx = getIdx(id);
+  if (idx < 0 || idx >= beats.length - 1) { showToast('No beat below to merge'); return; }
+  beats[idx].text = beats[idx].text + ' ' + beats[idx+1].text;
+  beats.splice(idx + 1, 1);
+  renderBeats();
+}
+
+function autoTag() {
+  // Simple heuristic auto-tagger
+  beats.forEach(b => {
+    const t = b.text.toLowerCase();
+    const wc = wordCount(b.text);
+    if (/!/.test(b.text) || /urgent|hurry|now|immediately|critical|warning|alert/.test(t))
+      b.emotion = 'urgent';
+    else if (/\?/.test(b.text) || /wonder|perhaps|maybe|curious|imagine/.test(t))
+      b.emotion = 'warm';
+    else if (/sorry|sad|loss|gone|miss|quiet|gentle|soft|tender/.test(t))
+      b.emotion = 'soft';
+    else if (/love|joy|celebrate|amazing|incredible|great|best|wonderful/.test(t))
+      b.emotion = 'excited';
+    else if (/serious|somber|dark|difficult|hard|challenge|struggle/.test(t))
+      b.emotion = 'somber';
+    else b.emotion = 'neutral';
+
+    if (wc > 30) b.pace = 'fast';
+    else if (wc < 8) b.pace = 'slow';
+    else b.pace = 'normal';
+  });
+  renderBeats();
+  showToast('Auto-tagged all beats');
+}
+
+// ── DRAG & DROP ───────────────────────────────────────────────
+function clearDragOver() {
+  document.querySelectorAll('.beat-card').forEach(c => c.classList.remove('drag-over'));
+}
+function dropBeat(targetId) {
+  if (dragSrc === null || dragSrc === targetId) return;
+  const si = getIdx(dragSrc);
+  const ti = getIdx(targetId);
+  if (si < 0 || ti < 0) return;
+  const [moved] = beats.splice(si, 1);
+  beats.splice(ti, 0, moved);
+  dragSrc = null;
+  renderBeats();
+}
+
+// ── STATS ─────────────────────────────────────────────────────
+function wordCount(text) {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function beatSeconds(b) {
+  const wpm = parseInt(document.getElementById('wpm').value) || 150;
+  const wc  = wordCount(b.text);
+  let secs  = (wc / wpm) * 60;
+  const pv = { 'none':0, 'beat-pause': parseFloat(document.getElementById('pause-beat').value)||0.3,
+                'short-pause': parseFloat(document.getElementById('pause-short').value)||0.8,
+                'long-pause':  parseFloat(document.getElementById('pause-long').value)||2.0 };
+  secs += pv[b.pause] || 0;
+  if (b.pace === 'slow') secs *= 1.25;
+  if (b.pace === 'fast') secs *= 0.8;
+  return secs;
+}
+
+function totalSeconds() {
+  return beats.reduce((sum, b) => sum + beatSeconds(b), 0);
+}
+
+function formatSec(s) {
+  const m = Math.floor(s / 60);
+  const sec = Math.round(s % 60);
+  return m > 0 ? `${m}:${String(sec).padStart(2,'0')}` : `${sec}s`;
+}
+
+function updateStats() {
+  const total = totalSeconds();
+  const target = parseInt(document.getElementById('target-time').value) || 0;
+
+  document.getElementById('stat-time').textContent  = formatSec(total);
+  document.getElementById('stat-beats').textContent = beats.length;
+
+  const pct   = target > 0 ? Math.min((total / target) * 100, 100) : 0;
+  const fill  = document.getElementById('readbar-fill');
+  fill.style.width = pct + '%';
+  fill.classList.toggle('warn', target > 0 && total > target);
+
+  const pill = document.getElementById('pill-time');
+  pill.classList.toggle('warn', target > 0 && total > target);
+  pill.classList.toggle('ok',   target > 0 && total <= target);
+}
+
+// ── LEGEND ───────────────────────────────────────────────────
+function buildLegend() {
+  const used = [...new Set(beats.map(b => b.emotion))];
+  const lg = document.getElementById('emotion-legend');
+  lg.innerHTML = used.map(e =>
+    `<span class="badge badge-${e}">${EMOTION_LABELS[e]}</span>`
+  ).join('');
+}
+
+// ── DIRECTION SHEET ──────────────────────────────────────────
+function buildSheet() {
+  const showWC     = document.getElementById('sheet-wc').checked;
+  const showTiming = document.getElementById('sheet-timing').checked;
+  const showNotes  = document.getElementById('sheet-notes').checked;
+  const total      = totalSeconds();
+
+  if (!beats.length) {
+    document.getElementById('sheet-output').textContent = '— No beats to export —';
+    return;
+  }
+
+  const header  = `VOICEOVER DIRECTION SHEET\n${'═'.repeat(50)}\n` +
+    `Total read time: ${formatSec(total)}  |  Beats: ${beats.length}\n${'═'.repeat(50)}\n\n`;
+
+  let cumSec = 0;
+  const lines = beats.map((b, i) => {
+    const wc   = wordCount(b.text);
+    const secs = beatSeconds(b);
+    const meta = [];
+
+    meta.push(`EMOTION: ${EMOTION_LABELS[b.emotion].toUpperCase()}`);
+    if (b.pace !== 'normal') meta.push(`PACE: ${PACE_LABELS[b.pace].toUpperCase()}`);
+    if (b.pause !== 'none')  meta.push(`PAUSE AFTER: ${PAUSE_LABELS[b.pause].toUpperCase()}`);
+    if (showWC)              meta.push(`${wc}w`);
+    if (showTiming)          meta.push(`~${formatSec(secs)}` + (showTiming ? ` [${formatSec(cumSec)}]` : ''));
+
+    cumSec += secs;
+
+    let block = `[${String(i+1).padStart(2,'0')}] ${meta.join(' · ')}\n`;
+    block += `     ${b.text}`;
+    if (showNotes && b.note.trim()) block += `\n     ↳ Note: ${b.note.trim()}`;
+    return block;
+  });
+
+  document.getElementById('sheet-output').textContent = header + lines.join('\n\n');
+}
+
+function goSheet() {
+  buildSheet();
+  switchTab('sheet');
+}
+
+async function copySheet() {
+  const text = document.getElementById('sheet-output').textContent;
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast('Copied to clipboard ✓');
+  } catch {
+    document.getElementById('sheet-output').select?.();
+    showToast('Select and copy manually');
+  }
+}
+
+// ── CLEAR ─────────────────────────────────────────────────────
+function clearAll() {
+  if (beats.length && !confirm('Clear all beats?')) return;
+  beats = [];
+  document.getElementById('script-input').value = '';
+  renderBeats();
+  showToast('Cleared');
+}
+
+// ── TOAST ─────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── HELPERS ──────────────────────────────────────────────────
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── SETTINGS LIVE UPDATE ──────────────────────────────────────
+['wpm','target-time','pause-beat','pause-short','pause-long'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', updateStats);
+});
+
+// update pause labels in selects when pause settings change
+['pause-beat','pause-short','pause-long'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    PAUSE_LABELS['beat-pause']  = `Beat (${document.getElementById('pause-beat').value}s)`;
+    PAUSE_LABELS['short-pause'] = `Short (${document.getElementById('pause-short').value}s)`;
+    PAUSE_LABELS['long-pause']  = `Long (${document.getElementById('pause-long').value}s)`;
+  });
+});
+
+// max-words change
+document.getElementById('max-words').addEventListener('input', renderBeats);
+
+// ── INIT ──────────────────────────────────────────────────────
+updateStats();
+buildLegend();
+</script>
+</body>
+</html>

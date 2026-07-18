@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pixel Stamp Card Maker</title>
+<style>
+  :root{
+    --bg:#191b22;
+    --panel:#242733;
+    --panel2:#303444;
+    --ink:#f4f1e8;
+    --muted:#b8b2a5;
+    --line:#4d5368;
+    --accent:#ffd166;
+    --danger:#ff6b6b;
+    --ok:#8ce99a;
+    --card:#fff6dc;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  body{display:flex;justify-content:center;padding:12px}
+  .app{width:min(100%,390px);display:grid;gap:10px}
+  h1{font-size:18px;margin:0;text-align:center;letter-spacing:.04em}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px;box-shadow:0 8px 24px #0005}
+  .top{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px}
+  input,select,button{font:inherit}
+  input[type="text"]{width:100%;border:1px solid var(--line);background:#151821;color:var(--ink);border-radius:9px;padding:8px}
+  button{border:1px solid var(--line);background:var(--panel2);color:var(--ink);border-radius:10px;padding:8px 9px;cursor:pointer;touch-action:manipulation}
+  button:active{transform:translateY(1px)}
+  button.primary{background:#51432a;border-color:#8f7534;color:#fff2bf}
+  button.danger{background:#4a252b;border-color:#8b3d46;color:#ffd7dc}
+  .canvasWrap{display:grid;place-items:center;overflow:hidden}
+  canvas{image-rendering:pixelated;image-rendering:crisp-edges;max-width:100%;touch-action:none;border-radius:12px}
+  #cardCanvas{width:360px;height:500px;background:var(--card);border:1px solid #0006}
+  .tools{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+  .stampGrid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+  .stampBtn{height:42px;padding:3px;display:grid;place-items:center}
+  .stampBtn.active{outline:2px solid var(--accent);background:#3b3324}
+  .mini{width:32px;height:32px;image-rendering:pixelated}
+  .palette{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+  .swatch{height:36px;border-radius:10px;border:2px solid #0008;position:relative;padding:0}
+  .swatch.active{outline:2px solid var(--ink);outline-offset:2px}
+  .swatch input{opacity:0;position:absolute;inset:0;width:100%;height:100%;cursor:pointer}
+  .hint{font-size:12px;color:var(--muted);line-height:1.35;text-align:center}
+  .exportRow{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+  .status{font-size:12px;color:var(--ok);min-height:16px;text-align:center}
+  @media print{
+    body{background:white;padding:0}
+    .app{width:100%;display:block}
+    .panel:not(.printOnly),h1,.status{display:none}
+    .printOnly{display:block;border:0;box-shadow:none;padding:0}
+    #cardCanvas{width:3.5in;height:auto;border:0}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>Pixel Stamp Card Maker</h1>
+
+  <div class="panel top">
+    <div>
+      <label for="title">Card title</label>
+      <input id="title" type="text" maxlength="24" value="BUG HUNTER BADGE">
+    </div>
+    <div>
+      <label for="subtitle">Subtitle</label>
+      <input id="subtitle" type="text" maxlength="28" value="collector stamp card">
+    </div>
+  </div>
+
+  <div class="panel printOnly">
+    <div class="canvasWrap">
+      <canvas id="cardCanvas" width="720" height="1000" aria-label="Printable pixel collector card"></canvas>
+    </div>
+  </div>
+
+  <div class="panel">
+    <label>Choose stamp</label>
+    <div id="stamps" class="stampGrid"></div>
+  </div>
+
+  <div class="panel">
+    <label>Palette, tap color chip to use, open picker to recolor</label>
+    <div id="palette" class="palette"></div>
+  </div>
+
+  <div class="panel">
+    <div class="tools">
+      <button id="undo">Undo</button>
+      <button id="clear" class="danger">Clear</button>
+      <button id="randomize">Recolor</button>
+      <button id="print" class="primary">Print</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="exportRow">
+      <button id="copy" class="primary">Copy PNG</button>
+      <button id="download" class="primary">Download PNG</button>
+    </div>
+    <p class="hint">Tap or drag on the card to place stamps. Recoloring updates every stamp already placed.</p>
+    <div id="status" class="status"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  const canvas = document.getElementById("cardCanvas");
+  const ctx = canvas.getContext("2d");
+  const titleInput = document.getElementById("title");
+  const subtitleInput = document.getElementById("subtitle");
+  const stampsEl = document.getElementById("stamps");
+  const paletteEl = document.getElementById("palette");
+  const statusEl = document.getElementById("status");
+
+  const card = { w:720, h:1000, pad:52, gridX:84, gridY:250, cols:9, rows:8, cell:62 };
+
+  let colors = ["#1d2b53","#7e2553","#008751","#ab5236","#5f574f","#c2c3c7"];
+  let activeColor = 0;
+  let activeStamp = 0;
+  let placed = [];
+  let history = [];
+  let lastCellKey = "";
+  let drawing = false;
+
+  const stamps = [
+    {name:"star", px:["00100","01110","11111","01110","01010"]},
+    {name:"heart", px:["01010","11111","11111","01110","00100"]},
+    {name:"bug", px:["01010","11111","10101","11111","01010"]},
+    {name:"sword", px:["00100","00100","00100","01110","00100"]},
+    {name:"gem", px:["01110","11111","11111","01110","00100"]},
+    {name:"skull", px:["01110","10101","11111","01110","01010"]},
+    {name:"bolt", px:["00110","01100","11110","00110","01100"]},
+    {name:"leaf", px:["00100","01110","11100","01110","00100"]},
+    {name:"moon", px:["01110","11000","11000","11000","01110"]},
+    {name:"flag", px:["11110","10110","11110","10000","10000"]},
+    {name:"key", px:["01100","10010","01100","00111","00010"]},
+    {name:"cat", px:["10001","11111","10101","11111","01010"]}
+  ];
+
+  function saveHistory(){
+    history.push(JSON.stringify(placed));
+    if(history.length > 80) history.shift();
+  }
+
+  function text(s,x,y,size,align="center",color="#2b2430"){
+    ctx.fillStyle = color;
+    ctx.font = `${size}px monospace`;
+    ctx.textAlign = align;
+    ctx.textBaseline = "middle";
+    ctx.fillText(s,x,y);
+  }
+
+  function drawPixelStamp(stampIndex, colorIndex, x, y, scale){
+    const map = stamps[stampIndex].px;
+    ctx.fillStyle = colors[colorIndex];
+    for(let r=0;r<map.length;r++){
+      for(let c=0;c<map[r].length;c++){
+        if(map[r][c] === "1") ctx.fillRect(x + c*scale, y + r*scale, scale, scale);
+      }
+    }
+    ctx.fillStyle = "rgba(0,0,0,.16)";
+    for(let r=0;r<map.length;r++){
+      for(let c=0;c<map[r].length;c++){
+        if(map[r][c] === "1") ctx.fillRect(x + c*scale, y + r*scale, Math.max(1,scale*.16), scale);
+      }
+    }
+  }
+
+  function render(){
+    ctx.clearRect(0,0,card.w,card.h);
+
+    ctx.fillStyle = "#fff6dc";
+    ctx.fillRect(0,0,card.w,card.h);
+
+    ctx.fillStyle = "#f0dca7";
+    ctx.fillRect(28,28,card.w-56,card.h-56);
+
+    ctx.fillStyle = "#fff6dc";
+    ctx.fillRect(42,42,card.w-84,card.h-84);
+
+    ctx.strokeStyle = "#2b2430";
+    ctx.lineWidth = 6;
+    ctx.strokeRect(42,42,card.w-84,card.h-84);
+    ctx.lineWidth = 2;
+    ctx.strokeRect(62,62,card.w-124,card.h-124);
+
+    text(titleInput.value.toUpperCase() || "PIXEL CARD", card.w/2, 108, 34);
+    text(subtitleInput.value.toLowerCase() || "collector stamp card", card.w/2, 154, 20, "center", "#6d5d4b");
+
+    ctx.fillStyle = "#ead290";
+    ctx.fillRect(84,188,552,34);
+    text("STAMP ZONE", card.w/2, 206, 18, "center", "#5c4428");
+
+    for(let r=0;r<card.rows;r++){
+      for(let c=0;c<card.cols;c++){
+        const x = card.gridX + c*card.cell;
+        const y = card.gridY + r*card.cell;
+        ctx.fillStyle = (r+c)%2 ? "#fff0c5" : "#ffe8ad";
+        ctx.fillRect(x,y,card.cell-6,card.cell-6);
+        ctx.strokeStyle = "#c49b54";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x+1,y+1,card.cell-8,card.cell-8);
+      }
+    }
+
+    for(const p of placed){
+      const x = card.gridX + p.c*card.cell + 10;
+      const y = card.gridY + p.r*card.cell + 10;
+      drawPixelStamp(p.stamp, p.color, x, y, 8);
+    }
+
+    ctx.fillStyle = "#2b2430";
+    ctx.fillRect(86,802,548,80);
+    text("FOUND BY", 144, 824, 16, "left", "#ffe8ad");
+    ctx.strokeStyle = "#ffe8ad";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(248,842);
+    ctx.lineTo(596,842);
+    ctx.stroke();
+
+    text(`${placed.length}/${card.cols*card.rows} STAMPS`, card.w/2, 920, 22, "center", "#2b2430");
+    text("made with tiny pixels", card.w/2, 956, 16, "center", "#7b684c");
+  }
+
+  function makeMiniCanvas(stampIndex){
+    const m = document.createElement("canvas");
+    m.width = 35;
+    m.height = 35;
+    m.className = "mini";
+    const mctx = m.getContext("2d");
+    const map = stamps[stampIndex].px;
+    mctx.fillStyle = colors[activeColor];
+    for(let r=0;r<map.length;r++){
+      for(let c=0;c<map[r].length;c++){
+        if(map[r][c] === "1") mctx.fillRect(c*7,r*7,7,7);
+      }
+    }
+    return m;
+  }
+
+  function buildStamps(){
+    stampsEl.innerHTML = "";
+    stamps.forEach((s,i) => {
+      const b = document.createElement("button");
+      b.className = "stampBtn" + (i === activeStamp ? " active" : "");
+      b.type = "button";
+      b.title = s.name;
+      b.setAttribute("aria-label", `Use ${s.name} stamp`);
+      b.appendChild(makeMiniCanvas(i));
+      b.onclick = () => {
+        activeStamp = i;
+        buildStamps();
+      };
+      stampsEl.appendChild(b);
+    });
+  }
+
+  function buildPalette(){
+    paletteEl.innerHTML = "";
+    colors.forEach((col,i) => {
+      const b = document.createElement("button");
+      b.className = "swatch" + (i === activeColor ? " active" : "");
+      b.style.background = col;
+      b.type = "button";
+      b.title = `Color ${i+1}`;
+      b.setAttribute("aria-label", `Use color ${i+1}`);
+      b.onclick = () => {
+        activeColor = i;
+        buildPalette();
+        buildStamps();
+      };
+      const inp = document.createElement("input");
+      inp.type = "color";
+      inp.value = col;
+      inp.setAttribute("aria-label", `Change color ${i+1}`);
+      inp.oninput = e => {
+        colors[i] = e.target.value;
+        b.style.background = colors[i];
+        render();
+        buildStamps();
+      };
+      b.appendChild(inp);
+      paletteEl.appendChild(b);
+    });
+  }
+
+  function getCell(ev){
+    const rect = canvas.getBoundingClientRect();
+    const sx = canvas.width / rect.width;
+    const sy = canvas.height / rect.height;
+    const x = (ev.clientX - rect.left) * sx;
+    const y = (ev.clientY - rect.top) * sy;
+    const c = Math.floor((x - card.gridX) / card.cell);
+    const r = Math.floor((y - card.gridY) / card.cell);
+    if(c < 0 || c >= card.cols || r < 0 || r >= card.rows) return null;
+    return {r,c,key:`${r},${c}`};
+  }
+
+  function placeAt(ev){
+    const cell = getCell(ev);
+    if(!cell || cell.key === lastCellKey) return;
+    lastCellKey = cell.key;
+    saveHistory();
+    const existing = placed.findIndex(p => p.r === cell.r && p.c === cell.c);
+    const stamp = {r:cell.r,c:cell.c,stamp:activeStamp,color:activeColor};
+    if(existing >= 0) placed[existing] = stamp;
+    else placed.push(stamp);
+    render();
+  }
+
+  canvas.addEventListener("pointerdown", ev => {
+    drawing = true;
+    canvas.setPointerCapture(ev.pointerId);
+    lastCellKey = "";
+    placeAt(ev);
+  });
+  canvas.addEventListener("pointermove", ev => {
+    if(drawing) placeAt(ev);
+  });
+  canvas.addEventListener("pointerup", () => {
+    drawing = false;
+    lastCellKey = "";
+  });
+  canvas.addEventListener("pointercancel", () => {
+    drawing = false;
+    lastCellKey = "";
+  });
+
+  document.getElementById("undo").onclick = () => {
+    const prev = history.pop();
+    if(prev) placed = JSON.parse(prev);
+    render();
+  };
+
+  document.getElementById("clear").onclick = () => {
+    saveHistory();
+    placed = [];
+    render();
+  };
+
+  document.getElementById("randomize").onclick = () => {
+    const base = Math.floor(Math.random()*360);
+    colors = colors.map((_,i) => `hsl(${(base+i*47)%360} 72% ${i%2?42:58}%)`);
+    buildPalette();
+    buildStamps();
+    render();
+  };
+
+  document.getElementById("print").onclick = () => window.print();
+
+  document.getElementById("download").onclick = () => {
+    render();
+    const a = document.createElement("a");
+    a.download = "pixel-stamp-card.png";
+    a.href = canvas.toDataURL("image/png");
+    a.click();
+    flash("Downloaded PNG.");
+  };
+
+  document.getElementById("copy").onclick = async () => {
+    render();
+    try{
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+      await navigator.clipboard.write([new ClipboardItem({"image/png": blob})]);
+      flash("Copied PNG to clipboard.");
+    }catch(err){
+      flash("Copy failed. Use Download PNG instead.", true);
+    }
+  };
+
+  function flash(msg,bad=false){
+    statusEl.textContent = msg;
+    statusEl.style.color = bad ? "var(--danger)" : "var(--ok)";
+    clearTimeout(flash.t);
+    flash.t = setTimeout(() => statusEl.textContent = "", 2200);
+  }
+
+  titleInput.addEventListener("input", render);
+  subtitleInput.addEventListener("input", render);
+
+  buildPalette();
+  buildStamps();
+  render();
+})();
+</script>
+</body>
+</html>

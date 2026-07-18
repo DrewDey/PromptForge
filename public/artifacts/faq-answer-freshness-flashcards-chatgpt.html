@@ -1,0 +1,1079 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FAQ Flashcard Reviewer</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f4ee;
+      --panel: #fffdf8;
+      --ink: #201a14;
+      --muted: #695f54;
+      --line: #ddd2c4;
+      --accent: #7d4f2a;
+      --accent-2: #efe2d3;
+      --good: #236b3a;
+      --warn: #9a5b00;
+      --bad: #9b2f2f;
+      --shadow: 0 10px 30px rgba(54, 36, 20, .10);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+      min-width: 0;
+    }
+
+    html {
+      width: 100%;
+      min-height: 100%;
+    }
+
+    body {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(125, 79, 42, .12), transparent 34rem),
+        var(--bg);
+      color: var(--ink);
+      line-height: 1.45;
+    }
+
+    button,
+    textarea,
+    input {
+      font: inherit;
+    }
+
+    button,
+    textarea,
+    input,
+    .card,
+    .panel,
+    .chip,
+    .meter-wrap,
+    .output-box {
+      max-width: 100%;
+    }
+
+    .app {
+      width: min(100%, 760px);
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    header {
+      padding: 12px 0 16px;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(2rem, 10vw, 3.4rem);
+      line-height: .94;
+      letter-spacing: -.06em;
+    }
+
+    h1 span {
+      display: block;
+      overflow-wrap: anywhere;
+    }
+
+    .lede {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1rem;
+      overflow-wrap: anywhere;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+      margin: 14px 0;
+    }
+
+    .panel-title {
+      margin: 0 0 10px;
+      font-size: 1rem;
+      letter-spacing: -.02em;
+    }
+
+    .hint {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: .92rem;
+      overflow-wrap: anywhere;
+    }
+
+    textarea,
+    input[type="text"] {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      color: var(--ink);
+      padding: 12px;
+      outline: none;
+      resize: vertical;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+
+    textarea:focus,
+    input[type="text"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(125, 79, 42, .14);
+    }
+
+    #faqInput {
+      min-height: 190px;
+    }
+
+    .btn-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    button {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--ink);
+      padding: 11px 12px;
+      cursor: pointer;
+      overflow-wrap: anywhere;
+      white-space: normal;
+      touch-action: manipulation;
+    }
+
+    button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    button.soft {
+      background: var(--accent-2);
+      border-color: #e1c8ae;
+      color: #4d2f18;
+    }
+
+    button.danger {
+      color: var(--bad);
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .status-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .meter-wrap {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fff;
+      padding: 12px;
+    }
+
+    .meter-label {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 6px;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: .92rem;
+    }
+
+    .meter {
+      width: 100%;
+      height: 16px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #eee8df;
+      position: relative;
+    }
+
+    .meter-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #9b2f2f, #b87516, #236b3a);
+      transition: width .18s ease;
+    }
+
+    .score-big {
+      font-size: 2rem;
+      line-height: 1;
+      letter-spacing: -.05em;
+      margin: 6px 0 0;
+    }
+
+    .card-stage {
+      perspective: 900px;
+    }
+
+    .review-card {
+      width: 100%;
+      min-height: 270px;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: #fff;
+      box-shadow: var(--shadow);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+
+    .card-kicker {
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      font-size: .74rem;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .card-text {
+      font-size: 1.18rem;
+      letter-spacing: -.02em;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+
+    .progress {
+      color: var(--muted);
+      font-size: .92rem;
+      margin-top: 14px;
+      overflow-wrap: anywhere;
+    }
+
+    .flag-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .chip {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      align-items: start;
+      gap: 9px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      padding: 11px;
+      overflow-wrap: anywhere;
+      white-space: normal;
+    }
+
+    .chip input {
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+      accent-color: var(--accent);
+    }
+
+    .chip span {
+      overflow-wrap: anywhere;
+    }
+
+    .note-area {
+      margin-top: 10px;
+      min-height: 76px;
+    }
+
+    .mini-list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .mini-item {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      padding: 10px;
+      overflow-wrap: anywhere;
+    }
+
+    .mini-item p {
+      margin: 0;
+    }
+
+    .mini-item .tagline {
+      color: var(--muted);
+      font-size: .9rem;
+      margin-top: 4px;
+    }
+
+    .output-box {
+      min-height: 170px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      color: var(--ink);
+    }
+
+    .small-status {
+      min-height: 1.4em;
+      color: var(--muted);
+      font-size: .92rem;
+      margin-top: 8px;
+      overflow-wrap: anywhere;
+    }
+
+    .empty {
+      color: var(--muted);
+      padding: 18px;
+      border: 1px dashed var(--line);
+      border-radius: 16px;
+      background: rgba(255,255,255,.5);
+      overflow-wrap: anywhere;
+    }
+
+    @media (min-width: 620px) {
+      .btn-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .status-row {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .flag-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        color-scheme: dark;
+        --bg: #17130f;
+        --panel: #211b15;
+        --ink: #f5eadb;
+        --muted: #cab9a5;
+        --line: #4a3d31;
+        --accent: #d29a64;
+        --accent-2: #38291e;
+        --shadow: 0 10px 30px rgba(0, 0, 0, .25);
+      }
+
+      textarea,
+      input[type="text"],
+      button,
+      .review-card,
+      .meter-wrap,
+      .mini-item,
+      .output-box,
+      .chip {
+        background: #18130f;
+      }
+
+      button.primary {
+        background: var(--accent);
+        color: #1c130c;
+      }
+
+      .meter {
+        background: #30271f;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <h1>
+        <span>FAQ</span>
+        <span>Flashcard</span>
+        <span>Reviewer</span>
+      </h1>
+      <p class="lede">Paste FAQ questions and answers, review them as cards, flag stale claims or missing proof, then copy a short update list.</p>
+    </header>
+
+    <section class="panel" aria-labelledby="pasteTitle">
+      <h2 class="panel-title" id="pasteTitle">Paste FAQ set</h2>
+      <textarea id="faqInput" spellcheck="true">Q: How often should this FAQ be reviewed?
+A: Review any answer with prices, dates, product details, legal rules, policy language, or statistics at least quarterly.
+
+Q: What counts as missing evidence?
+A: A claim is missing evidence when it makes a factual promise but does not point to a source, date, internal note, report, policy page, or proof snippet.
+
+Q: What makes a claim stale?
+A: Claims using phrases like currently, latest, this year, recently, or now should be checked because they can age quickly.</textarea>
+      <p class="hint">Accepted formats: Q:/A: blocks, question and answer separated by a blank line, tab-separated rows, or question | answer rows.</p>
+      <div class="btn-grid">
+        <button class="primary" id="parseBtn">Build flashcards</button>
+        <button class="soft" id="sampleBtn">Load sample</button>
+        <button id="saveBtn">Save locally</button>
+        <button class="danger" id="clearBtn">Clear saved data</button>
+      </div>
+      <p class="small-status" id="saveStatus" aria-live="polite"></p>
+    </section>
+
+    <section class="panel" aria-labelledby="scoreTitle">
+      <h2 class="panel-title" id="scoreTitle">Freshness score</h2>
+      <div class="status-row">
+        <div class="meter-wrap">
+          <div class="meter-label">
+            <span>Review health</span>
+            <span id="scoreLabel">0/100</span>
+          </div>
+          <div class="meter" aria-hidden="true">
+            <div class="meter-fill" id="meterFill"></div>
+          </div>
+          <div class="score-big" id="scoreBig">0</div>
+        </div>
+        <div class="meter-wrap">
+          <div class="meter-label">
+            <span>Deck status</span>
+            <span id="deckCount">0 cards</span>
+          </div>
+          <p class="hint" id="scoreExplain">Build cards to score freshness. Flags and time-sensitive language lower the score.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="reviewTitle">
+      <h2 class="panel-title" id="reviewTitle">Review cards</h2>
+
+      <div id="emptyState" class="empty">No cards built yet.</div>
+
+      <div id="reviewArea" hidden>
+        <div class="card-stage">
+          <article class="review-card" aria-live="polite">
+            <div>
+              <div class="card-kicker" id="cardSide">Question</div>
+              <div class="card-text" id="cardText"></div>
+            </div>
+            <div class="progress" id="progressText"></div>
+          </article>
+        </div>
+
+        <div class="btn-grid">
+          <button id="prevBtn">Previous</button>
+          <button class="primary" id="flipBtn">Flip card</button>
+          <button id="nextBtn">Next</button>
+          <button class="soft" id="shuffleBtn">Shuffle</button>
+        </div>
+
+        <div class="flag-grid" aria-label="Card flags">
+          <label class="chip">
+            <input type="checkbox" id="staleFlag">
+            <span>Stale claim or time-sensitive wording</span>
+          </label>
+          <label class="chip">
+            <input type="checkbox" id="evidenceFlag">
+            <span>Missing evidence, source, date, or proof snippet</span>
+          </label>
+        </div>
+
+        <textarea class="note-area" id="cardNote" placeholder="Optional update note for this card. Example: verify 2026 pricing page and add source date."></textarea>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="flagTitle">
+      <h2 class="panel-title" id="flagTitle">Flagged cards</h2>
+      <div class="mini-list" id="flagList"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="updateTitle">
+      <h2 class="panel-title" id="updateTitle">Copy or download update list</h2>
+      <div class="output-box" id="updateOutput" aria-live="polite"></div>
+      <div class="btn-grid">
+        <button class="primary" id="copyBtn">Copy update list</button>
+        <button id="downloadBtn">Download .txt</button>
+      </div>
+      <p class="small-status" id="copyStatus" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var STORAGE_KEY = "faq_flashcard_reviewer_v1";
+
+      var state = {
+        cards: [],
+        index: 0,
+        showingAnswer: false
+      };
+
+      var sampleText = [
+        "Q: How often should this FAQ be reviewed?",
+        "A: Review any answer with prices, dates, product details, legal rules, policy language, or statistics at least quarterly.",
+        "",
+        "Q: What counts as missing evidence?",
+        "A: A claim is missing evidence when it makes a factual promise but does not point to a source, date, internal note, report, policy page, or proof snippet.",
+        "",
+        "Q: What makes a claim stale?",
+        "A: Claims using phrases like currently, latest, this year, recently, or now should be checked because they can age quickly."
+      ].join("\n");
+
+      var els = {
+        faqInput: document.getElementById("faqInput"),
+        parseBtn: document.getElementById("parseBtn"),
+        sampleBtn: document.getElementById("sampleBtn"),
+        saveBtn: document.getElementById("saveBtn"),
+        clearBtn: document.getElementById("clearBtn"),
+        saveStatus: document.getElementById("saveStatus"),
+        scoreLabel: document.getElementById("scoreLabel"),
+        meterFill: document.getElementById("meterFill"),
+        scoreBig: document.getElementById("scoreBig"),
+        deckCount: document.getElementById("deckCount"),
+        scoreExplain: document.getElementById("scoreExplain"),
+        emptyState: document.getElementById("emptyState"),
+        reviewArea: document.getElementById("reviewArea"),
+        cardSide: document.getElementById("cardSide"),
+        cardText: document.getElementById("cardText"),
+        progressText: document.getElementById("progressText"),
+        prevBtn: document.getElementById("prevBtn"),
+        flipBtn: document.getElementById("flipBtn"),
+        nextBtn: document.getElementById("nextBtn"),
+        shuffleBtn: document.getElementById("shuffleBtn"),
+        staleFlag: document.getElementById("staleFlag"),
+        evidenceFlag: document.getElementById("evidenceFlag"),
+        cardNote: document.getElementById("cardNote"),
+        flagList: document.getElementById("flagList"),
+        updateOutput: document.getElementById("updateOutput"),
+        copyBtn: document.getElementById("copyBtn"),
+        downloadBtn: document.getElementById("downloadBtn"),
+        copyStatus: document.getElementById("copyStatus")
+      };
+
+      function normalizeText(text) {
+        return String(text || "")
+          .replace(/\r\n/g, "\n")
+          .replace(/\r/g, "\n")
+          .trim();
+      }
+
+      function stripLabel(line, label) {
+        var re = label === "q"
+          ? /^\s*(q|question)\s*[:\-]\s*/i
+          : /^\s*(a|answer)\s*[:\-]\s*/i;
+        return String(line || "").replace(re, "").trim();
+      }
+
+      function parseLabeledBlock(block) {
+        var lines = block.split("\n");
+        var q = [];
+        var a = [];
+        var mode = "";
+        lines.forEach(function (line) {
+          if (/^\s*(q|question)\s*[:\-]/i.test(line)) {
+            mode = "q";
+            q.push(stripLabel(line, "q"));
+          } else if (/^\s*(a|answer)\s*[:\-]/i.test(line)) {
+            mode = "a";
+            a.push(stripLabel(line, "a"));
+          } else if (mode === "q") {
+            q.push(line.trim());
+          } else if (mode === "a") {
+            a.push(line.trim());
+          }
+        });
+        return {
+          question: q.join("\n").trim(),
+          answer: a.join("\n").trim()
+        };
+      }
+
+      function splitFirst(text, separator) {
+        var i = text.indexOf(separator);
+        if (i < 0) return null;
+        return [
+          text.slice(0, i).trim(),
+          text.slice(i + separator.length).trim()
+        ];
+      }
+
+      function parseFaqText(raw) {
+        var text = normalizeText(raw);
+        if (!text) return [];
+
+        var cards = [];
+        var blocks = text.split(/\n\s*\n+/);
+
+        blocks.forEach(function (block) {
+          var clean = block.trim();
+          if (!clean) return;
+
+          var parsed = null;
+
+          if (/^\s*(q|question)\s*[:\-]/im.test(clean) && /^\s*(a|answer)\s*[:\-]/im.test(clean)) {
+            parsed = parseLabeledBlock(clean);
+          } else if (clean.indexOf("\t") > -1) {
+            var tabSplit = splitFirst(clean, "\t");
+            if (tabSplit) parsed = { question: tabSplit[0], answer: tabSplit[1] };
+          } else if (clean.indexOf(" | ") > -1) {
+            var pipeSplit = splitFirst(clean, " | ");
+            if (pipeSplit) parsed = { question: pipeSplit[0], answer: pipeSplit[1] };
+          } else {
+            var lines = clean.split("\n").map(function (line) { return line.trim(); }).filter(Boolean);
+            if (lines.length >= 2) {
+              parsed = { question: lines[0], answer: lines.slice(1).join("\n") };
+            }
+          }
+
+          if (parsed && parsed.question && parsed.answer) {
+            cards.push({
+              id: makeId(),
+              question: parsed.question,
+              answer: parsed.answer,
+              stale: false,
+              missingEvidence: false,
+              note: ""
+            });
+          }
+        });
+
+        return cards;
+      }
+
+      function makeId() {
+        return String(Date.now()) + "_" + Math.random().toString(16).slice(2);
+      }
+
+      function currentCard() {
+        if (!state.cards.length) return null;
+        if (state.index < 0) state.index = 0;
+        if (state.index >= state.cards.length) state.index = state.cards.length - 1;
+        return state.cards[state.index];
+      }
+
+      function getFreshnessCues(card) {
+        var text = ((card.question || "") + " " + (card.answer || "")).toLowerCase();
+        var cues = [];
+        [
+          "currently",
+          "latest",
+          "recently",
+          "now",
+          "today",
+          "this year",
+          "new",
+          "updated",
+          "expected",
+          "will",
+          "soon",
+          "as of"
+        ].forEach(function (cue) {
+          if (text.indexOf(cue) > -1) cues.push(cue);
+        });
+
+        var yearMatches = text.match(/\b(20[0-9]{2})\b/g) || [];
+        var thisYear = new Date().getFullYear();
+        var oldYears = [];
+        yearMatches.forEach(function (yearText) {
+          var year = Number(yearText);
+          if (year <= thisYear - 2 && oldYears.indexOf(year) === -1) {
+            oldYears.push(year);
+          }
+        });
+        oldYears.sort();
+        oldYears.forEach(function (year) {
+          cues.push(String(year));
+        });
+
+        return cues.slice(0, 6);
+      }
+
+      function scoreCard(card) {
+        if (!card) return 0;
+        var score = 100;
+        var cues = getFreshnessCues(card);
+
+        if (!card.answer || card.answer.trim().length < 8) score -= 30;
+        if (card.stale) score -= 38;
+        if (card.missingEvidence) score -= 28;
+        if (cues.length) score -= Math.min(18, cues.length * 6);
+        if (card.note && card.note.trim().length > 0) score -= 4;
+
+        return Math.max(0, Math.min(100, Math.round(score)));
+      }
+
+      function deckScore() {
+        if (!state.cards.length) return 0;
+        var total = state.cards.reduce(function (sum, card) {
+          return sum + scoreCard(card);
+        }, 0);
+        return Math.round(total / state.cards.length);
+      }
+
+      function statusText(score) {
+        if (score >= 85) return "Strong. Few obvious freshness risks.";
+        if (score >= 65) return "Usable, but some answers need verification.";
+        if (score >= 40) return "Review needed before publishing.";
+        return "High-risk deck. Prioritize updates before reuse.";
+      }
+
+      function flaggedCards() {
+        return state.cards.filter(function (card) {
+          return card.stale || card.missingEvidence || card.note.trim() || getFreshnessCues(card).length;
+        });
+      }
+
+      function buildUpdateList() {
+        var score = deckScore();
+        var lines = [];
+        var flagged = flaggedCards();
+
+        lines.push("FAQ update list");
+        lines.push("Freshness score: " + score + "/100");
+        lines.push("Cards reviewed: " + state.cards.length);
+        lines.push("");
+
+        if (!state.cards.length) {
+          lines.push("No cards built yet.");
+          return lines.join("\n");
+        }
+
+        if (!flagged.length) {
+          lines.push("No flagged items yet.");
+          lines.push("Suggested next step: spot-check source dates for any answer with pricing, legal, policy, product, or statistical claims.");
+          return lines.join("\n");
+        }
+
+        flagged.forEach(function (card, idx) {
+          var flags = [];
+          var cues = getFreshnessCues(card);
+
+          if (card.stale) flags.push("stale claim");
+          if (card.missingEvidence) flags.push("missing evidence");
+          if (cues.length) flags.push("time-sensitive cue: " + cues.join(", "));
+          if (card.note.trim()) flags.push("review note");
+
+          lines.push(String(idx + 1) + ". " + card.question);
+          lines.push("   Flags: " + flags.join("; "));
+          lines.push("   Action: verify the answer, add source/date/proof, and rewrite any outdated wording.");
+          if (card.note.trim()) {
+            lines.push("   Note: " + card.note.trim());
+          }
+          lines.push("");
+        });
+
+        return lines.join("\n").trim();
+      }
+
+      function saveToLocal(message) {
+        try {
+          var payload = {
+            input: els.faqInput.value,
+            cards: state.cards,
+            index: state.index,
+            showingAnswer: state.showingAnswer
+          };
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+          if (message) setStatus(els.saveStatus, message);
+        } catch (err) {
+          setStatus(els.saveStatus, "Could not save locally in this browser.");
+        }
+      }
+
+      function loadFromLocal() {
+        try {
+          var raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return false;
+          var payload = JSON.parse(raw);
+          els.faqInput.value = payload.input || "";
+          state.cards = Array.isArray(payload.cards) ? payload.cards : [];
+          state.index = Number(payload.index) || 0;
+          state.showingAnswer = Boolean(payload.showingAnswer);
+          return true;
+        } catch (err) {
+          return false;
+        }
+      }
+
+      function setStatus(el, text) {
+        el.textContent = text;
+        window.clearTimeout(el._timer);
+        el._timer = window.setTimeout(function () {
+          el.textContent = "";
+        }, 2500);
+      }
+
+      function syncCurrentCardFromControls() {
+        var card = currentCard();
+        if (!card) return;
+        card.stale = els.staleFlag.checked;
+        card.missingEvidence = els.evidenceFlag.checked;
+        card.note = els.cardNote.value;
+      }
+
+      function render() {
+        var hasCards = state.cards.length > 0;
+        var card = currentCard();
+        var score = deckScore();
+
+        els.emptyState.hidden = hasCards;
+        els.reviewArea.hidden = !hasCards;
+
+        els.scoreLabel.textContent = score + "/100";
+        els.scoreBig.textContent = String(score);
+        els.meterFill.style.width = score + "%";
+        els.deckCount.textContent = state.cards.length === 1 ? "1 card" : state.cards.length + " cards";
+        els.scoreExplain.textContent = statusText(score);
+
+        if (card) {
+          els.cardSide.textContent = state.showingAnswer ? "Answer" : "Question";
+          els.cardText.textContent = state.showingAnswer ? card.answer : card.question;
+          els.progressText.textContent = "Card " + (state.index + 1) + " of " + state.cards.length + " · Card score " + scoreCard(card) + "/100";
+          els.staleFlag.checked = Boolean(card.stale);
+          els.evidenceFlag.checked = Boolean(card.missingEvidence);
+          els.cardNote.value = card.note || "";
+        } else {
+          els.cardText.textContent = "";
+          els.progressText.textContent = "";
+          els.staleFlag.checked = false;
+          els.evidenceFlag.checked = false;
+          els.cardNote.value = "";
+        }
+
+        renderFlagList();
+        els.updateOutput.textContent = buildUpdateList();
+      }
+
+      function renderFlagList() {
+        var flagged = flaggedCards();
+        els.flagList.textContent = "";
+
+        if (!state.cards.length) {
+          var emptyDeck = document.createElement("div");
+          emptyDeck.className = "empty";
+          emptyDeck.textContent = "Build cards to see flagged items.";
+          els.flagList.appendChild(emptyDeck);
+          return;
+        }
+
+        if (!flagged.length) {
+          var none = document.createElement("div");
+          none.className = "empty";
+          none.textContent = "No flagged cards yet.";
+          els.flagList.appendChild(none);
+          return;
+        }
+
+        flagged.forEach(function (card) {
+          var item = document.createElement("div");
+          item.className = "mini-item";
+
+          var q = document.createElement("p");
+          q.textContent = card.question;
+
+          var meta = document.createElement("p");
+          meta.className = "tagline";
+
+          var tags = [];
+          if (card.stale) tags.push("stale");
+          if (card.missingEvidence) tags.push("needs evidence");
+          var cues = getFreshnessCues(card);
+          if (cues.length) tags.push("cue: " + cues.join(", "));
+          if (card.note.trim()) tags.push("note added");
+
+          meta.textContent = tags.join(" · ");
+
+          item.appendChild(q);
+          item.appendChild(meta);
+          els.flagList.appendChild(item);
+        });
+      }
+
+      function buildCardsFromInput() {
+        var parsed = parseFaqText(els.faqInput.value);
+        state.cards = parsed;
+        state.index = 0;
+        state.showingAnswer = false;
+        render();
+        saveToLocal("Cards built and saved locally.");
+        if (!parsed.length) {
+          setStatus(els.saveStatus, "No usable Q&A pairs found. Try Q: and A: labels.");
+        }
+      }
+
+      function moveCard(delta) {
+        syncCurrentCardFromControls();
+        if (!state.cards.length) return;
+        state.index = (state.index + delta + state.cards.length) % state.cards.length;
+        state.showingAnswer = false;
+        render();
+        saveToLocal("");
+      }
+
+      function shuffleCards() {
+        syncCurrentCardFromControls();
+        for (var i = state.cards.length - 1; i > 0; i--) {
+          var j = Math.floor(Math.random() * (i + 1));
+          var temp = state.cards[i];
+          state.cards[i] = state.cards[j];
+          state.cards[j] = temp;
+        }
+        state.index = 0;
+        state.showingAnswer = false;
+        render();
+        saveToLocal("Shuffled and saved locally.");
+      }
+
+      function copyText(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          return navigator.clipboard.writeText(text);
+        }
+
+        return new Promise(function (resolve, reject) {
+          var temp = document.createElement("textarea");
+          temp.value = text;
+          temp.setAttribute("readonly", "");
+          temp.style.position = "fixed";
+          temp.style.top = "0";
+          temp.style.left = "0";
+          document.body.appendChild(temp);
+          temp.select();
+
+          try {
+            var ok = document.execCommand("copy");
+            document.body.removeChild(temp);
+            ok ? resolve() : reject(new Error("copy failed"));
+          } catch (err) {
+            document.body.removeChild(temp);
+            reject(err);
+          }
+        });
+      }
+
+      function downloadText(filename, text) {
+        var blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.setTimeout(function () {
+          URL.revokeObjectURL(url);
+        }, 500);
+      }
+
+      els.parseBtn.addEventListener("click", buildCardsFromInput);
+
+      els.sampleBtn.addEventListener("click", function () {
+        els.faqInput.value = sampleText;
+        buildCardsFromInput();
+      });
+
+      els.saveBtn.addEventListener("click", function () {
+        syncCurrentCardFromControls();
+        saveToLocal("Saved locally on this device.");
+        render();
+      });
+
+      els.clearBtn.addEventListener("click", function () {
+        localStorage.removeItem(STORAGE_KEY);
+        state.cards = [];
+        state.index = 0;
+        state.showingAnswer = false;
+        els.faqInput.value = "";
+        render();
+        setStatus(els.saveStatus, "Saved data cleared.");
+      });
+
+      els.prevBtn.addEventListener("click", function () {
+        moveCard(-1);
+      });
+
+      els.nextBtn.addEventListener("click", function () {
+        moveCard(1);
+      });
+
+      els.flipBtn.addEventListener("click", function () {
+        syncCurrentCardFromControls();
+        state.showingAnswer = !state.showingAnswer;
+        render();
+        saveToLocal("");
+      });
+
+      els.shuffleBtn.addEventListener("click", shuffleCards);
+
+      els.staleFlag.addEventListener("change", function () {
+        syncCurrentCardFromControls();
+        render();
+        saveToLocal("");
+      });
+
+      els.evidenceFlag.addEventListener("change", function () {
+        syncCurrentCardFromControls();
+        render();
+        saveToLocal("");
+      });
+
+      els.cardNote.addEventListener("input", function () {
+        syncCurrentCardFromControls();
+        render();
+        saveToLocal("");
+      });
+
+      els.faqInput.addEventListener("input", function () {
+        saveToLocal("");
+      });
+
+      els.copyBtn.addEventListener("click", function () {
+        var text = buildUpdateList();
+        copyText(text).then(function () {
+          setStatus(els.copyStatus, "Copied update list.");
+        }).catch(function () {
+          setStatus(els.copyStatus, "Copy failed. Select the update list and copy manually.");
+        });
+      });
+
+      els.downloadBtn.addEventListener("click", function () {
+        downloadText("faq-update-list.txt", buildUpdateList());
+        setStatus(els.copyStatus, "Downloaded faq-update-list.txt.");
+      });
+
+      document.addEventListener("keydown", function (event) {
+        var tag = document.activeElement && document.activeElement.tagName;
+        var typing = tag === "TEXTAREA" || tag === "INPUT";
+        if (typing) return;
+
+        if (event.key === "ArrowLeft") moveCard(-1);
+        if (event.key === "ArrowRight") moveCard(1);
+        if (event.key === " " || event.key === "Enter") {
+          event.preventDefault();
+          state.showingAnswer = !state.showingAnswer;
+          render();
+        }
+      });
+
+      if (!loadFromLocal()) {
+        state.cards = [];
+      }
+
+      render();
+    }());
+  </script>
+</body>
+</html>

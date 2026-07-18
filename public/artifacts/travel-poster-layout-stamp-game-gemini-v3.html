@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Poster Compose Studio</title>
+    <style>
+        :root {
+            --bg-dark: #1e1e24;
+            --panel-bg: #2b2b36;
+            --accent: #ff6b6b;
+            --text: #f8f9fa;
+        }
+        body {
+            margin: 0;
+            display: flex;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+        #sidebar {
+            width: 280px;
+            background: var(--panel-bg);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+        button {
+            padding: 12px;
+            background: #444;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        button:hover { background: #555; }
+        .primary-btn { background: var(--accent); border-color: var(--accent); }
+        .primary-btn:hover { background: #ff5252; }
+        
+        #workspace {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 20px;
+        }
+        #poster-board {
+            width: 500px;
+            height: 700px;
+            background: #e9ecef;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            overflow: hidden;
+        }
+        
+        /* Stamp Styles */
+        .stamp {
+            position: absolute;
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #333;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            border-radius: 4px;
+        }
+        .stamp:active { cursor: grabbing; opacity: 0.9; }
+        
+        .stamp[data-type="landmark"] { width: 120px; height: 160px; background: #a2d2ff; border: 4px solid #fff; }
+        .stamp[data-type="texture"] { width: 200px; height: 200px; background: #ffafcc; opacity: 0.7; border-radius: 50%; }
+        .stamp[data-type="type"] { width: 250px; height: 60px; background: transparent; color: #111; font-size: 24px; text-transform: uppercase; border: 2px dashed #333; box-shadow: none; }
+        .stamp[data-type="sticker"] { width: 60px; height: 60px; background: #fca311; border-radius: 50%; border: 3px solid #fff; }
+
+        #feedback-panel {
+            background: #222;
+            padding: 15px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            color: #a8dadc;
+            min-height: 100px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <h2>Poster Tools</h2>
+    <button id="btn-landmark">Add Landmark</button>
+    <button id="btn-texture">Add Texture</button>
+    <button id="btn-type">Add Typography</button>
+    <button id="btn-sticker">Add Sticker</button>
+    <hr style="width: 100%; border-color: #555;">
+    <div id="feedback-panel"></div>
+    <button id="btn-reset">Reset Board</button>
+    <button id="btn-export" class="primary-btn">Copy Poster Brief</button>
+</div>
+
+<div id="workspace">
+    <div id="poster-board"></div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const board = document.getElementById('poster-board');
+        const feedbackPanel = document.getElementById('feedback-panel');
+        
+        let draggedEl = null;
+        let offsetX = 0;
+        let offsetY = 0;
+        let stampCounter = 0;
+
+        // Setup Buttons
+        document.getElementById('btn-landmark').addEventListener('click', () => createStamp('landmark', 'Monument'));
+        document.getElementById('btn-texture').addEventListener('click', () => createStamp('texture', 'Pattern'));
+        document.getElementById('btn-type').addEventListener('click', () => createStamp('type', 'VISIT NOW'));
+        document.getElementById('btn-sticker').addEventListener('click', () => createStamp('sticker', '★'));
+        document.getElementById('btn-reset').addEventListener('click', resetBoard);
+        document.getElementById('btn-export').addEventListener('click', exportBrief);
+
+        // Initialize empty state
+        evaluateComposition();
+
+        function createStamp(type, text) {
+            const el = document.createElement('div');
+            el.className = 'stamp';
+            el.dataset.type = type;
+            el.dataset.id = `stamp-${stampCounter++}`;
+            el.textContent = text;
+            
+            // Initial center placement
+            el.style.left = '150px';
+            el.style.top = '200px';
+            
+            board.appendChild(el);
+            evaluateComposition();
+        }
+
+        // Drag and Drop Logic
+        document.addEventListener('mousedown', (e) => {
+            if (e.target.classList.contains('stamp')) {
+                draggedEl = e.target;
+                const rect = draggedEl.getBoundingClientRect();
+                offsetX = e.clientX - rect.left;
+                offsetY = e.clientY - rect.top;
+                // Bring to front
+                Array.from(board.children).forEach(child => child.style.zIndex = 1);
+                draggedEl.style.zIndex = 10;
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!draggedEl) return;
+            
+            const boardRect = board.getBoundingClientRect();
+            let newX = e.clientX - boardRect.left - offsetX;
+            let newY = e.clientY - boardRect.top - offsetY;
+
+            draggedEl.style.left = `${newX}px`;
+            draggedEl.style.top = `${newY}px`;
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (draggedEl) {
+                draggedEl = null;
+                evaluateComposition();
+            }
+        });
+
+        function renderFeedback(score, messages) {
+            feedbackPanel.replaceChildren();
+
+            const scoreEl = document.createElement('strong');
+            scoreEl.textContent = `Score: ${score}/100`;
+            feedbackPanel.appendChild(scoreEl);
+            
+            feedbackPanel.appendChild(document.createElement('br'));
+            feedbackPanel.appendChild(document.createElement('br'));
+
+            messages.forEach(msg => {
+                const textNode = document.createTextNode(msg);
+                feedbackPanel.appendChild(textNode);
+                feedbackPanel.appendChild(document.createElement('br'));
+            });
+        }
+
+        // Scoring & Feedback Logic
+        function evaluateComposition() {
+            const stamps = Array.from(board.children);
+            if (stamps.length === 0) {
+                renderFeedback(0, ["Add elements to begin composing."]);
+                return;
+            }
+
+            let score = 0;
+            let feedback = [];
+            const typesPresent = new Set(stamps.map(s => s.dataset.type));
+
+            // Goal 1: Diversity
+            if (typesPresent.size === 4) {
+                score += 40;
+                feedback.push("✓ Great element diversity.");
+            } else {
+                feedback.push("- Try using all four stamp types.");
+            }
+
+            // Goal 2: Typography Placement
+            const typeStamps = stamps.filter(s => s.dataset.type === 'type');
+            if (typeStamps.length > 0) {
+                const typeTop = parseInt(typeStamps[0].style.top || 0);
+                if (typeTop < 200) {
+                    score += 30;
+                    feedback.push("✓ Strong headline placement.");
+                } else {
+                    feedback.push("- Headlines usually work best near the top.");
+                }
+            }
+
+            // Goal 3: Clutter management
+            if (stamps.length > 2 && stamps.length < 8) {
+                score += 30;
+                feedback.push("✓ Good composition balance.");
+            } else if (stamps.length >= 8) {
+                score += 10;
+                feedback.push("- Getting a bit cluttered.");
+            }
+
+            renderFeedback(score, feedback);
+            board.dataset.currentScore = score;
+        }
+
+        function resetBoard() {
+            board.replaceChildren();
+            stampCounter = 0;
+            evaluateComposition();
+        }
+
+        function exportBrief() {
+            const stamps = Array.from(board.children);
+            const score = board.dataset.currentScore || 0;
+            
+            const layoutDetails = stamps.map(s => 
+                `- ${s.dataset.type} at (x: ${parseInt(s.style.left)}, y: ${parseInt(s.style.top)})`
+            ).join('\n');
+
+            const brief = `POSTER COMPOSITION BRIEF\n` +
+                          `========================\n` +
+                          `Final Score: ${score}/100\n` +
+                          `Total Elements: ${stamps.length}\n\n` +
+                          `Layout Map:\n${layoutDetails || "Blank Canvas"}`;
+
+            const textArea = document.createElement("textarea");
+            textArea.value = brief;
+            document.body.appendChild(textArea);
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+                const btn = document.getElementById('btn-export');
+                const originalText = btn.textContent;
+                btn.textContent = "Copied!";
+                setTimeout(() => btn.textContent = originalText, 2000);
+            } catch (err) {
+                console.error('Failed to copy brief', err);
+            }
+            
+            document.body.removeChild(textArea);
+        }
+    });
+</script>
+</body>
+</html>

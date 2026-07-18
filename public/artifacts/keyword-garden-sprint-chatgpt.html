@@ -1,0 +1,1044 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Keyword Garden Sprint</title>
+<style>
+  :root{
+    --bg:#f6f1e8;
+    --panel:#fffaf0;
+    --panel2:#fff4da;
+    --ink:#242018;
+    --muted:#6f6758;
+    --line:#dfd3bc;
+    --accent:#477a57;
+    --accent2:#9a6b2f;
+    --danger:#9d3d34;
+    --good:#2f7450;
+    --shadow:0 12px 26px rgba(52,42,24,.12);
+    --radius:18px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:
+      radial-gradient(circle at top left, rgba(97,142,86,.18), transparent 34rem),
+      linear-gradient(180deg,#fbf7ee,var(--bg));
+    color:var(--ink);
+  }
+  .app{
+    width:min(980px,100%);
+    margin:0 auto;
+    padding:14px;
+  }
+  header{
+    background:rgba(255,250,240,.88);
+    border:1px solid var(--line);
+    border-radius:24px;
+    padding:16px;
+    box-shadow:var(--shadow);
+    position:sticky;
+    top:0;
+    z-index:5;
+    backdrop-filter:blur(10px);
+  }
+  h1{
+    margin:0 0 6px;
+    font-size:clamp(1.45rem,7vw,2.25rem);
+    letter-spacing:-.04em;
+    line-height:1;
+  }
+  .sub{
+    margin:0;
+    color:var(--muted);
+    font-size:.95rem;
+    line-height:1.35;
+  }
+  .grid{
+    display:grid;
+    gap:12px;
+    margin-top:12px;
+  }
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:14px;
+    box-shadow:0 8px 18px rgba(52,42,24,.08);
+  }
+  label{
+    display:block;
+    font-weight:750;
+    font-size:.88rem;
+    margin-bottom:6px;
+  }
+  input,textarea,select,button{
+    font:inherit;
+  }
+  input,textarea,select{
+    width:100%;
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:11px 12px;
+    background:#fffdf7;
+    color:var(--ink);
+    outline:none;
+  }
+  textarea{
+    min-height:84px;
+    resize:vertical;
+  }
+  input:focus,textarea:focus,select:focus{
+    border-color:rgba(71,122,87,.75);
+    box-shadow:0 0 0 3px rgba(71,122,87,.14);
+  }
+  .row{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+  button{
+    border:0;
+    border-radius:999px;
+    padding:11px 14px;
+    background:var(--ink);
+    color:white;
+    font-weight:800;
+    cursor:pointer;
+    min-height:44px;
+  }
+  button.secondary{
+    background:#eadcc2;
+    color:var(--ink);
+  }
+  button.ghost{
+    background:transparent;
+    color:var(--ink);
+    border:1px solid var(--line);
+  }
+  button.warn{
+    background:var(--danger);
+  }
+  button:active{
+    transform:translateY(1px);
+  }
+  .controls{
+    display:grid;
+    gap:10px;
+    grid-template-columns:1fr;
+  }
+  .stats{
+    display:grid;
+    gap:10px;
+    grid-template-columns:1fr 1fr;
+  }
+  .stat{
+    background:var(--panel2);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:12px;
+  }
+  .stat .num{
+    display:block;
+    font-size:1.55rem;
+    font-weight:900;
+    letter-spacing:-.04em;
+  }
+  .stat .txt{
+    color:var(--muted);
+    font-size:.82rem;
+    line-height:1.2;
+  }
+  .meter{
+    height:12px;
+    border-radius:999px;
+    background:#e6d9c2;
+    overflow:hidden;
+    border:1px solid var(--line);
+  }
+  .bar{
+    height:100%;
+    width:0;
+    background:linear-gradient(90deg,var(--accent),#87a85c);
+    transition:width .2s ease;
+  }
+  .gapList{
+    margin:10px 0 0;
+    padding-left:18px;
+    color:var(--muted);
+    font-size:.9rem;
+  }
+  .gapList li{margin:4px 0}
+  .addBox{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:8px;
+  }
+  .lanes{
+    display:grid;
+    gap:12px;
+  }
+  .lane{
+    background:rgba(255,250,240,.86);
+    border:1px solid var(--line);
+    border-radius:20px;
+    padding:12px;
+    min-height:148px;
+  }
+  .lane.dragOver{
+    outline:3px solid rgba(71,122,87,.25);
+    background:#fff8e8;
+  }
+  .laneHead{
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+    align-items:flex-start;
+    margin-bottom:8px;
+  }
+  .laneTitle{
+    font-weight:900;
+    letter-spacing:-.02em;
+  }
+  .laneHint{
+    color:var(--muted);
+    font-size:.78rem;
+    line-height:1.25;
+    margin-top:2px;
+  }
+  .pill{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:28px;
+    height:28px;
+    padding:0 8px;
+    border-radius:999px;
+    background:#eadcc2;
+    font-weight:900;
+    font-size:.78rem;
+  }
+  .seedbed{
+    min-height:90px;
+  }
+  .kw{
+    border:1px solid var(--line);
+    background:#fffdf8;
+    border-radius:16px;
+    padding:10px;
+    margin:8px 0;
+    box-shadow:0 6px 14px rgba(52,42,24,.06);
+    touch-action:manipulation;
+  }
+  .kw[draggable="true"]{cursor:grab}
+  .kw.dragging{opacity:.45}
+  .kwTop{
+    display:flex;
+    gap:8px;
+    align-items:flex-start;
+  }
+  .kwText{
+    flex:1;
+    min-width:0;
+    font-weight:850;
+    border:0;
+    background:transparent;
+    padding:3px 0;
+    border-radius:8px;
+  }
+  .kwText:focus{
+    outline:2px solid rgba(71,122,87,.25);
+    background:#fffaf0;
+  }
+  .kwMeta{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    margin-top:8px;
+  }
+  .tag{
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:5px 8px;
+    color:var(--muted);
+    background:#fbf4e6;
+    font-size:.75rem;
+    font-weight:750;
+  }
+  .miniBtns{
+    display:flex;
+    gap:5px;
+    align-items:center;
+  }
+  .iconBtn{
+    min-height:34px;
+    width:34px;
+    padding:0;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    background:#eadcc2;
+    color:var(--ink);
+  }
+  .deleteBtn{
+    background:#f2d4cb;
+    color:#6f211b;
+  }
+  .moveSelect{
+    margin-top:8px;
+    min-height:40px;
+    padding:8px 10px;
+    font-size:.9rem;
+  }
+  .briefGrid{
+    display:grid;
+    gap:10px;
+  }
+  .briefPreview{
+    white-space:pre-wrap;
+    background:#fffdf8;
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:12px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:.82rem;
+    line-height:1.45;
+    max-height:360px;
+    overflow:auto;
+  }
+  .small{
+    font-size:.82rem;
+    color:var(--muted);
+    line-height:1.35;
+  }
+  .toast{
+    position:fixed;
+    left:50%;
+    bottom:16px;
+    transform:translateX(-50%) translateY(20px);
+    opacity:0;
+    pointer-events:none;
+    background:var(--ink);
+    color:white;
+    padding:10px 14px;
+    border-radius:999px;
+    font-weight:850;
+    box-shadow:var(--shadow);
+    transition:.2s ease;
+    z-index:20;
+    width:max-content;
+    max-width:calc(100% - 28px);
+  }
+  .toast.show{
+    opacity:1;
+    transform:translateX(-50%) translateY(0);
+  }
+  .hidden{
+    display:none !important;
+  }
+  @media (min-width:720px){
+    .controls{grid-template-columns:1.2fr .8fr}
+    .lanes{grid-template-columns:repeat(2,1fr)}
+    .stats{grid-template-columns:repeat(4,1fr)}
+    .addBox{grid-template-columns:1fr 160px auto}
+    .briefGrid{grid-template-columns:1fr 1fr}
+  }
+  @media (max-width:420px){
+    .app{padding:10px}
+    header{padding:14px;border-radius:20px}
+    .card{padding:12px}
+    .stats{grid-template-columns:1fr 1fr}
+    button{width:100%}
+    .row button{flex:1 1 auto}
+    .miniBtns button{width:34px}
+  }
+  @media print{
+    body{background:white}
+    header,.noPrint,.moveSelect,.miniBtns,.addBox{display:none !important}
+    .app{width:100%;padding:0}
+    .card,.lane{box-shadow:none;border-color:#bbb;background:white}
+    .lanes{grid-template-columns:repeat(2,1fr)}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Keyword Garden Sprint</h1>
+    <p class="sub">Type a topic, grow keyword cards, sort them into intent lanes, score coverage, then copy or export a compact content brief. Runs fully offline.</p>
+  </header>
+
+  <main class="grid">
+    <section class="card controls noPrint">
+      <div>
+        <label for="topic">Topic</label>
+        <input id="topic" placeholder="Example: tax planning for retirees">
+      </div>
+      <div>
+        <label for="audience">Audience or angle notes</label>
+        <input id="audience" placeholder="Example: DIY investors near retirement">
+      </div>
+      <div>
+        <label for="seedNotes">Raw keyword notes</label>
+        <textarea id="seedNotes" placeholder="Paste keyword ideas, competitor gaps, FAQs, or messy notes. One per line works best."></textarea>
+      </div>
+      <div>
+        <label for="goal">Brief goal</label>
+        <textarea id="goal" placeholder="What should this page help the reader do?"></textarea>
+      </div>
+      <div class="row">
+        <button id="growBtn">Grow cards</button>
+        <button class="secondary" id="sampleBtn">Load sample</button>
+        <button class="ghost" id="clearBtn">Clear</button>
+      </div>
+    </section>
+
+    <section class="card noPrint">
+      <label>Coverage and gaps</label>
+      <div class="stats">
+        <div class="stat"><span class="num" id="coverageScore">0</span><span class="txt">Coverage score</span></div>
+        <div class="stat"><span class="num" id="gapScore">100</span><span class="txt">Gap risk score</span></div>
+        <div class="stat"><span class="num" id="cardCount">0</span><span class="txt">Keyword cards</span></div>
+        <div class="stat"><span class="num" id="laneCount">0/5</span><span class="txt">Intent lanes filled</span></div>
+      </div>
+      <div style="margin-top:12px">
+        <div class="meter"><div class="bar" id="coverageBar"></div></div>
+      </div>
+      <ul class="gapList" id="gapList"></ul>
+    </section>
+
+    <section class="card noPrint">
+      <label>Add one keyword</label>
+      <div class="addBox">
+        <input id="newKw" placeholder="Keyword or question">
+        <select id="newIntent">
+          <option value="seed">Seedbed</option>
+          <option value="informational">Informational</option>
+          <option value="question">Questions</option>
+          <option value="commercial">Commercial</option>
+          <option value="transactional">Transactional</option>
+          <option value="navigational">Navigational</option>
+        </select>
+        <button id="addBtn">Add</button>
+      </div>
+      <p class="small">Tap the lane dropdown on a card or drag it into a lane. Edit card text directly.</p>
+    </section>
+
+    <section class="lanes" id="lanes"></section>
+
+    <section class="card">
+      <label for="briefNotes">Editable brief notes</label>
+      <textarea id="briefNotes" placeholder="Add must-cover claims, internal links, source needs, tone notes, CTA ideas, or drafting constraints."></textarea>
+    </section>
+
+    <section class="card">
+      <div class="row noPrint" style="justify-content:space-between">
+        <label style="margin:0">Final content brief</label>
+        <div class="row">
+          <button id="copyBtn">Copy brief</button>
+          <button class="secondary" id="txtBtn">Export TXT</button>
+          <button class="secondary" id="jsonBtn">Export JSON</button>
+          <button class="ghost" id="printBtn">Print</button>
+        </div>
+      </div>
+      <div class="briefGrid">
+        <div>
+          <label for="titleIdea">Working title</label>
+          <input id="titleIdea" placeholder="Auto-suggested after growing cards">
+          <label for="metaIdea" style="margin-top:10px">Meta description</label>
+          <textarea id="metaIdea" placeholder="Auto-suggested after growing cards"></textarea>
+        </div>
+        <div class="briefPreview" id="briefPreview"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast">Copied</div>
+
+<script>
+(function(){
+  const laneDefs = [
+    {id:"seed", title:"Seedbed", hint:"Unsorted ideas and rough keyword material"},
+    {id:"informational", title:"Informational", hint:"Learn, understand, compare basics"},
+    {id:"question", title:"Questions", hint:"FAQ, PAA, objection, long-tail searches"},
+    {id:"commercial", title:"Commercial", hint:"Best, review, comparison, alternatives"},
+    {id:"transactional", title:"Transactional", hint:"Buy, book, hire, download, start"},
+    {id:"navigational", title:"Navigational", hint:"Brand, tool, template, calculator, specific page"}
+  ];
+
+  const $ = id => document.getElementById(id);
+  const stateKey = "keywordGardenSprint.v1";
+  let cards = [];
+  let dragId = null;
+
+  const els = {
+    topic:$("topic"),
+    audience:$("audience"),
+    seedNotes:$("seedNotes"),
+    goal:$("goal"),
+    lanes:$("lanes"),
+    growBtn:$("growBtn"),
+    sampleBtn:$("sampleBtn"),
+    clearBtn:$("clearBtn"),
+    addBtn:$("addBtn"),
+    newKw:$("newKw"),
+    newIntent:$("newIntent"),
+    briefNotes:$("briefNotes"),
+    titleIdea:$("titleIdea"),
+    metaIdea:$("metaIdea"),
+    briefPreview:$("briefPreview"),
+    copyBtn:$("copyBtn"),
+    txtBtn:$("txtBtn"),
+    jsonBtn:$("jsonBtn"),
+    printBtn:$("printBtn"),
+    coverageScore:$("coverageScore"),
+    gapScore:$("gapScore"),
+    cardCount:$("cardCount"),
+    laneCount:$("laneCount"),
+    coverageBar:$("coverageBar"),
+    gapList:$("gapList"),
+    toast:$("toast")
+  };
+
+  function uid(){
+    return "k" + Math.random().toString(36).slice(2,9) + Date.now().toString(36).slice(-4);
+  }
+
+  function cleanText(s){
+    return (s || "").replace(/\s+/g," ").trim();
+  }
+
+  function titleCase(s){
+    return cleanText(s).replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+  }
+
+  function dedupe(items){
+    const seen = new Set();
+    const out = [];
+    items.forEach(raw => {
+      const text = cleanText(raw).replace(/^[-*•\d.)\s]+/,"");
+      const key = text.toLowerCase();
+      if(text.length > 1 && !seen.has(key)){
+        seen.add(key);
+        out.push(text);
+      }
+    });
+    return out;
+  }
+
+  function inferIntent(text){
+    const t = text.toLowerCase();
+    if(/[?]/.test(t) || /^(how|what|why|when|where|who|can|should|does|do|is|are)\b/.test(t)) return "question";
+    if(/\b(best|top|review|reviews|vs|versus|compare|comparison|alternative|alternatives|pros|cons)\b/.test(t)) return "commercial";
+    if(/\b(buy|book|hire|pricing|price|cost|quote|download|template|checklist|calculator|service|near me|start|signup|sign up)\b/.test(t)) return "transactional";
+    if(/\b(login|official|brand|app|tool|software|website|portal|dashboard)\b/.test(t)) return "navigational";
+    return "informational";
+  }
+
+  function cardTags(text){
+    const t = text.toLowerCase();
+    const tags = [];
+    if(text.split(/\s+/).length >= 4) tags.push("long-tail");
+    if(/[?]/.test(text) || /^(how|what|why|when|where|who|can|should|does|do|is|are)\b/i.test(text)) tags.push("question");
+    if(/\b(best|vs|compare|review|alternative)\b/.test(t)) tags.push("comparison");
+    if(/\b(cost|price|pricing|fee|cheap|affordable)\b/.test(t)) tags.push("money");
+    if(/\b(template|checklist|guide|calculator|examples|ideas)\b/.test(t)) tags.push("asset");
+    if(!tags.length) tags.push("core");
+    return tags.slice(0,3);
+  }
+
+  function makeCard(text, intent){
+    return {
+      id:uid(),
+      text:cleanText(text),
+      intent:intent || inferIntent(text),
+      notes:"",
+      priority:"medium"
+    };
+  }
+
+  function baseKeywordIdeas(topic){
+    const t = cleanText(topic);
+    if(!t) return [];
+    return [
+      t,
+      t + " guide",
+      "what is " + t,
+      "how does " + t + " work",
+      "how to choose " + t,
+      "best " + t,
+      t + " examples",
+      t + " checklist",
+      t + " template",
+      t + " cost",
+      t + " mistakes",
+      t + " benefits",
+      t + " vs alternatives",
+      t + " for beginners",
+      t + " questions"
+    ];
+  }
+
+  function growCards(){
+    const rawLines = els.seedNotes.value.split(/\n|,/).map(cleanText);
+    const ideas = dedupe([...baseKeywordIdeas(els.topic.value), ...rawLines]);
+    const existing = new Set(cards.map(c => c.text.toLowerCase()));
+    ideas.forEach(item => {
+      if(!existing.has(item.toLowerCase())){
+        cards.push(makeCard(item));
+        existing.add(item.toLowerCase());
+      }
+    });
+    autoSuggestBriefFields();
+    saveRender();
+    toast("Cards grown");
+  }
+
+  function autoSuggestBriefFields(){
+    const topic = cleanText(els.topic.value);
+    const audience = cleanText(els.audience.value);
+    if(topic && !cleanText(els.titleIdea.value)){
+      els.titleIdea.value = titleCase(topic) + ": Practical Guide, Gaps, and Next Steps";
+    }
+    if(topic && !cleanText(els.metaIdea.value)){
+      const who = audience ? " for " + audience : "";
+      els.metaIdea.value = "Plan a focused page on " + topic + who + " with clear intent coverage, useful answers, and a next-step CTA.";
+    }
+    if(topic && !cleanText(els.goal.value)){
+      els.goal.value = "Help the reader understand the topic, compare options, answer common objections, and take the next useful step.";
+    }
+  }
+
+  function addManualCard(){
+    const text = cleanText(els.newKw.value);
+    if(!text) return;
+    cards.push(makeCard(text, els.newIntent.value));
+    els.newKw.value = "";
+    saveRender();
+  }
+
+  function moveCard(id, lane){
+    const c = cards.find(x => x.id === id);
+    if(c){
+      c.intent = lane;
+      saveRender();
+    }
+  }
+
+  function deleteCard(id){
+    cards = cards.filter(c => c.id !== id);
+    saveRender();
+  }
+
+  function updateCard(id, patch){
+    const c = cards.find(x => x.id === id);
+    if(c){
+      Object.assign(c, patch);
+      save();
+      updateScoresAndBrief();
+    }
+  }
+
+  function renderLanes(){
+    els.lanes.innerHTML = "";
+    laneDefs.forEach(lane => {
+      const laneEl = document.createElement("section");
+      laneEl.className = "lane";
+      laneEl.dataset.lane = lane.id;
+
+      const count = cards.filter(c => c.intent === lane.id).length;
+      laneEl.innerHTML =
+        '<div class="laneHead">' +
+          '<div><div class="laneTitle">' + escapeHtml(lane.title) + '</div><div class="laneHint">' + escapeHtml(lane.hint) + '</div></div>' +
+          '<span class="pill">' + count + '</span>' +
+        '</div>';
+
+      const list = document.createElement("div");
+      list.className = lane.id === "seed" ? "seedbed" : "";
+      cards.filter(c => c.intent === lane.id).forEach(c => list.appendChild(renderCard(c)));
+      laneEl.appendChild(list);
+
+      laneEl.addEventListener("dragover", e => {
+        e.preventDefault();
+        laneEl.classList.add("dragOver");
+      });
+      laneEl.addEventListener("dragleave", () => laneEl.classList.remove("dragOver"));
+      laneEl.addEventListener("drop", e => {
+        e.preventDefault();
+        laneEl.classList.remove("dragOver");
+        if(dragId) moveCard(dragId, lane.id);
+      });
+
+      els.lanes.appendChild(laneEl);
+    });
+  }
+
+  function renderCard(c){
+    const el = document.createElement("article");
+    el.className = "kw";
+    el.draggable = true;
+    el.dataset.id = c.id;
+
+    const laneOptions = laneDefs.map(l => {
+      return '<option value="' + l.id + '"' + (l.id === c.intent ? " selected" : "") + '>' + l.title + '</option>';
+    }).join("");
+
+    el.innerHTML =
+      '<div class="kwTop">' +
+        '<input class="kwText" value="' + escapeAttr(c.text) + '" aria-label="Keyword text">' +
+        '<div class="miniBtns">' +
+          '<button class="iconBtn dupBtn" title="Duplicate">+</button>' +
+          '<button class="iconBtn deleteBtn" title="Delete">×</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="kwMeta">' + cardTags(c.text).map(t => '<span class="tag">' + escapeHtml(t) + '</span>').join("") + '</div>' +
+      '<select class="moveSelect" aria-label="Move keyword to intent lane">' + laneOptions + '</select>' +
+      '<textarea class="cardNotes" placeholder="Card note, source need, or angle idea">' + escapeHtml(c.notes || "") + '</textarea>' +
+      '<select class="prioritySelect" aria-label="Priority">' +
+        '<option value="low"' + (c.priority==="low" ? " selected" : "") + '>Low priority</option>' +
+        '<option value="medium"' + (c.priority==="medium" ? " selected" : "") + '>Medium priority</option>' +
+        '<option value="high"' + (c.priority==="high" ? " selected" : "") + '>High priority</option>' +
+      '</select>';
+
+    el.addEventListener("dragstart", () => {
+      dragId = c.id;
+      el.classList.add("dragging");
+    });
+    el.addEventListener("dragend", () => {
+      dragId = null;
+      el.classList.remove("dragging");
+    });
+
+    el.querySelector(".kwText").addEventListener("input", e => {
+      updateCard(c.id, {text:e.target.value});
+      const meta = el.querySelector(".kwMeta");
+      meta.innerHTML = cardTags(e.target.value).map(t => '<span class="tag">' + escapeHtml(t) + '</span>').join("");
+    });
+
+    el.querySelector(".moveSelect").addEventListener("change", e => moveCard(c.id, e.target.value));
+    el.querySelector(".cardNotes").addEventListener("input", e => updateCard(c.id, {notes:e.target.value}));
+    el.querySelector(".prioritySelect").addEventListener("change", e => updateCard(c.id, {priority:e.target.value}));
+    el.querySelector(".deleteBtn").addEventListener("click", () => deleteCard(c.id));
+    el.querySelector(".dupBtn").addEventListener("click", () => {
+      cards.push(makeCard(c.text + " variation", c.intent));
+      saveRender();
+    });
+
+    return el;
+  }
+
+  function score(){
+    const nonSeed = cards.filter(c => c.intent !== "seed");
+    const sortedCount = nonSeed.length;
+    const usefulLanes = laneDefs.filter(l => l.id !== "seed");
+    const filled = usefulLanes.filter(l => nonSeed.some(c => c.intent === l.id)).length;
+    const highPriority = nonSeed.filter(c => c.priority === "high").length;
+    const questions = nonSeed.filter(c => c.intent === "question").length;
+    const longTail = nonSeed.filter(c => c.text.split(/\s+/).length >= 4).length;
+    const notes = nonSeed.filter(c => cleanText(c.notes).length > 0).length;
+
+    let coverage = 0;
+    coverage += Math.min(35, filled * 7);
+    coverage += Math.min(25, sortedCount * 3);
+    coverage += Math.min(15, questions * 5);
+    coverage += Math.min(15, longTail * 3);
+    coverage += Math.min(10, notes * 2);
+    coverage = Math.max(0, Math.min(100, coverage));
+
+    const gaps = [];
+    usefulLanes.forEach(l => {
+      const count = nonSeed.filter(c => c.intent === l.id).length;
+      if(count === 0) gaps.push("No " + l.title.toLowerCase() + " intent coverage yet.");
+      if(count === 1 && l.id !== "navigational") gaps.push("Thin " + l.title.toLowerCase() + " lane. Add at least one supporting keyword.");
+    });
+    if(cards.some(c => c.intent === "seed")) gaps.push("Some cards are still unsorted in the seedbed.");
+    if(questions < 2) gaps.push("Add more question keywords for FAQ and objection coverage.");
+    if(longTail < 4) gaps.push("Add more long-tail phrases to make the brief more specific.");
+    if(highPriority === 0 && sortedCount > 0) gaps.push("Mark at least one keyword as high priority.");
+    if(!cleanText(els.goal.value)) gaps.push("Add a brief goal so the outline has direction.");
+    if(!cleanText(els.briefNotes.value)) gaps.push("Add brief notes for sources, CTA, internal links, or claims.");
+
+    const gapRisk = Math.max(0, Math.min(100, 100 - coverage + Math.min(20, gaps.length * 2)));
+
+    return {coverage, gapRisk, gaps:gaps.slice(0,7), sortedCount, filled, total:cards.length};
+  }
+
+  function updateScoresAndBrief(){
+    const s = score();
+    els.coverageScore.textContent = s.coverage;
+    els.gapScore.textContent = s.gapRisk;
+    els.cardCount.textContent = s.total;
+    els.laneCount.textContent = s.filled + "/5";
+    els.coverageBar.style.width = s.coverage + "%";
+    els.gapList.innerHTML = s.gaps.length
+      ? s.gaps.map(g => "<li>" + escapeHtml(g) + "</li>").join("")
+      : "<li>Coverage looks balanced enough to draft from.</li>";
+    els.briefPreview.textContent = buildBrief();
+  }
+
+  function groupedCards(){
+    const groups = {};
+    laneDefs.forEach(l => groups[l.id] = cards.filter(c => c.intent === l.id));
+    return groups;
+  }
+
+  function buildBrief(){
+    const topic = cleanText(els.topic.value) || "Untitled topic";
+    const audience = cleanText(els.audience.value) || "Not specified";
+    const goal = cleanText(els.goal.value) || "Not specified";
+    const title = cleanText(els.titleIdea.value) || titleCase(topic);
+    const meta = cleanText(els.metaIdea.value) || "";
+    const notes = cleanText(els.briefNotes.value) || "None added";
+    const s = score();
+    const groups = groupedCards();
+
+    const laneText = laneDefs.filter(l => l.id !== "seed").map(l => {
+      const items = groups[l.id];
+      if(!items.length) return l.title + "\n- GAP";
+      return l.title + "\n" + items.map(c => {
+        const note = cleanText(c.notes) ? " — " + cleanText(c.notes) : "";
+        const p = c.priority === "high" ? " [HIGH]" : c.priority === "low" ? " [LOW]" : "";
+        return "- " + cleanText(c.text) + p + note;
+      }).join("\n");
+    }).join("\n\n");
+
+    const primary = cards
+      .filter(c => c.intent !== "seed")
+      .sort((a,b) => priorityRank(b.priority) - priorityRank(a.priority))
+      .slice(0,5)
+      .map(c => "- " + cleanText(c.text) + " (" + readableLane(c.intent) + ")")
+      .join("\n") || "- None selected";
+
+    const gaps = s.gaps.length ? s.gaps.map(g => "- " + g).join("\n") : "- No major gaps flagged";
+
+    return [
+      "KEYWORD GARDEN SPRINT BRIEF",
+      "",
+      "Topic",
+      topic,
+      "",
+      "Audience",
+      audience,
+      "",
+      "Goal",
+      goal,
+      "",
+      "Working title",
+      title,
+      "",
+      "Meta description",
+      meta || "Not specified",
+      "",
+      "Scores",
+      "- Coverage score: " + s.coverage + "/100",
+      "- Gap risk score: " + s.gapRisk + "/100",
+      "- Intent lanes filled: " + s.filled + "/5",
+      "- Keyword cards: " + s.total,
+      "",
+      "Primary keyword targets",
+      primary,
+      "",
+      "Intent map",
+      laneText,
+      "",
+      "Current gaps",
+      gaps,
+      "",
+      "Brief notes",
+      notes,
+      "",
+      "Suggested page structure",
+      "1. Open with the core problem and promise around " + topic + ".",
+      "2. Define the topic in plain language.",
+      "3. Cover the informational keywords before selling or pushing action.",
+      "4. Add question-led sections for objections and FAQ snippets.",
+      "5. Add comparison or commercial sections where the lane has cards.",
+      "6. Close with a clear next step, asset, CTA, or internal link."
+    ].join("\n");
+  }
+
+  function readableLane(id){
+    const lane = laneDefs.find(l => l.id === id);
+    return lane ? lane.title : id;
+  }
+
+  function priorityRank(p){
+    return p === "high" ? 3 : p === "medium" ? 2 : 1;
+  }
+
+  function save(){
+    const data = {
+      topic:els.topic.value,
+      audience:els.audience.value,
+      seedNotes:els.seedNotes.value,
+      goal:els.goal.value,
+      briefNotes:els.briefNotes.value,
+      titleIdea:els.titleIdea.value,
+      metaIdea:els.metaIdea.value,
+      cards
+    };
+    localStorage.setItem(stateKey, JSON.stringify(data));
+  }
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(stateKey);
+      if(!raw) return;
+      const data = JSON.parse(raw);
+      els.topic.value = data.topic || "";
+      els.audience.value = data.audience || "";
+      els.seedNotes.value = data.seedNotes || "";
+      els.goal.value = data.goal || "";
+      els.briefNotes.value = data.briefNotes || "";
+      els.titleIdea.value = data.titleIdea || "";
+      els.metaIdea.value = data.metaIdea || "";
+      cards = Array.isArray(data.cards) ? data.cards : [];
+    }catch(e){
+      cards = [];
+    }
+  }
+
+  function saveRender(){
+    save();
+    renderLanes();
+    updateScoresAndBrief();
+  }
+
+  function clearAll(){
+    if(!confirm("Clear this sprint?")) return;
+    cards = [];
+    ["topic","audience","seedNotes","goal","briefNotes","titleIdea","metaIdea","newKw"].forEach(id => els[id].value = "");
+    localStorage.removeItem(stateKey);
+    saveRender();
+  }
+
+  function sample(){
+    els.topic.value = "Roth conversion planning";
+    els.audience.value = "near-retirees with taxable brokerage accounts";
+    els.seedNotes.value = [
+      "Roth conversion ladder",
+      "Roth conversion tax brackets",
+      "best age for Roth conversion",
+      "Roth conversion before RMDs",
+      "Roth conversion Medicare IRMAA",
+      "how much should I convert to Roth",
+      "Roth conversion calculator",
+      "Roth conversion mistakes",
+      "Roth conversion vs traditional IRA",
+      "Roth conversion checklist"
+    ].join("\\n");
+    els.goal.value = "Help readers decide whether a Roth conversion deserves analysis and what variables matter before they act.";
+    els.briefNotes.value = "Include tax bracket management, IRMAA, RMD timing, state tax, estate planning, and the need for CPA or advisor review.";
+    els.titleIdea.value = "";
+    els.metaIdea.value = "";
+    cards = [];
+    growCards();
+  }
+
+  async function copyBrief(){
+    const text = buildBrief();
+    try{
+      await navigator.clipboard.writeText(text);
+      toast("Brief copied");
+    }catch(e){
+      fallbackCopy(text);
+    }
+  }
+
+  function fallbackCopy(text){
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    toast("Brief copied");
+  }
+
+  function download(filename, text, type){
+    const blob = new Blob([text], {type:type || "text/plain"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+      a.remove();
+    }, 0);
+  }
+
+  function exportJson(){
+    const data = {
+      exportedAt:new Date().toISOString(),
+      topic:els.topic.value,
+      audience:els.audience.value,
+      goal:els.goal.value,
+      titleIdea:els.titleIdea.value,
+      metaIdea:els.metaIdea.value,
+      briefNotes:els.briefNotes.value,
+      scores:score(),
+      cards
+    };
+    download(slug(els.topic.value || "keyword-garden") + ".json", JSON.stringify(data,null,2), "application/json");
+  }
+
+  function slug(s){
+    return cleanText(s).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0,60) || "keyword-garden";
+  }
+
+  function toast(msg){
+    els.toast.textContent = msg;
+    els.toast.classList.add("show");
+    clearTimeout(toast.t);
+    toast.t = setTimeout(() => els.toast.classList.remove("show"), 1500);
+  }
+
+  function escapeHtml(str){
+    return String(str || "").replace(/[&<>"']/g, ch => ({
+      "&":"&amp;",
+      "<":"&lt;",
+      ">":"&gt;",
+      '"':"&quot;",
+      "'":"&#039;"
+    }[ch]));
+  }
+
+  function escapeAttr(str){
+    return escapeHtml(str).replace(/\n/g," ");
+  }
+
+  ["topic","audience","seedNotes","goal","briefNotes","titleIdea","metaIdea"].forEach(id => {
+    els[id].addEventListener("input", () => {
+      save();
+      updateScoresAndBrief();
+    });
+  });
+
+  els.growBtn.addEventListener("click", growCards);
+  els.sampleBtn.addEventListener("click", sample);
+  els.clearBtn.addEventListener("click", clearAll);
+  els.addBtn.addEventListener("click", addManualCard);
+  els.newKw.addEventListener("keydown", e => {
+    if(e.key === "Enter"){
+      e.preventDefault();
+      addManualCard();
+    }
+  });
+  els.copyBtn.addEventListener("click", copyBrief);
+  els.txtBtn.addEventListener("click", () => download(slug(els.topic.value || "keyword-garden") + "-brief.txt", buildBrief(), "text/plain"));
+  els.jsonBtn.addEventListener("click", exportJson);
+  els.printBtn.addEventListener("click", () => window.print());
+
+  load();
+  renderLanes();
+  updateScoresAndBrief();
+})();
+</script>
+</body>
+</html>

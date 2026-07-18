@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>5-Shot Hook Planner</title>
+<style>
+  :root {
+    --bg: #f7f6f2;
+    --surface: #ffffff;
+    --surface2: #f0efe9;
+    --border: rgba(0,0,0,0.10);
+    --border-strong: rgba(0,0,0,0.18);
+    --text: #1a1917;
+    --text-muted: #6b6860;
+    --text-hint: #9e9b93;
+    --accent: #1a5fb4;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --font-mono: 'SF Mono', 'Fira Mono', 'Cascadia Code', monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141412;
+      --surface: #1f1e1b;
+      --surface2: #2a2925;
+      --border: rgba(255,255,255,0.09);
+      --border-strong: rgba(255,255,255,0.18);
+      --text: #f0ede6;
+      --text-muted: #a09d96;
+      --text-hint: #6b6860;
+      --accent: #5b9cf0;
+    }
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 16px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+ 
+  .app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0 14px;
+    border-bottom: 0.5px solid var(--border-strong);
+    margin-bottom: 14px;
+  }
+  .app-title {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .app-title svg { opacity: .7; flex-shrink: 0; }
+  .progress-pill {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: var(--surface2);
+    border: 0.5px solid var(--border);
+    border-radius: 20px;
+    padding: 3px 10px;
+  }
+ 
+  .thread-bar {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+  .section-eyebrow {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--text-hint);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .thread-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .thread-field { display: flex; flex-direction: column; gap: 3px; }
+  .thread-field label { font-size: 11px; font-weight: 500; color: var(--text-muted); }
+  .thread-field input {
+    font-size: 13px;
+    font-family: var(--font);
+    background: var(--surface2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 9px;
+    color: var(--text);
+    width: 100%;
+    transition: border-color .15s;
+  }
+  .thread-field input::placeholder { color: var(--text-hint); }
+  .thread-field input:focus { outline: none; border-color: var(--accent); }
+ 
+  .shot-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 10px;
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .shot-card.visible { display: flex; }
+  .shot-card.active  { border: 1.5px solid var(--accent); }
+ 
+  .card-header { display: flex; align-items: flex-start; gap: 10px; }
+  .badge {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .card-label { font-size: 14px; font-weight: 600; line-height: 1.3; }
+  .card-role  { font-size: 12px; color: var(--text-muted); margin-top: 1px; font-style: italic; }
+ 
+  .card-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .card-field  { display: flex; flex-direction: column; gap: 3px; }
+  .card-field.full { grid-column: 1 / -1; }
+  .card-field label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-hint);
+  }
+  .card-field textarea,
+  .card-field input[type="text"] {
+    font-size: 13px;
+    font-family: var(--font);
+    background: var(--surface2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 7px 9px;
+    color: var(--text);
+    width: 100%;
+    resize: none;
+    transition: border-color .15s;
+  }
+  .card-field textarea { min-height: 58px; line-height: 1.5; }
+  .card-field textarea::placeholder,
+  .card-field input[type="text"]::placeholder { color: var(--text-hint); }
+  .card-field textarea:focus,
+  .card-field input[type="text"]:focus { outline: none; border-color: var(--accent); }
+ 
+  .dot-row {
+    display: flex;
+    justify-content: center;
+    gap: 7px;
+    padding: 4px 0 10px;
+  }
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border-strong);
+    cursor: pointer;
+    transition: background .18s, transform .18s;
+    border: none;
+    padding: 0;
+  }
+  .dot.active { background: var(--accent); transform: scale(1.2); }
+ 
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.4fr;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 10px 0;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    font-family: var(--font);
+    cursor: pointer;
+    border: 0.5px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--text);
+    transition: background .14s, transform .1s, opacity .14s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn:active   { transform: scale(0.97); }
+  .btn:disabled { opacity: .35; pointer-events: none; }
+  .btn.primary  { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:active { filter: brightness(.88); }
+ 
+  .export-area {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .export-area.visible { display: flex; }
+  .export-area textarea {
+    font-size: 12px;
+    font-family: var(--font-mono);
+    background: var(--surface);
+    border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    color: var(--text);
+    resize: vertical;
+    min-height: 180px;
+    line-height: 1.55;
+  }
+  .export-row { display: flex; gap: 8px; }
+  .export-row .btn { flex: 1; }
+ 
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(8px);
+    background: var(--text);
+    color: var(--bg);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 9px 18px;
+    border-radius: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .22s, transform .22s;
+    white-space: nowrap;
+    z-index: 999;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+ 
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+ 
+<header class="app-header">
+  <div class="app-title">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+    5-shot hook planner
+  </div>
+  <div class="progress-pill" id="progress-pill">0 / 5 filled</div>
+</header>
+ 
+<section class="thread-bar" aria-label="Continuity threads">
+  <div class="section-eyebrow">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+    continuity threads
+  </div>
+  <div class="thread-grid">
+    <div class="thread-field">
+      <label for="t-hook">Opening hook</label>
+      <input id="t-hook" type="text" placeholder="e.g. problem reveal">
+    </div>
+    <div class="thread-field">
+      <label for="t-motif">Visual motif</label>
+      <input id="t-motif" type="text" placeholder="e.g. slow-mo pour">
+    </div>
+    <div class="thread-field">
+      <label for="t-product">Product / object</label>
+      <input id="t-product" type="text" placeholder="e.g. blue bottle">
+    </div>
+    <div class="thread-field">
+      <label for="t-cta">CTA</label>
+      <input id="t-cta" type="text" placeholder="e.g. link in bio">
+    </div>
+  </div>
+</section>
+ 
+<div id="cards" role="region" aria-label="Shot cards" aria-live="polite"></div>
+ 
+<div class="dot-row" id="dot-row" role="tablist" aria-label="Shot navigation"></div>
+ 
+<div class="actions">
+  <button class="btn" id="btn-prev" disabled aria-label="Previous shot">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+    Prev
+  </button>
+  <button class="btn" id="btn-next" aria-label="Next shot">
+    Next
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+  </button>
+  <button class="btn primary" id="btn-export">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+    Export brief
+  </button>
+</div>
+ 
+<div class="export-area" id="export-area">
+  <textarea id="brief-text" readonly aria-label="Shot brief text"></textarea>
+  <div class="export-row">
+    <button class="btn" id="btn-copy">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      Copy
+    </button>
+    <button class="btn" id="btn-download">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Save .txt
+    </button>
+  </div>
+</div>
+ 
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+ 
+<script>
+(function () {
+  'use strict';
+ 
+  /* ── config ── */
+  const SHOTS = [
+    { num: 1, label: 'Shot 1 — open',    role: 'Hook / pattern interrupt',
+      light: { bg: '#dde9f8', text: '#1a5fb4' }, dark: { bg: '#1a2d4a', text: '#5b9cf0' } },
+    { num: 2, label: 'Shot 2 — tension', role: 'Amplify the problem or desire',
+      light: { bg: '#fde8d8', text: '#c4511a' }, dark: { bg: '#3d1f0a', text: '#f0875b' } },
+    { num: 3, label: 'Shot 3 — reveal',  role: 'Introduce product / solution',
+      light: { bg: '#d4f0e4', text: '#1a7a4a' }, dark: { bg: '#0d2e1e', text: '#4ecf8a' } },
+    { num: 4, label: 'Shot 4 — proof',   role: 'Benefit / social proof moment',
+      light: { bg: '#fdefd0', text: '#8a5a00' }, dark: { bg: '#2e1f00', text: '#f0be50' } },
+    { num: 5, label: 'Shot 5 — close',   role: 'CTA + motif callback',
+      light: { bg: '#e8d8f8', text: '#6a2fb4' }, dark: { bg: '#1e0d3a', text: '#b07af0' } }
+  ];
+ 
+  const FIELDS = [
+    { key: 'scene',    label: 'Scene / action',  full: true,  type: 'textarea', ph: "What's physically happening on screen" },
+    { key: 'audio',    label: 'Audio / VO',       full: false, type: 'textarea', ph: 'Spoken line or sound' },
+    { key: 'text',     label: 'On-screen text',   full: false, type: 'textarea', ph: 'Caption or overlay' },
+    { key: 'motif',    label: 'Motif appearance', full: false, type: 'text',     ph: 'How the motif shows up' },
+    { key: 'product',  label: 'Product in frame', full: false, type: 'text',     ph: 'How product appears' },
+    { key: 'duration', label: 'Duration (s)',      full: false, type: 'text',     ph: 'e.g. 3' }
+  ];
+ 
+  /* ── state ── */
+  const data = SHOTS.map(() =>
+    Object.fromEntries(FIELDS.map(f => [f.key, '']))
+  );
+  let current = 0;
+  let exportOpen = false;
+  const darkMQ = window.matchMedia('(prefers-color-scheme: dark)');
+ 
+  /* ── helpers ── */
+  function $ (id) { return document.getElementById(id); }
+ 
+  function badgeColors (i) {
+    return darkMQ.matches ? SHOTS[i].dark : SHOTS[i].light;
+  }
+ 
+  function svgEl (svgString) {
+    /* Safe: svgString is a static author-written constant, never user data. */
+    const tpl = document.createElement('template');
+    tpl.innerHTML = svgString;
+    return tpl.content.firstChild;
+  }
+ 
+  /* ── card construction (no innerHTML for user data) ── */
+  function buildCardEl (i) {
+    const s = SHOTS[i];
+ 
+    const card = document.createElement('div');
+    card.className = 'shot-card' + (i === current ? ' visible active' : '');
+    card.id = 'card-' + i;
+    card.setAttribute('role', 'tabpanel');
+    card.setAttribute('aria-label', s.label);
+ 
+    /* header */
+    const header = document.createElement('div');
+    header.className = 'card-header';
+ 
+    const badge = document.createElement('div');
+    badge.className = 'badge';
+    const colors = badgeColors(i);
+    badge.style.background = colors.bg;
+    badge.style.color = colors.text;
+    badge.textContent = String(s.num);   /* safe integer — textContent only */
+ 
+    const meta = document.createElement('div');
+ 
+    const labelEl = document.createElement('div');
+    labelEl.className = 'card-label';
+    labelEl.textContent = s.label;      /* static config string */
+ 
+    const roleEl = document.createElement('div');
+    roleEl.className = 'card-role';
+    roleEl.textContent = s.role;        /* static config string */
+ 
+    meta.appendChild(labelEl);
+    meta.appendChild(roleEl);
+    header.appendChild(badge);
+    header.appendChild(meta);
+    card.appendChild(header);
+ 
+    /* fields grid */
+    const grid = document.createElement('div');
+    grid.className = 'card-fields';
+ 
+    FIELDS.forEach(f => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'card-field' + (f.full ? ' full' : '');
+ 
+      const fieldId = 'f-' + i + '-' + f.key;
+ 
+      const lbl = document.createElement('label');
+      lbl.setAttribute('for', fieldId);
+      lbl.textContent = f.label;        /* static config string */
+ 
+      let input;
+      if (f.type === 'textarea') {
+        input = document.createElement('textarea');
+        input.rows = 2;
+        input.value = data[i][f.key];   /* .value assignment — not innerHTML */
+      } else {
+        input = document.createElement('input');
+        input.type = 'text';
+        input.value = data[i][f.key];   /* .value assignment — not innerHTML */
+      }
+ 
+      input.id = fieldId;
+      input.placeholder = f.ph;        /* static config string */
+ 
+      /* closure captures i and f.key — no inline attribute */
+      input.addEventListener('input', function () {
+        data[i][f.key] = this.value;
+        updateProgress();
+        if (exportOpen) { renderBrief(); }
+      });
+ 
+      wrapper.appendChild(lbl);
+      wrapper.appendChild(input);
+      grid.appendChild(wrapper);
+    });
+ 
+    card.appendChild(grid);
+    return card;
+  }
+ 
+  /* ── initial card render (build once, show/hide after) ── */
+  function buildAllCards () {
+    const container = $('cards');
+    /* clear safely — no user data in DOM yet at init time */
+    while (container.firstChild) { container.removeChild(container.firstChild); }
+    SHOTS.forEach((_, i) => container.appendChild(buildCardEl(i)));
+  }
+ 
+  /* ── dot nav ── */
+  function buildDots () {
+    const row = $('dot-row');
+    while (row.firstChild) { row.removeChild(row.firstChild); }
+    SHOTS.forEach((s, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'dot' + (i === current ? ' active' : '');
+      btn.setAttribute('role', 'tab');
+      btn.setAttribute('aria-label', s.label);
+      btn.setAttribute('aria-selected', i === current ? 'true' : 'false');
+      btn.addEventListener('click', function () { goTo(i); });
+      row.appendChild(btn);
+    });
+  }
+ 
+  /* ── refresh visibility (no rebuild, preserves live input values) ── */
+  function refresh () {
+    SHOTS.forEach((_, i) => {
+      const card = $('card-' + i);
+      if (!card) { return; }
+      card.className = 'shot-card' + (i === current ? ' visible active' : '');
+    });
+    buildDots();
+    $('btn-prev').disabled = (current === 0);
+    $('btn-next').disabled = (current === 4);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+ 
+  function goTo (idx) { current = idx; refresh(); }
+ 
+  /* ── badge color refresh on scheme change ── */
+  function refreshBadgeColors () {
+    SHOTS.forEach((_, i) => {
+      const badge = document.querySelector('#card-' + i + ' .badge');
+      if (!badge) { return; }
+      const colors = badgeColors(i);
+      badge.style.background = colors.bg;
+      badge.style.color = colors.text;
+    });
+  }
+ 
+  /* ── progress ── */
+  function updateProgress () {
+    const n = data.filter(d => d.scene && d.scene.trim()).length;
+    $('progress-pill').textContent = n + ' / 5 filled';
+  }
+ 
+  /* ── brief assembly (reads .value from live inputs) ── */
+  function buildBriefText () {
+    const hook    = $('t-hook').value.trim();
+    const motif   = $('t-motif').value.trim();
+    const product = $('t-product').value.trim();
+    const cta     = $('t-cta').value.trim();
+ 
+    let out = '=== 5-SHOT HOOK BRIEF ===\n';
+    if (hook || motif || product || cta) {
+      out += '\nCONTINUITY THREADS\n';
+      if (hook)    { out += '  Opening hook: '   + hook    + '\n'; }
+      if (motif)   { out += '  Visual motif: '   + motif   + '\n'; }
+      if (product) { out += '  Product/object: ' + product + '\n'; }
+      if (cta)     { out += '  CTA: '            + cta     + '\n'; }
+    }
+    SHOTS.forEach((s, i) => {
+      const d = data[i];
+      out += '\n--- ' + s.label.toUpperCase() + ' / ' + s.role + ' ---\n';
+      if (d.scene)    { out += '  Scene: '          + d.scene    + '\n'; }
+      if (d.audio)    { out += '  Audio/VO: '        + d.audio    + '\n'; }
+      if (d.text)     { out += '  On-screen text: '  + d.text     + '\n'; }
+      if (d.motif)    { out += '  Motif: '           + d.motif    + '\n'; }
+      if (d.product)  { out += '  Product: '         + d.product  + '\n'; }
+      if (d.duration) { out += '  Duration: '        + d.duration + 's\n'; }
+    });
+    out += '\n========================';
+    return out;
+  }
+ 
+  function renderBrief () {
+    $('brief-text').value = buildBriefText();
+  }
+ 
+  /* ── export panel ── */
+  function toggleExport () {
+    exportOpen = !exportOpen;
+    const area = $('export-area');
+    const btn  = $('btn-export');
+ 
+    if (exportOpen) {
+      renderBrief();
+      area.classList.add('visible');
+      /* update button label — textContent only, no innerHTML */
+      btn.textContent = '';
+      btn.appendChild(svgEl('<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'));
+      btn.appendChild(document.createTextNode(' Close'));
+      setTimeout(function () {
+        area.querySelector('textarea').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 50);
+    } else {
+      area.classList.remove('visible');
+      btn.textContent = '';
+      btn.appendChild(svgEl('<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>'));
+      btn.appendChild(document.createTextNode(' Export brief'));
+    }
+  }
+ 
+  /* ── copy ── */
+  function copyBrief () {
+    const text = buildBriefText();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text)
+        .then(function () { showToast('Copied to clipboard ✓'); })
+        .catch(function () { fallbackCopy(); });
+    } else {
+      fallbackCopy();
+    }
+  }
+ 
+  function fallbackCopy () {
+    const ta = $('brief-text');
+    ta.select();
+    try {
+      document.execCommand('copy');
+      showToast('Copied ✓');
+    } catch (_) {
+      showToast('Select the text above and copy manually');
+    }
+  }
+ 
+  /* ── download ── */
+  function downloadBrief () {
+    const text = buildBriefText();
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'hook-brief.txt';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 500);
+    showToast('hook-brief.txt saved ✓');
+  }
+ 
+  /* ── toast ── */
+  function showToast (msg) {
+    const t = $('toast');
+    t.textContent = msg;   /* textContent — never innerHTML */
+    t.classList.add('show');
+    clearTimeout(t._hideTimer);
+    t._hideTimer = setTimeout(function () { t.classList.remove('show'); }, 2400);
+  }
+ 
+  /* ── wire up static buttons (addEventListener only, no onclick attrs) ── */
+  $('btn-prev').addEventListener('click',     function () { if (current > 0) { goTo(current - 1); } });
+  $('btn-next').addEventListener('click',     function () { if (current < 4) { goTo(current + 1); } });
+  $('btn-export').addEventListener('click',   toggleExport);
+  $('btn-copy').addEventListener('click',     copyBrief);
+  $('btn-download').addEventListener('click', downloadBrief);
+ 
+  /* live-update the brief textarea whenever a thread input changes */
+  ['t-hook', 't-motif', 't-product', 't-cta'].forEach(function (id) {
+    $(id).addEventListener('input', function () {
+      if (exportOpen) { renderBrief(); }
+    });
+  });
+ 
+  /* re-color badges if color scheme flips at runtime */
+  darkMQ.addEventListener('change', refreshBadgeColors);
+ 
+  /* ── init ── */
+  buildAllCards();
+  buildDots();
+ 
+}());
+</script>
+</body>
+</html>

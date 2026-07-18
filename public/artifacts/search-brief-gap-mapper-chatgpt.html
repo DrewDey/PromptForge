@@ -1,0 +1,1435 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SEO Gap Brief Builder</title>
+  <style>
+    :root {
+      --bg: #f6f3ee;
+      --panel: #fffaf2;
+      --panel-2: #ffffff;
+      --ink: #202020;
+      --muted: #706a61;
+      --line: #ddd3c4;
+      --accent: #635bff;
+      --accent-2: #ebe9ff;
+      --good: #1f7a4d;
+      --warn: #9b5b00;
+      --bad: #a93636;
+      --chip: #f0e8da;
+      --shadow: 0 8px 22px rgba(30, 24, 18, .08);
+      --radius: 18px;
+      --radius-sm: 12px;
+      --tap: 44px;
+      --max: 980px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(99,91,255,.12), transparent 34rem),
+        linear-gradient(180deg, #faf7f0 0%, var(--bg) 100%);
+      color: var(--ink);
+      line-height: 1.35;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    button {
+      min-height: var(--tap);
+      border: 0;
+      border-radius: 999px;
+      padding: 10px 14px;
+      background: var(--ink);
+      color: white;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    button.secondary {
+      background: var(--chip);
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+
+    button.ghost {
+      background: transparent;
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+
+    button.danger {
+      background: #f7dddd;
+      color: #751d1d;
+      border: 1px solid #edb8b8;
+    }
+
+    button.small {
+      min-height: 36px;
+      padding: 8px 11px;
+      font-size: 13px;
+    }
+
+    .wrap {
+      width: min(var(--max), 100%);
+      margin: 0 auto;
+      padding: 14px;
+    }
+
+    header {
+      padding: 18px 2px 8px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(26px, 8vw, 46px);
+      letter-spacing: -.05em;
+      line-height: .95;
+    }
+
+    .sub {
+      margin: 10px 0 0;
+      color: var(--muted);
+      max-width: 62ch;
+      font-size: 15px;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      margin: 10px -14px 14px;
+      padding: 9px 14px;
+      background: rgba(246, 243, 238, .9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(221, 211, 196, .7);
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .topbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .topbar a {
+      flex: 0 0 auto;
+      text-decoration: none;
+      color: var(--ink);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 9px 12px;
+      font-size: 13px;
+      box-shadow: 0 2px 10px rgba(20, 20, 20, .04);
+    }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    @media (min-width: 800px) {
+      .grid.two {
+        grid-template-columns: 1fr 1fr;
+        align-items: start;
+      }
+    }
+
+    section,
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 19px;
+      letter-spacing: -.025em;
+    }
+
+    h3 {
+      margin: 0 0 8px;
+      font-size: 15px;
+      letter-spacing: -.015em;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin: 0 0 6px;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      background: var(--panel-2);
+      color: var(--ink);
+      outline: none;
+    }
+
+    textarea {
+      min-height: 94px;
+      resize: vertical;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-2);
+    }
+
+    .field {
+      margin-bottom: 12px;
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .row > * {
+      flex: 1 1 auto;
+    }
+
+    .row.tight > * {
+      flex: 0 0 auto;
+    }
+
+    .status {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .stat {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 10px;
+    }
+
+    .stat .num {
+      display: block;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -.04em;
+    }
+
+    .stat .lbl {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 13px;
+      margin: 8px 0 0;
+    }
+
+    .cards {
+      display: grid;
+      gap: 10px;
+    }
+
+    .card {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: var(--accent-2);
+      color: #37309a;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .badge.good {
+      background: #e2f3ea;
+      color: var(--good);
+    }
+
+    .badge.warn {
+      background: #fff0d6;
+      color: var(--warn);
+    }
+
+    .badge.bad {
+      background: #f9dfdf;
+      color: var(--bad);
+    }
+
+    .editable {
+      min-height: 42px;
+      border: 1px dashed transparent;
+      border-radius: 10px;
+      padding: 4px;
+      outline: none;
+      white-space: pre-wrap;
+    }
+
+    .editable:focus {
+      border-color: var(--accent);
+      background: #fbfaff;
+    }
+
+    .mini {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    .chipline {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .chip {
+      border: 1px solid var(--line);
+      background: var(--chip);
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 6px 9px;
+      font-size: 12px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .chip[data-on="true"] {
+      background: var(--ink);
+      color: white;
+      border-color: var(--ink);
+    }
+
+    .check {
+      display: grid;
+      grid-template-columns: 32px 1fr;
+      gap: 8px;
+      align-items: start;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .check:last-child {
+      border-bottom: 0;
+    }
+
+    .box {
+      width: 28px;
+      height: 28px;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      user-select: none;
+      font-weight: 900;
+    }
+
+    .box[data-checked="true"] {
+      background: #e2f3ea;
+      color: var(--good);
+      border-color: #b7dfc9;
+    }
+
+    .brief {
+      min-height: 320px;
+      white-space: pre-wrap;
+      background: #171717;
+      color: #fafafa;
+      border-radius: 16px;
+      padding: 14px;
+      overflow: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%) translateY(20px);
+      opacity: 0;
+      pointer-events: none;
+      background: #171717;
+      color: white;
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-size: 13px;
+      transition: .18s ease;
+      z-index: 50;
+      box-shadow: 0 8px 30px rgba(0,0,0,.2);
+      max-width: calc(100% - 28px);
+      text-align: center;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    details {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 10px 12px;
+      background: var(--panel-2);
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .footer-space {
+      height: 30px;
+    }
+
+    @media (max-width: 430px) {
+      .wrap {
+        padding: 12px;
+      }
+
+      section,
+      .panel {
+        padding: 12px;
+      }
+
+      .topbar {
+        margin-left: -12px;
+        margin-right: -12px;
+        padding-left: 12px;
+        padding-right: 12px;
+      }
+
+      .row button {
+        flex: 1 1 100%;
+      }
+
+      .status {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+
+      .topbar,
+      .controls,
+      .no-print,
+      button {
+        display: none !important;
+      }
+
+      .wrap {
+        width: 100%;
+        max-width: none;
+      }
+
+      section,
+      .panel {
+        box-shadow: none;
+        break-inside: avoid;
+      }
+
+      .brief {
+        color: black;
+        background: white;
+        border: 1px solid #ccc;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>SEO Gap Brief Builder</h1>
+      <p class="sub">
+        Turn a rough keyword, audience, angle, and competitor notes into editable cards for content gaps, outline angles, metadata, FAQs, claim checks, and a copy-ready brief.
+      </p>
+    </header>
+
+    <nav class="topbar" aria-label="Tool sections">
+      <a href="#inputs">Inputs</a>
+      <a href="#gaps">Gap map</a>
+      <a href="#outline">Outline</a>
+      <a href="#meta">Titles/meta</a>
+      <a href="#faqs">FAQs</a>
+      <a href="#claims">Claims</a>
+      <a href="#brief">Brief</a>
+    </nav>
+
+    <main class="grid">
+      <section id="inputs">
+        <div class="section-head">
+          <div>
+            <h2>Inputs</h2>
+            <p class="hint">Paste messy notes. The tool uses local heuristics only. No network calls.</p>
+          </div>
+        </div>
+
+        <div class="grid two">
+          <div>
+            <div class="field">
+              <label for="keyword">Primary keyword</label>
+              <input id="keyword" placeholder="Example: best Roth conversion strategy" />
+            </div>
+
+            <div class="field">
+              <label for="audience">Audience</label>
+              <input id="audience" placeholder="Example: pre-retirees with $1M-$3M invested" />
+            </div>
+
+            <div class="field">
+              <label for="angle">Content angle</label>
+              <textarea id="angle" placeholder="Example: Explain when Roth conversions are worth it, when they backfire, and how to avoid tax-bracket surprises."></textarea>
+            </div>
+          </div>
+
+          <div>
+            <div class="field">
+              <label for="competitors">Competitor notes</label>
+              <textarea id="competitors" placeholder="Paste competitor headings, SERP observations, missing sections, notes from top articles, People Also Ask questions, Reddit pain points, etc."></textarea>
+            </div>
+
+            <div class="field">
+              <label for="brandNotes">Internal notes or must-cover points</label>
+              <textarea id="brandNotes" placeholder="Optional: examples, product/service notes, disclaimers, proof points, sources to verify, preferred CTA."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="row controls">
+          <button id="generateBtn">Generate cards</button>
+          <button class="secondary" id="sampleBtn">Load sample</button>
+          <button class="ghost" id="clearBtn">Clear</button>
+        </div>
+
+        <div class="status" aria-live="polite">
+          <div class="stat">
+            <span class="num" id="gapCount">0</span>
+            <span class="lbl">gap cards</span>
+          </div>
+          <div class="stat">
+            <span class="num" id="briefScore">0</span>
+            <span class="lbl">brief depth</span>
+          </div>
+          <div class="stat">
+            <span class="num" id="riskCount">0</span>
+            <span class="lbl">claims to verify</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="gaps">
+        <div class="section-head">
+          <div>
+            <h2>Gap-map cards</h2>
+            <p class="hint">Edit the cards directly. Tap chips to change priority.</p>
+          </div>
+          <button class="small secondary no-print" data-add="gaps">Add</button>
+        </div>
+        <div class="cards" id="gapCards"></div>
+      </section>
+
+      <section id="outline">
+        <div class="section-head">
+          <div>
+            <h2>Outline ideas</h2>
+            <p class="hint">Use these as H2/H3 candidates or content modules.</p>
+          </div>
+          <button class="small secondary no-print" data-add="outline">Add</button>
+        </div>
+        <div class="cards" id="outlineCards"></div>
+      </section>
+
+      <section id="meta">
+        <div class="section-head">
+          <div>
+            <h2>Title and meta options</h2>
+            <p class="hint">Title length and meta length are estimated while you edit.</p>
+          </div>
+          <button class="small secondary no-print" data-add="meta">Add</button>
+        </div>
+        <div class="cards" id="metaCards"></div>
+      </section>
+
+      <section id="faqs">
+        <div class="section-head">
+          <div>
+            <h2>FAQ prompts</h2>
+            <p class="hint">Good for PAA-style questions, support objections, and internal-link targets.</p>
+          </div>
+          <button class="small secondary no-print" data-add="faqs">Add</button>
+        </div>
+        <div class="cards" id="faqCards"></div>
+      </section>
+
+      <section id="claims">
+        <div class="section-head">
+          <div>
+            <h2>Claims checklist</h2>
+            <p class="hint">Use this to prevent thin, unsupported, or risky copy.</p>
+          </div>
+          <button class="small secondary no-print" data-add="claims">Add</button>
+        </div>
+        <div class="cards" id="claimCards"></div>
+      </section>
+
+      <section id="brief">
+        <div class="section-head">
+          <div>
+            <h2>Copyable content brief</h2>
+            <p class="hint">Generated from your current cards and edits.</p>
+          </div>
+        </div>
+
+        <div class="row controls">
+          <button id="copyBriefBtn">Copy brief</button>
+          <button class="secondary" id="refreshBriefBtn">Refresh brief</button>
+          <button class="ghost" id="downloadBtn">Download .txt</button>
+          <button class="ghost" id="printBtn">Print</button>
+        </div>
+
+        <div id="briefOutput" class="brief" tabindex="0"></div>
+
+        <details class="no-print" style="margin-top:12px;">
+          <summary>Backup and restore</summary>
+          <p class="hint">Export saves your current inputs and editable cards as JSON.</p>
+          <div class="row controls" style="margin-top:10px;">
+            <button class="secondary" id="exportJsonBtn">Export JSON</button>
+            <button class="secondary" id="importJsonBtn">Import JSON</button>
+          </div>
+          <input id="importFile" type="file" accept="application/json" hidden />
+        </details>
+      </section>
+    </main>
+
+    <div class="footer-space"></div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const $ = (sel, root = document) => root.querySelector(sel);
+    const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+    const els = {
+      keyword: $("#keyword"),
+      audience: $("#audience"),
+      angle: $("#angle"),
+      competitors: $("#competitors"),
+      brandNotes: $("#brandNotes"),
+      gapCards: $("#gapCards"),
+      outlineCards: $("#outlineCards"),
+      metaCards: $("#metaCards"),
+      faqCards: $("#faqCards"),
+      claimCards: $("#claimCards"),
+      briefOutput: $("#briefOutput"),
+      gapCount: $("#gapCount"),
+      briefScore: $("#briefScore"),
+      riskCount: $("#riskCount"),
+      toast: $("#toast")
+    };
+
+    const STORAGE_KEY = "seoGapBriefBuilder.v1";
+
+    let state = {
+      inputs: {
+        keyword: "",
+        audience: "",
+        angle: "",
+        competitors: "",
+        brandNotes: ""
+      },
+      gaps: [],
+      outline: [],
+      meta: [],
+      faqs: [],
+      claims: []
+    };
+
+    const templates = {
+      gaps: () => ({
+        type: "Opportunity",
+        title: "New gap card",
+        body: "Describe the missing angle, weak competitor coverage, or user need.",
+        priority: "Medium"
+      }),
+      outline: () => ({
+        type: "Section",
+        title: "New outline section",
+        body: "Add notes, bullets, examples, internal links, or proof needed.",
+        priority: "Medium"
+      }),
+      meta: () => ({
+        type: "Metadata",
+        title: "New title option",
+        body: "Meta description option goes here.",
+        priority: "Medium"
+      }),
+      faqs: () => ({
+        type: "FAQ",
+        title: "New question?",
+        body: "Draft the answer angle or source needed.",
+        priority: "Medium"
+      }),
+      claims: () => ({
+        type: "Verify",
+        title: "Claim to check",
+        body: "Source, evidence, date, and wording notes.",
+        checked: false,
+        priority: "Medium"
+      })
+    };
+
+    function uid() {
+      return Math.random().toString(36).slice(2, 10);
+    }
+
+    function cleanText(text) {
+      return String(text || "")
+        .replace(/\r/g, "")
+        .replace(/\t/g, " ")
+        .replace(/[ ]{2,}/g, " ")
+        .trim();
+    }
+
+    function splitLines(text) {
+      return cleanText(text)
+        .split(/\n|•|\u2022|\- /)
+        .map(s => s.replace(/^[-*#\d.)\s]+/, "").trim())
+        .filter(Boolean);
+    }
+
+    function words(text) {
+      return cleanText(text)
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, " ")
+        .split(/\s+/)
+        .filter(w => w.length > 2);
+    }
+
+    function titleCase(text) {
+      return cleanText(text)
+        .split(" ")
+        .map(w => w ? w[0].toUpperCase() + w.slice(1) : "")
+        .join(" ");
+    }
+
+    function unique(arr) {
+      const seen = new Set();
+      return arr.filter(item => {
+        const key = cleanText(typeof item === "string" ? item : item.title + item.body).toLowerCase();
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
+
+    function topTerms(text, limit = 8) {
+      const stop = new Set([
+        "the","and","for","with","that","this","from","into","your","you","are","can","how",
+        "why","what","when","where","best","guide","tips","about","have","has","had","not",
+        "but","all","our","their","they","them","then","than","was","were","been","being",
+        "will","would","should","could","use","using","article","content","page","pages"
+      ]);
+      const counts = {};
+      words(text).forEach(w => {
+        if (!stop.has(w)) counts[w] = (counts[w] || 0) + 1;
+      });
+      return Object.entries(counts)
+        .sort((a,b) => b[1] - a[1])
+        .slice(0, limit)
+        .map(([w]) => w);
+    }
+
+    function inferIntent(keyword, angle, notes) {
+      const text = `${keyword} ${angle} ${notes}`.toLowerCase();
+      if (/price|cost|fee|rate|cheap|affordable|pricing/.test(text)) return "Cost comparison";
+      if (/best|top|review|compare|vs|alternative/.test(text)) return "Comparison";
+      if (/how to|step|setup|build|create|fix/.test(text)) return "How-to";
+      if (/what is|definition|meaning|basics|beginner/.test(text)) return "Explainer";
+      if (/near me|local|city|area/.test(text)) return "Local";
+      return "Decision support";
+    }
+
+    function makeCards(items, fallbackType) {
+      return items.map(item => ({
+        id: uid(),
+        type: item.type || fallbackType,
+        title: item.title || "Untitled",
+        body: item.body || "",
+        priority: item.priority || "Medium",
+        checked: item.checked || false
+      }));
+    }
+
+    function generate() {
+      syncInputsToState();
+
+      const keyword = cleanText(state.inputs.keyword) || "target keyword";
+      const audience = cleanText(state.inputs.audience) || "target audience";
+      const angle = cleanText(state.inputs.angle);
+      const competitorNotes = cleanText(state.inputs.competitors);
+      const brandNotes = cleanText(state.inputs.brandNotes);
+      const allNotes = `${angle}\n${competitorNotes}\n${brandNotes}`;
+      const terms = topTerms(allNotes + " " + keyword, 10);
+      const lines = splitLines(competitorNotes);
+      const intent = inferIntent(keyword, angle, competitorNotes);
+
+      const lineCards = lines.slice(0, 8).map((line, i) => ({
+        type: i < 3 ? "SERP gap" : "Competitor note",
+        title: line.length > 62 ? line.slice(0, 62).trim() + "…" : line,
+        body: `Turn this into a useful section by adding an original example, clearer answer, stronger evidence, or better comparison for ${audience}.`,
+        priority: i < 3 ? "High" : "Medium"
+      }));
+
+      const termCards = terms.slice(0, 5).map(term => ({
+        type: "Missing subtopic",
+        title: `${titleCase(term)} angle`,
+        body: `Check whether competitors cover this deeply. Add definitions, examples, mistakes, decision criteria, and source-backed claims where useful.`,
+        priority: "Medium"
+      }));
+
+      state.gaps = makeCards(unique([
+        {
+          type: "Search intent",
+          title: `${intent} intent for “${keyword}”`,
+          body: `The page should satisfy ${audience} by matching the real job behind the query, not just repeating the keyword. Use the angle: ${angle || "clarify the decision, tradeoffs, and next step."}`,
+          priority: "High"
+        },
+        {
+          type: "Differentiator",
+          title: "What this article should do better",
+          body: `Add practical judgment, examples, checklists, and source discipline where competitor pages are thin, generic, outdated, or too broad.`,
+          priority: "High"
+        },
+        ...lineCards,
+        ...termCards,
+        {
+          type: "Reader objection",
+          title: "Objections and edge cases",
+          body: `Add a section for when the usual advice does not apply, especially for ${audience}. Include warning signs and decision rules.`,
+          priority: "High"
+        }
+      ]), "Opportunity");
+
+      state.outline = makeCards([
+        {
+          type: "H1",
+          title: `${titleCase(keyword)}: Practical Guide for ${audience}`,
+          body: "Open with a direct answer, define who the advice is for, and state the main tradeoff.",
+          priority: "High"
+        },
+        {
+          type: "H2",
+          title: `What ${keyword} really means`,
+          body: "Give a plain definition, explain why people search it, and clarify common misunderstandings.",
+          priority: "High"
+        },
+        {
+          type: "H2",
+          title: "Decision factors",
+          body: `List the criteria ${audience} should use before acting. Include costs, timing, risk, effort, alternatives, and proof needed.`,
+          priority: "High"
+        },
+        {
+          type: "H2",
+          title: "Competitor gaps to beat",
+          body: state.gaps.slice(0, 5).map(g => `• ${g.title}`).join("\n"),
+          priority: "High"
+        },
+        {
+          type: "H2",
+          title: "Examples and scenarios",
+          body: "Add 2-3 realistic examples that show when the advice works, when it fails, and what changes the answer.",
+          priority: "Medium"
+        },
+        {
+          type: "H2",
+          title: "Mistakes to avoid",
+          body: "Turn weak competitor coverage into a practical warning section.",
+          priority: "Medium"
+        },
+        {
+          type: "H2",
+          title: "FAQ",
+          body: "Answer common questions directly in 40-80 words each.",
+          priority: "Medium"
+        },
+        {
+          type: "CTA",
+          title: "Next step",
+          body: brandNotes || "Give the reader a useful next step without over-selling.",
+          priority: "Medium"
+        }
+      ], "Section");
+
+      state.meta = makeCards([
+        {
+          type: "Title",
+          title: `${titleCase(keyword)}: What to Know Before You Decide`,
+          body: `A practical guide for ${audience} covering tradeoffs, mistakes, examples, and when the usual advice does not apply.`,
+          priority: "High"
+        },
+        {
+          type: "Title",
+          title: `${titleCase(keyword)} Guide for ${titleCase(audience)}`,
+          body: `Learn how to evaluate ${keyword}, compare your options, avoid weak advice, and build a clearer next-step plan.`,
+          priority: "Medium"
+        },
+        {
+          type: "Title",
+          title: `${titleCase(keyword)}: Pros, Cons, Examples, and Mistakes`,
+          body: `Use this decision-focused guide to understand the main benefits, risks, competitor gaps, and practical checks before acting.`,
+          priority: "Medium"
+        },
+        {
+          type: "Title",
+          title: `Is ${titleCase(keyword)} Worth It?`,
+          body: `See when ${keyword} makes sense, when it can backfire, and what ${audience} should verify first.`,
+          priority: "Medium"
+        }
+      ], "Metadata");
+
+      const faqSeeds = [
+        `What is ${keyword}?`,
+        `Who should consider ${keyword}?`,
+        `What are the biggest mistakes with ${keyword}?`,
+        `How do you compare ${keyword} options?`,
+        `When is ${keyword} not worth it?`,
+        `What should ${audience} verify first?`
+      ];
+
+      const noteQuestions = lines
+        .filter(l => /\?/.test(l) || /how|what|why|when|best|cost|compare/i.test(l))
+        .slice(0, 4)
+        .map(l => l.endsWith("?") ? l : `${l}?`);
+
+      state.faqs = makeCards(unique([...noteQuestions, ...faqSeeds]).slice(0, 10).map(q => ({
+        type: "FAQ",
+        title: q,
+        body: "Answer directly, then add one practical qualifier or example. Verify any factual, legal, medical, financial, pricing, or statistics-based statement.",
+        priority: /mistake|not worth|verify|cost|compare/i.test(q) ? "High" : "Medium"
+      })), "FAQ");
+
+      state.claims = makeCards([
+        {
+          type: "Evidence",
+          title: "Define source requirements",
+          body: "List the sources needed for statistics, rules, dates, pricing, product claims, legal/tax/medical statements, and competitor comparisons.",
+          priority: "High"
+        },
+        {
+          type: "Freshness",
+          title: "Check dates and current rules",
+          body: "Verify anything that may have changed recently, including rates, thresholds, regulations, feature sets, rankings, and market data.",
+          priority: "High"
+        },
+        {
+          type: "Comparison",
+          title: "Support every competitor claim",
+          body: "Avoid saying competitors miss something unless notes or examples clearly support it.",
+          priority: "High"
+        },
+        {
+          type: "Reader safety",
+          title: "Add limits and exceptions",
+          body: `Flag where advice depends on the reader’s situation, especially for ${audience}.`,
+          priority: "High"
+        },
+        {
+          type: "E-E-A-T",
+          title: "Add proof of usefulness",
+          body: "Include examples, methodology, author review notes, citations, screenshots, templates, or firsthand testing where possible.",
+          priority: "Medium"
+        },
+        {
+          type: "CTA",
+          title: "Avoid unsupported promises",
+          body: "Make the CTA useful and specific without guaranteeing outcomes.",
+          priority: "Medium"
+        }
+      ], "Verify");
+
+      renderAll();
+      save();
+      toast("Cards generated");
+    }
+
+    function syncInputsToState() {
+      state.inputs.keyword = els.keyword.value;
+      state.inputs.audience = els.audience.value;
+      state.inputs.angle = els.angle.value;
+      state.inputs.competitors = els.competitors.value;
+      state.inputs.brandNotes = els.brandNotes.value;
+    }
+
+    function syncStateToInputs() {
+      els.keyword.value = state.inputs.keyword || "";
+      els.audience.value = state.inputs.audience || "";
+      els.angle.value = state.inputs.angle || "";
+      els.competitors.value = state.inputs.competitors || "";
+      els.brandNotes.value = state.inputs.brandNotes || "";
+    }
+
+    function cardHtml(item, bucket) {
+      const isClaim = bucket === "claims";
+      const lengthNote = bucket === "meta"
+        ? `<div class="mini">Title ${item.title.length} chars · Meta ${item.body.length} chars</div>`
+        : "";
+
+      return `
+        <article class="card" data-id="${item.id}" data-bucket="${bucket}">
+          <div class="card-top">
+            <span class="badge ${badgeClass(item.priority)}">${escapeHtml(item.type || "Card")}</span>
+            <div class="row tight no-print">
+              ${isClaim ? `<button class="small secondary" data-check="${item.id}">${item.checked ? "Done" : "Open"}</button>` : ""}
+              <button class="small danger" data-delete="${item.id}">Delete</button>
+            </div>
+          </div>
+
+          ${isClaim ? `
+            <div class="check">
+              <div class="box" data-check="${item.id}" data-checked="${item.checked ? "true" : "false"}">${item.checked ? "✓" : ""}</div>
+              <div>
+                <div class="editable" contenteditable="true" data-field="title">${escapeHtml(item.title)}</div>
+                <div class="editable mini" contenteditable="true" data-field="body">${escapeHtml(item.body)}</div>
+              </div>
+            </div>
+          ` : `
+            <div class="editable" contenteditable="true" data-field="title">${escapeHtml(item.title)}</div>
+            <div class="editable mini" contenteditable="true" data-field="body">${escapeHtml(item.body)}</div>
+          `}
+
+          ${lengthNote}
+
+          <div class="chipline no-print" aria-label="Priority">
+            ${["High","Medium","Low"].map(p => `<span class="chip" data-priority="${p}" data-on="${item.priority === p ? "true" : "false"}">${p}</span>`).join("")}
+          </div>
+        </article>
+      `;
+    }
+
+    function badgeClass(priority) {
+      if (priority === "High") return "bad";
+      if (priority === "Low") return "good";
+      return "warn";
+    }
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+
+    function renderBucket(bucket, el) {
+      const arr = state[bucket] || [];
+      el.innerHTML = arr.length
+        ? arr.map(item => cardHtml(item, bucket)).join("")
+        : `<div class="card"><p class="hint">No cards yet. Generate cards or tap Add.</p></div>`;
+    }
+
+    function renderAll() {
+      syncStateToInputs();
+      renderBucket("gaps", els.gapCards);
+      renderBucket("outline", els.outlineCards);
+      renderBucket("meta", els.metaCards);
+      renderBucket("faqs", els.faqCards);
+      renderBucket("claims", els.claimCards);
+      renderBrief();
+      updateStats();
+    }
+
+    function renderBrief() {
+      syncInputsToState();
+
+      const keyword = cleanText(state.inputs.keyword) || "[primary keyword]";
+      const audience = cleanText(state.inputs.audience) || "[audience]";
+      const angle = cleanText(state.inputs.angle) || "[angle]";
+      const brandNotes = cleanText(state.inputs.brandNotes) || "[internal notes]";
+      const competitors = cleanText(state.inputs.competitors) || "[competitor notes]";
+
+      const high = arr => arr.filter(x => x.priority === "High");
+      const list = arr => arr.map(x => `- ${x.title}${x.body ? "\n  ${x.body}".replace("${x.body}", x.body.replace(/\n/g, "\n  ")) : ""}`).join("\n");
+      const metaList = state.meta.map(x => `- Title: ${x.title}\n  Meta: ${x.body}`).join("\n");
+      const claimList = state.claims.map(x => `- [${x.checked ? "x" : " "}] ${x.title}\n  ${x.body}`).join("\n");
+
+      const brief =
+`SEO CONTENT BRIEF
+
+Primary keyword
+${keyword}
+
+Audience
+${audience}
+
+Content angle
+${angle}
+
+Search intent target
+${inferIntent(keyword, angle, competitors)}
+
+Competitor notes
+${competitors}
+
+Internal notes
+${brandNotes}
+
+Highest-priority gaps
+${list(high(state.gaps).length ? high(state.gaps) : state.gaps.slice(0, 5))}
+
+Recommended outline
+${list(state.outline)}
+
+Title and meta options
+${metaList}
+
+FAQ prompts
+${list(state.faqs)}
+
+Claims and verification checklist
+${claimList}
+
+Drafting instructions
+- Lead with a direct answer.
+- Cover the query fully without padding.
+- Beat generic competitor pages with examples, decision rules, edge cases, and proof.
+- Verify current facts before publishing.
+- Add internal links where they genuinely help the reader.
+- Keep metadata specific to the audience and angle.`;
+
+      els.briefOutput.textContent = brief;
+    }
+
+    function updateStats() {
+      const gaps = state.gaps.length;
+      const sections = state.outline.length + state.meta.length + state.faqs.length;
+      const uncheckedClaims = state.claims.filter(c => !c.checked).length;
+      const score = Math.min(100, gaps * 7 + sections * 4 + state.claims.filter(c => c.checked).length * 3);
+
+      els.gapCount.textContent = gaps;
+      els.briefScore.textContent = score;
+      els.riskCount.textContent = uncheckedClaims;
+    }
+
+    function addCard(bucket) {
+      const item = templates[bucket]();
+      item.id = uid();
+      state[bucket].push(item);
+      renderAll();
+      save();
+      toast("Card added");
+    }
+
+    function deleteCard(id) {
+      for (const bucket of ["gaps","outline","meta","faqs","claims"]) {
+        const before = state[bucket].length;
+        state[bucket] = state[bucket].filter(item => item.id !== id);
+        if (state[bucket].length !== before) break;
+      }
+      renderAll();
+      save();
+    }
+
+    function updateCardFromDom(card) {
+      const id = card.dataset.id;
+      const bucket = card.dataset.bucket;
+      const item = state[bucket].find(x => x.id === id);
+      if (!item) return;
+
+      const title = $('[data-field="title"]', card);
+      const body = $('[data-field="body"]', card);
+
+      item.title = cleanText(title ? title.innerText : item.title);
+      item.body = cleanText(body ? body.innerText : item.body);
+      renderBrief();
+      updateStats();
+      save();
+    }
+
+    function setPriority(card, priority) {
+      const id = card.dataset.id;
+      const bucket = card.dataset.bucket;
+      const item = state[bucket].find(x => x.id === id);
+      if (!item) return;
+      item.priority = priority;
+      renderAll();
+      save();
+    }
+
+    function toggleClaim(id) {
+      const item = state.claims.find(x => x.id === id);
+      if (!item) return;
+      item.checked = !item.checked;
+      renderAll();
+      save();
+    }
+
+    function save() {
+      syncInputsToState();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function load() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      try {
+        const parsed = JSON.parse(raw);
+        state = {
+          inputs: { ...state.inputs, ...(parsed.inputs || {}) },
+          gaps: parsed.gaps || [],
+          outline: parsed.outline || [],
+          meta: parsed.meta || [],
+          faqs: parsed.faqs || [],
+          claims: parsed.claims || []
+        };
+        renderAll();
+      } catch {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    }
+
+    function clearAll() {
+      if (!confirm("Clear all inputs and cards?")) return;
+      state = {
+        inputs: { keyword: "", audience: "", angle: "", competitors: "", brandNotes: "" },
+        gaps: [],
+        outline: [],
+        meta: [],
+        faqs: [],
+        claims: []
+      };
+      localStorage.removeItem(STORAGE_KEY);
+      renderAll();
+      toast("Cleared");
+    }
+
+    async function copyText(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        toast("Copied");
+      } catch {
+        const area = document.createElement("textarea");
+        area.value = text;
+        document.body.appendChild(area);
+        area.select();
+        document.execCommand("copy");
+        area.remove();
+        toast("Copied");
+      }
+    }
+
+    function download(filename, text, type = "text/plain") {
+      const blob = new Blob([text], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function toast(msg) {
+      els.toast.textContent = msg;
+      els.toast.classList.add("show");
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => els.toast.classList.remove("show"), 1500);
+    }
+
+    function loadSample() {
+      state.inputs = {
+        keyword: "best Roth conversion strategy",
+        audience: "pre-retirees with $1M-$3M invested",
+        angle: "Explain when Roth conversions are worth it, when they backfire, and how to avoid tax bracket and Medicare premium surprises.",
+        competitors:
+`Top pages define Roth conversions but stay generic
+Few examples show partial conversions over multiple years
+Competitors mention tax brackets but not IRMAA clearly
+Little guidance on widow/widower tax risk
+Almost no checklist for source documents
+Some pages overpromise tax-free growth without explaining tradeoffs
+People Also Ask: Is a Roth conversion worth it after age 60?
+People Also Ask: How much tax will I pay on a Roth conversion?`,
+        brandNotes:
+`Mention that individual tax advice depends on full tax return, income, deductions, IRMAA exposure, state taxes, estate goals, and time horizon.
+Preferred CTA: ask for a tax-aware retirement income review.`
+      };
+      generate();
+    }
+
+    function exportJson() {
+      save();
+      download("seo-gap-brief-builder-backup.json", JSON.stringify(state, null, 2), "application/json");
+      toast("JSON exported");
+    }
+
+    function importJson(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const imported = JSON.parse(reader.result);
+          state = {
+            inputs: { ...state.inputs, ...(imported.inputs || {}) },
+            gaps: imported.gaps || [],
+            outline: imported.outline || [],
+            meta: imported.meta || [],
+            faqs: imported.faqs || [],
+            claims: imported.claims || []
+          };
+          renderAll();
+          save();
+          toast("JSON imported");
+        } catch {
+          toast("Import failed");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    document.addEventListener("input", e => {
+      if (["keyword","audience","angle","competitors","brandNotes"].includes(e.target.id)) {
+        save();
+        renderBrief();
+        updateStats();
+        return;
+      }
+
+      const card = e.target.closest(".card");
+      if (card && e.target.matches("[contenteditable='true']")) {
+        updateCardFromDom(card);
+      }
+    });
+
+    document.addEventListener("click", e => {
+      const add = e.target.closest("[data-add]");
+      if (add) {
+        addCard(add.dataset.add);
+        return;
+      }
+
+      const del = e.target.closest("[data-delete]");
+      if (del) {
+        deleteCard(del.dataset.delete);
+        return;
+      }
+
+      const chip = e.target.closest("[data-priority]");
+      if (chip) {
+        const card = chip.closest(".card");
+        setPriority(card, chip.dataset.priority);
+        return;
+      }
+
+      const check = e.target.closest("[data-check]");
+      if (check) {
+        toggleClaim(check.dataset.check);
+      }
+    });
+
+    $("#generateBtn").addEventListener("click", generate);
+    $("#sampleBtn").addEventListener("click", loadSample);
+    $("#clearBtn").addEventListener("click", clearAll);
+
+    $("#refreshBriefBtn").addEventListener("click", () => {
+      renderBrief();
+      save();
+      toast("Brief refreshed");
+    });
+
+    $("#copyBriefBtn").addEventListener("click", () => {
+      renderBrief();
+      copyText(els.briefOutput.textContent);
+    });
+
+    $("#downloadBtn").addEventListener("click", () => {
+      renderBrief();
+      const safe = (cleanText(state.inputs.keyword) || "seo-brief")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+      download(`${safe}-content-brief.txt`, els.briefOutput.textContent);
+    });
+
+    $("#printBtn").addEventListener("click", () => {
+      renderBrief();
+      window.print();
+    });
+
+    $("#exportJsonBtn").addEventListener("click", exportJson);
+    $("#importJsonBtn").addEventListener("click", () => $("#importFile").click());
+    $("#importFile").addEventListener("change", e => {
+      const file = e.target.files && e.target.files[0];
+      if (file) importJson(file);
+      e.target.value = "";
+    });
+
+    window.addEventListener("beforeunload", save);
+
+    load();
+    renderAll();
+  </script>
+</body>
+</html>

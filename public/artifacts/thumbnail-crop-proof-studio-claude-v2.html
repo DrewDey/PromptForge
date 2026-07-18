@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Thumb Studio — YouTube Thumbnail Planner</title>
+<style>
+  /* ── TOKENS ─────────────────────────────────────────────────────────── */
+  :root {
+    --ink:     #0d0d0f;
+    --panel:   #1c1c22;
+    --raise:   #242430;
+    --border:  #2e2e3a;
+    --muted:   #55556a;
+    --dim:     #8888a2;
+    --body:    #c4c4d6;
+    --bright:  #ededf5;
+    --accent:  #ff3f3f;
+    --accent2: #ff8c42;
+    --teal:    #3fffd8;
+    --good:    #3fde8a;
+    --bad:     #ff4f4f;
+    --warn:    #f5c842;
+    --r-sm: 4px; --r-md: 8px; --r-lg: 14px;
+    --font-ui: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Mono', monospace;
+    /* single source of truth for horizontal breathing room */
+    --gutter: 12px;
+  }
+ 
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+  /* Hard stop: nothing escapes the viewport */
+  html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+ 
+  body {
+    background: var(--ink);
+    color: var(--body);
+    font-family: var(--font-ui);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+ 
+  /* ── APP SHELL ───────────────────────────────────────────────────────── */
+  .app {
+    width: 100%;
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 20px var(--gutter) 80px;
+  }
+ 
+  /* ── HEADER ──────────────────────────────────────────────────────────── */
+  .header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 14px;
+  }
+  .header h1 { font-size: 17px; font-weight: 700; color: var(--bright); letter-spacing: -.3px; }
+  .header h1 span { color: var(--accent); }
+  .header p { font-size: 12px; color: var(--muted); }
+ 
+  /* ── SECTION ─────────────────────────────────────────────────────────── */
+  .section {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: 16px var(--gutter);
+    margin-bottom: 14px;
+    /* prevent children from escaping */
+    overflow: hidden;
+    min-width: 0;
+  }
+  .section-title {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--muted);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;          /* badge wraps on tiny screens */
+  }
+  .section-title .badge {
+    background: var(--raise);
+    color: var(--dim);
+    border-radius: 20px;
+    padding: 1px 7px;
+    font-size: 9px;
+    white-space: nowrap;
+  }
+ 
+  /* ── GRIDS — all collapse to 1-col below 520px ───────────────────────── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+ 
+  @media (max-width: 519px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  }
+ 
+  /* ── FORM CONTROLS ───────────────────────────────────────────────────── */
+  label {
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--dim);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+  }
+ 
+  input[type="text"], textarea, select {
+    width: 100%;
+    min-width: 0;              /* allow shrink inside grid cells */
+    background: var(--raise);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    color: var(--bright);
+    font-family: var(--font-ui);
+    font-size: 16px;           /* ≥16px prevents iOS zoom */
+    padding: 8px 10px;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  input[type="text"]:focus, textarea:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(255,63,63,.12);
+  }
+  textarea { resize: vertical; min-height: 52px; }
+ 
+  /* ── PILL TOGGLES ────────────────────────────────────────────────────── */
+  .pill-group { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill {
+    cursor: pointer;
+    background: var(--raise);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    color: var(--dim);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 11px;
+    transition: all .15s;
+    user-select: none;
+    white-space: nowrap;
+  }
+  .pill:hover { border-color: var(--accent); color: var(--body); }
+  .pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+ 
+  /* ── BUTTONS ─────────────────────────────────────────────────────────── */
+  .btn-generate {
+    flex: 1 1 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--accent);
+    border: none;
+    border-radius: var(--r-md);
+    color: #fff;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: 14px;
+    font-weight: 700;
+    padding: 11px 20px;
+    transition: background .15s, transform .1s;
+    min-width: 0;
+  }
+  .btn-generate:hover { background: #e62e2e; }
+  .btn-generate:active { transform: scale(.97); }
+ 
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--raise);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    color: var(--body);
+    cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 7px 13px;
+    transition: border-color .15s;
+    white-space: nowrap;
+  }
+  .btn-secondary:hover { border-color: var(--accent2); color: var(--accent2); }
+ 
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    align-items: stretch;
+  }
+ 
+  /* ── LAYOUT CARDS ────────────────────────────────────────────────────── */
+  /*  Desktop: 3-col side-by-side
+      ≤700px:  horizontal scroll strip (cards keep 240px min-width)
+      ≤480px:  single column stacked   */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    /* prevent grid from pushing past container */
+    min-width: 0;
+  }
+ 
+  @media (max-width: 700px) {
+    /* Scrollable horizontal strip — the grid itself becomes a row of fixed-width cards */
+    .cards-scroll-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      /* negative margin + padding trick keeps the panel's rounded corners visible */
+      margin-left: calc(-1 * var(--gutter));
+      margin-right: calc(-1 * var(--gutter));
+      padding-left: var(--gutter);
+      padding-right: var(--gutter);
+      padding-bottom: 6px;
+    }
+    .cards-grid {
+      grid-template-columns: repeat(3, 260px);
+      width: max-content;
+    }
+  }
+ 
+  @media (max-width: 480px) {
+    .cards-scroll-wrap {
+      overflow-x: visible;
+      margin-left: 0; margin-right: 0;
+      padding-left: 0; padding-right: 0;
+    }
+    .cards-grid {
+      grid-template-columns: 1fr;
+      width: 100%;
+    }
+  }
+ 
+  .layout-card {
+    background: var(--raise);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    transition: border-color .2s;
+    min-width: 0;
+  }
+  .layout-card:hover { border-color: var(--accent2); }
+  .layout-card.selected { border-color: var(--teal); box-shadow: 0 0 0 2px rgba(63,255,216,.15); }
+ 
+  .card-preview-area {
+    position: relative;
+    background: #000;
+    overflow: hidden;
+    cursor: pointer;
+    width: 100%;
+  }
+  /* ratio sizer */
+  .card-ratio-sizer { display: block; width: 100%; }
+  .card-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+ 
+  .card-meta { padding: 10px 10px 12px; }
+  .card-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--accent2);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin-bottom: 7px;
+  }
+  .card-field { margin-bottom: 7px; }
+  .card-field label { margin-bottom: 3px; }
+ 
+  .card-score-bar {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+  .score-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    margin-bottom: 5px;
+    color: var(--dim);
+  }
+  .score-label strong { font-size: 12px; }
+  .score-track { height: 5px; background: var(--border); border-radius: 10px; overflow: hidden; }
+  .score-fill   { height: 100%; border-radius: 10px; transition: width .4s ease; }
+  .score-pills  { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 7px; }
+  .score-pill   { font-size: 9px; padding: 2px 7px; border-radius: 20px; font-weight: 600; }
+  .score-pill.pass { background: rgba(63,222,138,.15); color: var(--good); }
+  .score-pill.fail { background: rgba(255,79,79,.15);  color: var(--bad); }
+  .score-pill.warn { background: rgba(245,200,66,.15); color: var(--warn); }
+ 
+  /* ── TINY STRIP ──────────────────────────────────────────────────────── */
+  /* Scrollable so fixed-pixel canvases don't push the body */
+  .tiny-scroll-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-left: calc(-1 * var(--gutter));
+    margin-right: calc(-1 * var(--gutter));
+    padding-left: var(--gutter);
+    padding-right: var(--gutter);
+    padding-bottom: 6px;
+  }
+  .tiny-strip {
+    display: inline-flex;    /* shrink-wraps to content, scroll parent clips it */
+    align-items: flex-end;
+    gap: 16px;
+    padding: 14px 0 4px;
+    white-space: nowrap;
+  }
+  .tiny-preview {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+  }
+  .tiny-preview span { font-size: 9px; color: var(--muted); }
+  .tiny-canvas-wrap {
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+ 
+  /* ── CHECKLIST ───────────────────────────────────────────────────────── */
+  .checklist-wrap {
+    background: var(--raise);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: 14px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--body);
+    /* wrap long lines instead of overflowing horizontally */
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    overflow-y: auto;
+    max-height: 340px;
+    line-height: 1.85;
+  }
+ 
+  .copy-row { display: flex; justify-content: flex-end; margin-top: 10px; }
+ 
+  /* ── DIVIDER ─────────────────────────────────────────────────────────── */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 16px 0 12px; }
+ 
+  /* ── FIELD SPACING ───────────────────────────────────────────────────── */
+  .field-gap { margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<div class="app">
+ 
+  <!-- HEADER -->
+  <div class="header">
+    <h1>&#9632; Thumb<span>Studio</span></h1>
+    <p>Plan · Compare · Score · Shoot</p>
+  </div>
+ 
+  <!-- 01 BRIEF -->
+  <div class="section">
+    <div class="section-title">01 — Brief <span class="badge">describe your idea</span></div>
+    <div class="grid-2 field-gap">
+      <div>
+        <label for="idea">Video idea / title</label>
+        <input type="text" id="idea" placeholder="e.g. I quit my 9-5 after 10 years" />
+      </div>
+      <div>
+        <label for="channel">Channel / niche</label>
+        <input type="text" id="channel" placeholder="e.g. personal finance, gaming" />
+      </div>
+    </div>
+    <div class="grid-3 field-gap">
+      <div>
+        <label for="headline">Headline text</label>
+        <input type="text" id="headline" placeholder="e.g. I QUIT" maxlength="40"/>
+      </div>
+      <div>
+        <label for="subtext">Sub-text (optional)</label>
+        <input type="text" id="subtext" placeholder="e.g. after 10 years" maxlength="60"/>
+      </div>
+      <div>
+        <label for="subject">Main subject</label>
+        <input type="text" id="subject" placeholder="e.g. person, product" />
+      </div>
+    </div>
+    <div>
+      <label>Tone / vibe</label>
+      <div class="pill-group" id="tone-pills">
+        <span class="pill active" data-val="shock">Shock</span>
+        <span class="pill" data-val="hype">Hype</span>
+        <span class="pill" data-val="curiosity">Curiosity</span>
+        <span class="pill" data-val="calm">Calm</span>
+        <span class="pill" data-val="tutorial">Tutorial</span>
+        <span class="pill" data-val="emotional">Emotional</span>
+        <span class="pill" data-val="dramatic">Dramatic</span>
+        <span class="pill" data-val="comedic">Comedic</span>
+      </div>
+    </div>
+  </div>
+ 
+  <!-- 02 FORMAT -->
+  <div class="section">
+    <div class="section-title">02 — Format <span class="badge">ratio &amp; crop</span></div>
+    <div class="grid-3">
+      <div class="field-gap">
+        <label>Aspect ratio</label>
+        <div class="pill-group" id="ratio-pills">
+          <span class="pill active" data-val="16:9">16:9</span>
+          <span class="pill" data-val="9:16">9:16</span>
+          <span class="pill" data-val="1:1">1:1</span>
+          <span class="pill" data-val="4:3">4:3</span>
+        </div>
+      </div>
+      <div class="field-gap">
+        <label>Crop style</label>
+        <div class="pill-group" id="crop-pills">
+          <span class="pill active" data-val="tight">Tight</span>
+          <span class="pill" data-val="mid">Mid-body</span>
+          <span class="pill" data-val="wide">Wide</span>
+          <span class="pill" data-val="product">Product</span>
+          <span class="pill" data-val="text-only">Text only</span>
+        </div>
+      </div>
+      <div>
+        <label>Subject emphasis</label>
+        <div class="pill-group" id="emphasis-pills">
+          <span class="pill active" data-val="left">Left</span>
+          <span class="pill" data-val="center">Center</span>
+          <span class="pill" data-val="right">Right</span>
+          <span class="pill" data-val="split">Split</span>
+        </div>
+      </div>
+    </div>
+  </div>
+ 
+  <!-- GENERATE ROW -->
+  <div class="btn-row">
+    <button class="btn-generate" onclick="generate()">&#9654;&#xFE0E; Generate 3 layouts</button>
+    <button class="btn-secondary" onclick="resetAll()">&#8635; Reset</button>
+  </div>
+ 
+  <!-- 03 LAYOUTS -->
+  <div class="section" id="results-section" style="display:none;">
+    <div class="section-title">03 — Layouts <span class="badge">tap to select · fields editable</span></div>
+    <div class="cards-scroll-wrap">
+      <div class="cards-grid" id="cards-grid"></div>
+    </div>
+ 
+    <hr class="divider">
+    <div class="section-title" style="margin-bottom:8px;">
+      Tiny-size readability <span class="badge">scroll to compare sizes</span>
+    </div>
+    <div class="tiny-scroll-wrap">
+      <div class="tiny-strip" id="tiny-strip"></div>
+    </div>
+  </div>
+ 
+  <!-- 04 CHECKLIST -->
+  <div class="section" id="checklist-section" style="display:none;">
+    <div class="section-title">04 — Shot &amp; Crop Checklist <span class="badge">copy to phone</span></div>
+    <div class="checklist-wrap" id="checklist-text"></div>
+    <div class="copy-row">
+      <button class="btn-secondary" id="copy-btn" onclick="copyChecklist()">&#9113; Copy checklist</button>
+    </div>
+  </div>
+ 
+</div><!-- /.app -->
+ 
+<script>
+// ─── STATE ────────────────────────────────────────────────────────────────────
+const state = {
+  tone:'shock', ratio:'16:9', crop:'tight', emphasis:'left',
+  idea:'', channel:'', headline:'', subtext:'', subject:'',
+  selectedCard:0,
+};
+ 
+// ─── PILLS ───────────────────────────────────────────────────────────────────
+function setupPills(id, key) {
+  document.getElementById(id).querySelectorAll('.pill').forEach(p => {
+    p.addEventListener('click', () => {
+      document.getElementById(id).querySelectorAll('.pill').forEach(x => x.classList.remove('active'));
+      p.classList.add('active');
+      state[key] = p.dataset.val;
+    });
+  });
+}
+setupPills('tone-pills','tone');
+setupPills('ratio-pills','ratio');
+setupPills('crop-pills','crop');
+setupPills('emphasis-pills','emphasis');
+ 
+// ─── RATIO HELPERS ────────────────────────────────────────────────────────────
+function ratioPct(r) {
+  return { '16:9':56.25, '9:16':177.78, '1:1':100, '4:3':75 }[r] || 56.25;
+}
+ 
+// ─── PALETTES & ARCHETYPES ───────────────────────────────────────────────────
+const palettes = [
+  ['#0a0a0a','#ff3f3f','#ffffff','#ffaa00'],
+  ['#fff8e7','#e63000','#1a1a1a','#f5a623'],
+  ['#0d1b2a','#00e5ff','#ffffff','#ffffff'],
+  ['#1a0a2e','#bf00ff','#ffffff','#ff80ff'],
+  ['#0f2518','#00ff88','#ffffff','#88ff00'],
+  ['#1c1000','#ffd700','#ffffff','#ff9900'],
+  ['#f0f0f0','#222222','#111111','#555555'],
+];
+ 
+const archetypes = [
+  { id:'A', label:'Bold Focus',    paletteIdx:0, textPos:'bottom-left', subjectPos:'right',  subjectScale:.75 },
+  { id:'B', label:'Split Canvas',  paletteIdx:2, textPos:'center',      subjectPos:'left',   subjectScale:.65 },
+  { id:'C', label:'Text Dominant', paletteIdx:5, textPos:'top-center',  subjectPos:'center', subjectScale:.50 },
+];
+ 
+function toneToLayout(t) {
+  const m = {
+    shock:    {gradient:true,  bigText:true,  arrow:true },
+    hype:     {gradient:true,  bigText:true,  arrow:false},
+    curiosity:{gradient:false, bigText:false, arrow:false},
+    calm:     {gradient:false, bigText:false, arrow:false},
+    tutorial: {gradient:false, bigText:false, arrow:false},
+    emotional:{gradient:true,  bigText:false, arrow:false},
+    dramatic: {gradient:true,  bigText:true,  arrow:false},
+    comedic:  {gradient:false, bigText:true,  arrow:true },
+  };
+  return m[t] || m.shock;
+}
+ 
+// ─── CANVAS DRAW ──────────────────────────────────────────────────────────────
+function drawCard(canvas, arch, cd) {
+  const W = canvas.width, H = canvas.height;
+  const ctx = canvas.getContext('2d');
+  const [bg, acc, , secCol] = palettes[arch.paletteIdx];
+  const layout = toneToLayout(state.tone);
+  const headline = (cd.headline || state.headline || 'YOUR TITLE');
+  const subtext  = (cd.subtext  || state.subtext  || '');
+ 
+  // Background
+  if (layout.gradient) {
+    const gr = ctx.createLinearGradient(0,0,W,H);
+    gr.addColorStop(0, bg);
+    gr.addColorStop(1, shiftColor(bg, 30));
+    ctx.fillStyle = gr;
+  } else {
+    ctx.fillStyle = bg;
+  }
+  ctx.fillRect(0,0,W,H);
+ 
+  // Arch-specific accents
+  if (arch.id === 'A') {
+    ctx.fillStyle = acc + '22';
+    ctx.fillRect(W*.55,0,W*.45,H);
+    ctx.strokeStyle = acc; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(W*.55,0); ctx.lineTo(W*.48,H); ctx.stroke();
+  }
+  if (arch.id === 'B') {
+    const gr2 = ctx.createLinearGradient(0,0,W*.5,0);
+    gr2.addColorStop(0, acc+'33'); gr2.addColorStop(1,'transparent');
+    ctx.fillStyle = gr2; ctx.fillRect(0,0,W,H);
+  }
+  if (arch.id === 'C') {
+    ctx.fillStyle = acc+'18'; ctx.fillRect(0,H*.1,W,H*.65);
+    ctx.strokeStyle = acc; ctx.lineWidth = 2;
+    ctx.strokeRect(W*.04,H*.1,W*.92,H*.65);
+  }
+ 
+  drawSubject(ctx,W,H,arch,acc);
+ 
+  // Headline
+  const headSize = layout.bigText ? Math.min(H*.28,W*.12) : Math.min(H*.2,W*.09);
+  let tx, ty, align;
+  if (arch.textPos==='bottom-left') { tx=W*.05; ty=H*.88; align='left'; }
+  else if (arch.textPos==='top-center') { tx=W/2; ty=H*.28; align='center'; }
+  else { tx=W/2; ty=H*.55; align='center'; }
+ 
+  if (state.emphasis==='left')   { tx=W*.05; align='left'; }
+  if (state.emphasis==='right')  { tx=W*.95; align='right'; }
+  if (state.emphasis==='center') { tx=W/2;   align='center'; }
+ 
+  ctx.textAlign = align;
+  ctx.textBaseline = 'alphabetic';
+  ctx.font = `900 ${headSize}px Impact, Arial Black, sans-serif`;
+  ctx.shadowColor = 'rgba(0,0,0,.9)'; ctx.shadowBlur = headSize*.4;
+  ctx.fillStyle = acc;
+  ctx.fillText(headline.toUpperCase(), tx, ty);
+  ctx.shadowBlur = 0;
+ 
+  if (subtext) {
+    const subSize = headSize*.38;
+    ctx.font = `700 ${subSize}px Inter, Arial, sans-serif`;
+    ctx.fillStyle = secCol || '#fff';
+    ctx.shadowColor = 'rgba(0,0,0,.8)'; ctx.shadowBlur = 8;
+    ctx.fillText(subtext.toUpperCase(), tx, ty + headSize*.9);
+    ctx.shadowBlur = 0;
+  }
+ 
+  if (layout.arrow) drawArrow(ctx, W*.85, H*.85, H*.12, acc);
+ 
+  ctx.textAlign = 'left';
+  ctx.font = `700 ${H*.065}px Inter, sans-serif`;
+  ctx.fillStyle = 'rgba(255,255,255,.5)';
+  ctx.fillText(`[${arch.id}]`, W*.03, H*.1);
+}
+ 
+function drawSubject(ctx,W,H,arch,acc) {
+  if (state.crop==='text-only') return;
+  const baseR = Math.min(W,H)*.22*arch.subjectScale;
+  let cx = W*.5, cy = H*.5;
+  if (arch.subjectPos==='right') cx=W*.78;
+  if (arch.subjectPos==='left')  cx=W*.22;
+ 
+  const crop = state.crop;
+  if (crop==='tight'||crop==='mid') {
+    ctx.beginPath(); ctx.arc(cx,cy-baseR*.3,baseR*.6,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,255,255,.08)'; ctx.fill();
+    ctx.strokeStyle=acc+'55'; ctx.lineWidth=1.5; ctx.stroke();
+    if (crop==='mid') {
+      ctx.beginPath();
+      ctx.moveTo(cx-baseR*.5, cy+baseR*.3); ctx.lineTo(cx-baseR*.65, cy+baseR*1.5);
+      ctx.lineTo(cx+baseR*.65,cy+baseR*1.5); ctx.lineTo(cx+baseR*.5, cy+baseR*.3);
+      ctx.closePath(); ctx.fillStyle='rgba(255,255,255,.06)'; ctx.fill();
+    }
+  } else if (crop==='wide') {
+    ctx.strokeStyle=acc+'44'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(0,cy+baseR); ctx.lineTo(W,cy+baseR); ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,.05)';
+    ctx.fillRect(cx-baseR,cy-baseR*.4,baseR*2,baseR*.8);
+  } else if (crop==='product') {
+    const pw=baseR*.9, ph=baseR*1.1;
+    ctx.beginPath();
+    roundRect(ctx, cx-pw/2, cy-ph/2, pw, ph, 8);
+    ctx.fillStyle='rgba(255,255,255,.08)'; ctx.fill();
+    ctx.strokeStyle=acc+'55'; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,.12)';
+    ctx.fillRect(cx-pw/2+4,cy-ph/2+4,pw*.25,ph*.15);
+  }
+}
+ 
+function drawArrow(ctx,x,y,size,color) {
+  ctx.save(); ctx.fillStyle=color;
+  ctx.beginPath();
+  ctx.moveTo(x,y); ctx.lineTo(x-size*.5,y-size*.5);
+  ctx.lineTo(x-size*.3,y); ctx.lineTo(x-size*.5,y+size*.5);
+  ctx.closePath(); ctx.fill(); ctx.restore();
+}
+ 
+function shiftColor(hex,amt) {
+  const c=parseInt(hex.slice(1),16);
+  const r=Math.min(255,((c>>16)&0xff)+amt);
+  const g=Math.min(255,((c>>8)&0xff)+amt);
+  const b=Math.min(255,(c&0xff)+amt);
+  return `rgb(${r},${g},${b})`;
+}
+ 
+function roundRect(ctx,x,y,w,h,r) {
+  if (ctx.roundRect) { ctx.roundRect(x,y,w,h,r); return; }
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.closePath();
+}
+ 
+// ─── READABILITY SCORER ───────────────────────────────────────────────────────
+function scoreReadability(cd) {
+  const headline = (cd.headline || state.headline || '').trim();
+  const subtext  = (cd.subtext  || state.subtext  || '').trim();
+  const words = headline.split(/\s+/).filter(Boolean);
+  const checks = [
+    { label:`${words.length<=4?'✓':'✗'} ≤4 words (${words.length})`,    tag: words.length<=4?'pass':'fail' },
+    { label:`${headline.length<=25?'✓':headline.length<=35?'~':'✗'} ≤25 chars (${headline.length})`, tag: headline.length<=25?'pass':headline.length<=35?'warn':'fail' },
+    { label:`${headline===headline.toUpperCase()?'✓':'~'} All caps`,      tag: headline===headline.toUpperCase()?'pass':'warn' },
+    { label:`${subtext?'✓':'~'} Sub-text present`,                        tag: subtext?'pass':'warn' },
+  ];
+  if (['shock','hype','dramatic'].includes(state.tone)) {
+    const ok = words.length<=3 && headline===headline.toUpperCase();
+    checks.push({ label:`${ok?'✓':'~'} Short+caps (${state.tone})`, tag: ok?'pass':'warn' });
+  }
+  const score = Math.round(checks.filter(c=>c.tag==='pass').length/checks.length*100);
+  return {score, checks};
+}
+ 
+// ─── CARD STORE ───────────────────────────────────────────────────────────────
+const cardData = [{headline:'',subtext:'',notes:''},{headline:'',subtext:'',notes:''},{headline:'',subtext:'',notes:''}];
+ 
+// ─── GENERATE ─────────────────────────────────────────────────────────────────
+function generate() {
+  state.idea     = document.getElementById('idea').value;
+  state.channel  = document.getElementById('channel').value;
+  state.headline = document.getElementById('headline').value || 'YOUR TITLE';
+  state.subtext  = document.getElementById('subtext').value;
+  state.subject  = document.getElementById('subject').value;
+  for (let i=0;i<3;i++) {
+    if (!cardData[i].headline) cardData[i].headline = state.headline;
+    if (!cardData[i].subtext)  cardData[i].subtext  = state.subtext;
+  }
+  renderCards();
+  renderTinyStrip();
+  renderChecklist();
+  document.getElementById('results-section').style.display='';
+  document.getElementById('checklist-section').style.display='';
+  document.getElementById('results-section').scrollIntoView({behavior:'smooth',block:'start'});
+}
+ 
+// ─── RENDER CARDS ─────────────────────────────────────────────────────────────
+function renderCards() {
+  const grid = document.getElementById('cards-grid');
+  grid.innerHTML = '';
+  const pct = ratioPct(state.ratio);
+ 
+  archetypes.forEach((arch,idx) => {
+    const card = document.createElement('div');
+    card.className = 'layout-card' + (state.selectedCard===idx?' selected':'');
+    card.dataset.idx = idx;
+    card.innerHTML = `
+      <div class="card-preview-area">
+        <div class="card-ratio-sizer" style="padding-top:${pct}%; position:relative;">
+          <canvas class="card-canvas" id="canvas-${idx}"></canvas>
+        </div>
+      </div>
+      <div class="card-meta">
+        <div class="card-label">Layout ${arch.id} — ${arch.label}</div>
+        <div class="card-field">
+          <label>Headline</label>
+          <input type="text" id="cd-head-${idx}" value="${escH(cardData[idx].headline||state.headline)}" maxlength="40" oninput="onCardEdit(${idx})" />
+        </div>
+        <div class="card-field">
+          <label>Sub-text</label>
+          <input type="text" id="cd-sub-${idx}" value="${escH(cardData[idx].subtext||state.subtext)}" maxlength="60" oninput="onCardEdit(${idx})" />
+        </div>
+        <div class="card-field">
+          <label>Notes</label>
+          <input type="text" id="cd-notes-${idx}" value="${escH(cardData[idx].notes)}" placeholder="angle, wardrobe, prop…" oninput="onCardEdit(${idx})" />
+        </div>
+        <div class="card-score-bar" id="score-bar-${idx}"></div>
+      </div>`;
+    card.querySelector('.card-preview-area').addEventListener('click', ()=>selectCard(idx));
+    grid.appendChild(card);
+ 
+    requestAnimationFrame(()=>{
+      const canvas = document.getElementById(`canvas-${idx}`);
+      const sizer  = canvas.parentElement;
+      canvas.width  = sizer.offsetWidth  || 260;
+      canvas.height = sizer.offsetHeight || Math.round((sizer.offsetWidth||260)*(pct/100));
+      drawCard(canvas, arch, cardData[idx]);
+      renderScoreBar(idx);
+    });
+  });
+}
+ 
+function onCardEdit(idx) {
+  cardData[idx].headline = document.getElementById(`cd-head-${idx}`).value;
+  cardData[idx].subtext  = document.getElementById(`cd-sub-${idx}`).value;
+  cardData[idx].notes    = document.getElementById(`cd-notes-${idx}`).value;
+  const canvas = document.getElementById(`canvas-${idx}`);
+  if (canvas) drawCard(canvas, archetypes[idx], cardData[idx]);
+  renderScoreBar(idx);
+  renderTinyStrip();
+  renderChecklist();
+}
+ 
+function renderScoreBar(idx) {
+  const bar = document.getElementById(`score-bar-${idx}`);
+  if (!bar) return;
+  const {score,checks} = scoreReadability(cardData[idx]);
+  const col = score>=80?'var(--good)':score>=55?'var(--warn)':'var(--bad)';
+  bar.innerHTML = `
+    <div class="score-label"><span>Readability</span><strong style="color:${col}">${score}%</strong></div>
+    <div class="score-track"><div class="score-fill" style="width:${score}%;background:${col};"></div></div>
+    <div class="score-pills">${checks.map(c=>`<span class="score-pill ${c.tag}">${c.label}</span>`).join('')}</div>`;
+}
+ 
+function selectCard(idx) {
+  state.selectedCard = idx;
+  document.querySelectorAll('.layout-card').forEach((c,i)=>c.classList.toggle('selected',i===idx));
+  renderTinyStrip();
+  renderChecklist();
+}
+ 
+// ─── TINY STRIP ───────────────────────────────────────────────────────────────
+const tinyFormats = [
+  {label:'Mobile 68px',  w:120, h:68 },
+  {label:'Home 90px',    w:160, h:90 },
+  {label:'Suggested 120px', w:213, h:120},
+];
+ 
+function renderTinyStrip() {
+  const strip = document.getElementById('tiny-strip');
+  strip.innerHTML = '';
+  const arch = archetypes[state.selectedCard];
+  const cd   = cardData[state.selectedCard];
+  tinyFormats.forEach(fmt=>{
+    const wrap = document.createElement('div');
+    wrap.className = 'tiny-preview';
+    const cw = document.createElement('div'); cw.className='tiny-canvas-wrap';
+    const cv = document.createElement('canvas');
+    cv.width=fmt.w; cv.height=fmt.h; cv.style.display='block';
+    drawCard(cv, arch, cd);
+    cw.appendChild(cv); wrap.appendChild(cw);
+    const lbl=document.createElement('span'); lbl.textContent=fmt.label;
+    wrap.appendChild(lbl); strip.appendChild(wrap);
+  });
+}
+ 
+// ─── CHECKLIST ────────────────────────────────────────────────────────────────
+function renderChecklist() {
+  const arch = archetypes[state.selectedCard];
+  const cd   = cardData[state.selectedCard];
+  const headline = cd.headline||state.headline||'YOUR TITLE';
+  const subtext  = cd.subtext ||state.subtext ||'';
+  const notes    = cd.notes   ||'';
+  const {score,checks} = scoreReadability(cd);
+ 
+  const cropAdvice = {
+    tight:'Camera close on face — chin to forehead, eyes 1/3 from top',
+    mid:'Frame waist-to-head — leave headroom, no awkward shoulder crop',
+    wide:'Show environment — rule-of-thirds horizon, subject off-center',
+    product:'Flat lay or 45° angle — clean BG, single highlight source',
+    'text-only':'No subject — BG color/gradient must contrast strongly with text',
+  };
+  const emphasisAdvice = {
+    left:'Subject placed left — text/graphics occupy right 40-50%',
+    right:'Subject placed right — text/graphics occupy left 40-50%',
+    center:'Centered subject — overlay text above or below with scrim',
+    split:'Hard diagonal or color split divides subject from text',
+  };
+  const toneAdvice = {
+    shock:'Mouth open, wide eyes, pointing gesture. Warm/red palette.',
+    hype:'Arms raised or pointing at camera. High contrast. Bold yellow/red.',
+    curiosity:'Thinking pose or obscured subject. Cool tones, mysterious crop.',
+    calm:'Neutral expression, open space. Minimal palette. Soft shadows.',
+    tutorial:'Show hands on tool/screen. Step number badge. Clean BG.',
+    emotional:'Candid expression. Soft focus edges. Muted warm palette.',
+    dramatic:'Low key lighting. Strong shadow. Single subject. High contrast.',
+    comedic:'Exaggerated expression. Prop in frame. Bold outlines or bright fill.',
+  };
+  const ratioNote = {
+    '16:9':'Standard YouTube — 1280x720 min, 1920x1080 preferred, ≤2MB',
+    '9:16':'YouTube Shorts — 1080x1920, vertical framing, face centered',
+    '1:1': 'Square community posts — 1080x1080, safe zone inside 900x900',
+    '4:3': 'Classic TV format — 1440x1080',
+  };
+ 
+  const txt =
+`══════════════════════════════════════════
+THUMB STUDIO — SHOT & CROP CHECKLIST
+Layout ${arch.id}: ${arch.label} | Score: ${score}%
+══════════════════════════════════════════
+ 
+VIDEO:   ${state.idea    || '(your video idea)'}
+CHANNEL: ${state.channel || '(your channel)'}
+ 
+HEADLINE TEXT
+  "${headline}"${subtext?`\n  Sub: "${subtext}"`:''}${notes?`\n  Notes: ${notes}`:''}
+ 
+READABILITY CHECKS
+${checks.map(c=>`  ${c.label}`).join('\n')}
+ 
+── FORMAT ─────────────────────────────────
+Ratio:  ${state.ratio}
+  ${ratioNote[state.ratio]}
+ 
+Crop:   ${state.crop}
+  ${cropAdvice[state.crop]}
+ 
+Emphasis: ${state.emphasis}
+  ${emphasisAdvice[state.emphasis]}
+ 
+Tone: ${state.tone}
+  ${toneAdvice[state.tone]||''}
+ 
+── ON-SET REMINDERS ───────────────────────
+[ ] Camera sensor clean before shoot
+[ ] Shoot RAW or highest JPEG quality
+[ ] Manual exposure: face correctly exposed
+[ ] Check BG for distracting elements
+[ ] Leave 10% safe zone bleed on all edges
+[ ] Shoot more than you think you need
+[ ] Horizontal for 16:9/4:3; vertical for 9:16
+ 
+── LIGHTING ───────────────────────────────
+[ ] Key light camera-right or -left, NOT flat
+[ ] Catch light visible in eyes (face crops)
+[ ] No harsh shadow cutting through eye level
+[ ] Background separated from subject (depth)
+[ ] White balance locked before shooting
+ 
+── EXPRESSION / POSE ──────────────────────
+[ ] Expression matches tone: ${state.tone}
+[ ] Take 15+ variations minimum
+[ ] Discard mid-blink frames
+[ ] Mouth slightly open = more dynamic
+ 
+── CROP SAFETY (${state.crop}) ─────────────
+${getCropSafety(state.crop)}
+ 
+── TEXT PLACEMENT (${state.emphasis}) ────────
+[ ] Reserve ${state.emphasis==='center'?'top or bottom 30%':state.emphasis==='split'?'50% one side':'40-50% '+(state.emphasis==='left'?'right':'left')+' side'} for text
+[ ] Text contrast ratio ≥ 4.5:1 vs BG
+[ ] Squint test: headline readable from 3 ft?
+[ ] Zoom to 90px wide — still readable?
+ 
+── EXPORT ─────────────────────────────────
+[ ] 1920x1080 (or appropriate for ${state.ratio})
+[ ] JPG or PNG ≤ 2MB
+[ ] Color profile: sRGB
+[ ] Filename: thumbnail-${(state.idea||'video').replace(/\s+/g,'-').slice(0,20).toLowerCase()}.jpg
+ 
+── LAYOUT ${arch.id} SPECIFIC ─────────────
+${getArchNotes(arch, state.emphasis)}
+ 
+══════════════════════════════════════════
+Generated by Thumb Studio (offline)
+══════════════════════════════════════════`;
+ 
+  document.getElementById('checklist-text').textContent = txt;
+}
+ 
+function getCropSafety(crop) {
+  return {
+    tight:    '[ ] Head not cropped at top\n[ ] Forehead has gap to frame edge\n[ ] Eyes above vertical midpoint\n[ ] Ear tips visible (unless extreme zoom)',
+    mid:      '[ ] Full head visible with gap at top\n[ ] Hands/arms not cropped awkwardly\n[ ] Waist is the bottom crop line',
+    wide:     '[ ] Horizon level (use grid overlay)\n[ ] Subject at rule-of-thirds intersection\n[ ] No distracting objects touching subject edge',
+    product:  '[ ] Product fully inside frame with padding\n[ ] No creases/damage visible\n[ ] Logo facing camera\n[ ] Single clear hero angle',
+    'text-only':'[ ] BG ≥60% contrast with text\n[ ] No busy texture behind text\n[ ] Gradient supports reading hierarchy',
+  }[crop] || '';
+}
+ 
+function getArchNotes(arch, em) {
+  return {
+    A:`[ ] Hard diagonal split — slash top-${em==='left'?'right':'left'} to bottom\n[ ] Accent color stripe on ${em==='left'?'right':'left'} half\n[ ] Text stacked bottom-${em==='left'?'left':'right'}, bold Impact-style font`,
+    B:`[ ] Subject occupies ${em==='right'?'right':'left'} 40% of frame\n[ ] Color gradient bleeding from subject side\n[ ] Headline spans center, readable over both panels`,
+    C:`[ ] Text is the dominant element — large, centered\n[ ] Subject framed small or as BG element\n[ ] Strong border/box contains headline text`,
+  }[arch.id] || '';
+}
+ 
+// ─── COPY ─────────────────────────────────────────────────────────────────────
+function copyChecklist() {
+  const text = document.getElementById('checklist-text').textContent;
+  const btn  = document.getElementById('copy-btn');
+  const done = () => { btn.textContent='✓ Copied!'; setTimeout(()=>{ btn.innerHTML='&#9113; Copy checklist'; },1800); };
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(done).catch(fallback);
+  } else { fallback(); }
+  function fallback() {
+    const ta=document.createElement('textarea');
+    ta.value=text; ta.style.cssText='position:fixed;opacity:0;';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta); done();
+  }
+}
+ 
+// ─── RESET ────────────────────────────────────────────────────────────────────
+function resetAll() {
+  ['idea','channel','headline','subtext','subject'].forEach(id=>document.getElementById(id).value='');
+  for(let i=0;i<3;i++){cardData[i].headline='';cardData[i].subtext='';cardData[i].notes='';}
+  document.getElementById('results-section').style.display='none';
+  document.getElementById('checklist-section').style.display='none';
+}
+ 
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function escH(s){ return (s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+ 
+// Redraw canvases on resize
+let rsTimer;
+window.addEventListener('resize', ()=>{
+  clearTimeout(rsTimer);
+  rsTimer = setTimeout(()=>{
+    if (document.getElementById('results-section').style.display==='none') return;
+    const pct = ratioPct(state.ratio);
+    archetypes.forEach((arch,idx)=>{
+      const canvas = document.getElementById(`canvas-${idx}`);
+      if (!canvas) return;
+      const sizer = canvas.parentElement;
+      canvas.width  = sizer.offsetWidth  || 260;
+      canvas.height = sizer.offsetHeight || Math.round((sizer.offsetWidth||260)*(pct/100));
+      drawCard(canvas, arch, cardData[idx]);
+    });
+    renderTinyStrip();
+  }, 120);
+});
+</script>
+</body>
+</html>

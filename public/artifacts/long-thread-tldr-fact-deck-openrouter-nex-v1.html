@@ -1,0 +1,962 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Thread → Fact Cards</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0f172a;
+      --panel: rgba(15, 23, 42, 0.9);
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --border: rgba(148, 163, 184, 0.25);
+      --primary: #38bdf8;
+      --primary2: #a78bfa;
+      --ok: #22c55e;
+      --warn: #f59e0b;
+      --bad: #ef4444;
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        color-scheme: light;
+        --bg: #f6f8fc;
+        --panel: #ffffff;
+        --text: #111827;
+        --muted: #64748b;
+        --border: #d9e2ef;
+        --shadow: 0 16px 45px rgba(15, 23, 42, 0.08);
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(56, 189, 248, 0.22), transparent 30rem),
+        radial-gradient(circle at top right, rgba(167, 139, 250, 0.18), transparent 28rem),
+        var(--bg);
+      color: var(--text);
+    }
+
+    .app {
+      width: min(1040px, 100%);
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .hero {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin: 6px 0 14px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.35rem, 5vw, 2.25rem);
+      letter-spacing: -0.04em;
+    }
+
+    p { line-height: 1.45; }
+
+    .sub {
+      margin: 0.35rem 0 0;
+      color: var(--muted);
+      max-width: 62ch;
+    }
+
+    .badge {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.45rem 0.7rem;
+      color: var(--muted);
+      font-size: 0.82rem;
+      white-space: nowrap;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      padding: 14px;
+      margin: 14px 0;
+      backdrop-filter: blur(12px);
+    }
+
+    label {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 330px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: rgba(148, 163, 184, 0.08);
+      color: var(--text);
+      padding: 14px;
+      font: 16px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      resize: vertical;
+      outline: none;
+    }
+
+    textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.16);
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    button {
+      appearance: none;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.12);
+      color: var(--text);
+      padding: 0.75rem 1rem;
+      font-weight: 750;
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+
+    button.primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary2));
+      border: 0;
+      color: #07111f;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .metric {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 12px;
+      box-shadow: var(--shadow);
+    }
+
+    .metric .k {
+      color: var(--muted);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .metric .v {
+      font-size: clamp(1.35rem, 6vw, 2.1rem);
+      font-weight: 850;
+      letter-spacing: -0.04em;
+      margin-top: 2px;
+    }
+
+    .metric .hint {
+      color: var(--muted);
+      font-size: 0.78rem;
+      margin-top: 4px;
+    }
+
+    .meter {
+      height: 9px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.18);
+      overflow: hidden;
+      margin-top: 10px;
+    }
+
+    .meter span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--primary), var(--primary2));
+      transition: width 0.35s ease;
+    }
+
+    .panelHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 1.05rem;
+    }
+
+    .count {
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .cards {
+      display: grid;
+      gap: 10px;
+    }
+
+    .card {
+      --accent: var(--primary);
+      border: 1px solid var(--border);
+      border-left: 6px solid var(--accent);
+      border-radius: 18px;
+      background: rgba(148, 163, 184, 0.08);
+      padding: 12px;
+    }
+
+    .card h3 {
+      margin: 0 0 7px;
+      font-size: 0.98rem;
+      line-height: 1.35;
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .card .meta {
+      margin-top: 9px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 0.76rem;
+    }
+
+    .tag {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.2rem 0.5rem;
+      background: rgba(148, 163, 184, 0.1);
+    }
+
+    .type-decision { --accent: var(--ok); }
+    .type-question { --accent: var(--warn); }
+    .type-risk { --accent: var(--bad); }
+    .type-action { --accent: #38bdf8; }
+    .type-fact { --accent: #a78bfa; }
+
+    .empty {
+      color: var(--muted);
+      border: 1px dashed var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      text-align: center;
+    }
+
+    .status {
+      color: var(--muted);
+      font-size: 0.85rem;
+      min-height: 1.2em;
+      margin: 8px 0 0;
+    }
+
+    .recap {
+      min-height: 260px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .footer {
+      color: var(--muted);
+      font-size: 0.78rem;
+      text-align: center;
+      padding: 18px 0 28px;
+    }
+
+    @media (max-width: 640px) {
+      .app { padding: 12px; }
+      .hero { flex-direction: column; }
+      .metrics { grid-template-columns: 1fr; }
+      .panel { border-radius: 18px; padding: 12px; }
+      textarea { min-height: 360px; font-size: 15px; }
+      button { width: 100%; }
+      .panelHeader {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+
+    @media (min-width: 860px) {
+      .mainGrid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(340px, 0.95fr);
+        gap: 14px;
+        align-items: start;
+      }
+
+      .sticky {
+        position: sticky;
+        top: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="hero">
+      <div>
+        <h1>Thread → Fact Cards</h1>
+        <p class="sub">Paste a messy Slack/email/meeting thread. This one-file tool extracts decisions, questions, risks, actions, and facts locally in your browser.</p>
+      </div>
+      <div class="badge">No server • copy/download recap</div>
+    </header>
+
+    <div class="mainGrid">
+      <section>
+        <div class="panel">
+          <label for="thread">Messy thread</label>
+          <textarea id="thread" spellcheck="false" placeholder="Paste thread here… Example:
+Alex: We agreed to launch the beta Friday, but legal is still reviewing the privacy copy.
+Sam: Can someone confirm the owner for the FAQ?
+Priya: Risk: the analytics event may be delayed because the data team is overloaded."></textarea>
+          <div class="toolbar">
+            <button id="analyze" class="primary">Make fact cards</button>
+            <button id="sample">Load sample</button>
+            <button id="clear">Clear</button>
+          </div>
+          <p id="status" class="status"></p>
+        </div>
+
+        <div class="metrics" aria-live="polite">
+          <div class="metric">
+            <div class="k">Source words</div>
+            <div id="wordCount" class="v">0</div>
+            <div class="hint">Input length</div>
+          </div>
+          <div class="metric">
+            <div class="k">TL;DR density</div>
+            <div id="density" class="v">0%</div>
+            <div class="hint">Recap words / source words</div>
+            <div class="meter"><span id="densityBar"></span></div>
+          </div>
+          <div class="metric">
+            <div class="k">Coverage</div>
+            <div id="coverage" class="v">0%</div>
+            <div class="hint">Estimated extracted coverage</div>
+            <div class="meter"><span id="coverageBar"></span></div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="sticky">
+        <section id="recapPanel" class="panel" hidden>
+          <div class="panelHeader">
+            <h2>Concise recap</h2>
+            <div class="toolbar" style="margin: 0">
+              <button id="copy">Copy</button>
+              <button id="download">Download</button>
+            </div>
+          </div>
+          <textarea id="recap" class="recap" readonly></textarea>
+          <p id="copyStatus" class="status"></p>
+        </section>
+
+        <section id="cardsPanel" class="panel" hidden>
+          <div class="panelHeader">
+            <h2>Fact cards</h2>
+            <span id="cardCount" class="count">0 cards</span>
+          </div>
+          <div id="cards" class="cards"></div>
+        </section>
+      </aside>
+    </div>
+
+    <footer class="footer">Tip: add labels like “Decision:”, “Risk:”, “Question:”, or “Next step:” in messy threads to improve extraction.</footer>
+  </div>
+
+  <script>
+    (() => {
+      const $ = (id) => document.getElementById(id);
+
+      const els = {
+        thread: $("thread"),
+        analyze: $("analyze"),
+        sample: $("sample"),
+        clear: $("clear"),
+        status: $("status"),
+        wordCount: $("wordCount"),
+        density: $("density"),
+        coverage: $("coverage"),
+        densityBar: $("densityBar"),
+        coverageBar: $("coverageBar"),
+        recapPanel: $("recapPanel"),
+        cardsPanel: $("cardsPanel"),
+        recap: $("recap"),
+        copyStatus: $("copyStatus"),
+        copy: $("copy"),
+        download: $("download"),
+        cards: $("cards"),
+        cardCount: $("cardCount")
+      };
+
+      const typeLabel = {
+        decision: "Decision",
+        question: "Question",
+        risk: "Risk",
+        action: "Action",
+        fact: "Fact"
+      };
+
+      const typeOrder = {
+        decision: 1,
+        risk: 2,
+        action: 3,
+        question: 4,
+        fact: 5
+      };
+
+      const SPEAKER_RE = /^((?:\[[^\]]{1,50}\]|\([^)]{1,50}\)|[A-Z][A-Za-z0-9 .'-]{1,45}|[a-z][a-z0-9 ._-]{1,35})):\s*/;
+
+      const sampleText = `Alex: We agreed to launch the beta this Friday, but legal is still reviewing the privacy copy.
+Sam: Can someone confirm the owner for the FAQ?
+Priya: Risk: the analytics event may be delayed because the data team is overloaded.
+Jordan: Decision: we are going with the lightweight onboarding flow instead of the full wizard.
+Maya: I'll draft the FAQ by Wednesday EOD and share it in #launch-beta.
+Sam: What is the cutoff for bug fixes?
+Alex: Bug-fix cutoff is Thursday 2pm PT. Anything after that goes into the post-launch backlog.
+Priya: Concern: if Legal does not approve by Thursday noon, we should slip the launch to Monday.
+Jordan: Next step: Maya owns FAQ, Alex owns Legal, Priya owns analytics.
+Maya: FYI current conversion from invite to signup is 18.4%, down from 21.1% last week.
+Alex: We are not changing pricing in this release.`;
+
+      els.sample.addEventListener("click", () => {
+        els.thread.value = sampleText;
+        els.status.textContent = "Sample loaded. Tap “Make fact cards”.";
+        els.thread.focus();
+      });
+
+      els.clear.addEventListener("click", () => {
+        els.thread.value = "";
+        resetOutput();
+        els.status.textContent = "Cleared.";
+        els.thread.focus();
+      });
+
+      els.analyze.addEventListener("click", analyze);
+      els.thread.addEventListener("input", () => {
+        if (!els.thread.value.trim()) resetOutput();
+        updateSourceMetric();
+      });
+      els.copy.addEventListener("click", copyRecap);
+      els.download.addEventListener("click", downloadRecap);
+
+      function resetOutput() {
+        els.recapPanel.hidden = true;
+        els.cardsPanel.hidden = true;
+        els.cards.innerHTML = "";
+        els.recap.value = "";
+        els.copyStatus.textContent = "";
+        els.cardCount.textContent = "0 cards";
+        els.density.textContent = "0%";
+        els.coverage.textContent = "0%";
+        els.densityBar.style.width = "0%";
+        els.coverageBar.style.width = "0%";
+        els.wordCount.textContent = "0";
+      }
+
+      function updateSourceMetric() {
+        els.wordCount.textContent = String(countWords(els.thread.value));
+      }
+
+      function analyze() {
+        const text = els.thread.value.trim();
+        if (!text) {
+          els.status.textContent = "Paste a thread first.";
+          els.thread.focus();
+          return;
+        }
+
+        const sentences = segment(text);
+        const cards = makeCards(sentences);
+        const sourceWords = countWords(text);
+        const coverage = computeCoverage(cards, sentences, sourceWords);
+
+        let recap = generateRecap(cards, sourceWords, coverage);
+        let recapWords = countWords(recap);
+        let density = sourceWords ? Math.round((recapWords / sourceWords) * 100) : 0;
+
+        recap = generateRecap(cards, sourceWords, coverage, {
+          density,
+          recapWords,
+          coverage,
+          cardCount: cards.length
+        });
+
+        recapWords = countWords(recap);
+        density = sourceWords ? Math.round((recapWords / sourceWords) * 100) : 0;
+
+        recap = generateRecap(cards, sourceWords, coverage, {
+          density,
+          recapWords,
+          coverage,
+          cardCount: cards.length
+        });
+
+        renderCards(cards);
+        renderRecap(recap);
+        updateMetrics(sourceWords, density, coverage);
+
+        const questionCount = cards.filter((c) => c.type === "question").length;
+        const riskCount = cards.filter((c) => c.type === "risk").length;
+        els.status.textContent = `Extracted ${cards.length} cards (${questionCount} questions, ${riskCount} risks).`;
+      }
+
+      function segment(text) {
+        const lines = text
+          .replace(/\r/g, "\n")
+          .split(/\n+/)
+          .map(cleanLine)
+          .filter(Boolean);
+
+        const items = [];
+
+        for (const line of lines) {
+          const chunks = splitLongLine(line);
+
+          for (const chunk of chunks) {
+            const parts = splitSentences(chunk);
+
+            for (const part of parts) {
+              const speaker = extractSpeaker(part);
+              const clean = removeSpeaker(part).replace(/^[-*•]\s*/, "").trim();
+
+              if (clean.length >= 14) {
+                items.push({ text: clean, speaker, raw: part });
+              }
+            }
+          }
+        }
+
+        return items;
+      }
+
+      function cleanLine(line) {
+        return line
+          .replace(/^\s*(?:[-*•>]+\s*)+/, "")
+          .replace(/^\s*(?:On .* wrote:|From:|Sent:|To:|Cc:|Subject:)\s*/i, "")
+          .trim();
+      }
+
+      function splitLongLine(line) {
+        if (line.length <= 190) return [line];
+
+        return line
+          .split(/;\s+|\s{2,}/)
+          .map((x) => x.trim())
+          .filter((x) => x.length > 0);
+      }
+
+      function splitSentences(text) {
+        const DOT = "⟨dot⟩";
+        let s = text.replace(/\s+/g, " ").trim();
+
+        if (!s) return [];
+
+        s = s.replace(/([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})/g, (m) => m.replace(/\./g, DOT));
+        s = s.replace(/(\d)\.(\d)/g, `$1${DOT}$2`);
+        s = s.replace(/\b(?:e\.g\.|i\.e\.|Mr\.|Ms\.|Dr\.|Prof\.|Jr\.|Sr\.|Inc\.|Ltd\.)\b/gi, (m) => m.replace(/\./g, DOT));
+
+        const pieces = s.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [s];
+
+        return pieces
+          .map((p) => p.trim().replace(new RegExp(DOT, "g"), ".").replace(/^[-*•>]+\s*/, "").trim())
+          .filter((p) => p.length >= 14);
+      }
+
+      function extractSpeaker(text) {
+        const m = text.match(SPEAKER_RE);
+        if (!m) return "";
+
+        const speaker = m[1].trim();
+        if (isSpeakerLabel(speaker)) return "";
+        return speaker;
+      }
+
+      function removeSpeaker(text) {
+        const m = text.match(SPEAKER_RE);
+        if (!m) return text;
+
+        const speaker = m[1].trim();
+        if (isSpeakerLabel(speaker)) return text;
+        return text.replace(m[0], "").trim();
+      }
+
+      function isSpeakerLabel(label) {
+        return /^(risk|concern|issue|question|decision|action|next step|fyi|note|tl;dr)$/i.test(label);
+      }
+
+      function classify(text) {
+        const t = text.toLowerCase();
+        const scores = { decision: 0, question: 0, risk: 0, action: 0, fact: 0 };
+
+        if (/\?$/.test(text.trim())) scores.question += 5;
+        if (/^(who|what|when|where|why|how|can|could|should|would|is|are|do|does|did|will|may|might)\b/i.test(text.trim())) scores.question += 2;
+
+        addHits(scores, "decision", t, [
+          "decided", "decision", "agreed", "agreement", "confirmed", "finalized", "settled on",
+          "went with", "chosen", "approved", "approval", "we are going with", "we are doing",
+          "we will use", "we are not", "not changing", "ship on", "launching on", "cutoff is",
+          "deadline is", "owner is", "owns"
+        ]);
+
+        addHits(scores, "risk", t, [
+          "risk", "risks", "blocker", "blocking", "blocked", "concern", "concerns", "issue",
+          "issues", "problem", "bug", "delay", "delayed", "slip", "slips", "depends on",
+          "dependency", "unclear", "unknown", "not sure", "overloaded", "security", "privacy",
+          "legal", "compliance", "budget", "cost", "outage", "downtime", "data loss"
+        ]);
+
+        addHits(scores, "action", t, [
+          "next step", "next steps", "action item", "action items", "owner", "owns", "need to",
+          "needs to", "will follow up", "follow up", "follow-up", "send", "share", "draft",
+          "review", "update", "confirm", "schedule", "book", "create", "prepare", "test",
+          "ship", "deploy", "launch", "notify", "document", "ping", "ask", "by eod", "by tomorrow"
+        ]);
+
+        addHits(scores, "fact", t, [
+          "metric", "kpi", "revenue", "conversion", "users", "customers", "sla", "slo", "uptime",
+          "budget", "price", "cost", "plan", "scope", "phase", "deadline", "channel", "account",
+          "ticket", "jira", "asana", "notion", "slack", "release", "beta", "launch"
+        ]);
+
+        if (hasFactSignal(text)) scores.fact += 2;
+        if (/^(i|we)\s+(will|won't|won’t|am|are)\b/i.test(text)) scores.action += 1;
+
+        let best = "fact";
+        for (const key of Object.keys(scores)) {
+          if (scores[key] > scores[best]) best = key;
+        }
+
+        if (best === "fact" && (scores.decision || scores.risk || scores.action || scores.question)) {
+          best = pickExplicit(scores);
+        }
+
+        return { type: best, score: scores[best] };
+      }
+
+      function addHits(scores, type, text, words) {
+        for (const w of words) {
+          if (text.includes(w)) scores[type] += 1;
+        }
+      }
+
+      function pickExplicit(scores) {
+        const order = ["decision", "risk", "action", "question"];
+        let best = order[0];
+
+        for (const key of order.slice(1)) {
+          if (scores[key] > scores[best]) best = key;
+        }
+
+        return best;
+      }
+
+      function hasFactSignal(text) {
+        return /(?:\b\d{1,2}[\/-]\d{1,2}(?:[\/-]\d{2,4})?\b|\b\d{1,2}:\d{2}\b|[A-Z][a-z]{2,8}\s+\d{1,2},?\s+\d{4}\b|\$\d[\d,.]*|\b\d+(?:\.\d+)?%?\b|\b\d+\s+(users|customers|tickets|days|weeks|months|hours|people|accounts|teams|dollars|ms|mb|gb)\b)/i.test(text);
+      }
+
+      function makeCards(items) {
+        const map = new Map();
+
+        for (const item of items) {
+          const c = classify(item.text);
+
+          if (c.type === "fact" && c.score < 2) continue;
+          if (c.type === "action" && c.score < 1) continue;
+          if (c.type === "risk" && c.score < 1) continue;
+
+          const card = {
+            type: c.type,
+            title: makeTitle(item.text, c.type),
+            detail: normalizeSentence(item.text),
+            speaker: item.speaker,
+            score: c.score
+          };
+
+          const key = dedupeKey(card.detail);
+          const existing = map.get(key);
+
+          if (!existing || card.detail.length > existing.detail.length) {
+            map.set(key, card);
+          }
+        }
+
+        return [...map.values()]
+          .sort((a, b) => (typeOrder[a.type] - typeOrder[b.type]) || (b.score - a.score) || a.detail.localeCompare(b.detail))
+          .slice(0, 90);
+      }
+
+      function makeTitle(text, type) {
+        let t = text.replace(/[.!?]$/, "").trim();
+
+        if (type === "question" && !/\?$/.test(t)) t += "?";
+        if (t.length > 115) t = t.slice(0, 112).trim() + "…";
+
+        return t;
+      }
+
+      function normalizeSentence(text) {
+        return text
+          .replace(/\s+/g, " ")
+          .replace(/\s+([,.;:!?])/g, "$1")
+          .replace(/([([{])\s+/g, "$1")
+          .replace(/\s+([)\]}])/g, "$1")
+          .trim();
+      }
+
+      function dedupeKey(text) {
+        const stop = new Set("the a an and or but for to of in on at by with from into over after before is are was were be been being this that these those it its as we i you he she they them their our your will can should would may might not no yes".split(" "));
+        const words = text.toLowerCase().match(/[a-z0-9]+/g) || [];
+        return words.filter((w) => !stop.has(w)).slice(0, 10).join(" ");
+      }
+
+      function computeCoverage(cards, sentences, sourceWords) {
+        if (!sourceWords || !cards.length) return 0;
+
+        const cardWords = cards.reduce((sum, c) => sum + countWords(c.detail), 0);
+        const wordCoverage = Math.min(100, (cardWords / sourceWords) * 220);
+        const itemCoverage = Math.min(100, (cards.length / Math.max(sentences.length, 1)) * 180);
+
+        return Math.round(wordCoverage * 0.65 + itemCoverage * 0.35);
+      }
+
+      function generateRecap(cards, sourceWords, coverage, metrics = null) {
+        const groups = groupByType(cards);
+        const lines = [];
+
+        const densityText = metrics ? metrics.density : "{density}";
+        const recapWordsText = metrics ? metrics.recapWords : "{recapWords}";
+        const cardCountText = metrics ? metrics.cardCount : "{cardCount}";
+
+        const facts = groups.fact || [];
+        const actions = groups.action || [];
+        const decisions = groups.decision || [];
+        const questions = groups.question || [];
+        const risks = groups.risk || [];
+
+        lines.push("## TL;DR");
+
+        if (decisions.length || risks.length || questions.length || actions.length) {
+          const important = [
+            ...(decisions.slice(0, 2).map((c) => `Decision: ${c.detail}`)),
+            ...(risks.slice(0, 2).map((c) => `Risk: ${c.detail}`)),
+            ...(actions.slice(0, 2).map((c) => `Next: ${c.detail}`)),
+            ...(questions.slice(0, 2).map((c) => `Open: ${c.detail}`))
+          ];
+
+          for (const item of important.slice(0, 5)) {
+            lines.push(`- ${item}`);
+          }
+        } else if (facts.length) {
+          for (const f of facts.slice(0, 4)) {
+            lines.push(`- ${f.detail}`);
+          }
+        } else {
+          lines.push("- No clear decisions, questions, risks, or actions detected. Review the source for key facts.");
+        }
+
+        lines.push("");
+        lines.push("### Decisions");
+        appendItems(lines, decisions, "No explicit decisions found.");
+
+        lines.push("");
+        lines.push("### Open questions");
+        appendItems(lines, questions, "No open questions found.");
+
+        lines.push("");
+        lines.push("### Risks / blockers");
+        appendItems(lines, risks, "No risks or blockers found.");
+
+        lines.push("");
+        lines.push("### Actions / next steps");
+        appendItems(lines, actions, "No explicit next steps found.");
+
+        lines.push("");
+        lines.push("### Key facts");
+        appendItems(lines, facts, "No fact-like details found.");
+
+        lines.push("");
+        lines.push("### Coverage notes");
+        lines.push(`- TL;DR density: ${densityText}% (${recapWordsText}/${sourceWords} words).`);
+        lines.push(`- Coverage meter: ${coverage}% estimated from extracted cards.`);
+        lines.push(`- Extracted ${cardCountText} fact cards.`);
+
+        return lines.join("\n");
+      }
+
+      function groupByType(cards) {
+        const groups = { decision: [], question: [], risk: [], action: [], fact: [] };
+
+        for (const card of cards) {
+          if (!groups[card.type]) groups[card.type] = [];
+          groups[card.type].push(card);
+        }
+
+        return groups;
+      }
+
+      function appendItems(lines, items, emptyText) {
+        const visible = items.slice(0, 8);
+
+        if (!visible.length) {
+          lines.push(`- ${emptyText}`);
+          return;
+        }
+
+        for (const item of visible) {
+          lines.push(`- ${item.detail}${item.speaker ? ` (${item.speaker})` : ""}`);
+        }
+
+        if (items.length > visible.length) {
+          lines.push(`- …and ${items.length - visible.length} more ${typeLabel[visible[0].type].toLowerCase()} card(s).`);
+        }
+      }
+
+      function renderCards(cards) {
+        els.cards.innerHTML = "";
+        els.cardCount.textContent = `${cards.length} card${cards.length === 1 ? "" : "s"}`;
+
+        if (!cards.length) {
+          els.cards.innerHTML = `<div class="empty">No clear cards found. Try adding clearer labels like “Decision:”, “Risk:”, “Question:”, or “Next step:”.</div>`;
+          return;
+        }
+
+        const frag = document.createDocumentFragment();
+
+        for (const card of cards) {
+          const el = document.createElement("article");
+          el.className = `card type-${card.type}`;
+          el.innerHTML = `
+            <h3>${escapeHtml(card.title)}</h3>
+            <p>${escapeHtml(card.detail)}</p>
+            <div class="meta">
+              <span class="tag">${typeLabel[card.type]}</span>
+              ${card.speaker ? `<span class="tag">Speaker: ${escapeHtml(card.speaker)}</span>` : ""}
+            </div>
+          `;
+          frag.appendChild(el);
+        }
+
+        els.cards.appendChild(frag);
+      }
+
+      function renderRecap(recap) {
+        els.recap.value = recap;
+        els.recapPanel.hidden = false;
+        els.cardsPanel.hidden = false;
+      }
+
+      function updateMetrics(sourceWords, density, coverage) {
+        els.wordCount.textContent = String(sourceWords);
+        els.density.textContent = `${density}%`;
+        els.coverage.textContent = `${coverage}%`;
+        els.densityBar.style.width = `${Math.min(100, density * 4)}%`;
+        els.coverageBar.style.width = `${Math.min(100, coverage)}%`;
+      }
+
+      async function copyRecap() {
+        const text = els.recap.value;
+        if (!text) return;
+
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(text);
+          } else {
+            fallbackCopy(text);
+          }
+
+          els.copyStatus.textContent = "Copied recap.";
+        } catch (err) {
+          fallbackCopy(text);
+          els.copyStatus.textContent = "Copied recap using fallback.";
+        }
+      }
+
+      function fallbackCopy(text) {
+        const temp = document.createElement("textarea");
+        temp.value = text;
+        temp.setAttribute("readonly", "");
+        temp.style.position = "fixed";
+        temp.style.left = "-9999px";
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand("copy");
+        temp.remove();
+      }
+
+      function downloadRecap() {
+        const text = els.recap.value;
+        if (!text) return;
+
+        const blob = new Blob([text], { type: "text/markdown;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        const date = new Date().toISOString().slice(0, 10);
+
+        a.href = url;
+        a.download = `thread-recap-${date}.md`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+        els.copyStatus.textContent = "Downloaded recap.";
+      }
+
+      function countWords(text) {
+        const trimmed = text.trim();
+        if (!trimmed) return 0;
+
+        try {
+          const matches = trimmed.match(new RegExp("[\\p{L}\\p{N}]+(?:['’.-][\\p{L}\\p{N}]+)*", "gu"));
+          if (matches) return matches.length;
+        } catch (err) {}
+
+        return (trimmed.match(/[A-Za-z0-9]+(?:['.-][A-Za-z0-9]+)*/g) || []).length;
+      }
+
+      function escapeHtml(text) {
+        return text
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      updateSourceMetric();
+    })();
+  </script>
+</body>
+</html>

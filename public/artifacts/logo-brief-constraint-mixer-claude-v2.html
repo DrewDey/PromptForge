@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Logo Brief Studio</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+  :root {
+    --navy:   #0D1B2A;
+    --ink:    #1C2B3A;
+    --cream:  #F5F0E8;
+    --blue:   #1A73E8;
+    --blue2:  #1558B0;
+    --purple: #7C3AED;
+    --red:    #DC2626;
+    --green:  #16A34A;
+    --amber:  #B45309;
+    --teal:   #0369A1;
+    --label:  #64748B;
+    --border: #CBD5E1;
+    --radius: 12px;
+    --shadow: 0 4px 24px rgba(0,0,0,.18);
+  }
+ 
+  html { scroll-behavior: smooth; }
+ 
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--navy);
+    color: var(--ink);
+    min-height: 100vh;
+    padding-bottom: 60px;
+  }
+ 
+  /* HEADER */
+  header {
+    background: linear-gradient(135deg, #0D1B2A 0%, #1C2B3A 100%);
+    padding: 28px 20px 24px;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+    text-align: center;
+  }
+  .eyebrow {
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--purple);
+    margin-bottom: 8px;
+  }
+  header h1 {
+    font-size: clamp(22px, 5vw, 30px);
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -.02em;
+    line-height: 1.15;
+  }
+  header p {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #94A3B8;
+    max-width: 320px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.5;
+  }
+ 
+  /* LAYOUT */
+  main { max-width: 520px; margin: 0 auto; padding: 0 16px; }
+ 
+  /* PANELS */
+  .panel {
+    background: #fff;
+    border-radius: var(--radius);
+    margin-top: 20px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .panel-head {
+    background: var(--cream);
+    padding: 14px 18px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .panel-icon {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    background: var(--purple);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    color: #fff;
+    font-style: normal;
+  }
+  .panel-head h2 {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .panel-body { padding: 18px; }
+ 
+  /* FORM */
+  .field { margin-bottom: 16px; }
+  .field:last-child { margin-bottom: 0; }
+ 
+  label {
+    display: block;
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--label);
+    margin-bottom: 6px;
+  }
+  .hint {
+    font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    font-size: 10px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: #94A3B8;
+    margin-left: 4px;
+  }
+ 
+  input[type="text"], textarea, select {
+    width: 100%;
+    background: #F8FAFC;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 14px;
+    color: var(--ink);
+    transition: border-color .15s;
+    font-family: inherit;
+    -webkit-appearance: none;
+  }
+  input[type="text"]:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--blue);
+    background: #fff;
+  }
+  textarea { resize: vertical; min-height: 72px; line-height: 1.5; }
+ 
+  /* TAG PILLS */
+  .tag-input-wrap {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    background: #F8FAFC;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    min-height: 44px;
+    cursor: text;
+    transition: border-color .15s;
+  }
+  .tag-input-wrap:focus-within { border-color: var(--blue); background: #fff; }
+ 
+  .tag-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--purple);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 3px 6px 3px 10px;
+    border-radius: 20px;
+  }
+  .tag-pill.avoid   { background: var(--red); }
+  .tag-pill.context { background: var(--teal); }
+ 
+  .tag-pill-remove {
+    background: rgba(255,255,255,.25);
+    border: none;
+    color: #fff;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0;
+    flex-shrink: 0;
+  }
+ 
+  .tag-input-inner {
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    color: var(--ink);
+    min-width: 80px;
+    flex: 1;
+    outline: none;
+    padding: 2px 0;
+    font-family: inherit;
+  }
+ 
+  /* CONTRAST */
+  .contrast-row { display: flex; gap: 8px; align-items: flex-end; }
+  .contrast-row .field { flex: 1; margin-bottom: 0; }
+ 
+  .swatch-wrap {
+    width: 40px; height: 40px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    flex-shrink: 0;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+  }
+  .swatch-wrap input[type="color"] {
+    position: absolute;
+    inset: 0;
+    width: 200%; height: 200%;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    opacity: 0;
+  }
+ 
+  .ratio-badge {
+    display: inline-flex; align-items: center;
+    font-size: 11px; font-weight: 700;
+    padding: 3px 8px; border-radius: 20px;
+    margin-top: 8px;
+  }
+  .ratio-badge.pass { background: #DCFCE7; color: var(--green); }
+  .ratio-badge.warn { background: #FEF9C3; color: var(--amber); }
+  .ratio-badge.fail { background: #FEE2E2; color: var(--red); }
+ 
+  /* GENERATE BUTTON */
+  .generate-wrap { margin-top: 24px; }
+ 
+  #generateBtn {
+    width: 100%;
+    background: linear-gradient(135deg, var(--blue) 0%, var(--blue2) 100%);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: .01em;
+    border: none;
+    border-radius: var(--radius);
+    padding: 16px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    box-shadow: 0 4px 16px rgba(26,115,232,.35);
+    -webkit-tap-highlight-color: transparent;
+  }
+  #generateBtn:active { opacity: .9; transform: scale(.99); }
+ 
+  /* OUTPUT */
+  #outputSection { display: none; }
+ 
+  /* DIRECTION CARDS */
+  .cards-grid { display: flex; flex-direction: column; gap: 16px; margin-top: 4px; }
+ 
+  .brief-card {
+    background: var(--cream);
+    border-radius: var(--radius);
+    border: 1.5px solid #E2D9C8;
+    padding: 18px 18px 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.07);
+    position: relative;
+    overflow: hidden;
+  }
+  .card-stripe {
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .card-stripe.s0 { background: linear-gradient(90deg, #7C3AED, #1A73E8); }
+  .card-stripe.s1 { background: linear-gradient(90deg, #0369A1, #059669); }
+  .card-stripe.s2 { background: linear-gradient(90deg, #B45309, #DC2626); }
+ 
+  .card-eyebrow {
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--label);
+    margin-bottom: 6px;
+    margin-top: 6px;
+  }
+  .card-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -.01em;
+    margin-bottom: 8px;
+    line-height: 1.3;
+  }
+  .card-desc {
+    font-size: 13px;
+    color: #374151;
+    line-height: 1.7;
+    margin-bottom: 12px;
+    white-space: pre-wrap;
+  }
+  .card-rationale {
+    font-size: 11px;
+    color: #6B7280;
+    font-style: italic;
+    line-height: 1.5;
+    border-top: 1px solid #E2D9C8;
+    padding-top: 10px;
+  }
+  .card-rationale-arrow {
+    font-style: normal;
+    margin-right: 3px;
+  }
+ 
+  /* RISK CHECKLIST */
+  .risk-list { list-style: none; margin-top: 4px; }
+  .risk-item {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .risk-item:last-child { border-bottom: none; }
+ 
+  .risk-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 5px;
+  }
+  .risk-dot.high { background: var(--red); }
+  .risk-dot.med  { background: var(--amber); }
+  .risk-dot.low  { background: var(--green); }
+ 
+  .risk-level {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    flex-shrink: 0;
+    margin-top: 3px;
+    width: 28px;
+  }
+  .risk-level.high { color: var(--red); }
+  .risk-level.med  { color: var(--amber); }
+  .risk-level.low  { color: var(--green); }
+ 
+  .risk-text { flex: 1; color: #374151; }
+ 
+  /* HANDOFF */
+  .handoff-ta {
+    width: 100%;
+    background: #0D1B2A;
+    color: #A5F3FC;
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    font-size: 11.5px;
+    line-height: 1.7;
+    border: 1.5px solid #1E3A5F;
+    border-radius: 8px;
+    padding: 14px;
+    resize: none;
+    min-height: 200px;
+    white-space: pre;
+    overflow-x: auto;
+  }
+ 
+  .action-row {
+    display: flex; gap: 10px; margin-top: 12px;
+  }
+  .btn-action {
+    flex: 1;
+    padding: 11px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    font-family: inherit;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-action:active { opacity: .85; transform: scale(.98); }
+ 
+  .btn-copy {
+    background: #F1F5F9;
+    color: var(--ink);
+    border: 1.5px solid var(--border);
+  }
+  .btn-copy.copied {
+    background: #DCFCE7;
+    color: var(--green);
+    border-color: var(--green);
+  }
+  .btn-dl {
+    background: var(--ink);
+    color: #fff;
+  }
+ 
+  /* RESET */
+  #resetBtn {
+    display: block;
+    width: 100%;
+    margin-top: 28px;
+    background: transparent;
+    border: 1.5px dashed #334155;
+    border-radius: var(--radius);
+    color: #64748B;
+    font-size: 13px;
+    padding: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #resetBtn:active { color: var(--red); border-color: var(--red); }
+ 
+  /* VALIDATION WARNING */
+  .form-warn {
+    background: #FEF9C3;
+    border: 1px solid #FDE047;
+    border-radius: 8px;
+    color: #78350F;
+    font-size: 12.5px;
+    padding: 10px 14px;
+    margin-top: 12px;
+    line-height: 1.5;
+    display: none;
+  }
+ 
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+ 
+<header>
+  <p class="eyebrow">Design Studio</p>
+  <h1>Logo Brief Mixer</h1>
+  <p>Fill the constraints — get three distinct direction cards, a risk checklist, and a copy-ready designer handoff.</p>
+</header>
+ 
+<main>
+ 
+  <!-- BRAND VOICE -->
+  <section class="panel" aria-labelledby="hd-voice">
+    <div class="panel-head">
+      <i class="panel-icon" aria-hidden="true">✦</i>
+      <h2 id="hd-voice">Brand Voice</h2>
+    </div>
+    <div class="panel-body">
+ 
+      <div class="field">
+        <label for="adjInput">Brand adjectives <span class="hint">— press Enter or comma to add</span></label>
+        <div class="tag-input-wrap" id="adjWrap" role="group" aria-label="Brand adjectives tags">
+          <input class="tag-input-inner" id="adjInput" type="text"
+            placeholder="e.g. bold, playful, trustworthy…"
+            autocomplete="off" autocorrect="off" spellcheck="false">
+        </div>
+      </div>
+ 
+      <div class="field">
+        <label for="audience">Target audience</label>
+        <input type="text" id="audience" placeholder="e.g. Gen Z fitness enthusiasts, B2B SaaS buyers…">
+      </div>
+ 
+      <div class="field">
+        <label for="brandName">Company / product name</label>
+        <input type="text" id="brandName" placeholder="e.g. Veltro, Bloom & Co., NeuralStack">
+      </div>
+ 
+      <div class="field">
+        <label for="industry">Industry / category</label>
+        <input type="text" id="industry" placeholder="e.g. fintech, organic food, deep-tech">
+      </div>
+ 
+    </div>
+  </section>
+ 
+  <!-- USAGE -->
+  <section class="panel" aria-labelledby="hd-usage">
+    <div class="panel-head">
+      <i class="panel-icon" aria-hidden="true">◎</i>
+      <h2 id="hd-usage">Usage Contexts</h2>
+    </div>
+    <div class="panel-body">
+ 
+      <div class="field">
+        <label for="ctxInput">Where will this logo live? <span class="hint">— press Enter or comma</span></label>
+        <div class="tag-input-wrap" id="ctxWrap" role="group" aria-label="Usage context tags">
+          <input class="tag-input-inner" id="ctxInput" type="text"
+            placeholder="e.g. mobile app icon, hoodie, billboard…"
+            autocomplete="off" autocorrect="off" spellcheck="false">
+        </div>
+      </div>
+ 
+      <div class="field">
+        <label for="minSize">Minimum reproduction size</label>
+        <input type="text" id="minSize" placeholder="e.g. 16px favicon, 1-inch print">
+      </div>
+ 
+    </div>
+  </section>
+ 
+  <!-- MUST-AVOID -->
+  <section class="panel" aria-labelledby="hd-avoid">
+    <div class="panel-head">
+      <i class="panel-icon" aria-hidden="true">⊘</i>
+      <h2 id="hd-avoid">Must-Avoid</h2>
+    </div>
+    <div class="panel-body">
+ 
+      <div class="field">
+        <label for="avoidInput">Shapes / symbols to avoid</label>
+        <div class="tag-input-wrap" id="avoidWrap" role="group" aria-label="Avoid shape tags">
+          <input class="tag-input-inner" id="avoidInput" type="text"
+            placeholder="e.g. shields, flames, swooshes…"
+            autocomplete="off" autocorrect="off" spellcheck="false">
+        </div>
+      </div>
+ 
+      <div class="field">
+        <label for="competitors">Competitor logos to differentiate from</label>
+        <input type="text" id="competitors" placeholder="e.g. Stripe, Notion, Robinhood">
+      </div>
+ 
+      <div class="field">
+        <label for="hardConstraints">Hard constraints</label>
+        <textarea id="hardConstraints" placeholder="e.g. must work in single-color, no script fonts, avoid red associations…"></textarea>
+      </div>
+ 
+    </div>
+  </section>
+ 
+  <!-- CONTRAST -->
+  <section class="panel" aria-labelledby="hd-contrast">
+    <div class="panel-head">
+      <i class="panel-icon" aria-hidden="true">◑</i>
+      <h2 id="hd-contrast">Contrast Limits</h2>
+    </div>
+    <div class="panel-body">
+ 
+      <p style="font-size:12px;color:#64748B;margin-bottom:14px;line-height:1.5;">
+        Pick the lightest and darkest brand colors you are considering — the tool checks WCAG ratio live.
+      </p>
+ 
+      <div class="contrast-row">
+        <div class="field">
+          <label for="fgHex">Foreground color</label>
+          <input type="text" id="fgHex" value="#1C2B3A" maxlength="7">
+        </div>
+        <div class="swatch-wrap" id="fgSwatch" style="background:#1C2B3A;" title="Tap to open color picker">
+          <input type="color" id="fgPicker" value="#1C2B3A" aria-label="Foreground color picker">
+        </div>
+      </div>
+ 
+      <div class="contrast-row" style="margin-top:8px;">
+        <div class="field">
+          <label for="bgHex">Background color</label>
+          <input type="text" id="bgHex" value="#F5F0E8" maxlength="7">
+        </div>
+        <div class="swatch-wrap" id="bgSwatch" style="background:#F5F0E8;" title="Tap to open color picker">
+          <input type="color" id="bgPicker" value="#F5F0E8" aria-label="Background color picker">
+        </div>
+      </div>
+ 
+      <div id="contrastResult" aria-live="polite"></div>
+ 
+      <div class="field" style="margin-top:16px;">
+        <label for="wcagLevel">Required WCAG level</label>
+        <select id="wcagLevel">
+          <option value="AA">AA — 4.5:1 minimum (most logos)</option>
+          <option value="AAA">AAA — 7:1 (accessibility-critical)</option>
+          <option value="none">No requirement specified</option>
+        </select>
+      </div>
+ 
+    </div>
+  </section>
+ 
+  <!-- EXTRAS -->
+  <section class="panel" aria-labelledby="hd-extras">
+    <div class="panel-head">
+      <i class="panel-icon" aria-hidden="true">⊕</i>
+      <h2 id="hd-extras">Additional Notes</h2>
+    </div>
+    <div class="panel-body">
+ 
+      <div class="field">
+        <label for="budget">Budget / deliverable format</label>
+        <input type="text" id="budget" placeholder="e.g. SVG + PNG, full brand kit, just the mark">
+      </div>
+ 
+      <div class="field">
+        <label for="timeline">Timeline / milestones</label>
+        <input type="text" id="timeline" placeholder="e.g. first round in 2 weeks, launch Dec 1">
+      </div>
+ 
+      <div class="field">
+        <label for="extras">Anything else for the designer</label>
+        <textarea id="extras" placeholder="Inspiration references, mood, what the founders love / hate…"></textarea>
+      </div>
+ 
+    </div>
+  </section>
+ 
+  <!-- GENERATE -->
+  <div class="generate-wrap">
+    <button id="generateBtn" type="button">
+      <span>✦ Mix the Brief</span>
+    </button>
+    <p class="form-warn" id="formWarn" role="alert"></p>
+  </div>
+ 
+  <!-- OUTPUT -->
+  <div id="outputSection" aria-live="polite">
+ 
+    <!-- Cards -->
+    <section class="panel" aria-labelledby="hd-cards">
+      <div class="panel-head">
+        <i class="panel-icon" aria-hidden="true">▣</i>
+        <h2 id="hd-cards">Three Direction Cards</h2>
+      </div>
+      <div class="panel-body">
+        <div class="cards-grid" id="cardsGrid"></div>
+      </div>
+    </section>
+ 
+    <!-- Risk -->
+    <section class="panel" aria-labelledby="hd-risk">
+      <div class="panel-head">
+        <i class="panel-icon" aria-hidden="true">⚑</i>
+        <h2 id="hd-risk">Risk Checklist</h2>
+      </div>
+      <div class="panel-body">
+        <ul class="risk-list" id="riskList"></ul>
+      </div>
+    </section>
+ 
+    <!-- Handoff -->
+    <section class="panel" aria-labelledby="hd-handoff">
+      <div class="panel-head">
+        <i class="panel-icon" aria-hidden="true">↗</i>
+        <h2 id="hd-handoff">Designer Handoff</h2>
+      </div>
+      <div class="panel-body">
+        <textarea class="handoff-ta" id="handoffText" readonly aria-label="Designer handoff brief"></textarea>
+        <div class="action-row">
+          <button class="btn-action btn-copy" id="copyBtn" type="button">⎘ Copy</button>
+          <button class="btn-action btn-dl" id="dlBtn" type="button">⤓ Download .txt</button>
+        </div>
+      </div>
+    </section>
+ 
+    <button id="resetBtn" type="button">↺ Start a new brief</button>
+ 
+  </div><!-- /outputSection -->
+ 
+</main>
+ 
+<script>
+(function () {
+  'use strict';
+ 
+  /* ─────────────────────────────────────────────────────────────────────────
+     TAG-PILL SYSTEM
+     Each tag field: { wrapId, inputId, colorClass, store }
+  ───────────────────────────────────────────────────────────────────────── */
+  var TAG_CONFIGS = [
+    { inputId: 'adjInput',   wrapId: 'adjWrap',   colorClass: ''        },
+    { inputId: 'ctxInput',   wrapId: 'ctxWrap',   colorClass: 'context' },
+    { inputId: 'avoidInput', wrapId: 'avoidWrap', colorClass: 'avoid'   }
+  ];
+ 
+  // Store tags separately from the DOM
+  var tagStores = {};
+  TAG_CONFIGS.forEach(function (cfg) { tagStores[cfg.inputId] = []; });
+ 
+  function getTagInput(inputId) {
+    return document.getElementById(inputId);
+  }
+  function getTagWrap(wrapId) {
+    return document.getElementById(wrapId);
+  }
+ 
+  function addTag(inputId, wrapId, colorClass, rawText) {
+    var text = rawText.replace(/,/g, '').trim();
+    if (!text) return;
+    var store = tagStores[inputId];
+    if (store.indexOf(text) !== -1) return; // no duplicates
+    store.push(text);
+    renderTags(inputId, wrapId, colorClass);
+  }
+ 
+  function removeTag(inputId, wrapId, colorClass, index) {
+    tagStores[inputId].splice(index, 1);
+    renderTags(inputId, wrapId, colorClass);
+  }
+ 
+  function renderTags(inputId, wrapId, colorClass) {
+    var wrap  = getTagWrap(wrapId);
+    var input = getTagInput(inputId);
+    var store = tagStores[inputId];
+ 
+    // Remove existing pills (keep the input element)
+    Array.prototype.slice.call(wrap.querySelectorAll('.tag-pill')).forEach(function (p) {
+      wrap.removeChild(p);
+    });
+ 
+    // Rebuild pills before the input
+    store.forEach(function (text, i) {
+      var pill = document.createElement('span');
+      pill.className = colorClass ? 'tag-pill ' + colorClass : 'tag-pill';
+ 
+      var label = document.createElement('span');
+      label.textContent = text;
+      pill.appendChild(label);
+ 
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'tag-pill-remove';
+      btn.setAttribute('aria-label', 'Remove ' + text);
+      btn.textContent = '×';
+      // closure over i, inputId, wrapId, colorClass
+      (function (idx) {
+        btn.addEventListener('click', function () {
+          removeTag(inputId, wrapId, colorClass, idx);
+        });
+      }(i));
+ 
+      pill.appendChild(btn);
+      wrap.insertBefore(pill, input);
+    });
+  }
+ 
+  TAG_CONFIGS.forEach(function (cfg) {
+    var input = getTagInput(cfg.inputId);
+    var wrap  = getTagWrap(cfg.wrapId);
+ 
+    // Commit tag on Enter, comma, Tab
+    input.addEventListener('keydown', function (e) {
+      if ((e.key === 'Enter' || e.key === ',' || e.key === 'Tab') && input.value.trim()) {
+        e.preventDefault();
+        addTag(cfg.inputId, cfg.wrapId, cfg.colorClass, input.value);
+        input.value = '';
+      } else if (e.key === 'Backspace' && input.value === '' && tagStores[cfg.inputId].length) {
+        removeTag(cfg.inputId, cfg.wrapId, cfg.colorClass, tagStores[cfg.inputId].length - 1);
+      }
+    });
+ 
+    // Commit on blur
+    input.addEventListener('blur', function () {
+      if (input.value.trim()) {
+        addTag(cfg.inputId, cfg.wrapId, cfg.colorClass, input.value);
+        input.value = '';
+      }
+    });
+ 
+    // Click wrap → focus input
+    wrap.addEventListener('click', function (e) {
+      if (e.target === wrap) input.focus();
+    });
+  });
+ 
+ 
+  /* ─────────────────────────────────────────────────────────────────────────
+     CONTRAST CHECKER
+  ───────────────────────────────────────────────────────────────────────── */
+  function hexToRgb(hex) {
+    var h = hex.replace('#', '');
+    if (!/^[0-9a-fA-F]{6}$/.test(h)) return null;
+    return [
+      parseInt(h.slice(0, 2), 16),
+      parseInt(h.slice(2, 4), 16),
+      parseInt(h.slice(4, 6), 16)
+    ];
+  }
+ 
+  function relativeLum(rgb) {
+    var channels = rgb.map(function (c) {
+      c = c / 255;
+      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+  }
+ 
+  function contrastRatio(hex1, hex2) {
+    var r1 = hexToRgb(hex1), r2 = hexToRgb(hex2);
+    if (!r1 || !r2) return null;
+    var l1 = relativeLum(r1), l2 = relativeLum(r2);
+    var hi = Math.max(l1, l2), lo = Math.min(l1, l2);
+    return (hi + 0.05) / (lo + 0.05);
+  }
+ 
+  function updateSwatch(swatchId, color) {
+    document.getElementById(swatchId).style.background = color;
+  }
+ 
+  function calcContrast() {
+    var fg    = document.getElementById('fgHex').value;
+    var bg    = document.getElementById('bgHex').value;
+    var res   = document.getElementById('contrastResult');
+    var ratio = contrastRatio(fg, bg);
+ 
+    // Clear previous badge
+    while (res.firstChild) res.removeChild(res.firstChild);
+ 
+    if (!ratio) return;
+ 
+    var cls   = ratio >= 7 ? 'pass' : ratio >= 4.5 ? 'warn' : 'fail';
+    var label = ratio >= 7 ? '✓ Passes AAA'
+              : ratio >= 4.5 ? '✓ Passes AA'
+              : '✗ Fails AA';
+ 
+    var badge = document.createElement('span');
+    badge.className = 'ratio-badge ' + cls;
+    badge.textContent = ratio.toFixed(2) + ':1 — ' + label;
+    res.appendChild(badge);
+  }
+ 
+  // Wire hex text inputs
+  document.getElementById('fgHex').addEventListener('input', function () {
+    var v = this.value;
+    if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+      updateSwatch('fgSwatch', v);
+      document.getElementById('fgPicker').value = v;
+    }
+    calcContrast();
+  });
+  document.getElementById('bgHex').addEventListener('input', function () {
+    var v = this.value;
+    if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+      updateSwatch('bgSwatch', v);
+      document.getElementById('bgPicker').value = v;
+    }
+    calcContrast();
+  });
+ 
+  // Wire color pickers
+  document.getElementById('fgPicker').addEventListener('input', function () {
+    document.getElementById('fgHex').value = this.value;
+    updateSwatch('fgSwatch', this.value);
+    calcContrast();
+  });
+  document.getElementById('bgPicker').addEventListener('input', function () {
+    document.getElementById('bgHex').value = this.value;
+    updateSwatch('bgSwatch', this.value);
+    calcContrast();
+  });
+ 
+  document.getElementById('wcagLevel').addEventListener('change', calcContrast);
+ 
+  calcContrast(); // initial run
+ 
+ 
+  /* ─────────────────────────────────────────────────────────────────────────
+     BRIEF COLLECTION
+  ───────────────────────────────────────────────────────────────────────── */
+  function val(id) {
+    return (document.getElementById(id).value || '').trim();
+  }
+ 
+  function collectBrief() {
+    var fg = val('fgHex'), bg = val('bgHex');
+    return {
+      adjectives:    tagStores.adjInput.join(', ')   || '(not specified)',
+      audience:      val('audience')                 || '(not specified)',
+      brandName:     val('brandName')                || '(not specified)',
+      industry:      val('industry')                 || '(not specified)',
+      contexts:      tagStores.ctxInput.join(', ')   || '(not specified)',
+      minSize:       val('minSize')                  || '(not specified)',
+      avoidShapes:   tagStores.avoidInput.join(', ') || '(none)',
+      competitors:   val('competitors')              || '(not specified)',
+      hardConstraints: val('hardConstraints')        || '(none)',
+      fgColor:       fg,
+      bgColor:       bg,
+      wcagLevel:     document.getElementById('wcagLevel').value,
+      contrastRatio: (contrastRatio(fg, bg) || 0).toFixed(2),
+      budget:        val('budget')   || '(not specified)',
+      timeline:      val('timeline') || '(not specified)',
+      extras:        val('extras')   || '(none)'
+    };
+  }
+ 
+ 
+  /* ─────────────────────────────────────────────────────────────────────────
+     BRIEF ENGINE  — runs fully locally, no network call
+     Produces three opinionated directions keyed to the actual brief data.
+  ───────────────────────────────────────────────────────────────────────── */
+ 
+  // Direction templates: each is a function that receives the brief and returns
+  // { eyebrow, title, desc, rationale }
+  var DIRECTION_TEMPLATES = [
+ 
+    // Direction 1 — Geometric / Abstract mark
+    function (b) {
+      var adj1 = firstOf(b.adjectives, 'bold');
+      var adj2 = secondOf(b.adjectives, 'modern');
+      var ctx1 = firstOf(b.contexts, 'digital interfaces');
+      return {
+        eyebrow: 'Direction 01 — Geometric Mark',
+        title:   capitalize(adj1) + ' Abstract Symbol',
+        desc:    [
+          'A reductive geometric mark built from a single, ownable shape — no gradients, ',
+          'no decorative detail. The form is constructed from pure angles or curves derived ',
+          'from the first letter of the brand name, giving it a typographic anchor without ',
+          'reading as a conventional lettermark. The wordmark sits in a clean sans-serif ',
+          'with wide tracking to balance the density of the icon.'
+        ].join(''),
+        rationale: [
+          'Geometric marks scale cleanly from ' + b.minSize + ' up to large-format, ',
+          'making this the strongest choice for ' + ctx1 + '. ',
+          'The single-color construction satisfies any hard single-color constraint ',
+          'and keeps trademark surface area tight against ' + b.competitors + '.'
+        ].join('')
+      };
+    },
+ 
+    // Direction 2 — Expressive Wordmark
+    function (b) {
+      var adj1 = firstOf(b.adjectives,  'expressive');
+      var aud  = b.audience !== '(not specified)' ? b.audience : 'your audience';
+      var ctx2 = secondOf(b.contexts, 'print and packaging');
+      return {
+        eyebrow: 'Direction 02 — Custom Wordmark',
+        title:   'Typographic Voice — ' + capitalize(adj1),
+        desc:    [
+          'A fully custom wordmark where the brand name is the mark — no icon, no tagline. ',
+          'Letter spacing, stroke weight, and one bespoke ligature or terminal give the ',
+          'type a signature character that cannot be replicated with an off-the-shelf font. ',
+          'The weight is set heavy enough to hold at small sizes yet refined enough to feel ',
+          'credible at display scale. Color is a single, high-contrast value against the ',
+          'brand background to hit the required contrast threshold.'
+        ].join(''),
+        rationale: [
+          capitalize(adj1) + ' energy lands directly with ' + aud + ' because the name ',
+          'itself carries the personality — no translation layer needed. ',
+          'Pure type also avoids all the shape categories listed in must-avoid ',
+          'and reads unambiguously across ' + ctx2 + '.'
+        ].join('')
+      };
+    },
+ 
+    // Direction 3 — Pictorial / Conceptual
+    function (b) {
+      var adj3 = thirdOf(b.adjectives, 'distinctive');
+      var ind  = b.industry !== '(not specified)' ? b.industry : 'the industry';
+      var ctx3 = firstOf(b.contexts, 'brand collateral');
+      return {
+        eyebrow: 'Direction 03 — Pictorial Concept',
+        title:   'Conceptual Icon from ' + capitalize(ind),
+        desc:    [
+          'A simplified pictorial icon drawn from a concrete object or metaphor native to ',
+          ind + ' — abstracted until it reads as a symbol rather than an illustration. ',
+          'The silhouette is closed and solid so it works as a single-color stamp, an ',
+          'embossed element, or a reversed-out bug. The wordmark is set in a geometric ',
+          'sans with optical kerning corrections, sitting to the right or below the icon ',
+          'in two lockup variants.'
+        ].join(''),
+        rationale: [
+          'A domain-rooted pictorial mark signals category fluency to ' + b.audience + ' ',
+          'at a glance while giving ' + ctx3 + ' an ownable visual anchor. ',
+          'The closed-silhouette rule ensures it reproduces at ' + b.minSize + ' without ',
+          'fill-in artifacts, and keeps differentiation clear from ' + b.competitors + '.'
+        ].join('')
+      };
+    }
+  ];
+ 
+  function firstOf(csv, fallback)  { return nthTag(csv, 0) || fallback; }
+  function secondOf(csv, fallback) { return nthTag(csv, 1) || fallback; }
+  function thirdOf(csv, fallback)  { return nthTag(csv, 2) || fallback; }
+  function nthTag(csv, n) {
+    if (!csv || csv === '(not specified)' || csv === '(none)') return '';
+    var parts = csv.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+    return parts[n] || parts[0] || '';
+  }
+  function capitalize(s) {
+    if (!s) return s;
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+ 
+ 
+  // Risk engine — deterministic checks on the brief data
+  function buildRisks(b) {
+    var risks = [];
+ 
+    // Contrast
+    var ratio = parseFloat(b.contrastRatio);
+    var wcag  = b.wcagLevel;
+    if (wcag === 'AA'  && ratio < 4.5) {
+      risks.push({ level: 'high', text: 'Current color pairing (' + b.fgColor + ' on ' + b.bgColor + ') is ' + b.contrastRatio + ':1 — below the required AA minimum of 4.5:1. Adjust one value before handoff.' });
+    } else if (wcag === 'AAA' && ratio < 7) {
+      risks.push({ level: 'high', text: 'Current color pairing is ' + b.contrastRatio + ':1 — below AAA minimum of 7:1. Lightening the background or darkening the foreground will resolve this.' });
+    } else if (ratio >= 4.5 && ratio < 7) {
+      risks.push({ level: 'low', text: 'Contrast ratio of ' + b.contrastRatio + ':1 passes AA but not AAA. Acceptable for logos; flag if the mark ever appears as body-copy-scale text.' });
+    } else if (ratio >= 7) {
+      risks.push({ level: 'low', text: 'Strong contrast ratio of ' + b.contrastRatio + ':1 — passes both AA and AAA. No action needed.' });
+    }
+ 
+    // Scalability
+    if (b.minSize && b.minSize !== '(not specified)') {
+      risks.push({ level: 'med', text: 'Minimum reproduction at ' + b.minSize + ' — request a simplified single-color version from the designer (no fine strokes or inline detail) specifically tested at this size.' });
+    } else {
+      risks.push({ level: 'med', text: 'No minimum size was specified. Ask the designer to test reproduction down to at least 16px (favicon) and 1 inch at 300 dpi to surface scalability failures early.' });
+    }
+ 
+    // Competitor confusion
+    if (b.competitors && b.competitors !== '(not specified)') {
+      risks.push({ level: 'high', text: 'Brief calls out ' + b.competitors + ' as differentiation targets. Run a visual similarity scan (USPTO, Brandfetch) before finalizing — similarity in color, form language, or typography can cause brand confusion and trademark risk.' });
+    }
+ 
+    // Must-avoid shapes
+    if (b.avoidShapes && b.avoidShapes !== '(none)') {
+      risks.push({ level: 'med', text: 'Must-avoid shapes (' + b.avoidShapes + ') must be checked against all three directions before first review. Add an explicit note in the brief that these are disqualifying, not just preferences.' });
+    }
+ 
+    // Single-color / hard constraints
+    if (b.hardConstraints && b.hardConstraints !== '(none)') {
+      risks.push({ level: 'med', text: 'Hard constraints noted: "' + b.hardConstraints.slice(0, 120) + '". Verify each constraint is represented verbatim in the handoff document so there is no ambiguity in the first revision round.' });
+    }
+ 
+    // Multi-context
+    var ctxCount = b.contexts === '(not specified)' ? 0
+                 : b.contexts.split(',').length;
+    if (ctxCount >= 3) {
+      risks.push({ level: 'med', text: ctxCount + ' usage contexts specified (' + b.contexts + '). Request responsive logo variants: full lockup, icon-only bug, and a horizontal strip — testing each across all listed contexts before sign-off.' });
+    }
+ 
+    // Cultural
+    risks.push({ level: 'low', text: 'Before global launch, screen the chosen symbol for unintended cultural meanings in your primary markets. Abstract geometric marks are lower-risk than pictorial icons, which can carry unexpected regional connotations.' });
+ 
+    // Trademark
+    risks.push({ level: 'high', text: 'Conduct a trademark clearance search (USPTO TESS or international equivalent) on the final mark before filing or launching publicly. Visual similarity is assessed by overall impression, not exact match.' });
+ 
+    // Timeline
+    if (b.timeline === '(not specified)') {
+      risks.push({ level: 'low', text: 'No timeline specified. Recommend scoping at least two revision rounds with a minimum of 5 business days between each to allow proper stakeholder review.' });
+    }
+ 
+    return risks;
+  }
+ 
+ 
+  // Handoff document builder
+  function buildHandoff(b) {
+    var line = '================================';
+    var thin = '--------------------------------';
+    var now  = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    return [
+      'LOGO DESIGN BRIEF',
+      'Generated: ' + now,
+      line,
+      '',
+      'BRAND OVERVIEW',
+      thin,
+      'Name:      ' + b.brandName,
+      'Industry:  ' + b.industry,
+      '',
+      'VOICE & AUDIENCE',
+      thin,
+      'Adjectives:  ' + b.adjectives,
+      'Audience:    ' + b.audience,
+      '',
+      'USAGE CONTEXTS',
+      thin,
+      'Where used:    ' + b.contexts,
+      'Minimum size:  ' + b.minSize,
+      '',
+      'CONSTRAINTS',
+      thin,
+      'Avoid shapes:  ' + b.avoidShapes,
+      'Competitors:   ' + b.competitors,
+      'Hard limits:   ' + b.hardConstraints,
+      '',
+      'CONTRAST & COLOR',
+      thin,
+      'Foreground:  ' + b.fgColor,
+      'Background:  ' + b.bgColor,
+      'Ratio:       ' + b.contrastRatio + ':1  (Target: WCAG ' + b.wcagLevel + ')',
+      '',
+      'DELIVERABLES & LOGISTICS',
+      thin,
+      'Format:    ' + b.budget,
+      'Timeline:  ' + b.timeline,
+      '',
+      'ADDITIONAL NOTES',
+      thin,
+      b.extras,
+      '',
+      line,
+      'Please confirm receipt and schedule a kickoff call before beginning exploration.',
+      'All three directions should be presented simultaneously in the first review.',
+      line
+    ].join('\n');
+  }
+ 
+ 
+  /* ─────────────────────────────────────────────────────────────────────────
+     RENDER OUTPUT — createElement / textContent / setAttribute only
+  ───────────────────────────────────────────────────────────────────────── */
+  var STRIPE_CLASSES = ['s0', 's1', 's2'];
+ 
+  function renderCards(directions) {
+    var grid = document.getElementById('cardsGrid');
+    // Clear safely
+    while (grid.firstChild) grid.removeChild(grid.firstChild);
+ 
+    directions.forEach(function (d, i) {
+      var card = document.createElement('article');
+      card.className = 'brief-card';
+ 
+      var stripe = document.createElement('div');
+      stripe.className = 'card-stripe ' + STRIPE_CLASSES[i];
+      card.appendChild(stripe);
+ 
+      var eyebrow = document.createElement('p');
+      eyebrow.className = 'card-eyebrow';
+      eyebrow.textContent = d.eyebrow;
+      card.appendChild(eyebrow);
+ 
+      var title = document.createElement('h3');
+      title.className = 'card-title';
+      title.textContent = d.title;
+      card.appendChild(title);
+ 
+      var desc = document.createElement('p');
+      desc.className = 'card-desc';
+      desc.textContent = d.desc;
+      card.appendChild(desc);
+ 
+      var rat = document.createElement('p');
+      rat.className = 'card-rationale';
+ 
+      var arrow = document.createElement('span');
+      arrow.className = 'card-rationale-arrow';
+      arrow.textContent = '↳';
+      rat.appendChild(arrow);
+ 
+      var ratText = document.createTextNode(' ' + d.rationale);
+      rat.appendChild(ratText);
+ 
+      card.appendChild(rat);
+      grid.appendChild(card);
+    });
+  }
+ 
+  function renderRisks(risks) {
+    var list = document.getElementById('riskList');
+    while (list.firstChild) list.removeChild(list.firstChild);
+ 
+    risks.forEach(function (r) {
+      var lvl = (r.level === 'high' || r.level === 'med' || r.level === 'low')
+                ? r.level : 'med';
+ 
+      var li = document.createElement('li');
+      li.className = 'risk-item';
+ 
+      var dot = document.createElement('span');
+      dot.className = 'risk-dot ' + lvl;
+      dot.setAttribute('aria-hidden', 'true');
+      li.appendChild(dot);
+ 
+      var levelLabel = document.createElement('span');
+      levelLabel.className = 'risk-level ' + lvl;
+      levelLabel.textContent = lvl.toUpperCase();
+      li.appendChild(levelLabel);
+ 
+      var text = document.createElement('span');
+      text.className = 'risk-text';
+      text.textContent = r.text;
+      li.appendChild(text);
+ 
+      list.appendChild(li);
+    });
+  }
+ 
+  function renderHandoff(brief) {
+    document.getElementById('handoffText').value = buildHandoff(brief);
+  }
+ 
+ 
+  /* ─────────────────────────────────────────────────────────────────────────
+     GENERATE — validation + orchestration
+  ───────────────────────────────────────────────────────────────────────── */
+  document.getElementById('generateBtn').addEventListener('click', function () {
+    var warn = document.getElementById('formWarn');
+    warn.style.display = 'none';
+    warn.textContent = '';
+ 
+    var brief = collectBrief();
+ 
+    // Soft validation — nudge but don't block
+    var missing = [];
+    if (brief.brandName === '(not specified)') missing.push('brand name');
+    if (brief.adjectives === '(not specified)') missing.push('at least one brand adjective');
+    if (brief.audience   === '(not specified)') missing.push('target audience');
+ 
+    if (missing.length) {
+      warn.textContent = '⚠ For stronger directions, consider adding: ' + missing.join(', ') + '.';
+      warn.style.display = 'block';
+    }
+ 
+    // Build output
+    var directions = DIRECTION_TEMPLATES.map(function (fn) { return fn(brief); });
+    var risks      = buildRisks(brief);
+ 
+    renderCards(directions);
+    renderRisks(risks);
+    renderHandoff(brief);
+ 
+    var out = document.getElementById('outputSection');
+    out.style.display = 'block';
+    // Slight delay so display:block is painted before scrollIntoView
+    setTimeout(function () {
+      out.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+  });
+ 
+ 
+  /* ─────────────────────────────────────────────────────────────────────────
+     COPY / DOWNLOAD
+  ───────────────────────────────────────────────────────────────────────── */
+  document.getElementById('copyBtn').addEventListener('click', function () {
+    var ta  = document.getElementById('handoffText');
+    var btn = document.getElementById('copyBtn');
+ 
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(ta.value).then(function () {
+        btn.textContent = '✓ Copied!';
+        btn.classList.add('copied');
+        setTimeout(function () {
+          btn.textContent = '⎘ Copy';
+          btn.classList.remove('copied');
+        }, 2200);
+      });
+    } else {
+      ta.select();
+      document.execCommand('copy');
+      btn.textContent = '✓ Copied!';
+      btn.classList.add('copied');
+      setTimeout(function () {
+        btn.textContent = '⎘ Copy';
+        btn.classList.remove('copied');
+      }, 2200);
+    }
+  });
+ 
+  document.getElementById('dlBtn').addEventListener('click', function () {
+    var text = document.getElementById('handoffText').value;
+    var slug = (val('brandName') || 'logo-brief')
+                 .toLowerCase()
+                 .replace(/[^a-z0-9]+/g, '-')
+                 .replace(/^-|-$/g, '');
+    var blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.setAttribute('href', url);
+    a.setAttribute('download', slug + '-brief.txt');
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+ 
+ 
+  /* ─────────────────────────────────────────────────────────────────────────
+     RESET
+  ───────────────────────────────────────────────────────────────────────── */
+  document.getElementById('resetBtn').addEventListener('click', function () {
+    if (!confirm('Clear everything and start a new brief?')) return;
+ 
+    // Clear tag stores + re-render each
+    TAG_CONFIGS.forEach(function (cfg) {
+      tagStores[cfg.inputId] = [];
+      renderTags(cfg.inputId, cfg.wrapId, cfg.colorClass);
+    });
+ 
+    // Clear plain text inputs and textareas
+    ['audience','brandName','industry','minSize','competitors',
+     'hardConstraints','budget','timeline','extras'].forEach(function (id) {
+      document.getElementById(id).value = '';
+    });
+ 
+    // Reset color fields
+    document.getElementById('fgHex').value = '#1C2B3A';
+    document.getElementById('bgHex').value = '#F5F0E8';
+    document.getElementById('fgPicker').value = '#1C2B3A';
+    document.getElementById('bgPicker').value = '#F5F0E8';
+    updateSwatch('fgSwatch', '#1C2B3A');
+    updateSwatch('bgSwatch', '#F5F0E8');
+    calcContrast();
+ 
+    // Reset select
+    document.getElementById('wcagLevel').value = 'AA';
+ 
+    // Hide output
+    document.getElementById('outputSection').style.display = 'none';
+    document.getElementById('formWarn').style.display = 'none';
+ 
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+ 
+}());
+</script>
+</body>
+</html>

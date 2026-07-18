@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pop-Up Menu & Profit Tracker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
+    <style>
+        :root {
+            --bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text: #212529;
+            --primary: #4f46e5;
+            --border: #e5e7eb;
+            --success: #16a34a;
+            --danger: #dc2626;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 15px; max-width: 600px; margin: 0 auto; padding-bottom: 60px; }
+        h1, h2, h3 { margin-bottom: 10px; }
+        h1 { font-size: 1.5rem; text-align: center; margin-bottom: 20px; }
+        .section { background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 15px; }
+        .form-group { margin-bottom: 12px; }
+        label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; }
+        input, textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; }
+        textarea { resize: vertical; height: 60px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        button { width: 100%; background: var(--primary); color: white; border: none; padding: 12px; font-size: 1rem; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 5px; }
+        button:active { opacity: 0.9; }
+        .metrics { display: flex; justify-content: space-between; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; border-radius: 6px; margin-top: 10px; font-size: 0.9rem; }
+        .metric-item span { font-weight: bold; color: var(--success); }
+        .menu-preview { border: 2px dashed #9ca3af; padding: 20px; text-align: center; background: #fffdf9; position: relative; }
+        .menu-title { font-serif: Georgia, serif; font-size: 1.4rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        .menu-hook { font-style: italic; color: #4b5563; margin: 5px 0 10px 0; font-size: 0.95rem; }
+        .menu-price { font-weight: bold; font-size: 1.1rem; margin-bottom: 8px; }
+        .menu-allergens { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: #7f1d1d; background: #fef2f2; display: inline-block; padding: 2px 6px; border-radius: 4px; }
+        .brief-box { background: #f3f4f6; border: 1px solid var(--border); padding: 10px; font-family: monospace; font-size: 0.85rem; white-space: pre-wrap; max-height: 150px; overflow-y: auto; border-radius: 6px; }
+        .copy-btn { background: #4b5563; margin-top: 8px; padding: 8px; font-size: 0.85rem; }
+        @media print {
+            body * { visibility: hidden; }
+            .menu-preview, .menu-preview * { visibility: visible; }
+            .menu-preview { position: absolute; left: 0; top: 0; width: 100%; border: 1px solid #000; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1 class="no-print">Pop-Up Menu Card Builder</h1>
+
+    <!-- INPUT FORM -->
+    <div class="section no-print">
+        <h2>1. Dish Details</h2>
+        <div class="form-group">
+            <label for="dishName">Dish Name</label>
+            <input type="text" id="dishName" placeholder="e.g., Crispy Pork Belly Bao">
+        </div>
+        <div class="form-group">
+            <label for="dishHook">The Hook (Short Description)</label>
+            <textarea id="dishHook" placeholder="e.g., 24-hour braised pork, pickled cucumber, hoisin drizzle in a fluffy steamed bun."></textarea>
+        </div>
+        <div class="grid-2">
+            <div class="form-group">
+                <label for="servings">Est. Servings</label>
+                <input type="number" id="servings" value="20" min="1">
+            </div>
+            <div class="form-group">
+                <label for="allergens">Allergens</label>
+                <input type="text" id="allergens" placeholder="e.g., Gluten, Soy, Sesame">
+            </div>
+        </div>
+        <div class="grid-2">
+            <div class="form-group">
+                <label for="unitCost">Cost per Serving ($)</label>
+                <input type="number" id="unitCost" value="2.50" step="0.01" min="0">
+            </div>
+            <div class="form-group">
+                <label for="unitPrice">Menu Price ($)</label>
+                <input type="number" id="unitPrice" value="9.00" step="0.01" min="0">
+            </div>
+        </div>
+        
+        <!-- FINANCIAL METRICS -->
+        <div class="metrics">
+            <div class="metric-item">Food Cost: <span id="costPct">0%</span></div>
+            <div class="metric-item">Profit/Serving: <span id="profPer"> $0.00</span></div>
+            <div class="metric-item">Total Pot. Profit: <span id="potProf">$0.00</span></div>
+        </div>
+    </div>
+
+    <!-- PRINTABLE MENU CARD -->
+    <div class="section">
+        <h2 class="no-print">2. Printable Card Preview</h2>
+        <div class="menu-preview" id="menuCard">
+            <div class="menu-title" id="pName">Dish Name</div>
+            <div class="menu-hook" id="pHook">The delicious description goes here.</div>
+            <div class="menu-price" id="pPrice">$0.00</div>
+            <div class="menu-allergens" id="pAllergens" style="display:none;">Allergens</div>
+        </div>
+        <button class="no-print" onclick="window.print()" style="background: #059669; margin-top:15px;">Print Menu Card</button>
+    </div>
+
+    <!-- COPYABLE TEXT BRIEF -->
+    <div class="section no-print">
+        <h2>3. Copyable Text Brief</h2>
+        <div class="brief-box" id="briefText">Brief will generate here...</div>
+        <button class="copy-btn" onclick="copyBrief()">Copy Brief to Clipboard</button>
+    </div>
+
+    <script>
+        const inputs = ['dishName', 'dishHook', 'servings', 'allergens', 'unitCost', 'unitPrice'];
+        inputs.forEach(id => document.getElementById(id).addEventListener('input', calculateAndRender));
+
+        function calculateAndRender() {
+            // Get raw input values
+            const name = document.getElementById('dishName').value || 'Dish Name';
+            const hook = document.getElementById('dishHook').value || 'The delicious description goes here.';
+            const allergens = document.getElementById('allergens').value;
+            
+            // Math operations handled cleanly via math.js parsing
+            const servings = math.evaluate(document.getElementById('servings').value || '0');
+            const cost = math.evaluate(document.getElementById('unitCost').value || '0');
+            const price = math.evaluate(document.getElementById('unitPrice').value || '0');
+
+            // Profit Calculations
+            let costPercentage = 0;
+            let profitPerServing = 0;
+            let totalProfit = 0;
+
+            if (price > 0) {
+                costPercentage = math.round((cost / price) * 100, 1);
+                profitPerServing = math.round(price - cost, 2);
+                totalProfit = math.round(profitPerServing * servings, 2);
+            }
+
+            // Update UI Metrics
+            document.getElementById('costPct').innerText = price > 0 ? `${costPercentage}%` : '0%';
+            document.getElementById('profPer').innerText = `$${profitPerServing.toFixed(2)}`;
+            document.getElementById('potProf').innerText = `$${totalProfit.toFixed(2)}`;
+
+            // Update Card Preview
+            document.getElementById('pName').innerText = name;
+            document.getElementById('pHook').innerText = hook;
+            document.getElementById('pPrice').innerText = `$${price.toFixed(2)}`;
+            
+            const allergenElement = document.getElementById('pAllergens');
+            if (allergens.trim() !== '') {
+                allergenElement.innerText = `Contains: ${allergens}`;
+                allergenElement.style.display = 'inline-block';
+            } else {
+                allergenElement.style.display = 'none';
+            }
+
+            // Update Text Brief
+            const brief = `DISH: ${name}
+PRICE: $${price.toFixed(2)}
+HOOK: ${hook}
+ALLERGENS: ${allergens || 'None declared'}
+---
+PROFIT BRIEF:
+Cost/Serving: $${cost.toFixed(2)} (${costPercentage}% Food Cost)
+Profit/Serving: $${profitPerServing.toFixed(2)}
+Target Volume: ${servings} servings
+Est. Total Profit: $${totalProfit.toFixed(2)}`;
+
+            document.getElementById('briefText').innerText = brief;
+        }
+
+        function copyBrief() {
+            const text = document.getElementById('briefText').innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Brief copied to clipboard!');
+            }).catch(err => {
+                alert('Failed to copy. You can manually select and copy the text.');
+            });
+        }
+
+        // Initial setup run
+        calculateAndRender();
+    </script>
+</body>
+</html>

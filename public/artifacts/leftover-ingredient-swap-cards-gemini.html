@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leftover Swapper</title>
+    <style>
+        :root {
+            --bg: #121212;
+            --surface: #1e1e1e;
+            --surface-2: #2a2a2a;
+            --primary: #4caf50;
+            --text: #ffffff;
+            --text-muted: #aaaaaa;
+            --border: #333333;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 12px; font-size: 14px; line-height: 1.4; }
+        .container { max-width: 500px; margin: 0 auto; }
+        
+        h1 { font-size: 1.2rem; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .global-actions { display: flex; gap: 8px; }
+        button { background: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.85rem; font-weight: bold; cursor: pointer; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        button.secondary { background: var(--surface-2); border: 1px solid var(--border); color: var(--text); }
+
+        .section-title { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin: 16px 0 8px; }
+        
+        .ingredient-chip { display: inline-flex; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 4px 10px; margin: 4px; font-size: 0.85rem; }
+        .ingredient-chip input[type="checkbox"] { margin-right: 6px; accent-color: var(--primary); }
+        .ingredient-chip span { outline: none; border-bottom: 1px dashed var(--text-muted); }
+
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 12px; position: relative; }
+        .card-title { font-weight: bold; font-size: 1rem; color: #fff; margin-bottom: 6px; }
+        
+        .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+        .tag { font-size: 0.7rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+        .tag.veg { background: #2e7d32; color: #e8f5e9; }
+        .tag.heat { background: #c62828; color: #ffebee; }
+        .tag.allergen { background: #ef6c00; color: #fff3e0; }
+
+        .list-title { font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: bold; margin-top: 6px; }
+        .gap { color: #ffb74d; font-style: italic; }
+        .directions { margin-top: 6px; color: #dddddd; }
+
+        .card-actions { display: flex; gap: 8px; margin-top: 10px; justify-content: flex-end; }
+        .card-actions button { padding: 4px 8px; font-size: 0.75rem; }
+
+        .empty-message { color: var(--text-muted); font-style: italic; padding: 12px 4px; }
+
+        @media print {
+            body { background: white; color: black; }
+            .no-print { display: none !important; }
+            .card { border: 1px solid #000; background: white; page-break-inside: avoid; color: black; }
+            .card-title, .directions { color: black; }
+            .tag { border: 1px solid #000; color: black !important; background: transparent !important; }
+            .gap { color: black; font-weight: bold; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1 class="no-print">
+        Leftover Swapper
+        <div class="global-actions">
+            <button id="btn-export" class="secondary" disabled>Export Plan</button>
+            <button id="btn-print-all" class="secondary">Print All</button>
+        </div>
+    </h1>
+
+    <div class="no-print">
+        <div class="section-title">Your Leftovers (Tap Checkbox to Select / Text to Edit)</div>
+        <div id="ingredients-container"></div>
+    </div>
+
+    <div class="section-title">Available Meal Matches</div>
+    <div id="recipes-container"></div>
+</div>
+
+<script>
+    const recipeDatabase = [
+        {
+            name: "Crispy Leftover Hash",
+            tags: ["veg"],
+            baseIngredients: ["potatoes", "peppers", "onions"],
+            swaps: { "potatoes": ["sweet potatoes", "tater tots", "fries"], "peppers": ["broccoli", "zucchini"] },
+            gaps: ["cooking oil", "salt/pepper"],
+            directions: "Dice all ingredients. Fry in a hot skillet with oil until edges crisp. Top with an egg if available."
+        },
+        {
+            name: "Spicy Stir-Fry Noodles",
+            tags: ["heat", "veg"],
+            baseIngredients: ["noodles", "broccoli", "onions"],
+            swaps: { "noodles": ["rice", "quinoa"], "broccoli": ["peppers", "cabbage", "carrots"] },
+            gaps: ["soy sauce", "chili oil / sriracha"],
+            directions: "Sear veggies in a hot pan. Toss in your pre-cooked base noodles/rice. Stir-fry with soy sauce and chili oil until piping hot."
+        },
+        {
+            name: "Quick Shredded Protein Tacos",
+            tags: [],
+            baseIngredients: ["chicken", "onions"],
+            swaps: { "chicken": ["beef", "pork", "tofu", "beans"], "onions": ["peppers", "jalapenos"] },
+            gaps: ["tortillas", "taco seasoning"],
+            directions: "Shred your protein. Reheat in a skillet with a splash of water and taco seasoning. Serve inside warmed tortillas."
+        },
+        {
+            name: "Thai-Style Peanut Curry",
+            tags: ["allergen", "heat"],
+            baseIngredients: ["chicken", "broccoli", "peppers"],
+            swaps: { "chicken": ["tofu", "shrimp", "beef"], "broccoli": ["zucchini", "carrots"] },
+            gaps: ["coconut milk", "peanut butter", "curry paste"],
+            directions: "Simmer coconut milk, curry paste, and peanut butter. Drop in your leftovers and simmer until fully heated through."
+        },
+        {
+            name: "Loaded Scramble / Frittata",
+            tags: ["veg"],
+            baseIngredients: ["onions", "peppers"],
+            swaps: { "onions": ["scallions", "leeks"], "peppers": ["spinach", "mushrooms", "tomatoes"] },
+            gaps: ["eggs", "butter / oil"],
+            directions: "Sauté the veggies in butter until soft. Pour in beaten eggs and stir constantly over medium heat until set."
+        }
+    ];
+
+    let inventory = [
+        { id: "potatoes", name: "potatoes", checked: true },
+        { id: "peppers", name: "peppers", checked: true },
+        { id: "onions", name: "onions", checked: true },
+        { id: "chicken", name: "chicken", checked: false },
+        { id: "broccoli", name: "broccoli", checked: false },
+        { id: "noodles", name: "noodles", checked: false }
+    ];
+
+    function init() {
+        document.getElementById("btn-print-all").addEventListener("click", () => window.print());
+        document.getElementById("btn-export").addEventListener("click", exportMealPlan);
+        renderIngredients();
+        renderRecipes();
+    }
+
+    function renderIngredients() {
+        const container = document.getElementById("ingredients-container");
+        container.textContent = "";
+        
+        inventory.forEach((ing, index) => {
+            const chip = document.createElement("label");
+            chip.className = "ingredient-chip";
+            
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.checked = ing.checked;
+            checkbox.addEventListener("change", () => {
+                inventory[index].checked = checkbox.checked;
+                renderRecipes();
+            });
+
+            const textSpan = document.createElement("span");
+            textSpan.contentEditable = "true";
+            textSpan.textContent = ing.name;
+            textSpan.addEventListener("blur", () => {
+                inventory[index].name = textSpan.textContent.trim().toLowerCase();
+                renderRecipes();
+            });
+            textSpan.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    textSpan.blur();
+                }
+            });
+
+            chip.appendChild(checkbox);
+            chip.appendChild(textSpan);
+            container.appendChild(chip);
+        });
+    }
+
+    function getActiveRecipes(activeIngredients) {
+        const matched = [];
+        recipeDatabase.forEach(recipe => {
+            const usedIngredients = [];
+            let hasAtLeastOneMatch = false;
+
+            recipe.baseIngredients.forEach(baseIng => {
+                if (activeIngredients.includes(baseIng)) {
+                    usedIngredients.push({ display: baseIng, isSwap: false });
+                    hasAtLeastOneMatch = true;
+                } else {
+                    const alternates = recipe.swaps[baseIng] || [];
+                    const activeAlt = alternates.find(alt => activeIngredients.includes(alt));
+                    if (activeAlt) {
+                        usedIngredients.push({ display: `${activeAlt} (swapped for ${baseIng})`, isSwap: true });
+                        hasAtLeastOneMatch = true;
+                    } else {
+                        usedIngredients.push({ display: `${baseIng} [Missing/Optional]`, isSwap: false });
+                    }
+                }
+            });
+
+            if (hasAtLeastOneMatch) {
+                matched.push({ recipe, usedIngredients });
+            }
+        });
+        return matched;
+    }
+
+    function renderRecipes() {
+        const container = document.getElementById("recipes-container");
+        container.textContent = "";
+
+        const activeIngredients = inventory
+            .filter(i => i.checked && i.name.length > 0)
+            .map(i => i.name);
+
+        const currentMatches = getActiveRecipes(activeIngredients);
+        const exportBtn = document.getElementById("btn-export");
+
+        if (currentMatches.length === 0) {
+            exportBtn.disabled = true;
+            const emptyMsg = document.createElement("div");
+            emptyMsg.className = "empty-message";
+            emptyMsg.textContent = "Select or edit leftovers above to generate meal cards.";
+            container.appendChild(emptyMsg);
+            return;
+        }
+
+        exportBtn.disabled = false;
+
+        currentMatches.forEach((match) => {
+            const { recipe, usedIngredients } = match;
+            
+            const card = document.createElement("div");
+            card.className = "card";
+
+            const title = document.createElement("div");
+            title.className = "card-title";
+            title.textContent = recipe.name;
+            card.appendChild(title);
+
+            const tagsContainer = document.createElement("div");
+            tagsContainer.className = "tags";
+            recipe.tags.forEach(t => {
+                const tagSpan = document.createElement("span");
+                tagSpan.className = `tag ${t}`;
+                if (t === 'veg') tagSpan.textContent = 'Vegetarian';
+                if (t === 'heat') tagSpan.textContent = 'Spicy';
+                if (t === 'allergen') tagSpan.textContent = 'Allergen (Peanut)';
+                tagsContainer.appendChild(tagSpan);
+            });
+            card.appendChild(tagsContainer);
+
+            const ingTitle = document.createElement("div");
+            ingTitle.className = "list-title";
+            ingTitle.textContent = "Ingredients Used";
+            card.appendChild(ingTitle);
+
+            const ingDesc = document.createElement("div");
+            ingDesc.style.fontSize = "0.85rem";
+            ingDesc.style.marginBottom = "6px";
+            ingDesc.textContent = usedIngredients.map(i => i.display).join(", ");
+            card.appendChild(ingDesc);
+
+            const gapTitle = document.createElement("div");
+            gapTitle.className = "list-title";
+            gapTitle.textContent = "Pantry Gaps";
+            card.appendChild(gapTitle);
+
+            const gapDesc = document.createElement("div");
+            gapDesc.className = "gap";
+            gapDesc.style.fontSize = "0.85rem";
+            gapDesc.style.marginBottom = "6px";
+            gapDesc.textContent = recipe.gaps.join(", ");
+            card.appendChild(gapDesc);
+
+            const dirTitle = document.createElement("div");
+            dirTitle.className = "list-title";
+            dirTitle.textContent = "Quick Directions";
+            card.appendChild(dirTitle);
+
+            const dirDesc = document.createElement("div");
+            dirDesc.className = "directions";
+            dirDesc.textContent = recipe.directions;
+            card.appendChild(dirDesc);
+
+            const actionsDiv = document.createElement("div");
+            actionsDiv.className = "card-actions no-print";
+
+            const copyBtn = document.createElement("button");
+            copyBtn.className = "secondary";
+            copyBtn.textContent = "Copy";
+            copyBtn.addEventListener("click", () => {
+                const textBlock = `${recipe.name}\n\nIngredients: ${usedIngredients.map(i => i.display).join(", ")}\n\nPantry Gaps: ${recipe.gaps.join(", ")}\n\nDirections:\n${recipe.directions}`;
+                navigator.clipboard.writeText(textBlock).then(() => {
+                    alert(`Copied "${recipe.name}" card to clipboard.`);
+                });
+            });
+
+            const printBtn = document.createElement("button");
+            printBtn.className = "secondary";
+            printBtn.textContent = "Print Card";
+            printBtn.addEventListener("click", () => window.print());
+
+            actionsDiv.appendChild(copyBtn);
+            actionsDiv.appendChild(printBtn);
+            card.appendChild(actionsDiv);
+
+            container.appendChild(card);
+        });
+    }
+
+    function exportMealPlan() {
+        const activeIngredients = inventory
+            .filter(i => i.checked && i.name.length > 0)
+            .map(i => i.name);
+
+        const currentMatches = getActiveRecipes(activeIngredients);
+        if (currentMatches.length === 0) return;
+
+        let fileText = "LEFTOVER SWAPPER - MEAL PLAN\n";
+        fileText += `Generated on: ${new Date().toLocaleDateString()}\n`;
+        fileText += `Selected Ingredients: ${activeIngredients.join(", ")}\n`;
+        fileText += "========================================\n\n";
+
+        currentMatches.forEach((match, idx) => {
+            const { recipe, usedIngredients } = match;
+            fileText += `${idx + 1}. ${recipe.name.toUpperCase()}\n`;
+            fileText += `Tags: ${recipe.tags.join(", ")}\n`;
+            fileText += `Ingredients Matrix: ${usedIngredients.map(i => i.display).join(", ")}\n`;
+            fileText += `Pantry Gaps needed: ${recipe.gaps.join(", ")}\n`;
+            fileText += `Directions: ${recipe.directions}\n`;
+            fileText += "----------------------------------------\n\n";
+        });
+
+        const blob = new Blob([fileText], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `leftover-meal-plan-${new Date().toISOString().slice(0,10)}.txt`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    init();
+</script>
+
+</body>
+</html>

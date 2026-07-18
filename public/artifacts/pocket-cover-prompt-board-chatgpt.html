@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Pocket Cover Prompt Board</title>
+<style>
+  :root{
+    --bg:#15130f; --panel:#211d17; --card:#2b261e; --ink:#fff5df;
+    --muted:#cbbd9b; --line:#4a3f31; --hot:#ffb84d; --soft:#7ee0c3;
+    --bad:#ff7b7b; --ok:#a6ff8f;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+  body{display:flex;justify-content:center}
+  .app{width:min(100%,430px);padding:14px}
+  header{padding:12px 4px 8px}
+  h1{font-size:1.35rem;margin:0 0 6px;letter-spacing:.2px}
+  p{margin:0;color:var(--muted);line-height:1.35}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:12px;margin:12px 0;box-shadow:0 10px 30px #0004}
+  label{display:block;font-size:.82rem;color:var(--muted);margin:0 0 6px}
+  textarea,input{width:100%;border:1px solid var(--line);background:#14110d;color:var(--ink);border-radius:14px;padding:11px;font:inherit;outline:none}
+  textarea{min-height:72px;resize:vertical}
+  textarea:focus,input:focus{border-color:var(--hot)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+  button,.chip{
+    border:1px solid var(--line);background:#30291f;color:var(--ink);
+    border-radius:999px;padding:9px 11px;font:inherit;min-height:40px;cursor:pointer;
+    touch-action:manipulation;
+  }
+  button:active,.chip:active{transform:translateY(1px)}
+  .chip.on{background:var(--hot);color:#201306;border-color:var(--hot);font-weight:700}
+  .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .primary{background:var(--hot);color:#201306;border-color:var(--hot);font-weight:800}
+  .ghost{background:transparent}
+  .cards{display:grid;gap:10px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px}
+  .card h2{font-size:1rem;margin:0 0 6px;color:var(--soft)}
+  .prompt{font-size:.94rem;line-height:1.4;color:#fff7e8;white-space:pre-wrap}
+  .tiny{font-size:.78rem;color:var(--muted);margin-top:8px}
+  .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#080705;color:var(--ok);border:1px solid #315b35;padding:10px 13px;border-radius:999px;display:none;z-index:5}
+  @media(max-width:390px){
+    .app{padding:10px}
+    .row{grid-template-columns:1fr}
+    button,.chip{padding:9px 10px}
+    h1{font-size:1.22rem}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Pocket Cover Prompt Board</h1>
+    <p>Turn a rough visual idea into four stronger image-prompt cards. No APIs, no image calls, no outside files.</p>
+  </header>
+
+  <section class="panel">
+    <label for="idea">Rough visual idea</label>
+    <textarea id="idea" placeholder="Example: a lonely astronaut selling flowers from a street cart"></textarea>
+
+    <div class="row" style="margin-top:10px">
+      <div>
+        <label for="subject">Subject</label>
+        <input id="subject" placeholder="astronaut, witch, diner, robot..." />
+      </div>
+      <div>
+        <label for="setting">Setting</label>
+        <input id="setting" placeholder="rainy alley, moon base..." />
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="primary" id="build">Build 4 Cards</button>
+      <button class="ghost" id="clear">Clear</button>
+      <button class="ghost" id="export">Export .txt</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <label>Mood</label>
+    <div class="chips" data-group="mood">
+      <button class="chip on">cinematic</button><button class="chip">cozy</button><button class="chip">eerie</button>
+      <button class="chip">playful</button><button class="chip">melancholy</button><button class="chip">heroic</button>
+    </div>
+
+    <label style="margin-top:14px">Framing</label>
+    <div class="chips" data-group="framing">
+      <button class="chip on">cover art</button><button class="chip">close-up portrait</button><button class="chip">wide establishing shot</button>
+      <button class="chip">overhead view</button><button class="chip">low angle</button><button class="chip">centered composition</button>
+    </div>
+
+    <label style="margin-top:14px">Palette</label>
+    <div class="chips" data-group="palette">
+      <button class="chip on">warm amber and deep teal</button><button class="chip">soft pastels</button><button class="chip">black, cream, and red</button>
+      <button class="chip">neon night colors</button><button class="chip">dusty earth tones</button><button class="chip">icy blue monochrome</button>
+    </div>
+
+    <label style="margin-top:14px">Detail chips</label>
+    <div class="chips" data-group="details">
+      <button class="chip on">strong silhouette</button><button class="chip">textured background</button><button class="chip">small story clues</button>
+      <button class="chip">dramatic lighting</button><button class="chip">handmade imperfections</button><button class="chip">negative space for title</button>
+    </div>
+  </section>
+
+  <section class="cards" id="cards"></section>
+</div>
+
+<div class="toast" id="toast">Copied</div>
+
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+  const cards = $("#cards");
+  const toast = $("#toast");
+
+  const variants = [
+    {name:"Bold Cover", add:"bold editorial cover design, memorable central shape, poster-ready hierarchy"},
+    {name:"Storybook Scene", add:"narrative illustration, charming environmental details, readable visual story"},
+    {name:"Premium Product Shot", add:"polished commercial image, refined surface detail, clean visual focus"},
+    {name:"Moody Film Still", add:"cinematic still frame, atmospheric depth, expressive lighting and shadow"}
+  ];
+
+  function selected(group){
+    return $$(`[data-group="${group}"] .chip.on`).map(b=>b.textContent.trim());
+  }
+
+  function baseData(){
+    const idea = $("#idea").value.trim();
+    const subject = $("#subject").value.trim();
+    const setting = $("#setting").value.trim();
+    return {
+      idea: idea || "a striking visual concept",
+      subject: subject || idea || "main subject",
+      setting: setting || "a distinctive setting",
+      mood:selected("mood"),
+      framing:selected("framing"),
+      palette:selected("palette"),
+      details:selected("details")
+    };
+  }
+
+  function makePrompt(v,d){
+    return `${d.subject} in ${d.setting}. ${v.add}. Mood: ${d.mood.join(", ")}. Framing: ${d.framing.join(", ")}. Palette: ${d.palette.join(", ")}. Details: ${d.details.join(", ")}. Based on rough idea: ${d.idea}. Crisp composition, intentional focal point, high visual clarity, no text artifacts.`;
+  }
+
+  function render(){
+    const d = baseData();
+    cards.innerHTML = variants.map((v,i)=>{
+      const p = makePrompt(v,d);
+      return `<article class="card">
+        <h2>${i+1}. ${v.name}</h2>
+        <div class="prompt" id="p${i}">${escapeHtml(p)}</div>
+        <div class="actions">
+          <button data-copy="${i}">Copy Card</button>
+        </div>
+        <div class="tiny">Use this as a cover/image prompt starter, then swap in exact brand, format, or style constraints.</div>
+      </article>`;
+    }).join("");
+  }
+
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+
+  async function copyText(text){
+    try{
+      await navigator.clipboard.writeText(text);
+      flash("Copied");
+    }catch(e){
+      const ta=document.createElement("textarea");
+      ta.value=text; document.body.appendChild(ta); ta.select();
+      document.execCommand("copy"); ta.remove(); flash("Copied");
+    }
+  }
+
+  function flash(msg){
+    toast.textContent=msg; toast.style.display="block";
+    clearTimeout(window.__toast);
+    window.__toast=setTimeout(()=>toast.style.display="none",1200);
+  }
+
+  document.addEventListener("click", e=>{
+    const chip = e.target.closest(".chip");
+    if(chip){
+      chip.classList.toggle("on");
+      render();
+    }
+    const copy = e.target.closest("[data-copy]");
+    if(copy){
+      copyText($("#p"+copy.dataset.copy).textContent);
+    }
+  });
+
+  $("#build").addEventListener("click", render);
+
+  $("#clear").addEventListener("click", ()=>{
+    $("#idea").value=""; $("#subject").value=""; $("#setting").value="";
+    render(); flash("Cleared");
+  });
+
+  $("#export").addEventListener("click", ()=>{
+    const text = $$(".prompt").map((el,i)=>`${i+1}. ${variants[i].name}\n${el.textContent}`).join("\n\n");
+    const blob = new Blob([text], {type:"text/plain"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "pocket-cover-prompt-board.txt";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  ["idea","subject","setting"].forEach(id=>$("#"+id).addEventListener("input", render));
+  render();
+})();
+</script>
+</body>
+</html>

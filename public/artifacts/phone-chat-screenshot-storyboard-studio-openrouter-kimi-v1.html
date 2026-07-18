@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Phone-Chat Storyboard Studio</title>
+  <style>
+    :root {
+      --bg: #f7f8fb;
+      --panel: #ffffff;
+      --text: #1f2937;
+      --text-secondary: #6b7280;
+      --border: #e5e7eb;
+      --primary: #4f46e5;
+      --primary-light: #eef2ff;
+      --accent: #0ea5e9;
+      --danger: #ef4444;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --shadow: 0 4px 24px rgba(0,0,0,0.06);
+      --radius: 14px;
+      --header-height: 60px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
+
+    /* Header */
+    header {
+      position: fixed; top: 0; left: 0; right: 0; height: var(--header-height);
+      background: var(--panel); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; z-index: 100; box-shadow: var(--shadow);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 18px; }
+    .brand-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 0 4px var(--primary-light); }
+    .actions { display: flex; gap: 10px; align-items: center; }
+
+    button {
+      border: 1px solid var(--border); background: var(--panel); color: var(--text);
+      padding: 8px 14px; border-radius: 10px; cursor: pointer; font-size: 13px;
+      font-weight: 600; transition: all .15s ease; display: inline-flex; align-items: center; gap: 6px;
+    }
+    button:hover { background: var(--bg); border-color: var(--primary); color: var(--primary); }
+    button.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    button.primary:hover { background: #4338ca; color: #fff; }
+    button.success { background: var(--success); color: #fff; border-color: var(--success); }
+    button.success:hover { background: #059669; color: #fff; }
+    button.danger { color: var(--danger); border-color: #fecaca; background: #fef2f2; }
+    button.danger:hover { background: var(--danger); color: #fff; }
+    button.ghost { border-color: transparent; background: transparent; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* Layout */
+    .app { display: grid; grid-template-columns: 280px 1fr 360px; height: 100vh; padding-top: var(--header-height); }
+    .panel { background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+    .panel:last-child { border-right: none; border-left: 1px solid var(--border); }
+    .panel-header { padding: 18px 20px 10px; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center; }
+    .panel-body { flex: 1; overflow-y: auto; padding: 0 20px 20px; }
+
+    /* Roles */
+    .role-list { display: flex; flex-direction: column; gap: 10px; }
+    .role-card {
+      display: grid; grid-template-columns: 36px 1fr 28px; align-items: center; gap: 10px;
+      padding: 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg);
+    }
+    .role-avatar { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-size: 16px; color: #fff; font-weight: 700; }
+    .role-name { font-weight: 600; font-size: 14px; }
+    .role-meta { font-size: 11px; color: var(--text-secondary); }
+    .role-card.active { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-light); background: #fff; }
+    .role-edit { display: grid; grid-template-columns: 1fr 60px; gap: 8px; margin-bottom: 10px; }
+    .role-edit input, .role-edit select { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; }
+    .role-check { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+
+    /* Timeline / Phone */
+    .stage { background: var(--bg); display: flex; flex-direction: column; }
+    .stage-toolbar { padding: 12px 20px; display: flex; gap: 12px; align-items: center; border-bottom: 1px solid var(--border); background: var(--panel); flex-wrap: wrap; }
+    .stage-toolbar label { font-size: 12px; color: var(--text-secondary); font-weight: 600; }
+    .stage-toolbar input, .stage-toolbar select { padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; }
+
+    .phone-wrap { flex: 1; overflow-y: auto; padding: 30px 20px; display: flex; justify-content: center; }
+    .phone {
+      width: 360px; min-height: 640px; background: #fff; border: 12px solid #111827; border-radius: 42px;
+      box-shadow: 0 24px 60px rgba(0,0,0,.18); display: flex; flex-direction: column; overflow: hidden; position: relative;
+    }
+    .phone-notch { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 140px; height: 26px; background: #111827; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; z-index: 5; }
+    .phone-status { height: 46px; background: #f3f4f6; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; font-size: 11px; font-weight: 700; color: #111827; padding-top: 12px; }
+    .phone-header { padding: 10px 16px; background: #f9fafb; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; gap: 10px; }
+    .phone-header .back { color: var(--primary); font-size: 18px; }
+    .phone-header .name { flex: 1; font-weight: 700; font-size: 15px; }
+    .phone-header .sub { font-size: 11px; color: var(--text-secondary); }
+    .chat { flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; background: #fff; }
+    .bubble {
+      max-width: 78%; padding: 10px 14px; border-radius: 18px; font-size: 14px; line-height: 1.45; position: relative;
+      cursor: pointer; transition: transform .1s;
+    }
+    .bubble:hover { transform: translateY(-1px); }
+    .bubble.them { align-self: flex-start; background: #e5e7eb; color: #111827; border-bottom-left-radius: 4px; }
+    .bubble.me { align-self: flex-end; background: var(--primary); color: #fff; border-bottom-right-radius: 4px; }
+    .bubble.status { align-self: center; background: transparent; color: var(--text-secondary); font-size: 11px; max-width: 90%; text-align: center; padding: 4px 0; }
+    .bubble.image { padding: 4px; background: transparent; }
+    .bubble.image img { width: 100%; border-radius: 14px; display: block; background: #e5e7eb; min-height: 120px; object-fit: cover; }
+    .bubble.voice { display: flex; align-items: center; gap: 10px; min-width: 140px; }
+    .bubble .time { font-size: 10px; opacity: .75; margin-top: 6px; display: block; text-align: right; }
+    .bubble.selected { outline: 3px solid var(--accent); outline-offset: 2px; }
+    .beat-num { position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 10px; font-weight: 800; display: grid; place-items: center; }
+
+    .add-beat-bar { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; padding: 12px 16px; background: #f9fafb; border-top: 1px solid var(--border); }
+    .add-beat-bar button { justify-content: center; font-size: 12px; padding: 8px; }
+
+    /* Right inspector */
+    .empty-state { color: var(--text-secondary); font-size: 13px; text-align: center; padding: 40px 10px; }
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-size: 12px; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .03em; }
+    .field input, .field textarea, .field select {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 13px; font-family: inherit;
+    }
+    .field textarea { resize: vertical; min-height: 80px; }
+    .field .hint { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .tag {
+      font-size: 11px; padding: 4px 10px; border-radius: 20px; background: var(--bg); border: 1px solid var(--border);
+      cursor: pointer; user-select: none;
+    }
+    .tag.active { background: var(--primary-light); border-color: var(--primary); color: var(--primary); font-weight: 700; }
+    .coherence-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 6px 10px; border-radius: 20px; font-weight: 700; }
+    .coherence-badge.ok { background: #d1fae5; color: #065f46; }
+    .coherence-badge.warn { background: #fef3c7; color: #92400e; }
+    .coherence-badge.err { background: #fee2e2; color: #991b1b; }
+
+    /* Modals / Drawers */
+    .drawer-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 200; opacity: 0; pointer-events: none; transition: opacity .2s; }
+    .drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+    .drawer { position: fixed; top: 0; right: 0; width: 520px; max-width: 90vw; height: 100%; background: var(--panel); box-shadow: -8px 0 40px rgba(0,0,0,.12); transform: translateX(100%); transition: transform .25s ease; z-index: 201; display: flex; flex-direction: column; }
+    .drawer.open { transform: translateX(0); }
+    .drawer-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .drawer-body { flex: 1; overflow-y: auto; padding: 24px; }
+    .brief-output { white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13px; line-height: 1.6; background: #111827; color: #e5e7eb; padding: 20px; border-radius: var(--radius); min-height: 300px; }
+    .checks-list { display: flex; flex-direction: column; gap: 10px; }
+    .check-item { display: flex; gap: 12px; align-items: flex-start; padding: 12px; border-radius: 12px; border: 1px solid var(--border); }
+    .check-icon { font-size: 16px; line-height: 1; margin-top: 2px; }
+    .check-title { font-weight: 700; font-size: 13px; margin-bottom: 2px; }
+    .check-desc { font-size: 12px; color: var(--text-secondary); }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); background: #111827; color: #fff; padding: 12px 20px; border-radius: 30px; font-size: 13px; font-weight: 600; opacity: 0; pointer-events: none; transition: all .25s; z-index: 300; box-shadow: var(--shadow); }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+
+    @media (max-width: 1100px) {
+      .app { grid-template-columns: 240px 1fr 320px; }
+      .phone { width: 320px; }
+    }
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; }
+      .panel { border-right: none; border-bottom: 1px solid var(--border); height: auto; max-height: 40vh; }
+      .panel:last-child { border-left: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="brand"><div class="brand-dot"></div> Phone-Chat Storyboard Studio</div>
+  <div class="actions">
+    <input type="file" id="fileInput" accept=".json" hidden />
+    <button onclick="loadProject()">📂 Load</button>
+    <button onclick="saveProject()">💾 Save JSON</button>
+    <button class="primary" onclick="runChecks()">✅ Coherence</button>
+    <button class="primary" onclick="openBrief()">🎬 Image Brief</button>
+  </div>
+</header>
+
+<div class="app">
+  <!-- Roles Panel -->
+  <aside class="panel">
+    <div class="panel-header">Sender Roles <button class="ghost" onclick="addRole()">+ Add</button></div>
+    <div class="panel-body">
+      <div class="role-edit">
+        <input id="newRoleName" placeholder="Name" />
+        <select id="newRoleColor">
+          <option value="#4f46e5">Indigo</option>
+          <option value="#0ea5e9">Sky</option>
+          <option value="#10b981">Green</option>
+          <option value="#f59e0b">Amber</option>
+          <option value="#ef4444">Red</option>
+          <option value="#8b5cf6">Violet</option>
+          <option value="#ec4899">Pink</option>
+          <option value="#6b7280">Gray</option>
+        </select>
+        <input id="newRoleEmoji" placeholder="Emoji avatar" maxlength="2" value="🧑" />
+        <label class="role-check"><input type="checkbox" id="newRoleIsMe" /> This is "me"</label>
+      </div>
+      <div id="roleList" class="role-list"></div>
+    </div>
+  </aside>
+
+  <!-- Stage Panel -->
+  <main class="panel stage">
+    <div class="stage-toolbar">
+      <label>Project</label>
+      <input id="projectTitle" placeholder="Untitled storyboard" oninput="updateProject()" />
+      <label>Platform</label>
+      <select id="projectPlatform" onchange="updateProject()">
+        <option>iMessage</option>
+        <option>WhatsApp</option>
+        <option>Messenger</option>
+        <option>Instagram</option>
+        <option>Telegram</option>
+        <option>Generic</option>
+      </select>
+      <label>Time</label>
+      <input id="projectTime" value="9:41" oninput="updateProject()" />
+      <label>Carrier</label>
+      <input id="projectCarrier" value="5G" oninput="updateProject()" />
+    </div>
+
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-status">
+          <span id="statusTime">9:41</span>
+          <span>📶 <span id="statusCarrier">5G</span> 🔋</span>
+        </div>
+        <div class="phone-header">
+          <span class="back">‹</span>
+          <div>
+            <div class="name" id="chatTitle">Chat</div>
+            <div class="sub" id="chatSubtitle">typing…</div>
+          </div>
+          <span>📹</span>
+        </div>
+        <div id="chatStage" class="chat"></div>
+        <div class="add-beat-bar">
+          <button onclick="addBeat('text')">💬 Text</button>
+          <button onclick="addBeat('image')">🖼 Image</button>
+          <button onclick="addBeat('voice')">🎙 Voice</button>
+          <button onclick="addBeat('status')">ℹ Status</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Inspector Panel -->
+  <aside class="panel">
+    <div class="panel-header">Beat Inspector</div>
+    <div class="panel-body" id="inspector">
+      <div class="empty-state">Select a message bubble to edit its content, sender, and shot-quality notes.</div>
+    </div>
+  </aside>
+</div>
+
+<!-- Coherence Drawer -->
+<div id="checksBackdrop" class="drawer-backdrop" onclick="closeChecks()"></div>
+<div id="checksDrawer" class="drawer">
+  <div class="drawer-header">
+    <div>
+      <div style="font-weight:800;font-size:16px;">Coherence Checks</div>
+      <div style="font-size:12px;color:var(--text-secondary);">Story logic, continuity & production readiness</div>
+    </div>
+    <button onclick="closeChecks()">Close</button>
+  </div>
+  <div class="drawer-body">
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;">
+      <span id="checksSummary" class="coherence-badge ok">All clear</span>
+      <button class="primary" onclick="runChecks()">Re-run checks</button>
+    </div>
+    <div id="checksList" class="checks-list"></div>
+  </div>
+</div>
+
+<!-- Brief Drawer -->
+<div id="briefBackdrop" class="drawer-backdrop" onclick="closeBrief()"></div>
+<div id="briefDrawer" class="drawer">
+  <div class="drawer-header">
+    <div>
+      <div style="font-weight:800;font-size:16px;">Image Brief</div>
+      <div style="font-size:12px;color:var(--text-secondary);">Copy or download the production brief</div>
+    </div>
+    <button onclick="closeBrief()">Close</button>
+  </div>
+  <div class="drawer-body">
+    <div style="display:flex;gap:10px;margin-bottom:16px;">
+      <button class="success" onclick="copyBrief()">📋 Copy to clipboard</button>
+      <button onclick="downloadBrief()">⬇ Download .txt</button>
+    </div>
+    <div id="briefOutput" class="brief-output"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+/* ===================== STATE ===================== */
+const defaultState = () => ({
+  title: "Late Night Confession",
+  platform: "iMessage",
+  time: "9:41",
+  carrier: "5G",
+  roles: [
+    { id: "r1", name: "Alex", color: "#4f46e5", emoji: "🧑", isMe: false },
+    { id: "r2", name: "Jordan", color: "#0ea5e9", emoji: "👤", isMe: true }
+  ],
+  beats: [
+    { id: "b1", roleId: "r1", type: "text", text: "are you awake?", shotNotes: "Close-up on lock screen, dim bedroom glow. 2-second hold.", flags: ["lock screen"] },
+    { id: "b2", roleId: "r2", type: "text", text: "yeah. can't sleep.", shotNotes: "Over-shoulder, thumb hovering keyboard. Soft blue light on face.", flags: ["typing indicator"] },
+    { id: "b3", roleId: "r1", type: "text", text: "i need to tell you something", shotNotes: "Tight on message bubble, slight camera push-in.", flags: ["suspense"] }
+  ],
+  selectedBeatId: null
+});
+
+let state = loadFromStorage() || defaultState();
+
+/* ===================== DOM refs ===================== */
+const roleList = document.getElementById('roleList');
+const chatStage = document.getElementById('chatStage');
+const inspector = document.getElementById('inspector');
+const projectTitle = document.getElementById('projectTitle');
+const projectPlatform = document.getElementById('projectPlatform');
+const projectTime = document.getElementById('projectTime');
+const projectCarrier = document.getElementById('projectCarrier');
+const statusTime = document.getElementById('statusTime');
+const statusCarrier = document.getElementById('statusCarrier');
+const chatTitle = document.getElementById('chatTitle');
+const chatSubtitle = document.getElementById('chatSubtitle');
+
+/* ===================== INIT ===================== */
+function init() {
+  projectTitle.value = state.title;
+  projectPlatform.value = state.platform;
+  projectTime.value = state.time;
+  projectCarrier.value = state.carrier;
+  updateStatusBar();
+  renderRoles();
+  renderChat();
+  renderInspector();
+}
+
+function updateStatusBar() {
+  statusTime.textContent = state.time || '--:--';
+  statusCarrier.textContent = state.carrier || '';
+  chatTitle.textContent = state.title || 'Chat';
+  const others = state.roles.filter(r => !r.isMe).map(r => r.name).join(', ');
+  chatSubtitle.textContent = others ? `with ${others}` : 'new message';
+}
+
+function updateProject() {
+  state.title = projectTitle.value;
+  state.platform = projectPlatform.value;
+  state.time = projectTime.value;
+  state.carrier = projectCarrier.value;
+  updateStatusBar();
+  persist();
+}
+
+/* ===================== ROLES ===================== */
+function renderRoles() {
+  roleList.innerHTML = '';
+  state.roles.forEach(role => {
+    const div = document.createElement('div');
+    div.className = `role-card ${role.isMe ? 'active' : ''}`;
+    div.innerHTML = `
+      <div class="role-avatar" style="background:${role.color}">${role.emoji || '•'}</div>
+      <div>
+        <div class="role-name">${escapeHtml(role.name)} ${role.isMe ? '<span style="font-size:11px;color:var(--primary);">(me)</span>' : ''}</div>
+        <div class="role-meta">${state.beats.filter(b => b.roleId === role.id).length} beats</div>
+      </div>
+      <button class="ghost" onclick="deleteRole('${role.id}')" title="Delete">×</button>
+    `;
+    roleList.appendChild(div);
+  });
+}
+
+function addRole() {
+  const name = document.getElementById('newRoleName').value.trim();
+  const color = document.getElementById('newRoleColor').value;
+  const emoji = document.getElementById('newRoleEmoji').value.trim() || '👤';
+  const isMe = document.getElementById('newRoleIsMe').checked;
+  if (!name) return toast('Enter a role name');
+  if (isMe) state.roles.forEach(r => r.isMe = false);
+  state.roles.push({ id: 'r' + Date.now(), name, color, emoji, isMe });
+  document.getElementById('newRoleName').value = '';
+  document.getElementById('newRoleEmoji').value = '🧑';
+  document.getElementById('newRoleIsMe').checked = false;
+  renderRoles();
+  renderChat();
+  persist();
+}
+
+function deleteRole(id) {
+  if (state.roles.length <= 1) return toast('Keep at least one role');
+  state.roles = state.roles.filter(r => r.id !== id);
+  state.beats.forEach(b => { if (b.roleId === id) b.roleId = state.roles[0].id; });
+  renderRoles();
+  renderChat();
+  renderInspector();
+  persist();
+}
+
+function getRole(id) { return state.roles.find(r => r.id === id) || state.roles[0]; }
+
+/* ===================== BEATS / CHAT ===================== */
+function addBeat(type) {
+  const meRole = state.roles.find(r => r.isMe) || state.roles[0];
+  const lastRole = state.beats.length ? getRole(state.beats[state.beats.length-1].roleId) : meRole;
+  const role = type === 'status' ? null : lastRole;
+  const beat = {
+    id: 'b' + Date.now(),
+    roleId: role ? role.id : null,
+    type,
+    text: type === 'image' ? '[image placeholder]' : type === 'voice' ? '0:08 voice memo' : '',
+    shotNotes: '',
+    flags: []
+  };
+  state.beats.push(beat);
+  state.selectedBeatId = beat.id;
+  renderChat();
+  renderInspector();
+  persist();
+}
+
+function moveBeat(id, dir) {
+  const idx = state.beats.findIndex(b => b.id === id);
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= state.beats.length) return;
+  [state.beats[idx], state.beats[newIdx]] = [state.beats[newIdx], state.beats[idx]];
+  renderChat();
+  persist();
+}
+
+function deleteBeat(id) {
+  state.beats = state.beats.filter(b => b.id !== id);
+  if (state.selectedBeatId === id) state.selectedBeatId = null;
+  renderChat();
+  renderInspector();
+  persist();
+}
+
+function selectBeat(id) {
+  state.selectedBeatId = id;
+  renderChat();
+  renderInspector();
+}
+
+function renderChat() {
+  chatStage.innerHTML = '';
+  state.beats.forEach((beat, i) => {
+    const el = document.createElement('div');
+    const isStatus = beat.type === 'status';
+    const role = isStatus ? null : getRole(beat.roleId);
+    const isMe = role && role.isMe;
+    el.className = `bubble ${isStatus ? 'status' : (isMe ? 'me' : 'them')} ${beat.type} ${state.selectedBeatId === beat.id ? 'selected' : ''}`;
+    el.onclick = () => selectBeat(beat.id);
+
+    let content = '';
+    if (beat.type === 'image') {
+      content = `<img src="" alt="${escapeHtml(beat.text)}" /><div class="time">${escapeHtml(beat.text)}</div>`;
+    } else if (beat.type === 'voice') {
+      content = `<div class="voice">🎙 ${escapeHtml(beat.text)}</div><div class="time">voice note</div>`;
+    } else {
+      content = `${escapeHtml(beat.text)}<div class="time">${role ? role.name : ''} • beat ${i+1}</div>`;
+    }
+    el.innerHTML = content;
+
+    const num = document.createElement('div');
+    num.className = 'beat-num';
+    num.textContent = i + 1;
+    el.appendChild(num);
+    chatStage.appendChild(el);
+  });
+}
+
+/* ===================== INSPECTOR ===================== */
+function renderInspector() {
+  const beat = state.beats.find(b => b.id === state.selectedBeatId);
+  if (!beat) {
+    inspector.innerHTML = `<div class="empty-state">Select a message bubble to edit its content, sender, and shot-quality notes.</div>`;
+    return;
+  }
+  const role = getRole(beat.roleId);
+  const roleOptions = state.roles.map(r => `<option value="${r.id}" ${r.id === beat.roleId ? 'selected' : ''}>${escapeHtml(r.name)}${r.isMe ? ' (me)' : ''}</option>`).join('');
+
+  inspector.innerHTML = `
+    <div class="field">
+      <label>Beat #${state.beats.indexOf(beat) + 1} Type</label>
+      <select onchange="updateBeat('${beat.id}','type',this.value)">
+        <option value="text" ${beat.type==='text'?'selected':''}>Text</option>
+        <option value="image" ${beat.type==='image'?'selected':''}>Image</option>
+        <option value="voice" ${beat.type==='voice'?'selected':''}>Voice memo</option>
+        <option value="status" ${beat.type==='status'?'selected':''}>Status / system</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Sender</label>
+      <select onchange="updateBeat('${beat.id}','roleId',this.value)">
+        ${beat.type === 'status' ? '<option value="">— System —</option>' : ''}
+        ${roleOptions}
+      </select>
+    </div>
+    <div class="field">
+      <label>Message / Label</label>
+      <textarea oninput="updateBeat('${beat.id}','text',this.value)">${escapeHtml(beat.text)}</textarea>
+    </div>
+    <div class="field">
+      <label>Shot-quality notes</label>
+      <textarea oninput="updateBeat('${beat.id}','shotNotes',this.value)" placeholder="Camera angle, lighting, lens, motion, duration, prop details…">${escapeHtml(beat.shotNotes)}</textarea>
+      <div class="hint">Describe how this screenshot should be captured or designed.</div>
+    </div>
+    <div class="field">
+      <label>Flags</label>
+      <div class="tags">
+        ${['lock screen','typing indicator','suspense','reveal','cutaway','CGUI','reaction','time jump'].map(tag => `
+          <span class="tag ${(beat.flags||[]).includes(tag)?'active':''}" onclick="toggleFlag('${beat.id}','${tag}')">${tag}</span>
+        `).join('')}
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button onclick="moveBeat('${beat.id}', -1)" ${state.beats[0].id===beat.id?'disabled':''}>↑ Move up</button>
+      <button onclick="moveBeat('${beat.id}', 1)" ${state.beats[state.beats.length-1].id===beat.id?'disabled':''}>↓ Move down</button>
+      <button class="danger" style="margin-left:auto;" onclick="deleteBeat('${beat.id}')">Delete beat</button>
+    </div>
+  `;
+}
+
+function updateBeat(id, key, value) {
+  const beat = state.beats.find(b => b.id === id);
+  if (!beat) return;
+  beat[key] = value;
+  renderChat();
+  renderInspector();
+  persist();
+}
+
+function toggleFlag(id, tag) {
+  const beat = state.beats.find(b => b.id === id);
+  if (!beat.flags) beat.flags = [];
+  if (beat.flags.includes(tag)) beat.flags = beat.flags.filter(f => f !== tag);
+  else beat.flags.push(tag);
+  renderInspector();
+  persist();
+}
+
+/* ===================== COHERENCE CHECKS ===================== */
+function runChecks() {
+  const issues = [];
+  const beats = state.beats;
+
+  if (!state.title.trim()) issues.push({ level: 'warn', title: 'Missing project title', desc: 'Add a title so the brief is identifiable.' });
+
+  if (beats.length === 0) issues.push({ level: 'err', title: 'No beats', desc: 'Add at least one message beat.' });
+
+  if (state.roles.length < 2 && beats.some(b => b.type !== 'status')) {
+    issues.push({ level: 'warn', title: 'Only one role', desc: 'Real chats usually involve at least two participants.' });
+  }
+
+  const noNotes = beats.filter(b => !b.shotNotes || !b.shotNotes.trim());
+  if (noNotes.length) {
+    issues.push({ level: 'warn', title: `${noNotes.length} beat(s) lack shot notes`, desc: 'Production-quality storyboards should include camera/lens/lighting notes for every beat.' });
+  }
+
+  beats.forEach((b, i) => {
+    if (b.type === 'image' && (!b.text || b.text === '[image placeholder]')) {
+      issues.push({ level: 'err', title: `Beat ${i+1}: image lacks description`, desc: 'Describe what the image shows.' });
+    }
+    if (b.type === 'text' && b.text.length > 300) {
+      issues.push({ level: 'warn', title: `Beat ${i+1}: very long message`, desc: 'Consider splitting into smaller bubbles for readability.' });
+    }
+  });
+
+  const unanswered = [];
+  for (let i = 0; i < beats.length - 1; i++) {
+    const cur = beats[i], next = beats[i+1];
+    if (cur.type !== 'status' && next.type !== 'status' && cur.roleId === next.roleId) {
+      issues.push({ level: 'warn', title: `Beat ${i+1} & ${i+2}: same sender twice`, desc: 'Back-to-back messages from one sender can look unnatural unless intentional.' });
+    }
+    const txt = (cur.text || '').toLowerCase();
+    if ((txt.includes('?') || txt.includes('can you') || txt.includes('are you')) && i + 2 < beats.length && beats[i+1].roleId !== next.roleId) {
+      // skip generic heuristic
+    }
+  }
+
+  // tone shift heuristic
+  for (let i = 1; i < beats.length; i++) {
+    const prev = (beats[i-1].text || '').toLowerCase();
+    const cur = (beats[i].text || '').toLowerCase();
+    const sad = ['sorry','dead','never','hate','cry','miss'];
+    const happy = ['love','great','yes','happy','awesome','thanks'];
+    const prevSad = sad.some(w => prev.includes(w));
+    const curHappy = happy.some(w => cur.includes(w));
+    if (prevSad && curHappy) {
+      issues.push({ level: 'warn', title: `Beat ${i} to ${i+1}: possible abrupt tone shift`, desc: 'A sudden swing from negative to positive may need a bridging beat.' });
+    }
+  }
+
+  if (!issues.length) issues.push({ level: 'ok', title: 'All coherence checks passed', desc: 'Your storyboard looks consistent and production-ready.' });
+
+  const list = document.getElementById('checksList');
+  list.innerHTML = issues.map(iss => `
+    <div class="check-item" style="background:${iss.level==='err'?'#fef2f2':iss.level==='warn'?'#fffbeb':'#f0fdf4'};border-color:${iss.level==='err'?'#fecaca':iss.level==='warn'?'#fde68a':'#bbf7d0'};">
+      <div class="check-icon">${iss.level==='err'?'❌':iss.level==='warn'?'⚠️':'✅'}</div>
+      <div>
+        <div class="check-title">${escapeHtml(iss.title)}</div>
+        <div class="check-desc">${escapeHtml(iss.desc)}</div>
+      </div>
+    </div>
+  `).join('');
+
+  const summary = document.getElementById('checksSummary');
+  const errCount = issues.filter(i => i.level === 'err').length;
+  const warnCount = issues.filter(i => i.level === 'warn').length;
+  summary.className = `coherence-badge ${errCount ? 'err' : warnCount ? 'warn' : 'ok'}`;
+  summary.textContent = errCount ? `${errCount} error(s)` : warnCount ? `${warnCount} warning(s)` : 'All clear';
+
+  openChecks();
+}
+
+function openChecks() { document.getElementById('checksBackdrop').classList.add('open'); document.getElementById('checksDrawer').classList.add('open'); }
+function closeChecks() { document.getElementById('checksBackdrop').classList.remove('open'); document.getElementById('checksDrawer').classList.remove('open'); }
+
+/* ===================== IMAGE BRIEF ===================== */
+function generateBrief() {
+  const lines = [];
+  lines.push(`PHONE-CHAT SCREENSHOT STORYBOARD BRIEF`);
+  lines.push(`Generated: ${new Date().toLocaleString()}`);
+  lines.push(`Project: ${state.title || 'Untitled'}`);
+  lines.push(`Platform: ${state.platform}`);
+  lines.push(`Simulated time: ${state.time} | Carrier: ${state.carrier}`);
+  lines.push('');
+
+  lines.push(`CAST / ROLES`);
+  state.roles.forEach(r => {
+    lines.push(`• ${r.name} ${r.isMe?'(protagonist / "me")':'(contact)'}`);
+    lines.push(`  Avatar: ${r.emoji} | Bubble color: ${r.color}`);
+  });
+  lines.push('');
+
+  lines.push(`SHOT LIST (${state.beats.length} beats)`);
+  state.beats.forEach((b, i) => {
+    const role = b.type === 'status' ? 'SYSTEM' : getRole(b.roleId).name;
+    lines.push(`BEAT ${i+1}`);
+    lines.push(`  Type     : ${b.type.toUpperCase()}`);
+    lines.push(`  Sender   : ${role}`);
+    lines.push(`  Content  : ${b.text}`);
+    lines.push(`  Shot Note: ${b.shotNotes || '—'}`);
+    lines.push(`  Flags    : ${(b.flags || []).join(', ') || 'none'}`);
+    lines.push('');
+  });
+
+  lines.push(`PRODUCTION NOTES`);
+  lines.push(`• Maintain consistent UI bar / notch / carrier / battery across all shots.`);
+  lines.push(`• Preserve bubble colors per role. Use neutral gray for status beats.`);
+  lines.push(`• Keep text scale, padding, and corner radius uniform within the chat app skin.`);
+  lines.push(`• For image beats, supply final asset or on-set placeholder matching described framing.`);
+  return lines.join('\n');
+}
+
+function openBrief() {
+  document.getElementById('briefOutput').textContent = generateBrief();
+  document.getElementById('briefBackdrop').classList.add('open');
+  document.getElementById('briefDrawer').classList.add('open');
+}
+function closeBrief() { document.getElementById('briefBackdrop').classList.remove('open'); document.getElementById('briefDrawer').classList.remove('open'); }
+
+function copyBrief() {
+  navigator.clipboard.writeText(generateBrief()).then(() => toast('Brief copied to clipboard'));
+}
+function downloadBrief() {
+  const blob = new Blob([generateBrief()], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${(state.title || 'storyboard').replace(/\s+/g,'_')}_brief.txt`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('Brief downloaded');
+}
+
+/* ===================== SAVE / LOAD ===================== */
+function persist() { localStorage.setItem('chatStoryboardStudio', JSON.stringify(state)); }
+function loadFromStorage() {
+  const raw = localStorage.getItem('chatStoryboardStudio');
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch { return null; }
+}
+
+function saveProject() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${(state.title || 'storyboard').replace(/\s+/g,'_')}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('Project saved as JSON');
+}
+
+function loadProject() { document.getElementById('fileInput').click(); }
+document.getElementById('fileInput').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const loaded = JSON.parse(ev.target.result);
+      state = { ...defaultState(), ...loaded, selectedBeatId: null };
+      init();
+      persist();
+      toast('Project loaded');
+    } catch {
+      toast('Invalid JSON file');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+/* ===================== UTILS ===================== */
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+init();
+</script>
+</body>
+</html>

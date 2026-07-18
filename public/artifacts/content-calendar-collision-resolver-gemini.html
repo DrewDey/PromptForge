@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content Planner Board</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --border: #334155;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #6366f1;
+            --warning: #ef4444;
+            --success: #10b981;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 12px; min-height: 100vh; font-size: 14px; }
+        
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 8px; flex-wrap: wrap; }
+        h1 { font-size: 1.2rem; }
+        .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+        
+        button { background: var(--accent); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem; }
+        button:active { opacity: 0.9; }
+
+        .board { display: flex; flex-direction: column; gap: 16px; }
+        .column { background: #151f32; border: 1px solid var(--border); border-radius: 8px; padding: 12px; min-height: 100px; }
+        .column-header { font-weight: bold; margin-bottom: 10px; display: flex; justify-content: space-between; color: var(--text-muted); font-size: 0.9rem; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+        
+        .card-list { display: flex; flex-direction: column; gap: 8px; min-height: 50px; }
+        .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px; position: relative; cursor: grab; }
+        .card:active { cursor: grabbing; }
+        
+        .card-title { font-weight: 600; margin-bottom: 6px; background: transparent; color: var(--text); border: none; width: 100%; font-size: 0.9rem; border-bottom: 1px dashed transparent; }
+        .card-title:focus { outline: none; border-bottom: 1px solid var(--accent); }
+        
+        .meta-row { display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+        select, input { background: #0f172a; color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 2px 4px; font-size: 0.75rem; max-width: 100%; }
+        
+        .warnings { display: flex; flex-direction: column; gap: 2px; margin-top: 6px; }
+        .warning-tag { display: none; color: var(--warning); font-size: 0.72rem; font-weight: 600; }
+        
+        .has-conflict { border-color: var(--warning) !important; }
+
+        .btn-row { display: flex; justify-content: space-between; margin-top: 8px; align-items: center; }
+        .delete-btn { background: none; color: var(--text-muted); font-size: 0.75rem; border: none; padding: 0; cursor: pointer; }
+        .delete-btn:hover { color: var(--warning); }
+
+        .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; padding: 20px; z-index: 100; }
+        .modal { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; width: 100%; max-width: 500px; }
+        textarea { width: 100%; height: 250px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 10px; font-family: monospace; font-size: 0.8rem; resize: none; margin-bottom: 12px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Content Scheduler</h1>
+        <div class="actions">
+            <button id="add-idea-btn">+ Idea</button>
+            <button id="auto-slot-btn" style="background: #a855f7;">Auto-Slot</button>
+            <button id="open-handoff-btn" style="background: #3b82f6;">Handoff</button>
+        </div>
+    </header>
+
+    <div class="board">
+        <div class="column" data-week="backlog">
+            <div class="column-header"><span>💡 Messy Ideas Backlog</span> <span class="count">(0)</span></div>
+            <div class="card-list"></div>
+        </div>
+        <div class="column" data-week="1">
+            <div class="column-header"><span>📅 Week 1</span> <span class="count">(0)</span></div>
+            <div class="card-list"></div>
+        </div>
+        <div class="column" data-week="2">
+            <div class="column-header"><span>📅 Week 2</span> <span class="count">(0)</span></div>
+            <div class="card-list"></div>
+        </div>
+        <div class="column" data-week="3">
+            <div class="column-header"><span>📅 Week 3</span> <span class="count">(0)</span></div>
+            <div class="card-list"></div>
+        </div>
+        <div class="column" data-week="4">
+            <div class="column-header"><span>📅 Week 4</span> <span class="count">(0)</span></div>
+            <div class="card-list"></div>
+        </div>
+    </div>
+
+    <div class="overlay" id="handoffOverlay">
+        <div class="modal">
+            <h3 style="margin-bottom: 10px;">📋 Copyable Handoff Summary</h3>
+            <textarea id="handoffText" readonly></textarea>
+            <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                <button id="copy-clipboard-btn" style="background: var(--success);">Copy to Clipboard</button>
+                <button id="close-handoff-btn" style="background: var(--border);">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const addIdeaBtn = document.getElementById('add-idea-btn');
+        const autoSlotBtn = document.getElementById('auto-slot-btn');
+        const openHandoffBtn = document.getElementById('open-handoff-btn');
+        const closeHandoffBtn = document.getElementById('close-handoff-btn');
+        const copyClipboardBtn = document.getElementById('copy-clipboard-btn');
+        const handoffOverlay = document.getElementById('handoffOverlay');
+        const handoffText = document.getElementById('handoffText');
+        const cardLists = document.querySelectorAll('.card-list');
+
+        // State
+        let cards = JSON.parse(localStorage.getItem('planner-cards-v3')) || [
+            { id: '1', title: '10 Tips for HTML Layouts', channel: 'X/Twitter', effort: 'Low', deadline: '2026-06-05', week: 'backlog', theme: 'Tech', cta: 'Yes' },
+            { id: '2', title: 'Deep-dive AI Tutorial', channel: 'YouTube', effort: 'High', deadline: '2026-06-25', week: 'backlog', theme: 'Tech', cta: 'No' }
+        ];
+
+        // Date Helpers
+        const weekDeadlines = {
+            '1': new Date('2026-06-07'),
+            '2': new Date('2026-06-14'),
+            '3': new Date('2026-06-21'),
+            '4': new Date('2026-06-28')
+        };
+
+        function save() {
+            localStorage.setItem('planner-cards-v3', JSON.stringify(cards));
+            checkConflictsAndMetrics();
+            updateCounts();
+        }
+
+        function createCardElement(card) {
+            const cardEl = document.createElement('div');
+            cardEl.className = 'card';
+            cardEl.id = `card-${card.id}`;
+            cardEl.draggable = true;
+
+            // Drag and Drop Listeners
+            cardEl.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', card.id);
+            });
+
+            // Title Input
+            const titleInput = document.createElement('input');
+            titleInput.className = 'card-title';
+            titleInput.value = card.title;
+            titleInput.placeholder = 'Content Title';
+            titleInput.addEventListener('input', (e) => updateCard(card.id, 'title', e.target.value));
+
+            // Meta Row 1 (Channel, Effort, Deadline)
+            const metaRow1 = document.createElement('div');
+            metaRow1.className = 'meta-row';
+
+            const channelSelect = createSelect(['YouTube', 'LinkedIn', 'X/Twitter', 'Newsletter'], card.channel, 'Channel', (val) => updateCard(card.id, 'channel', val));
+            const effortSelect = createSelect(['Low', 'Medium', 'High'], card.effort, 'Effort', (val) => updateCard(card.id, 'effort', val));
+            
+            const dateInput = document.createElement('input');
+            dateInput.type = 'date';
+            dateInput.value = card.deadline || '';
+            dateInput.addEventListener('input', (e) => updateCard(card.id, 'deadline', e.target.value));
+
+            metaRow1.appendChild(channelSelect);
+            metaRow1.appendChild(effortSelect);
+            metaRow1.appendChild(dateInput);
+
+            // Meta Row 2 (Theme, CTA)
+            const metaRow2 = document.createElement('div');
+            metaRow2.className = 'meta-row';
+
+            const themeInput = document.createElement('input');
+            themeInput.type = 'text';
+            themeInput.placeholder = 'Theme/Topic';
+            themeInput.value = card.theme || '';
+            themeInput.style.width = '100px';
+            themeInput.addEventListener('input', (e) => updateCard(card.id, 'theme', e.target.value));
+
+            const ctaSelect = createSelect(['Yes', 'No'], card.cta, 'CTA?', (val) => updateCard(card.id, 'cta', val));
+
+            metaRow2.appendChild(themeInput);
+            metaRow2.appendChild(ctaSelect);
+
+            // Warnings Container
+            const warningsDiv = document.createElement('div');
+            warningsDiv.className = 'warnings';
+
+            const channelWarn = createWarningTag('warn-channel', '⚠️ Channel Conflict');
+            const effortWarn = createWarningTag('warn-effort', '⚠️ Heavy Effort Load');
+            const themeWarn = createWarningTag('warn-theme', '⚠️ Repeated Theme This Week');
+            const ctaWarn = createWarningTag('warn-cta', '⚠️ Missing CTA');
+            const deadlineWarn = createWarningTag('warn-date', '⚠️ Missed Deadline');
+
+            warningsDiv.appendChild(channelWarn);
+            warningsDiv.appendChild(effortWarn);
+            warningsDiv.appendChild(themeWarn);
+            warningsDiv.appendChild(ctaWarn);
+            warningsDiv.appendChild(deadlineWarn);
+
+            // Action Row
+            const btnRow = document.createElement('div');
+            btnRow.className = 'btn-row';
+
+            const weekSelect = createSelect(['backlog', '1', '2', '3', '4'], card.week, 'Slot', (val) => {
+                updateCard(card.id, 'week', val);
+                const targetList = document.querySelector(`.column[data-week="${val}"] .card-list`);
+                if (targetList) targetList.appendChild(cardEl);
+            });
+            
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.textContent = 'Delete';
+            deleteBtn.addEventListener('click', () => deleteCard(card.id));
+
+            btnRow.appendChild(weekSelect);
+            btnRow.appendChild(deleteBtn);
+
+            // Assemble
+            cardEl.appendChild(titleInput);
+            cardEl.appendChild(metaRow1);
+            cardEl.appendChild(metaRow2);
+            cardEl.appendChild(warningsDiv);
+            cardEl.appendChild(btnRow);
+
+            return cardEl;
+        }
+
+        function createSelect(options, currentVal, placeholder, onChange) {
+            const select = document.createElement('select');
+            const defaultOpt = document.createElement('option');
+            defaultOpt.value = '';
+            defaultOpt.textContent = placeholder;
+            select.appendChild(defaultOpt);
+
+            options.forEach(opt => {
+                const o = document.createElement('option');
+                o.value = opt;
+                o.textContent = opt === 'backlog' ? 'Backlog' : (opt.match(/^\d$/) ? `Wk ${opt}` : opt);
+                if (opt === currentVal) o.selected = true;
+                select.appendChild(o);
+            });
+
+            select.addEventListener('change', (e) => onChange(e.target.value));
+            return select;
+        }
+
+        function createWarningTag(className, text) {
+            const span = document.createElement('span');
+            span.className = `warning-tag ${className}`;
+            span.textContent = text;
+            return span;
+        }
+
+        function buildBoard() {
+            cardLists.forEach(list => list.textContent = '');
+            
+            cards.forEach(card => {
+                const cardEl = createCardElement(card);
+                const targetList = document.querySelector(`.column[data-week="${card.week}"] .card-list`);
+                if (targetList) targetList.appendChild(cardEl);
+            });
+
+            checkConflictsAndMetrics();
+            updateCounts();
+        }
+
+        function addCard() {
+            const newId = Date.now().toString();
+            const newCard = { id: newId, title: '', channel: '', effort: '', deadline: '', week: 'backlog', theme: '', cta: '' };
+            cards.push(newCard);
+            
+            const cardEl = createCardElement(newCard);
+            const targetList = document.querySelector('.column[data-week="backlog"] .card-list');
+            if (targetList) targetList.appendChild(cardEl);
+            
+            save();
+        }
+
+        function updateCard(id, field, value) {
+            const card = cards.find(c => c.id === id);
+            if (card) {
+                card[field] = value;
+                save();
+            }
+        }
+
+        function deleteCard(id) {
+            cards = cards.filter(c => c.id !== id);
+            const cardEl = document.getElementById(`card-${id}`);
+            if (cardEl) cardEl.remove();
+            save();
+        }
+
+        function autoSlot() {
+            let currentWeek = 1;
+            cards.forEach(card => {
+                if (card.week === 'backlog') {
+                    card.week = currentWeek.toString();
+                    currentWeek = currentWeek >= 4 ? 1 : currentWeek + 1;
+                }
+            });
+            buildBoard();
+            localStorage.setItem('planner-cards-v3', JSON.stringify(cards));
+        }
+
+        function checkConflictsAndMetrics() {
+            const targetWeeks = ['1', '2', '3', '4'];
+            
+            cards.forEach(c => {
+                const el = document.getElementById(`card-${c.id}`);
+                if (!el) return;
+                el.classList.remove('has-conflict');
+                el.querySelectorAll('.warning-tag').forEach(t => t.style.display = 'none');
+            });
+
+            targetWeeks.forEach(wk => {
+                const weekCards = cards.filter(c => c.week === wk);
+                
+                const channelCounts = {};
+                const themeCounts = {};
+                let highEffortCount = 0;
+
+                weekCards.forEach(c => {
+                    if (c.channel) channelCounts[c.channel] = (channelCounts[c.channel] || 0) + 1;
+                    if (c.theme && c.theme.trim() !== '') {
+                        const normalizedTheme = c.theme.trim().toLowerCase();
+                        themeCounts[normalizedTheme] = (themeCounts[normalizedTheme] || 0) + 1;
+                    }
+                    if (c.effort === 'High') highEffortCount++;
+                });
+
+                weekCards.forEach(c => {
+                    const el = document.getElementById(`card-${c.id}`);
+                    if (!el) return;
+
+                    let triggered = false;
+
+                    // Channel Conflict
+                    if (c.channel && channelCounts[c.channel] > 1) {
+                        el.querySelector('.warn-channel').style.display = 'block';
+                        triggered = true;
+                    }
+                    // Effort Conflict
+                    if (highEffortCount > 1 && c.effort === 'High') {
+                        el.querySelector('.warn-effort').style.display = 'block';
+                        triggered = true;
+                    }
+                    // Theme Conflict
+                    if (c.theme && themeCounts[c.theme.trim().toLowerCase()] > 1) {
+                        el.querySelector('.warn-theme').style.display = 'block';
+                        triggered = true;
+                    }
+                    // Missing CTA
+                    if (c.cta === 'No' || !c.cta) {
+                        el.querySelector('.warn-cta').style.display = 'block';
+                        triggered = true;
+                    }
+                    // Deadline Miss
+                    if (c.deadline && weekDeadlines[wk]) {
+                        const targetDate = new Date(c.deadline);
+                        if (targetDate < weekDeadlines[wk]) {
+                            el.querySelector('.warn-date').style.display = 'block';
+                            triggered = true;
+                        }
+                    }
+
+                    if (triggered) {
+                        el.classList.add('has-conflict');
+                    }
+                });
+            });
+
+            // Backlog validation
+            cards.filter(c => c.week === 'backlog').forEach(c => {
+                const el = document.getElementById(`card-${c.id}`);
+                if (!el) return;
+                if (c.cta === 'No' || !c.cta) {
+                    el.querySelector('.warn-cta').style.display = 'block';
+                    el.classList.add('has-conflict');
+                }
+            });
+        }
+
+        function updateCounts() {
+            document.querySelectorAll('.column').forEach(col => {
+                const week = col.dataset.week;
+                const count = cards.filter(c => c.week === week).length;
+                col.querySelector('.count').textContent = `(${count})`;
+            });
+        }
+
+        function generateSummary() {
+            let txt = "🚀 CONTENT SCHEDULE HANDOFF SUMMARY\n=================================\n\n";
+            const sections = ['1', '2', '3', '4', 'backlog'];
+            
+            sections.forEach(sec => {
+                const secCards = cards.filter(c => c.week === sec);
+                txt += sec === 'backlog' ? "💡 UNASSIGNED/BACKLOG\n" : `📅 WEEK ${sec}\n`;
+                
+                if (secCards.length === 0) {
+                    txt += "  (No items scheduled)\n";
+                } else {
+                    secCards.forEach(c => {
+                        txt += `  - [${c.channel || 'No Channel'}] ${c.title || 'Untitled'} (${c.effort || 'No Effort'} effort)\n`;
+                        txt += `    Topic: ${c.theme || 'None'} | CTA: ${c.cta || 'No'} | Due: ${c.deadline || 'No Date'}\n`;
+                    });
+                }
+                txt += "\n";
+            });
+            return txt;
+        }
+
+        // Setup Drag and Drop Containers
+        cardLists.forEach(list => {
+            list.addEventListener('dragover', (e) => {
+                e.preventDefault();
+            });
+
+            list.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const id = e.dataTransfer.getData('text/plain');
+                const targetColumn = list.closest('.column');
+                if (targetColumn && id) {
+                    updateCard(id, 'week', targetColumn.dataset.week);
+                    const cardEl = document.getElementById(`card-${id}`);
+                    if (cardEl) list.appendChild(cardEl);
+                }
+            });
+        });
+
+        // Interactive UI Events
+        addIdeaBtn.addEventListener('click', addCard);
+        autoSlotBtn.addEventListener('click', autoSlot);
+        
+        openHandoffBtn.addEventListener('click', () => {
+            handoffText.value = generateSummary();
+            handoffOverlay.style.display = 'flex';
+        });
+
+        closeHandoffBtn.addEventListener('click', () => {
+            handoffOverlay.style.display = 'none';
+        });
+
+        copyClipboardBtn.addEventListener('click', () => {
+            handoffText.select();
+            navigator.clipboard.writeText(handoffText.value).then(() => {
+                alert('Summary copied to clipboard!');
+            });
+        });
+
+        // Initialize board UI
+        buildBoard();
+    </script>
+</body>
+</html>

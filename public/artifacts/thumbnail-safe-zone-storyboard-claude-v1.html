@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Thumbnail Storyboard</title>
+<style>
+  :root {
+    --bg: #0E0E10;
+    --surface: #18181C;
+    --card: #1F1F25;
+    --border: #2E2E38;
+    --amber: #F5A623;
+    --amber-dim: #8A5D10;
+    --amber-glow: rgba(245,166,35,0.12);
+    --red: #E05252;
+    --green: #52C77F;
+    --blue: #5B8AF5;
+    --text: #F0EDE8;
+    --text-mid: #8A8898;
+    --text-dim: #3E3E50;
+    --mono: 'Courier New', 'Menlo', monospace;
+    --sans: -apple-system, 'Segoe UI', sans-serif;
+    --r: 10px;
+    --r-sm: 6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; font-size: 15px; }
+
+  /* HEADER */
+  .app-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 18px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .app-header .logo { font-family: var(--mono); font-size: 11px; color: var(--amber); letter-spacing: 0.12em; text-transform: uppercase; }
+  .app-header .title { font-size: 16px; font-weight: 600; flex: 1; }
+  .tab-bar {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky;
+    top: 53px;
+    z-index: 99;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tab-bar::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    flex: none;
+    padding: 11px 18px 10px;
+    font-size: 12px;
+    font-family: var(--mono);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-mid);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .tab-btn.active { color: var(--amber); border-bottom-color: var(--amber); }
+
+  /* PANELS */
+  .panel { display: none; padding: 18px; max-width: 600px; margin: 0 auto; }
+  .panel.active { display: block; }
+
+  /* FORM ELEMENTS */
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block;
+    font-size: 10px;
+    font-family: var(--mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 6px;
+  }
+  .field input, .field select, .field textarea {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    padding: 10px 12px;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    transition: border-color 0.15s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--amber); }
+  .field select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23F5A623' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+  .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    padding: 7px 13px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text-mid);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .chip.selected { border-color: var(--amber); background: var(--amber-glow); color: var(--amber); }
+
+  /* SECTION TITLES */
+  .section-title {
+    font-size: 10px;
+    font-family: var(--mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin: 24px 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* CANVAS AREA */
+  .canvas-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 14px;
+    margin-bottom: 16px;
+  }
+  .canvas-label { font-size: 10px; font-family: var(--mono); color: var(--text-mid); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+  #thumbCanvas {
+    display: block;
+    width: 100%;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    cursor: crosshair;
+    touch-action: none;
+  }
+
+  /* ZONE CONTROLS */
+  .zone-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
+  .zone-label { font-size: 12px; color: var(--text-mid); min-width: 60px; }
+  .zone-select { flex: 1; }
+  .zone-toggle {
+    padding: 8px 12px;
+    font-size: 12px;
+    border-radius: var(--r-sm);
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text-mid);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .zone-toggle.on { border-color: var(--amber); color: var(--amber); background: var(--amber-glow); }
+
+  /* SCORE METER */
+  .score-block {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .score-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .score-row:last-child { margin-bottom: 0; }
+  .score-name { font-size: 12px; color: var(--text-mid); min-width: 110px; }
+  .score-bar-wrap { flex: 1; background: var(--bg); border-radius: 4px; height: 7px; overflow: hidden; }
+  .score-bar { height: 100%; border-radius: 4px; transition: width 0.4s; }
+  .score-val { font-family: var(--mono); font-size: 11px; min-width: 36px; text-align: right; }
+  .score-big {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .score-num { font-family: var(--mono); font-size: 40px; font-weight: 700; line-height: 1; }
+  .score-max { font-family: var(--mono); font-size: 16px; color: var(--text-mid); }
+  .score-label { font-size: 12px; color: var(--text-mid); }
+  .verdict {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-family: var(--mono);
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    margin-top: 4px;
+  }
+  .verdict.good { background: rgba(82,199,127,0.15); color: var(--green); }
+  .verdict.warn { background: rgba(245,166,35,0.15); color: var(--amber); }
+  .verdict.risk { background: rgba(224,82,82,0.15); color: var(--red); }
+  .flag-list { margin-top: 10px; }
+  .flag-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 0;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-mid);
+  }
+  .flag-dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+
+  /* RANDOMIZER */
+  .layout-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .layout-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 10px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .layout-card.picked { border-color: var(--amber); background: var(--amber-glow); }
+  .layout-card canvas { display: block; width: 100%; border-radius: 4px; border: 1px solid var(--border); margin-bottom: 8px; }
+  .layout-card .layout-name { font-size: 11px; font-family: var(--mono); color: var(--text-mid); }
+  .layout-card.picked .layout-name { color: var(--amber); }
+
+  /* PRODUCTION NOTE */
+  .prod-note-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 14px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+    white-space: pre-wrap;
+    margin-bottom: 16px;
+    min-height: 140px;
+  }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 12px 18px;
+    border-radius: var(--r-sm);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+  }
+  .btn-amber { background: var(--amber); color: #0E0E10; }
+  .btn-amber:active { background: #d48f18; }
+  .btn-ghost { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:active { border-color: var(--amber); color: var(--amber); }
+  .btn-full { width: 100%; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* COPY FEEDBACK */
+  .copy-flash {
+    display: none;
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--green);
+    color: #0E0E10;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 20px;
+    border-radius: 20px;
+    z-index: 999;
+    pointer-events: none;
+    font-family: var(--mono);
+    letter-spacing: 0.06em;
+  }
+
+  /* UTILS */
+  .mt-sm { margin-top: 8px; }
+  .mt-md { margin-top: 16px; }
+  .row { display: flex; gap: 10px; }
+  .row .field { flex: 1; }
+  .helper { font-size: 11px; color: var(--text-dim); margin-top: 5px; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <span class="logo">&#9632; BOARD</span>
+  <span class="title">Thumbnail Storyboard</span>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('setup')">&#9654; Setup</button>
+  <button class="tab-btn" onclick="switchTab('zones')">&#9633; Zones</button>
+  <button class="tab-btn" onclick="switchTab('score')">&#9651; Score</button>
+  <button class="tab-btn" onclick="switchTab('random')">&#9670; Ideas</button>
+  <button class="tab-btn" onclick="switchTab('note')">&#8594; Note</button>
+</div>
+
+<!-- ═══════════════════════════════ SETUP ═══════════════════════════════ -->
+<div id="tab-setup" class="panel active">
+  <p class="section-title">Video metadata</p>
+
+  <div class="field">
+    <label>Video title</label>
+    <input type="text" id="videoTitle" placeholder="e.g. I Made $10k in 30 Days on Etsy" oninput="syncAll()">
+  </div>
+  <div class="field">
+    <label>Subject / hero</label>
+    <input type="text" id="videoSubject" placeholder="e.g. person holding laptop, shocked face" oninput="syncAll()">
+  </div>
+
+  <div class="row">
+    <div class="field">
+      <label>Crop format</label>
+      <select id="cropFormat" onchange="syncAll()">
+        <option value="16:9">16:9 YouTube</option>
+        <option value="9:16">9:16 Shorts / TikTok</option>
+        <option value="1:1">1:1 Square</option>
+        <option value="4:5">4:5 Instagram</option>
+        <option value="1.91:1">1.91:1 Twitter/X</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Emotion</label>
+      <select id="videoEmotion" onchange="syncAll()">
+        <option value="shock">Shock / Surprise</option>
+        <option value="curiosity">Curiosity</option>
+        <option value="excitement">Excitement</option>
+        <option value="fear">Fear / Urgency</option>
+        <option value="joy">Joy / Celebration</option>
+        <option value="authority">Authority / Trust</option>
+        <option value="controversy">Controversy</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Call-to-action intent</label>
+    <div class="chip-group" id="ctaChips">
+      <div class="chip selected" onclick="toggleChip(this,'Watch now')">Watch now</div>
+      <div class="chip" onclick="toggleChip(this,'Find out how')">Find out how</div>
+      <div class="chip" onclick="toggleChip(this,'See results')">See results</div>
+      <div class="chip" onclick="toggleChip(this,'Don\'t miss this')">Don't miss this</div>
+      <div class="chip" onclick="toggleChip(this,'Learn the secret')">Learn the secret</div>
+      <div class="chip" onclick="toggleChip(this,'I tried it')">I tried it</div>
+    </div>
+  </div>
+
+  <p class="section-title">Text overlay lines</p>
+
+  <div class="field">
+    <label>Headline text (large)</label>
+    <input type="text" id="headlineText" placeholder="e.g. $10,000 in 30 DAYS" oninput="syncAll()">
+  </div>
+  <div class="field">
+    <label>Sub-headline (smaller)</label>
+    <input type="text" id="subText" placeholder="e.g. Here's exactly how I did it" oninput="syncAll()">
+  </div>
+
+  <p class="section-title">Palette hint</p>
+  <div class="field">
+    <label>Primary bg color</label>
+    <input type="color" id="bgColor" value="#1a1a2e" style="height:42px;padding:4px 6px;" oninput="syncAll()">
+  </div>
+  <div class="field">
+    <label>Accent / text color</label>
+    <input type="color" id="accentColor" value="#F5C518" style="height:42px;padding:4px 6px;" oninput="syncAll()">
+  </div>
+
+  <div class="mt-md">
+    <button class="btn btn-amber btn-full" onclick="switchTab('zones')">Next: Set zones &#8594;</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ ZONES ═══════════════════════════════ -->
+<div id="tab-zones" class="panel">
+  <div class="canvas-wrap">
+    <div class="canvas-label">
+      <span>Safe-zone preview</span>
+      <span id="zoneRatioLabel" style="color:var(--amber);font-family:var(--mono);">16:9</span>
+    </div>
+    <canvas id="thumbCanvas"></canvas>
+    <p class="helper" style="margin-top:8px;">Tap canvas to cycle text anchor · zones auto-update with Setup changes</p>
+  </div>
+
+  <p class="section-title">Layout zones</p>
+
+  <div class="zone-row">
+    <span class="zone-label" style="color:var(--blue);">&#9632; Subject</span>
+    <select class="zone-select field" id="subjectZone" onchange="drawCanvas()" style="margin:0;">
+      <option value="left">Left third</option>
+      <option value="center">Center</option>
+      <option value="right" selected>Right third</option>
+      <option value="fill">Full bleed</option>
+    </select>
+    <button class="zone-toggle on" id="subjectToggle" onclick="toggleZone('subject')">Visible</button>
+  </div>
+
+  <div class="zone-row">
+    <span class="zone-label" style="color:var(--amber);">&#9632; Headline</span>
+    <select class="zone-select field" id="headlineZone" onchange="drawCanvas()" style="margin:0;">
+      <option value="top-left" selected>Top left</option>
+      <option value="top-center">Top center</option>
+      <option value="top-right">Top right</option>
+      <option value="center-left">Mid left</option>
+      <option value="bottom-left">Bottom left</option>
+      <option value="bottom-center">Bottom center</option>
+      <option value="bottom-right">Bottom right</option>
+    </select>
+    <button class="zone-toggle on" id="headlineToggle" onclick="toggleZone('headline')">Visible</button>
+  </div>
+
+  <div class="zone-row">
+    <span class="zone-label" style="color:var(--green);">&#9632; Sub-text</span>
+    <select class="zone-select field" id="subtextZone" onchange="drawCanvas()" style="margin:0;">
+      <option value="top-left">Top left</option>
+      <option value="bottom-left" selected>Bottom left</option>
+      <option value="bottom-center">Bottom center</option>
+      <option value="bottom-right">Bottom right</option>
+      <option value="center-left">Mid left</option>
+    </select>
+    <button class="zone-toggle on" id="subtextToggle" onclick="toggleZone('subtext')">Visible</button>
+  </div>
+
+  <div class="zone-row">
+    <span class="zone-label" style="color:var(--red);">&#9632; CTA badge</span>
+    <select class="zone-select field" id="ctaZone" onchange="drawCanvas()" style="margin:0;">
+      <option value="top-right" selected>Top right</option>
+      <option value="top-left">Top left</option>
+      <option value="bottom-right">Bottom right</option>
+      <option value="bottom-left">Bottom left</option>
+    </select>
+    <button class="zone-toggle on" id="ctaToggle" onclick="toggleZone('cta')">Visible</button>
+  </div>
+
+  <hr class="divider">
+
+  <div class="field">
+    <label>Crop safety margin</label>
+    <select id="safetyMargin" onchange="drawCanvas()">
+      <option value="5">5% — tight</option>
+      <option value="8" selected>8% — standard</option>
+      <option value="12">12% — safe broadcast</option>
+    </select>
+  </div>
+
+  <div class="btn-row mt-md">
+    <button class="btn btn-amber btn-full" onclick="switchTab('score')">Next: Score it &#8594;</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ SCORE ═══════════════════════════════ -->
+<div id="tab-score" class="panel">
+  <p class="section-title">Readability &amp; risk score</p>
+
+  <div class="score-block">
+    <div class="score-big">
+      <span class="score-num" id="totalScoreNum">--</span>
+      <span class="score-max">/100</span>
+      <span class="score-label" id="totalScoreLabel">Run score ↓</span>
+    </div>
+    <span class="verdict" id="totalVerdict" style="display:none;"></span>
+  </div>
+
+  <div class="score-block">
+    <div class="score-row">
+      <span class="score-name">Contrast ratio</span>
+      <div class="score-bar-wrap"><div class="score-bar" id="barContrast" style="width:0%;background:var(--amber)"></div></div>
+      <span class="score-val" id="valContrast">-</span>
+    </div>
+    <div class="score-row">
+      <span class="score-name">Text legibility</span>
+      <div class="score-bar-wrap"><div class="score-bar" id="barLegib" style="width:0%;background:var(--blue)"></div></div>
+      <span class="score-val" id="valLegib">-</span>
+    </div>
+    <div class="score-row">
+      <span class="score-name">Crop safety</span>
+      <div class="score-bar-wrap"><div class="score-bar" id="barCrop" style="width:0%;background:var(--green)"></div></div>
+      <span class="score-val" id="valCrop">-</span>
+    </div>
+    <div class="score-row">
+      <span class="score-name">Zone overlap</span>
+      <div class="score-bar-wrap"><div class="score-bar" id="barOverlap" style="width:0%;background:var(--red)"></div></div>
+      <span class="score-val" id="valOverlap">-</span>
+    </div>
+    <div class="score-row">
+      <span class="score-name">Emotion–CTA match</span>
+      <div class="score-bar-wrap"><div class="score-bar" id="barEmotion" style="width:0%;background:var(--amber)"></div></div>
+      <span class="score-val" id="valEmotion">-</span>
+    </div>
+    <div class="score-row">
+      <span class="score-name">Title completeness</span>
+      <div class="score-bar-wrap"><div class="score-bar" id="barTitle" style="width:0%;background:var(--blue)"></div></div>
+      <span class="score-val" id="valTitle">-</span>
+    </div>
+  </div>
+
+  <div class="score-block flag-list" id="flagList">
+    <p style="color:var(--text-dim);font-size:12px;">Press Score to see flags</p>
+  </div>
+
+  <div class="btn-row mt-md">
+    <button class="btn btn-amber" style="flex:1;" onclick="runScore()">&#9651; Score layout</button>
+    <button class="btn btn-ghost" onclick="switchTab('random')">&#8594; Ideas</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ RANDOM IDEAS ═══════════════════════════════ -->
+<div id="tab-random" class="panel">
+  <p class="section-title">Layout ideas</p>
+
+  <div class="layout-grid" id="layoutGrid">
+    <div style="text-align:center;padding:40px 0;color:var(--text-dim);font-size:12px;grid-column:span 2;">
+      Press Randomize to generate layout ideas
+    </div>
+  </div>
+
+  <div class="btn-row mt-md">
+    <button class="btn btn-amber btn-full" onclick="randomizeLayouts()">&#9670; Randomize 4 layouts</button>
+  </div>
+  <div id="pickConfirm" style="display:none;margin-top:14px;">
+    <button class="btn btn-ghost btn-full" onclick="applyPickedLayout()">&#8592; Apply picked layout to Zones</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ NOTE ═══════════════════════════════ -->
+<div id="tab-note" class="panel">
+  <p class="section-title">Production note</p>
+
+  <div class="prod-note-box" id="prodNote">Fill in Setup to generate a note.</div>
+
+  <div class="btn-row">
+    <button class="btn btn-amber" style="flex:1;" onclick="generateNote()">&#8635; Regenerate</button>
+    <button class="btn btn-ghost" style="flex:1;" onclick="copyNote()">&#9635; Copy note</button>
+  </div>
+
+  <hr class="divider">
+  <p class="section-title">Export canvas as text</p>
+  <div class="prod-note-box" id="asciiExport" style="font-size:10px;line-height:1.3;"></div>
+  <button class="btn btn-ghost btn-full mt-sm" onclick="generateAscii()">&#9671; Generate ASCII layout</button>
+</div>
+
+<div class="copy-flash" id="copyFlash">&#10003; Copied!</div>
+
+<script>
+// ═══════════════════ STATE ═══════════════════
+const state = {
+  subject: { visible: true },
+  headline: { visible: true },
+  subtext: { visible: true },
+  cta: { visible: true }
+};
+let pickedLayoutIndex = null;
+let generatedLayouts = [];
+
+// ═══════════════════ TABS ═══════════════════
+function switchTab(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (name === 'zones') { setTimeout(initCanvas, 80); }
+  if (name === 'score') { /* auto-run? */ }
+  if (name === 'note') { generateNote(); generateAscii(); }
+}
+
+// ═══════════════════ CHIPS ═══════════════════
+function toggleChip(el, val) {
+  document.querySelectorAll('#ctaChips .chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  syncAll();
+}
+function getSelectedCTA() {
+  const sel = document.querySelector('#ctaChips .chip.selected');
+  return sel ? sel.textContent : 'Watch now';
+}
+
+// ═══════════════════ ZONE TOGGLE ═══════════════════
+function toggleZone(zone) {
+  state[zone].visible = !state[zone].visible;
+  const btn = document.getElementById(zone + 'Toggle');
+  btn.textContent = state[zone].visible ? 'Visible' : 'Hidden';
+  btn.classList.toggle('on', state[zone].visible);
+  drawCanvas();
+}
+
+// ═══════════════════ CANVAS ═══════════════════
+let canvasW = 0, canvasH = 0;
+
+function getRatio() {
+  const fmt = document.getElementById('cropFormat').value;
+  const parts = fmt.split(':');
+  return parseFloat(parts[0]) / parseFloat(parts[1]);
+}
+
+function initCanvas() {
+  const canvas = document.getElementById('thumbCanvas');
+  const wrap = canvas.parentElement;
+  const maxW = wrap.clientWidth - 28;
+  const ratio = getRatio();
+  canvas.width = maxW;
+  canvas.height = Math.round(maxW / ratio);
+  canvasW = canvas.width;
+  canvasH = canvas.height;
+  document.getElementById('zoneRatioLabel').textContent = document.getElementById('cropFormat').value;
+  drawCanvas();
+}
+
+function getZoneRect(position, W, H, margin) {
+  const m = margin;
+  const col = Math.floor(W / 3);
+  const row = Math.floor(H / 3);
+  const map = {
+    'left':          [m, m, col - m, H - 2*m],
+    'center':        [col, m, col, H - 2*m],
+    'right':         [W - col + m/2, m, col - m, H - 2*m],
+    'fill':          [0, 0, W, H],
+    'top-left':      [m, m, col*1.4, row*0.8],
+    'top-center':    [col*0.6, m, col*1.8, row*0.8],
+    'top-right':     [W - col*1.4 - m, m, col*1.4, row*0.8],
+    'center-left':   [m, row + m, col*1.6, row*0.9],
+    'bottom-left':   [m, H - row*0.85 - m, col*1.6, row*0.75],
+    'bottom-center': [col*0.5, H - row*0.85 - m, col*2, row*0.75],
+    'bottom-right':  [W - col*1.5 - m, H - row*0.85 - m, col*1.5, row*0.75],
+  };
+  return map[position] || [m, m, 100, 30];
+}
+
+function drawCanvas() {
+  const canvas = document.getElementById('thumbCanvas');
+  if (!canvas) return;
+  if (canvasW === 0) { initCanvas(); return; }
+  const ctx = canvas.getContext('2d');
+  const W = canvasW, H = canvasH;
+  const marginPct = parseInt(document.getElementById('safetyMargin').value) / 100;
+  const margin = Math.round(Math.min(W, H) * marginPct);
+
+  const bgColor = document.getElementById('bgColor').value;
+  const accentColor = document.getElementById('accentColor').value;
+
+  // Background
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, W, H);
+
+  // Safety zone border
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.strokeRect(margin, margin, W - 2*margin, H - 2*margin);
+  ctx.setLineDash([]);
+
+  // Rule of thirds grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  [1/3, 2/3].forEach(f => {
+    ctx.beginPath(); ctx.moveTo(W*f, 0); ctx.lineTo(W*f, H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, H*f); ctx.lineTo(W, H*f); ctx.stroke();
+  });
+
+  // Subject zone
+  if (state.subject.visible) {
+    const sz = document.getElementById('subjectZone').value;
+    const [sx, sy, sw, sh] = getZoneRect(sz, W, H, margin);
+    ctx.fillStyle = 'rgba(91,138,245,0.18)';
+    ctx.fillRect(sx, sy, sw, sh);
+    ctx.strokeStyle = 'rgba(91,138,245,0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(sx, sy, sw, sh);
+    ctx.fillStyle = 'rgba(91,138,245,0.9)';
+    ctx.font = `bold ${Math.max(9, Math.round(H*0.05))}px monospace`;
+    ctx.fillText('SUBJECT', sx + 5, sy + Math.round(H*0.055));
+  }
+
+  // Headline zone
+  if (state.headline.visible) {
+    const hz = document.getElementById('headlineZone').value;
+    const [hx, hy, hw, hh] = getZoneRect(hz, W, H, margin);
+    ctx.fillStyle = 'rgba(245,166,35,0.15)';
+    ctx.fillRect(hx, hy, hw, hh);
+    ctx.strokeStyle = 'rgba(245,166,35,0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(hx, hy, hw, hh);
+    const hl = document.getElementById('headlineText').value || 'HEADLINE';
+    ctx.fillStyle = accentColor;
+    const fs = Math.max(7, Math.round(hh * 0.42));
+    ctx.font = `bold ${fs}px sans-serif`;
+    ctx.save();
+    ctx.rect(hx + 2, hy + 2, hw - 4, hh - 4);
+    ctx.clip();
+    ctx.fillText(hl, hx + 4, hy + hh * 0.6);
+    ctx.restore();
+  }
+
+  // Sub-text zone
+  if (state.subtext.visible) {
+    const tz = document.getElementById('subtextZone').value;
+    const [tx, ty, tw, th] = getZoneRect(tz, W, H, margin);
+    ctx.fillStyle = 'rgba(82,199,127,0.12)';
+    ctx.fillRect(tx, ty, tw, th);
+    ctx.strokeStyle = 'rgba(82,199,127,0.6)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(tx, ty, tw, th);
+    const st = document.getElementById('subText').value || 'sub-text';
+    ctx.fillStyle = 'rgba(82,199,127,0.9)';
+    const sfs = Math.max(6, Math.round(th * 0.38));
+    ctx.font = `${sfs}px sans-serif`;
+    ctx.save();
+    ctx.rect(tx + 2, ty + 2, tw - 4, th - 4);
+    ctx.clip();
+    ctx.fillText(st, tx + 4, ty + th * 0.65);
+    ctx.restore();
+  }
+
+  // CTA badge zone
+  if (state.cta.visible) {
+    const cz = document.getElementById('ctaZone').value;
+    const [cx2, cy2, cw, ch] = getZoneRect(cz, W, H, margin);
+    const bw = Math.min(cw, Math.round(W * 0.22));
+    const bh = Math.round(bw * 0.38);
+    let bx = cx2, by = cy2;
+    ctx.fillStyle = 'rgba(224,82,82,0.85)';
+    const rad = 3;
+    ctx.beginPath();
+    ctx.moveTo(bx + rad, by); ctx.lineTo(bx + bw - rad, by);
+    ctx.quadraticCurveTo(bx + bw, by, bx + bw, by + rad);
+    ctx.lineTo(bx + bw, by + bh - rad);
+    ctx.quadraticCurveTo(bx + bw, by + bh, bx + bw - rad, by + bh);
+    ctx.lineTo(bx + rad, by + bh);
+    ctx.quadraticCurveTo(bx, by + bh, bx, by + bh - rad);
+    ctx.lineTo(bx, by + rad);
+    ctx.quadraticCurveTo(bx, by, bx + rad, by);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = `bold ${Math.max(6, Math.round(bh * 0.42))}px monospace`;
+    ctx.fillText('CTA', bx + 4, by + bh * 0.68);
+  }
+
+  // Margin label
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.font = `${Math.max(7, Math.round(H * 0.045))}px monospace`;
+  ctx.fillText(`${document.getElementById('safetyMargin').value}% margin`, margin + 3, H - 4);
+}
+
+window.addEventListener('resize', () => { if (document.getElementById('tab-zones').classList.contains('active')) initCanvas(); });
+document.getElementById('thumbCanvas').addEventListener('click', cyclHeadlineZone);
+
+function cyclHeadlineZone() {
+  const sel = document.getElementById('headlineZone');
+  const opts = Array.from(sel.options);
+  const cur = sel.selectedIndex;
+  sel.selectedIndex = (cur + 1) % opts.length;
+  drawCanvas();
+}
+
+// ═══════════════════ SCORE ═══════════════════
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return [r, g, b];
+}
+function relativeLum(r, g, b) {
+  const srgb = [r, g, b].map(v => { v /= 255; return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); });
+  return 0.2126 * srgb[0] + 0.7152 * srgb[1] + 0.0722 * srgb[2];
+}
+function contrastRatio(hex1, hex2) {
+  const [r1,g1,b1] = hexToRgb(hex1), [r2,g2,b2] = hexToRgb(hex2);
+  const l1 = relativeLum(r1,g1,b1), l2 = relativeLum(r2,g2,b2);
+  const lighter = Math.max(l1,l2), darker = Math.min(l1,l2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+const EMOTION_CTA = {
+  shock: ['Watch now', "Don't miss this", 'See results'],
+  curiosity: ['Find out how', 'Learn the secret', 'Watch now'],
+  excitement: ['Watch now', 'See results', "I tried it"],
+  fear: ["Don't miss this", 'Watch now', 'Find out how'],
+  joy: ['Watch now', 'See results', "I tried it"],
+  authority: ['Find out how', 'Learn the secret', 'See results'],
+  controversy: ["Don't miss this", 'Watch now', 'See results'],
+};
+
+function runScore() {
+  const bg = document.getElementById('bgColor').value;
+  const accent = document.getElementById('accentColor').value;
+  const cr = contrastRatio(bg, accent);
+  const crScore = Math.min(100, Math.round((cr / 21) * 100 * 1.8));
+
+  const hl = document.getElementById('headlineText').value.trim();
+  const st = document.getElementById('subText').value.trim();
+  let legScore = 0;
+  if (hl.length > 0) legScore += 40;
+  if (hl.length >= 3 && hl.length <= 40) legScore += 20;
+  if (st.length > 0) legScore += 30;
+  if (st.length <= 60) legScore += 10;
+
+  const safetyVal = parseInt(document.getElementById('safetyMargin').value);
+  const cropScore = safetyVal >= 8 ? 100 : safetyVal >= 5 ? 70 : 40;
+
+  const hz = document.getElementById('headlineZone').value;
+  const tz = document.getElementById('subtextZone').value;
+  const overlapScore = hz === tz ? 20 : 100;
+
+  const emotion = document.getElementById('videoEmotion').value;
+  const cta = getSelectedCTA();
+  const goodCTAs = EMOTION_CTA[emotion] || [];
+  const emotionScore = goodCTAs.includes(cta) ? 100 : 50;
+
+  const title = document.getElementById('videoTitle').value.trim();
+  const subject = document.getElementById('videoSubject').value.trim();
+  const titleScore = (title.length > 5 ? 50 : 0) + (subject.length > 3 ? 50 : 0);
+
+  const weights = [0.25, 0.2, 0.15, 0.15, 0.15, 0.1];
+  const scores = [crScore, legScore, cropScore, overlapScore, emotionScore, titleScore];
+  const total = Math.round(scores.reduce((acc, s, i) => acc + s * weights[i], 0));
+
+  document.getElementById('totalScoreNum').textContent = total;
+  document.getElementById('totalScoreLabel').textContent = total >= 80 ? 'Production ready' : total >= 60 ? 'Needs refinement' : 'High risk';
+  const verdict = document.getElementById('totalVerdict');
+  verdict.style.display = 'inline-block';
+  verdict.className = 'verdict ' + (total >= 80 ? 'good' : total >= 60 ? 'warn' : 'risk');
+  verdict.textContent = total >= 80 ? '✓ READY TO SHOOT' : total >= 60 ? '⚠ REVIEW FLAGS' : '✕ HIGH RISK';
+
+  const setBar = (id, val, color) => {
+    const bar = document.getElementById('bar' + id);
+    bar.style.width = val + '%';
+    bar.style.background = val >= 80 ? '#52C77F' : val >= 60 ? '#F5A623' : '#E05252';
+    document.getElementById('val' + id).textContent = val;
+    document.getElementById('val' + id).style.color = val >= 80 ? '#52C77F' : val >= 60 ? '#F5A623' : '#E05252';
+  };
+  setBar('Contrast', crScore); setBar('Legib', legScore); setBar('Crop', cropScore);
+  setBar('Overlap', overlapScore); setBar('Emotion', emotionScore); setBar('Title', titleScore);
+
+  const flags = [];
+  if (cr < 4.5) flags.push({color:'#E05252', msg: `Contrast ratio ${cr.toFixed(1)}:1 — WCAG AA needs 4.5:1 minimum. Adjust bg or accent color.`});
+  if (cr >= 4.5 && cr < 7) flags.push({color:'#F5A623', msg: `Contrast ratio ${cr.toFixed(1)}:1 — acceptable but not AAA. Consider bolder type.`});
+  if (hl.length === 0) flags.push({color:'#E05252', msg: 'No headline text set. Thumbnails with large text outperform by 42% on avg.'});
+  if (hl.length > 40) flags.push({color:'#E05252', msg: 'Headline over 40 chars — likely unreadable at mobile thumbnail size.'});
+  if (overlapScore < 100) flags.push({color:'#E05252', msg: 'Headline and sub-text are in the same zone — they will overlap.'});
+  if (safetyVal < 8) flags.push({color:'#F5A623', msg: 'Margin under 8% — important content may clip in mobile feed previews.'});
+  if (!goodCTAs.includes(cta)) flags.push({color:'#F5A623', msg: `CTA "${cta}" is a weak match for "${emotion}" emotion. Try: ${goodCTAs[0]}.`});
+  if (title.length === 0) flags.push({color:'#E05252', msg: 'No video title — production note will be incomplete.'});
+  if (flags.length === 0) flags.push({color:'#52C77F', msg: 'No critical flags found. Good to go!'});
+
+  const fl = document.getElementById('flagList');
+  fl.innerHTML = flags.map(f => `<div class="flag-item"><div class="flag-dot" style="background:${f.color}"></div><span>${f.msg}</span></div>`).join('');
+}
+
+// ═══════════════════ RANDOMIZER ═══════════════════
+const LAYOUT_TEMPLATES = [
+  { name: 'Classic Split', subject: 'right', headline: 'top-left', subtext: 'bottom-left', cta: 'top-right' },
+  { name: 'Hero Center', subject: 'center', headline: 'bottom-center', subtext: 'bottom-left', cta: 'top-right' },
+  { name: 'Left Lead', subject: 'left', headline: 'top-right', subtext: 'bottom-right', cta: 'bottom-left' },
+  { name: 'Big Text', subject: 'right', headline: 'top-center', subtext: 'bottom-center', cta: 'top-left' },
+  { name: 'Rule of Thirds', subject: 'right', headline: 'top-left', subtext: 'center-left', cta: 'top-right' },
+  { name: 'Shock Face', subject: 'left', headline: 'top-right', subtext: 'bottom-right', cta: 'top-left' },
+  { name: 'Full Bleed', subject: 'fill', headline: 'bottom-center', subtext: 'top-center', cta: 'top-right' },
+  { name: 'Asymmetric', subject: 'right', headline: 'center-left', subtext: 'bottom-left', cta: 'top-right' },
+];
+
+function randomizeLayouts() {
+  const shuffled = [...LAYOUT_TEMPLATES].sort(() => Math.random() - 0.5).slice(0, 4);
+  generatedLayouts = shuffled;
+  pickedLayoutIndex = null;
+  const grid = document.getElementById('layoutGrid');
+  grid.innerHTML = '';
+  shuffled.forEach((layout, i) => {
+    const card = document.createElement('div');
+    card.className = 'layout-card';
+    card.id = 'lcard' + i;
+
+    const cnv = document.createElement('canvas');
+    cnv.width = 320; cnv.height = 180;
+    card.appendChild(cnv);
+
+    const label = document.createElement('div');
+    label.className = 'layout-name';
+    label.textContent = layout.name;
+    card.appendChild(label);
+
+    card.onclick = () => pickLayout(i);
+    grid.appendChild(card);
+    drawMiniCanvas(cnv, layout);
+  });
+  document.getElementById('pickConfirm').style.display = 'none';
+}
+
+function drawMiniCanvas(canvas, layout) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const bg = document.getElementById('bgColor').value;
+  const accent = document.getElementById('accentColor').value;
+  const margin = Math.round(Math.min(W, H) * 0.08);
+
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 3]);
+  ctx.strokeRect(margin, margin, W - 2*margin, H - 2*margin);
+  ctx.setLineDash([]);
+
+  [1/3, 2/3].forEach(f => {
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(W*f, 0); ctx.lineTo(W*f, H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, H*f); ctx.lineTo(W, H*f); ctx.stroke();
+  });
+
+  const drawZone = (pos, color) => {
+    const [x, y, w, h] = getZoneRect(pos, W, H, margin);
+    ctx.fillStyle = color.replace(')', ',0.2)').replace('rgb', 'rgba').replace('#', 'rgba(').split('rgba(').pop();
+    // Simple approach
+    ctx.globalAlpha = 0.25;
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, w, h);
+    ctx.globalAlpha = 0.8;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(x, y, w, h);
+    ctx.globalAlpha = 1;
+  };
+
+  if (layout.subject !== 'fill') drawZone(layout.subject, '#5B8AF5');
+  else {
+    ctx.globalAlpha = 0.1;
+    ctx.fillStyle = '#5B8AF5';
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = 1;
+  }
+  drawZone(layout.headline, accent);
+  drawZone(layout.subtext, '#52C77F');
+  drawZone(layout.cta, '#E05252');
+}
+
+function pickLayout(i) {
+  pickedLayoutIndex = i;
+  document.querySelectorAll('.layout-card').forEach((c, j) => c.classList.toggle('picked', j === i));
+  document.getElementById('pickConfirm').style.display = 'block';
+}
+
+function applyPickedLayout() {
+  if (pickedLayoutIndex === null) return;
+  const l = generatedLayouts[pickedLayoutIndex];
+  document.getElementById('subjectZone').value = l.subject;
+  document.getElementById('headlineZone').value = l.headline;
+  document.getElementById('subtextZone').value = l.subtext;
+  document.getElementById('ctaZone').value = l.cta;
+  switchTab('zones');
+  setTimeout(initCanvas, 100);
+}
+
+// ═══════════════════ PRODUCTION NOTE ═══════════════════
+function generateNote() {
+  const title = document.getElementById('videoTitle').value || '[No title]';
+  const subject = document.getElementById('videoSubject').value || '[No subject]';
+  const crop = document.getElementById('cropFormat').value;
+  const emotion = document.getElementById('videoEmotion').value;
+  const cta = getSelectedCTA();
+  const hl = document.getElementById('headlineText').value || '[No headline]';
+  const st = document.getElementById('subText').value || '[None]';
+  const hz = document.getElementById('headlineZone').value;
+  const tz = document.getElementById('subtextZone').value;
+  const sz = document.getElementById('subjectZone').value;
+  const cz = document.getElementById('ctaZone').value;
+  const bg = document.getElementById('bgColor').value;
+  const acc = document.getElementById('accentColor').value;
+  const margin = document.getElementById('safetyMargin').value;
+  const cr = contrastRatio(bg, acc).toFixed(1);
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+
+  const note = `THUMBNAIL PRODUCTION NOTE
+Generated: ${dateStr}
+─────────────────────────────
+VIDEO
+  Title:     ${title}
+  Subject:   ${subject}
+  Format:    ${crop}
+  Emotion:   ${emotion.toUpperCase()}
+  CTA:       "${cta}"
+
+TEXT OVERLAYS
+  Headline:  "${hl}"
+             → Zone: ${hz.toUpperCase()}
+  Sub-text:  "${st}"
+             → Zone: ${tz.toUpperCase()}
+
+LAYOUT
+  Subject:   ${sz.toUpperCase()}
+  CTA badge: ${cz.toUpperCase()}
+  Safety:    ${margin}% margin
+
+PALETTE
+  BG:        ${bg.toUpperCase()}
+  Accent:    ${acc.toUpperCase()}
+  Contrast:  ${cr}:1 ${parseFloat(cr) >= 4.5 ? '✓ PASS' : '✕ FAIL WCAG AA'}
+
+SHOT NOTES
+  - Hero should fill ${sz} zone, direct eye contact toward headline
+  - Headline font: min 72pt equivalent, high stroke weight
+  - Ensure background does not compete at mobile 120×67px preview
+  - Test thumb at 10% size before export
+─────────────────────────────`;
+
+  document.getElementById('prodNote').textContent = note;
+}
+
+function copyNote() {
+  const note = document.getElementById('prodNote').textContent;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(note).then(showCopyFlash);
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = note; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta); showCopyFlash();
+  }
+}
+
+function showCopyFlash() {
+  const el = document.getElementById('copyFlash');
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 1600);
+}
+
+// ═══════════════════ ASCII EXPORT ═══════════════════
+function generateAscii() {
+  const crop = document.getElementById('cropFormat').value;
+  const [rw, rh] = crop.split(':').map(parseFloat);
+  const W = 38, H = Math.round(W / (rw / rh) * 0.55);
+  const grid = Array.from({length: H}, () => Array(W).fill('·'));
+
+  const margin = Math.round(Math.min(W, H) * 0.1);
+  for (let r = 0; r < H; r++) { grid[r][margin] = '|'; grid[r][W-1-margin] = '|'; }
+  for (let c = 0; c < W; c++) { grid[margin][c] = '-'; grid[H-1-margin][c] = '-'; }
+
+  const placeLabel = (pos, label) => {
+    const [x, y, w, h] = getZoneRect(pos, W, H, margin);
+    const col = Math.min(Math.round(x), W-label.length-1);
+    const row = Math.min(Math.round(y), H-1);
+    for (let i = 0; i < label.length && col+i < W; i++) grid[row][col+i] = label[i];
+  };
+
+  placeLabel(document.getElementById('headlineZone').value, '[HL]');
+  placeLabel(document.getElementById('subtextZone').value, '[ST]');
+  placeLabel(document.getElementById('subjectZone').value, '[SJ]');
+  placeLabel(document.getElementById('ctaZone').value, '[CTA]');
+
+  const lines = grid.map(row => row.join('')).join('\n');
+  const header = `ASCII LAYOUT [${crop}] — ${W}×${H} char grid\n${'─'.repeat(W)}\n`;
+  const legend = `\n[SJ]=Subject  [HL]=Headline  [ST]=Sub-text  [CTA]=CTA`;
+  document.getElementById('asciiExport').textContent = header + lines + legend;
+}
+
+// ═══════════════════ SYNC ═══════════════════
+function syncAll() {
+  if (document.getElementById('tab-zones').classList.contains('active')) drawCanvas();
+}
+
+// Init on load
+setTimeout(() => {
+  if (document.getElementById('tab-zones').classList.contains('active')) initCanvas();
+}, 200);
+</script>
+</body>
+</html>

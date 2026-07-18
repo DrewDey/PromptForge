@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Thumbnail Storyboard</title>
+<style>
+  :root {
+    --bg: #0E0E10;
+    --surface: #18181C;
+    --card: #1F1F25;
+    --border: #2E2E38;
+    --amber: #F5A623;
+    --amber-glow: rgba(245,166,35,0.12);
+    --red: #E05252;
+    --green: #52C77F;
+    --blue: #5B8AF5;
+    --text: #F0EDE8;
+    --text-mid: #8A8898;
+    --text-dim: #3E3E50;
+    --mono: 'Courier New', 'Menlo', monospace;
+    --sans: -apple-system, 'Segoe UI', sans-serif;
+    --r: 10px;
+    --r-sm: 6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; font-size: 15px; }
+
+  .app-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 18px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .app-header .logo { font-family: var(--mono); font-size: 11px; color: var(--amber); letter-spacing: 0.12em; text-transform: uppercase; }
+  .app-header .title { font-size: 16px; font-weight: 600; flex: 1; }
+
+  .tab-bar {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky;
+    top: 53px;
+    z-index: 99;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tab-bar::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    flex: none;
+    padding: 11px 18px 10px;
+    font-size: 12px;
+    font-family: var(--mono);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-mid);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .tab-btn.active { color: var(--amber); border-bottom-color: var(--amber); }
+
+  .panel { display: none; padding: 18px; max-width: 600px; margin: 0 auto; }
+  .panel.active { display: block; }
+
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block;
+    font-size: 10px;
+    font-family: var(--mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 6px;
+  }
+  .field input, .field select {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    padding: 10px 12px;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    transition: border-color 0.15s;
+  }
+  .field input:focus, .field select:focus { border-color: var(--amber); }
+  .field select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23F5A623' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
+
+  .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    padding: 7px 13px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text-mid);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .chip.selected { border-color: var(--amber); background: var(--amber-glow); color: var(--amber); }
+
+  .section-title {
+    font-size: 10px;
+    font-family: var(--mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin: 24px 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .canvas-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 14px;
+    margin-bottom: 16px;
+  }
+  .canvas-label {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--text-mid);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  #thumbCanvas {
+    display: block;
+    width: 100%;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    cursor: crosshair;
+    touch-action: none;
+  }
+  .helper { font-size: 11px; color: var(--text-dim); margin-top: 8px; }
+
+  .zone-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
+  .zone-label { font-size: 12px; color: var(--text-mid); min-width: 64px; }
+  .zone-select { flex: 1; margin: 0; }
+  .zone-toggle {
+    padding: 8px 12px;
+    font-size: 12px;
+    border-radius: var(--r-sm);
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text-mid);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .zone-toggle.on { border-color: var(--amber); color: var(--amber); background: var(--amber-glow); }
+
+  .score-block {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .score-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .score-row:last-child { margin-bottom: 0; }
+  .score-name { font-size: 12px; color: var(--text-mid); min-width: 110px; }
+  .score-bar-wrap { flex: 1; background: var(--bg); border-radius: 4px; height: 7px; overflow: hidden; }
+  .score-bar { height: 100%; border-radius: 4px; transition: width 0.4s; }
+  .score-val { font-family: var(--mono); font-size: 11px; min-width: 36px; text-align: right; }
+  .score-big { display: flex; align-items: baseline; gap: 8px; margin-bottom: 14px; }
+  .score-num { font-family: var(--mono); font-size: 40px; font-weight: 700; line-height: 1; }
+  .score-max { font-family: var(--mono); font-size: 16px; color: var(--text-mid); }
+  .verdict {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-family: var(--mono);
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    margin-top: 4px;
+  }
+  .verdict.good { background: rgba(82,199,127,0.15); color: var(--green); }
+  .verdict.warn { background: rgba(245,166,35,0.15); color: var(--amber); }
+  .verdict.risk { background: rgba(224,82,82,0.15); color: var(--red); }
+
+  .flag-list { margin-top: 10px; }
+  .flag-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 0;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-mid);
+  }
+  .flag-dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+
+  .layout-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .layout-placeholder { grid-column: span 2; text-align: center; padding: 40px 0; color: var(--text-dim); font-size: 12px; }
+  .layout-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 10px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .layout-card.picked { border-color: var(--amber); background: var(--amber-glow); }
+  .layout-card canvas { display: block; width: 100%; border-radius: 4px; border: 1px solid var(--border); margin-bottom: 8px; }
+  .layout-name { font-size: 11px; font-family: var(--mono); color: var(--text-mid); }
+  .layout-card.picked .layout-name { color: var(--amber); }
+
+  .prod-note-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 14px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+    white-space: pre-wrap;
+    margin-bottom: 16px;
+    min-height: 140px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 12px 18px;
+    border-radius: var(--r-sm);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+  }
+  .btn-amber { background: var(--amber); color: #0E0E10; }
+  .btn-amber:active { background: #d48f18; }
+  .btn-ghost { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:active { border-color: var(--amber); color: var(--amber); }
+  .btn-full { width: 100%; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .copy-flash {
+    display: none;
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--green);
+    color: #0E0E10;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 20px;
+    border-radius: 20px;
+    z-index: 999;
+    pointer-events: none;
+    font-family: var(--mono);
+    letter-spacing: 0.06em;
+  }
+
+  .mt-sm { margin-top: 8px; }
+  .mt-md { margin-top: 16px; }
+  .row { display: flex; gap: 10px; }
+  .row .field { flex: 1; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+</style>
+</head>
+<body>
+
+<!-- ═══ STATIC SHELL — no inline event attributes anywhere ═══ -->
+
+<header class="app-header">
+  <span class="logo">&#9632; BOARD</span>
+  <span class="title">Thumbnail Storyboard</span>
+</header>
+
+<nav class="tab-bar">
+  <button class="tab-btn active" data-tab="setup">&#9654; Setup</button>
+  <button class="tab-btn" data-tab="zones">&#9633; Zones</button>
+  <button class="tab-btn" data-tab="score">&#9651; Score</button>
+  <button class="tab-btn" data-tab="random">&#9670; Ideas</button>
+  <button class="tab-btn" data-tab="note">&#8594; Note</button>
+</nav>
+
+<!-- SETUP -->
+<section id="tab-setup" class="panel active">
+  <p class="section-title">Video metadata</p>
+
+  <div class="field">
+    <label for="videoTitle">Video title</label>
+    <input type="text" id="videoTitle" placeholder="e.g. I Made $10k in 30 Days on Etsy">
+  </div>
+  <div class="field">
+    <label for="videoSubject">Subject / hero</label>
+    <input type="text" id="videoSubject" placeholder="e.g. person holding laptop, shocked face">
+  </div>
+
+  <div class="row">
+    <div class="field">
+      <label for="cropFormat">Crop format</label>
+      <select id="cropFormat">
+        <option value="16:9">16:9 YouTube</option>
+        <option value="9:16">9:16 Shorts / TikTok</option>
+        <option value="1:1">1:1 Square</option>
+        <option value="4:5">4:5 Instagram</option>
+        <option value="1.91:1">1.91:1 Twitter/X</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="videoEmotion">Emotion</label>
+      <select id="videoEmotion">
+        <option value="shock">Shock / Surprise</option>
+        <option value="curiosity">Curiosity</option>
+        <option value="excitement">Excitement</option>
+        <option value="fear">Fear / Urgency</option>
+        <option value="joy">Joy / Celebration</option>
+        <option value="authority">Authority / Trust</option>
+        <option value="controversy">Controversy</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Call-to-action intent</label>
+    <div class="chip-group" id="ctaChips">
+      <button class="chip selected" data-cta="Watch now">Watch now</button>
+      <button class="chip" data-cta="Find out how">Find out how</button>
+      <button class="chip" data-cta="See results">See results</button>
+      <button class="chip" data-cta="Don't miss this">Don't miss this</button>
+      <button class="chip" data-cta="Learn the secret">Learn the secret</button>
+      <button class="chip" data-cta="I tried it">I tried it</button>
+    </div>
+  </div>
+
+  <p class="section-title">Text overlay lines</p>
+
+  <div class="field">
+    <label for="headlineText">Headline text (large)</label>
+    <input type="text" id="headlineText" placeholder="e.g. $10,000 in 30 DAYS">
+  </div>
+  <div class="field">
+    <label for="subText">Sub-headline (smaller)</label>
+    <input type="text" id="subText" placeholder="e.g. Here's exactly how I did it">
+  </div>
+
+  <p class="section-title">Palette hint</p>
+  <div class="row">
+    <div class="field">
+      <label for="bgColor">Primary bg color</label>
+      <input type="color" id="bgColor" value="#1a1a2e" style="height:42px;padding:4px 6px;">
+    </div>
+    <div class="field">
+      <label for="accentColor">Accent / text color</label>
+      <input type="color" id="accentColor" value="#F5C518" style="height:42px;padding:4px 6px;">
+    </div>
+  </div>
+
+  <div class="mt-md">
+    <button class="btn btn-amber btn-full" id="setupNextBtn">Next: Set zones &#8594;</button>
+  </div>
+</section>
+
+<!-- ZONES -->
+<section id="tab-zones" class="panel">
+  <div class="canvas-wrap">
+    <div class="canvas-label">
+      <span>Safe-zone preview</span>
+      <span id="zoneRatioLabel" style="color:var(--amber);font-family:var(--mono);">16:9</span>
+    </div>
+    <canvas id="thumbCanvas"></canvas>
+    <p class="helper">Tap canvas to cycle headline position &middot; zones update live</p>
+  </div>
+
+  <p class="section-title">Layout zones</p>
+
+  <div class="zone-row">
+    <span class="zone-label" style="color:var(--blue);">&#9632; Subject</span>
+    <select class="field zone-select" id="subjectZone">
+      <option value="left">Left third</option>
+      <option value="center">Center</option>
+      <option value="right" selected>Right third</option>
+      <option value="fill">Full bleed</option>
+    </select>
+    <button class="zone-toggle on" id="subjectToggle" data-zone="subject">Visible</button>
+  </div>
+
+  <div class="zone-row">
+    <span class="zone-label" style="color:var(--amber);">&#9632; Headline</span>
+    <select class="field zone-select" id="headlineZone">
+      <option value="top-left" selected>Top left</option>
+      <option value="top-center">Top center</option>
+      <option value="top-right">Top right</option>
+      <option value="center-left">Mid left</option>
+      <option value="bottom-left">Bottom left</option>
+      <option value="bottom-center">Bottom center</option>
+      <option value="bottom-right">Bottom right</option>
+    </select>
+    <button class="zone-toggle on" id="headlineToggle" data-zone="headline">Visible</button>
+  </div>
+
+  <div class="zone-row">
+    <span class="zone-label" style="color:var(--green);">&#9632; Sub-text</span>
+    <select class="field zone-select" id="subtextZone">
+      <option value="top-left">Top left</option>
+      <option value="bottom-left" selected>Bottom left</option>
+      <option value="bottom-center">Bottom center</option>
+      <option value="bottom-right">Bottom right</option>
+      <option value="center-left">Mid left</option>
+    </select>
+    <button class="zone-toggle on" id="subtextToggle" data-zone="subtext">Visible</button>
+  </div>
+
+  <div class="zone-row">
+    <span class="zone-label" style="color:var(--red);">&#9632; CTA badge</span>
+    <select class="field zone-select" id="ctaZone">
+      <option value="top-right" selected>Top right</option>
+      <option value="top-left">Top left</option>
+      <option value="bottom-right">Bottom right</option>
+      <option value="bottom-left">Bottom left</option>
+    </select>
+    <button class="zone-toggle on" id="ctaToggle" data-zone="cta">Visible</button>
+  </div>
+
+  <hr class="divider">
+
+  <div class="field">
+    <label for="safetyMargin">Crop safety margin</label>
+    <select id="safetyMargin">
+      <option value="5">5% — tight</option>
+      <option value="8" selected>8% — standard</option>
+      <option value="12">12% — safe broadcast</option>
+    </select>
+  </div>
+
+  <div class="btn-row mt-md">
+    <button class="btn btn-amber btn-full" id="zonesNextBtn">Next: Score it &#8594;</button>
+  </div>
+</section>
+
+<!-- SCORE -->
+<section id="tab-score" class="panel">
+  <p class="section-title">Readability &amp; risk score</p>
+
+  <div class="score-block">
+    <div class="score-big">
+      <span class="score-num" id="totalScoreNum">--</span>
+      <span class="score-max">/100</span>
+      <span id="totalScoreLabel" style="font-size:12px;color:var(--text-mid);">Run score &#8595;</span>
+    </div>
+    <span class="verdict" id="totalVerdict" style="display:none;"></span>
+  </div>
+
+  <div class="score-block" id="scoreBars">
+    <!-- rows injected by buildScoreBars() on init -->
+  </div>
+
+  <div class="score-block flag-list" id="flagList">
+    <p id="flagPlaceholder" style="color:var(--text-dim);font-size:12px;">Press Score to see flags</p>
+  </div>
+
+  <div class="btn-row mt-md">
+    <button class="btn btn-amber" style="flex:1;" id="runScoreBtn">&#9651; Score layout</button>
+    <button class="btn btn-ghost" id="scoreToIdeasBtn">&#8594; Ideas</button>
+  </div>
+</section>
+
+<!-- IDEAS -->
+<section id="tab-random" class="panel">
+  <p class="section-title">Layout ideas</p>
+  <div class="layout-grid" id="layoutGrid">
+    <p class="layout-placeholder">Press Randomize to generate layout ideas</p>
+  </div>
+  <div class="btn-row mt-md">
+    <button class="btn btn-amber btn-full" id="randomizeBtn">&#9670; Randomize 4 layouts</button>
+  </div>
+  <div id="pickConfirm" style="display:none;margin-top:14px;">
+    <button class="btn btn-ghost btn-full" id="applyLayoutBtn">&#8592; Apply picked layout to Zones</button>
+  </div>
+</section>
+
+<!-- NOTE -->
+<section id="tab-note" class="panel">
+  <p class="section-title">Production note</p>
+  <div class="prod-note-box" id="prodNote">Fill in Setup to generate a note.</div>
+  <div class="btn-row">
+    <button class="btn btn-amber" style="flex:1;" id="regenNoteBtn">&#8635; Regenerate</button>
+    <button class="btn btn-ghost" style="flex:1;" id="copyNoteBtn">&#9635; Copy note</button>
+  </div>
+  <hr class="divider">
+  <p class="section-title">ASCII layout export</p>
+  <div class="prod-note-box" id="asciiExport" style="font-size:10px;line-height:1.3;"></div>
+  <button class="btn btn-ghost btn-full mt-sm" id="genAsciiBtn">&#9671; Generate ASCII layout</button>
+</section>
+
+<div class="copy-flash" id="copyFlash">&#10003; Copied!</div>
+
+<script>
+'use strict';
+
+// ─── helpers ──────────────────────────────────────────────────────────────────
+
+function el(id) { return document.getElementById(id); }
+
+function val(id) { return el(id).value; }
+
+function makeEl(tag, className) {
+  const e = document.createElement(tag);
+  if (className) e.className = className;
+  return e;
+}
+
+// ─── state ────────────────────────────────────────────────────────────────────
+
+const zoneVisible = { subject: true, headline: true, subtext: true, cta: true };
+let pickedLayoutIndex = null;
+let generatedLayouts = [];
+let canvasW = 0, canvasH = 0;
+
+// ─── score bar rows (built once) ──────────────────────────────────────────────
+
+const SCORE_METRICS = [
+  { key: 'Contrast', label: 'Contrast ratio' },
+  { key: 'Legib',    label: 'Text legibility' },
+  { key: 'Crop',     label: 'Crop safety' },
+  { key: 'Overlap',  label: 'Zone overlap' },
+  { key: 'Emotion',  label: 'Emotion–CTA match' },
+  { key: 'Title',    label: 'Title completeness' },
+];
+
+function buildScoreBars() {
+  const container = el('scoreBars');
+  SCORE_METRICS.forEach(m => {
+    const row = makeEl('div', 'score-row');
+
+    const name = makeEl('span', 'score-name');
+    name.textContent = m.label;
+
+    const barWrap = makeEl('div', 'score-bar-wrap');
+    const bar = makeEl('div', 'score-bar');
+    bar.id = 'bar' + m.key;
+    bar.style.width = '0%';
+    barWrap.appendChild(bar);
+
+    const valSpan = makeEl('span', 'score-val');
+    valSpan.id = 'val' + m.key;
+    valSpan.textContent = '-';
+
+    row.appendChild(name);
+    row.appendChild(barWrap);
+    row.appendChild(valSpan);
+    container.appendChild(row);
+  });
+}
+
+// ─── tab switching ────────────────────────────────────────────────────────────
+
+function switchTab(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  el('tab-' + name).classList.add('active');
+  document.querySelector(`.tab-btn[data-tab="${name}"]`).classList.add('active');
+  if (name === 'zones') setTimeout(initCanvas, 80);
+  if (name === 'note') { generateNote(); generateAscii(); }
+}
+
+// ─── CTA chips ────────────────────────────────────────────────────────────────
+
+function getSelectedCTA() {
+  const chip = document.querySelector('#ctaChips .chip.selected');
+  return chip ? chip.dataset.cta : 'Watch now';
+}
+
+// ─── zone toggles ─────────────────────────────────────────────────────────────
+
+function toggleZone(zoneName) {
+  zoneVisible[zoneName] = !zoneVisible[zoneName];
+  const btn = el(zoneName + 'Toggle');
+  btn.textContent = zoneVisible[zoneName] ? 'Visible' : 'Hidden';
+  btn.classList.toggle('on', zoneVisible[zoneName]);
+  drawCanvas();
+}
+
+// ─── canvas ───────────────────────────────────────────────────────────────────
+
+function getRatio() {
+  const parts = val('cropFormat').split(':');
+  return parseFloat(parts[0]) / parseFloat(parts[1]);
+}
+
+function initCanvas() {
+  const canvas = el('thumbCanvas');
+  const maxW = canvas.parentElement.clientWidth - 28;
+  canvas.width = maxW;
+  canvas.height = Math.round(maxW / getRatio());
+  canvasW = canvas.width;
+  canvasH = canvas.height;
+  el('zoneRatioLabel').textContent = val('cropFormat');
+  drawCanvas();
+}
+
+function getZoneRect(position, W, H, margin) {
+  const col = Math.floor(W / 3);
+  const row = Math.floor(H / 3);
+  const m = margin;
+  const MAP = {
+    'left':          [m,                    m,           col - m,      H - 2*m],
+    'center':        [col,                  m,           col,          H - 2*m],
+    'right':         [W - col + m/2,        m,           col - m,      H - 2*m],
+    'fill':          [0,                    0,           W,            H],
+    'top-left':      [m,                    m,           col*1.4,      row*0.8],
+    'top-center':    [col*0.6,              m,           col*1.8,      row*0.8],
+    'top-right':     [W - col*1.4 - m,      m,           col*1.4,      row*0.8],
+    'center-left':   [m,                    row + m,     col*1.6,      row*0.9],
+    'bottom-left':   [m,                    H - row*0.85 - m, col*1.6, row*0.75],
+    'bottom-center': [col*0.5,              H - row*0.85 - m, col*2,   row*0.75],
+    'bottom-right':  [W - col*1.5 - m,      H - row*0.85 - m, col*1.5, row*0.75],
+  };
+  return MAP[position] || [m, m, 100, 30];
+}
+
+function drawCanvas() {
+  const canvas = el('thumbCanvas');
+  if (!canvas || canvasW === 0) { initCanvas(); return; }
+  const ctx = canvas.getContext('2d');
+  const W = canvasW, H = canvasH;
+  const marginPct = parseInt(val('safetyMargin')) / 100;
+  const margin = Math.round(Math.min(W, H) * marginPct);
+  const bgColor = val('bgColor');
+  const accentColor = val('accentColor');
+
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, W, H);
+
+  // safety border
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.strokeRect(margin, margin, W - 2*margin, H - 2*margin);
+  ctx.setLineDash([]);
+
+  // rule-of-thirds grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  [1/3, 2/3].forEach(f => {
+    ctx.beginPath(); ctx.moveTo(W*f, 0); ctx.lineTo(W*f, H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, H*f); ctx.lineTo(W, H*f); ctx.stroke();
+  });
+
+  // subject
+  if (zoneVisible.subject) {
+    const [sx, sy, sw, sh] = getZoneRect(val('subjectZone'), W, H, margin);
+    ctx.fillStyle = 'rgba(91,138,245,0.18)';
+    ctx.fillRect(sx, sy, sw, sh);
+    ctx.strokeStyle = 'rgba(91,138,245,0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(sx, sy, sw, sh);
+    ctx.fillStyle = 'rgba(91,138,245,0.9)';
+    ctx.font = `bold ${Math.max(9, Math.round(H*0.05))}px monospace`;
+    ctx.fillText('SUBJECT', sx + 5, sy + Math.round(H*0.055));
+  }
+
+  // headline
+  if (zoneVisible.headline) {
+    const [hx, hy, hw, hh] = getZoneRect(val('headlineZone'), W, H, margin);
+    ctx.fillStyle = 'rgba(245,166,35,0.15)';
+    ctx.fillRect(hx, hy, hw, hh);
+    ctx.strokeStyle = 'rgba(245,166,35,0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(hx, hy, hw, hh);
+    const hlText = val('headlineText') || 'HEADLINE';
+    ctx.fillStyle = accentColor;
+    const fs = Math.max(7, Math.round(hh * 0.42));
+    ctx.font = `bold ${fs}px sans-serif`;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(hx + 2, hy + 2, hw - 4, hh - 4);
+    ctx.clip();
+    ctx.fillText(hlText, hx + 4, hy + hh * 0.6);
+    ctx.restore();
+  }
+
+  // sub-text
+  if (zoneVisible.subtext) {
+    const [tx, ty, tw, th] = getZoneRect(val('subtextZone'), W, H, margin);
+    ctx.fillStyle = 'rgba(82,199,127,0.12)';
+    ctx.fillRect(tx, ty, tw, th);
+    ctx.strokeStyle = 'rgba(82,199,127,0.6)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(tx, ty, tw, th);
+    const stText = val('subText') || 'sub-text';
+    ctx.fillStyle = 'rgba(82,199,127,0.9)';
+    const sfs = Math.max(6, Math.round(th * 0.38));
+    ctx.font = `${sfs}px sans-serif`;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(tx + 2, ty + 2, tw - 4, th - 4);
+    ctx.clip();
+    ctx.fillText(stText, tx + 4, ty + th * 0.65);
+    ctx.restore();
+  }
+
+  // CTA badge
+  if (zoneVisible.cta) {
+    const [cx2, cy2] = getZoneRect(val('ctaZone'), W, H, margin);
+    const bw = Math.round(W * 0.22);
+    const bh = Math.round(bw * 0.38);
+    const bx = cx2, by = cy2;
+    const rad = 3;
+    ctx.fillStyle = 'rgba(224,82,82,0.85)';
+    ctx.beginPath();
+    ctx.moveTo(bx + rad, by);
+    ctx.lineTo(bx + bw - rad, by);
+    ctx.quadraticCurveTo(bx + bw, by, bx + bw, by + rad);
+    ctx.lineTo(bx + bw, by + bh - rad);
+    ctx.quadraticCurveTo(bx + bw, by + bh, bx + bw - rad, by + bh);
+    ctx.lineTo(bx + rad, by + bh);
+    ctx.quadraticCurveTo(bx, by + bh, bx, by + bh - rad);
+    ctx.lineTo(bx, by + rad);
+    ctx.quadraticCurveTo(bx, by, bx + rad, by);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = `bold ${Math.max(6, Math.round(bh * 0.42))}px monospace`;
+    ctx.fillText('CTA', bx + 4, by + bh * 0.68);
+  }
+
+  // margin label
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.font = `${Math.max(7, Math.round(H * 0.045))}px monospace`;
+  ctx.fillText(val('safetyMargin') + '% margin', margin + 3, H - 4);
+}
+
+function cycleHeadlineZone() {
+  const sel = el('headlineZone');
+  sel.selectedIndex = (sel.selectedIndex + 1) % sel.options.length;
+  drawCanvas();
+}
+
+// ─── scoring ──────────────────────────────────────────────────────────────────
+
+function hexToRgb(hex) {
+  return [
+    parseInt(hex.slice(1, 3), 16),
+    parseInt(hex.slice(3, 5), 16),
+    parseInt(hex.slice(5, 7), 16),
+  ];
+}
+
+function relativeLum(r, g, b) {
+  return [r, g, b]
+    .map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); })
+    .reduce((acc, v, i) => acc + v * [0.2126, 0.7152, 0.0722][i], 0);
+}
+
+function contrastRatio(hex1, hex2) {
+  const l1 = relativeLum(...hexToRgb(hex1));
+  const l2 = relativeLum(...hexToRgb(hex2));
+  const lighter = Math.max(l1, l2), darker = Math.min(l1, l2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+const EMOTION_CTA = {
+  shock:       ['Watch now', "Don't miss this", 'See results'],
+  curiosity:   ['Find out how', 'Learn the secret', 'Watch now'],
+  excitement:  ['Watch now', 'See results', 'I tried it'],
+  fear:        ["Don't miss this", 'Watch now', 'Find out how'],
+  joy:         ['Watch now', 'See results', 'I tried it'],
+  authority:   ['Find out how', 'Learn the secret', 'See results'],
+  controversy: ["Don't miss this", 'Watch now', 'See results'],
+};
+
+function setBar(key, score) {
+  const bar = el('bar' + key);
+  const valEl = el('val' + key);
+  bar.style.width = score + '%';
+  const color = score >= 80 ? '#52C77F' : score >= 60 ? '#F5A623' : '#E05252';
+  bar.style.background = color;
+  valEl.textContent = score;
+  valEl.style.color = color;
+}
+
+function runScore() {
+  const bg = val('bgColor');
+  const accent = val('accentColor');
+  const cr = contrastRatio(bg, accent);
+  const crScore = Math.min(100, Math.round((cr / 21) * 100 * 1.8));
+
+  const hl = val('headlineText').trim();
+  const st = val('subText').trim();
+  let legScore = 0;
+  if (hl.length > 0) legScore += 40;
+  if (hl.length >= 3 && hl.length <= 40) legScore += 20;
+  if (st.length > 0) legScore += 30;
+  if (st.length <= 60) legScore += 10;
+
+  const safetyVal = parseInt(val('safetyMargin'));
+  const cropScore = safetyVal >= 8 ? 100 : safetyVal >= 5 ? 70 : 40;
+
+  const hz = val('headlineZone');
+  const tz = val('subtextZone');
+  const overlapScore = hz === tz ? 20 : 100;
+
+  const emotion = val('videoEmotion');
+  const cta = getSelectedCTA();
+  const goodCTAs = EMOTION_CTA[emotion] || [];
+  const emotionScore = goodCTAs.includes(cta) ? 100 : 50;
+
+  const title = val('videoTitle').trim();
+  const subject = val('videoSubject').trim();
+  const titleScore = (title.length > 5 ? 50 : 0) + (subject.length > 3 ? 50 : 0);
+
+  const weights = [0.25, 0.2, 0.15, 0.15, 0.15, 0.1];
+  const scores  = [crScore, legScore, cropScore, overlapScore, emotionScore, titleScore];
+  const total   = Math.round(scores.reduce((acc, s, i) => acc + s * weights[i], 0));
+
+  el('totalScoreNum').textContent = total;
+  el('totalScoreLabel').textContent =
+    total >= 80 ? 'Production ready' : total >= 60 ? 'Needs refinement' : 'High risk';
+
+  const verdict = el('totalVerdict');
+  verdict.style.display = 'inline-block';
+  verdict.className = 'verdict ' + (total >= 80 ? 'good' : total >= 60 ? 'warn' : 'risk');
+  verdict.textContent = total >= 80 ? '✓ READY TO SHOOT' : total >= 60 ? '⚠ REVIEW FLAGS' : '✕ HIGH RISK';
+
+  setBar('Contrast', crScore);
+  setBar('Legib',    legScore);
+  setBar('Crop',     cropScore);
+  setBar('Overlap',  overlapScore);
+  setBar('Emotion',  emotionScore);
+  setBar('Title',    titleScore);
+
+  // Build flags with DOM — no innerHTML
+  const flags = [];
+  if (cr < 4.5)            flags.push({ color: '#E05252', msg: `Contrast ratio ${cr.toFixed(1)}:1 — WCAG AA needs 4.5:1 minimum. Adjust bg or accent color.` });
+  else if (cr < 7)         flags.push({ color: '#F5A623', msg: `Contrast ratio ${cr.toFixed(1)}:1 — acceptable but not AAA. Consider bolder type.` });
+  if (hl.length === 0)     flags.push({ color: '#E05252', msg: 'No headline text set. Thumbnails with large text outperform by 42% on avg.' });
+  if (hl.length > 40)      flags.push({ color: '#E05252', msg: 'Headline over 40 chars — likely unreadable at mobile thumbnail size.' });
+  if (overlapScore < 100)  flags.push({ color: '#E05252', msg: 'Headline and sub-text share the same zone — they will overlap.' });
+  if (safetyVal < 8)       flags.push({ color: '#F5A623', msg: 'Margin under 8% — important content may clip in mobile feed previews.' });
+  if (!goodCTAs.includes(cta)) flags.push({ color: '#F5A623', msg: `CTA "${cta}" is a weak match for "${emotion}" emotion. Try: ${goodCTAs[0]}.` });
+  if (title.length === 0)  flags.push({ color: '#E05252', msg: 'No video title — production note will be incomplete.' });
+  if (flags.length === 0)  flags.push({ color: '#52C77F', msg: 'No critical flags found. Good to go!' });
+
+  const flagList = el('flagList');
+  // Remove all children except the static placeholder (we'll hide it)
+  while (flagList.firstChild) flagList.removeChild(flagList.firstChild);
+
+  flags.forEach(f => {
+    const item = makeEl('div', 'flag-item');
+
+    const dot = makeEl('div', 'flag-dot');
+    dot.style.background = f.color;
+
+    const msg = makeEl('span');
+    msg.textContent = f.msg;
+
+    item.appendChild(dot);
+    item.appendChild(msg);
+    flagList.appendChild(item);
+  });
+}
+
+// ─── randomizer ───────────────────────────────────────────────────────────────
+
+const LAYOUT_TEMPLATES = [
+  { name: 'Classic Split',  subject: 'right',  headline: 'top-left',     subtext: 'bottom-left',   cta: 'top-right'   },
+  { name: 'Hero Center',    subject: 'center', headline: 'bottom-center', subtext: 'bottom-left',   cta: 'top-right'   },
+  { name: 'Left Lead',      subject: 'left',   headline: 'top-right',     subtext: 'bottom-right',  cta: 'bottom-left' },
+  { name: 'Big Text',       subject: 'right',  headline: 'top-center',    subtext: 'bottom-center', cta: 'top-left'    },
+  { name: 'Rule of Thirds', subject: 'right',  headline: 'top-left',      subtext: 'center-left',   cta: 'top-right'   },
+  { name: 'Shock Face',     subject: 'left',   headline: 'top-right',     subtext: 'bottom-right',  cta: 'top-left'    },
+  { name: 'Full Bleed',     subject: 'fill',   headline: 'bottom-center', subtext: 'top-center',    cta: 'top-right'   },
+  { name: 'Asymmetric',     subject: 'right',  headline: 'center-left',   subtext: 'bottom-left',   cta: 'top-right'   },
+];
+
+function drawMiniCanvas(canvas, layout) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const bg = val('bgColor');
+  const accent = val('accentColor');
+  const margin = Math.round(Math.min(W, H) * 0.08);
+
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 3]);
+  ctx.strokeRect(margin, margin, W - 2*margin, H - 2*margin);
+  ctx.setLineDash([]);
+
+  [1/3, 2/3].forEach(f => {
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(W*f, 0); ctx.lineTo(W*f, H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, H*f); ctx.lineTo(W, H*f); ctx.stroke();
+  });
+
+  const paintZone = (pos, color) => {
+    const [x, y, w, h] = getZoneRect(pos, W, H, margin);
+    ctx.globalAlpha = 0.25;
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, w, h);
+    ctx.globalAlpha = 0.8;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(x, y, w, h);
+    ctx.globalAlpha = 1;
+  };
+
+  if (layout.subject === 'fill') {
+    ctx.globalAlpha = 0.1;
+    ctx.fillStyle = '#5B8AF5';
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = 1;
+  } else {
+    paintZone(layout.subject, '#5B8AF5');
+  }
+  paintZone(layout.headline, accent);
+  paintZone(layout.subtext, '#52C77F');
+  paintZone(layout.cta, '#E05252');
+}
+
+function randomizeLayouts() {
+  const shuffled = [...LAYOUT_TEMPLATES].sort(() => Math.random() - 0.5).slice(0, 4);
+  generatedLayouts = shuffled;
+  pickedLayoutIndex = null;
+
+  const grid = el('layoutGrid');
+  while (grid.firstChild) grid.removeChild(grid.firstChild);
+
+  shuffled.forEach((layout, i) => {
+    const card = makeEl('div', 'layout-card');
+    card.setAttribute('data-index', i);
+
+    const cnv = document.createElement('canvas');
+    cnv.width = 320;
+    cnv.height = 180;
+
+    const label = makeEl('div', 'layout-name');
+    label.textContent = layout.name;
+
+    card.appendChild(cnv);
+    card.appendChild(label);
+    card.addEventListener('click', () => pickLayout(i));
+    grid.appendChild(card);
+    drawMiniCanvas(cnv, layout);
+  });
+
+  el('pickConfirm').style.display = 'none';
+}
+
+function pickLayout(i) {
+  pickedLayoutIndex = i;
+  document.querySelectorAll('.layout-card').forEach((c, j) => {
+    c.classList.toggle('picked', j === i);
+  });
+  el('pickConfirm').style.display = 'block';
+}
+
+function applyPickedLayout() {
+  if (pickedLayoutIndex === null) return;
+  const l = generatedLayouts[pickedLayoutIndex];
+  el('subjectZone').value  = l.subject;
+  el('headlineZone').value = l.headline;
+  el('subtextZone').value  = l.subtext;
+  el('ctaZone').value      = l.cta;
+  switchTab('zones');
+  setTimeout(initCanvas, 100);
+}
+
+// ─── production note ──────────────────────────────────────────────────────────
+
+function generateNote() {
+  const title   = val('videoTitle')   || '[No title]';
+  const subject = val('videoSubject') || '[No subject]';
+  const crop    = val('cropFormat');
+  const emotion = val('videoEmotion');
+  const cta     = getSelectedCTA();
+  const hl      = val('headlineText') || '[No headline]';
+  const st      = val('subText')      || '[None]';
+  const hz      = val('headlineZone');
+  const tz      = val('subtextZone');
+  const sz      = val('subjectZone');
+  const cz      = val('ctaZone');
+  const bg      = val('bgColor');
+  const acc     = val('accentColor');
+  const margin  = val('safetyMargin');
+  const cr      = contrastRatio(bg, acc).toFixed(1);
+  const dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const pass    = parseFloat(cr) >= 4.5 ? '\u2713 PASS' : '\u2715 FAIL WCAG AA';
+
+  const lines = [
+    'THUMBNAIL PRODUCTION NOTE',
+    'Generated: ' + dateStr,
+    '\u2500'.repeat(29),
+    'VIDEO',
+    '  Title:     ' + title,
+    '  Subject:   ' + subject,
+    '  Format:    ' + crop,
+    '  Emotion:   ' + emotion.toUpperCase(),
+    '  CTA:       "' + cta + '"',
+    '',
+    'TEXT OVERLAYS',
+    '  Headline:  "' + hl + '"',
+    '             \u2192 Zone: ' + hz.toUpperCase(),
+    '  Sub-text:  "' + st + '"',
+    '             \u2192 Zone: ' + tz.toUpperCase(),
+    '',
+    'LAYOUT',
+    '  Subject:   ' + sz.toUpperCase(),
+    '  CTA badge: ' + cz.toUpperCase(),
+    '  Safety:    ' + margin + '% margin',
+    '',
+    'PALETTE',
+    '  BG:        ' + bg.toUpperCase(),
+    '  Accent:    ' + acc.toUpperCase(),
+    '  Contrast:  ' + cr + ':1 ' + pass,
+    '',
+    'SHOT NOTES',
+    '  - Hero should fill ' + sz + ' zone, direct eye contact toward headline',
+    '  - Headline font: min 72pt equivalent, high stroke weight',
+    '  - Ensure background does not compete at mobile 120\u00d767px preview',
+    '  - Test thumb at 10% size before export',
+    '\u2500'.repeat(29),
+  ];
+
+  el('prodNote').textContent = lines.join('\n');
+}
+
+function copyNote() {
+  const note = el('prodNote').textContent;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(note).then(showCopyFlash);
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = note;
+    ta.style.cssText = 'position:fixed;opacity:0;';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showCopyFlash();
+  }
+}
+
+function showCopyFlash() {
+  const flash = el('copyFlash');
+  flash.style.display = 'block';
+  setTimeout(() => { flash.style.display = 'none'; }, 1600);
+}
+
+// ─── ASCII export ─────────────────────────────────────────────────────────────
+
+function generateAscii() {
+  const crop = val('cropFormat');
+  const [rw, rh] = crop.split(':').map(parseFloat);
+  const W = 38;
+  const H = Math.round(W / (rw / rh) * 0.55);
+  const grid = Array.from({ length: H }, () => Array(W).fill('\u00b7'));
+  const margin = Math.round(Math.min(W, H) * 0.1);
+
+  for (let r = 0; r < H; r++) { grid[r][margin] = '|'; grid[r][W - 1 - margin] = '|'; }
+  for (let c = 0; c < W; c++) { grid[margin][c] = '-'; grid[H - 1 - margin][c] = '-'; }
+
+  const placeLabel = (pos, labelText) => {
+    const [x, y] = getZoneRect(pos, W, H, margin);
+    const col = Math.min(Math.round(x), W - labelText.length - 1);
+    const row = Math.min(Math.round(y), H - 1);
+    for (let i = 0; i < labelText.length && col + i < W; i++) {
+      grid[row][col + i] = labelText[i];
+    }
+  };
+
+  placeLabel(val('headlineZone'), '[HL]');
+  placeLabel(val('subtextZone'),  '[ST]');
+  placeLabel(val('subjectZone'),  '[SJ]');
+  placeLabel(val('ctaZone'),      '[CTA]');
+
+  const header = 'ASCII LAYOUT [' + crop + '] \u2014 ' + W + '\u00d7' + H + ' char grid\n' + '\u2500'.repeat(W) + '\n';
+  const body   = grid.map(row => row.join('')).join('\n');
+  const legend = '\n[SJ]=Subject  [HL]=Headline  [ST]=Sub-text  [CTA]=CTA';
+
+  el('asciiExport').textContent = header + body + legend;
+}
+
+// ─── wire everything up after DOM ready ───────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', () => {
+
+  // Build score bar rows
+  buildScoreBars();
+
+  // Tab buttons
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+
+  // Setup → next
+  el('setupNextBtn').addEventListener('click', () => switchTab('zones'));
+
+  // Zones → next
+  el('zonesNextBtn').addEventListener('click', () => switchTab('score'));
+
+  // Score → ideas
+  el('scoreToIdeasBtn').addEventListener('click', () => switchTab('random'));
+
+  // Run score
+  el('runScoreBtn').addEventListener('click', runScore);
+
+  // Randomize
+  el('randomizeBtn').addEventListener('click', randomizeLayouts);
+
+  // Apply picked layout
+  el('applyLayoutBtn').addEventListener('click', applyPickedLayout);
+
+  // Note buttons
+  el('regenNoteBtn').addEventListener('click', generateNote);
+  el('copyNoteBtn').addEventListener('click', copyNote);
+  el('genAsciiBtn').addEventListener('click', generateAscii);
+
+  // CTA chips
+  el('ctaChips').addEventListener('click', e => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    document.querySelectorAll('#ctaChips .chip').forEach(c => c.classList.remove('selected'));
+    chip.classList.add('selected');
+  });
+
+  // Zone toggles (all share one listener via data-zone)
+  ['subjectToggle', 'headlineToggle', 'subtextToggle', 'ctaToggle'].forEach(id => {
+    el(id).addEventListener('click', () => toggleZone(el(id).dataset.zone));
+  });
+
+  // Zone selects → redraw
+  ['subjectZone', 'headlineZone', 'subtextZone', 'ctaZone', 'safetyMargin'].forEach(id => {
+    el(id).addEventListener('change', drawCanvas);
+  });
+
+  // Crop format → reinit canvas
+  el('cropFormat').addEventListener('change', () => {
+    if (el('tab-zones').classList.contains('active')) initCanvas();
+  });
+
+  // Setup fields → sync canvas if zones tab is active
+  ['videoTitle', 'videoSubject', 'headlineText', 'subText', 'bgColor', 'accentColor'].forEach(id => {
+    el(id).addEventListener('input', () => {
+      if (el('tab-zones').classList.contains('active')) drawCanvas();
+    });
+  });
+
+  // Canvas click → cycle headline zone
+  el('thumbCanvas').addEventListener('click', cycleHeadlineZone);
+
+  // Resize
+  window.addEventListener('resize', () => {
+    if (el('tab-zones').classList.contains('active')) initCanvas();
+  });
+});
+</script>
+</body>
+</html>

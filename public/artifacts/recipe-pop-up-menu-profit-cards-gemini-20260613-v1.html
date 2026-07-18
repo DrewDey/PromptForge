@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pop-Up Menu Tester</title>
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+            --primary: #4f46e5;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --success: #10b981;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 16px;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        h2 { margin-bottom: 16px; font-size: 1.5rem; }
+        h3 { margin-top: 0; font-size: 1.2rem; }
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .form-group {
+            margin-bottom: 12px;
+        }
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            width: 100%;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        button:active { opacity: 0.9; }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-top: 4px;
+        }
+        .badge-low { background: #d1fae5; color: var(--success); }
+        .badge-med { background: #fef3c7; color: var(--warning); }
+        .badge-high { background: #fee2e2; color: var(--danger); }
+        
+        .metric { font-size: 1.1rem; font-weight: bold; }
+        .flag {
+            background: #fff7ed;
+            border-left: 4px solid var(--warning);
+            padding: 8px;
+            margin-top: 8px;
+            border-radius: 0 4px 4px 0;
+            font-size: 0.9rem;
+        }
+        .flag.danger {
+            background: #fef2f2;
+            border-left-color: var(--danger);
+        }
+        .copy-btn {
+            background: #e2e8f0;
+            color: var(--text);
+            margin-top: 8px;
+            padding: 8px;
+            font-size: 0.9rem;
+        }
+        textarea.note-output {
+            background: #f1f5f9;
+            font-family: monospace;
+            font-size: 0.85rem;
+            resize: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Pop-Up Menu Tester</h2>
+    
+    <!-- Input Form Card -->
+    <div class="card">
+        <h3>Add/Edit Dish</h3>
+        <form id="dishForm">
+            <div class="form-group">
+                <label>Dish Name</label>
+                <input type="text" id="name" placeholder="e.g., Truffle Gnocchi" required>
+            </div>
+            
+            <div class="grid-2">
+                <div class="form-group">
+                    <label>Total Batch Cost ($)</label>
+                    <input type="number" id="batchCost" step="0.01" placeholder="40.00" required>
+                </div>
+                <div class="form-group">
+                    <label>Servings per Batch</label>
+                    <input type="number" id="servings" placeholder="10" required>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="form-group">
+                    <label>Target Price ($)</label>
+                    <input type="number" id="price" step="0.01" placeholder="18.00" required>
+                </div>
+                <div class="form-group">
+                    <label>Prep Risk</label>
+                    <select id="risk">
+                        <option value="Low">Low (Assemble/Chill)</option>
+                        <option value="Medium">Medium (Warm up)</option>
+                        <option value="High">High (Cook to order)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Promo Angle / Hook</label>
+                <input type="text" id="promo" placeholder="e.g., Handmade daily, limited to 20 portions">
+            </div>
+
+            <button type="submit">Analyze Dish</button>
+        </form>
+    </div>
+
+    <!-- Active Menu Cards -->
+    <div id="menuCards"></div>
+
+    <!-- Generated Launch Note -->
+    <div class="card" id="noteCard" style="display: none;">
+        <h3>📋 Live Launch Note</h3>
+        <textarea id="launchNote" class="note-output" rows="8" readonly></textarea>
+        <button id="copyBtn" class="copy-btn">Copy to Clipboard</button>
+    </div>
+</div>
+
+<script>
+    const dishes = [];
+    const form = document.getElementById('dishForm');
+    const menuCardsContainer = document.getElementById('menuCards');
+    const noteCard = document.getElementById('noteCard');
+    const launchNote = document.getElementById('launchNote');
+    const copyBtn = document.getElementById('copyBtn');
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const unitCost = parseFloat(document.getElementById('batchCost').value) / parseInt(document.getElementById('servings').value);
+        const price = parseFloat(document.getElementById('price').value);
+        const margin = ((price - unitCost) / price) * 100;
+        const profit = price - unitCost;
+
+        const dish = {
+            name: document.getElementById('name').value,
+            unitCost: unitCost.toFixed(2),
+            price: price.toFixed(2),
+            profit: profit.toFixed(2),
+            margin: margin.toFixed(1),
+            risk: document.getElementById('risk').value,
+            promo: document.getElementById('promo').value || "Chef's special creation"
+        };
+
+        dishes.push(dish);
+        form.reset();
+        render();
+    });
+
+    function render() {
+        menuCardsContainer.innerHTML = '';
+        if (dishes.length === 0) {
+            noteCard.style.display = 'none';
+            return;
+        }
+
+        let noteText = "🔥 TONIGHT'S POP-UP MENU 🔥\n\n";
+
+        dishes.forEach((dish, index) => {
+            // Build Launch Note Text
+            noteText += `▪️ ${dish.name} - $${dish.price}\n   ${dish.promo}\n\n`;
+
+            // Risk Badge Color
+            let riskClass = 'badge-low';
+            if (dish.risk === 'Medium') riskClass = 'badge-med';
+            if (dish.risk === 'High') riskClass = 'badge-high';
+
+            // Warning Flags Logic
+            let flagsHtml = '';
+            if (parseFloat(dish.margin) < 65) {
+                flagsHtml += `<div class="flag danger">⚠️ Low Margin (${dish.margin}%): Aim for > 65% for pop-ups to clear overhead.</div>`;
+            }
+            if (dish.risk === 'High') {
+                flagsHtml += `<div class="flag">⚠️ High Prep Risk: Requires active on-site cooking. Bottleneck danger.</div>`;
+            }
+
+            // Create Card UI
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <h3 style="margin:0;">${dish.name}</h3>
+                    <span class="badge ${riskClass}">${dish.risk} Risk</span>
+                </div>
+                <hr style="border:0; border-top:1px solid var(--border); margin:12px 0;">
+                <div class="grid-2">
+                    <div>
+                        <span style="font-size:0.8rem; color:#64748b; display:block;">Unit Cost / Price</span>
+                        <div class="metric">$${dish.unitCost} / $${dish.price}</div>
+                    </div>
+                    <div>
+                        <span style="font-size:0.8rem; color:#64748b; display:block;">Profit / Margin</span>
+                        <div class="metric" style="color:var(--success);">$${dish.profit} (${dish.margin}%)</div>
+                    </div>
+                </div>
+                ${flagsHtml}
+            `;
+            menuCardsContainer.appendChild(card);
+        });
+
+        // Update Launch Note Area
+        launchNote.value = noteText.trim();
+        noteCard.style.display = 'block';
+    }
+
+    copyBtn.addEventListener('click', () => {
+        launchNote.select();
+        launchNote.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(launchNote.value);
+        
+        const originalText = copyBtn.innerText;
+        copyBtn.innerText = "Copied!";
+        copyBtn.style.background = '#10b981';
+        copyBtn.style.color = 'white';
+        setTimeout(() => {
+            copyBtn.innerText = originalText;
+            copyBtn.style.background = '#e2e8f0';
+            copyBtn.style.color = var(--text);
+        }, 1500);
+    });
+</script>
+
+</body>
+</html>

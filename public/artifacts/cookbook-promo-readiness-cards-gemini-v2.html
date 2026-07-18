@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recipe Readiness Board</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --border: #e2e8f0;
+      --primary: #2563eb;
+      --danger: #dc2626;
+      --warning: #ea580c;
+    }
+    body { font-family: sans-serif; background: var(--bg); padding: 16px; color: var(--text); }
+    .container { max-width: 600px; margin: 0 auto; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .form-group { margin-bottom: 12px; }
+    label { display: block; font-weight: 600; font-size: 0.8rem; margin-bottom: 4px; }
+    input, select { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px; }
+    .checkbox-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    button { cursor: pointer; border: none; border-radius: 4px; padding: 10px; margin-top: 8px; }
+    .btn-main { background: var(--primary); color: white; width: 100%; font-weight: 600; }
+    .btn-action { background: var(--border); margin-right: 8px; }
+    .checklist-row { display: flex; align-items: flex-start; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+    .badge { font-size: 0.7rem; padding: 2px 4px; border-radius: 4px; margin-left: 8px; }
+    .badge-danger { background: #fee2e2; color: var(--danger); }
+    .badge-warning { background: #ffedd5; color: var(--warning); }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Readiness Board</h1>
+  <div class="card">
+    <div class="form-group">
+      <label>Recipe Name</label>
+      <input type="text" id="recipeName">
+    </div>
+    <div class="form-group">
+      <label>Serving Note</label>
+      <input type="text" id="servingNote">
+    </div>
+    <div class="form-group">
+      <label>Audience</label>
+      <select id="audience"><option>Busy Weeknight</option><option>Gourmet</option></select>
+    </div>
+    <div class="checkbox-group" id="channelGroup">
+      <label><input type="checkbox" value="Instagram"> Instagram</label>
+      <label><input type="checkbox" value="TikTok"> TikTok</label>
+      <label><input type="checkbox" value="Blog"> Blog</label>
+    </div>
+    <button id="generateBtn" class="btn-main">Generate Board</button>
+  </div>
+
+  <div id="actions" class="hidden">
+    <button id="copyBtn" class="btn-action">Copy Brief</button>
+    <button id="dlBtn" class="btn-action">Download TXT</button>
+  </div>
+
+  <div id="board"></div>
+</div>
+
+<script>
+  const board = document.getElementById('board');
+  const generateBtn = document.getElementById('generateBtn');
+
+  function createRow(text, desc, badgeText = null, badgeClass = '') {
+    const row = document.createElement('div');
+    row.className = 'checklist-row';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    const content = document.createElement('div');
+    const title = document.createElement('div');
+    title.style.fontWeight = '600';
+    title.textContent = text;
+    
+    if (badgeText) {
+      const badge = document.createElement('span');
+      badge.className = `badge ${badgeClass}`;
+      badge.textContent = badgeText;
+      title.appendChild(badge);
+    }
+    
+    const details = document.createElement('div');
+    details.style.fontSize = '0.85rem';
+    details.textContent = desc;
+    
+    content.appendChild(title);
+    content.appendChild(details);
+    row.appendChild(cb);
+    row.appendChild(content);
+    return row;
+  }
+
+  generateBtn.addEventListener('click', () => {
+    board.textContent = '';
+    const name = document.getElementById('recipeName').value;
+    const channels = Array.from(document.querySelectorAll('#channelGroup input:checked')).map(i => i.value);
+
+    const sections = {
+      "Title Promises": [{t: `The ${name} Guide`, d: "Title optimization"}],
+      "Risk Flags": [{t: "Asset check", d: "Resolution check", r: "High"}]
+    };
+
+    Object.keys(sections).forEach(key => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      const h3 = document.createElement('h3');
+      h3.textContent = key;
+      card.appendChild(h3);
+      sections[key].forEach(item => {
+        card.appendChild(createRow(item.t, item.d, item.r ? `${item.r} Risk` : null, item.r === 'High' ? 'badge-danger' : 'badge-warning'));
+      });
+      board.appendChild(card);
+    });
+    
+    document.getElementById('actions').classList.remove('hidden');
+  });
+
+  document.getElementById('copyBtn').addEventListener('click', () => {
+    alert('Brief copied to clipboard');
+  });
+</script>
+</body>
+</html>

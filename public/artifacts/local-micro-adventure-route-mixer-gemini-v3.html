@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Micro-Adventure Route Mixer</title>
+  <style>
+    :root {
+      --bg-primary: #121214;
+      --bg-surface: #1a1a1e;
+      --bg-card: #222227;
+      --text-main: #e4e4e7;
+      --text-muted: #a1a1aa;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --border: #2e2e33;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg-primary); color: var(--text-main); padding: 1.5rem; display: flex; justify-content: center; min-height: 100vh; }
+    .container { width: 100%; max-width: 500px; background: var(--bg-surface); border-radius: 12px; border: 1px solid var(--border); padding: 1.5rem; }
+    h1 { font-size: 1.25rem; margin-bottom: 1.25rem; }
+    label { display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; }
+    select, input[type="text"] { width: 100%; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main); padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; }
+    .stop-input-group { display: flex; gap: 0.5rem; }
+    .stop-item { display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 0.5rem 0.75rem; border-radius: 6px; margin-bottom: 0.35rem; border: 1px solid var(--border); }
+    button { background: var(--accent); color: white; border: none; padding: 0.75rem; border-radius: 6px; cursor: pointer; font-weight: 600; }
+    .btn-sec { background: var(--border); }
+    .route-card { display: none; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin-top: 1.5rem; }
+    .checklist { list-style: none; margin-top: 1rem; }
+    .checklist-item { display: flex; align-items: flex-start; gap: 0.6rem; margin-bottom: 0.6rem; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Micro-Adventure Mixer</h1>
+  <label for="timeBudget">Time Budget</label>
+  <select id="timeBudget">
+    <option value="quick">Quick Detour (30-60 mins)</option>
+    <option value="half">Half-Day Escape (2-4 hours)</option>
+    <option value="full">Full Horizon (Deep Dive)</option>
+  </select>
+
+  <label for="mood">Weather / Mood</label>
+  <select id="mood">
+    <option value="sunny">Sunny & High Energy</option>
+    <option value="moody">Overcast, Moody & Melancholic</option>
+    <option value="neon">Neon Night Vibes</option>
+    <option value="rainy">Rainy Day Slog</option>
+  </select>
+
+  <label for="transit">Transit Mode</label>
+  <select id="transit">
+    <option value="walk">Foot Patrol (Walking)</option>
+    <option value="bike">Two-Wheel Blitz (Bike/Scooter)</option>
+    <option value="transit">Urban Transit / Cruiser</option>
+  </select>
+
+  <label>Nearby Waypoints</label>
+  <div class="stop-input-group">
+    <input type="text" id="stopInput" placeholder="Add a waypoint...">
+    <button id="addStopBtn">Add</button>
+  </div>
+  <div id="stopList"></div>
+
+  <button id="dealBtn" style="width: 100%; margin-top: 1rem;">Deal Route Card</button>
+
+  <div class="route-card" id="routeCard">
+    <div id="cardTitle" style="font-weight: 600; margin-bottom: 0.5rem;"></div>
+    <ul class="checklist" id="checklist"></ul>
+    <button id="copyBtn" class="btn-sec" style="margin-top: 1rem; width: 100%;">Copy Checklist to Clipboard</button>
+  </div>
+</div>
+
+<script>
+  const stops = [];
+  const stopList = document.getElementById('stopList');
+  const stopInput = document.getElementById('stopInput');
+  const addStopBtn = document.getElementById('addStopBtn');
+  const dealBtn = document.getElementById('dealBtn');
+  const routeCard = document.getElementById('routeCard');
+  const checklist = document.getElementById('checklist');
+  const copyBtn = document.getElementById('copyBtn');
+
+  addStopBtn.addEventListener('click', () => {
+    const val = stopInput.value.trim();
+    if (val) {
+      stops.push(val);
+      const div = document.createElement('div');
+      div.className = 'stop-item';
+      const span = document.createElement('span');
+      span.textContent = val;
+      const btn = document.createElement('button');
+      btn.textContent = '×';
+      btn.className = 'btn-sec';
+      btn.addEventListener('click', () => {
+        const index = stops.indexOf(val);
+        if (index > -1) stops.splice(index, 1);
+        div.remove();
+      });
+      div.appendChild(span);
+      div.appendChild(btn);
+      stopList.appendChild(div);
+      stopInput.value = '';
+    }
+  });
+
+  dealBtn.addEventListener('click', () => {
+    if (stops.length === 0) return alert('Add waypoints first.');
+
+    const time = document.getElementById('timeBudget').value;
+    const mood = document.getElementById('mood').value;
+
+    const seed = (time + mood + stops.join('')).length;
+    document.getElementById('cardTitle').textContent = 'Mission ID: #' + (1000 + seed);
+
+    while (checklist.firstChild) {
+      checklist.removeChild(checklist.firstChild);
+    }
+
+    const actions = [
+      'Initialize transit via ' + document.getElementById('transit').options[document.getElementById('transit').selectedIndex].text,
+      ...stops.map(s => 'Visit waypoint: ' + s),
+      mood === 'sunny' ? 'Find shade at the halfway point' : 'Seek cover if the light fades',
+      time === 'quick' ? 'Maintain a brisk pace' : 'Take time to observe the local geometry'
+    ];
+
+    actions.forEach(text => {
+      const li = document.createElement('li');
+      li.className = 'checklist-item';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      const span = document.createElement('span');
+      span.textContent = text;
+      li.appendChild(cb);
+      li.appendChild(span);
+      checklist.appendChild(li);
+    });
+
+    routeCard.style.display = 'block';
+  });
+
+  copyBtn.addEventListener('click', () => {
+    const items = Array.from(checklist.querySelectorAll('span')).map(s => '- ' + s.textContent);
+    navigator.clipboard.writeText(items.join('\n'));
+    alert('Checklist copied to clipboard!');
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blurb Beat Mapper</title>
+<style>
+  :root {
+    --ink: #1a1714;
+    --paper: #f7f4ef;
+    --aged: #e8e2d9;
+    --red-mark: #c0392b;
+    --blue-mark: #2c5f8a;
+    --gold: #b8943a;
+    --mid: #6b6560;
+    --light: #d4cfc8;
+    --score-low: #c0392b;
+    --score-mid: #d4820a;
+    --score-high: #2e7d52;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 20px 20px 18px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 3px solid var(--gold);
+  }
+
+  header h1 {
+    font-family: Georgia, serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    line-height: 1.2;
+  }
+
+  header p {
+    font-size: 0.72rem;
+    color: var(--light);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 3px;
+    font-family: Arial, sans-serif;
+  }
+
+  main {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 24px 16px 60px;
+  }
+
+  .section-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 28px 0 12px;
+  }
+
+  .section-label .num {
+    font-family: 'Courier New', monospace;
+    font-size: 0.68rem;
+    color: var(--red-mark);
+    border: 1px solid var(--red-mark);
+    padding: 1px 5px;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+
+  .section-label .title {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--mid);
+    font-family: Arial, sans-serif;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--light);
+  }
+
+  .beat-card {
+    background: white;
+    border: 1px solid var(--aged);
+    border-left: 3px solid var(--blue-mark);
+    border-radius: 2px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+
+  .beat-card label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--blue-mark);
+    margin-bottom: 6px;
+    font-family: Arial, sans-serif;
+  }
+
+  .beat-card .hint {
+    font-size: 0.76rem;
+    color: var(--mid);
+    margin-bottom: 8px;
+    font-style: italic;
+    font-family: Arial, sans-serif;
+  }
+
+  textarea, input[type="text"] {
+    width: 100%;
+    background: var(--paper);
+    border: 1px solid var(--light);
+    border-radius: 2px;
+    padding: 9px 11px;
+    font-family: Arial, sans-serif;
+    font-size: 0.88rem;
+    color: var(--ink);
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  textarea:focus, input[type="text"]:focus {
+    border-color: var(--blue-mark);
+    background: white;
+  }
+
+  textarea { min-height: 70px; }
+  textarea.short { min-height: 52px; }
+
+  .score-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .score-item {
+    background: white;
+    border: 1px solid var(--aged);
+    border-radius: 2px;
+    padding: 12px 14px;
+  }
+
+  .score-item label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--mid);
+    margin-bottom: 8px;
+    font-family: Arial, sans-serif;
+  }
+
+  .slider-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 3px;
+    background: var(--light);
+    border-radius: 2px;
+    outline: none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--blue-mark);
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+
+  .score-val {
+    font-family: 'Courier New', monospace;
+    font-size: 1rem;
+    font-weight: bold;
+    min-width: 24px;
+    text-align: right;
+  }
+
+  .score-avg-bar {
+    background: white;
+    border: 1px solid var(--aged);
+    padding: 14px 16px;
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 12px;
+  }
+
+  .avg-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--mid);
+    white-space: nowrap;
+    font-family: Arial, sans-serif;
+  }
+
+  .avg-track {
+    flex: 1;
+    height: 8px;
+    background: var(--aged);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .avg-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s, background 0.3s;
+  }
+
+  .avg-num {
+    font-family: 'Courier New', monospace;
+    font-size: 1.1rem;
+    font-weight: bold;
+    min-width: 32px;
+    text-align: right;
+  }
+
+  .gen-btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 2px;
+    font-family: Arial, sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    margin: 24px 0 0;
+    transition: background 0.15s;
+  }
+
+  .gen-btn:hover { background: var(--blue-mark); }
+
+  .error-msg {
+    background: #fdf2f2;
+    border: 1px solid #f5c6c6;
+    border-left: 3px solid var(--red-mark);
+    padding: 12px 14px;
+    border-radius: 2px;
+    font-size: 0.82rem;
+    color: var(--red-mark);
+    margin-top: 12px;
+    font-family: Arial, sans-serif;
+    display: none;
+  }
+
+  .comp-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .comp-input { flex: 1; min-width: 140px; }
+
+  .variant-card {
+    background: white;
+    border: 1px solid var(--aged);
+    border-radius: 2px;
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+
+  .variant-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .v-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-family: Arial, sans-serif;
+  }
+
+  .v-tone {
+    font-family: Georgia, serif;
+    font-style: italic;
+    font-size: 0.82rem;
+    color: var(--gold);
+  }
+
+  .copy-btn {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.3);
+    color: var(--paper);
+    padding: 4px 10px;
+    font-size: 0.68rem;
+    font-family: Arial, sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .copy-btn:hover { background: rgba(255,255,255,0.15); }
+  .copy-btn.copied { border-color: var(--gold); color: var(--gold); }
+
+  .variant-body {
+    padding: 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.75;
+    color: var(--ink);
+    white-space: pre-wrap;
+    min-height: 80px;
+  }
+
+  .variant-body.empty {
+    color: var(--light);
+    font-style: italic;
+    font-family: Arial, sans-serif;
+    font-size: 0.82rem;
+  }
+
+  /* ── Export bar ── */
+  .export-bar {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .export-btn {
+    flex: 1;
+    padding: 12px 10px;
+    border-radius: 2px;
+    font-family: Arial, sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: none;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .export-btn.copy-all {
+    background: var(--blue-mark);
+    color: var(--paper);
+  }
+  .export-btn.copy-all:hover { background: #1e4a6e; }
+  .export-btn.copy-all.copied {
+    background: var(--score-high);
+    color: white;
+  }
+
+  .export-btn.export-txt {
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--aged);
+  }
+  .export-btn.export-txt:hover { background: var(--aged); }
+
+  .export-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .foot-note {
+    text-align: center;
+    font-size: 0.7rem;
+    color: var(--light);
+    margin-top: 40px;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.05em;
+  }
+
+  @media (max-width: 420px) {
+    .score-row { grid-template-columns: 1fr; }
+    .comp-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Blurb Beat Mapper</h1>
+  <p>Back-cover copy builder &nbsp;&middot;&nbsp; Nonfiction</p>
+</header>
+
+<main>
+
+  <div class="section-label"><span class="num">01</span><span class="title">Audience</span></div>
+  <div class="beat-card">
+    <label for="audience">Primary Reader</label>
+    <div class="hint">Who picks this book up? Be specific &mdash; job, mindset, the problem they&rsquo;re standing in.</div>
+    <textarea id="audience" class="short" placeholder="e.g. Mid-career product managers who feel like they're executing but not leading — smart, frustrated, busy."></textarea>
+  </div>
+
+  <div class="section-label"><span class="num">02</span><span class="title">Hook</span></div>
+  <div class="beat-card">
+    <label for="hook">Opening Provocation</label>
+    <div class="hint">The one sentence that makes someone flip it over. A tension, a counterintuitive claim, a dangerous question.</div>
+    <textarea id="hook" class="short" placeholder="e.g. Every leadership book tells you to communicate more. None of them tell you what to stop saying."></textarea>
+  </div>
+
+  <div class="section-label"><span class="num">03</span><span class="title">Stakes</span></div>
+  <div class="beat-card">
+    <label for="stakes">What&rsquo;s Actually at Risk</label>
+    <div class="hint">If the reader doesn&rsquo;t read this book, what do they lose, miss, or remain? Make the cost visceral.</div>
+    <textarea id="stakes" placeholder="e.g. Without this, leaders keep solving the wrong problems faster. Teams burn out. Talented people leave. And the leader never understands why."></textarea>
+  </div>
+
+  <div class="section-label"><span class="num">04</span><span class="title">Credibility</span></div>
+  <div class="beat-card">
+    <label for="cred">Why You / Why This Book</label>
+    <div class="hint">Not your resume. The specific experience or insight that makes your take uniquely earned.</div>
+    <textarea id="cred" class="short" placeholder="e.g. Based on 200+ executive interviews and a decade coaching Fortune 500 teams through leadership transitions."></textarea>
+  </div>
+
+  <div class="section-label"><span class="num">05</span><span class="title">Comparable Shelf</span></div>
+  <div class="beat-card">
+    <label>Books This Sits Between</label>
+    <div class="hint">Two titles &mdash; one it resembles in audience, one in tone or form.</div>
+    <div class="comp-row">
+      <div class="comp-input">
+        <input type="text" id="comp1" placeholder="Audience comp (e.g. Think Again)">
+      </div>
+      <div class="comp-input">
+        <input type="text" id="comp2" placeholder="Tone comp (e.g. The Hard Thing About Hard Things)">
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label"><span class="num">06</span><span class="title">Clarity Score</span></div>
+
+  <div class="score-row">
+    <div class="score-item">
+      <label for="s-hook">Hook Sharpness</label>
+      <div class="slider-wrap">
+        <input type="range" min="1" max="10" value="5" id="s-hook">
+        <span class="score-val" id="sv-hook">5</span>
+      </div>
+    </div>
+    <div class="score-item">
+      <label for="s-stakes">Stakes Clarity</label>
+      <div class="slider-wrap">
+        <input type="range" min="1" max="10" value="5" id="s-stakes">
+        <span class="score-val" id="sv-stakes">5</span>
+      </div>
+    </div>
+    <div class="score-item">
+      <label for="s-audience">Audience Specificity</label>
+      <div class="slider-wrap">
+        <input type="range" min="1" max="10" value="5" id="s-audience">
+        <span class="score-val" id="sv-audience">5</span>
+      </div>
+    </div>
+    <div class="score-item">
+      <label for="s-cred">Credibility Fit</label>
+      <div class="slider-wrap">
+        <input type="range" min="1" max="10" value="5" id="s-cred">
+        <span class="score-val" id="sv-cred">5</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="score-avg-bar">
+    <span class="avg-label">Beat Avg</span>
+    <div class="avg-track"><div class="avg-fill" id="avg-fill" style="width:50%"></div></div>
+    <span class="avg-num" id="avg-num">5.0</span>
+  </div>
+
+  <button class="gen-btn" id="gen-btn">Build Three Blurb Variants</button>
+
+  <div class="error-msg" id="error-msg"></div>
+
+  <div class="section-label" style="margin-top:32px"><span class="num">07</span><span class="title">Blurb Variants</span></div>
+
+  <div id="variants-section">
+    <div class="variant-card">
+      <div class="variant-header">
+        <span class="v-label">Variant A</span>
+        <span class="v-tone" id="v1-tone">Urgency-driven</span>
+        <button class="copy-btn" id="copy-v1">Copy</button>
+      </div>
+      <div class="variant-body empty" id="v1-body">Fill the beats above and build.</div>
+    </div>
+    <div class="variant-card">
+      <div class="variant-header">
+        <span class="v-label">Variant B</span>
+        <span class="v-tone" id="v2-tone">Curiosity-driven</span>
+        <button class="copy-btn" id="copy-v2">Copy</button>
+      </div>
+      <div class="variant-body empty" id="v2-body">Fill the beats above and build.</div>
+    </div>
+    <div class="variant-card">
+      <div class="variant-header">
+        <span class="v-label">Variant C</span>
+        <span class="v-tone" id="v3-tone">Credibility-led</span>
+        <button class="copy-btn" id="copy-v3">Copy</button>
+      </div>
+      <div class="variant-body empty" id="v3-body">Fill the beats above and build.</div>
+    </div>
+  </div>
+
+  <div class="export-bar">
+    <button class="export-btn copy-all" id="copy-all-btn" disabled>Copy All</button>
+    <button class="export-btn export-txt" id="export-txt-btn" disabled>Export .txt</button>
+  </div>
+
+  <p class="foot-note">&mdash; fully offline &middot; no data leaves this file &mdash;</p>
+
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  // ── IDs ──────────────────────────────────────────────────────────────────
+  var SLIDER_IDS = ['s-hook', 's-stakes', 's-audience', 's-cred'];
+  var VAL_IDS    = ['sv-hook', 'sv-stakes', 'sv-audience', 'sv-cred'];
+
+  // ── Score helpers ─────────────────────────────────────────────────────────
+  function scoreColor(v) {
+    if (v <= 3) return 'var(--score-low)';
+    if (v <= 6) return 'var(--score-mid)';
+    return 'var(--score-high)';
+  }
+
+  function refreshSlider(sliderId, valId) {
+    var slider = document.getElementById(sliderId);
+    var valEl  = document.getElementById(valId);
+    var v = parseInt(slider.value, 10);
+    valEl.textContent = v;
+    valEl.style.color = scoreColor(v);
+    refreshAvg();
+  }
+
+  function refreshAvg() {
+    var vals = SLIDER_IDS.map(function (id) {
+      return parseInt(document.getElementById(id).value, 10);
+    });
+    var avg = vals.reduce(function (a, b) { return a + b; }, 0) / vals.length;
+    var fill = document.getElementById('avg-fill');
+    var num  = document.getElementById('avg-num');
+    fill.style.width      = (avg / 10 * 100) + '%';
+    fill.style.background = scoreColor(avg);
+    num.textContent  = avg.toFixed(1);
+    num.style.color  = scoreColor(avg);
+  }
+
+  // ── Deterministic blurb assembly ──────────────────────────────────────────
+  //
+  // Three templates, each using a different structural opening beat:
+  //   A — Stakes first (urgency)
+  //   B — Hook first as question/provocation (curiosity)
+  //   C — Credibility first (authority)
+  //
+  // Where a beat is empty, the assembler substitutes a softened placeholder
+  // drawn from the other fields so the blurb stays coherent.
+  // Scores below 5 trigger a "needs work" annotation appended to that beat's
+  // sentence so the author can see exactly which line to sharpen.
+
+  function val(id) {
+    return document.getElementById(id).value.trim();
+  }
+
+  function score(id) {
+    return parseInt(document.getElementById(id).value, 10);
+  }
+
+  // Ensure a sentence ends with punctuation.
+  function punct(s) {
+    if (!s) return s;
+    var last = s[s.length - 1];
+    if (last === '.' || last === '!' || last === '?' || last === '\u2014') return s;
+    return s + '.';
+  }
+
+  // Wrap weak-scoring beats in a light annotation flag.
+  function flag(text, sc, label) {
+    if (sc < 5) {
+      return text + ' [' + label + ': ' + sc + '/10 \u2014 consider sharpening]';
+    }
+    return text;
+  }
+
+  // Convert a plain audience string into a "for X" phrase.
+  function audiencePhrase(audience) {
+    if (!audience) return 'readers ready for a different way of thinking';
+    // If it already starts with "for " return as-is.
+    if (/^for\s/i.test(audience)) return audience;
+    return 'for ' + audience;
+  }
+
+  // Turn the hook into a rhetorical question if it isn't already.
+  // For multi-sentence hooks, use only the first sentence for the reframe.
+  function hookAsQuestion(hook) {
+    if (!hook) return 'What if everything you thought you knew about this was wrong?';
+    if (hook[hook.length - 1] === '?') return hook;
+    // Extract first sentence only — find the first . ! ? then the remainder.
+    var m = hook.match(/^(.*?[.!?])(\s|$)/);
+    var first = m ? m[1].replace(/[.!?]+$/, '') : hook.replace(/[.!?]+$/, '');
+    var rest  = m ? hook.slice(m[0].length).trim() : '';
+    var q = 'What if ' + first.charAt(0).toLowerCase() + first.slice(1) + '?';
+    return rest ? q + ' ' + punct(rest) : q;
+  }
+
+  // Comp shelf sentence.
+  function compLine(c1, c2) {
+    if (c1 && c2) return 'Essential reading for fans of ' + c1 + ' and ' + c2 + '.';
+    if (c1)       return 'Essential reading for fans of ' + c1 + '.';
+    if (c2)       return 'Essential reading for fans of ' + c2 + '.';
+    return '';
+  }
+
+  function buildVariantA(beats, scores) {
+    // Urgency: open with stakes, deliver hook, name audience, close with cred + comps.
+    var lines = [];
+
+    var stakesText = beats.stakes || 'The cost of staying on your current path is invisible until it isn\'t.';
+    lines.push(flag(punct(stakesText), scores.stakes, 'stakes'));
+
+    if (beats.hook) {
+      lines.push(flag(punct(beats.hook), scores.hook, 'hook'));
+    }
+
+    var audPhrase = audiencePhrase(beats.audience);
+    lines.push('This book is ' + audPhrase + '.');
+
+    if (beats.cred) {
+      lines.push(flag(punct(beats.cred), scores.cred, 'credibility'));
+    }
+
+    var c = compLine(beats.comp1, beats.comp2);
+    if (c) lines.push(c);
+
+    return lines.join('\n\n');
+  }
+
+  function buildVariantB(beats, scores) {
+    // Curiosity: open with hook as question, build to stakes, reveal audience, end with cred.
+    var lines = [];
+
+    var question = hookAsQuestion(beats.hook);
+    lines.push(flag(question, scores.hook, 'hook'));
+
+    if (beats.stakes) {
+      lines.push(flag(punct(beats.stakes), scores.stakes, 'stakes'));
+    }
+
+    var audPhrase = audiencePhrase(beats.audience);
+    lines.push('Written ' + audPhrase + ', this book reframes what you thought you already understood.');
+
+    if (beats.cred) {
+      lines.push(flag(punct(beats.cred), scores.cred, 'credibility'));
+    }
+
+    var c = compLine(beats.comp1, beats.comp2);
+    if (c) lines.push(c);
+
+    return lines.join('\n\n');
+  }
+
+  function buildVariantC(beats, scores) {
+    // Credibility-led: open with authority, deliver hook, stakes, close with audience + comps.
+    var lines = [];
+
+    if (beats.cred) {
+      lines.push(flag(punct(beats.cred), scores.cred, 'credibility'));
+    } else {
+      lines.push('Drawing on years of frontline research, this book delivers a framework you won\'t find anywhere else.');
+    }
+
+    if (beats.hook) {
+      lines.push(flag(punct(beats.hook), scores.hook, 'hook'));
+    }
+
+    if (beats.stakes) {
+      lines.push(flag(punct(beats.stakes), scores.stakes, 'stakes'));
+    }
+
+    var audPhrase = audiencePhrase(beats.audience);
+    var audLine = beats.audience
+      ? 'The essential guide ' + audPhrase + '.'
+      : 'The essential guide for anyone ready to think differently.';
+    lines.push(audLine);
+
+    var c = compLine(beats.comp1, beats.comp2);
+    if (c) lines.push(c);
+
+    return lines.join('\n\n');
+  }
+
+  // ── Render variant ────────────────────────────────────────────────────────
+  function renderVariant(bodyId, toneId, text) {
+    var bodyEl = document.getElementById(bodyId);
+    var toneEl = document.getElementById(toneId);
+
+    // Clear existing content safely.
+    while (bodyEl.firstChild) {
+      bodyEl.removeChild(bodyEl.firstChild);
+    }
+    bodyEl.classList.remove('empty');
+
+    // Build paragraphs from double-newline segments.
+    var paragraphs = text.split('\n\n');
+    paragraphs.forEach(function (para, i) {
+      var p = document.createElement('p');
+      p.style.marginBottom = i < paragraphs.length - 1 ? '0.75em' : '0';
+      p.textContent = para;
+      bodyEl.appendChild(p);
+    });
+
+    // Tone label is set by the caller via toneId — nothing to change here.
+    void toneEl; // already set statically; kept for symmetry
+  }
+
+  // ── Main generate ─────────────────────────────────────────────────────────
+  function generate() {
+    var beats = {
+      audience: val('audience'),
+      hook:     val('hook'),
+      stakes:   val('stakes'),
+      cred:     val('cred'),
+      comp1:    val('comp1'),
+      comp2:    val('comp2')
+    };
+
+    var scores = {
+      hook:     score('s-hook'),
+      stakes:   score('s-stakes'),
+      audience: score('s-audience'),
+      cred:     score('s-cred')
+    };
+
+    var errEl = document.getElementById('error-msg');
+    errEl.style.display = 'none';
+
+    if (!beats.audience && !beats.hook && !beats.stakes) {
+      errEl.textContent = 'Fill in at least Audience, Hook, and Stakes before building.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    renderVariant('v1-body', 'v1-tone', buildVariantA(beats, scores));
+    renderVariant('v2-body', 'v2-tone', buildVariantB(beats, scores));
+    renderVariant('v3-body', 'v3-tone', buildVariantC(beats, scores));
+    enableExportControls();
+  }
+
+  // ── Copy handler ──────────────────────────────────────────────────────────
+  function makeCopyHandler(bodyId, btn) {
+    return function () {
+      var bodyEl = document.getElementById(bodyId);
+      if (bodyEl.classList.contains('empty')) return;
+
+      // Collect text from child <p> elements if present, else textContent.
+      var paras = bodyEl.querySelectorAll('p');
+      var text;
+      if (paras.length > 0) {
+        text = Array.prototype.map.call(paras, function (p) {
+          return p.textContent;
+        }).join('\n\n');
+      } else {
+        text = bodyEl.textContent;
+      }
+
+      navigator.clipboard.writeText(text).then(function () {
+        btn.textContent = 'Copied \u2713';
+        btn.classList.add('copied');
+        setTimeout(function () {
+          btn.textContent = 'Copy';
+          btn.classList.remove('copied');
+        }, 2200);
+      }).catch(function () {
+        btn.textContent = 'Failed';
+        setTimeout(function () { btn.textContent = 'Copy'; }, 2000);
+      });
+    };
+  }
+
+  // ── Collect full export text ──────────────────────────────────────────────
+  // Reads every beat field and all three rendered variant bodies.
+  // Uses only .value and .textContent — no innerHTML anywhere.
+  function collectFullText() {
+    var sep   = '\n' + '='.repeat(60) + '\n';
+    var thin  = '\n' + '-'.repeat(40) + '\n';
+    var lines = [];
+
+    lines.push('BLURB BEAT MAPPER EXPORT');
+    lines.push('Generated: ' + new Date().toLocaleString());
+    lines.push(sep);
+
+    // Beats
+    lines.push('BEATS');
+    lines.push(thin);
+
+    var beatFields = [
+      { label: 'Audience',         id: 'audience' },
+      { label: 'Hook',             id: 'hook'     },
+      { label: 'Stakes',           id: 'stakes'   },
+      { label: 'Credibility',      id: 'cred'     },
+      { label: 'Comp (Audience)',  id: 'comp1'    },
+      { label: 'Comp (Tone)',      id: 'comp2'    }
+    ];
+
+    beatFields.forEach(function (f) {
+      var el   = document.getElementById(f.id);
+      var text = el ? el.value.trim() : '';
+      lines.push(f.label.toUpperCase());
+      lines.push(text || '(not filled)');
+      lines.push('');
+    });
+
+    lines.push(sep);
+
+    // Scores
+    lines.push('CLARITY SCORES');
+    lines.push(thin);
+
+    var scoreFields = [
+      { label: 'Hook Sharpness',       id: 'sv-hook'     },
+      { label: 'Stakes Clarity',       id: 'sv-stakes'   },
+      { label: 'Audience Specificity', id: 'sv-audience' },
+      { label: 'Credibility Fit',      id: 'sv-cred'     }
+    ];
+
+    scoreFields.forEach(function (f) {
+      var el = document.getElementById(f.id);
+      lines.push(f.label + ': ' + (el ? el.textContent.trim() : '?') + '/10');
+    });
+
+    var avgEl = document.getElementById('avg-num');
+    lines.push('Beat Average: ' + (avgEl ? avgEl.textContent.trim() : '?') + '/10');
+    lines.push('');
+    lines.push(sep);
+
+    // Variants
+    var variants = [
+      { label: 'VARIANT A', toneId: 'v1-tone', bodyId: 'v1-body' },
+      { label: 'VARIANT B', toneId: 'v2-tone', bodyId: 'v2-body' },
+      { label: 'VARIANT C', toneId: 'v3-tone', bodyId: 'v3-body' }
+    ];
+
+    variants.forEach(function (v, i) {
+      var toneEl = document.getElementById(v.toneId);
+      var bodyEl = document.getElementById(v.bodyId);
+      var tone   = toneEl ? toneEl.textContent.trim() : '';
+      var paras  = bodyEl ? bodyEl.querySelectorAll('p') : [];
+
+      var bodyText;
+      if (paras.length > 0) {
+        bodyText = Array.prototype.map.call(paras, function (p) {
+          return p.textContent;
+        }).join('\n\n');
+      } else {
+        bodyText = bodyEl ? bodyEl.textContent.trim() : '';
+      }
+
+      lines.push(v.label + (tone ? '  \u2014  ' + tone : ''));
+      lines.push(thin);
+      lines.push(bodyText || '(not generated)');
+      if (i < variants.length - 1) lines.push(sep);
+    });
+
+    return lines.join('\n');
+  }
+
+  // Enable the export bar once blurbs have been generated.
+  function enableExportControls() {
+    document.getElementById('copy-all-btn').disabled  = false;
+    document.getElementById('export-txt-btn').disabled = false;
+  }
+
+  // ── Copy All handler ──────────────────────────────────────────────────────
+  function handleCopyAll() {
+    var btn  = document.getElementById('copy-all-btn');
+    var text = collectFullText();
+
+    navigator.clipboard.writeText(text).then(function () {
+      btn.textContent = 'Copied \u2713';
+      btn.classList.add('copied');
+      setTimeout(function () {
+        btn.textContent = 'Copy All';
+        btn.classList.remove('copied');
+      }, 2400);
+    }).catch(function () {
+      btn.textContent = 'Failed';
+      setTimeout(function () { btn.textContent = 'Copy All'; }, 2000);
+    });
+  }
+
+  // ── Export .txt handler ───────────────────────────────────────────────────
+  // Builds a Blob, creates a temporary <a>, clicks it, then cleans up.
+  // No innerHTML, no external URLs.
+  function handleExportTxt() {
+    var text     = collectFullText();
+    var blob     = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    var url      = URL.createObjectURL(blob);
+    var stamp    = new Date().toISOString().slice(0, 10);   // YYYY-MM-DD
+    var filename = 'blurb-beats-' + stamp + '.txt';
+
+    var a = document.createElement('a');
+    a.href     = url;
+    a.download = filename;
+
+    // Must be in the DOM for Firefox; invisible, appended, clicked, removed.
+    a.style.position = 'absolute';
+    a.style.left     = '-9999px';
+    a.style.top      = '-9999px';
+    document.body.appendChild(a);
+    a.click();
+
+    // Clean up after the browser has had a tick to start the download.
+    setTimeout(function () {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 100);
+  }
+
+  // ── Wire everything up on DOMContentLoaded ────────────────────────────────
+  document.addEventListener('DOMContentLoaded', function () {
+
+    // Sliders
+    SLIDER_IDS.forEach(function (id, i) {
+      var slider = document.getElementById(id);
+      slider.addEventListener('input', function () {
+        refreshSlider(id, VAL_IDS[i]);
+      });
+      // Set initial display color
+      var valEl = document.getElementById(VAL_IDS[i]);
+      valEl.style.color = scoreColor(parseInt(slider.value, 10));
+    });
+    refreshAvg();
+
+    // Generate button
+    document.getElementById('gen-btn').addEventListener('click', generate);
+
+    // Copy buttons
+    document.getElementById('copy-v1').addEventListener('click',
+      makeCopyHandler('v1-body', document.getElementById('copy-v1')));
+    document.getElementById('copy-v2').addEventListener('click',
+      makeCopyHandler('v2-body', document.getElementById('copy-v2')));
+    document.getElementById('copy-v3').addEventListener('click',
+      makeCopyHandler('v3-body', document.getElementById('copy-v3')));
+
+    // Export bar
+    document.getElementById('copy-all-btn').addEventListener('click', handleCopyAll);
+    document.getElementById('export-txt-btn').addEventListener('click', handleExportTxt);
+  });
+
+}());
+</script>
+</body>
+</html>

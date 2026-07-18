@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>ZINE STUDIO ✂</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Special+Elite&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink: #1A1410;
+  --paper: #F5F0E8;
+  --newsprint: #E8E3D8;
+  --red: #E8462A;
+  --blue: #2B4FBF;
+  --yellow: #DDB84A;
+  --green: #3A7D44;
+  --purple: #7B3FA0;
+  --panel: #1E1A16;
+  --panel2: #2A251F;
+  --border: #3D3528;
+  --label: #9A8F7E;
+  --mono: 'Courier Prime', 'Courier New', monospace;
+  --display: 'Special Elite', 'Courier New', monospace;
+}
+
+html, body {
+  height: 100%;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--mono);
+  font-size: 13px;
+  overflow: hidden;
+}
+
+/* ── HEADER ── */
+#header {
+  background: var(--panel);
+  border-bottom: 2px solid var(--red);
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  z-index: 100;
+}
+#header h1 {
+  font-family: var(--display);
+  font-size: 18px;
+  letter-spacing: 0.12em;
+  color: var(--paper);
+}
+#header h1 span { color: var(--red); }
+#tab-bar {
+  display: flex;
+  gap: 4px;
+}
+.tab-btn {
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  color: var(--label);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 5px 10px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: all 0.15s;
+}
+.tab-btn.active {
+  background: var(--red);
+  border-color: var(--red);
+  color: #fff;
+}
+
+/* ── LAYOUT ── */
+#app {
+  display: flex;
+  height: calc(100vh - 43px);
+  overflow: hidden;
+}
+
+/* ── PANELS ── */
+.panel {
+  display: none;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.panel.active { display: flex; flex-direction: column; }
+
+/* Sidebar */
+#sidebar {
+  width: 280px;
+  min-width: 240px;
+  background: var(--panel);
+  border-right: 2px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* Canvas area */
+#canvas-area {
+  flex: 1;
+  background: var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px;
+  overflow-y: auto;
+  gap: 12px;
+}
+
+/* ── SECTION BLOCKS ── */
+.section {
+  border-bottom: 1px solid var(--border);
+  padding: 10px 14px;
+}
+.section-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--red);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── FORMAT CHIPS ── */
+.format-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.format-chip {
+  background: var(--panel2);
+  border: 1.5px solid var(--border);
+  padding: 8px 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+  position: relative;
+}
+.format-chip:hover { border-color: var(--yellow); }
+.format-chip.active {
+  border-color: var(--yellow);
+  background: #2E2718;
+}
+.format-chip .fmt-name {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--paper);
+  text-transform: uppercase;
+}
+.format-chip .fmt-dim {
+  font-size: 9px;
+  color: var(--label);
+  margin-top: 2px;
+}
+.format-chip .fmt-preview {
+  display: block;
+  margin: 4px auto 0;
+  background: var(--border);
+  outline: 1.5px solid var(--label);
+}
+
+/* ── TEXTURE CHIPS ── */
+.texture-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+}
+.tex-chip {
+  height: 40px;
+  cursor: pointer;
+  border: 2px solid var(--border);
+  transition: all 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+.tex-chip:hover { border-color: var(--blue); }
+.tex-chip.active { border-color: var(--blue); box-shadow: 0 0 0 1px var(--blue); }
+.tex-chip .tex-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  font-size: 7px;
+  text-align: center;
+  padding: 1px 2px;
+  background: rgba(0,0,0,0.65);
+  color: var(--paper);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── LAYERS ── */
+#layer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 20px;
+}
+.layer-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  padding: 5px 7px;
+  cursor: default;
+  user-select: none;
+  transition: background 0.1s;
+}
+.layer-row.active-layer { border-color: var(--blue); background: #1E2535; }
+.layer-row.dragging { opacity: 0.4; }
+.layer-vis {
+  cursor: pointer;
+  font-size: 12px;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+.layer-vis:hover { opacity: 1; }
+.layer-thumb {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+}
+.layer-name-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--paper);
+  font-family: var(--mono);
+  font-size: 11px;
+  min-width: 0;
+  cursor: pointer;
+}
+.layer-name-input:focus { outline: none; background: rgba(255,255,255,0.05); }
+.layer-del {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--label);
+  flex-shrink: 0;
+  line-height: 1;
+}
+.layer-del:hover { color: var(--red); }
+.layer-actions {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: 7px;
+}
+
+/* ── CROP / ZONE CONTROLS ── */
+.zone-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+.zone-label-sm {
+  font-size: 10px;
+  color: var(--label);
+  width: 28px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+input[type=range] {
+  flex: 1;
+  accent-color: var(--blue);
+  height: 3px;
+  cursor: pointer;
+}
+.zone-val {
+  font-size: 10px;
+  color: var(--paper);
+  width: 32px;
+  text-align: right;
+  font-weight: 700;
+}
+.zone-presets {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.preset-btn {
+  font-size: 9px;
+  padding: 3px 6px;
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  color: var(--label);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: all 0.12s;
+}
+.preset-btn:hover {
+  border-color: var(--yellow);
+  color: var(--yellow);
+}
+
+/* ── BUTTONS ── */
+.btn {
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 5px 10px;
+  cursor: pointer;
+  border: 1.5px solid;
+  background: transparent;
+  transition: all 0.15s;
+}
+.btn-red { color: var(--red); border-color: var(--red); }
+.btn-red:hover { background: var(--red); color: #fff; }
+.btn-blue { color: var(--blue); border-color: var(--blue); }
+.btn-blue:hover { background: var(--blue); color: #fff; }
+.btn-yellow { color: var(--yellow); border-color: var(--yellow); }
+.btn-yellow:hover { background: var(--yellow); color: var(--ink); }
+.btn-paper { color: var(--paper); border-color: var(--border); }
+.btn-paper:hover { border-color: var(--paper); }
+.btn-sm { font-size: 9px; padding: 3px 7px; }
+.btn-full { width: 100%; text-align: center; }
+
+/* ── COLOR PICKER STRIP ── */
+.color-strip {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.color-dot {
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  transition: border-color 0.12s;
+  flex-shrink: 0;
+}
+.color-dot.active { border-color: #fff; }
+.color-dot:hover { border-color: rgba(255,255,255,0.6); }
+#custom-color {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  background: transparent;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+/* ── BLEND MODE ── */
+select, .sel-styled {
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  color: var(--paper);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 4px 7px;
+  cursor: pointer;
+  width: 100%;
+}
+select:focus { outline: 1px solid var(--blue); }
+
+/* ── NOTES PANEL ── */
+#notes-panel {
+  flex: 1;
+  background: var(--panel);
+  border-right: 2px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  max-width: 320px;
+  min-width: 260px;
+}
+textarea {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--paper);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.6;
+  padding: 10px 14px;
+  resize: none;
+  scrollbar-width: thin;
+}
+textarea:focus { outline: none; }
+textarea::placeholder { color: var(--label); }
+
+/* ── CANVAS / LIVE PREVIEW ── */
+#zine-canvas-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+#zine-canvas {
+  display: block;
+  background: var(--paper);
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.6), 8px 8px 0 rgba(0,0,0,0.3);
+  position: relative;
+  overflow: hidden;
+}
+.canvas-layer {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+.canvas-block {
+  position: absolute;
+  border: 1.5px dashed transparent;
+  cursor: move;
+  transition: border-color 0.12s;
+}
+.canvas-block.selected {
+  border-color: var(--blue) !important;
+  z-index: 100;
+}
+.canvas-block.selected::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border: 1px solid rgba(43,79,191,0.4);
+  pointer-events: none;
+}
+.resize-handle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--blue);
+  border: 1px solid #fff;
+  cursor: se-resize;
+  bottom: -4px;
+  right: -4px;
+  z-index: 10;
+}
+
+/* ── PRINT PREVIEW PANEL ── */
+#preview-wrap {
+  background: #2A2520;
+  border-top: 1px solid var(--border);
+  padding: 10px 14px;
+  flex-shrink: 0;
+}
+.preview-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--label);
+  margin-bottom: 6px;
+}
+#print-meta {
+  font-size: 10px;
+  color: var(--label);
+  line-height: 1.7;
+}
+
+/* ── EXPORT PANEL ── */
+#export-panel {
+  background: var(--panel);
+  border-left: 2px solid var(--border);
+  width: 240px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+.brief-block {
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  padding: 9px 10px;
+  margin: 0 10px 8px;
+  font-size: 10px;
+  line-height: 1.6;
+  color: var(--paper);
+}
+.brief-block .brief-head {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--red);
+  margin-bottom: 5px;
+  font-weight: 700;
+}
+#brief-output {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ── MOBILE TABS ── */
+@media (max-width: 700px) {
+  #sidebar { width: 100%; min-width: unset; border-right: none; }
+  #canvas-area { padding: 10px; }
+  #export-panel { width: 100%; border-left: none; border-top: 2px solid var(--border); }
+  #app { flex-direction: column; }
+}
+
+/* ── TORN EDGE (canvas deco) ── */
+.torn-top, .torn-bottom {
+  position: absolute;
+  left: 0; right: 0;
+  height: 8px;
+  pointer-events: none;
+  z-index: 50;
+  background: var(--ink);
+}
+.torn-top { top: 0; clip-path: polygon(0 0,4% 100%,8% 20%,12% 90%,16% 10%,20% 80%,24% 30%,28% 100%,32% 0,36% 90%,40% 20%,44% 100%,48% 0,52% 80%,56% 30%,60% 100%,64% 10%,68% 90%,72% 0,76% 80%,80% 20%,84% 100%,88% 10%,92% 80%,96% 30%,100% 0,100% 0,0 0); }
+.torn-bottom { bottom: 0; clip-path: polygon(0 100%,4% 0%,8% 80%,12% 10%,16% 90%,20% 20%,24% 70%,28% 0%,32% 100%,36% 10%,40% 80%,44% 0%,48% 100%,52% 20%,56% 70%,60% 0%,64% 90%,68% 10%,72% 100%,76% 20%,80% 80%,84% 0%,88% 90%,92% 20%,96% 70%,100% 100%,0 100%); }
+
+/* ── STAMP OVERLAY ── */
+.stamp {
+  display: inline-block;
+  border: 2.5px solid;
+  padding: 2px 6px;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-weight: 700;
+  opacity: 0.75;
+  transform: rotate(-3deg);
+}
+.stamp-red { border-color: var(--red); color: var(--red); }
+.stamp-blue { border-color: var(--blue); color: var(--blue); }
+
+/* ── RULER ── */
+#ruler-h, #ruler-v {
+  position: absolute;
+  background: var(--panel2);
+  font-size: 7px;
+  color: var(--label);
+  pointer-events: none;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+}
+#ruler-h { top: -14px; left: 0; right: 0; height: 14px; overflow: hidden; }
+#ruler-v { left: -14px; top: 0; bottom: 0; width: 14px; flex-direction: column; overflow: hidden; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); }
+
+/* PRINT */
+@media print {
+  body { background: #fff; color: #000; overflow: auto; }
+  #header, #sidebar, #export-panel, #notes-panel, #tab-bar { display: none !important; }
+  #app, #canvas-area { display: block; overflow: visible; }
+  #zine-canvas { box-shadow: none; }
+}
+
+/* Tooltip */
+[title] { cursor: help; }
+.tip {
+  font-size: 9px;
+  color: var(--label);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div id="header">
+  <h1>✂ ZINE <span>STUDIO</span></h1>
+  <div id="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('layout')">Layout</button>
+    <button class="tab-btn" onclick="switchTab('notes')">Notes</button>
+    <button class="tab-btn" onclick="switchTab('brief')">Brief</button>
+  </div>
+</div>
+
+<!-- ═══ APP ═══ -->
+<div id="app">
+
+  <!-- ══ SIDEBAR ══ -->
+  <div id="sidebar" class="panel active" data-tab="layout">
+
+    <!-- FORMAT -->
+    <div class="section">
+      <div class="section-label">Format</div>
+      <div class="format-grid" id="format-grid"></div>
+    </div>
+
+    <!-- TEXTURE -->
+    <div class="section">
+      <div class="section-label">Texture</div>
+      <div class="texture-grid" id="texture-grid"></div>
+      <div class="tip">Tap a texture to apply to the active layer</div>
+    </div>
+
+    <!-- COLOR -->
+    <div class="section">
+      <div class="section-label">Ink Color</div>
+      <div class="color-strip" id="color-strip"></div>
+    </div>
+
+    <!-- BLEND -->
+    <div class="section">
+      <div class="section-label">Blend / Opacity</div>
+      <div class="zone-row" style="margin-bottom:6px">
+        <div class="zone-label-sm">Mix</div>
+        <select id="blend-select" onchange="applyBlend()">
+          <option>normal</option><option>multiply</option><option>screen</option>
+          <option>overlay</option><option>darken</option><option>lighten</option>
+          <option>color-dodge</option><option>color-burn</option><option>difference</option>
+          <option>exclusion</option><option>hue</option><option>saturation</option>
+          <option>color</option><option>luminosity</option>
+        </select>
+      </div>
+      <div class="zone-row">
+        <div class="zone-label-sm">Opac</div>
+        <input type="range" id="opacity-slider" min="5" max="100" value="100" oninput="applyOpacity(this.value)">
+        <div class="zone-val" id="opacity-val">100%</div>
+      </div>
+    </div>
+
+    <!-- LAYERS -->
+    <div class="section">
+      <div class="section-label">Layers</div>
+      <div id="layer-list"></div>
+      <div class="layer-actions">
+        <button class="btn btn-sm btn-paper" onclick="addLayer('text')">+ Text</button>
+        <button class="btn btn-sm btn-paper" onclick="addLayer('image')">+ Image</button>
+        <button class="btn btn-sm btn-paper" onclick="addLayer('shape')">+ Shape</button>
+        <button class="btn btn-sm btn-paper" onclick="addLayer('tape')">+ Tape</button>
+      </div>
+    </div>
+
+    <!-- CROP / ZONE -->
+    <div class="section">
+      <div class="section-label">Crop Zone</div>
+      <div class="zone-row"><div class="zone-label-sm">X</div>
+        <input type="range" id="cx" min="0" max="100" value="0" oninput="updateZone()">
+        <div class="zone-val" id="cx-val">0%</div></div>
+      <div class="zone-row"><div class="zone-label-sm">Y</div>
+        <input type="range" id="cy" min="0" max="100" value="0" oninput="updateZone()">
+        <div class="zone-val" id="cy-val">0%</div></div>
+      <div class="zone-row"><div class="zone-label-sm">W</div>
+        <input type="range" id="cw" min="10" max="100" value="100" oninput="updateZone()">
+        <div class="zone-val" id="cw-val">100%</div></div>
+      <div class="zone-row"><div class="zone-label-sm">H</div>
+        <input type="range" id="ch" min="10" max="100" value="100" oninput="updateZone()">
+        <div class="zone-val" id="ch-val">100%</div></div>
+      <div class="zone-presets">
+        <button class="preset-btn" onclick="setZone(0,0,100,100)">Full</button>
+        <button class="preset-btn" onclick="setZone(0,0,50,100)">Left Half</button>
+        <button class="preset-btn" onclick="setZone(50,0,50,100)">Right Half</button>
+        <button class="preset-btn" onclick="setZone(0,0,100,50)">Top Half</button>
+        <button class="preset-btn" onclick="setZone(10,10,80,80)">Center 80</button>
+        <button class="preset-btn" onclick="setZone(25,25,50,50)">Center 50</button>
+        <button class="preset-btn" onclick="setZone(5,5,45,90)">Gutter L</button>
+        <button class="preset-btn" onclick="setZone(50,5,45,90)">Gutter R</button>
+      </div>
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="section">
+      <div class="section-label">Actions</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-yellow btn-sm" onclick="generateBrief()">⚙ Gen Brief</button>
+        <button class="btn btn-red btn-sm" onclick="clearCanvas()">✕ Clear</button>
+        <button class="btn btn-blue btn-sm" onclick="window.print()">⎙ Print</button>
+        <button class="btn btn-paper btn-sm" onclick="exportState()">↓ Save</button>
+        <button class="btn btn-paper btn-sm" onclick="importState()">↑ Load</button>
+      </div>
+    </div>
+
+  </div><!-- /sidebar -->
+
+  <!-- ══ CANVAS AREA ══ -->
+  <div id="canvas-area" class="panel active" data-tab="layout">
+    <div id="zine-canvas-wrap" style="position:relative;margin-top:14px;">
+      <div id="ruler-h"></div>
+      <div id="ruler-v"></div>
+      <div id="zine-canvas" onclick="canvasClick(event)">
+        <div class="torn-top"></div>
+        <div class="torn-bottom"></div>
+        <div id="crop-overlay" style="position:absolute;pointer-events:none;border:2px dashed rgba(43,79,191,0.5);z-index:200;"></div>
+      </div>
+    </div>
+
+    <!-- Print Meta -->
+    <div id="preview-wrap" style="width:100%;max-width:400px">
+      <div class="preview-label">▸ Print Specs</div>
+      <div id="print-meta">Loading…</div>
+    </div>
+  </div>
+
+  <!-- ══ NOTES PANEL ══ -->
+  <div id="notes-panel" class="panel" data-tab="notes">
+    <div class="section" style="flex-shrink:0">
+      <div class="section-label">Raw Notes</div>
+      <div class="tip" style="margin-bottom:6px">Brain-dump here. Describe vibes, collage scraps, reference images, text you want to include. Hit "Gen Brief" to turn this into a layout brief.</div>
+    </div>
+    <textarea id="raw-notes" placeholder="e.g. torn magazine photo of a highway at dusk, handwritten caption in red, newsprint column on the left, tape marks on corners, ransom-note headline: 'ESCAPE VELOCITY', risograph blue for the sky layer, something chaotic but readable…"></textarea>
+    <div class="section" style="flex-shrink:0">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;padding-top:4px">
+        <button class="btn btn-yellow btn-sm btn-full" onclick="generateBrief()">⚙ Generate Layout Brief</button>
+      </div>
+      <div id="ai-status" class="tip" style="margin-top:6px;min-height:14px;color:var(--yellow)"></div>
+    </div>
+  </div>
+
+  <!-- ══ BRIEF PANEL ══ -->
+  <div id="export-panel" class="panel" data-tab="brief">
+    <div class="section">
+      <div class="section-label">Layout Brief</div>
+      <div class="tip">AI-generated brief from your notes + current layout state</div>
+    </div>
+    <div class="brief-block">
+      <div class="brief-head">Current Layout</div>
+      <div id="layout-summary">—</div>
+    </div>
+    <div class="brief-block" style="flex:1;overflow-y:auto">
+      <div class="brief-head">Brief Output</div>
+      <div id="brief-output">Hit "Gen Brief" in the Notes tab to generate…</div>
+    </div>
+    <div class="section" style="flex-shrink:0">
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-paper btn-sm btn-full" onclick="copyBrief()">⎘ Copy Brief</button>
+      </div>
+      <div id="copy-confirm" class="tip" style="min-height:14px;color:var(--green)"></div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- ══════════════════════════════════════════ -->
+<!-- SVG DEFS for textures (hidden)            -->
+<!-- ══════════════════════════════════════════ -->
+<svg style="display:none" id="svg-defs">
+  <defs>
+    <pattern id="tex-halftone" patternUnits="userSpaceOnUse" width="6" height="6">
+      <rect width="6" height="6" fill="#F5F0E8"/>
+      <circle cx="3" cy="3" r="1.4" fill="#1A1410" opacity="0.6"/>
+    </pattern>
+    <pattern id="tex-newsprint" patternUnits="userSpaceOnUse" width="3" height="4">
+      <rect width="3" height="4" fill="#E8E3D8"/>
+      <line x1="0" y1="2" x2="3" y2="2" stroke="#1A1410" stroke-width="0.4" opacity="0.25"/>
+    </pattern>
+    <pattern id="tex-crosshatch" patternUnits="userSpaceOnUse" width="8" height="8">
+      <rect width="8" height="8" fill="#F5F0E8"/>
+      <line x1="0" y1="0" x2="8" y2="8" stroke="#1A1410" stroke-width="0.5" opacity="0.3"/>
+      <line x1="8" y1="0" x2="0" y2="8" stroke="#1A1410" stroke-width="0.5" opacity="0.3"/>
+    </pattern>
+    <pattern id="tex-grain" patternUnits="userSpaceOnUse" width="100" height="100">
+      <rect width="100" height="100" fill="#D4CFC4"/>
+      <filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>
+      <rect width="100" height="100" filter="url(#noise)" opacity="0.35"/>
+    </pattern>
+    <pattern id="tex-scan" patternUnits="userSpaceOnUse" width="2" height="2">
+      <rect width="2" height="2" fill="#F5F0E8"/>
+      <rect width="2" height="1" fill="#1A1410" opacity="0.06"/>
+    </pattern>
+    <pattern id="tex-riso" patternUnits="userSpaceOnUse" width="4" height="4">
+      <rect width="4" height="4" fill="#2B4FBF" opacity="0.12"/>
+      <circle cx="2" cy="2" r="0.8" fill="#2B4FBF" opacity="0.5"/>
+    </pattern>
+    <pattern id="tex-tape" patternUnits="userSpaceOnUse" width="60" height="20">
+      <rect width="60" height="20" fill="rgba(221,184,74,0.25)"/>
+      <line x1="0" y1="5" x2="60" y2="5" stroke="rgba(221,184,74,0.4)" stroke-width="0.5"/>
+      <line x1="0" y1="15" x2="60" y2="15" stroke="rgba(221,184,74,0.4)" stroke-width="0.5"/>
+    </pattern>
+    <pattern id="tex-burn" patternUnits="userSpaceOnUse" width="10" height="10">
+      <rect width="10" height="10" fill="#1A1410" opacity="0.07"/>
+      <circle cx="5" cy="5" r="4" fill="none" stroke="#3D2A1A" stroke-width="1" opacity="0.2"/>
+    </pattern>
+    <pattern id="tex-clean" patternUnits="userSpaceOnUse" width="1" height="1">
+      <rect width="1" height="1" fill="#F5F0E8"/>
+    </pattern>
+  </defs>
+</svg>
+
+<script>
+/* ══════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════ */
+const STATE = {
+  format: 'mini',
+  texture: 'clean',
+  activeLayer: null,
+  layers: [],
+  zone: { x:0, y:0, w:100, h:100 },
+  inkColor: '#1A1410',
+  blend: 'normal',
+  opacity: 100,
+  notes: '',
+  brief: ''
+};
+
+/* ══════════════════════════════════════════════
+   FORMATS
+══════════════════════════════════════════════ */
+const FORMATS = [
+  { id:'mini', name:'Mini', dim:'3.5"×5.5"', ratio:0.636, css:'60x95', w:200, h:314, paper:'Letter (folded)', pages:'8' },
+  { id:'half', name:'Half-size', dim:'5.5"×8.5"', ratio:0.647, css:'110x170', w:240, h:370, paper:'Letter', pages:'4' },
+  { id:'digest', name:'Digest', dim:'5.5"×8.5"', ratio:0.647, css:'110x170', w:240, h:370, paper:'Legal', pages:'4' },
+  { id:'quarter', name:'Quarter', dim:'4.25"×5.5"', ratio:0.773, css:'85x110', w:220, h:284, paper:'Letter (4-up)', pages:'4' },
+  { id:'square', name:'Square', dim:'5"×5"', ratio:1, css:'100x100', w:280, h:280, paper:'Bond', pages:'1' },
+  { id:'riso', name:'Riso A5', dim:'5.8"×8.3"', ratio:0.699, css:'148x210mm', w:232, h:332, paper:'A4', pages:'4' },
+];
+
+/* ══════════════════════════════════════════════
+   TEXTURES
+══════════════════════════════════════════════ */
+const TEXTURES = [
+  { id:'clean',     name:'Clean',     fill:'#F5F0E8',                 bg:'#F5F0E8' },
+  { id:'newsprint', name:'News',      fill:'url(#tex-newsprint)',     bg:'#E8E3D8' },
+  { id:'halftone',  name:'Halftone',  fill:'url(#tex-halftone)',      bg:'#F0EBE0' },
+  { id:'crosshatch',name:'Hatch',     fill:'url(#tex-crosshatch)',    bg:'#EDE8DC' },
+  { id:'scan',      name:'Scan',      fill:'url(#tex-scan)',          bg:'#F2EDE2' },
+  { id:'riso',      name:'Riso',      fill:'url(#tex-riso)',          bg:'#E0E8F5' },
+  { id:'tape',      name:'Tape',      fill:'url(#tex-tape)',          bg:'#F5EFD5' },
+  { id:'burn',      name:'Burn',      fill:'url(#tex-burn)',          bg:'#2A1F15' },
+];
+
+const COLORS = [
+  '#1A1410','#F5F0E8','#E8462A','#2B4FBF','#DDB84A','#3A7D44','#7B3FA0','#E8A87C','#5B4A3A','#C7C2B6'
+];
+
+/* ══════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════ */
+function init() {
+  buildFormatGrid();
+  buildTextureGrid();
+  buildColorStrip();
+  selectFormat('mini');
+  addLayer('text');
+  renderLayerList();
+  updatePrintMeta();
+  buildRuler();
+}
+
+/* ══════════════════════════════════════════════
+   TABS
+══════════════════════════════════════════════ */
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  document.querySelectorAll('.panel').forEach(p => {
+    p.classList.toggle('active', p.dataset.tab === tab);
+  });
+  if (tab === 'brief') updateLayoutSummary();
+}
+
+/* ══════════════════════════════════════════════
+   FORMAT
+══════════════════════════════════════════════ */
+function buildFormatGrid() {
+  const g = document.getElementById('format-grid');
+  g.innerHTML = '';
+  FORMATS.forEach(f => {
+    const chip = document.createElement('div');
+    chip.className = 'format-chip';
+    chip.id = 'fmt-' + f.id;
+    const pw = 28, ph = Math.round(pw / f.ratio);
+    chip.innerHTML = `
+      <div class="fmt-name">${f.name}</div>
+      <div class="fmt-dim">${f.dim}</div>
+      <svg class="fmt-preview" width="${pw}" height="${Math.min(ph,44)}" viewBox="0 0 ${pw} ${Math.min(ph,44)}">
+        <rect x="1" y="1" width="${pw-2}" height="${Math.min(ph,44)-2}" fill="var(--border)" stroke="var(--label)" stroke-width="1"/>
+        <line x1="0" y1="${Math.min(ph,44)/2}" x2="${pw}" y2="${Math.min(ph,44)/2}" stroke="var(--label)" stroke-width="0.5" opacity="0.4"/>
+      </svg>`;
+    chip.onclick = () => selectFormat(f.id);
+    g.appendChild(chip);
+  });
+}
+
+function selectFormat(id) {
+  const f = FORMATS.find(x => x.id === id);
+  if (!f) return;
+  STATE.format = id;
+  document.querySelectorAll('.format-chip').forEach(c => c.classList.remove('active'));
+  const el = document.getElementById('fmt-' + id);
+  if (el) el.classList.add('active');
+  const canvas = document.getElementById('zine-canvas');
+  canvas.style.width = f.w + 'px';
+  canvas.style.height = f.h + 'px';
+  updatePrintMeta();
+  renderCropOverlay();
+}
+
+/* ══════════════════════════════════════════════
+   TEXTURES
+══════════════════════════════════════════════ */
+function buildTextureGrid() {
+  const g = document.getElementById('texture-grid');
+  g.innerHTML = '';
+  TEXTURES.forEach(t => {
+    const chip = document.createElement('div');
+    chip.className = 'tex-chip';
+    chip.id = 'tex-' + t.id;
+    chip.style.background = t.bg;
+    // SVG overlay for pattern textures
+    if (t.fill.startsWith('url')) {
+      chip.innerHTML = `<svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="${t.fill}"/></svg>`;
+    }
+    chip.innerHTML += `<div class="tex-label">${t.name}</div>`;
+    chip.onclick = () => selectTexture(t.id);
+    g.appendChild(chip);
+  });
+}
+
+function selectTexture(id) {
+  STATE.texture = id;
+  document.querySelectorAll('.tex-chip').forEach(c => c.classList.remove('active'));
+  const el = document.getElementById('tex-' + id);
+  if (el) el.classList.add('active');
+  const t = TEXTURES.find(x => x.id === id);
+  if (!t) return;
+  const canvas = document.getElementById('zine-canvas');
+  // Apply texture as background
+  if (id === 'clean') {
+    canvas.style.background = '#F5F0E8';
+    canvas.style.backgroundImage = 'none';
+  } else if (t.fill.startsWith('url')) {
+    const pid = t.fill.replace('url(','').replace(')','');
+    canvas.style.background = t.bg;
+    // Use SVG data uri for pattern
+    canvas.style.backgroundImage = `url("data:image/svg+xml,${encodeURIComponent(getSVGPattern(id))}")`;
+    canvas.style.backgroundRepeat = 'repeat';
+  } else {
+    canvas.style.background = t.fill;
+  }
+  // Apply to active layer if present
+  if (STATE.activeLayer !== null) {
+    const layer = STATE.layers.find(l => l.id === STATE.activeLayer);
+    if (layer) { layer.texture = id; renderLayer(layer); }
+  }
+}
+
+function getSVGPattern(id) {
+  const patterns = {
+    newsprint: `<svg xmlns="http://www.w3.org/2000/svg" width="3" height="4"><rect width="3" height="4" fill="#E8E3D8"/><line x1="0" y1="2" x2="3" y2="2" stroke="#1A1410" stroke-width="0.4" opacity="0.25"/></svg>`,
+    halftone: `<svg xmlns="http://www.w3.org/2000/svg" width="6" height="6"><rect width="6" height="6" fill="#F5F0E8"/><circle cx="3" cy="3" r="1.4" fill="#1A1410" opacity="0.6"/></svg>`,
+    crosshatch: `<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"><rect width="8" height="8" fill="#F5F0E8"/><line x1="0" y1="0" x2="8" y2="8" stroke="#1A1410" stroke-width="0.5" opacity="0.3"/><line x1="8" y1="0" x2="0" y2="8" stroke="#1A1410" stroke-width="0.5" opacity="0.3"/></svg>`,
+    scan: `<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><rect width="2" height="2" fill="#F5F0E8"/><rect width="2" height="1" fill="#1A1410" opacity="0.06"/></svg>`,
+    riso: `<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4"><rect width="4" height="4" fill="#E0E8F5"/><circle cx="2" cy="2" r="0.8" fill="#2B4FBF" opacity="0.5"/></svg>`,
+    tape: `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="20"><rect width="60" height="20" fill="rgba(221,184,74,0.2)"/><line x1="0" y1="5" x2="60" y2="5" stroke="rgba(221,184,74,0.4)" stroke-width="0.5"/><line x1="0" y1="15" x2="60" y2="15" stroke="rgba(221,184,74,0.4)" stroke-width="0.5"/></svg>`,
+    burn: `<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="#2A1F15"/><circle cx="5" cy="5" r="4" fill="none" stroke="#5D3A1A" stroke-width="1" opacity="0.3"/></svg>`,
+  };
+  return patterns[id] || `<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"><rect width="1" height="1" fill="#F5F0E8"/></svg>`;
+}
+
+/* ══════════════════════════════════════════════
+   COLOR
+══════════════════════════════════════════════ */
+function buildColorStrip() {
+  const s = document.getElementById('color-strip');
+  s.innerHTML = '';
+  COLORS.forEach(c => {
+    const dot = document.createElement('div');
+    dot.className = 'color-dot' + (c === STATE.inkColor ? ' active' : '');
+    dot.style.background = c;
+    dot.style.border = c === '#F5F0E8' ? '2px solid #555' : '2px solid transparent';
+    dot.onclick = () => {
+      STATE.inkColor = c;
+      document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+      dot.classList.add('active');
+      applyColorToActive();
+    };
+    s.appendChild(dot);
+  });
+  const cc = document.createElement('input');
+  cc.type = 'color';
+  cc.id = 'custom-color';
+  cc.value = '#DDB84A';
+  cc.title = 'Custom color';
+  cc.oninput = () => { STATE.inkColor = cc.value; applyColorToActive(); };
+  s.appendChild(cc);
+}
+
+function applyColorToActive() {
+  const layer = STATE.layers.find(l => l.id === STATE.activeLayer);
+  if (layer) { layer.color = STATE.inkColor; renderLayer(layer); }
+}
+
+/* ══════════════════════════════════════════════
+   BLEND / OPACITY
+══════════════════════════════════════════════ */
+function applyBlend() {
+  const v = document.getElementById('blend-select').value;
+  STATE.blend = v;
+  const layer = STATE.layers.find(l => l.id === STATE.activeLayer);
+  if (layer) { layer.blend = v; renderLayer(layer); }
+}
+
+function applyOpacity(val) {
+  STATE.opacity = parseInt(val);
+  document.getElementById('opacity-val').textContent = val + '%';
+  const layer = STATE.layers.find(l => l.id === STATE.activeLayer);
+  if (layer) { layer.opacity = parseInt(val); renderLayer(layer); }
+}
+
+/* ══════════════════════════════════════════════
+   LAYERS
+══════════════════════════════════════════════ */
+let _lid = 0;
+const LAYER_ICONS = { text:'T', image:'▣', shape:'◆', tape:'✂' };
+const LAYER_DEFAULTS = {
+  text:  { label:'Text Block', color:'#1A1410', w:60, h:25, content:'HEADLINE', fontSize:16, fontStyle:'bold' },
+  image: { label:'Image Zone', color:'#5B4A3A', w:55, h:50, content:'[image]' },
+  shape: { label:'Shape', color:'#E8462A', w:40, h:40, content:'rect', shapeType:'rect' },
+  tape:  { label:'Tape Strip', color:'#DDB84A', w:70, h:10, content:'tape' },
+};
+
+function addLayer(type) {
+  const id = ++_lid;
+  const canvas = document.getElementById('zine-canvas');
+  const cw = canvas.offsetWidth || 240;
+  const ch = canvas.offsetHeight || 370;
+  const def = LAYER_DEFAULTS[type] || LAYER_DEFAULTS.text;
+  const layer = {
+    id, type,
+    label: def.label + ' ' + id,
+    visible: true,
+    color: STATE.inkColor !== '#1A1410' ? STATE.inkColor : def.color,
+    opacity: 100,
+    blend: 'normal',
+    texture: 'clean',
+    x: 10 + (id % 5) * 8,
+    y: 10 + (id % 4) * 12,
+    w: def.w,
+    h: def.h,
+    content: def.content,
+    fontSize: def.fontSize || 12,
+    fontStyle: def.fontStyle || 'normal',
+    shapeType: def.shapeType || 'rect',
+  };
+  STATE.layers.push(layer);
+  STATE.activeLayer = id;
+  renderLayerList();
+  createBlockEl(layer, canvas, cw, ch);
+  syncLayerControls(layer);
+}
+
+function renderLayerList() {
+  const list = document.getElementById('layer-list');
+  list.innerHTML = '';
+  [...STATE.layers].reverse().forEach(layer => {
+    const row = document.createElement('div');
+    row.className = 'layer-row' + (layer.id === STATE.activeLayer ? ' active-layer' : '');
+    row.dataset.lid = layer.id;
+    row.innerHTML = `
+      <span class="layer-vis" title="Toggle visibility" onclick="toggleLayerVis(${layer.id})">${layer.visible ? '◉' : '○'}</span>
+      <div class="layer-thumb" style="background:${layer.color};opacity:0.7">${LAYER_ICONS[layer.type]||'?'}</div>
+      <input class="layer-name-input" value="${layer.label}" onchange="renameLayer(${layer.id},this.value)" onclick="selectLayer(${layer.id})">
+      <span class="layer-del" title="Delete layer" onclick="deleteLayer(${layer.id})">✕</span>`;
+    list.appendChild(row);
+  });
+}
+
+function selectLayer(id) {
+  STATE.activeLayer = id;
+  renderLayerList();
+  document.querySelectorAll('.canvas-block').forEach(b => b.classList.remove('selected'));
+  const el = document.querySelector(`.canvas-block[data-lid="${id}"]`);
+  if (el) el.classList.add('selected');
+  const layer = STATE.layers.find(l => l.id === id);
+  if (layer) syncLayerControls(layer);
+}
+
+function syncLayerControls(layer) {
+  document.getElementById('blend-select').value = layer.blend || 'normal';
+  const opSlider = document.getElementById('opacity-slider');
+  opSlider.value = layer.opacity || 100;
+  document.getElementById('opacity-val').textContent = (layer.opacity || 100) + '%';
+}
+
+function toggleLayerVis(id) {
+  event.stopPropagation();
+  const layer = STATE.layers.find(l => l.id === id);
+  if (!layer) return;
+  layer.visible = !layer.visible;
+  const el = document.querySelector(`.canvas-block[data-lid="${id}"]`);
+  if (el) el.style.display = layer.visible ? '' : 'none';
+  renderLayerList();
+}
+
+function renameLayer(id, val) {
+  const layer = STATE.layers.find(l => l.id === id);
+  if (layer) layer.label = val;
+}
+
+function deleteLayer(id) {
+  event.stopPropagation();
+  STATE.layers = STATE.layers.filter(l => l.id !== id);
+  const el = document.querySelector(`.canvas-block[data-lid="${id}"]`);
+  if (el) el.remove();
+  if (STATE.activeLayer === id) STATE.activeLayer = STATE.layers.length ? STATE.layers[STATE.layers.length-1].id : null;
+  renderLayerList();
+}
+
+function renderLayer(layer) {
+  const el = document.querySelector(`.canvas-block[data-lid="${layer.id}"]`);
+  if (!el) return;
+  el.style.opacity = (layer.opacity || 100) / 100;
+  el.style.mixBlendMode = layer.blend || 'normal';
+  el.style.display = layer.visible ? '' : 'none';
+  // Re-render inner content
+  renderBlockContent(el, layer);
+}
+
+/* ══════════════════════════════════════════════
+   CANVAS BLOCKS
+══════════════════════════════════════════════ */
+function createBlockEl(layer, canvas, cw, ch) {
+  const el = document.createElement('div');
+  el.className = 'canvas-block selected';
+  el.dataset.lid = layer.id;
+  el.style.left = (layer.x / 100 * cw) + 'px';
+  el.style.top = (layer.y / 100 * ch) + 'px';
+  el.style.width = (layer.w / 100 * cw) + 'px';
+  el.style.height = (layer.h / 100 * ch) + 'px';
+  el.style.opacity = (layer.opacity || 100) / 100;
+  el.style.mixBlendMode = layer.blend || 'normal';
+
+  renderBlockContent(el, layer);
+  makeDraggable(el, layer, canvas);
+
+  // Deselect others
+  document.querySelectorAll('.canvas-block').forEach(b => b.classList.remove('selected'));
+  canvas.appendChild(el);
+  el.classList.add('selected');
+  el.addEventListener('click', (e) => { e.stopPropagation(); selectLayer(layer.id); });
+}
+
+function renderBlockContent(el, layer) {
+  const cw = el.offsetWidth || parseInt(el.style.width);
+  const ch = el.offsetHeight || parseInt(el.style.height);
+  el.style.color = layer.color;
+
+  if (layer.type === 'text') {
+    el.style.background = 'transparent';
+    el.style.border = '1.5px dashed ' + layer.color;
+    el.style.display = 'flex';
+    el.style.alignItems = 'center';
+    el.style.justifyContent = 'center';
+    el.style.padding = '4px';
+    el.innerHTML = `
+      <div contenteditable="true" 
+        style="font-family:var(--display);font-size:${layer.fontSize}px;font-weight:${layer.fontStyle==='bold'?'700':'400'};
+               color:${layer.color};text-align:center;outline:none;width:100%;word-break:break-word;line-height:1.2"
+        onblur="updateLayerContent(${layer.id},this.innerText)"
+        onclick="selectLayer(${layer.id})"
+      >${layer.content}</div>
+      <div class="resize-handle" onmousedown="startResize(event,${layer.id})"></div>`;
+  } else if (layer.type === 'image') {
+    el.style.border = '1.5px dashed ' + layer.color;
+    el.style.background = layer.color + '22';
+    el.innerHTML = `
+      <div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;position:relative;overflow:hidden">
+        <label style="cursor:pointer;text-align:center;padding:4px">
+          <div style="font-size:20px;color:${layer.color}">▣</div>
+          <div style="font-size:8px;text-transform:uppercase;letter-spacing:0.1em;color:${layer.color};opacity:0.7">${layer.label}</div>
+          <div style="font-size:7px;color:${layer.color};opacity:0.5;margin-top:2px">tap to place</div>
+          <input type="file" accept="image/*" style="display:none" onchange="loadImageLayer(event,${layer.id})">
+        </label>
+        <div class="resize-handle" onmousedown="startResize(event,${layer.id})"></div>
+      </div>`;
+    if (layer.imgData) {
+      el.innerHTML = `
+        <div style="width:100%;height:100%;overflow:hidden;position:relative">
+          <img src="${layer.imgData}" style="width:100%;height:100%;object-fit:cover">
+          <div class="resize-handle" onmousedown="startResize(event,${layer.id})"></div>
+        </div>`;
+    }
+  } else if (layer.type === 'shape') {
+    el.style.background = layer.color;
+    el.style.border = 'none';
+    el.style.opacity = ((layer.opacity || 100) / 100) * 0.7;
+    el.innerHTML = `<div class="resize-handle" onmousedown="startResize(event,${layer.id})"></div>`;
+  } else if (layer.type === 'tape') {
+    el.style.background = layer.color + '44';
+    el.style.borderTop = '1px solid ' + layer.color + '88';
+    el.style.borderBottom = '1px solid ' + layer.color + '88';
+    el.style.border = 'none';
+    el.innerHTML = `<div class="resize-handle" onmousedown="startResize(event,${layer.id})"></div>`;
+  }
+}
+
+function updateLayerContent(id, text) {
+  const layer = STATE.layers.find(l => l.id === id);
+  if (layer) layer.content = text;
+}
+
+function loadImageLayer(e, id) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const layer = STATE.layers.find(l => l.id === id);
+    if (layer) {
+      layer.imgData = ev.target.result;
+      const el = document.querySelector(`.canvas-block[data-lid="${id}"]`);
+      if (el) renderBlockContent(el, layer);
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ══════════════════════════════════════════════
+   DRAG & RESIZE
+══════════════════════════════════════════════ */
+function makeDraggable(el, layer, canvas) {
+  let drag = false, sx, sy, ox, oy;
+  el.addEventListener('mousedown', (e) => {
+    if (e.target.classList.contains('resize-handle')) return;
+    if (e.target.tagName === 'INPUT' || e.target.contentEditable === 'true') return;
+    drag = true;
+    sx = e.clientX; sy = e.clientY;
+    ox = el.offsetLeft; oy = el.offsetTop;
+    selectLayer(layer.id);
+    e.preventDefault();
+  });
+  el.addEventListener('touchstart', (e) => {
+    if (e.target.classList.contains('resize-handle')) return;
+    const t = e.touches[0];
+    drag = true; sx = t.clientX; sy = t.clientY;
+    ox = el.offsetLeft; oy = el.offsetTop;
+    selectLayer(layer.id);
+  }, { passive: true });
+
+  const move = (cx, cy) => {
+    if (!drag) return;
+    const dx = cx - sx, dy = cy - sy;
+    const cw = canvas.offsetWidth, ch = canvas.offsetHeight;
+    const nx = Math.max(0, Math.min(cw - el.offsetWidth, ox + dx));
+    const ny = Math.max(0, Math.min(ch - el.offsetHeight, oy + dy));
+    el.style.left = nx + 'px';
+    el.style.top = ny + 'px';
+    layer.x = (nx / cw * 100);
+    layer.y = (ny / ch * 100);
+  };
+  const up = () => { drag = false; };
+
+  document.addEventListener('mousemove', (e) => move(e.clientX, e.clientY));
+  document.addEventListener('mouseup', up);
+  document.addEventListener('touchmove', (e) => { const t = e.touches[0]; move(t.clientX, t.clientY); }, { passive: true });
+  document.addEventListener('touchend', up);
+}
+
+function startResize(e, id) {
+  e.stopPropagation();
+  e.preventDefault();
+  const layer = STATE.layers.find(l => l.id === id);
+  const el = document.querySelector(`.canvas-block[data-lid="${id}"]`);
+  const canvas = document.getElementById('zine-canvas');
+  if (!el || !layer) return;
+  const sx = e.clientX || e.touches?.[0]?.clientX;
+  const sy = e.clientY || e.touches?.[0]?.clientY;
+  const sw = el.offsetWidth, sh = el.offsetHeight;
+
+  const move = (cx, cy) => {
+    const cw = canvas.offsetWidth, ch = canvas.offsetHeight;
+    const nw = Math.max(30, sw + cx - sx);
+    const nh = Math.max(20, sh + cy - sy);
+    el.style.width = nw + 'px';
+    el.style.height = nh + 'px';
+    layer.w = nw / cw * 100;
+    layer.h = nh / ch * 100;
+  };
+  const up = () => {
+    document.removeEventListener('mousemove', mm);
+    document.removeEventListener('mouseup', up);
+    document.removeEventListener('touchmove', tm);
+    document.removeEventListener('touchend', up);
+  };
+  const mm = (e) => move(e.clientX, e.clientY);
+  const tm = (e) => { const t = e.touches[0]; move(t.clientX, t.clientY); };
+  document.addEventListener('mousemove', mm);
+  document.addEventListener('mouseup', up);
+  document.addEventListener('touchmove', tm, { passive: true });
+  document.addEventListener('touchend', up);
+}
+
+function canvasClick(e) {
+  if (e.target.id === 'zine-canvas' || e.target.classList.contains('torn-top') || e.target.classList.contains('torn-bottom')) {
+    document.querySelectorAll('.canvas-block').forEach(b => b.classList.remove('selected'));
+    STATE.activeLayer = null;
+    renderLayerList();
+  }
+}
+
+/* ══════════════════════════════════════════════
+   CROP ZONE
+══════════════════════════════════════════════ */
+function updateZone() {
+  const x = parseInt(document.getElementById('cx').value);
+  const y = parseInt(document.getElementById('cy').value);
+  const w = parseInt(document.getElementById('cw').value);
+  const h = parseInt(document.getElementById('ch').value);
+  STATE.zone = { x, y, w, h };
+  document.getElementById('cx-val').textContent = x + '%';
+  document.getElementById('cy-val').textContent = y + '%';
+  document.getElementById('cw-val').textContent = w + '%';
+  document.getElementById('ch-val').textContent = h + '%';
+  renderCropOverlay();
+}
+
+function setZone(x, y, w, h) {
+  ['cx','cy','cw','ch'].forEach((id, i) => {
+    document.getElementById(id).value = [x,y,w,h][i];
+  });
+  updateZone();
+}
+
+function renderCropOverlay() {
+  const canvas = document.getElementById('zine-canvas');
+  const ov = document.getElementById('crop-overlay');
+  const cw = canvas.offsetWidth, ch = canvas.offsetHeight;
+  const z = STATE.zone;
+  ov.style.left   = (z.x / 100 * cw) + 'px';
+  ov.style.top    = (z.y / 100 * ch) + 'px';
+  ov.style.width  = (z.w / 100 * cw) + 'px';
+  ov.style.height = (z.h / 100 * ch) + 'px';
+}
+
+/* ══════════════════════════════════════════════
+   RULER
+══════════════════════════════════════════════ */
+function buildRuler() {
+  const rh = document.getElementById('ruler-h');
+  const rv = document.getElementById('ruler-v');
+  for (let i = 0; i <= 10; i++) {
+    const m = document.createElement('span');
+    m.style.cssText = `position:absolute;left:${i*10}%;font-size:6px;color:var(--label);padding-left:1px`;
+    m.textContent = i*10;
+    rh.appendChild(m);
+    const mv = document.createElement('span');
+    mv.style.cssText = `position:absolute;top:${i*10}%;font-size:6px;color:var(--label);writing-mode:vertical-lr;padding-top:1px`;
+    mv.textContent = i*10;
+    rv.appendChild(mv);
+  }
+}
+
+/* ══════════════════════════════════════════════
+   PRINT META
+══════════════════════════════════════════════ */
+function updatePrintMeta() {
+  const f = FORMATS.find(x => x.id === STATE.format) || FORMATS[0];
+  document.getElementById('print-meta').innerHTML =
+    `Format: <b>${f.name}</b> (${f.dim})<br>
+     Paper: <b>${f.paper}</b><br>
+     Pages: <b>${f.pages}</b><br>
+     Texture: <b>${STATE.texture}</b><br>
+     Layers: <b>${STATE.layers.length}</b> active`;
+}
+
+/* ══════════════════════════════════════════════
+   AI BRIEF GENERATION
+══════════════════════════════════════════════ */
+async function generateBrief() {
+  const notes = document.getElementById('raw-notes').value.trim();
+  const statusEl = document.getElementById('ai-status');
+  const outputEl = document.getElementById('brief-output');
+  const f = FORMATS.find(x => x.id === STATE.format) || FORMATS[0];
+
+  const layoutSummary = buildLayoutSummary();
+  updateLayoutSummary();
+
+  const prompt = `You are a zine layout editor and collage artist. The user has rough notes and mixed-media ideas they want to turn into a clear, printable layout brief.
+
+CURRENT LAYOUT STATE:
+${layoutSummary}
+
+USER'S RAW NOTES:
+${notes || "(no notes — use the layout state to generate a brief)"}
+
+Generate a concise layout brief with these sections:
+1. CONCEPT — one punchy sentence describing the vibe/intent
+2. FORMAT — confirm or adjust format choice with reasoning
+3. LAYERS — list each content zone: what goes there, suggested texture, ink color, placement notes
+4. TYPOGRAPHY — headline style, body style, any found-text or ransom-note elements
+5. PRODUCTION NOTES — print method, paper stock, fold/trim instructions, any risograph or photocopy notes
+6. COPY NOTES — placeholder text or actual copy for any text layers
+
+Keep it raw, practical, and zine-brained. No corporate speak.`;
+
+  statusEl.textContent = '⟳ Generating brief…';
+  outputEl.textContent = '…';
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.map(c => c.text || '').join('') || 'Error: no response';
+    STATE.brief = text;
+    outputEl.textContent = text;
+    statusEl.textContent = '✓ Brief ready — check Brief tab';
+    // Switch to brief tab
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    const briefBtn = document.querySelector('.tab-btn:last-child');
+    if (briefBtn) briefBtn.classList.add('active');
+    document.querySelectorAll('.panel').forEach(p => {
+      p.classList.toggle('active', p.dataset.tab === 'brief');
+    });
+    updateLayoutSummary();
+  } catch(err) {
+    statusEl.textContent = '✕ Error: ' + err.message;
+    outputEl.textContent = 'Failed to generate brief. Check your connection.';
+  }
+}
+
+function buildLayoutSummary() {
+  const f = FORMATS.find(x => x.id === STATE.format) || FORMATS[0];
+  const lines = [
+    `Format: ${f.name} (${f.dim}), Paper: ${f.paper}`,
+    `Texture: ${STATE.texture}`,
+    `Layers (${STATE.layers.length}):`,
+    ...STATE.layers.map(l => `  - [${l.type.toUpperCase()}] "${l.label}" | color:${l.color} | blend:${l.blend} | opacity:${l.opacity}% | content:"${l.content}"`)
+  ];
+  if (STATE.zone.x > 0 || STATE.zone.y > 0 || STATE.zone.w < 100 || STATE.zone.h < 100) {
+    lines.push(`Active crop zone: x${STATE.zone.x}% y${STATE.zone.y}% w${STATE.zone.w}% h${STATE.zone.h}%`);
+  }
+  return lines.join('\n');
+}
+
+function updateLayoutSummary() {
+  document.getElementById('layout-summary').textContent = buildLayoutSummary();
+}
+
+/* ══════════════════════════════════════════════
+   COPY / EXPORT
+══════════════════════════════════════════════ */
+function copyBrief() {
+  const brief = document.getElementById('brief-output').textContent;
+  if (!brief || brief.startsWith('Hit "Gen Brief"')) return;
+  navigator.clipboard.writeText(brief).then(() => {
+    const el = document.getElementById('copy-confirm');
+    el.textContent = '✓ Copied to clipboard';
+    setTimeout(() => el.textContent = '', 2500);
+  }).catch(() => {
+    const el = document.getElementById('copy-confirm');
+    el.textContent = '✕ Copy failed — select manually';
+  });
+}
+
+function exportState() {
+  updateLayoutSummary();
+  const data = {
+    version: 1,
+    format: STATE.format,
+    texture: STATE.texture,
+    zone: STATE.zone,
+    layers: STATE.layers.map(l => ({ ...l, imgData: l.imgData ? '[IMAGE]' : undefined })),
+    notes: document.getElementById('raw-notes').value,
+    brief: document.getElementById('brief-output').textContent,
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'zine-layout.json';
+  a.click();
+}
+
+function importState() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json,application/json';
+  input.onchange = (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (data.format) selectFormat(data.format);
+        if (data.texture) selectTexture(data.texture);
+        if (data.zone) { STATE.zone = data.zone; setZone(data.zone.x,data.zone.y,data.zone.w,data.zone.h); }
+        if (data.notes) document.getElementById('raw-notes').value = data.notes;
+        if (data.brief) document.getElementById('brief-output').textContent = data.brief;
+        // Restore layers
+        document.querySelectorAll('.canvas-block').forEach(el => el.remove());
+        STATE.layers = [];
+        const canvas = document.getElementById('zine-canvas');
+        if (data.layers) {
+          data.layers.forEach(l => {
+            STATE.layers.push(l);
+            _lid = Math.max(_lid, l.id);
+            createBlockEl(l, canvas, canvas.offsetWidth, canvas.offsetHeight);
+          });
+        }
+        renderLayerList();
+        updatePrintMeta();
+      } catch(err) { alert('Could not load file: ' + err.message); }
+    };
+    r.readAsText(f);
+  };
+  input.click();
+}
+
+function clearCanvas() {
+  if (!confirm('Clear all layers?')) return;
+  document.querySelectorAll('.canvas-block').forEach(el => el.remove());
+  STATE.layers = [];
+  STATE.activeLayer = null;
+  renderLayerList();
+  updatePrintMeta();
+}
+
+/* ══════════════════════════════════════════════
+   KEYBOARD
+══════════════════════════════════════════════ */
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (document.activeElement.tagName === 'INPUT' || document.activeElement.contentEditable === 'true' || document.activeElement.tagName === 'TEXTAREA') return;
+    if (STATE.activeLayer !== null) deleteLayer(STATE.activeLayer);
+  }
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.canvas-block').forEach(b => b.classList.remove('selected'));
+    STATE.activeLayer = null;
+    renderLayerList();
+  }
+});
+
+/* ══════════════════════════════════════════════
+   BOOT
+══════════════════════════════════════════════ */
+window.addEventListener('load', () => {
+  init();
+  // Seed a second text layer for demo
+  setTimeout(() => {
+    addLayer('shape');
+    addLayer('tape');
+    selectLayer(STATE.layers[0].id);
+  }, 100);
+});
+
+window.addEventListener('resize', () => {
+  renderCropOverlay();
+});
+</script>
+</body>
+</html>

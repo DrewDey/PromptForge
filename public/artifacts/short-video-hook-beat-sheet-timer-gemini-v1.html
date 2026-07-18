@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Short Video Planner</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --border: #334155;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 12px;
+            max-width: 600px;
+            margin: 0 auto;
+            padding-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 16px;
+            text-align: center;
+            color: var(--text-color);
+        }
+
+        .section {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        input[type="text"], textarea {
+            width: 100%;
+            background: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-color);
+            padding: 10px;
+            font-size: 0.95rem;
+            margin-bottom: 12px;
+        }
+
+        textarea {
+            resize: vertical;
+            height: 60px;
+        }
+
+        input[type="text"]:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        /* Dash Dashboard / Status Indicators */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .stat-val {
+            font-size: 1.8rem;
+            font-weight: 800;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .warning-banner {
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid var(--warning);
+            color: #fbbf24;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+            display: none;
+        }
+
+        /* Beats Builder */
+        .beat-item {
+            background: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+            position: relative;
+        }
+
+        .beat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .beat-title {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--accent);
+        }
+
+        .duration-ctrl {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .duration-ctrl input[type="number"] {
+            width: 50px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text-color);
+            padding: 4px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .btn-delete {
+            background: transparent;
+            color: var(--danger);
+            border: none;
+            font-size: 0.85rem;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        /* Buttons */
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            text-align: center;
+            width: 100%;
+        }
+
+        .btn:hover { background: var(--accent-hover); }
+        .btn-secondary { background: #334155; }
+        .btn-secondary:hover { background: #475569; }
+        .btn-full { grid-column: span 2; }
+
+        /* Preview Cards */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .shot-card {
+            background: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .shot-meta {
+            background: var(--border);
+            padding: 6px 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .shot-body {
+            padding: 10px;
+        }
+
+        .shot-element {
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+        }
+
+        .shot-element span {
+            font-weight: bold;
+            color: var(--text-muted);
+            display: block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Short Video Planner</h1>
+
+    <!-- Stats Dashboard -->
+    <div class="dashboard">
+        <div class="stat-card">
+            <div id="total-time" class="stat-val" style="color: var(--success);">0s</div>
+            <div class="stat-label">Total Duration</div>
+        </div>
+        <div class="stat-card">
+            <div id="hook-time" class="stat-val" style="color: var(--success);">0s</div>
+            <div class="stat-label">Hook Duration</div>
+        </div>
+    </div>
+
+    <!-- Warnings Panel -->
+    <div id="warnings" class="warning-banner"></div>
+
+    <!-- Metadata Panel -->
+    <div class="section">
+        <label for="concept">Concept / Objective</label>
+        <input type="text" id="concept" value="My Short Form Video Strategy" oninput="updateUI()">
+    </div>
+
+    <!-- Beats Editor -->
+    <div class="section">
+        <label>Scene Beats & Timing</label>
+        <div id="beats-container"></div>
+        
+        <div class="btn-group">
+            <button class="btn btn-secondary btn-full" onclick="addBeat()">+ Add Scene Beat</button>
+            <button class="btn" onclick="copyToClipboard()">Copy Script</button>
+            <button class="btn btn-secondary" onclick="downloadConfig()">Download Plan</button>
+        </div>
+    </div>
+
+    <!-- Storyboard Preview -->
+    <div class="section">
+        <label>Visual Shot Cards</label>
+        <div id="cards-container" class="cards-grid"></div>
+    </div>
+
+    <script>
+        // Initial state
+        let programData = {
+            concept: "How to maximize daily efficiency",
+            beats: [
+                { title: "Hook", visual: "Tight zoom on a ticking watch face, looking frustrated.", dialogue: "Stop wasting hours rewriting your daily content workflow.", duration: 3 },
+                { title: "The Problem", visual: "Quick cuts of messy desktop folders and notes applications open simultaneously.", dialogue: "Most creators lose half their day simply planning what to shoot next.", duration: 12 },
+                { title: "The Solution", visual: "Over shoulder view typing efficiently into a structured single-page editor.", dialogue: "Instead, consolidate your concept, script, and timestamps into a layout like this.", duration: 15 },
+                { title: "Call to Action", visual: "Direct to camera view pointing downward toward caption link location.", dialogue: "Drop a comment below to grab this direct template file for yourself.", duration: 5 }
+            ]
+        };
+
+        function init() {
+            document.getElementById('concept').value = programData.concept;
+            renderBeats();
+        }
+
+        function renderBeats() {
+            const container = document.getElementById('beats-container');
+            container.innerHTML = '';
+
+            programData.beats.forEach((beat, index) => {
+                const beatDiv = document.createElement('div');
+                beatDiv.className = 'beat-item';
+                beatDiv.innerHTML = `
+                    <div class="beat-header">
+                        <span class="beat-title">#${index + 1}: ${index === 0 ? 'Hook Scene' : 'Beat Card'}</span>
+                        <div class="duration-ctrl">
+                            <label style="margin:0; font-size:0.75rem;">Secs:</label>
+                            <input type="number" value="${beat.duration}" min="1" max="60" onchange="updateBeatDuration(${index}, this.value)">
+                            ${index > 0 ? `<button class="btn-delete" onclick="deleteBeat(${index})">✕</button>` : ''}
+                        </div>
+                    </div>
+                    <input type="text" placeholder="Visual / Framing description..." value="${escapeHtml(beat.visual)}" oninput="updateBeatText(${index}, 'visual', this.value)">
+                    <textarea placeholder="Dialogue / Voiceover script text..." oninput="updateBeatText(${index}, 'dialogue', this.value)">${escapeHtml(beat.dialogue)}</textarea>
+                `;
+                container.appendChild(beatDiv);
+            });
+
+            updateUI();
+        }
+
+        function addBeat() {
+            programData.beats.push({ title: "Scene Beat", visual: "", dialogue: "", duration: 5 });
+            renderBeats();
+        }
+
+        function deleteBeat(index) {
+            if(index === 0) return; // Hook protection
+            programData.beats.splice(index, 1);
+            renderBeats();
+        }
+
+        function updateBeatDuration(index, val) {
+            programData.beats[index].duration = parseInt(val) || 0;
+            updateUI();
+        }
+
+        function updateBeatText(index, field, val) {
+            programData.beats[index][field] = val;
+            updatePreviewCards(); // Immediate render without rebuilding inputs
+        }
+
+        function updateUI() {
+            programData.concept = document.getElementById('concept').value;
+            
+            let totalSecs = 0;
+            let hookSecs = programData.beats[0] ? programData.beats[0].duration : 0;
+            
+            programData.beats.forEach(b => totalSecs += b.duration);
+
+            // Clock elements
+            const totalClock = document.getElementById('total-time');
+            const hookClock = document.getElementById('hook-time');
+
+            totalClock.innerText = `${totalSecs}s`;
+            hookClock.innerText = `${hookSecs}s`;
+
+            // Evaluate Warnings
+            let messages = [];
+            
+            if (hookSecs > 3) {
+                messages.push(`⚠️ <strong>Slow Opening:</strong> Hook duration (${hookSecs}s) exceeds the optimal 3-second short-form attention window.`);
+                hookClock.style.color = 'var(--warning)';
+            } else {
+                hookClock.style.color = 'var(--success)';
+            }
+
+            if (totalSecs < 30 || totalSecs > 60) {
+                messages.push(`⚠️ <strong>Pacing Notice:</strong> Total runtime (${totalSecs}s) is outside the requested 30-60 second structural threshold.`);
+                totalClock.style.color = 'var(--warning)';
+            } else {
+                totalClock.style.color = 'var(--success)';
+            }
+
+            const warnDiv = document.getElementById('warnings');
+            if (messages.length > 0) {
+                warnDiv.innerHTML = messages.join('<br><br>');
+                warnDiv.style.display = 'block';
+            } else {
+                warnDiv.style.display = 'none';
+            }
+
+            updatePreviewCards();
+        }
+
+        function updatePreviewCards() {
+            const container = document.getElementById('cards-container');
+            container.innerHTML = '';
+
+            let runningTime = 0;
+
+            programData.beats.forEach((beat, index) => {
+                const startTime = runningTime;
+                runningTime += beat.duration;
+
+                const card = document.createElement('div');
+                card.className = 'shot-card';
+                card.innerHTML = `
+                    <div class="shot-meta">
+                        <span>Card #${index + 1} (${beat.duration}s)</span>
+                        <span>${startTime}s - ${runningTime}s</span>
+                    </div>
+                    <div class="shot-body">
+                        <div class="shot-element"><span>Visual/Frame</span>${escapeHtml(beat.visual) || '<i>No details</i>'}</div>
+                        <div class="shot-element" style="margin:0;"><span>Dialogue/Audio</span>${escapeHtml(beat.dialogue) || '<i>Silence</i>'}</div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function generateScriptOutput() {
+            let output = `CONCEPT: ${programData.concept}\n\n`;
+            let runningTime = 0;
+            programData.beats.forEach((b, i) => {
+                output += `[${runningTime}s - ${runningTime + b.duration}s] Beat #${i+1}\n`;
+                output += `VISUAL: ${b.visual}\n`;
+                output += `AUDIO:  ${b.dialogue}\n\n`;
+                runningTime += b.duration;
+            });
+            return output;
+        }
+
+        function copyToClipboard() {
+            const text = generateScriptOutput();
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Script copy clean to clipboard!");
+            }).catch(err => {
+                alert("Error copying content: " + err);
+            });
+        }
+
+        function downloadConfig() {
+            const fileData = {
+                timestamp: new Date().toISOString(),
+                data: programData
+            };
+            const blob = new Blob([JSON.stringify(fileData, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `video-plan-${programData.concept.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        // Trigger startup layout
+        window.onload = init;
+    </script>
+</body>
+</html>

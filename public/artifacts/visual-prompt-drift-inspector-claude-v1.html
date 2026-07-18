@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Prompt Studio</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,600;1,400&display=swap');
+
+  :root {
+    --bg: #0E0E0F;
+    --surface: #181818;
+    --card: #1F1F20;
+    --border: #2E2E30;
+    --parchment: #F0E8D8;
+    --parchment-dim: #C8BBA8;
+    --amber: #C17F24;
+    --amber-light: #E09A3A;
+    --slate: #7B9BA6;
+    --rose: #C47B7B;
+    --green: #6BA87A;
+    --text: #E8E2D9;
+    --text-dim: #888480;
+    --mono: 'Space Mono', monospace;
+    --serif: 'Lora', Georgia, serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 16px 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .header-logo {
+    font-size: 18px;
+    line-height: 1;
+  }
+  .header-title {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--amber);
+  }
+  .header-sub {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.05em;
+  }
+
+  /* ── Section wrappers ── */
+  .section {
+    padding: 16px 14px 0;
+  }
+  .section-label {
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── Prompt Input ── */
+  .prompt-area {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--parchment);
+    font-family: var(--serif);
+    font-size: 15px;
+    line-height: 1.6;
+    padding: 12px;
+    resize: none;
+    min-height: 110px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .prompt-area:focus {
+    border-color: var(--amber);
+  }
+  .prompt-area::placeholder {
+    color: var(--text-dim);
+    font-style: italic;
+    font-size: 13px;
+  }
+
+  /* ── Film strip density meter ── */
+  .density-wrap {
+    margin-top: 8px;
+  }
+  .density-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+  .density-count {
+    font-weight: 700;
+    color: var(--amber);
+  }
+  .filmstrip {
+    display: flex;
+    gap: 3px;
+    height: 14px;
+    border-radius: 3px;
+    overflow: hidden;
+    background: var(--border);
+    padding: 2px;
+  }
+  .film-frame {
+    flex: 1;
+    border-radius: 2px;
+    background: var(--border);
+    transition: background 0.25s;
+  }
+  .film-frame.lit-green  { background: var(--green); }
+  .film-frame.lit-amber  { background: var(--amber); }
+  .film-frame.lit-rose   { background: var(--rose); }
+
+  .density-status {
+    font-size: 10px;
+    margin-top: 5px;
+    min-height: 14px;
+    color: var(--text-dim);
+    font-style: italic;
+  }
+  .density-status.warn { color: var(--amber); }
+  .density-status.over { color: var(--rose); }
+
+  /* ── Drift warnings ── */
+  .drift-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    min-height: 40px;
+  }
+  .drift-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+  }
+  .drift-item:last-child { border-bottom: none; }
+  .drift-icon { font-size: 13px; line-height: 1.4; flex-shrink: 0; }
+  .drift-text { color: var(--parchment-dim); line-height: 1.5; }
+  .drift-text strong { color: var(--parchment); }
+  .drift-empty { color: var(--text-dim); font-style: italic; font-size: 11px; }
+
+  /* ── Tag system ── */
+  .tag-group {
+    margin-bottom: 10px;
+  }
+  .tag-group-label {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+  .tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .tag-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    padding: 4px 10px;
+    transition: all 0.15s;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tag-btn:active { opacity: 0.7; }
+  .tag-btn.on { color: var(--bg); font-weight: 700; border-color: transparent; }
+  .tag-btn[data-group="mood"].on    { background: var(--slate); }
+  .tag-btn[data-group="subject"].on { background: var(--amber); }
+  .tag-btn[data-group="lens"].on    { background: var(--green); }
+  .tag-btn[data-group="style"].on   { background: var(--rose); }
+
+  /* ── Custom tag input ── */
+  .custom-tag-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .custom-tag-input {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 5px 8px;
+    outline: none;
+  }
+  .custom-tag-input:focus { border-color: var(--amber); }
+  .custom-tag-input::placeholder { color: var(--text-dim); }
+  .mini-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 5px 10px;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .mini-btn:active { opacity: 0.7; }
+  .mini-btn.primary {
+    background: var(--amber);
+    border-color: var(--amber);
+    color: var(--bg);
+    font-weight: 700;
+  }
+
+  /* ── Crop cards ── */
+  .crop-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .crop-card {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    padding: 8px 6px 7px;
+    text-align: center;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .crop-card.selected {
+    border-color: var(--amber);
+  }
+  .crop-card:active { opacity: 0.75; }
+  .crop-visual {
+    margin: 0 auto 5px;
+    border: 2px solid var(--text-dim);
+    background: transparent;
+    border-radius: 2px;
+  }
+  .crop-card.selected .crop-visual { border-color: var(--amber); }
+  .crop-name {
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  .crop-card.selected .crop-name { color: var(--amber); }
+  .crop-ratio {
+    font-size: 8px;
+    color: #555;
+    margin-top: 2px;
+  }
+  .crop-card.selected .crop-ratio { color: var(--amber-light); }
+
+  /* ── Output area ── */
+  .output-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .output-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+  }
+  .output-header-label {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  .copy-btn {
+    background: var(--amber);
+    border: none;
+    border-radius: 4px;
+    color: var(--bg);
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 4px 10px;
+    text-transform: uppercase;
+    transition: all 0.15s;
+  }
+  .copy-btn:active { opacity: 0.7; transform: scale(0.97); }
+  .copy-btn.copied { background: var(--green); }
+  .output-text {
+    color: var(--parchment);
+    font-family: var(--serif);
+    font-size: 14px;
+    line-height: 1.65;
+    min-height: 60px;
+    padding: 12px;
+  }
+  .output-text.empty { color: var(--text-dim); font-style: italic; font-size: 12px; }
+
+  /* ── Checklist ── */
+  .checklist {
+    list-style: none;
+    padding: 10px 12px;
+  }
+  .checklist li {
+    align-items: flex-start;
+    border-bottom: 1px solid var(--border);
+    color: var(--parchment-dim);
+    display: flex;
+    font-size: 11px;
+    gap: 8px;
+    line-height: 1.5;
+    padding: 6px 0;
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .check-icon { flex-shrink: 0; font-size: 13px; }
+  .checklist li.done { color: var(--text-dim); }
+  .checklist li.done .check-icon::before { content: '✓'; }
+  .checklist li:not(.done) .check-icon::before { content: '○'; }
+  .check-text b { color: var(--parchment); }
+
+  /* ── Actions row ── */
+  .actions-row {
+    display: flex;
+    gap: 8px;
+    padding: 14px 14px 0;
+  }
+  .action-btn {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    padding: 10px 8px;
+    text-align: center;
+    text-transform: uppercase;
+    transition: all 0.15s;
+  }
+  .action-btn:active { opacity: 0.7; }
+  .action-btn.primary {
+    background: var(--amber);
+    border-color: var(--amber);
+    color: var(--bg);
+    font-weight: 700;
+  }
+
+  /* ── Toast ── */
+  .toast {
+    background: var(--green);
+    border-radius: 6px;
+    bottom: 20px;
+    color: var(--bg);
+    font-size: 11px;
+    font-weight: 700;
+    left: 50%;
+    letter-spacing: 0.08em;
+    opacity: 0;
+    padding: 8px 16px;
+    pointer-events: none;
+    position: fixed;
+    text-transform: uppercase;
+    transform: translateX(-50%) translateY(10px);
+    transition: all 0.25s;
+    z-index: 999;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ── Divider ── */
+  .spacer { height: 14px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">⬡</div>
+  <div>
+    <div class="header-title">Prompt Studio</div>
+    <div class="header-sub">Draft · Tag · Tighten · Shoot</div>
+  </div>
+</div>
+
+<!-- 1. PROMPT INPUT -->
+<div class="section">
+  <div class="section-label">Raw Prompt</div>
+  <textarea class="prompt-area" id="rawPrompt" placeholder="Paste or type your rough visual idea… describe light, subject, mood, anything." rows="5"></textarea>
+
+  <div class="density-wrap">
+    <div class="density-label">
+      <span>Prompt Density</span>
+      <span class="density-count" id="wordCount">0 words</span>
+    </div>
+    <div class="filmstrip" id="filmstrip">
+      <!-- frames injected by JS -->
+    </div>
+    <div class="density-status" id="densityStatus">Start typing to check density.</div>
+  </div>
+</div>
+
+<!-- 2. DRIFT / OVERSTUFFING ANALYSIS -->
+<div class="section spacer">
+  <div class="section-label">Drift &amp; Overstuffing Check</div>
+  <div class="drift-box" id="driftBox">
+    <div class="drift-empty">Paste a prompt above to see conflict flags.</div>
+  </div>
+</div>
+
+<!-- 3. TAGS -->
+<div class="section spacer">
+  <div class="section-label">Tag Your Shot</div>
+
+  <div class="tag-group">
+    <div class="tag-group-label">🌡 Mood</div>
+    <div class="tag-row" id="tags-mood"></div>
+  </div>
+  <div class="tag-group">
+    <div class="tag-group-label">📐 Subject</div>
+    <div class="tag-row" id="tags-subject"></div>
+  </div>
+  <div class="tag-group">
+    <div class="tag-group-label">🔭 Lens</div>
+    <div class="tag-row" id="tags-lens"></div>
+  </div>
+  <div class="tag-group">
+    <div class="tag-group-label">🎨 Style</div>
+    <div class="tag-row" id="tags-style"></div>
+  </div>
+
+  <div class="custom-tag-row">
+    <input class="custom-tag-input" id="customTagInput" placeholder="Custom tag…" maxlength="30">
+    <select class="custom-tag-input" id="customTagGroup" style="flex:0 0 80px;">
+      <option value="mood">Mood</option>
+      <option value="subject">Subject</option>
+      <option value="lens">Lens</option>
+      <option value="style">Style</option>
+    </select>
+    <button class="mini-btn primary" onclick="addCustomTag()">+ Add</button>
+  </div>
+</div>
+
+<!-- 4. CROP CARDS -->
+<div class="section spacer">
+  <div class="section-label">Crop / Format</div>
+  <div class="crop-grid" id="cropGrid"></div>
+</div>
+
+<!-- 5. TIGHTENED OUTPUT -->
+<div class="section spacer">
+  <div class="section-label">Tightened Prompt</div>
+  <div class="output-card">
+    <div class="output-header">
+      <span class="output-header-label">Ready to copy</span>
+      <button class="copy-btn" id="copyPromptBtn" onclick="copyTightened()">Copy</button>
+    </div>
+    <div class="output-text empty" id="tightenedOutput">Build your prompt above, then tap Tighten.</div>
+  </div>
+</div>
+
+<!-- 6. SHOOT CHECKLIST -->
+<div class="section spacer">
+  <div class="section-label">Shoot Checklist</div>
+  <div class="output-card">
+    <div class="output-header">
+      <span class="output-header-label">Before you shoot</span>
+      <button class="copy-btn" id="copyCheckBtn" onclick="copyChecklist()">Copy</button>
+    </div>
+    <ul class="checklist" id="checklist"></ul>
+  </div>
+</div>
+
+<!-- 7. ACTIONS -->
+<div class="actions-row">
+  <button class="action-btn" onclick="resetAll()">↺ Reset</button>
+  <button class="action-btn primary" onclick="tightenPrompt()">⚡ Tighten</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────────
+
+const TAGS = {
+  mood:    ["Golden Hour","Blue Hour","Overcast","Dramatic","Intimate","Ethereal","Gritty","Serene","Nostalgic","Surreal"],
+  subject: ["Portrait","Landscape","Street","Architecture","Still Life","Wildlife","Abstract","Fashion","Documentary","Night Sky"],
+  lens:    ["Wide 16mm","Normal 35mm","Portrait 50mm","Tele 85mm","Tele 135mm","Macro","Fish-eye","Tilt-shift","Zoom","Phone"],
+  style:   ["Film Grain","Cinematic","High-Key","Low-Key","B&W","Muted","Vivid","Infrared","Double Exp","HDR"]
+};
+
+const CROPS = [
+  { name:"Square",   ratio:"1:1",  w:48, h:48 },
+  { name:"Portrait", ratio:"4:5",  w:40, h:50 },
+  { name:"Story",    ratio:"9:16", w:28, h:50 },
+  { name:"Classic",  ratio:"3:2",  w:54, h:36 },
+  { name:"Cinematic",ratio:"16:9", w:54, h:30 },
+  { name:"Ultra",    ratio:"2.39:1",w:54,h:23 },
+];
+
+const DRIFT_RULES = [
+  { pattern: /\b(day(light)?|sun(ny|light|rise|set)?|golden hour)\b.*\b(night|dusk|dark|evening|moonlight)\b/i, msg: "⚡ <strong>Time conflict</strong> — daylight and night cues in the same prompt", type:"conflict" },
+  { pattern: /\b(night|dusk|dark|evening|moonlight)\b.*\b(day(light)?|sun(ny|light|rise|set)?|golden hour)\b/i, msg: "⚡ <strong>Time conflict</strong> — night and daylight cues collide", type:"conflict" },
+  { pattern: /\b(wide.?angle|fish.?eye|ultra.?wide)\b.*\b(tele(photo)?|compressed|85mm|135mm|200mm)\b/i, msg: "🔭 <strong>Lens conflict</strong> — wide and tele descriptors both present", type:"conflict" },
+  { pattern: /\b(tele(photo)?|85mm|135mm|200mm)\b.*\b(wide.?angle|fish.?eye|ultra.?wide)\b/i, msg: "🔭 <strong>Lens conflict</strong> — tele and wide descriptors both present", type:"conflict" },
+  { pattern: /\b(warm|orange|yellow|amber)\b.*\b(cold|blue|cool|cyan)\b/i, msg: "🌡 <strong>Tone drift</strong> — warm and cool color cues competing", type:"drift" },
+  { pattern: /\b(cold|blue|cool|cyan)\b.*\b(warm|orange|yellow|amber)\b/i, msg: "🌡 <strong>Tone drift</strong> — cool and warm color cues competing", type:"drift" },
+  { pattern: /\b(cinematic|film|analog)\b.*\b(digital|clean|sharp|crisp|clinical)\b/i, msg: "🎞 <strong>Style drift</strong> — film/analog and clinical-digital descriptors mix", type:"drift" },
+  { pattern: /\b(shallow.?depth|bokeh|f\/1|f\/1\.4|f\/2)\b.*\b(deep.?focus|everything.?sharp|f\/8|f\/11|f\/16|tack.?sharp throughout)\b/i, msg: "📷 <strong>DOF conflict</strong> — shallow and deep depth-of-field cues clash", type:"conflict" },
+  { pattern: /\b(minimalist|simple|clean|sparse|empty)\b.*\b(busy|detailed|complex|rich|intricate|layered)\b/i, msg: "✂️ <strong>Composition drift</strong> — minimalist and maximalist language together", type:"drift" },
+];
+
+const OVERSTUFF_SOFT = 35;
+const OVERSTUFF_HARD = 55;
+const FRAMES = 20;
+
+let selectedTags = { mood:[], subject:[], lens:[], style:[] };
+let selectedCrop = null;
+let customTags = { mood:[], subject:[], lens:[], style:[] };
+
+// ── Init ──────────────────────────────────────────────────────────────
+
+function init() {
+  buildFilmstrip();
+  buildTagGroups();
+  buildCropGrid();
+  buildChecklist();
+  document.getElementById('rawPrompt').addEventListener('input', onPromptInput);
+}
+
+// ── Filmstrip ─────────────────────────────────────────────────────────
+
+function buildFilmstrip() {
+  const fs = document.getElementById('filmstrip');
+  fs.innerHTML = '';
+  for (let i=0;i<FRAMES;i++) {
+    const f = document.createElement('div');
+    f.className = 'film-frame';
+    f.id = 'frame-'+i;
+    fs.appendChild(f);
+  }
+}
+
+function updateFilmstrip(words) {
+  const pct = Math.min(words / OVERSTUFF_HARD, 1);
+  const lit = Math.round(pct * FRAMES);
+  const status = document.getElementById('densityStatus');
+  document.getElementById('wordCount').textContent = words + ' word' + (words!==1?'s':'');
+  for (let i=0;i<FRAMES;i++) {
+    const f = document.getElementById('frame-'+i);
+    f.className = 'film-frame';
+    if (i < lit) {
+      if (words <= OVERSTUFF_SOFT) f.classList.add('lit-green');
+      else if (words <= OVERSTUFF_HARD) f.classList.add('lit-amber');
+      else f.classList.add('lit-rose');
+    }
+  }
+  if (words === 0) {
+    status.textContent = 'Start typing to check density.';
+    status.className = 'density-status';
+  } else if (words < 10) {
+    status.textContent = 'Sparse — add more context.';
+    status.className = 'density-status';
+  } else if (words <= OVERSTUFF_SOFT) {
+    status.textContent = 'Good exposure — prompt is well-packed.';
+    status.className = 'density-status';
+  } else if (words <= OVERSTUFF_HARD) {
+    status.textContent = 'Getting dense — consider trimming competing ideas.';
+    status.className = 'density-status warn';
+  } else {
+    status.textContent = 'Overexposed — too many directions at once. Trim hard.';
+    status.className = 'density-status over';
+  }
+}
+
+// ── Drift analysis ────────────────────────────────────────────────────
+
+function analyzeDrift(text) {
+  const box = document.getElementById('driftBox');
+  if (!text.trim()) {
+    box.innerHTML = '<div class="drift-empty">Paste a prompt above to see conflict flags.</div>';
+    return;
+  }
+  const hits = DRIFT_RULES.filter(r => r.pattern.test(text));
+  if (!hits.length) {
+    box.innerHTML = '<div class="drift-empty" style="color:var(--green)">✓ No obvious conflicts found.</div>';
+    return;
+  }
+  box.innerHTML = hits.map(h => `
+    <div class="drift-item">
+      <span class="drift-icon">${h.type==='conflict'?'⚡':'↔'}</span>
+      <span class="drift-text">${h.msg}</span>
+    </div>`).join('');
+}
+
+// ── Prompt events ─────────────────────────────────────────────────────
+
+function onPromptInput() {
+  const val = document.getElementById('rawPrompt').value;
+  const words = val.trim() ? val.trim().split(/\s+/).length : 0;
+  updateFilmstrip(words);
+  analyzeDrift(val);
+}
+
+// ── Tags ──────────────────────────────────────────────────────────────
+
+function buildTagGroups() {
+  Object.keys(TAGS).forEach(group => renderTagGroup(group));
+}
+
+function renderTagGroup(group) {
+  const container = document.getElementById('tags-' + group);
+  const allTags = [...TAGS[group], ...customTags[group]];
+  container.innerHTML = allTags.map(tag => `
+    <button class="tag-btn ${selectedTags[group].includes(tag)?'on':''}" 
+            data-group="${group}" data-tag="${tag}"
+            onclick="toggleTag('${group}','${escQ(tag)}')">${tag}</button>
+  `).join('');
+}
+
+function toggleTag(group, tag) {
+  const arr = selectedTags[group];
+  const idx = arr.indexOf(tag);
+  if (idx > -1) arr.splice(idx,1); else arr.push(tag);
+  renderTagGroup(group);
+}
+
+function escQ(s) { return s.replace(/'/g,"\\'"); }
+
+function addCustomTag() {
+  const input = document.getElementById('customTagInput');
+  const group = document.getElementById('customTagGroup').value;
+  const val = input.value.trim();
+  if (!val) return;
+  if (!customTags[group].includes(val) && !TAGS[group].includes(val)) {
+    customTags[group].push(val);
+    renderTagGroup(group);
+    toast('Tag added');
+  }
+  input.value = '';
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.activeElement.id === 'customTagInput') {
+    e.preventDefault(); addCustomTag();
+  }
+});
+
+// ── Crop grid ─────────────────────────────────────────────────────────
+
+function buildCropGrid() {
+  const grid = document.getElementById('cropGrid');
+  grid.innerHTML = CROPS.map((c,i) => `
+    <div class="crop-card ${selectedCrop===i?'selected':''}" onclick="selectCrop(${i})">
+      <div class="crop-visual" style="width:${c.w}px;height:${c.h}px;"></div>
+      <div class="crop-name">${c.name}</div>
+      <div class="crop-ratio">${c.ratio}</div>
+    </div>
+  `).join('');
+}
+
+function selectCrop(i) {
+  selectedCrop = selectedCrop === i ? null : i;
+  buildCropGrid();
+}
+
+// ── Tighten ───────────────────────────────────────────────────────────
+
+function tightenPrompt() {
+  const raw = document.getElementById('rawPrompt').value.trim();
+  if (!raw) { toast('Paste a prompt first'); return; }
+
+  // Build tightened version
+  const parts = [];
+
+  // Core cleaned prompt — strip filler phrases
+  let cleaned = raw
+    .replace(/\b(I want|I'd like|please make|can you|generate me|create a photo of|a photo of|an image of|imagine)\b/gi,'')
+    .replace(/\s{2,}/g,' ').trim();
+  // Capitalise first letter
+  cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+  if (cleaned.slice(-1) !== '.') cleaned += '.';
+  parts.push(cleaned);
+
+  // Append active tags
+  const allTags = [];
+  ['mood','subject','lens','style'].forEach(g => {
+    if (selectedTags[g].length) allTags.push(...selectedTags[g]);
+  });
+  if (allTags.length) parts.push(allTags.join(', ') + '.');
+
+  // Append crop
+  if (selectedCrop !== null) {
+    parts.push(CROPS[selectedCrop].name + ' crop (' + CROPS[selectedCrop].ratio + ').');
+  }
+
+  const tightened = parts.join(' ');
+  const el = document.getElementById('tightenedOutput');
+  el.textContent = tightened;
+  el.classList.remove('empty');
+
+  buildChecklist();
+  toast('Prompt tightened ✓');
+}
+
+// ── Checklist ─────────────────────────────────────────────────────────
+
+function buildChecklist() {
+  const raw = document.getElementById('rawPrompt').value.trim();
+  const items = [];
+
+  // Always-present items
+  items.push({ text: '<b>Camera / app ready</b> — charge check, storage free', done: false });
+
+  // Tag-driven items
+  if (selectedTags.lens.some(t => /macro/i.test(t)))
+    items.push({ text: '<b>Macro distance</b> — get within minimum focus distance', done: false });
+  if (selectedTags.lens.some(t => /tele|85mm|135mm/i.test(t)))
+    items.push({ text: '<b>Stabilisation on</b> — enable IBIS or use tripod for tele', done: false });
+  if (selectedTags.lens.some(t => /wide|16mm|fish/i.test(t)))
+    items.push({ text: '<b>Horizon level</b> — wide lenses exaggerate tilt', done: false });
+  if (selectedTags.mood.some(t => /golden|blue hour/i.test(t)))
+    items.push({ text: '<b>Time the light</b> — scout location before the window opens', done: false });
+  if (selectedTags.mood.some(t => /night|dark|dusk/i.test(t)))
+    items.push({ text: '<b>Long exposure kit</b> — tripod + remote shutter for night work', done: false });
+  if (selectedTags.style.some(t => /film|grain|analog/i.test(t)))
+    items.push({ text: '<b>Film profile active</b> — set picture style or plan in post', done: false });
+  if (selectedTags.style.some(t => /b&w|black.*white/i.test(t)))
+    items.push({ text: '<b>Monochrome preview on</b> — see B&W in-camera while shooting', done: false });
+  if (selectedCrop !== null)
+    items.push({ text: `<b>Frame for ${CROPS[selectedCrop].name} (${CROPS[selectedCrop].ratio})</b> — leave headroom for crop`, done: false });
+  if (selectedTags.subject.some(t => /portrait/i.test(t)))
+    items.push({ text: '<b>Catchlights</b> — position light source at eye level', done: false });
+  if (selectedTags.subject.some(t => /street|documentary/i.test(t)))
+    items.push({ text: '<b>Discreet settings</b> — silent shutter, small footprint', done: false });
+
+  // Prompt-driven items
+  if (/\b(fog|mist|smoke)\b/i.test(raw))
+    items.push({ text: '<b>Atmosphere check</b> — confirm fog/mist is present or bring a diffuser', done: false });
+  if (/\b(model|person|people|subject)\b/i.test(raw))
+    items.push({ text: '<b>Model release</b> — carry a signed release if publishing', done: false });
+
+  // Always last
+  items.push({ text: '<b>Review first frame</b> — histogram + focus check before committing', done: false });
+
+  const list = document.getElementById('checklist');
+  list.innerHTML = items.map(item => `
+    <li>
+      <span class="check-icon"></span>
+      <span class="check-text">${item.text}</span>
+    </li>`).join('');
+}
+
+// ── Copy ──────────────────────────────────────────────────────────────
+
+function copyTightened() {
+  const text = document.getElementById('tightenedOutput').textContent;
+  if (!text || document.getElementById('tightenedOutput').classList.contains('empty')) {
+    toast('Nothing to copy yet'); return;
+  }
+  copyText(text, 'copyPromptBtn');
+}
+
+function copyChecklist() {
+  const items = document.querySelectorAll('#checklist li .check-text');
+  if (!items.length) { toast('No checklist yet'); return; }
+  const lines = Array.from(items).map((el,i) => `${i+1}. ${el.innerText}`).join('\n');
+  copyText('Shoot Checklist\n' + lines, 'copyCheckBtn');
+}
+
+function copyText(text, btnId) {
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById(btnId);
+    btn.textContent = '✓ Copied';
+    btn.classList.add('copied');
+    toast('Copied to clipboard');
+    setTimeout(()=>{ btn.textContent='Copy'; btn.classList.remove('copied'); }, 2000);
+  }).catch(() => {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    toast('Copied!');
+  });
+}
+
+// ── Reset ─────────────────────────────────────────────────────────────
+
+function resetAll() {
+  document.getElementById('rawPrompt').value = '';
+  selectedTags = {mood:[],subject:[],lens:[],style:[]};
+  customTags = {mood:[],subject:[],lens:[],style:[]};
+  selectedCrop = null;
+  updateFilmstrip(0);
+  analyzeDrift('');
+  buildTagGroups();
+  buildCropGrid();
+  buildChecklist();
+  const out = document.getElementById('tightenedOutput');
+  out.textContent = 'Build your prompt above, then tap Tighten.';
+  out.classList.add('empty');
+  toast('Reset ✓');
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────
+
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove('show'), 1800);
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

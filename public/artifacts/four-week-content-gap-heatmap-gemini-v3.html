@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4-Week Content Heatmap Planner</title>
+    <style>
+        :root {
+            --bg-main: #121214;
+            --bg-card: #1a1a1e;
+            --bg-input: #26262b;
+            --border: #33333a;
+            --text-main: #f1f1f3;
+            --text-muted: #9898a3;
+            --accent: #3b82f6;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
+            
+            --h-0: #1a1a1e;
+            --h-1: #1e293b;
+            --h-2: #1e3a8a;
+            --h-3: #1d4ed8;
+            --h-max: #2563eb;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: var(--bg-main); color: var(--text-main); padding: 12px; line-height: 1.4; }
+        h1, h2, h3 { font-weight: 600; margin-bottom: 8px; }
+        h1 { font-size: 1.3rem; }
+        h2 { font-size: 1.1rem; color: var(--text-main); border-bottom: 1px solid var(--border); padding-bottom: 4px; margin-top: 12px; }
+        
+        .container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 16px; }
+        @media (min-width: 768px) { .container { grid-template-columns: 320px 1fr; } }
+
+        .panel { background: var(--bg-card); border: 1px solid var(--border); padding: 12px; border-radius: 8px; height: max-content; }
+        .input-group { margin-bottom: 10px; }
+        label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 3px; font-weight: 500; }
+        input, select { width: 100%; background: var(--bg-input); border: 1px solid var(--border); color: var(--text-main); padding: 8px; border-radius: 6px; font-size: 0.9rem; }
+        input:focus, select:focus { border-color: var(--accent); outline: none; }
+
+        button { width: 100%; background: var(--accent); color: white; border: none; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem; margin-top: 8px; }
+        button:active { opacity: 0.9; }
+        button.secondary { background: transparent; border: 1px solid var(--border); color: var(--text-main); margin-top: 4px; }
+        .button-row { display: flex; gap: 8px; }
+
+        /* Calendar Matrix */
+        .calendar-header { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; margin-bottom: 4px; }
+        .day-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+        
+        .day-card { background: var(--h-0); border: 1px solid var(--border); border-radius: 6px; min-height: 85px; padding: 6px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; position: relative; transition: background 0.2s, transform 0.1s; }
+        .day-card:active { transform: scale(0.97); }
+        .day-card.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+        .day-meta { display: flex; justify-content: space-between; align-items: center; }
+        .day-num { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
+        .day-count { font-size: 0.7rem; background: rgba(0,0,0,0.4); padding: 1px 5px; border-radius: 4px; color: var(--text-main); font-weight: bold; }
+        .day-items { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; overflow: hidden; }
+        .item-dot { font-size: 0.65rem; padding: 2px 4px; border-radius: 4px; background: rgba(255,255,255,0.08); color: var(--text-main); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-left: 2px solid var(--accent); }
+
+        /* Heatmap Intensities */
+        .heat-0 { background-color: var(--h-0); }
+        .heat-1 { background-color: var(--h-1); border-color: #2e405e; }
+        .heat-2 { background-color: var(--h-2); border-color: #2b4cb0; }
+        .heat-3 { background-color: var(--h-3); border-color: #3b66f5; }
+        .heat-max { background-color: var(--h-max); border-color: #60a5fa; }
+
+        /* Audit Panel */
+        .audit-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+        .audit-item { display: flex; align-items: flex-start; gap: 8px; padding: 10px; border-radius: 6px; background: rgba(255,255,255,0.02); border-left: 4px solid var(--border); font-size: 0.85rem; }
+        .audit-item.danger { border-left-color: var(--danger); background: rgba(239, 68, 68, 0.05); }
+        .audit-item.warning { border-left-color: var(--warning); background: rgba(245, 158, 11, 0.05); }
+        .audit-item.success { border-left-color: var(--success); background: rgba(16, 185, 129, 0.05); }
+        .audit-title { font-weight: 600; margin-bottom: 2px; }
+        .audit-desc { color: var(--text-muted); font-size: 0.8rem; }
+
+        /* Post Drawer List */
+        .post-drawer { margin-top: 12px; max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+        .post-drawer-item { background: var(--bg-input); border: 1px solid var(--border); padding: 8px; border-radius: 6px; font-size: 0.8rem; position: relative; display: flex; flex-direction: column; justify-content: space-between; }
+        .post-drawer-meta { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 2px; }
+        .post-drawer-title { font-weight: 500; color: var(--text-main); margin-bottom: 2px; word-break: break-word; }
+        .post-drawer-cta { font-size: 0.7rem; color: var(--text-muted); }
+        .delete-btn { position: absolute; top: 6px; right: 8px; color: var(--danger); cursor: pointer; font-weight: bold; font-size: 1.1rem; border: none; background: none; width: auto; margin: 0; padding: 0; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="panel">
+        <h1>Content Matrix Setup</h1>
+        
+        <div class="input-group" style="margin-top: 12px;">
+            <label>Campaign Pillars</label>
+            <input type="text" id="p1" value="Product Launch" style="margin-bottom:4px;">
+            <input type="text" id="p2" value="Authority/Value" style="margin-bottom:4px;">
+            <input type="text" id="p3" value="Case Studies" style="margin-bottom:4px;">
+            <input type="text" id="p4" value="Community/Engagement" style="margin-bottom:4px;">
+        </div>
+
+        <h2>Create / Edit Post</h2>
+        <div class="input-group" style="margin-top:8px;">
+            <label>Target Day (1-28)</label>
+            <input type="number" id="postDay" min="1" max="28" value="1">
+        </div>
+        <div class="input-group">
+            <label>Post Title/Hook</label>
+            <input type="text" id="postTitle" placeholder="E.g., 3 mistakes holding you back...">
+        </div>
+        <div class="input-group">
+            <label>Channel</label>
+            <select id="postChannel">
+                <option value="LinkedIn">LinkedIn</option>
+                <option value="X/Twitter">X/Twitter</option>
+                <option value="Instagram">Instagram</option>
+                <option value="Threads">Threads</option>
+                <option value="Email">Email List</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label>Pillar Alignment</label>
+            <select id="postPillar">
+                <option value="1">Pillar 1</option>
+                <option value="2">Pillar 2</option>
+                <option value="3">Pillar 3</option>
+                <option value="4">Pillar 4</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label>Call to Action (CTA)</label>
+            <select id="postCta">
+                <option value="None">None / Pure Value</option>
+                <option value="Lead Magnet">Free Resource / Lead Magnet</option>
+                <option value="Direct Sale">Direct Offer / Book Call</option>
+                <option value="Engagement">Drop a Comment / Share</option>
+            </select>
+        </div>
+        <button id="savePostBtn">Schedule Post</button>
+        
+        <div class="button-row">
+            <button class="secondary" id="exportBtn">Export JSON</button>
+            <button class="secondary" id="clearBtn">Clear Plan</button>
+        </div>
+
+        <h2 id="drawerTitle">Day 1 Scheduled Posts</h2>
+        <div class="post-drawer" id="postDrawer"></div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div class="panel">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap: wrap; gap: 8px;">
+                <h1>4-Week Calendar Grid</h1>
+                <div style="display:flex; gap:4px; font-size:0.7rem; color:var(--text-muted); align-items:center;">
+                    <span>Heatmap Index:</span>
+                    <span style="padding:2px 4px; background:var(--h-0); border-radius:3px;">0</span>
+                    <span style="padding:2px 4px; background:var(--h-1); border-radius:3px;">1</span>
+                    <span style="padding:2px 4px; background:var(--h-2); border-radius:3px;">2</span>
+                    <span style="padding:2px 4px; background:var(--h-3); border-radius:3px;">3</span>
+                    <span style="padding:2px 4px; background:var(--h-max); border-radius:3px;">4+</span>
+                </div>
+            </div>
+            
+            <div class="calendar-header">
+                <div class="day-label">Mon</div><div class="day-label">Tue</div><div class="day-label">Wed</div>
+                <div class="day-label">Thu</div><div class="day-label">Fri</div><div class="day-label">Sat</div>
+                <div class="day-label">Sun</div>
+            </div>
+            <div class="calendar-grid" id="calendarGrid"></div>
+        </div>
+
+        <div class="panel">
+            <h1>Automated Strategy Diagnostics</h1>
+            <div class="audit-list" id="auditList"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // State initialization with safe sample data schema
+    let posts = JSON.parse(localStorage.getItem('content_planner_secure_posts')) || [
+        { id: 1, day: 1, title: 'How to scale application logic cleanly', channel: 'LinkedIn', pillar: '2', cta: 'Engagement' },
+        { id: 2, day: 1, title: 'Complete structural database architecture template', channel: 'LinkedIn', pillar: '2', cta: 'Lead Magnet' },
+        { id: 3, day: 1, title: 'Opening up 3 application consulting slots', channel: 'Email', pillar: '1', cta: 'Direct Sale' },
+        { id: 4, day: 2, title: 'Quick optimization tricks for responsive mobile web views', channel: 'Instagram', pillar: '4', cta: 'None' },
+        { id: 5, day: 5, title: 'Case study: Scaling infrastructure to 100k concurrent requests', channel: 'LinkedIn', pillar: '3', cta: 'Lead Magnet' }
+    ];
+
+    // DOM Nodes
+    const grid = document.getElementById('calendarGrid');
+    const auditList = document.getElementById('auditList');
+    const postDrawer = document.getElementById('postDrawer');
+    const drawerTitle = document.getElementById('drawerTitle');
+    
+    // Form Inputs
+    const postDayInput = document.getElementById('postDay');
+    const postTitleInput = document.getElementById('postTitle');
+    const postChannelInput = document.getElementById('postChannel');
+    const postPillarInput = document.getElementById('postPillar');
+    const postCtaInput = document.getElementById('postCta');
+
+    const pillarInputs = {
+        '1': document.getElementById('p1'),
+        '2': document.getElementById('p2'),
+        '3': document.getElementById('p3'),
+        '4': document.getElementById('p4')
+    };
+
+    function getPillarName(num) {
+        const inputElement = pillarInputs[num];
+        const val = inputElement ? inputElement.value.trim() : '';
+        return val || `Pillar ${num}`;
+    }
+
+    function saveState() {
+        localStorage.setItem('content_planner_secure_posts', JSON.stringify(posts));
+        render();
+    }
+
+    function render() {
+        const activeDay = parseInt(postDayInput.value) || 1;
+        renderGrid(activeDay);
+        renderAudit();
+        renderDrawer(activeDay);
+    }
+
+    function renderGrid(activeDay) {
+        const cardsFragment = document.createDocumentFragment();
+        
+        const dayMaps = Array.from({ length: 29 }, () => []);
+        posts.forEach(p => {
+            if (p.day >= 1 && p.day <= 28) {
+                dayMaps[p.day].push(p);
+            }
+        });
+
+        for (let d = 1; d <= 28; d++) {
+            const dayPosts = dayMaps[d];
+            const count = dayPosts.length;
+            
+            let heatClass = 'heat-0';
+            if (count === 1) heatClass = 'heat-1';
+            else if (count === 2) heatClass = 'heat-2';
+            else if (count === 3) heatClass = 'heat-3';
+            else if (count > 3) heatClass = 'heat-max';
+
+            const card = document.createElement('div');
+            card.className = `day-card ${heatClass}`;
+            if (d === activeDay) {
+                card.classList.add('selected');
+            }
+
+            // Safe metadata panel
+            const metaContainer = document.createElement('div');
+            metaContainer.className = 'day-meta';
+            
+            const numSpan = document.createElement('span');
+            numSpan.className = 'day-num';
+            numSpan.textContent = d.toString();
+            metaContainer.appendChild(numSpan);
+
+            if (count > 0) {
+                const countSpan = document.createElement('span');
+                countSpan.className = 'day-count';
+                countSpan.textContent = count.toString();
+                metaContainer.appendChild(countSpan);
+            }
+            card.appendChild(metaContainer);
+
+            // Safe item dot previews
+            const itemsContainer = document.createElement('div');
+            itemsContainer.className = 'day-items';
+
+            dayPosts.slice(0, 3).forEach(p => {
+                const itemDot = document.createElement('div');
+                itemDot.className = 'item-dot';
+                itemDot.setAttribute('title', p.title);
+                itemDot.textContent = `[${p.channel[0]}] ${p.title}`;
+                itemsContainer.appendChild(itemDot);
+            });
+
+            if (count > 3) {
+                const moreDot = document.createElement('div');
+                moreDot.className = 'item-dot';
+                moreDot.style.background = 'transparent';
+                moreDot.style.textAlign = 'center';
+                moreDot.textContent = `+${count - 3} more`;
+                itemsContainer.appendChild(moreDot);
+            }
+
+            card.appendChild(itemsContainer);
+
+            card.addEventListener('click', () => {
+                postDayInput.value = d.toString();
+                render();
+            });
+
+            cardsFragment.appendChild(card);
+        }
+        
+        grid.replaceChildren(cardsFragment);
+    }
+
+    function renderDrawer(day) {
+        drawerTitle.textContent = `Day ${day} Scheduled Posts`;
+        
+        const drawerFragment = document.createDocumentFragment();
+        const dayPosts = posts.filter(p => p.day === day);
+        
+        if (dayPosts.length === 0) {
+            const emptyNotice = document.createElement('div');
+            emptyNotice.style.fontSize = '0.8rem';
+            emptyNotice.style.color = 'var(--text-muted)';
+            emptyNotice.style.textAlign = 'center';
+            emptyNotice.style.padding = '12px';
+            emptyNotice.textContent = 'No posts scheduled for this day.';
+            drawerFragment.appendChild(emptyNotice);
+            postDrawer.replaceChildren(drawerFragment);
+            return;
+        }
+
+        dayPosts.forEach(p => {
+            const item = document.createElement('div');
+            item.className = 'post-drawer-item';
+
+            const delBtn = document.createElement('button');
+            delBtn.className = 'delete-btn';
+            delBtn.textContent = '×';
+            delBtn.setAttribute('aria-label', 'Delete post');
+            delBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                posts = posts.filter(item => item.id !== p.id);
+                saveState();
+            });
+            item.appendChild(delBtn);
+
+            const metaRow = document.createElement('div');
+            metaRow.className = 'post-drawer-meta';
+            metaRow.textContent = `${p.channel} | ${getPillarName(p.pillar)}`;
+            item.appendChild(metaRow);
+
+            const titleRow = document.createElement('div');
+            titleRow.className = 'post-drawer-title';
+            titleRow.textContent = p.title;
+            item.appendChild(titleRow);
+
+            const ctaRow = document.createElement('div');
+            ctaRow.className = 'post-drawer-cta';
+            ctaRow.textContent = `CTA: ${p.cta}`;
+            item.appendChild(ctaRow);
+
+            drawerFragment.appendChild(item);
+        });
+
+        postDrawer.replaceChildren(drawerFragment);
+    }
+
+    function renderAudit() {
+        const auditFragment = document.createDocumentFragment();
+        
+        const dayMap = Array.from({ length: 29 }, () => []);
+        posts.forEach(p => { 
+            if (p.day <= 28) dayMap[p.day].push(p); 
+        });
+
+        // 1. Fatigue Analysis 
+        let fatigueWarnings = [];
+        let consecutiveChannels = { count: 1, type: '' };
+        let consecutivePillars = { count: 1, type: '' };
+
+        for (let d = 1; d <= 28; d++) {
+            dayMap[d].forEach(p => {
+                if (p.channel === consecutiveChannels.type) {
+                    consecutiveChannels.count++;
+                    if (consecutiveChannels.count === 3) {
+                        fatigueWarnings.push(`Channel Fatigue: ${p.channel} scheduled consecutively 3+ times around Day ${d}.`);
+                    }
+                } else {
+                    consecutiveChannels = { count: 1, type: p.channel };
+                }
+
+                if (p.pillar === consecutivePillars.type) {
+                    consecutivePillars.count++;
+                    if (consecutivePillars.count === 3) {
+                        fatigueWarnings.push(`Pillar Fatigue: "${getPillarName(p.pillar)}" repeated consecutively 3+ times around Day ${d}.`);
+                    }
+                } else {
+                    consecutivePillars = { count: 1, type: p.pillar };
+                }
+            });
+        }
+
+        // 2. Empty Stretches
+        let emptyStretches = [];
+        let currentStretchStart = null;
+        
+        for (let d = 1; d <= 28; d++) {
+            if (dayMap[d].length === 0) {
+                if (currentStretchStart === null) currentStretchStart = d;
+            } else {
+                if (currentStretchStart !== null) {
+                    let len = d - currentStretchStart;
+                    if (len >= 3) emptyStretches.push(`Days ${currentStretchStart}–${d-1} (${len} days)`);
+                    currentStretchStart = null;
+                }
+            }
+        }
+        if (currentStretchStart !== null) {
+            let len = 29 - currentStretchStart;
+            if (len >= 3) emptyStretches.push(`Days ${currentStretchStart}–28 (${len} days)`);
+        }
+
+        // 3. Overstuffed Content Blocks
+        let overstuffedDays = [];
+        for (let d = 1; d <= 28; d++) {
+            if (dayMap[d].length > 2) overstuffedDays.push(`Day ${d} (${dayMap[d].length} posts)`);
+        }
+
+        // 4. Missing Call to Action
+        let missingCtaCount = posts.filter(p => p.cta === 'None').length;
+
+        // Compile blocks into fragment safely via Node generators
+        auditFragment.appendChild(createAuditNode(
+            emptyStretches.length > 0 ? 'warning' : 'success',
+            'Distribution Coverage (Empty Stretches)',
+            emptyStretches.length > 0 ? `Unscheduled gaps of 3+ days detected: ${emptyStretches.join(', ')}.` : 'Excellent. No dangerous empty content stretches found across the 4 weeks.'
+        ));
+
+        auditFragment.appendChild(createAuditNode(
+            overstuffedDays.length > 0 ? 'warning' : 'success',
+            'Day Fatigue (Overstuffed Spikes)',
+            overstuffedDays.length > 0 ? `High concentration warning on: ${overstuffedDays.join(', ')}. Risk of audience fatigue.` : 'Safe payload distribution. No single day exceeds 2 posts.'
+        ));
+
+        if (posts.length > 0) {
+            const pct = Math.round((missingCtaCount / posts.length) * 100);
+            auditFragment.appendChild(createAuditNode(
+                pct > 40 ? 'danger' : (pct > 20 ? 'warning' : 'success'),
+                'Conversion Health (Missing CTAs)',
+                `${missingCtaCount} out of ${posts.length} posts (${pct}%) have no conversion directive. High concentrations of pure-value posts can lower short-term direct attribution.`
+            ));
+        }
+
+        if (fatigueWarnings.length > 0) {
+            fatigueWarnings.forEach(warningText => {
+                auditFragment.appendChild(createAuditNode('danger', 'Format & Pillar Fatigue', warningText));
+            });
+        } else if (posts.length > 0) {
+            auditFragment.appendChild(createAuditNode('success', 'Sequence Variety Matrix', 'Perfect structural variety. Channels and marketing pillars alternate correctly to protect asset conversion cycles.'));
+        }
+
+        auditList.replaceChildren(auditFragment);
+    }
+
+    function createAuditNode(status, title, desc) {
+        const item = document.createElement('div');
+        item.className = `audit-item ${status}`;
+        
+        const contentContainer = document.createElement('div');
+        
+        const titleNode = document.createElement('div');
+        titleNode.className = 'audit-title';
+        titleNode.textContent = title;
+        
+        const descNode = document.createElement('div');
+        descNode.className = 'audit-desc';
+        descNode.textContent = desc;
+        
+        contentContainer.appendChild(titleNode);
+        contentContainer.appendChild(descNode);
+        item.appendChild(contentContainer);
+        return item;
+    }
+
+    // Event Handling Matrix
+    document.getElementById('savePostBtn').addEventListener('click', () => {
+        const title = postTitleInput.value.trim();
+        if (!title) return;
+
+        const dayValue = parseInt(postDayInput.value) || 1;
+        const boundedDay = Math.max(1, Math.min(28, dayValue));
+
+        const newPost = {
+            id: Date.now() + Math.random(),
+            day: boundedDay,
+            title: title,
+            channel: postChannelInput.value,
+            pillar: postPillarInput.value,
+            cta: postCtaInput.value
+        };
+
+        posts.push(newPost);
+        postTitleInput.value = '';
+        saveState();
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', () => {
+        if (confirm('Purge current content plan data?')) {
+            posts = [];
+            saveState();
+        }
+    });
+
+    document.getElementById('exportBtn').addEventListener('click', () => {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(posts, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", "marketing_content_plan.json");
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+    });
+
+    postDayInput.addEventListener('input', (e) => {
+        let val = parseInt(e.target.value) || 1;
+        if (val < 1) val = 1;
+        if (val > 28) val = 28;
+        renderDrawer(val);
+        
+        // Highlight active card directly to avoid resetting layout structure
+        document.querySelectorAll('.day-card').forEach((card, idx) => {
+            if (idx + 1 === val) card.classList.add('selected');
+            else card.classList.remove('selected');
+        });
+    });
+
+    // Strategy structural change observers
+    Object.values(pillarInputs).forEach(inputElement => {
+        inputElement.addEventListener('change', render);
+    });
+
+    // Initialization lifecycle execution
+    render();
+</script>
+</body>
+</html>

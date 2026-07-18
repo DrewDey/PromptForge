@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Content Proof Lab</title>
+
+    <style>
+
+        body {
+
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+
+            line-height: 1.6;
+
+            max-width: 1000px;
+
+            margin: 0 auto;
+
+            padding: 20px;
+
+            color: #333;
+
+        }
+
+        .section {
+
+            background: #f8f9fa;
+
+            border-radius: 8px;
+
+            padding: 20px;
+
+            margin-bottom: 20px;
+
+        }
+
+        .serp-card {
+
+            border: 1px solid #ddd;
+
+            border-radius: 4px;
+
+            padding: 15px;
+
+            margin-bottom: 15px;
+
+            background: white;
+
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+
+        }
+
+        .serp-title {
+
+            color: #1a0dab;
+
+            font-size: 18px;
+
+            margin-bottom: 5px;
+
+            text-decoration: none;
+
+        }
+
+        .serp-url {
+
+            color: #006621;
+
+            font-size: 14px;
+
+            margin-bottom: 8px;
+
+        }
+
+        .serp-desc {
+
+            color: #545454;
+
+            font-size: 14px;
+
+        }
+
+        .mismatch {
+
+            background-color: #fff3cd;
+
+            border-left: 4px solid #ffc107;
+
+        }
+
+        textarea, input {
+
+            width: 100%;
+
+            padding: 8px;
+
+            margin-bottom: 10px;
+
+            border: 1px solid #ddd;
+
+            border-radius: 4px;
+
+        }
+
+        button {
+
+            background: #007bff;
+
+            color: white;
+
+            border: none;
+
+            padding: 8px 16px;
+
+            border-radius: 4px;
+
+            cursor: pointer;
+
+        }
+
+        button:hover {
+
+            background: #0056b3;
+
+        }
+
+        .proof-points {
+
+            display: flex;
+
+            flex-wrap: wrap;
+
+            gap: 10px;
+
+            margin-bottom: 15px;
+
+        }
+
+        .proof-point {
+
+            background: #e9ecef;
+
+            padding: 5px 10px;
+
+            border-radius: 20px;
+
+            font-size: 14px;
+
+            display: flex;
+
+            align-items: center;
+
+        }
+
+        .proof-point-text {
+
+            flex-grow: 1;
+
+            margin-right: 5px;
+
+        }
+
+        .export-section {
+
+            background: #e9ecef;
+
+            padding: 15px;
+
+            border-radius: 4px;
+
+            margin-top: 20px;
+
+        }
+
+        h2 {
+
+            color: #007bff;
+
+            border-bottom: 1px solid #eee;
+
+            padding-bottom: 5px;
+
+        }
+
+        .add-btn {
+
+            background: #28a745;
+
+            margin-bottom: 10px;
+
+        }
+
+        .add-btn:hover {
+
+            background: #218838;
+
+        }
+
+        .remove-btn {
+
+            background: #dc3545;
+
+            padding: 2px 6px;
+
+            font-size: 12px;
+
+            line-height: 1;
+
+        }
+
+        .remove-btn:hover {
+
+            background: #c82333;
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <h1>Content Proof Lab</h1>
+
+
+
+    <div class="section">
+
+        <h2>Page Promise</h2>
+
+        <textarea id="pagePromise" rows="3" placeholder="What is the core promise of this page?"></textarea>
+
+    </div>
+
+
+
+    <div class="section">
+
+        <h2>Search Intent</h2>
+
+        <textarea id="searchIntent" rows="3" placeholder="What is the user trying to accomplish?"></textarea>
+
+    </div>
+
+
+
+    <div class="section">
+
+        <h2>Title/Meta Options</h2>
+
+        <div id="titleOptions">
+
+            <div class="title-option">
+
+                <input type="text" class="title-input" placeholder="Title option 1">
+
+                <textarea class="meta-input" rows="2" placeholder="Meta description"></textarea>
+
+            </div>
+
+        </div>
+
+        <button id="addTitleOption" class="add-btn">Add Another Option</button>
+
+    </div>
+
+
+
+    <div class="section">
+
+        <h2>Proof Points</h2>
+
+        <div class="proof-points" id="proofPoints">
+
+            <div class="proof-point">
+
+                <span class="proof-point-text" contenteditable="true">Key benefit 1</span>
+
+                <button class="remove-btn">×</button>
+
+            </div>
+
+        </div>
+
+        <button id="addProofPoint" class="add-btn">Add Proof Point</button>
+
+    </div>
+
+
+
+    <div class="section">
+
+        <h2>SERP Preview</h2>
+
+        <div id="serpPreview">
+
+            <!-- SERP cards will be generated here -->
+
+        </div>
+
+    </div>
+
+
+
+    <div class="section export-section">
+
+        <h2>Editor Notes</h2>
+
+        <textarea id="editorNotes" rows="6" placeholder="Notes for the editor..."></textarea>
+
+        <button id="generateNotes">Generate Notes</button>
+
+        <button id="exportData">Export Data</button>
+
+    </div>
+
+
+
+    <script>
+
+        document.addEventListener('DOMContentLoaded', function() {
+
+            // DOM elements
+
+            const addTitleOptionBtn = document.getElementById('addTitleOption');
+
+            const addProofPointBtn = document.getElementById('addProofPoint');
+
+            const generateNotesBtn = document.getElementById('generateNotes');
+
+            const exportDataBtn = document.getElementById('exportData');
+
+            const titleOptionsContainer = document.getElementById('titleOptions');
+
+            const proofPointsContainer = document.getElementById('proofPoints');
+
+            const serpPreviewContainer = document.getElementById('serpPreview');
+
+            const pagePromiseInput = document.getElementById('pagePromise');
+
+            const searchIntentInput = document.getElementById('searchIntent');
+
+            const editorNotesInput = document.getElementById('editorNotes');
+
+
+
+            // Add title option
+
+            addTitleOptionBtn.addEventListener('click', function() {
+
+                const optionCount = titleOptionsContainer.children.length + 1;
+
+                const newOption = document.createElement('div');
+
+                newOption.className = 'title-option';
+
+
+
+                const titleInput = document.createElement('input');
+
+                titleInput.type = 'text';
+
+                titleInput.className = 'title-input';
+
+                titleInput.placeholder = `Title option ${optionCount}`;
+
+
+
+                const metaInput = document.createElement('textarea');
+
+                metaInput.className = 'meta-input';
+
+                metaInput.rows = 2;
+
+                metaInput.placeholder = 'Meta description';
+
+
+
+                newOption.appendChild(titleInput);
+
+                newOption.appendChild(metaInput);
+
+                titleOptionsContainer.appendChild(newOption);
+
+
+
+                // Update preview
+
+                generateSERPPreview();
+
+            });
+
+
+
+            // Add proof point
+
+            addProofPointBtn.addEventListener('click', function() {
+
+                const pointCount = proofPointsContainer.children.length + 1;
+
+                const newPoint = document.createElement('div');
+
+                newPoint.className = 'proof-point';
+
+
+
+                const pointText = document.createElement('span');
+
+                pointText.className = 'proof-point-text';
+
+                pointText.contentEditable = true;
+
+                pointText.textContent = `Key benefit ${pointCount}`;
+
+
+
+                const removeBtn = document.createElement('button');
+
+                removeBtn.className = 'remove-btn';
+
+                removeBtn.textContent = '×';
+
+                removeBtn.addEventListener('click', function() {
+
+                    newPoint.remove();
+
+                    generateSERPPreview();
+
+                });
+
+
+
+                newPoint.appendChild(pointText);
+
+                newPoint.appendChild(removeBtn);
+
+                proofPointsContainer.appendChild(newPoint);
+
+
+
+                // Update preview
+
+                generateSERPPreview();
+
+            });
+
+
+
+            // Remove proof point (event delegation)
+
+            proofPointsContainer.addEventListener('click', function(e) {
+
+                if (e.target.classList.contains('remove-btn')) {
+
+                    e.target.parentElement.remove();
+
+                    generateSERPPreview();
+
+                }
+
+            });
+
+
+
+            // Generate SERP preview
+
+            function generateSERPPreview() {
+
+                serpPreviewContainer.innerHTML = '';
+
+
+
+                const titleOptions = document.querySelectorAll('.title-option');
+
+                const proofPoints = Array.from(document.querySelectorAll('.proof-point-text'))
+
+                    .map(el => el.textContent);
+
+                const pagePromise = pagePromiseInput.value.trim();
+
+                const searchIntent = searchIntentInput.value.trim();
+
+
+
+                titleOptions.forEach((option, index) => {
+
+                    const titleInput = option.querySelector('.title-input');
+
+                    const metaInput = option.querySelector('.meta-input');
+
+                    const title = titleInput.value.trim();
+
+                    const meta = metaInput.value.trim();
+
+
+
+                    const card = document.createElement('div');
+
+                    card.className = 'serp-card';
+
+
+
+                    // Check for mismatches
+
+                    if (pagePromise && title && !title.toLowerCase().includes(pagePromise.toLowerCase())) {
+
+                        card.classList.add('mismatch');
+
+                    }
+
+
+
+                    const titleElement = document.createElement('h3');
+
+                    titleElement.className = 'serp-title';
+
+                    titleElement.textContent = title || 'Untitled Option';
+
+
+
+                    const urlElement = document.createElement('div');
+
+                    urlElement.className = 'serp-url';
+
+                    urlElement.textContent = `https://example.com/page-title-${index + 1}`;
+
+
+
+                    const descElement = document.createElement('div');
+
+                    descElement.className = 'serp-desc';
+
+                    descElement.textContent = meta || 'No meta description provided';
+
+
+
+                    const proofPointsElement = document.createElement('div');
+
+                    proofPointsElement.style.marginTop = '10px';
+
+                    proofPointsElement.style.fontSize = '12px';
+
+                    proofPointsElement.style.color = '#666';
+
+
+
+                    const proofPointsLabel = document.createElement('strong');
+
+                    proofPointsLabel.textContent = 'Proof Points: ';
+
+                    proofPointsElement.appendChild(proofPointsLabel);
+
+                    proofPointsElement.appendChild(document.createTextNode(proofPoints.join(', ')));
+
+
+
+                    card.appendChild(titleElement);
+
+                    card.appendChild(urlElement);
+
+                    card.appendChild(descElement);
+
+                    card.appendChild(proofPointsElement);
+
+
+
+                    serpPreviewContainer.appendChild(card);
+
+                });
+
+            }
+
+
+
+            // Generate editor notes
+
+            function generateEditorNotes() {
+
+                const pagePromise = pagePromiseInput.value;
+
+                const searchIntent = searchIntentInput.value;
+
+                const proofPoints = Array.from(document.querySelectorAll('.proof-point-text'))
+
+                    .map(el => el.textContent);
+
+                const titleOptions = document.querySelectorAll('.title-option');
+
+
+
+                let notes = `EDITOR NOTES\n================\n\n`;
+
+                notes += `**Page Promise:** ${pagePromise}\n\n`;
+
+                notes += `**Search Intent:** ${searchIntent}\n\n`;
+
+                notes += `**Proof Points:**\n- ${proofPoints.join('\n- ')}\n\n`;
+
+                notes += `**Title Options (${titleOptions.length}):**\n`;
+
+
+
+                titleOptions.forEach((option, index) => {
+
+                    const title = option.querySelector('.title-input').value;
+
+                    const meta = option.querySelector('.meta-input').value;
+
+                    notes += `\nOption ${index + 1}:\n- Title: "${title}"\n- Meta: "${meta}"\n`;
+
+                });
+
+
+
+                notes += `\n**Recommendations:**\n`;
+
+                notes += `- Verify all titles include the core page promise\n`;
+
+                notes += `- Ensure meta descriptions align with search intent\n`;
+
+                notes += `- Check that proof points are reflected in the content\n`;
+
+
+
+                editorNotesInput.value = notes;
+
+            }
+
+
+
+            // Export data as JSON
+
+            function exportData() {
+
+                const data = {
+
+                    pagePromise: pagePromiseInput.value,
+
+                    searchIntent: searchIntentInput.value,
+
+                    titleOptions: Array.from(document.querySelectorAll('.title-option')).map(option => ({
+
+                        title: option.querySelector('.title-input').value,
+
+                        meta: option.querySelector('.meta-input').value
+
+                    })),
+
+                    proofPoints: Array.from(document.querySelectorAll('.proof-point-text')).map(el => el.textContent),
+
+                    editorNotes: editorNotesInput.value
+
+                };
+
+
+
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement('a');
+
+                a.href = url;
+
+                a.download = 'content-proof-data.json';
+
+                document.body.appendChild(a);
+
+                a.click();
+
+                document.body.removeChild(a);
+
+            }
+
+
+
+            // Event listeners for input changes
+
+            document.addEventListener('input', function(e) {
+
+                if (e.target.classList.contains('title-input') ||
+
+                    e.target.classList.contains('meta-input') ||
+
+                    e.target.id === 'pagePromise' ||
+
+                    e.target.id === 'searchIntent') {
+
+                    generateSERPPreview();
+
+                }
+
+            });
+
+
+
+            // Button event listeners
+
+            generateNotesBtn.addEventListener('click', generateEditorNotes);
+
+            exportDataBtn.addEventListener('click', exportData);
+
+
+
+            // Initialize
+
+            generateSERPPreview();
+
+        });
+
+    </script>
+
+</body>
+
+</html>

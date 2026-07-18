@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Phone-Chat Storyboard Studio</title>
+  <style>
+    :root {
+      --bg: #f7f8fb;
+      --panel: #ffffff;
+      --text: #1f2937;
+      --text-secondary: #6b7280;
+      --border: #e5e7eb;
+      --primary: #4f46e5;
+      --primary-light: #eef2ff;
+      --accent: #0ea5e9;
+      --danger: #ef4444;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --shadow: 0 4px 24px rgba(0,0,0,0.06);
+      --radius: 14px;
+      --header-height: 60px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
+
+    header {
+      position: fixed; top: 0; left: 0; right: 0; height: var(--header-height);
+      background: var(--panel); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; z-index: 100; box-shadow: var(--shadow);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 18px; }
+    .brand-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 0 4px var(--primary-light); }
+    .actions { display: flex; gap: 10px; align-items: center; }
+
+    button {
+      border: 1px solid var(--border); background: var(--panel); color: var(--text);
+      padding: 8px 14px; border-radius: 10px; cursor: pointer; font-size: 13px;
+      font-weight: 600; transition: all .15s ease; display: inline-flex; align-items: center; gap: 6px;
+    }
+    button:hover { background: var(--bg); border-color: var(--primary); color: var(--primary); }
+    button.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    button.primary:hover { background: #4338ca; color: #fff; }
+    button.success { background: var(--success); color: #fff; border-color: var(--success); }
+    button.success:hover { background: #059669; color: #fff; }
+    button.danger { color: var(--danger); border-color: #fecaca; background: #fef2f2; }
+    button.danger:hover { background: var(--danger); color: #fff; }
+    button.ghost { border-color: transparent; background: transparent; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+
+    .app { display: grid; grid-template-columns: 280px 1fr 360px; height: 100vh; padding-top: var(--header-height); }
+    .panel { background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+    .panel:last-child { border-right: none; border-left: 1px solid var(--border); }
+    .panel-header { padding: 18px 20px 10px; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center; }
+    .panel-body { flex: 1; overflow-y: auto; padding: 0 20px 20px; }
+
+    .role-list { display: flex; flex-direction: column; gap: 10px; }
+    .role-card {
+      display: grid; grid-template-columns: 36px 1fr 28px; align-items: center; gap: 10px;
+      padding: 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg);
+    }
+    .role-avatar { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-size: 16px; color: #fff; font-weight: 700; }
+    .role-name { font-weight: 600; font-size: 14px; }
+    .role-meta { font-size: 11px; color: var(--text-secondary); }
+    .role-card.active { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-light); background: #fff; }
+    .role-edit { display: grid; grid-template-columns: 1fr 60px; gap: 8px; margin-bottom: 10px; }
+    .role-edit input, .role-edit select { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; }
+    .role-check { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+
+    .stage { background: var(--bg); display: flex; flex-direction: column; }
+    .stage-toolbar { padding: 12px 20px; display: flex; gap: 12px; align-items: center; border-bottom: 1px solid var(--border); background: var(--panel); flex-wrap: wrap; }
+    .stage-toolbar label { font-size: 12px; color: var(--text-secondary); font-weight: 600; }
+    .stage-toolbar input, .stage-toolbar select { padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; }
+
+    .phone-wrap { flex: 1; overflow-y: auto; padding: 30px 20px; display: flex; justify-content: center; }
+    .phone {
+      width: 360px; min-height: 640px; background: #fff; border: 12px solid #111827; border-radius: 42px;
+      box-shadow: 0 24px 60px rgba(0,0,0,.18); display: flex; flex-direction: column; overflow: hidden; position: relative;
+    }
+    .phone-notch { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 140px; height: 26px; background: #111827; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; z-index: 5; }
+    .phone-status { height: 46px; background: #f3f4f6; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; font-size: 11px; font-weight: 700; color: #111827; padding-top: 12px; }
+    .phone-header { padding: 10px 16px; background: #f9fafb; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; gap: 10px; }
+    .phone-header .back { color: var(--primary); font-size: 18px; }
+    .phone-header .name { flex: 1; font-weight: 700; font-size: 15px; }
+    .phone-header .sub { font-size: 11px; color: var(--text-secondary); }
+    .chat { flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; background: #fff; }
+    .bubble {
+      max-width: 78%; padding: 10px 14px; border-radius: 18px; font-size: 14px; line-height: 1.45; position: relative;
+      cursor: pointer; transition: transform .1s;
+    }
+    .bubble:hover { transform: translateY(-1px); }
+    .bubble.them { align-self: flex-start; background: #e5e7eb; color: #111827; border-bottom-left-radius: 4px; }
+    .bubble.me { align-self: flex-end; background: var(--primary); color: #fff; border-bottom-right-radius: 4px; }
+    .bubble.status { align-self: center; background: transparent; color: var(--text-secondary); font-size: 11px; max-width: 90%; text-align: center; padding: 4px 0; }
+    .bubble.image { padding: 4px; background: transparent; }
+    .bubble.image img { width: 100%; border-radius: 14px; display: block; background: #e5e7eb; min-height: 120px; object-fit: cover; }
+    .bubble.voice { display: flex; align-items: center; gap: 10px; min-width: 140px; }
+    .bubble .time { font-size: 10px; opacity: .75; margin-top: 6px; display: block; text-align: right; }
+    .bubble.selected { outline: 3px solid var(--accent); outline-offset: 2px; }
+    .beat-num { position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 10px; font-weight: 800; display: grid; place-items: center; }
+
+    .add-beat-bar { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; padding: 12px 16px; background: #f9fafb; border-top: 1px solid var(--border); }
+    .add-beat-bar button { justify-content: center; font-size: 12px; padding: 8px; }
+
+    .empty-state { color: var(--text-secondary); font-size: 13px; text-align: center; padding: 40px 10px; }
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-size: 12px; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .03em; }
+    .field input, .field textarea, .field select {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 13px; font-family: inherit;
+    }
+    .field textarea { resize: vertical; min-height: 80px; }
+    .field .hint { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .tag {
+      font-size: 11px; padding: 4px 10px; border-radius: 20px; background: var(--bg); border: 1px solid var(--border);
+      cursor: pointer; user-select: none;
+    }
+    .tag.active { background: var(--primary-light); border-color: var(--primary); color: var(--primary); font-weight: 700; }
+    .coherence-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 6px 10px; border-radius: 20px; font-weight: 700; }
+    .coherence-badge.ok { background: #d1fae5; color: #065f46; }
+    .coherence-badge.warn { background: #fef3c7; color: #92400e; }
+    .coherence-badge.err { background: #fee2e2; color: #991b1b; }
+
+    .drawer-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 200; opacity: 0; pointer-events: none; transition: opacity .2s; }
+    .drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+    .drawer { position: fixed; top: 0; right: 0; width: 520px; max-width: 90vw; height: 100%; background: var(--panel); box-shadow: -8px 0 40px rgba(0,0,0,.12); transform: translateX(100%); transition: transform .25s ease; z-index: 201; display: flex; flex-direction: column; }
+    .drawer.open { transform: translateX(0); }
+    .drawer-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .drawer-body { flex: 1; overflow-y: auto; padding: 24px; }
+    .brief-output { white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13px; line-height: 1.6; background: #111827; color: #e5e7eb; padding: 20px; border-radius: var(--radius); min-height: 300px; overflow-wrap: break-word; }
+    .checks-list { display: flex; flex-direction: column; gap: 10px; }
+    .check-item { display: flex; gap: 12px; align-items: flex-start; padding: 12px; border-radius: 12px; border: 1px solid var(--border); }
+    .check-icon { font-size: 16px; line-height: 1; margin-top: 2px; }
+    .check-title { font-weight: 700; font-size: 13px; margin-bottom: 2px; }
+    .check-desc { font-size: 12px; color: var(--text-secondary); }
+
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); background: #111827; color: #fff; padding: 12px 20px; border-radius: 30px; font-size: 13px; font-weight: 600; opacity: 0; pointer-events: none; transition: all .25s; z-index: 300; box-shadow: var(--shadow); }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+
+    @media (max-width: 1100px) {
+      .app { grid-template-columns: 240px 1fr 320px; }
+      .phone { width: 320px; }
+    }
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; }
+      .panel { border-right: none; border-bottom: 1px solid var(--border); height: auto; max-height: 40vh; }
+      .panel:last-child { border-left: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="brand"><div class="brand-dot"></div><span>Phone-Chat Storyboard Studio</span></div>
+  <div class="actions" id="headerActions">
+    <input type="file" id="fileInput" accept=".json" hidden />
+    <button id="btnLoad">📂 Load</button>
+    <button id="btnSave">💾 Save JSON</button>
+    <button id="btnChecks" class="primary">✅ Coherence</button>
+    <button id="btnBrief" class="primary">🎬 Image Brief</button>
+  </div>
+</header>
+
+<div class="app">
+  <aside class="panel">
+    <div class="panel-header"><span>Sender Roles</span><button id="btnAddRole" class="ghost">+ Add</button></div>
+    <div class="panel-body">
+      <div class="role-edit">
+        <input id="newRoleName" placeholder="Name" />
+        <select id="newRoleColor">
+          <option value="#4f46e5">Indigo</option>
+          <option value="#0ea5e9">Sky</option>
+          <option value="#10b981">Green</option>
+          <option value="#f59e0b">Amber</option>
+          <option value="#ef4444">Red</option>
+          <option value="#8b5cf6">Violet</option>
+          <option value="#ec4899">Pink</option>
+          <option value="#6b7280">Gray</option>
+        </select>
+        <input id="newRoleEmoji" placeholder="Emoji avatar" maxlength="2" value="🧑" />
+        <label class="role-check"><input type="checkbox" id="newRoleIsMe" /> <span>This is "me"</span></label>
+      </div>
+      <div id="roleList" class="role-list"></div>
+    </div>
+  </aside>
+
+  <main class="panel stage">
+    <div class="stage-toolbar">
+      <label for="projectTitle">Project</label>
+      <input id="projectTitle" placeholder="Untitled storyboard" />
+      <label for="projectPlatform">Platform</label>
+      <select id="projectPlatform">
+        <option>iMessage</option>
+        <option>WhatsApp</option>
+        <option>Messenger</option>
+        <option>Instagram</option>
+        <option>Telegram</option>
+        <option>Generic</option>
+      </select>
+      <label for="projectTime">Time</label>
+      <input id="projectTime" value="9:41" />
+      <label for="projectCarrier">Carrier</label>
+      <input id="projectCarrier" value="5G" />
+    </div>
+
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-status">
+          <span id="statusTime">9:41</span>
+          <span>📶 <span id="statusCarrier">5G</span> 🔋</span>
+        </div>
+        <div class="phone-header">
+          <span class="back">‹</span>
+          <div>
+            <div class="name" id="chatTitle">Chat</div>
+            <div class="sub" id="chatSubtitle">typing…</div>
+          </div>
+          <span>📹</span>
+        </div>
+        <div id="chatStage" class="chat"></div>
+        <div class="add-beat-bar">
+          <button data-beat-type="text">💬 Text</button>
+          <button data-beat-type="image">🖼 Image</button>
+          <button data-beat-type="voice">🎙 Voice</button>
+          <button data-beat-type="status">ℹ Status</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <aside class="panel">
+    <div class="panel-header"><span>Beat Inspector</span></div>
+    <div class="panel-body" id="inspector">
+      <div class="empty-state">Select a message bubble to edit its content, sender, and shot-quality notes.</div>
+    </div>
+  </aside>
+</div>
+
+<div id="checksBackdrop" class="drawer-backdrop"></div>
+<div id="checksDrawer" class="drawer">
+  <div class="drawer-header">
+    <div>
+      <div style="font-weight:800;font-size:16px;">Coherence Checks</div>
+      <div style="font-size:12px;color:var(--text-secondary);">Story logic, continuity & production readiness</div>
+    </div>
+    <button id="btnCloseChecks">Close</button>
+  </div>
+  <div class="drawer-body">
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;">
+      <span id="checksSummary" class="coherence-badge ok">All clear</span>
+      <button id="btnRerunChecks" class="primary">Re-run checks</button>
+    </div>
+    <div id="checksList" class="checks-list"></div>
+  </div>
+</div>
+
+<div id="briefBackdrop" class="drawer-backdrop"></div>
+<div id="briefDrawer" class="drawer">
+  <div class="drawer-header">
+    <div>
+      <div style="font-weight:800;font-size:16px;">Image Brief</div>
+      <div style="font-size:12px;color:var(--text-secondary);">Copy or download the production brief</div>
+    </div>
+    <button id="btnCloseBrief">Close</button>
+  </div>
+  <div class="drawer-body">
+    <div style="display:flex;gap:10px;margin-bottom:16px;">
+      <button id="btnCopyBrief" class="success">📋 Copy to clipboard</button>
+      <button id="btnDownloadBrief">⬇ Download .txt</button>
+    </div>
+    <pre id="briefOutput" class="brief-output"></pre>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+/* ===================== DOM BUILDER ===================== */
+function create(tag, options) {
+  options = options || {};
+  const node = document.createElement(tag);
+  if (options.className) node.className = options.className;
+  if (options.text !== undefined) node.textContent = options.text;
+  if (options.attrs) {
+    Object.keys(options.attrs).forEach(function (key) {
+      var val = options.attrs[key];
+      if (val !== null && val !== undefined) {
+        node.setAttribute(key, val);
+      }
+    });
+  }
+  if (options.style) {
+    Object.keys(options.style).forEach(function (key) {
+      node.style[key] = options.style[key];
+    });
+  }
+  if (options.events) {
+    Object.keys(options.events).forEach(function (key) {
+      node.addEventListener(key, options.events[key]);
+    });
+  }
+  if (options.children) {
+    options.children.forEach(function (child) { node.appendChild(child); });
+  }
+  if (options.parent) {
+    options.parent.appendChild(node);
+  }
+  return node;
+}
+
+function clear(node) {
+  while (node.firstChild) {
+    node.removeChild(node.firstChild);
+  }
+}
+
+/* ===================== STATE ===================== */
+function defaultState() {
+  return {
+    title: "Late Night Confession",
+    platform: "iMessage",
+    time: "9:41",
+    carrier: "5G",
+    roles: [
+      { id: "r1", name: "Alex", color: "#4f46e5", emoji: "🧑", isMe: false },
+      { id: "r2", name: "Jordan", color: "#0ea5e9", emoji: "👤", isMe: true }
+    ],
+    beats: [
+      { id: "b1", roleId: "r1", type: "text", text: "are you awake?", shotNotes: "Close-up on lock screen, dim bedroom glow. 2-second hold.", flags: ["lock screen"] },
+      { id: "b2", roleId: "r2", type: "text", text: "yeah. can't sleep.", shotNotes: "Over-shoulder, thumb hovering keyboard. Soft blue light on face.", flags: ["typing indicator"] },
+      { id: "b3", roleId: "r1", type: "text", text: "i need to tell you something", shotNotes: "Tight on message bubble, slight camera push-in.", flags: ["suspense"] }
+    ],
+    selectedBeatId: null
+  };
+}
+
+function loadFromStorage() {
+  const raw = localStorage.getItem('chatStoryboardStudio');
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch (e) { return null; }
+}
+
+let state = loadFromStorage() || defaultState();
+
+/* ===================== DOM REFS ===================== */
+const refs = {
+  roleList: document.getElementById('roleList'),
+  chatStage: document.getElementById('chatStage'),
+  inspector: document.getElementById('inspector'),
+  projectTitle: document.getElementById('projectTitle'),
+  projectPlatform: document.getElementById('projectPlatform'),
+  projectTime: document.getElementById('projectTime'),
+  projectCarrier: document.getElementById('projectCarrier'),
+  statusTime: document.getElementById('statusTime'),
+  statusCarrier: document.getElementById('statusCarrier'),
+  chatTitle: document.getElementById('chatTitle'),
+  chatSubtitle: document.getElementById('chatSubtitle'),
+  checksBackdrop: document.getElementById('checksBackdrop'),
+  checksDrawer: document.getElementById('checksDrawer'),
+  checksSummary: document.getElementById('checksSummary'),
+  checksList: document.getElementById('checksList'),
+  briefBackdrop: document.getElementById('briefBackdrop'),
+  briefDrawer: document.getElementById('briefDrawer'),
+  briefOutput: document.getElementById('briefOutput'),
+  fileInput: document.getElementById('fileInput'),
+  newRoleName: document.getElementById('newRoleName'),
+  newRoleColor: document.getElementById('newRoleColor'),
+  newRoleEmoji: document.getElementById('newRoleEmoji'),
+  newRoleIsMe: document.getElementById('newRoleIsMe'),
+  toast: document.getElementById('toast')
+};
+
+/* ===================== INIT ===================== */
+function init() {
+  refs.projectTitle.value = state.title;
+  refs.projectPlatform.value = state.platform;
+  refs.projectTime.value = state.time;
+  refs.projectCarrier.value = state.carrier;
+  updateStatusBar();
+  renderRoles();
+  renderChat();
+  renderInspector();
+  wireEvents();
+}
+
+function persist() {
+  localStorage.setItem('chatStoryboardStudio', JSON.stringify(state));
+}
+
+function updateStatusBar() {
+  refs.statusTime.textContent = state.time || '--:--';
+  refs.statusCarrier.textContent = state.carrier || '';
+  refs.chatTitle.textContent = state.title || 'Chat';
+  const others = state.roles.filter(function (r) { return !r.isMe; }).map(function (r) { return r.name; }).join(', ');
+  refs.chatSubtitle.textContent = others ? 'with ' + others : 'new message';
+}
+
+function updateProject() {
+  state.title = refs.projectTitle.value;
+  state.platform = refs.projectPlatform.value;
+  state.time = refs.projectTime.value;
+  state.carrier = refs.projectCarrier.value;
+  updateStatusBar();
+  persist();
+}
+
+/* ===================== ROLES ===================== */
+function renderRoles() {
+  clear(refs.roleList);
+  state.roles.forEach(function (role) {
+    const card = create('div', {
+      className: 'role-card' + (role.isMe ? ' active' : ''),
+      attrs: { 'data-role-id': role.id },
+      parent: refs.roleList
+    });
+
+    create('div', {
+      className: 'role-avatar',
+      text: role.emoji || '•',
+      style: { backgroundColor: role.color },
+      parent: card
+    });
+
+    const info = create('div', { parent: card });
+
+    const nameLine = create('div', { className: 'role-name', parent: info });
+    create('span', { text: role.name, parent: nameLine });
+    if (role.isMe) {
+      create('span', { text: ' (me)', style: { fontSize: '11px', color: 'var(--primary)' }, parent: nameLine });
+    }
+
+    create('div', {
+      className: 'role-meta',
+      text: state.beats.filter(function (b) { return b.roleId === role.id; }).length + ' beats',
+      parent: info
+    });
+
+    create('button', {
+      className: 'ghost',
+      text: '×',
+      attrs: { title: 'Delete' },
+      events: { click: function () { deleteRole(role.id); } },
+      parent: card
+    });
+  });
+}
+
+function addRole() {
+  const name = refs.newRoleName.value.trim();
+  const color = refs.newRoleColor.value;
+  const emoji = refs.newRoleEmoji.value.trim() || '👤';
+  const isMe = refs.newRoleIsMe.checked;
+  if (!name) return toast('Enter a role name');
+
+  if (isMe) {
+    state.roles.forEach(function (r) { r.isMe = false; });
+  }
+  state.roles.push({ id: 'r' + Date.now(), name: name, color: color, emoji: emoji, isMe: isMe });
+
+  refs.newRoleName.value = '';
+  refs.newRoleEmoji.value = '🧑';
+  refs.newRoleIsMe.checked = false;
+
+  renderRoles();
+  renderChat();
+  persist();
+}
+
+function deleteRole(id) {
+  if (state.roles.length <= 1) return toast('Keep at least one role');
+  state.roles = state.roles.filter(function (r) { return r.id !== id; });
+  state.beats.forEach(function (b) {
+    if (b.roleId === id) b.roleId = state.roles[0].id;
+  });
+  renderRoles();
+  renderChat();
+  renderInspector();
+  persist();
+}
+
+function getRole(id) {
+  return state.roles.find(function (r) { return r.id === id; }) || state.roles[0];
+}
+
+/* ===================== BEATS / CHAT ===================== */
+function addBeat(type) {
+  const meRole = state.roles.find(function (r) { return r.isMe; }) || state.roles[0];
+  const lastRole = state.beats.length ? getRole(state.beats[state.beats.length - 1].roleId) : meRole;
+  const role = type === 'status' ? null : lastRole;
+
+  let text = '';
+  if (type === 'image') text = '[image placeholder]';
+  else if (type === 'voice') text = '0:08 voice memo';
+
+  const beat = {
+    id: 'b' + Date.now(),
+    roleId: role ? role.id : null,
+    type: type,
+    text: text,
+    shotNotes: '',
+    flags: []
+  };
+
+  state.beats.push(beat);
+  state.selectedBeatId = beat.id;
+  renderChat();
+  renderInspector();
+  persist();
+}
+
+function moveBeat(id, dir) {
+  const idx = state.beats.findIndex(function (b) { return b.id === id; });
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= state.beats.length) return;
+  const tmp = state.beats[idx];
+  state.beats[idx] = state.beats[newIdx];
+  state.beats[newIdx] = tmp;
+  renderChat();
+  persist();
+}
+
+function deleteBeat(id) {
+  state.beats = state.beats.filter(function (b) { return b.id !== id; });
+  if (state.selectedBeatId === id) state.selectedBeatId = null;
+  renderChat();
+  renderInspector();
+  persist();
+}
+
+function selectBeat(id) {
+  state.selectedBeatId = id;
+  renderChat();
+  renderInspector();
+}
+
+function renderChat() {
+  clear(refs.chatStage);
+  state.beats.forEach(function (beat, i) {
+    const isStatus = beat.type === 'status';
+    const role = isStatus ? null : getRole(beat.roleId);
+    const isMe = role && role.isMe;
+    const className = 'bubble ' + beat.type + ' ' + (isStatus ? 'status' : (isMe ? 'me' : 'them')) + (state.selectedBeatId === beat.id ? ' selected' : '');
+
+    const bubble = create('div', {
+      className: className,
+      attrs: { 'data-beat-id': beat.id },
+      events: { click: function () { selectBeat(beat.id); } },
+      parent: refs.chatStage
+    });
+
+    if (beat.type === 'image') {
+      const img = create('img', { attrs: { alt: beat.text } });
+      bubble.appendChild(img);
+      create('div', { className: 'time', text: beat.text, parent: bubble });
+    } else if (beat.type === 'voice') {
+      create('div', { className: 'voice', text: '🎙 ' + beat.text, parent: bubble });
+      create('div', { className: 'time', text: 'voice note', parent: bubble });
+    } else {
+      create('div', { text: beat.text, parent: bubble });
+      create('div', { className: 'time', text: (role ? role.name : '') + ' • beat ' + (i + 1), parent: bubble });
+    }
+
+    create('div', { className: 'beat-num', text: String(i + 1), parent: bubble });
+  });
+}
+
+/* ===================== INSPECTOR ===================== */
+function createFieldLabel(text, parent) {
+  const wrap = create('div', { className: 'field', parent: parent });
+  create('label', { text: text, parent: wrap });
+  return wrap;
+}
+
+function renderInspector() {
+  clear(refs.inspector);
+  const beat = state.beats.find(function (b) { return b.id === state.selectedBeatId; });
+  if (!beat) {
+    create('div', { className: 'empty-state', text: 'Select a message bubble to edit its content, sender, and shot-quality notes.', parent: refs.inspector });
+    return;
+  }
+
+  const index = state.beats.indexOf(beat) + 1;
+
+  const typeWrap = createFieldLabel('Beat #' + index + ' Type', refs.inspector);
+  const typeSelect = create('select', { parent: typeWrap });
+  [
+    ['text', 'Text'],
+    ['image', 'Image'],
+    ['voice', 'Voice memo'],
+    ['status', 'Status / system']
+  ].forEach(function (opt) {
+    const selected = beat.type === opt[0];
+    create('option', { text: opt[1], attrs: { value: opt[0], selected: selected ? 'selected' : null }, parent: typeSelect });
+  });
+  typeSelect.addEventListener('change', function () { updateBeat(beat.id, 'type', typeSelect.value); });
+
+  const roleWrap = createFieldLabel('Sender', refs.inspector);
+  const roleSelect = create('select', { parent: roleWrap });
+  if (beat.type === 'status') {
+    create('option', { text: '— System —', attrs: { value: '', selected: beat.roleId === null ? 'selected' : null }, parent: roleSelect });
+  }
+  state.roles.forEach(function (r) {
+    const label = r.name + (r.isMe ? ' (me)' : '');
+    create('option', { text: label, attrs: { value: r.id, selected: beat.roleId === r.id ? 'selected' : null }, parent: roleSelect });
+  });
+  roleSelect.addEventListener('change', function () { updateBeat(beat.id, 'roleId', roleSelect.value || null); });
+
+  const textWrap = createFieldLabel('Message / Label', refs.inspector);
+  const textArea = create('textarea', { parent: textWrap });
+  textArea.value = beat.text;
+  textArea.addEventListener('input', function () { updateBeat(beat.id, 'text', textArea.value); });
+
+  const notesWrap = createFieldLabel('Shot-quality notes', refs.inspector);
+  const notesArea = create('textarea', {
+    attrs: { placeholder: 'Camera angle, lighting, lens, motion, duration, prop details…' },
+    parent: notesWrap
+  });
+  notesArea.value = beat.shotNotes;
+  notesArea.addEventListener('input', function () { updateBeat(beat.id, 'shotNotes', notesArea.value); });
+  create('div', { className: 'hint', text: 'Describe how this screenshot should be captured or designed.', parent: notesWrap });
+
+  const flagsWrap = createFieldLabel('Flags', refs.inspector);
+  const tags = create('div', { className: 'tags', parent: flagsWrap });
+  const flagOptions = ['lock screen', 'typing indicator', 'suspense', 'reveal', 'cutaway', 'CGUI', 'reaction', 'time jump'];
+  flagOptions.forEach(function (tag) {
+    const active = (beat.flags || []).indexOf(tag) !== -1;
+    create('span', {
+      className: 'tag' + (active ? ' active' : ''),
+      text: tag,
+      events: { click: function () { toggleFlag(beat.id, tag); } },
+      parent: tags
+    });
+  });
+
+  const btnRow = create('div', { style: { display: 'flex', gap: '8px', marginTop: '8px' }, parent: refs.inspector });
+  create('button', {
+    text: '↑ Move up',
+    attrs: { disabled: state.beats[0].id === beat.id ? 'disabled' : null },
+    events: { click: function () { moveBeat(beat.id, -1); } },
+    parent: btnRow
+  });
+  create('button', {
+    text: '↓ Move down',
+    attrs: { disabled: state.beats[state.beats.length - 1].id === beat.id ? 'disabled' : null },
+    events: { click: function () { moveBeat(beat.id, 1); } },
+    parent: btnRow
+  });
+  create('button', {
+    className: 'danger',
+    text: 'Delete beat',
+    style: { marginLeft: 'auto' },
+    events: { click: function () { deleteBeat(beat.id); } },
+    parent: btnRow
+  });
+}
+
+function updateBeat(id, key, value) {
+  const beat = state.beats.find(function (b) { return b.id === id; });
+  if (!beat) return;
+  beat[key] = value;
+  renderChat();
+  renderInspector();
+  persist();
+}
+
+function toggleFlag(id, tag) {
+  const beat = state.beats.find(function (b) { return b.id === id; });
+  if (!beat.flags) beat.flags = [];
+  const pos = beat.flags.indexOf(tag);
+  if (pos !== -1) beat.flags.splice(pos, 1);
+  else beat.flags.push(tag);
+  renderInspector();
+  persist();
+}
+
+/* ===================== COHERENCE CHECKS ===================== */
+function runChecks() {
+  const issues = [];
+
+  if (!state.title.trim()) {
+    issues.push({ level: 'warn', title: 'Missing project title', desc: 'Add a title so the brief is identifiable.' });
+  }
+
+  if (state.beats.length === 0) {
+    issues.push({ level: 'err', title: 'No beats', desc: 'Add at least one message beat.' });
+  }
+
+  if (state.roles.length < 2 && state.beats.some(function (b) { return b.type !== 'status'; })) {
+    issues.push({ level: 'warn', title: 'Only one role', desc: 'Real chats usually involve at least two participants.' });
+  }
+
+  const noNotes = state.beats.filter(function (b) { return !b.shotNotes || !b.shotNotes.trim(); });
+  if (noNotes.length) {
+    issues.push({ level: 'warn', title: noNotes.length + ' beat(s) lack shot notes', desc: 'Production-quality storyboards should include camera/lens/lighting notes for every beat.' });
+  }
+
+  state.beats.forEach(function (b, i) {
+    if (b.type === 'image' && (!b.text || b.text === '[image placeholder]')) {
+      issues.push({ level: 'err', title: 'Beat ' + (i + 1) + ': image lacks description', desc: 'Describe what the image shows.' });
+    }
+    if (b.type === 'text' && b.text.length > 300) {
+      issues.push({ level: 'warn', title: 'Beat ' + (i + 1) + ': very long message', desc: 'Consider splitting into smaller bubbles for readability.' });
+    }
+  });
+
+  for (let i = 0; i < state.beats.length - 1; i++) {
+    const cur = state.beats[i];
+    const next = state.beats[i + 1];
+    if (cur.type !== 'status' && next.type !== 'status' && cur.roleId === next.roleId) {
+      issues.push({ level: 'warn', title: 'Beat ' + (i + 1) + ' & ' + (i + 2) + ': same sender twice', desc: 'Back-to-back messages from one sender can look unnatural unless intentional.' });
+    }
+  }
+
+  const sad = ['sorry', 'dead', 'never', 'hate', 'cry', 'miss'];
+  const happy = ['love', 'great', 'yes', 'happy', 'awesome', 'thanks'];
+  for (let i = 1; i < state.beats.length; i++) {
+    const prevText = (state.beats[i - 1].text || '').toLowerCase();
+    const curText = (state.beats[i].text || '').toLowerCase();
+    const prevSad = sad.some(function (w) { return prevText.indexOf(w) !== -1; });
+    const curHappy = happy.some(function (w) { return curText.indexOf(w) !== -1; });
+    if (prevSad && curHappy) {
+      issues.push({ level: 'warn', title: 'Beat ' + i + ' to ' + (i + 1) + ': possible abrupt tone shift', desc: 'A sudden swing from negative to positive may need a bridging beat.' });
+    }
+  }
+
+  if (!issues.length) {
+    issues.push({ level: 'ok', title: 'All coherence checks passed', desc: 'Your storyboard looks consistent and production-ready.' });
+  }
+
+  renderChecks(issues);
+  openChecks();
+}
+
+function renderChecks(issues) {
+  clear(refs.checksList);
+  issues.forEach(function (iss) {
+    const bg = iss.level === 'err' ? '#fef2f2' : iss.level === 'warn' ? '#fffbeb' : '#f0fdf4';
+    const border = iss.level === 'err' ? '#fecaca' : iss.level === 'warn' ? '#fde68a' : '#bbf7d0';
+    const icon = iss.level === 'err' ? '❌' : iss.level === 'warn' ? '⚠️' : '✅';
+
+    const item = create('div', {
+      className: 'check-item',
+      style: { backgroundColor: bg, borderColor: border },
+      parent: refs.checksList
+    });
+
+    create('div', { className: 'check-icon', text: icon, parent: item });
+    const body = create('div', { parent: item });
+    create('div', { className: 'check-title', text: iss.title, parent: body });
+    create('div', { className: 'check-desc', text: iss.desc, parent: body });
+  });
+
+  const errCount = issues.filter(function (i) { return i.level === 'err'; }).length;
+  const warnCount = issues.filter(function (i) { return i.level === 'warn'; }).length;
+  refs.checksSummary.className = 'coherence-badge ' + (errCount ? 'err' : warnCount ? 'warn' : 'ok');
+  refs.checksSummary.textContent = errCount ? errCount + ' error(s)' : warnCount ? warnCount + ' warning(s)' : 'All clear';
+}
+
+function openChecks() { refs.checksBackdrop.classList.add('open'); refs.checksDrawer.classList.add('open'); }
+function closeChecks() { refs.checksBackdrop.classList.remove('open'); refs.checksDrawer.classList.remove('open'); }
+
+/* ===================== IMAGE BRIEF ===================== */
+function generateBrief() {
+  const lines = [];
+  lines.push('PHONE-CHAT SCREENSHOT STORYBOARD BRIEF');
+  lines.push('Generated: ' + new Date().toLocaleString());
+  lines.push('Project: ' + (state.title || 'Untitled'));
+  lines.push('Platform: ' + state.platform);
+  lines.push('Simulated time: ' + state.time + ' | Carrier: ' + state.carrier);
+  lines.push('');
+
+  lines.push('CAST / ROLES');
+  state.roles.forEach(function (r) {
+    lines.push('• ' + r.name + (r.isMe ? ' (protagonist / "me")' : ' (contact)'));
+    lines.push('  Avatar: ' + r.emoji + ' | Bubble color: ' + r.color);
+  });
+  lines.push('');
+
+  lines.push('SHOT LIST (' + state.beats.length + ' beats)');
+  state.beats.forEach(function (b, i) {
+    const roleName = b.type === 'status' ? 'SYSTEM' : getRole(b.roleId).name;
+    lines.push('BEAT ' + (i + 1));
+    lines.push('  Type     : ' + b.type.toUpperCase());
+    lines.push('  Sender   : ' + roleName);
+    lines.push('  Content  : ' + b.text);
+    lines.push('  Shot Note: ' + (b.shotNotes || '—'));
+    lines.push('  Flags    : ' + ((b.flags || []).join(', ') || 'none'));
+    lines.push('');
+  });
+
+  lines.push('PRODUCTION NOTES');
+  lines.push('• Maintain consistent UI bar / notch / carrier / battery across all shots.');
+  lines.push('• Preserve bubble colors per role. Use neutral gray for status beats.');
+  lines.push('• Keep text scale, padding, and corner radius uniform within the chat app skin.');
+  lines.push('• For image beats, supply final asset or on-set placeholder matching described framing.');
+  return lines.join('\n');
+}
+
+function openBrief() {
+  refs.briefOutput.textContent = generateBrief();
+  refs.briefBackdrop.classList.add('open');
+  refs.briefDrawer.classList.add('open');
+}
+function closeBrief() { refs.briefBackdrop.classList.remove('open'); refs.briefDrawer.classList.remove('open'); }
+
+function copyBrief() {
+  navigator.clipboard.writeText(generateBrief()).then(function () { toast('Brief copied to clipboard'); });
+}
+
+function downloadBrief() {
+  const blob = new Blob([generateBrief()], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (state.title || 'storyboard').replace(/\s+/g, '_') + '_brief.txt';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('Brief downloaded');
+}
+
+/* ===================== SAVE / LOAD ===================== */
+function saveProject() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (state.title || 'storyboard').replace(/\s+/g, '_') + '.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('Project saved as JSON');
+}
+
+function loadProject() { refs.fileInput.click(); }
+
+function handleFileLoad(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function (ev) {
+    try {
+      const loaded = JSON.parse(ev.target.result);
+      state = Object.assign({}, defaultState(), loaded);
+      state.selectedBeatId = null;
+      init();
+      persist();
+      toast('Project loaded');
+    } catch (err) {
+      toast('Invalid JSON file');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+/* ===================== EVENT WIRING ===================== */
+function wireEvents() {
+  document.getElementById('btnLoad').addEventListener('click', loadProject);
+  document.getElementById('btnSave').addEventListener('click', saveProject);
+  document.getElementById('btnChecks').addEventListener('click', runChecks);
+  document.getElementById('btnBrief').addEventListener('click', openBrief);
+  document.getElementById('btnCloseChecks').addEventListener('click', closeChecks);
+  document.getElementById('btnRerunChecks').addEventListener('click', runChecks);
+  document.getElementById('btnCloseBrief').addEventListener('click', closeBrief);
+  document.getElementById('btnCopyBrief').addEventListener('click', copyBrief);
+  document.getElementById('btnDownloadBrief').addEventListener('click', downloadBrief);
+  document.getElementById('btnAddRole').addEventListener('click', addRole);
+
+  refs.checksBackdrop.addEventListener('click', closeChecks);
+  refs.briefBackdrop.addEventListener('click', closeBrief);
+
+  refs.projectTitle.addEventListener('input', updateProject);
+  refs.projectPlatform.addEventListener('change', updateProject);
+  refs.projectTime.addEventListener('input', updateProject);
+  refs.projectCarrier.addEventListener('input', updateProject);
+
+  refs.fileInput.addEventListener('change', handleFileLoad);
+
+  document.querySelectorAll('.add-beat-bar button').forEach(function (btn) {
+    btn.addEventListener('click', function () { addBeat(btn.getAttribute('data-beat-type')); });
+  });
+}
+
+/* ===================== UTILS ===================== */
+function toast(msg) {
+  refs.toast.textContent = msg;
+  refs.toast.classList.add('show');
+  setTimeout(function () { refs.toast.classList.remove('show'); }, 2200);
+}
+
+init();
+</script>
+</body>
+</html>

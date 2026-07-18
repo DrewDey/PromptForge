@@ -1,0 +1,940 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visual Brief Tile Studio</title>
+<style>
+  :root{
+    --bg:#f6f2ea;
+    --panel:#fffaf1;
+    --panel2:#f0e6d3;
+    --ink:#28231c;
+    --muted:#6f6456;
+    --line:#dacdb8;
+    --accent:#8a5b31;
+    --accent2:#3f6f65;
+    --warn:#9f4d2f;
+    --good:#3d7659;
+    --shadow:0 14px 38px rgba(48,38,24,.12);
+    --radius:22px;
+  }
+
+  *{box-sizing:border-box}
+
+  html,body{
+    margin:0;
+    min-height:100%;
+    background:
+      radial-gradient(circle at top left, rgba(138,91,49,.13), transparent 32rem),
+      linear-gradient(180deg,#fbf7ef 0%,var(--bg) 100%);
+    color:var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  body{
+    padding:12px;
+    overflow-x:visible;
+  }
+
+  .app{
+    width:100%;
+    max-width:760px;
+    margin:0 auto;
+  }
+
+  header{
+    border:1px solid var(--line);
+    background:rgba(255,250,241,.92);
+    border-radius:28px;
+    padding:18px;
+    box-shadow:var(--shadow);
+  }
+
+  .eyebrow{
+    display:block;
+    font-size:12px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--accent);
+    font-weight:800;
+    margin-bottom:10px;
+  }
+
+  h1{
+    margin:0;
+    font-size:32px;
+    line-height:1.02;
+    letter-spacing:0;
+  }
+
+  h1 span{
+    display:block;
+  }
+
+  .lede{
+    margin:12px 0 0;
+    color:var(--muted);
+    font-size:15px;
+    line-height:1.45;
+  }
+
+  main{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:12px;
+    margin-top:12px;
+  }
+
+  .card{
+    width:100%;
+    min-width:0;
+    border:1px solid var(--line);
+    background:rgba(255,250,241,.95);
+    border-radius:var(--radius);
+    padding:14px;
+    box-shadow:0 8px 24px rgba(48,38,24,.08);
+  }
+
+  .card h2{
+    margin:0 0 10px;
+    font-size:18px;
+    line-height:1.2;
+  }
+
+  label{
+    display:block;
+    margin:12px 0 6px;
+    font-size:13px;
+    font-weight:800;
+    color:#4b4035;
+  }
+
+  input, textarea, select, button{
+    width:100%;
+    max-width:100%;
+    font:inherit;
+    color:var(--ink);
+  }
+
+  input, textarea, select{
+    border:1px solid var(--line);
+    border-radius:16px;
+    background:#fffdf8;
+    padding:11px 12px;
+    outline:none;
+  }
+
+  textarea{
+    min-height:82px;
+    resize:vertical;
+    line-height:1.4;
+  }
+
+  input::placeholder,
+  textarea::placeholder{
+    color:#9b8b78;
+    white-space:normal;
+  }
+
+  input:focus, textarea:focus, select:focus{
+    border-color:rgba(138,91,49,.75);
+    box-shadow:0 0 0 3px rgba(138,91,49,.13);
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:10px;
+  }
+
+  .tile{
+    width:100%;
+    min-width:0;
+    border:1px solid var(--line);
+    background:#fffdf8;
+    border-radius:18px;
+    padding:12px;
+  }
+
+  .tileTop{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-bottom:8px;
+  }
+
+  .tileTitle{
+    font-size:14px;
+    font-weight:900;
+  }
+
+  .badge{
+    display:inline-flex;
+    max-width:100%;
+    align-items:center;
+    justify-content:center;
+    border-radius:999px;
+    padding:6px 9px;
+    font-size:12px;
+    font-weight:800;
+    background:var(--panel2);
+    color:#554838;
+    overflow-wrap:anywhere;
+  }
+
+  .badge.good{
+    background:rgba(61,118,89,.12);
+    color:var(--good);
+  }
+
+  .badge.warn{
+    background:rgba(159,77,47,.12);
+    color:var(--warn);
+  }
+
+  .chipRow{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:8px;
+    margin-top:8px;
+  }
+
+  .chip{
+    border:1px solid var(--line);
+    background:#fffaf1;
+    border-radius:999px;
+    padding:9px 10px;
+    font-size:13px;
+    font-weight:750;
+    line-height:1.2;
+    overflow-wrap:anywhere;
+  }
+
+  .chip input{
+    position:absolute;
+    opacity:0;
+    pointer-events:none;
+  }
+
+  .chip:has(input:checked){
+    border-color:rgba(63,111,101,.65);
+    background:rgba(63,111,101,.1);
+    color:#264e47;
+  }
+
+  .rangeWrap{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:6px;
+    margin-top:8px;
+  }
+
+  input[type="range"]{
+    padding:0;
+    accent-color:var(--accent);
+  }
+
+  .meter{
+    width:100%;
+    height:12px;
+    border-radius:999px;
+    background:#eadfce;
+    overflow:hidden;
+    border:1px solid var(--line);
+  }
+
+  .fill{
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg,var(--warn),#b98542,var(--good));
+    border-radius:999px;
+  }
+
+  .driftList{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:8px;
+    margin:10px 0 0;
+  }
+
+  .driftItem{
+    border:1px solid var(--line);
+    background:#fffdf8;
+    border-radius:15px;
+    padding:10px;
+    font-size:13px;
+    line-height:1.35;
+    color:#4f463a;
+    overflow-wrap:anywhere;
+  }
+
+  .driftItem strong{
+    display:block;
+    margin-bottom:3px;
+  }
+
+  .btns{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:9px;
+    margin-top:10px;
+  }
+
+  button{
+    border:0;
+    border-radius:16px;
+    padding:12px 13px;
+    font-weight:900;
+    background:var(--accent);
+    color:#fffaf1;
+    cursor:pointer;
+    min-height:46px;
+  }
+
+  button.secondary{
+    background:#eadfce;
+    color:#463b30;
+    border:1px solid var(--line);
+  }
+
+  button.ghost{
+    background:transparent;
+    color:#674323;
+    border:1px solid var(--line);
+  }
+
+  .brief{
+    min-height:220px;
+    white-space:pre-wrap;
+    overflow-wrap:anywhere;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size:13px;
+    line-height:1.45;
+  }
+
+  .status{
+    margin-top:8px;
+    color:var(--muted);
+    font-size:13px;
+    min-height:18px;
+  }
+
+  .footerPills{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:8px;
+    margin-top:12px;
+  }
+
+  .pill{
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:9px 10px;
+    background:rgba(255,250,241,.8);
+    color:#635746;
+    font-size:12px;
+    font-weight:800;
+    text-align:center;
+    overflow-wrap:anywhere;
+  }
+
+  @media (min-width:700px){
+    body{padding:22px}
+    h1{font-size:48px}
+    main{grid-template-columns:1.1fr .9fr}
+    .wide{grid-column:1 / -1}
+    .grid{grid-template-columns:repeat(2, minmax(0, 1fr))}
+    .chipRow{grid-template-columns:repeat(2, minmax(0,1fr))}
+    .btns{grid-template-columns:repeat(3, minmax(0,1fr))}
+    .footerPills{grid-template-columns:repeat(4, minmax(0,1fr))}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">Visual brief studio</span>
+    <h1>
+      <span>Split the</span>
+      <span>image idea</span>
+      <span>before generation</span>
+    </h1>
+    <p class="lede">Break one image concept into subject, style, camera, palette, and negative-prompt tiles. The studio flags tile drift and produces a copyable generation brief.</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Core image idea</h2>
+
+      <label for="idea">Image idea</label>
+      <textarea id="idea" placeholder="Example: a weathered lighthouse keeper studying a glowing sea map during a storm"></textarea>
+
+      <label for="purpose">Use case</label>
+      <select id="purpose">
+        <option>Editorial hero image</option>
+        <option>Product concept art</option>
+        <option>Social post visual</option>
+        <option>Book or album cover</option>
+        <option>Character design</option>
+        <option>Ad creative</option>
+      </select>
+
+      <label for="mustKeep">Non-negotiables</label>
+      <textarea id="mustKeep" placeholder="Objects, mood, brand cues, setting, audience, or details that must stay consistent."></textarea>
+
+      <div class="rangeWrap">
+        <label for="strictness">Consistency strictness: <span id="strictnessValue">70</span>%</label>
+        <input id="strictness" type="range" min="0" max="100" value="70">
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Consistency score</h2>
+      <div class="tile">
+        <div class="tileTop">
+          <span class="tileTitle">Brief readiness</span>
+          <span id="scoreBadge" class="badge">0%</span>
+        </div>
+        <div class="meter"><div id="scoreFill" class="fill"></div></div>
+        <div id="scoreNote" class="status">Add tile details to begin.</div>
+      </div>
+
+      <div class="driftList" id="driftList"></div>
+
+      <div class="btns">
+        <button id="copyBtn">Copy brief</button>
+        <button id="downloadBtn" class="secondary">Download .txt</button>
+        <button id="resetBtn" class="ghost">Reset</button>
+      </div>
+      <div id="actionStatus" class="status"></div>
+    </section>
+
+    <section class="card wide">
+      <h2>Brief tiles</h2>
+      <div class="grid">
+        <div class="tile" data-tile="subject">
+          <div class="tileTop">
+            <span class="tileTitle">Subject</span>
+            <span class="badge" id="subjectState">Needs detail</span>
+          </div>
+          <label for="subjectMain">Main subject</label>
+          <textarea id="subjectMain" placeholder="Who or what is centered in the image?"></textarea>
+          <label for="subjectMood">Subject mood or behavior</label>
+          <input id="subjectMood" placeholder="Calm, tense, curious, heroic, fragile...">
+          <div class="chipRow">
+            <label class="chip"><input type="checkbox" value="human figure" data-chip="subject"> human figure</label>
+            <label class="chip"><input type="checkbox" value="object-focused" data-chip="subject"> object-focused</label>
+            <label class="chip"><input type="checkbox" value="environment-led" data-chip="subject"> environment-led</label>
+            <label class="chip"><input type="checkbox" value="clear focal point" data-chip="subject"> clear focal point</label>
+          </div>
+        </div>
+
+        <div class="tile" data-tile="style">
+          <div class="tileTop">
+            <span class="tileTitle">Style</span>
+            <span class="badge" id="styleState">Needs detail</span>
+          </div>
+          <label for="styleMode">Visual style</label>
+          <textarea id="styleMode" placeholder="Cinematic realism, painterly fantasy, clean product render, retro editorial..."></textarea>
+          <label for="styleTexture">Texture or finish</label>
+          <input id="styleTexture" placeholder="Film grain, brush texture, glossy render, soft matte...">
+          <div class="chipRow">
+            <label class="chip"><input type="checkbox" value="realistic" data-chip="style"> realistic</label>
+            <label class="chip"><input type="checkbox" value="illustrated" data-chip="style"> illustrated</label>
+            <label class="chip"><input type="checkbox" value="minimal" data-chip="style"> minimal</label>
+            <label class="chip"><input type="checkbox" value="high detail" data-chip="style"> high detail</label>
+          </div>
+        </div>
+
+        <div class="tile" data-tile="camera">
+          <div class="tileTop">
+            <span class="tileTitle">Camera</span>
+            <span class="badge" id="cameraState">Needs detail</span>
+          </div>
+          <label for="shotType">Shot type</label>
+          <select id="shotType">
+            <option value="">Choose shot type</option>
+            <option>Close-up</option>
+            <option>Medium shot</option>
+            <option>Wide shot</option>
+            <option>Overhead shot</option>
+            <option>Low-angle shot</option>
+            <option>Product macro</option>
+          </select>
+          <label for="cameraNotes">Camera notes</label>
+          <textarea id="cameraNotes" placeholder="Lens feel, depth of field, framing, movement, perspective..."></textarea>
+          <div class="chipRow">
+            <label class="chip"><input type="checkbox" value="shallow depth of field" data-chip="camera"> shallow depth of field</label>
+            <label class="chip"><input type="checkbox" value="symmetrical framing" data-chip="camera"> symmetrical framing</label>
+            <label class="chip"><input type="checkbox" value="dynamic angle" data-chip="camera"> dynamic angle</label>
+            <label class="chip"><input type="checkbox" value="negative space" data-chip="camera"> negative space</label>
+          </div>
+        </div>
+
+        <div class="tile" data-tile="palette">
+          <div class="tileTop">
+            <span class="tileTitle">Palette</span>
+            <span class="badge" id="paletteState">Needs detail</span>
+          </div>
+          <label for="paletteMain">Palette direction</label>
+          <textarea id="paletteMain" placeholder="Muted ocean blues, warm amber highlights, black storm clouds..."></textarea>
+          <label for="lighting">Lighting</label>
+          <input id="lighting" placeholder="Golden hour, neon rim light, stormy backlight, soft studio...">
+          <div class="chipRow">
+            <label class="chip"><input type="checkbox" value="warm" data-chip="palette"> warm</label>
+            <label class="chip"><input type="checkbox" value="cool" data-chip="palette"> cool</label>
+            <label class="chip"><input type="checkbox" value="high contrast" data-chip="palette"> high contrast</label>
+            <label class="chip"><input type="checkbox" value="muted tones" data-chip="palette"> muted tones</label>
+          </div>
+        </div>
+
+        <div class="tile" data-tile="negative">
+          <div class="tileTop">
+            <span class="tileTitle">Negative prompt</span>
+            <span class="badge" id="negativeState">Needs detail</span>
+          </div>
+          <label for="avoidMain">Avoid</label>
+          <textarea id="avoidMain" placeholder="Extra limbs, warped hands, text artifacts, plastic skin, wrong era, busy background..."></textarea>
+          <label for="avoidDrift">Avoid style drift</label>
+          <input id="avoidDrift" placeholder="No cartoon look, no neon colors, no modern objects...">
+          <div class="chipRow">
+            <label class="chip"><input type="checkbox" value="text artifacts" data-chip="negative"> text artifacts</label>
+            <label class="chip"><input type="checkbox" value="extra fingers" data-chip="negative"> extra fingers</label>
+            <label class="chip"><input type="checkbox" value="blurry face" data-chip="negative"> blurry face</label>
+            <label class="chip"><input type="checkbox" value="off-theme objects" data-chip="negative"> off-theme objects</label>
+          </div>
+        </div>
+
+        <div class="tile">
+          <div class="tileTop">
+            <span class="tileTitle">Prompt lock</span>
+            <span class="badge good">Optional</span>
+          </div>
+          <label for="lockPhrase">One sentence lock phrase</label>
+          <textarea id="lockPhrase" placeholder="Example: Keep the image grounded, storm-lit, nautical, and emotionally restrained."></textarea>
+          <p class="status">Use this to anchor the generation prompt when the tiles start pulling in different directions.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card wide">
+      <h2>Copyable visual brief</h2>
+      <div id="briefOutput" class="tile brief" aria-live="polite"></div>
+      <div class="footerPills">
+        <div class="pill">Offline</div>
+        <div class="pill">Local save</div>
+        <div class="pill">No APIs</div>
+        <div class="pill">390px friendly</div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const fields = [
+    "idea","purpose","mustKeep","strictness",
+    "subjectMain","subjectMood","styleMode","styleTexture",
+    "shotType","cameraNotes","paletteMain","lighting",
+    "avoidMain","avoidDrift","lockPhrase"
+  ];
+
+  const tileMap = {
+    subject:["subjectMain","subjectMood"],
+    style:["styleMode","styleTexture"],
+    camera:["shotType","cameraNotes"],
+    palette:["paletteMain","lighting"],
+    negative:["avoidMain","avoidDrift"]
+  };
+
+  const driftRules = [
+    {
+      title:"Realism vs illustration drift",
+      termsA:["realistic","photo","cinematic realism","documentary"],
+      termsB:["illustrated","cartoon","anime","painterly"],
+      message:"The style tile mixes realism and illustration cues. Pick one dominant visual language."
+    },
+    {
+      title:"Minimal vs high-detail drift",
+      termsA:["minimal","clean","simple"],
+      termsB:["high detail","ornate","busy","maximal"],
+      message:"The style or camera direction pulls between minimal and high-detail. Decide whether the image should feel spare or dense."
+    },
+    {
+      title:"Warm vs cool palette drift",
+      termsA:["warm","amber","gold","orange","red"],
+      termsB:["cool","blue","cyan","icy","teal"],
+      message:"The palette contains strong warm and cool cues. Define which one dominates and which one acts as accent."
+    },
+    {
+      title:"Close subject vs environment-led drift",
+      termsA:["close-up","macro","portrait"],
+      termsB:["wide shot","environment-led","landscape","negative space"],
+      message:"The camera and subject tiles disagree on intimacy. Choose close subject detail or wider environmental storytelling."
+    },
+    {
+      title:"Negative prompt may block desired style",
+      termsA:["no grain","no texture","no blur","no shadows","no contrast"],
+      termsB:["film grain","brush texture","shallow depth of field","high contrast","stormy"],
+      message:"The negative prompt may remove effects requested elsewhere. Keep negatives targeted to actual failure modes."
+    }
+  ];
+
+  const els = {};
+  fields.forEach(id => els[id] = document.getElementById(id));
+
+  const scoreBadge = document.getElementById("scoreBadge");
+  const scoreFill = document.getElementById("scoreFill");
+  const scoreNote = document.getElementById("scoreNote");
+  const driftList = document.getElementById("driftList");
+  const briefOutput = document.getElementById("briefOutput");
+  const strictnessValue = document.getElementById("strictnessValue");
+  const actionStatus = document.getElementById("actionStatus");
+
+  function value(id){
+    return (els[id] && els[id].value ? els[id].value.trim() : "");
+  }
+
+  function chipValues(group){
+    return Array.from(document.querySelectorAll('[data-chip="' + group + '"]:checked')).map(input => input.value);
+  }
+
+  function allText(){
+    const fieldText = fields.map(value).join(" ");
+    const chips = Array.from(document.querySelectorAll("[data-chip]:checked")).map(input => input.value).join(" ");
+    return (fieldText + " " + chips).toLowerCase();
+  }
+
+  function hasAny(text, terms){
+    return terms.some(term => text.includes(term));
+  }
+
+  function completionForTile(tile){
+    const ids = tileMap[tile];
+    let count = 0;
+    ids.forEach(id => {
+      if(value(id).length > 2) count += 1;
+    });
+    if(chipValues(tile).length > 0) count += 1;
+    return Math.round((count / 3) * 100);
+  }
+
+  function setBadge(id, percent){
+    const node = document.getElementById(id);
+    node.classList.remove("good","warn");
+    if(percent >= 67){
+      node.textContent = "Ready";
+      node.classList.add("good");
+    } else if(percent >= 34){
+      node.textContent = "Partial";
+    } else {
+      node.textContent = "Needs detail";
+      node.classList.add("warn");
+    }
+  }
+
+  function detectDrift(){
+    const text = allText();
+    const found = [];
+    driftRules.forEach(rule => {
+      if(hasAny(text, rule.termsA) && hasAny(text, rule.termsB)){
+        found.push(rule);
+      }
+    });
+
+    if(value("idea").length > 10 && value("subjectMain").length > 10){
+      const ideaWords = keywordSet(value("idea"));
+      const subjectWords = keywordSet(value("subjectMain"));
+      const overlap = [...subjectWords].filter(word => ideaWords.has(word));
+      if(overlap.length === 0){
+        found.push({
+          title:"Subject may be drifting from core idea",
+          message:"The subject tile does not share obvious key terms with the core idea. Reuse the most important noun or setting."
+        });
+      }
+    }
+
+    if(Number(value("strictness")) > 75 && found.length > 0){
+      found.push({
+        title:"Strictness is high",
+        message:"With strictness above 75%, resolve drift before generation or the model may average conflicting directions."
+      });
+    }
+
+    return found;
+  }
+
+  function keywordSet(text){
+    const stop = new Set(["the","and","with","that","this","into","from","during","before","after","image","visual","style","shot","light","lighting","a","an","of","to","in","on","for"]);
+    return new Set(
+      text.toLowerCase()
+        .replace(/[^a-z0-9\s-]/g," ")
+        .split(/\s+/)
+        .filter(word => word.length > 3 && !stop.has(word))
+    );
+  }
+
+  function makeBrief(drift){
+    const subjectChips = chipValues("subject");
+    const styleChips = chipValues("style");
+    const cameraChips = chipValues("camera");
+    const paletteChips = chipValues("palette");
+    const negativeChips = chipValues("negative");
+
+    const lines = [
+      "VISUAL BRIEF",
+      "",
+      "Core idea:",
+      value("idea") || "[Add core image idea]",
+      "",
+      "Use case:",
+      value("purpose") || "[Choose use case]",
+      "",
+      "Subject tile:",
+      "- Main subject: " + (value("subjectMain") || "[Add subject]"),
+      "- Mood or behavior: " + (value("subjectMood") || "[Add mood]"),
+      "- Subject anchors: " + (subjectChips.length ? subjectChips.join(", ") : "[Add anchors]"),
+      "",
+      "Style tile:",
+      "- Visual style: " + (value("styleMode") || "[Add style]"),
+      "- Texture or finish: " + (value("styleTexture") || "[Add texture]"),
+      "- Style anchors: " + (styleChips.length ? styleChips.join(", ") : "[Add anchors]"),
+      "",
+      "Camera tile:",
+      "- Shot type: " + (value("shotType") || "[Choose shot type]"),
+      "- Camera notes: " + (value("cameraNotes") || "[Add camera notes]"),
+      "- Camera anchors: " + (cameraChips.length ? cameraChips.join(", ") : "[Add anchors]"),
+      "",
+      "Palette tile:",
+      "- Palette: " + (value("paletteMain") || "[Add palette]"),
+      "- Lighting: " + (value("lighting") || "[Add lighting]"),
+      "- Palette anchors: " + (paletteChips.length ? paletteChips.join(", ") : "[Add anchors]"),
+      "",
+      "Negative prompt consistency tile:",
+      "- Avoid: " + (value("avoidMain") || "[Add negative prompt]"),
+      "- Avoid style drift: " + (value("avoidDrift") || "[Add drift guardrails]"),
+      "- Negative anchors: " + (negativeChips.length ? negativeChips.join(", ") : "[Add anchors]"),
+      "",
+      "Non-negotiables:",
+      value("mustKeep") || "[Add non-negotiables]",
+      "",
+      "Prompt lock phrase:",
+      value("lockPhrase") || "[Optional]",
+      "",
+      "Drift flags:",
+      drift.length ? drift.map(item => "- " + item.title + ": " + item.message).join("\n") : "- No major drift detected.",
+      "",
+      "Generation prompt draft:",
+      buildPromptDraft(subjectChips, styleChips, cameraChips, paletteChips),
+      "",
+      "Negative prompt draft:",
+      buildNegativeDraft(negativeChips)
+    ];
+
+    return lines.join("\n");
+  }
+
+  function buildPromptDraft(subjectChips, styleChips, cameraChips, paletteChips){
+    const parts = [];
+    if(value("idea")) parts.push(value("idea"));
+    if(value("subjectMain")) parts.push("featuring " + value("subjectMain"));
+    if(value("subjectMood")) parts.push("with a " + value("subjectMood") + " subject feel");
+    if(value("styleMode")) parts.push("in " + value("styleMode") + " style");
+    if(value("styleTexture")) parts.push("with " + value("styleTexture"));
+    if(value("shotType")) parts.push(value("shotType"));
+    if(value("cameraNotes")) parts.push(value("cameraNotes"));
+    if(value("paletteMain")) parts.push(value("paletteMain"));
+    if(value("lighting")) parts.push(value("lighting") + " lighting");
+    const anchors = subjectChips.concat(styleChips, cameraChips, paletteChips);
+    if(anchors.length) parts.push("anchors: " + anchors.join(", "));
+    if(value("mustKeep")) parts.push("must keep: " + value("mustKeep"));
+    if(value("lockPhrase")) parts.push(value("lockPhrase"));
+    return parts.length ? parts.join("; ") + "." : "[Complete the tiles to create a prompt draft.]";
+  }
+
+  function buildNegativeDraft(negativeChips){
+    const parts = [];
+    if(value("avoidMain")) parts.push(value("avoidMain"));
+    if(value("avoidDrift")) parts.push(value("avoidDrift"));
+    if(negativeChips.length) parts.push(negativeChips.join(", "));
+    return parts.length ? parts.join(", ") : "[Add negative prompt items.]";
+  }
+
+  function renderDrift(drift){
+    driftList.replaceChildren();
+    if(!drift.length){
+      const item = document.createElement("div");
+      item.className = "driftItem";
+      const strong = document.createElement("strong");
+      strong.textContent = "No major drift detected";
+      const span = document.createElement("span");
+      span.textContent = "The tiles look aligned enough for a first generation pass.";
+      item.append(strong, span);
+      driftList.appendChild(item);
+      return;
+    }
+
+    drift.forEach(rule => {
+      const item = document.createElement("div");
+      item.className = "driftItem";
+      const strong = document.createElement("strong");
+      strong.textContent = rule.title;
+      const span = document.createElement("span");
+      span.textContent = rule.message;
+      item.append(strong, span);
+      driftList.appendChild(item);
+    });
+  }
+
+  function update(){
+    strictnessValue.textContent = value("strictness") || "0";
+
+    const tileScores = {
+      subject:completionForTile("subject"),
+      style:completionForTile("style"),
+      camera:completionForTile("camera"),
+      palette:completionForTile("palette"),
+      negative:completionForTile("negative")
+    };
+
+    setBadge("subjectState", tileScores.subject);
+    setBadge("styleState", tileScores.style);
+    setBadge("cameraState", tileScores.camera);
+    setBadge("paletteState", tileScores.palette);
+    setBadge("negativeState", tileScores.negative);
+
+    const drift = detectDrift();
+    const base = Object.values(tileScores).reduce((a,b) => a + b, 0) / 5;
+    const ideaBoost = value("idea").length > 12 ? 8 : 0;
+    const lockBoost = value("lockPhrase").length > 12 ? 4 : 0;
+    const driftPenalty = drift.length * (Number(value("strictness")) > 75 ? 8 : 5);
+    const score = Math.max(0, Math.min(100, Math.round(base + ideaBoost + lockBoost - driftPenalty)));
+
+    scoreBadge.textContent = score + "%";
+    scoreBadge.classList.remove("good","warn");
+    if(score >= 75) scoreBadge.classList.add("good");
+    if(score < 45) scoreBadge.classList.add("warn");
+    scoreFill.style.width = score + "%";
+
+    if(score >= 75){
+      scoreNote.textContent = "Ready for a controlled first generation pass.";
+    } else if(score >= 45){
+      scoreNote.textContent = "Usable, but a few tiles need sharper anchors.";
+    } else {
+      scoreNote.textContent = "Add more tile detail before generating.";
+    }
+
+    renderDrift(drift);
+    briefOutput.textContent = makeBrief(drift);
+    save();
+  }
+
+  function save(){
+    const data = {};
+    fields.forEach(id => data[id] = value(id));
+    data.chips = Array.from(document.querySelectorAll("[data-chip]")).map(input => ({
+      group:input.getAttribute("data-chip"),
+      value:input.value,
+      checked:input.checked
+    }));
+    localStorage.setItem("visualBriefTileStudio", JSON.stringify(data));
+  }
+
+  function load(){
+    try{
+      const raw = localStorage.getItem("visualBriefTileStudio");
+      if(!raw) return;
+      const data = JSON.parse(raw);
+      fields.forEach(id => {
+        if(els[id] && typeof data[id] === "string") els[id].value = data[id];
+      });
+      if(Array.isArray(data.chips)){
+        data.chips.forEach(saved => {
+          const selector = '[data-chip="' + saved.group + '"][value="' + cssEscape(saved.value) + '"]';
+          const input = document.querySelector(selector);
+          if(input) input.checked = !!saved.checked;
+        });
+      }
+    } catch(e){
+      localStorage.removeItem("visualBriefTileStudio");
+    }
+  }
+
+  function cssEscape(str){
+    if(window.CSS && CSS.escape) return CSS.escape(str);
+    return String(str).replace(/"/g, '\\"');
+  }
+
+  async function copyBrief(){
+    const text = briefOutput.textContent || "";
+    try{
+      await navigator.clipboard.writeText(text);
+      actionStatus.textContent = "Brief copied.";
+    } catch(e){
+      const helper = document.createElement("textarea");
+      helper.value = text;
+      helper.setAttribute("readonly","");
+      helper.style.position = "fixed";
+      helper.style.left = "-9999px";
+      document.body.appendChild(helper);
+      helper.select();
+      document.execCommand("copy");
+      helper.remove();
+      actionStatus.textContent = "Brief copied.";
+    }
+  }
+
+  function downloadBrief(){
+    const blob = new Blob([briefOutput.textContent || ""], {type:"text/plain;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const date = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = "visual-brief-" + date + ".txt";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    actionStatus.textContent = "Brief downloaded.";
+  }
+
+  function resetAll(){
+    fields.forEach(id => {
+      if(els[id]){
+        if(id === "purpose") els[id].selectedIndex = 0;
+        else if(id === "strictness") els[id].value = "70";
+        else els[id].value = "";
+      }
+    });
+    document.querySelectorAll("[data-chip]").forEach(input => input.checked = false);
+    localStorage.removeItem("visualBriefTileStudio");
+    actionStatus.textContent = "Studio reset.";
+    update();
+  }
+
+  fields.forEach(id => {
+    if(els[id]){
+      els[id].addEventListener("input", update);
+      els[id].addEventListener("change", update);
+    }
+  });
+
+  document.querySelectorAll("[data-chip]").forEach(input => {
+    input.addEventListener("change", update);
+  });
+
+  document.getElementById("copyBtn").addEventListener("click", copyBrief);
+  document.getElementById("downloadBtn").addEventListener("click", downloadBrief);
+  document.getElementById("resetBtn").addEventListener("click", resetAll);
+
+  load();
+  update();
+})();
+</script>
+</body>
+</html>

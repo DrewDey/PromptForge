@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sticker Sheet Studio</title>
+<style>
+/* ── TOKENS ──────────────────────────────────────────── */
+:root {
+  --ink:         #1A1A2E;
+  --ink-mid:     #2D2D4E;
+  --ink-soft:    #3D3D60;
+  --canvas:      #F7F5EE;
+  --coral:       #FF6B6B;
+  --mint:        #00D9A3;
+  --lavender:    #C4B5FD;
+  --amber:       #FFB347;
+  --text-on-ink: #E8E6FF;
+  --text-dim:    #9B98BB;
+  --border:      rgba(196,181,253,0.18);
+  --card-bg:     #22224A;
+  --drift-good:  #00D9A3;
+  --drift-warn:  #FFB347;
+  --drift-bad:   #FF6B6B;
+  --radius:      10px;
+  --font-ui:  system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+  /* sidebar width only used on wide viewports */
+  --panel-w: 240px;
+}
+
+/* ── RESET ───────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: var(--font-ui);
+  background: var(--ink);
+  color: var(--text-on-ink);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── TOP BAR ─────────────────────────────────────────── */
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--ink);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  width: 100%;
+}
+.topbar-logo {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--lavender);
+  flex-shrink: 0;
+}
+.topbar-logo em { font-style: italic; color: var(--coral); }
+
+.topbar-sheet-name {
+  flex: 1;
+  min-width: 0;        /* let it shrink below intrinsic */
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 9px;
+  color: var(--text-on-ink);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  outline: none;
+}
+.topbar-sheet-name:focus { border-color: var(--lavender); }
+
+.topbar-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* ── BUTTONS ─────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 7px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  white-space: nowrap;
+  transition: opacity .15s, transform .1s;
+}
+.btn:active { transform: scale(0.97); }
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+.btn-ghost:hover { border-color: var(--lavender); color: var(--lavender); }
+.btn-coral { background: var(--coral); color: #fff; }
+.btn-coral:hover { opacity: .88; }
+.btn-mint { background: var(--mint); color: var(--ink); }
+.btn-mint:hover { opacity: .88; }
+.btn-sm { padding: 4px 9px; font-size: 11px; }
+
+/* ── SIDEBAR TOGGLE (mobile) ─────────────────────────── */
+.sidebar-toggle {
+  display: none;   /* shown only on narrow */
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.sidebar-toggle:hover { border-color: var(--lavender); color: var(--lavender); }
+
+/* ── WORKSPACE ───────────────────────────────────────── */
+.workspace {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
+/* ── SIDEBAR ─────────────────────────────────────────── */
+.sidebar {
+  width: var(--panel-w);
+  min-width: var(--panel-w);
+  max-width: var(--panel-w);
+  background: var(--ink-mid);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px 12px 90px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex-shrink: 0;
+}
+.sidebar-section { display: flex; flex-direction: column; gap: 9px; }
+.section-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--border);
+}
+.field-row { display: flex; flex-direction: column; gap: 4px; }
+.field-label { font-size: 11px; color: var(--text-dim); font-weight: 500; }
+.field-input {
+  background: var(--ink-soft);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 9px;
+  color: var(--text-on-ink);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  outline: none;
+  width: 100%;
+  transition: border-color .15s;
+}
+.field-input:focus { border-color: var(--lavender); }
+textarea.field-input { resize: vertical; min-height: 60px; line-height: 1.5; }
+
+/* ── PALETTE ─────────────────────────────────────────── */
+.palette-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.swatch-wrap { position: relative; flex-shrink: 0; }
+.swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: border-color .15s, transform .12s;
+  padding: 0;
+  overflow: hidden;
+  display: block;
+}
+.swatch:hover { transform: scale(1.12); border-color: rgba(255,255,255,0.4); }
+.swatch input[type=color] {
+  opacity: 0;
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+  border: none;
+  padding: 0;
+}
+.swatch-add {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px dashed var(--text-dim);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color .15s, color .15s;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.swatch-add:hover { border-color: var(--lavender); color: var(--lavender); }
+
+/* ── CONSTRAINT CHIPS ────────────────────────────────── */
+.chips-area { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--ink-soft);
+  color: var(--text-on-ink);
+  border: 1px solid var(--border);
+  user-select: none;
+  word-break: break-word;
+}
+.chip-remove {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 0;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.chip-remove:hover { color: var(--coral); }
+.chip-add-row { display: flex; gap: 6px; margin-top: 2px; }
+.chip-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--ink-soft);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 8px;
+  color: var(--text-on-ink);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  outline: none;
+}
+.chip-input:focus { border-color: var(--lavender); }
+.btn-chip-add {
+  background: var(--lavender);
+  color: var(--ink);
+  border: none;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: opacity .15s;
+}
+.btn-chip-add:hover { opacity: .8; }
+
+/* ── PRESET GRID ─────────────────────────────────────── */
+.preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.preset-btn {
+  background: var(--ink-soft);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 5px;
+  color: var(--text-on-ink);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color .15s, background .15s;
+}
+.preset-btn:hover, .preset-btn.active {
+  border-color: var(--lavender);
+  background: rgba(196,181,253,0.12);
+  color: var(--lavender);
+}
+
+/* ── MAIN PANEL ──────────────────────────────────────── */
+.main {
+  flex: 1;
+  min-width: 0;    /* critical: prevents flex child from overflowing */
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px 14px 90px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── GRID HEADER ─────────────────────────────────────── */
+.grid-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.grid-title {
+  font-size: 18px;
+  color: var(--canvas);
+  font-weight: 700;
+}
+.drift-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--text-dim);
+  align-items: center;
+}
+.drift-legend-item { display: flex; align-items: center; gap: 3px; }
+.drift-legend-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── STICKER GRID ────────────────────────────────────── */
+.sticker-grid {
+  display: grid;
+  /* single column by default; on wider screens two columns appear */
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+/* ── STICKER CARD ────────────────────────────────────── */
+.sticker-card {
+  background: var(--card-bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  transition: border-color .2s;
+}
+.sticker-card:hover { border-color: rgba(196,181,253,0.45); }
+.sticker-card.drifting { border-color: rgba(255,107,107,0.55); }
+.sticker-card.aligned  { border-color: rgba(0,217,163,0.45); }
+
+.card-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.card-num {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+.card-title {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-on-ink);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  width: 100%;
+}
+.card-title::placeholder { color: var(--text-dim); font-weight: 400; }
+
+.drift-meter {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+.drift-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.drift-bar-wrap {
+  width: 40px;
+  height: 4px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 999px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.drift-bar {
+  height: 100%;
+  border-radius: 999px;
+  transition: width .4s, background .4s;
+}
+
+.card-desc {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 9px;
+  color: var(--text-on-ink);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  resize: vertical;
+  outline: none;
+  min-height: 52px;
+  line-height: 1.5;
+  width: 100%;
+  transition: border-color .15s;
+}
+.card-desc:focus { border-color: var(--lavender); }
+.card-desc::placeholder { color: var(--text-dim); }
+
+.card-tags { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.tag {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(196,181,253,0.15);
+  color: var(--lavender);
+  font-weight: 600;
+  border: 1px solid rgba(196,181,253,0.25);
+  cursor: pointer;
+  transition: background .15s;
+}
+.tag:hover { background: rgba(196,181,253,0.28); }
+.tag-add {
+  font-size: 10px;
+  background: transparent;
+  border: 1px dashed var(--text-dim);
+  border-radius: 999px;
+  color: var(--text-dim);
+  padding: 2px 6px;
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
+}
+.tag-add:hover { border-color: var(--lavender); color: var(--lavender); }
+
+/* meta: two selects stack under flag on very narrow; wrap on medium */
+.card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.card-meta select {
+  flex: 1;
+  min-width: 80px;
+  background: var(--ink-soft);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 6px;
+  color: var(--text-on-ink);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  outline: none;
+  cursor: pointer;
+}
+.card-flag {
+  font-size: 10px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: opacity .15s;
+}
+.card-flag.flagged { background: rgba(255,107,107,0.2); color: var(--coral); }
+.card-flag.ok      { background: rgba(0,217,163,0.15);  color: var(--mint);  }
+
+/* ── BRIEF BAR ───────────────────────────────────────── */
+.brief-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--ink-mid);
+  border-top: 1px solid var(--border);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 40;
+  width: 100%;
+}
+.brief-bar-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.brief-preview {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  color: var(--text-on-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: .7;
+}
+
+/* ── MODAL ───────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10,10,28,0.82);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.modal-overlay.hidden { display: none; }
+.modal {
+  background: var(--ink-mid);
+  border: 1px solid var(--border);
+  border-radius: 14px 14px 0 0;
+  width: 100%;
+  max-width: 680px;
+  padding: 20px 16px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.modal-title {
+  font-size: 17px;
+  color: var(--canvas);
+  font-weight: 700;
+}
+.modal-close {
+  background: var(--ink-soft);
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  color: var(--text-dim);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.brief-output {
+  background: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 11px;
+  line-height: 1.75;
+  color: var(--text-on-ink);
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--font-mono);
+  max-height: 320px;
+  overflow-y: auto;
+}
+.brief-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ── TOAST ───────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  top: 56px;
+  right: 14px;
+  background: var(--mint);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 8px;
+  z-index: 9999;
+  transform: translateX(140%);
+  transition: transform .25s;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.toast.show { transform: translateX(0); }
+
+/* ── RESPONSIVE LAYOUT ───────────────────────────────── */
+
+/* Narrow: stack layout, show sidebar toggle, hide sidebar by default */
+@media (max-width: 599px) {
+  .sidebar-toggle { display: inline-flex; }
+
+  .workspace { flex-direction: column; }
+
+  .sidebar {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 14px 14px 20px;
+    /* collapsed by default */
+    display: none;
+  }
+  .sidebar.open { display: flex; }
+
+  /* brief bar spans full width (already set, but reinforce) */
+  .brief-bar { left: 0; }
+}
+
+/* Wide: side-by-side, no toggle needed */
+@media (min-width: 600px) {
+  .sidebar-toggle { display: none; }
+  .sidebar { display: flex !important; } /* always visible */
+  .workspace { flex-direction: row; }
+  .brief-bar { left: var(--panel-w); }
+  .sticker-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--ink-soft); border-radius: 10px; }
+
+*:focus-visible { outline: 2px solid var(--lavender); outline-offset: 2px; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<header class="topbar">
+  <span class="topbar-logo"><em>sticker</em>sheet</span>
+  <button class="sidebar-toggle" id="btnSidebarToggle">&#9776; Theme</button>
+  <input class="topbar-sheet-name" id="sheetName" type="text" value="My Brand Sheet" placeholder="Sheet name">
+  <div class="topbar-actions">
+    <button class="btn btn-ghost btn-sm" id="btnLoadSample">&#9889; Sample</button>
+    <button class="btn btn-mint btn-sm" id="btnOpenBrief">&#128203; Brief</button>
+  </div>
+</header>
+
+<div class="workspace">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+
+    <div class="sidebar-section">
+      <div class="section-label">Theme</div>
+      <div class="field-row">
+        <label class="field-label" for="brandName">Brand Name</label>
+        <input class="field-input" id="brandName" type="text" placeholder="e.g. Mossy Peak Co.">
+      </div>
+      <div class="field-row">
+        <label class="field-label" for="vibe">Vibe / Aesthetic</label>
+        <input class="field-input" id="vibe" type="text" placeholder="e.g. cottagecore, bold retro">
+      </div>
+      <div class="field-row">
+        <label class="field-label" for="audience">Target Audience</label>
+        <input class="field-input" id="audience" type="text" placeholder="e.g. outdoor enthusiasts">
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-label">Style Preset</div>
+      <div class="preset-grid" id="presetGrid"></div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-label">Style Rules</div>
+      <div class="field-row">
+        <label class="field-label" for="moodWords">Mood words (comma-sep)</label>
+        <input class="field-input" id="moodWords" type="text" placeholder="e.g. playful, warm, cozy">
+      </div>
+      <div class="field-row">
+        <label class="field-label" for="styleRules">Design rules (one per line)</label>
+        <textarea class="field-input" id="styleRules" placeholder="No harsh lines&#10;Rounded shapes only"></textarea>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-label">Brand Palette</div>
+      <div class="palette-row" id="paletteRow"></div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-label">Constraints</div>
+      <div class="chips-area" id="constraintChips"></div>
+      <div class="chip-add-row">
+        <input class="chip-input" id="newChipInput" type="text" placeholder="Add constraint">
+        <button class="btn-chip-add" id="btnAddChip">+</button>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="grid-header">
+      <div class="grid-title">Sticker Ideas</div>
+      <div class="drift-legend" id="driftLegend"></div>
+      <button class="btn btn-ghost btn-sm" id="btnRescore">&#8635; Re-score</button>
+    </div>
+    <div class="sticker-grid" id="stickerGrid"></div>
+  </main>
+</div>
+
+<!-- BRIEF BAR -->
+<div class="brief-bar">
+  <div class="brief-bar-label">Brief</div>
+  <div class="brief-preview" id="briefPreview">Set theme and sticker ideas to generate a brief</div>
+  <button class="btn btn-coral btn-sm" id="btnBriefBarOpen">View</button>
+</div>
+
+<!-- BRIEF MODAL -->
+<div class="modal-overlay hidden" id="modalOverlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitleText">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitleText">Production Brief</div>
+      <button class="modal-close" id="btnModalClose" aria-label="Close">&#10005;</button>
+    </div>
+    <pre class="brief-output" id="briefOutput"></pre>
+    <div class="brief-actions">
+      <button class="btn btn-mint" id="btnCopyBrief">&#128203; Copy</button>
+      <button class="btn btn-ghost" id="btnModalClose2">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ── STATE ───────────────────────────────────────── */
+  var state = {
+    palette: ['#FF6B6B','#FFB347','#00D9A3','#C4B5FD','#1A1A2E'],
+    constraints: ['Max 3 colors per sticker','Thick outlines (3px+)','White fill background'],
+    stickers: []
+  };
+
+  var MOODS   = ['cozy','playful','bold','minimal','retro','cute','nostalgic','sharp','natural','electric'];
+  var FORMATS = ['circle','die-cut','rectangle','oval','kiss-cut'];
+
+  var STICKER_DEFAULTS = [
+    { title:'Mountain Sunrise', desc:'A tiny mountain peak with a rising sun behind it, warm sky.',   mood:'cozy',    format:'circle',    flagged:false, tags:['nature','gradient'] },
+    { title:'Mushroom Trio',    desc:'Three different mushrooms side by side, illustrated style.',     mood:'playful', format:'die-cut',   flagged:false, tags:['nature','food'] },
+    { title:'Busy Bee',         desc:'A plump honeybee with dotted flight trail, bold black stripes.', mood:'bold',    format:'circle',    flagged:false, tags:['animal','bold'] },
+    { title:'Pine Branch',      desc:'Single pine branch with pinecones, minimal linework.',           mood:'minimal', format:'rectangle', flagged:false, tags:['nature','minimal'] },
+    { title:'Crescent Moon',    desc:'Crescent moon with a sleepy face, star accent, pastel tones.',   mood:'cozy',    format:'die-cut',   flagged:false, tags:['celestial','cute'] },
+    { title:'Wild Strawberry',  desc:'Oversized cartoon strawberry with seeds and leaf top.',          mood:'playful', format:'die-cut',   flagged:false, tags:['food','bold'] },
+    { title:'Vintage Compass',  desc:'Classic compass rose in aged brass tones, hatching detail.',     mood:'retro',   format:'circle',    flagged:false, tags:['retro','tool'] },
+    { title:'Cloud Burst',      desc:'Happy cloud with cartoon lightning bolt shooting down.',          mood:'playful', format:'die-cut',   flagged:false, tags:['weather','fun'] }
+  ];
+
+  var PRESETS = {
+    retro:   { label:'Retro',   icon:'Rt', palette:['#D4441C','#F4CC3A','#2B4A8C','#FAF0DC','#1A1A1A'], constraints:['Halftone texture','Max 4 colors','Serif text labels','Aged/worn edges'],        mood:'nostalgic, bold, vintage',    rules:'Use thick outlines\nRetro typography\nHalftone textures welcome\nWarm muted palette' },
+    minimal: { label:'Minimal', icon:'Mi', palette:['#111111','#FFFFFF','#E5E5E5','#C8D8FF'],            constraints:['Max 2 colors','No texture','Clean vector only','Thin 1px strokes'],             mood:'clean, airy, refined',         rules:'No texture fills\nSingle accent color max\nAbundant white space\nGeometric shapes' },
+    cottage: { label:'Cottage', icon:'Co', palette:['#6B8F71','#C9956C','#F5DEB3','#A0522D','#FDFBF0'], constraints:['Organic shapes only','Earth tones','No neon','Hand-drawn aesthetic'],           mood:'cozy, natural, warm',          rules:'Natural motifs only\nHand-drawn feel\nOrganic rounded forms\nEarth and botanical palette' },
+    cyber:   { label:'Cyber',   icon:'Cy', palette:['#0D0D0D','#00FFC8','#FF00AA','#7B00FF','#FFFFFF'],  constraints:['Glow effects allowed','Grid or tech motifs','Sharp angles','Neon on dark only'], mood:'futuristic, electric, sharp',  rules:'Dark background always\nNeon/glow accents\nAngular geometric shapes\nCyberspace motifs' },
+    kawaii:  { label:'Kawaii',  icon:'Ka', palette:['#FFB7C5','#B5EAD7','#FFDAC1','#C7CEEA','#FFFFFF'],  constraints:['Round faces','Pastel only','No sharp angles','Max 5 colors'],                   mood:'cute, pastel, bubbly',         rules:'Pastel palette only\nRounded everything\nCharacters must have simple face\nNo hard shadows' },
+    bold:    { label:'Bold',    icon:'Bd', palette:['#000000','#FFFFFF','#FF3C00','#FFE600'],             constraints:['Max 3 colors','Thick 4px+ outlines','High contrast','No gradients'],            mood:'loud, confident, graphic',     rules:'No gradients\nThick black outlines\nHigh contrast always\nGraphic/poster aesthetic' }
+  };
+
+  /* ── DOM HELPERS ─────────────────────────────────── */
+  function el(tag, cls) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    return e;
+  }
+  function txt(node, str) { node.textContent = str; return node; }
+  function attr(node, k, v) { node.setAttribute(k, v); return node; }
+
+  /* ── INIT ────────────────────────────────────────── */
+  function init() {
+    state.stickers = STICKER_DEFAULTS.map(function(s) {
+      return { title:s.title, desc:s.desc, mood:s.mood, format:s.format, flagged:s.flagged, tags:s.tags.slice() };
+    });
+    buildPresetGrid();
+    buildDriftLegend();
+    renderPalette();
+    renderConstraints();
+    renderGrid();
+    bindStatic();
+  }
+
+  /* ── STATIC BINDINGS ─────────────────────────────── */
+  function bindStatic() {
+    document.getElementById('btnLoadSample').addEventListener('click', loadSample);
+    document.getElementById('btnOpenBrief').addEventListener('click', openBriefModal);
+    document.getElementById('btnBriefBarOpen').addEventListener('click', openBriefModal);
+    document.getElementById('btnModalClose').addEventListener('click', closeBriefModal);
+    document.getElementById('btnModalClose2').addEventListener('click', closeBriefModal);
+    document.getElementById('btnCopyBrief').addEventListener('click', copyBrief);
+    document.getElementById('btnRescore').addEventListener('click', recalcAllDrift);
+    document.getElementById('btnAddChip').addEventListener('click', addChip);
+    document.getElementById('btnSidebarToggle').addEventListener('click', function() {
+      document.getElementById('sidebar').classList.toggle('open');
+    });
+    document.getElementById('modalOverlay').addEventListener('click', function(e) {
+      if (e.target === this) closeBriefModal();
+    });
+    document.getElementById('newChipInput').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') addChip();
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeBriefModal();
+      if ((e.metaKey || e.ctrlKey) && e.key === 'b') { e.preventDefault(); openBriefModal(); }
+    });
+    ['moodWords','styleRules','brandName','vibe','audience'].forEach(function(id) {
+      document.getElementById(id).addEventListener('input', function() {
+        recalcAllDrift();
+        updateBriefPreview();
+      });
+    });
+    document.getElementById('sheetName').addEventListener('input', updateBriefPreview);
+  }
+
+  /* ── PRESET GRID ─────────────────────────────────── */
+  function buildPresetGrid() {
+    var grid = document.getElementById('presetGrid');
+    Object.keys(PRESETS).forEach(function(key) {
+      var p = PRESETS[key];
+      var btn = el('button', 'preset-btn');
+      txt(btn, p.label);
+      attr(btn, 'data-preset', key);
+      btn.addEventListener('click', function() { applyPreset(key, btn); });
+      grid.appendChild(btn);
+    });
+  }
+
+  function applyPreset(key, btn) {
+    var p = PRESETS[key];
+    if (!p) return;
+    state.palette = p.palette.slice();
+    state.constraints = p.constraints.slice();
+    document.getElementById('moodWords').value = p.mood;
+    document.getElementById('styleRules').value = p.rules;
+    document.querySelectorAll('.preset-btn').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    renderPalette();
+    renderConstraints();
+    recalcAllDrift();
+    updateBriefPreview();
+  }
+
+  /* ── DRIFT LEGEND ────────────────────────────────── */
+  function buildDriftLegend() {
+    var legend = document.getElementById('driftLegend');
+    [
+      { color:'var(--drift-good)', label:'On-brand' },
+      { color:'var(--drift-warn)', label:'Check' },
+      { color:'var(--drift-bad)',  label:'Drifting' }
+    ].forEach(function(item) {
+      var wrap = el('span', 'drift-legend-item');
+      var dot  = el('span', 'drift-legend-dot');
+      dot.style.background = item.color;
+      var lbl  = el('span');
+      txt(lbl, item.label);
+      wrap.appendChild(dot);
+      wrap.appendChild(lbl);
+      legend.appendChild(wrap);
+    });
+  }
+
+  /* ── PALETTE ─────────────────────────────────────── */
+  function renderPalette() {
+    var row = document.getElementById('paletteRow');
+    while (row.firstChild) row.removeChild(row.firstChild);
+
+    state.palette.forEach(function(hex, i) {
+      var wrap = el('div', 'swatch-wrap');
+      attr(wrap, 'title', hex);
+
+      var lbl = el('label', 'swatch');
+      lbl.style.background = hex;
+
+      var picker = el('input');
+      attr(picker, 'type', 'color');
+      picker.value = hex;
+      attr(picker, 'data-idx', String(i));
+      picker.addEventListener('change', function() {
+        var idx = parseInt(this.getAttribute('data-idx'), 10);
+        state.palette[idx] = this.value;
+        lbl.style.background = this.value;
+        attr(wrap, 'title', this.value);
+      });
+
+      lbl.appendChild(picker);
+      wrap.appendChild(lbl);
+      row.appendChild(wrap);
+    });
+
+    if (state.palette.length < 8) {
+      var addBtn = el('button', 'swatch-add');
+      txt(addBtn, '+');
+      attr(addBtn, 'title', 'Add color');
+      addBtn.addEventListener('click', function() {
+        state.palette.push('#FFFFFF');
+        renderPalette();
+      });
+      row.appendChild(addBtn);
+    }
+  }
+
+  /* ── CONSTRAINTS ─────────────────────────────────── */
+  function renderConstraints() {
+    var area = document.getElementById('constraintChips');
+    while (area.firstChild) area.removeChild(area.firstChild);
+
+    state.constraints.forEach(function(c, i) {
+      var chip = el('div', 'chip');
+      var span = el('span');
+      txt(span, c);
+      chip.appendChild(span);
+
+      var rmBtn = el('button', 'chip-remove');
+      txt(rmBtn, '\u2715');
+      attr(rmBtn, 'title', 'Remove');
+      rmBtn.addEventListener('click', function() {
+        state.constraints.splice(i, 1);
+        renderConstraints();
+        recalcAllDrift();
+        updateBriefPreview();
+      });
+      chip.appendChild(rmBtn);
+      area.appendChild(chip);
+    });
+  }
+
+  function addChip() {
+    var input = document.getElementById('newChipInput');
+    var val = input.value.trim();
+    if (!val) return;
+    state.constraints.push(val);
+    renderConstraints();
+    recalcAllDrift();
+    updateBriefPreview();
+    input.value = '';
+  }
+
+  /* ── DRIFT SCORING ───────────────────────────────── */
+  function calcDrift(sticker) {
+    if (sticker.flagged) return 0.15;
+
+    var mood = document.getElementById('moodWords').value.toLowerCase();
+    var moodWords = mood.split(',').map(function(w) { return w.trim(); }).filter(Boolean);
+    var stickerText = (sticker.title + ' ' + sticker.desc + ' ' + sticker.mood + ' ' + sticker.tags.join(' ')).toLowerCase();
+
+    var hits = 0;
+    moodWords.forEach(function(w) { if (stickerText.indexOf(w) !== -1) hits++; });
+    var moodScore = moodWords.length ? hits / moodWords.length : 0.5;
+
+    var constraintScore = 1.0;
+    var BAD = {
+      'gradient': ['gradient','gradients'],
+      'neon':     ['neon','electric','glow'],
+      'texture':  ['texture','halftone','grain'],
+      'sharp':    ['sharp','angular','geometric'],
+      'bold':     ['neon','black','bold','dark'],
+      'harsh':    ['harsh','sharp','angular'],
+      'earth':    ['neon','pastel','bright']
+    };
+    state.constraints.forEach(function(c) {
+      var cl = c.toLowerCase();
+      Object.keys(BAD).forEach(function(trigger) {
+        if (cl.indexOf(trigger) !== -1) {
+          BAD[trigger].forEach(function(w) {
+            if (stickerText.indexOf(w) !== -1) {
+              constraintScore = Math.max(0.1, constraintScore - 0.25);
+            }
+          });
+        }
+      });
+    });
+
+    return Math.min(1, Math.max(0, moodScore * 0.6 + constraintScore * 0.4));
+  }
+
+  function driftColor(score) {
+    if (score >= 0.65) return 'var(--drift-good)';
+    if (score >= 0.35) return 'var(--drift-warn)';
+    return 'var(--drift-bad)';
+  }
+
+  function driftLabel(score) {
+    if (score >= 0.65) return 'ON';
+    if (score >= 0.35) return 'CHK';
+    return 'OFF';
+  }
+
+  function recalcAllDrift() {
+    state.stickers.forEach(function(s, i) {
+      var card = document.querySelector('.sticker-card[data-idx="' + i + '"]');
+      if (!card) return;
+      var score = calcDrift(s);
+      var bar   = card.querySelector('.drift-bar');
+      var lbl   = card.querySelector('.drift-label');
+      var col   = driftColor(score);
+      bar.style.width      = (score * 100) + '%';
+      bar.style.background = col;
+      txt(lbl, driftLabel(score));
+      lbl.style.color = col;
+      card.classList.remove('drifting','aligned');
+      if (score >= 0.65) card.classList.add('aligned');
+      else if (score < 0.35) card.classList.add('drifting');
+    });
+    updateBriefPreview();
+  }
+
+  /* ── STICKER GRID ────────────────────────────────── */
+  function renderGrid() {
+    var grid = document.getElementById('stickerGrid');
+    while (grid.firstChild) grid.removeChild(grid.firstChild);
+    state.stickers.forEach(function(s, i) { grid.appendChild(buildCard(s, i)); });
+    updateBriefPreview();
+  }
+
+  function buildCard(s, i) {
+    var score = calcDrift(s);
+    var col   = driftColor(score);
+    var pct   = score * 100;
+
+    var card = el('div', 'sticker-card' + (score >= 0.65 ? ' aligned' : score < 0.35 ? ' drifting' : ''));
+    attr(card, 'data-idx', String(i));
+
+    /* top row */
+    var top = el('div', 'card-top');
+
+    var num = el('span', 'card-num');
+    txt(num, '#' + String(i + 1).padStart(2, '0'));
+    top.appendChild(num);
+
+    var titleInput = el('input', 'card-title');
+    attr(titleInput, 'type', 'text');
+    titleInput.value = s.title;
+    attr(titleInput, 'placeholder', 'Sticker name');
+    titleInput.addEventListener('change', function() { updateSticker(i, 'title', this.value); });
+    top.appendChild(titleInput);
+
+    var meter  = el('div', 'drift-meter');
+    var dLabel = el('span', 'drift-label');
+    txt(dLabel, driftLabel(score));
+    dLabel.style.color = col;
+    meter.appendChild(dLabel);
+
+    var barWrap = el('div', 'drift-bar-wrap');
+    var bar     = el('div', 'drift-bar');
+    bar.style.width      = pct + '%';
+    bar.style.background = col;
+    barWrap.appendChild(bar);
+    meter.appendChild(barWrap);
+    top.appendChild(meter);
+    card.appendChild(top);
+
+    /* description */
+    var desc = el('textarea', 'card-desc');
+    attr(desc, 'rows', '3');
+    attr(desc, 'placeholder', 'Describe this sticker concept');
+    desc.value = s.desc;
+    desc.addEventListener('change', function() { updateSticker(i, 'desc', this.value); });
+    card.appendChild(desc);
+
+    /* tags */
+    var tagsWrap = el('div', 'card-tags');
+    attr(tagsWrap, 'id', 'tags-' + i);
+    card.appendChild(tagsWrap);
+    renderTags(i, tagsWrap, s);
+
+    /* meta */
+    var meta    = el('div', 'card-meta');
+
+    var moodSel = buildSelect(MOODS, s.mood, '\u2014 Mood \u2014');
+    moodSel.addEventListener('change', function() { updateSticker(i, 'mood', this.value); });
+    meta.appendChild(moodSel);
+
+    var fmtSel  = buildSelect(FORMATS, s.format, '\u2014 Format \u2014');
+    fmtSel.addEventListener('change', function() { updateSticker(i, 'format', this.value); });
+    meta.appendChild(fmtSel);
+
+    var flagBtn = el('button', 'card-flag ' + (s.flagged ? 'flagged' : 'ok'));
+    txt(flagBtn, s.flagged ? '\u2691 Flag' : '\u2713 OK');
+    flagBtn.addEventListener('click', function() { toggleFlag(i, flagBtn); });
+    meta.appendChild(flagBtn);
+
+    card.appendChild(meta);
+    return card;
+  }
+
+  function buildSelect(options, selectedVal, placeholder) {
+    var sel = el('select');
+    var def = el('option');
+    attr(def, 'value', '');
+    txt(def, placeholder);
+    sel.appendChild(def);
+    options.forEach(function(o) {
+      var opt = el('option');
+      attr(opt, 'value', o);
+      txt(opt, o);
+      if (o === selectedVal) attr(opt, 'selected', 'selected');
+      sel.appendChild(opt);
+    });
+    return sel;
+  }
+
+  function renderTags(i, wrap, s) {
+    if (!wrap) wrap = document.getElementById('tags-' + i);
+    if (!s)    s    = state.stickers[i];
+    if (!wrap) return;
+    while (wrap.firstChild) wrap.removeChild(wrap.firstChild);
+
+    s.tags.forEach(function(t, ti) {
+      var tag = el('span', 'tag');
+      txt(tag, '#' + t);
+      attr(tag, 'title', 'Click to remove');
+      tag.addEventListener('click', function() {
+        s.tags.splice(ti, 1);
+        renderTags(i, wrap, s);
+        recalcAllDrift();
+        updateBriefPreview();
+      });
+      wrap.appendChild(tag);
+    });
+
+    var addBtn = el('button', 'tag-add');
+    txt(addBtn, '+ tag');
+    addBtn.addEventListener('click', function() {
+      var val = prompt('Add tag:', '');
+      if (val && val.trim()) {
+        s.tags.push(val.trim().replace(/^#/, ''));
+        renderTags(i, wrap, s);
+        recalcAllDrift();
+        updateBriefPreview();
+      }
+    });
+    wrap.appendChild(addBtn);
+  }
+
+  function updateSticker(i, key, val) {
+    state.stickers[i][key] = val;
+    recalcAllDrift();
+    updateBriefPreview();
+  }
+
+  function toggleFlag(i, btn) {
+    state.stickers[i].flagged = !state.stickers[i].flagged;
+    var flagged = state.stickers[i].flagged;
+    btn.className = 'card-flag ' + (flagged ? 'flagged' : 'ok');
+    txt(btn, flagged ? '\u2691 Flag' : '\u2713 OK');
+    recalcAllDrift();
+    updateBriefPreview();
+  }
+
+  /* ── SAMPLE LOAD ─────────────────────────────────── */
+  function loadSample() {
+    document.getElementById('brandName').value = 'Mossy Peak Co.';
+    document.getElementById('vibe').value      = 'cottagecore, nature-forward, cozy';
+    document.getElementById('audience').value  = 'Outdoor enthusiasts, plant lovers, 20s-30s';
+    document.getElementById('sheetName').value = 'Spring 2025 Sticker Sheet';
+
+    var cottageBtn = document.querySelector('[data-preset="cottage"]');
+    if (cottageBtn) applyPreset('cottage', cottageBtn);
+
+    state.stickers = [
+      { title:'Acorn Cap',     desc:'A tiny smiling acorn in warm browns, rounded and cute.',           mood:'cozy',    format:'die-cut',   flagged:false, tags:['nature','cute','forest'] },
+      { title:'Fern Frond',    desc:'Unfurling fern in deep green, hand-drawn ink style.',              mood:'natural', format:'die-cut',   flagged:false, tags:['nature','botanical'] },
+      { title:'Honey Jar',     desc:'Round jar of honey with a drip, golden amber tones.',             mood:'cozy',    format:'circle',    flagged:false, tags:['food','warm'] },
+      { title:'Hedgehog Hug',  desc:'Tiny hedgehog curled with a flower tucked in its spines.',        mood:'cute',    format:'die-cut',   flagged:false, tags:['animal','cute'] },
+      { title:'Thunder Skull', desc:'Bold neon skull with lightning bolts. High contrast.',             mood:'sharp',   format:'rectangle', flagged:true,  tags:['dark','neon','edgy'] },
+      { title:'Campfire',      desc:'Small glowing campfire with smoke curl, warm orange glow.',       mood:'cozy',    format:'circle',    flagged:false, tags:['outdoor','warm','night'] },
+      { title:'Rain Cloud',    desc:'Round cloud with gentle rain drops, soft blue-grey.',             mood:'natural', format:'die-cut',   flagged:false, tags:['weather','soft'] },
+      { title:'Wild Violet',   desc:'Cluster of violets with deep purple petals, botanical accuracy.', mood:'natural', format:'die-cut',   flagged:false, tags:['botanical','floral'] }
+    ];
+    renderGrid();
+    showToast('Sample loaded!');
+  }
+
+  /* ── BRIEF ───────────────────────────────────────── */
+  function buildBriefText() {
+    var name     = document.getElementById('sheetName').value  || 'Untitled Sheet';
+    var brand    = document.getElementById('brandName').value  || '-';
+    var vibe     = document.getElementById('vibe').value       || '-';
+    var audience = document.getElementById('audience').value   || '-';
+    var mood     = document.getElementById('moodWords').value  || '-';
+    var rules    = document.getElementById('styleRules').value || '-';
+    var palette  = state.palette.join(', ');
+    var cList    = state.constraints.map(function(c) { return '* ' + c; }).join('\n');
+
+    var stickerLines = state.stickers.map(function(s, i) {
+      var score = calcDrift(s);
+      var flag  = s.flagged ? ' [FLAGGED]' : score < 0.35 ? ' [DRIFTING]' : '';
+      var tags  = s.tags.length ? s.tags.map(function(t) { return '#' + t; }).join(' ') : 'none';
+      return '  ' + (i + 1) + '. ' + s.title + flag
+           + '\n     Format: ' + (s.format || '?') + ' | Mood: ' + (s.mood || '?') + ' | Tags: ' + tags
+           + '\n     ' + s.desc;
+    }).join('\n\n');
+
+    return 'STICKER SHEET PRODUCTION BRIEF\n'
+         + '========================================\n'
+         + 'Sheet: ' + name + '\n'
+         + 'Generated: ' + new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' }) + '\n\n'
+         + 'BRAND\n'
+         + '  Name: ' + brand + '\n'
+         + '  Vibe: ' + vibe  + '\n'
+         + '  Audience: ' + audience + '\n\n'
+         + 'STYLE\n'
+         + '  Mood: ' + mood + '\n'
+         + '  Rules:\n'
+         + rules.split('\n').map(function(r) { return '    * ' + r; }).join('\n') + '\n\n'
+         + 'PALETTE\n'
+         + '  ' + palette + '\n\n'
+         + 'CONSTRAINTS\n'
+         + cList + '\n\n'
+         + 'STICKERS (8)\n'
+         + stickerLines + '\n\n'
+         + '========================================\n'
+         + 'END OF BRIEF';
+  }
+
+  function updateBriefPreview() {
+    var brand = document.getElementById('brandName').value;
+    var count = state.stickers.filter(function(s) { return !s.flagged; }).length;
+    txt(
+      document.getElementById('briefPreview'),
+      (brand || 'Unnamed brand') + ' \u00b7 ' + count + ' active \u00b7 '
+      + state.palette.length + ' colors \u00b7 ' + state.constraints.length + ' constraints'
+    );
+  }
+
+  function openBriefModal() {
+    txt(document.getElementById('briefOutput'), buildBriefText());
+    document.getElementById('modalOverlay').classList.remove('hidden');
+  }
+
+  function closeBriefModal() {
+    document.getElementById('modalOverlay').classList.add('hidden');
+  }
+
+  function copyBrief() {
+    var text = document.getElementById('briefOutput').textContent;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text)
+        .then(function() { showToast('Brief copied!'); })
+        .catch(function() { fallbackCopy(text); });
+    } else {
+      fallbackCopy(text);
+    }
+  }
+
+  function fallbackCopy(text) {
+    var ta = el('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity  = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch(e) {}
+    document.body.removeChild(ta);
+    showToast('Brief copied!');
+  }
+
+  /* ── TOAST ───────────────────────────────────────── */
+  var toastTimer = null;
+  function showToast(msg) {
+    var t = document.getElementById('toast');
+    txt(t, msg);
+    t.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function() { t.classList.remove('show'); }, 2000);
+  }
+
+  /* ── START ───────────────────────────────────────── */
+  init();
+
+}());
+</script>
+</body>
+</html>

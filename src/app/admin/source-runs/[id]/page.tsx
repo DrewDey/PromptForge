@@ -33,34 +33,37 @@ export default async function AdminSourceRunDetailPage({
   const sourceLabel = sourceRun.source_url ?? sourceRun.file_name ?? 'No source attached'
   const preparedProject = getPreparedShowcaseProjectBySourceRunId(sourceRun.id)
   const linkedPromptStatus = sourceRun.extracted_prompt?.status ?? null
-  const isPublished = sourceRun.extracted_prompt?.status === 'approved'
+  const hasApprovedLinkedPrompt = linkedPromptStatus === 'approved'
+  const isPublished = hasApprovedLinkedPrompt && Boolean(preparedProject)
+  const hasInconsistentApprovedPrompt = hasApprovedLinkedPrompt && !isPublished
   const isDeclined = sourceRun.status === 'declined' || linkedPromptStatus === 'rejected'
   const isRepairRequested = sourceRun.status === 'needs_repair'
   const isProcessingFailure = sourceRun.status === 'failed'
   const canPublishPrepared = ['queued', 'draft_created'].includes(sourceRun.status)
-  const isPreparedPending = Boolean(sourceRun.extracted_prompt_id) && !isPublished && !isDeclined
-  const publishedHref = isPublished && sourceRun.extracted_prompt_id
-    ? preparedProject?.href ?? `/prompt/${sourceRun.extracted_prompt_id}`
-    : null
-  const reviewStatusLabel = isPublished
-    ? 'Published source run'
-    : isDeclined
-      ? linkedPromptStatus === 'rejected'
-        ? 'Rejected source-run page'
-        : 'Declined source run'
-      : isRepairRequested
-        ? 'Repair requested'
-      : isProcessingFailure
-        ? 'Source run processing failed'
-      : isPreparedPending
-        ? 'Prepared page pending approval'
-        : sourceRun.status === 'extracting'
-          ? 'Extracting source run'
-          : 'Pending source-run review'
-  const reviewStatusClass = isPublished
-    ? 'bg-green-100 text-green-800'
-    : isDeclined || isProcessingFailure
-      ? 'bg-red-100 text-red-800'
+  const isPreparedPending = Boolean(sourceRun.extracted_prompt_id) && !hasApprovedLinkedPrompt && !isDeclined
+  const canModerateUnpublished = !isPublished && !isDeclined && !hasApprovedLinkedPrompt
+  const publishedHref = isPublished ? preparedProject?.href ?? null : null
+  const reviewStatusLabel = hasInconsistentApprovedPrompt
+    ? 'Blocked inconsistent publication'
+    : isPublished
+      ? 'Published source run'
+      : isDeclined
+        ? linkedPromptStatus === 'rejected'
+          ? 'Rejected source-run page'
+          : 'Declined source run'
+        : isRepairRequested
+          ? 'Repair requested'
+          : isProcessingFailure
+            ? 'Source run processing failed'
+            : isPreparedPending
+              ? 'Prepared page pending approval'
+              : sourceRun.status === 'extracting'
+                ? 'Extracting source run'
+                : 'Pending source-run review'
+  const reviewStatusClass = hasInconsistentApprovedPrompt || isDeclined || isProcessingFailure
+    ? 'bg-red-100 text-red-800'
+    : isPublished
+      ? 'bg-green-100 text-green-800'
       : isRepairRequested
         ? 'bg-amber-100 text-amber-900'
       : 'bg-amber-100 text-amber-800'
@@ -87,9 +90,11 @@ export default async function AdminSourceRunDetailPage({
           <section className="border border-blue-200 bg-blue-50 p-4">
             <h2 className="text-sm font-bold text-blue-950">How this gets approved</h2>
             <p className="mt-1 text-sm leading-6 text-blue-900">
-              {isDeclined
-                ? 'This source-run review is closed. It should stay out of Build Paths unless an admin explicitly reopens or republishes it later.'
-                : 'This is the captured AI-session intake. It becomes public only after a prepared showcase page exists and an admin publishes that prepared page from here. Until then it stays out of Build Paths.'}
+              {hasInconsistentApprovedPrompt
+                ? 'The linked prompt is approved, but no prepared showcase page is wired for this source run. No generic public link is exposed. Wire the prepared page and dedicated route before this can be treated as published.'
+                : isDeclined
+                  ? 'This source-run review is closed. It should stay out of Build Paths unless an admin explicitly reopens or republishes it later.'
+                  : 'This is the captured AI-session intake. It becomes public only after a prepared showcase page exists and an admin publishes that prepared page from here. Until then it stays out of Build Paths.'}
             </p>
             {preparedProject ? (
               <p className="mt-2 text-sm font-semibold text-blue-950">
@@ -218,6 +223,17 @@ export default async function AdminSourceRunDetailPage({
             </section>
           )}
 
+          {hasInconsistentApprovedPrompt && (
+            <section className="border border-red-300 bg-red-50 p-4">
+              <h2 className="text-sm font-bold text-red-950">Publication blocked by an inconsistent state</h2>
+              <p className="mt-1 text-sm leading-6 text-red-900">
+                This source run has an approved linked prompt, but it does not have a completed prepared-showcase publication.
+                PathForge will not send reviewers to the generic prompt page. Add the prepared showcase registry entry
+                and dedicated route before attempting publication again.
+              </p>
+            </section>
+          )}
+
           {publishedHref ? (
             <section className="border border-green-200 bg-green-50 p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -244,7 +260,9 @@ export default async function AdminSourceRunDetailPage({
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h2 className="text-sm font-bold text-green-900">
-                    {sourceRun.extracted_prompt_id ? 'Prepared public page needs approval' : 'Prepared public page ready'}
+                    {sourceRun.extracted_prompt_id
+                      ? 'Prepared public page needs approval'
+                      : 'Prepared public page ready'}
                   </h2>
                   <p className="mt-1 text-sm text-green-800">
                     The artifact has been extracted and mounted in the PathForge showcase format. Publishing here
@@ -259,14 +277,16 @@ export default async function AdminSourceRunDetailPage({
                     className="inline-flex items-center justify-center gap-2 bg-green-700 px-3 py-2 text-sm font-semibold text-white hover:bg-green-800"
                   >
                     <CheckCircle className="h-4 w-4" aria-hidden="true" />
-                    {sourceRun.extracted_prompt_id ? 'Approve prepared page' : 'Publish public page'}
+                    {sourceRun.extracted_prompt_id
+                      ? 'Approve prepared page'
+                      : 'Publish public page'}
                   </button>
                 </form>
               </div>
             </section>
           ) : null}
 
-          {!isPublished && !isDeclined && (
+          {canModerateUnpublished && (
             <section className="border border-amber-200 bg-amber-50 p-4">
               <div>
                 <h2 className="text-sm font-bold text-amber-950">
@@ -304,7 +324,7 @@ export default async function AdminSourceRunDetailPage({
             </section>
           )}
 
-          {!isPublished && !isDeclined && (
+          {canModerateUnpublished && (
             <section className="border border-red-200 bg-red-50 p-4">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>

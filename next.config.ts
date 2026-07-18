@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import recoveredSourceRunData from "./seed-runs/curation/2026-07-16-recovered-approved-source-runs.json";
 import sourceRunRuntimeRoutes from "./config/source-run-runtime-routes.json";
 
 const sourceRunRuntimeFiles = [
@@ -20,6 +21,12 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: Object.fromEntries(
     sourceRunRuntimeRoutes.map((route) => [route, sourceRunRuntimeFiles]),
   ),
+  async rewrites() {
+    return recoveredSourceRunData.projects.map((project) => ({
+      source: project.href,
+      destination: `/recovered-source-runs/${project.href.slice(1)}`,
+    }));
+  },
   async headers() {
     return [
       {

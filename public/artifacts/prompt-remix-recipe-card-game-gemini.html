@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Chef: Secure Local-First Edition</title>
+    <style>
+        :root {
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-aud: #f43f5e;
+            --accent-tsk: #3b82f6;
+            --accent-con: #eab308;
+            --accent-out: #10b981;
+            --border-radius: 12px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            padding: 2rem;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 900px) {
+            .container { grid-template-columns: 1fr; }
+        }
+
+        header {
+            grid-column: 1 / -1;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        header h1 { font-size: 2.5rem; color: #fff; margin-bottom: 0.5rem; }
+        header p { color: var(--text-muted); }
+
+        .panel {
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+
+        h2 { font-size: 1.25rem; margin-bottom: 1rem; border-bottom: 2px solid #334155; padding-bottom: 0.5rem; }
+
+        .deck-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-pool {
+            background: #0f172a;
+            padding: 0.75rem;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .pool-item {
+            background: #334155;
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: transform 0.1s;
+        }
+        .pool-item:hover { transform: scale(1.02); }
+
+        .slots-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .slot {
+            background: #0f172a;
+            border: 2px dashed #334155;
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            position: relative;
+            min-height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slot-label {
+            position: absolute;
+            top: 5px;
+            left: 10px;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: bold;
+        }
+
+        .card {
+            width: 100%;
+            height: 100%;
+            padding: 0.5rem;
+            border-radius: 6px;
+            color: #fff;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.95rem;
+        }
+
+        .card.audience { background: var(--accent-aud); }
+        .card.task { background: var(--accent-tsk); }
+        .card.constraint { background: var(--accent-con); color: #000; }
+        .card.output { background: var(--accent-out); }
+
+        .clear-btn {
+            background: rgba(0,0,0,0.2);
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+
+        .score-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0f172a;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid var(--accent-con);
+        }
+
+        .score-num {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--accent-con);
+        }
+
+        .recipe-preview {
+            background: #0f172a;
+            border: 1px solid #334155;
+            padding: 1rem;
+            border-radius: 8px;
+            min-height: 200px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        button.action {
+            flex: 1;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            background: #3b82f6;
+            color: white;
+            transition: background 0.2s;
+        }
+        button.action:hover { background: #2563eb; }
+        button.action.secondary { background: #475569; }
+        button.action.secondary:hover { background: #334155; }
+
+        .status-log {
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-align: center;
+            min-height: 1.25rem;
+            color: var(--accent-out);
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Prompt Chef 🍳</h1>
+    <p>Combine ingredients to brew valid AI prompt recipes.</p>
+</header>
+
+<div class="container">
+    <div class="panel">
+        <h2>1. Choose Ingredients</h2>
+        <div class="deck-grid">
+            <div>
+                <label style="color:var(--accent-aud); font-size:0.8rem; font-weight:bold;">Audience</label>
+                <div class="card-pool" id="pool-audience"></div>
+            </div>
+            <div>
+                <label style="color:var(--accent-tsk); font-size:0.8rem; font-weight:bold;">Task</label>
+                <div class="card-pool" id="pool-task"></div>
+            </div>
+            <div>
+                <label style="color:var(--accent-con); font-size:0.8rem; font-weight:bold;">Constraint</label>
+                <div class="card-pool" id="pool-constraint"></div>
+            </div>
+            <div>
+                <label style="color:var(--accent-out); font-size:0.8rem; font-weight:bold;">Output</label>
+                <div class="card-pool" id="pool-output"></div>
+            </div>
+        </div>
+
+        <h2>2. Prep Station (Slots)</h2>
+        <div class="slots-container">
+            <div class="slot" id="slot-audience">
+                <span class="slot-label" style="color:var(--accent-aud)">Audience Slot</span>
+            </div>
+            <div class="slot" id="slot-task">
+                <span class="slot-label" style="color:var(--accent-tsk)">Task Slot</span>
+            </div>
+            <div class="slot" id="slot-constraint">
+                <span class="slot-label" style="color:var(--accent-con)">Constraint Slot</span>
+            </div>
+            <div class="slot" id="slot-output">
+                <span class="slot-label" style="color:var(--accent-out)">Output Slot</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2>3. Recipe Analysis</h2>
+        <div class="score-box">
+            <div>
+                <div style="font-weight: bold;">Missing-Ingredient Penalty</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);" id="score-feedback"></div>
+            </div>
+            <div class="score-num" id="score-display">--</div>
+        </div>
+
+        <h2>4. Final Recipe Card</h2>
+        <div class="recipe-preview" id="recipe-text"></div>
+
+        <div class="action-btns">
+            <button class="action" id="btn-copy">Copy Prompt</button>
+            <button class="action secondary" id="btn-download">Download File</button>
+        </div>
+        <div class="status-log" id="status-message"></div>
+    </div>
+</div>
+
+<script>
+    const decks = {
+        audience: [
+            "A high-stakes venture capitalist who hates jargon",
+            "A stressed-out college student studying for finals",
+            "An AI assistant designed to be clinical and direct",
+            "A cynical software engineer looking for architecture flaws"
+        ],
+        task: [
+            "Explain the technical breakdown of Game Theory Optimal poker strategies",
+            "Draft a brutal, objective code review focusing on performance bottlenecks",
+            "Create a rigorous workout split targeting high protein efficiency",
+            "Summarize the structural evolution of 90s grunge and heavy bass music"
+        ],
+        constraint: [
+            "Do not ask any follow-up questions at the end",
+            "Format the entire core payload in a clean Markdown code block",
+            "Never use passive voice or introductory filler phrasing",
+            "Keep the entire output under 150 words"
+        ],
+        output: [
+            "Structured JSON framework",
+            "A pristine Markdown table with custom ordered headers",
+            "Bullet-pointed list optimized for rapid scanning",
+            "Raw terminal-style configuration text"
+        ]
+    };
+
+    const currentSelections = {
+        audience: null,
+        task: null,
+        constraint: null,
+        output: null
+    };
+
+    let statusTimeout = null;
+
+    function initPools() {
+        for (const [type, items] of Object.entries(decks)) {
+            const poolEl = document.getElementById(`pool-${type}`);
+            items.forEach((item) => {
+                const itemEl = document.createElement('div');
+                itemEl.className = 'pool-item';
+                itemEl.textContent = item;
+                itemEl.addEventListener('click', () => selectCard(type, item));
+                poolEl.appendChild(itemEl);
+            });
+        }
+    }
+
+    function selectCard(type, value) {
+        currentSelections[type] = value;
+        updateSlotDisplay(type);
+        compileRecipe();
+    }
+
+    function clearSlot(type) {
+        currentSelections[type] = null;
+        updateSlotDisplay(type);
+        compileRecipe();
+    }
+
+    function updateSlotDisplay(type) {
+        const slot = document.getElementById(`slot-${type}`);
+        
+        const interactiveCard = slot.querySelector('.card');
+        const emptyState = slot.querySelector('.empty-text');
+        if (interactiveCard) interactiveCard.remove();
+        if (emptyState) emptyState.remove();
+
+        const value = currentSelections[type];
+        
+        if (value) {
+            const cardEl = document.createElement('div');
+            cardEl.className = `card ${type}`;
+            
+            const textSpan = document.createElement('span');
+            textSpan.textContent = value;
+            
+            const clearBtn = document.createElement('button');
+            clearBtn.className = 'clear-btn';
+            clearBtn.textContent = '✕';
+            clearBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                clearSlot(type);
+            });
+            
+            cardEl.appendChild(textSpan);
+            cardEl.appendChild(clearBtn);
+            slot.appendChild(cardEl);
+        } else {
+            const emptySpan = document.createElement('span');
+            emptySpan.className = 'empty-text';
+            emptySpan.style.color = 'var(--text-muted)';
+            emptySpan.textContent = 'Empty';
+            slot.appendChild(emptySpan);
+        }
+    }
+
+    function calculateDeterministicScore(a, t, c, o) {
+        const combinedString = a + t + c + o;
+        let hash = 0;
+        for (let i = 0; i < combinedString.length; i++) {
+            hash = (hash << 5) - hash + combinedString.charCodeAt(i);
+            hash |= 0;
+        }
+        return Math.abs(hash % 41); 
+    }
+
+    function displayStatus(msg, isError = false) {
+        const statusEl = document.getElementById('status-message');
+        statusEl.textContent = msg;
+        statusEl.style.color = isError ? 'var(--accent-aud)' : 'var(--accent-out)';
+        
+        if (statusTimeout) clearTimeout(statusTimeout);
+        statusTimeout = setTimeout(() => {
+            statusEl.textContent = '';
+        }, 4000);
+    }
+
+    function compileRecipe() {
+        const { audience, task, constraint, output } = currentSelections;
+        const scoreDisplay = document.getElementById('score-display');
+        const scoreFeedback = document.getElementById('score-feedback');
+        const recipeText = document.getElementById('recipe-text');
+
+        const missingCount = [audience, task, constraint, output].filter(x => !x).length;
+
+        if (missingCount > 0) {
+            scoreDisplay.textContent = '--';
+            scoreFeedback.textContent = `Missing ${missingCount} core ingredient${missingCount > 1 ? 's' : ''} to calculate recipe penalty.`;
+            recipeText.textContent = "Fill all slots to compile your markdown configuration template.";
+            return;
+        }
+
+        const penaltyScore = calculateDeterministicScore(audience, task, constraint, output);
+        scoreDisplay.textContent = penaltyScore + "%";
+
+        let analysisFeedback = "Flawless composition. All operational structural points match structural integrity criteria.";
+        if (penaltyScore > 30) analysisFeedback = "High operational friction detected. Constraints conflict structurally with the targeted output formatting.";
+        else if (penaltyScore > 15) analysisFeedback = "Moderate execution variance. Fine-tuning formatting parameters recommended.";
+        
+        scoreFeedback.textContent = analysisFeedback;
+
+        const finalizedPrompt = `# PROMPT CONTEXT RECIPE\n` +
+            `## Target Persona/Audience Profile\n` +
+            `- Execute processing sequence tailored specifically for: ${audience}\n\n` +
+            `## Core Operational Objective\n` +
+            `- Task Parameter: ${task}\n\n` +
+            `## System Constraints & Guardrails\n` +
+            `- Execution Rule: ${constraint}\n\n` +
+            `## Structural Output Schema\n` +
+            `- Deliver full payload using exactly: ${output}`;
+
+        recipeText.textContent = finalizedPrompt;
+    }
+
+    // Fixed execution block supporting restricted local protocol runtimes
+    function executeTextCopy(textToCopy) {
+        // Attempt 1: Modern Async Clipboard API
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(textToCopy)
+                .then(() => {
+                    displayStatus("Recipe payload copied safely to clipboard!");
+                })
+                .catch(() => {
+                    executeFallbackCopy(textToCopy);
+                });
+        } else {
+            // Attempt 2: Programmatic fallback channel (Crucial for local file:// frames)
+            executeFallbackCopy(textToCopy);
+        }
+    }
+
+    function executeFallbackCopy(textToCopy) {
+        const dummyTextarea = document.createElement('textarea');
+        dummyTextarea.value = textToCopy;
+        
+        // Protect layout visibility parameters securely during action lifecycle
+        dummyTextarea.style.position = 'fixed';
+        dummyTextarea.style.top = '-9999px';
+        dummyTextarea.style.left = '-9999px';
+        
+        document.body.appendChild(dummyTextarea);
+        dummyTextarea.focus();
+        dummyTextarea.select();
+        
+        try {
+            const evaluation = document.execCommand('copy');
+            if (evaluation) {
+                displayStatus("Recipe payload copied safely to clipboard (Fallback active)!");
+            } else {
+                displayStatus("Copy operation rejected by sandbox environments.", true);
+            }
+        } catch (err) {
+            displayStatus("Unable to write context payload automatically.", true);
+        }
+        
+        document.body.removeChild(dummyTextarea);
+    }
+
+    document.getElementById('btn-copy').addEventListener('click', () => {
+        const text = document.getElementById('recipe-text').textContent;
+        const missingCount = [currentSelections.audience, currentSelections.task, currentSelections.constraint, currentSelections.output].filter(x => !x).length;
+        
+        if (missingCount > 0) {
+            displayStatus("Cannot copy incomplete recipe matrix.", true);
+            return;
+        }
+        executeTextCopy(text);
+    });
+
+    document.getElementById('btn-download').addEventListener('click', () => {
+        const text = document.getElementById('recipe-text').textContent;
+        const missingCount = [currentSelections.audience, currentSelections.task, currentSelections.constraint, currentSelections.output].filter(x => !x).length;
+        
+        if (missingCount > 0) {
+            displayStatus("Cannot compile file download for incomplete matrices.", true);
+            return;
+        }
+
+        const blob = new Blob([text], { type: 'text/markdown' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'prompt_recipe_card.md';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        displayStatus("Markdown file compilation complete!");
+    });
+
+    initPools();
+    ['audience', 'task', 'constraint', 'output'].forEach(type => updateSlotDisplay(type));
+    compileRecipe();
+</script>
+</body>
+</html>

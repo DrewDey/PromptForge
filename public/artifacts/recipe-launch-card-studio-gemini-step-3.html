@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Launch Studio</title>
+    <style>
+        :root {
+            --bg: #121212;
+            --surface: #1e1e1e;
+            --border: #333333;
+            --text: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --accent: #ff9800;
+            --accent-dim: #b36b00;
+            --card-bg: #252525;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 10px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            color: var(--accent);
+        }
+
+        .section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 4px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            margin-top: 10px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            background: #000;
+            color: #fff;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 8px;
+            font-family: monospace;
+            font-size: 13px;
+            resize: vertical;
+        }
+
+        button {
+            background: var(--accent-dim);
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 8px;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+
+        button:active {
+            background: var(--accent);
+        }
+
+        .output-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 4px;
+        }
+
+        .editable-box {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 8px;
+            min-height: 40px;
+            white-space: pre-wrap;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+
+        .editable-box:focus {
+            outline: 1px solid var(--accent);
+            background: #000;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 6px;
+            background: #1a1a1a;
+            padding: 6px;
+            border-radius: 4px;
+        }
+
+        .checklist-item input {
+            margin-right: 8px;
+            margin-top: 3px;
+        }
+
+        .checklist-text {
+            font-size: 13px;
+            white-space: pre-wrap;
+        }
+
+        .tag {
+            display: inline-block;
+            background: #333;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .tag.diet { border: 1px solid #4caf50; color: #4caf50; }
+        .tag.allergen { border: 1px solid #f44336; color: #f44336; }
+
+        .caption-option {
+            background: #151515;
+            padding: 8px;
+            border-left: 3px solid var(--accent);
+            margin-bottom: 8px;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .caption-text {
+            white-space: pre-wrap;
+            margin-bottom: 4px;
+        }
+
+        .btn-copy-mini {
+            background: #333;
+            padding: 4px 8px;
+            font-size: 0.7rem;
+            width: auto;
+            display: inline-block;
+            margin-top: 4px;
+        }
+
+        #launch-card-print {
+            background: #fff;
+            color: #000;
+            padding: 20px;
+            border-radius: 0;
+            border: 2px dashed #000;
+        }
+
+        #launch-card-print .card-title {
+            color: #000;
+            border-bottom: 2px solid #000;
+            font-size: 1.3rem;
+        }
+
+        #launch-card-print .editable-box {
+            background: #fff;
+            border: none;
+            color: #000;
+            padding: 0;
+            min-height: auto;
+        }
+
+        #launch-card-print label {
+            color: #555;
+            margin-top: 10px;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #launch-card-print, #launch-card-print * {
+                visibility: visible;
+            }
+            #launch-card-print {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                border: none;
+            }
+            button {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Recipe Launch Studio</h1>
+    </header>
+
+    <div class="section">
+        <label for="rawNotes">Paste Raw Launch Notes</label>
+        <textarea id="rawNotes" placeholder="Drop messy notes here..."></textarea>
+        <button onclick="processNotes()">Parse & Generate Studio</button>
+    </div>
+
+    <div class="output-grid" id="studioOutput" style="display: none;">
+        
+        <div class="card">
+            <div class="card-title">Editable Recipe Sections</div>
+            <label>Ingredients</label>
+            <div class="editable-box" contenteditable="true" id="outIngredients"></div>
+            <label>Directions</label>
+            <div class="editable-box" contenteditable="true" id="outDirections"></div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Prep Checklist</div>
+            <div id="outChecklist"></div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Diet & Allergen Flags</div>
+            <div id="outTags"></div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Grocery Groups</div>
+            <div class="editable-box" contenteditable="true" id="outGroceries"></div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Short Captions</div>
+            <div id="outCaptions"></div>
+        </div>
+
+        <div class="card" style="background: #2e2e2e;">
+            <div class="card-title" style="color: #fff;">Printable Launch Card</div>
+            <button onclick="window.print()" style="background: #4caf50; margin-bottom: 8px;">Print / Save PDF</button>
+            <button onclick="copyPlainCard()" style="background: #2196f3; margin-bottom: 15px;">Copy Plain Text Card</button>
+            
+            <div id="launch-card-print">
+                <div class="card-title" id="printTitle">RECIPE LAUNCH CARD</div>
+                <label>DIET / ALLERGENS</label>
+                <div id="printTags" style="font-weight: bold; white-space: pre-wrap;"></div>
+                <label>INGREDIENTS</label>
+                <div class="editable-box" contenteditable="true" id="printIngredients"></div>
+                <label>PREP & DIRECTIONS</label>
+                <div class="editable-box" contenteditable="true" id="printDirections"></div>
+                <label>GROCERY LIST</label>
+                <div class="editable-box" contenteditable="true" id="printGroceries"></div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function processNotes() {
+        const raw = document.getElementById('rawNotes').value;
+        if (!raw.trim()) return;
+
+        const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+        
+        let title = "Recipe Launch Card";
+        let ingredients = [];
+        let directions = [];
+        let prepItems = [];
+        let diets = [];
+        let allergens = [];
+        let captions = [];
+        
+        const allergenKeywords = ['allergy', 'allergens', 'contains', 'allergen', 'gluten', 'dairy', 'nuts', 'peanut'];
+        const dietKeywords = ['keto', 'vegan', 'vegetarian', 'paleo', 'low carb', 'diet', 'friendly', 'plant-based'];
+        const prepKeywords = ['prep', 'chop', 'slice', 'dice', 'before', 'thaw', 'preheat', 'mise'];
+
+        if (lines[0] && lines[0].length < 40) {
+            title = lines[0].replace(/[:#]/g, '').trim();
+        }
+
+        lines.forEach(line => {
+            const lower = line.toLowerCase();
+            
+            if ((line.startsWith('"') || line.startsWith("'")) || (lower.includes('caption') || lower.includes('hook'))) {
+                captions.push(line.replace(/['"']/g, ''));
+                return;
+            }
+
+            let isFlagged = false;
+            allergenKeywords.forEach(k => {
+                if (lower.includes(k) && !isFlagged) {
+                    allergens.push(line);
+                    isFlagged = true;
+                }
+            });
+            dietKeywords.forEach(k => {
+                if (lower.includes(k) && !isFlagged) {
+                    diets.push(line);
+                    isFlagged = true;
+                }
+            });
+            if (isFlagged) return;
+
+            let isPrep = false;
+            prepKeywords.forEach(k => {
+                if (lower.includes(k)) {
+                    prepItems.push(line);
+                    isPrep = true;
+                }
+            });
+
+            if (!isPrep) {
+                if (lower.includes('need') || lower.includes('ingredients') || line.includes(',') || lower.startsWith('-') || lower.match(/^\d/)) {
+                    ingredients.push(line);
+                } else {
+                    directions.push(line);
+                }
+            }
+        });
+
+        if (ingredients.length === 0) ingredients = ["- Enter ingredients"];
+        if (directions.length === 0) directions = ["1. Enter directions"];
+        if (prepItems.length === 0) prepItems = ["Mise en place"];
+        if (captions.length === 0) captions = [`Fresh ${title} ready for launch.`, `Level up your menu with ${title}.`];
+
+        const formattedIngredients = ingredients.join('\n');
+        const formattedDirections = directions.join('\n');
+        
+        // Safe Text Assignment using textContent
+        document.getElementById('outIngredients').textContent = formattedIngredients;
+        document.getElementById('outDirections').textContent = formattedDirections;
+
+        // Build Prep Checklist safely
+        const checklistContainer = document.getElementById('outChecklist');
+        checklistContainer.textContent = '';
+        prepItems.forEach((item, i) => {
+            const div = document.createElement('div');
+            div.className = 'checklist-item';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = `prep_${i}`;
+            
+            const label = document.createElement('label');
+            label.htmlFor = `prep_${i}`;
+            label.className = 'checklist-text';
+            label.style.cssText = 'color:var(--text); font-weight:normal; text-transform:none; margin:0;';
+            label.textContent = item;
+            
+            div.appendChild(checkbox);
+            div.appendChild(label);
+            checklistContainer.appendChild(div);
+        });
+
+        // Build Tags safely
+        const tagsContainer = document.getElementById('outTags');
+        tagsContainer.textContent = '';
+        diets.forEach(d => {
+            const span = document.createElement('span');
+            span.className = 'tag diet';
+            span.textContent = d;
+            tagsContainer.appendChild(span);
+        });
+        allergens.forEach(a => {
+            const span = document.createElement('span');
+            span.className = 'tag allergen';
+            span.textContent = a;
+            tagsContainer.appendChild(span);
+        });
+        if (diets.length === 0 && allergens.length === 0) {
+            tagsContainer.textContent = 'None detected';
+        }
+
+        // Generate Grocery Groups safely
+        const groceryLines = ingredients.flatMap(i => i.split(',')).map(g => g.replace(/[-•\d]/g, '').trim()).filter(g => g.length > 2);
+        document.getElementById('outGroceries').textContent = groceryLines.map(g => `[ ] ${g}`).join('\n');
+
+        // Build Captions safely
+        const captionsContainer = document.getElementById('outCaptions');
+        captionsContainer.textContent = '';
+        captions.forEach(c => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'caption-option';
+            
+            const textDiv = document.createElement('div');
+            textDiv.className = 'caption-text';
+            textDiv.textContent = c;
+            
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'btn-copy-mini';
+            copyBtn.textContent = 'Copy';
+            copyBtn.onclick = () => navigator.clipboard.writeText(c);
+            
+            wrapper.appendChild(textDiv);
+            wrapper.appendChild(copyBtn);
+            captionsContainer.appendChild(wrapper);
+        });
+
+        // Populate Printable Card safely
+        document.getElementById('printTitle').textContent = title.toUpperCase() + ' LAUNCH CARD';
+        document.getElementById('printTags').textContent = [...diets, ...allergens].join(' | ') || 'None';
+        document.getElementById('printIngredients').textContent = formattedIngredients;
+        document.getElementById('printDirections').textContent = (prepItems.map(p => `[PREP] ${p}`).concat(directions)).join('\n');
+        document.getElementById('printGroceries').textContent = groceryLines.map(g => `_ ${g}`).join('\n');
+
+        // Display Studio Layout
+        document.getElementById('studioOutput').style.display = 'grid';
+    }
+
+    function copyPlainCard() {
+        const title = document.getElementById('printTitle').textContent;
+        const tags = document.getElementById('printTags').textContent;
+        const ing = document.getElementById('printIngredients').textContent;
+        const dir = document.getElementById('printDirections').textContent;
+        const groc = document.getElementById('printGroceries').textContent;
+
+        const plainText = `${title}\n\nDIET/ALLERGENS:\n${tags}\n\nINGREDIENTS:\n${ing}\n\nPREP & DIRECTIONS:\n${dir}\n\nGROCERY:\n${groc}`;
+        navigator.clipboard.writeText(plainText);
+    }
+</script>
+
+</body>
+</html>

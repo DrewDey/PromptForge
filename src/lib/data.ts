@@ -978,6 +978,47 @@ export async function createProject(project: {
 
 export async function updatePromptStatus(id: string, status: 'approved' | 'rejected') {
   const { supabase } = await requireAdminAccess()
+
+  if (status === 'approved') {
+    const { data: linkedSourceRun, error: sourceRunError } = await supabase
+      .from('source_run_submissions')
+      .select('id')
+      .eq('extracted_prompt_id', id)
+      .limit(1)
+      .maybeSingle()
+
+    if (sourceRunError) {
+      throw new Error(
+        `Generic approval is blocked because PathForge could not verify source-run links for project ${id}. Review the source-run queue and publish only through the prepared showcase flow.`,
+      )
+    }
+    if (linkedSourceRun) {
+      throw new Error(
+        `Generic approval is blocked for source-run projects. Review /admin/source-runs/${linkedSourceRun.id} and publish its prepared showcase from there.`,
+      )
+    }
+
+    const { data: promptForApproval, error: promptLookupError } = await supabase
+      .from('prompts')
+      .select('tags')
+      .eq('id', id)
+      .maybeSingle()
+
+    if (promptLookupError) {
+      throw new Error(
+        `Generic approval is blocked because PathForge could not verify provenance tags for project ${id}. Review the source-run queue and publish only through the prepared showcase flow.`,
+      )
+    }
+    const isSourceRunTagged = Array.isArray(promptForApproval?.tags) && promptForApproval.tags.some(
+      tag => typeof tag === 'string' && tag.trim().toLowerCase() === 'source-run',
+    )
+    if (isSourceRunTagged) {
+      throw new Error(
+        `Generic approval is blocked because project ${id} is tagged source-run but has no linked source-run review. Restore its source-run link before publishing a prepared showcase.`,
+      )
+    }
+  }
+
   const { error } = await supabase.from('prompts').update({ status, updated_at: new Date().toISOString() }).eq('id', id)
   if (error) throw error
 }

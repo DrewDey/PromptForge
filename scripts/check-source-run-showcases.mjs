@@ -2,8 +2,11 @@
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { basename, join } from 'node:path'
+import { auditRecoveredSourceRunPublicationRegistry } from './source-run-publication-registry.mjs'
 
 const failures = []
+const recoveredPublicationAudit = auditRecoveredSourceRunPublicationRegistry()
+failures.push(...recoveredPublicationAudit.failures)
 
 const sourceRunProjects = [
   {
@@ -1342,4 +1345,9 @@ if (failures.length > 0) {
   process.exit(1)
 }
 
+console.log(
+  `Verified ${recoveredPublicationAudit.stats.projects} recovered source-run projects, ` +
+    `${recoveredPublicationAudit.stats.packages} unique packages, and ` +
+    `${recoveredPublicationAudit.stats.artifacts} referenced artifacts through the shared prepared-page registry.`,
+)
 console.log('Source-run showcase guard passed.')

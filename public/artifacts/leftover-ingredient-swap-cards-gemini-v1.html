@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leftover Swapper</title>
+    <style>
+        :root {
+            --bg: #121212;
+            --surface: #1e1e1e;
+            --surface-2: #2a2a2a;
+            --primary: #4caf50;
+            --text: #ffffff;
+            --text-muted: #aaaaaa;
+            --border: #333333;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 12px; font-size: 14px; line-height: 1.4; }
+        .container { max-width: 500px; margin: 0 auto; }
+        
+        h1 { font-size: 1.2rem; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .global-actions { display: flex; gap: 8px; }
+        button { background: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.85rem; font-weight: bold; cursor: pointer; }
+        button:active { opacity: 0.8; }
+        button.secondary { background: var(--surface-2); border: 1px solid var(--border); color: var(--text); }
+
+        .section-title { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin: 16px 0 8px; }
+        
+        .ingredient-chip { display: inline-flex; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 4px 10px; margin: 4px; font-size: 0.85rem; }
+        .ingredient-chip input[type="checkbox"] { margin-right: 6px; accent-color: var(--primary); }
+        .ingredient-chip span { outline: none; }
+
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 12px; position: relative; }
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+        .card-title { font-weight: bold; font-size: 1rem; color: #fff; }
+        
+        .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+        .tag { font-size: 0.7rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+        .tag.veg { background: #2e7d32; color: #e8f5e9; }
+        .tag.heat { background: #c62828; color: #ffebee; }
+        .tag.allergen { background: #ef6c00; color: #fff3e0; }
+
+        .list-title { font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: bold; margin-top: 6px; }
+        .gap { color: #ffb74d; font-style: italic; }
+        .directions { margin-top: 6px; color: #dddddd; }
+
+        .card-actions { display: flex; gap: 8px; margin-top: 10px; justify-content: flex-end; }
+        .card-actions button { padding: 4px 8px; font-size: 0.75rem; }
+
+        @media print {
+            body { background: white; color: black; }
+            .no-print { display: none !important; }
+            .card { border: 1px solid #000; background: white; page-break-inside: avoid; color: black; }
+            .card-title, .directions { color: black; }
+            .tag { border: 1px solid #000; color: black !important; background: transparent !important; }
+            .gap { color: black; font-weight: bold; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1 class="no-print">
+        Leftover Swapper
+        <div class="global-actions">
+            <button class="secondary" onclick="window.print()">Print All</button>
+        </div>
+    </h1>
+
+    <div class="no-print">
+        <div class="section-title">Your Leftovers (Tap to Select / Edit)</div>
+        <div id="ingredients-container"></div>
+    </div>
+
+    <div class="section-title">Available Meal Matches</div>
+    <div id="recipes-container"></div>
+</div>
+
+<script>
+    // Configured recipe matrices with safe variations, tags, and pantry gaps
+    const recipeDatabase = [
+        {
+            name: "Crispy Leftover Hash",
+            tags: ["veg"],
+            baseIngredients: ["potatoes", "peppers", "onions"],
+            swaps: { "potatoes": ["sweet potatoes", "tater tots", "fries"], "peppers": ["broccoli", "zucchini"] },
+            gaps: ["cooking oil", "salt/pepper"],
+            directions: "Dice all ingredients. Fry in a hot skillet with oil until edges crisp. Top with an egg if available."
+        },
+        {
+            name: "Spicy Stir-Fry Noodles",
+            tags: ["heat", "veg"],
+            baseIngredients: ["noodles", "broccoli", "onions"],
+            swaps: { "noodles": ["rice", "quinoa"], "broccoli": ["peppers", "cabbage", "carrots"] },
+            gaps: ["soy sauce", "chili oil / sriracha"],
+            directions: "Sear veggies in a hot pan. Toss in your pre-cooked base noodles/rice. Stir-fry with soy sauce and chili oil until piping hot."
+        },
+        {
+            name: "Quick Shredded Protein Tacos",
+            tags: [],
+            baseIngredients: ["chicken", "onions"],
+            swaps: { "chicken": ["beef", "pork", "tofu", "beans"], "onions": ["peppers", "jalapenos"] },
+            gaps: ["tortillas", "taco seasoning"],
+            directions: "Shred your protein. Reheat in a skillet with a splash of water and taco seasoning. Serve inside warmed tortillas."
+        },
+        {
+            name: "Thai-Style Peanut Peanut Curry",
+            tags: ["allergen", "heat"],
+            baseIngredients: ["chicken", "broccoli", "peppers"],
+            swaps: { "chicken": ["tofu", "shrimp", "beef"], "broccoli": ["zucchini", "carrots"] },
+            gaps: ["coconut milk", "peanut butter", "curry paste"],
+            directions: "Simmer coconut milk, curry paste, and peanut butter. Drop in your leftovers and simmer until fully heated through."
+        },
+        {
+            name: "Loaded Scramble / Frittata",
+            tags: ["veg"],
+            baseIngredients: ["onions", "peppers"],
+            swaps: { "onions": ["scallions", "leeks"], "peppers": ["spinach", "mushrooms", "tomatoes"] },
+            gaps: ["eggs", "butter / oil"],
+            directions: "Sauté the veggies in butter until soft. Pour in beaten eggs and stir constantly over medium heat until set."
+        }
+    ];
+
+    // Default leftover tracking pool
+    let inventory = [
+        { id: "potatoes", name: "potatoes", checked: true },
+        { id: "peppers", name: "peppers", checked: true },
+        { id: "onions", name: "onions", checked: true },
+        { id: "chicken", name: "chicken", checked: false },
+        { id: "broccoli", name: "broccoli", checked: false },
+        { id: "noodles", name: "noodles", checked: false }
+    ];
+
+    function init() {
+        renderIngredients();
+        renderRecipes();
+    }
+
+    function renderIngredients() {
+        const container = document.getElementById("ingredients-container");
+        container.innerHTML = "";
+        inventory.forEach((ing, index) => {
+            const chip = document.createElement("label");
+            chip.className = "ingredient-chip";
+            
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.checked = ing.checked;
+            checkbox.addEventListener("change", () => {
+                inventory[index].checked = checkbox.checked;
+                renderRecipes();
+            });
+
+            const textSpan = document.createElement("span");
+            textSpan.contentEditable = true;
+            textSpan.textContent = ing.name;
+            textSpan.addEventListener("blur", () => {
+                inventory[index].name = textSpan.textContent.trim().toLowerCase();
+                renderRecipes();
+            });
+
+            chip.appendChild(checkbox);
+            chip.appendChild(textSpan);
+            container.appendChild(chip);
+        });
+    }
+
+    function renderRecipes() {
+        const container = document.getElementById("recipes-container");
+        container.innerHTML = "";
+
+        const activeIngredients = inventory
+            .filter(i => i.checked && i.name.length > 0)
+            .map(i => i.name);
+
+        let matchCount = 0;
+
+        recipeDatabase.forEach(recipe => {
+            // Evaluate dynamic match based on base items or their configured variants
+            const matches = recipe.baseIngredients.filter(baseIng => {
+                if (activeIngredients.includes(baseIng)) return true;
+                const alternates = recipe.swaps[baseIng] || [];
+                return alternates.some(alt => activeIngredients.includes(alt));
+            });
+
+            // Show card if it leverages at least one selected item
+            if (matches.length > 0) {
+                matchCount++;
+                const card = document.createElement("div");
+                card.className = "card";
+
+                // Map active components used vs those needing swaps
+                const displaySwaps = recipe.baseIngredients.map(baseIng => {
+                    if (activeIngredients.includes(baseIng)) {
+                        return `<strong>${baseIng}</strong>`;
+                    }
+                    const alternates = recipe.swaps[baseIng] || [];
+                    const activeAlt = alternates.find(alt => activeIngredients.includes(alt));
+                    if (activeAlt) {
+                        return `<strong>${activeAlt}</strong> (swapped for ${baseIng})`;
+                    }
+                    return `${baseIng} [Missing/Optional]`;
+                }).join(", ");
+
+                // Tags markup
+                const tagsMarkup = recipe.tags.map(t => {
+                    let label = t;
+                    if (t === 'veg') label = 'Vegetarian';
+                    if (t === 'heat') label = 'Spicy';
+                    if (t === 'allergen') label = 'Allergen (Peanut)';
+                    return `<span class="tag ${t}">${label}</span>`;
+                }).join("");
+
+                const cardId = `recipe-${matchCount}`;
+                
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div class="card-title">${recipe.name}</div>
+                    </div>
+                    <div class="tags">${tagsMarkup}</div>
+                    <div class="list-title">Ingredients Used</div>
+                    <div style="font-size: 0.85rem; margin-bottom: 6px;">${displaySwaps}</div>
+                    <div class="list-title">Pantry Gaps</div>
+                    <div class="gap" style="font-size: 0.85rem; margin-bottom: 6px;">${recipe.gaps.join(", ")}</div>
+                    <div class="list-title">Quick Directions</div>
+                    <div class="directions" id="${cardId}-dir">${recipe.directions}</div>
+                    <div class="card-actions no-print">
+                        <button class="secondary" onclick="copyCard('${cardId}', '${recipe.name}')">Copy</button>
+                        <button class="secondary" onclick="printCard('${cardId}')">Print Card</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            }
+        });
+
+        if (matchCount === 0) {
+            container.innerHTML = `<div style="color: var(--text-muted); font-style: italic; padding: 12px 4px;">Select or edit leftovers above to generate meal cards.</div>`;
+        }
+    }
+
+    function copyCard(id, title) {
+        const text = document.getElementById(`${id}-dir`).innerText;
+        navigator.clipboard.writeText(`${title}\n\nDirections:\n${text}`).then(() => {
+            alert("Directions copied to clipboard.");
+        });
+    }
+
+    function printCard(id) {
+        window.print();
+    }
+
+    init();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PosterCompose</title>
+    <style>
+        body { margin: 0; display: flex; font-family: sans-serif; background: #222; color: #fff; height: 100vh; overflow: hidden; }
+        #toolbar { width: 250px; background: #333; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        #canvas-container { flex-grow: 1; display: flex; align-items: center; justify-content: center; position: relative; }
+        canvas { background: #f4f4f4; cursor: crosshair; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        .stamp { padding: 8px; background: #444; cursor: pointer; border: 1px solid #555; text-align: center; }
+        .stamp:hover { background: #555; }
+        #score { position: absolute; top: 10px; right: 20px; font-weight: bold; color: #00ff00; }
+    </style>
+</head>
+<body>
+
+<div id="toolbar">
+    <h3>Stamp Box</h3>
+    <div class="stamp" onclick="addStamp('landmark')">Add Landmark</div>
+    <div class="stamp" onclick="addStamp('texture')">Add Texture</div>
+    <div class="stamp" onclick="addStamp('sticker')">Add Sticker</div>
+    <hr>
+    <button onclick="resetBoard()">Reset Board</button>
+    <button onclick="exportBrief()">Copy Poster Brief</button>
+</div>
+
+<div id="canvas-container">
+    <div id="score">Score: 0</div>
+    <canvas id="posterBoard" width="600" height="800"></canvas>
+</div>
+
+<script>
+    const canvas = document.getElementById('posterBoard');
+    const ctx = canvas.getContext('2d');
+    let stamps = [];
+    let score = 0;
+
+    function addStamp(type) {
+        stamps.push({
+            type: type,
+            x: Math.random() * 400 + 50,
+            y: Math.random() * 600 + 50,
+            w: 80, h: 80
+        });
+        calculateScore();
+        draw();
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        stamps.forEach(s => {
+            ctx.fillStyle = s.type === 'landmark' ? '#e74c3c' : s.type === 'texture' ? '#3498db' : '#f1c40f';
+            ctx.fillRect(s.x, s.y, s.w, s.h);
+        });
+    }
+
+    function calculateScore() {
+        // Playful logic: More stamps = higher entropy/score
+        score = stamps.length * 15;
+        document.getElementById('score').innerText = `Score: ${score}`;
+    }
+
+    function resetBoard() { stamps = []; calculateScore(); draw(); }
+
+    function exportBrief() {
+        const brief = `Poster Composition Brief:\nStamps Used: ${stamps.length}\nFinal Score: ${score}\nDate: ${new Date().toLocaleDateString()}`;
+        navigator.clipboard.writeText(brief);
+        alert("Brief copied to clipboard!");
+    }
+
+    draw();
+</script>
+</body>
+</html>

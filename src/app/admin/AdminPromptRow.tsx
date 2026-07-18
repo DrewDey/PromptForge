@@ -24,6 +24,9 @@ export default function AdminPromptRow({
   const title = prompt.status === 'pending'
     ? cleanGeneratedProjectTitle(prompt.title)
     : prompt.title
+  const isSourceRunTagged = prompt.tags?.some(tag => tag.trim().toLowerCase() === 'source-run') ?? false
+  const hasMissingSourceRunLink = isSourceRunTagged && !sourceRunHref
+  const requiresSourceRunReview = Boolean(sourceRunHref) || isSourceRunTagged
   const detailHref = sourceRunHref ?? `/prompt/${prompt.id}`
   const author = prompt.author?.display_name ?? 'Anonymous'
 
@@ -41,19 +44,25 @@ export default function AdminPromptRow({
                 Project review
               </span>
             )}
-            {sourceRunHref && (
-              <span className="border border-brand-blue/25 bg-blue-50 px-2 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-brand-blue-dark">
-                Source run attached
+            {requiresSourceRunReview && (
+              <span className={`border px-2 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.12em] ${hasMissingSourceRunLink ? 'border-red-200 bg-red-50 text-red-800' : 'border-brand-blue/25 bg-blue-50 text-brand-blue-dark'}`}>
+                {hasMissingSourceRunLink ? 'Source-run link missing' : 'Source run attached'}
               </span>
             )}
           </div>
 
-          <Link
-            href={detailHref}
-            className="block break-words text-base font-black leading-6 text-surface-900 transition-colors hover:text-brand-orange-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange-ink"
-          >
-            {title}
-          </Link>
+          {hasMissingSourceRunLink ? (
+            <div className="block break-words text-base font-black leading-6 text-surface-900">
+              {title}
+            </div>
+          ) : (
+            <Link
+              href={detailHref}
+              className="block break-words text-base font-black leading-6 text-surface-900 transition-colors hover:text-brand-orange-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange-ink"
+            >
+              {title}
+            </Link>
+          )}
           <p className="mt-1 line-clamp-2 max-w-4xl text-sm leading-6 text-surface-600">{prompt.description}</p>
 
           <dl className="mt-3 flex min-w-0 flex-wrap gap-x-5 gap-y-2 text-xs text-surface-600">
@@ -81,24 +90,32 @@ export default function AdminPromptRow({
         </div>
 
         <div className="flex min-w-0 flex-wrap items-center gap-2 border-t border-surface-200 pt-4 lg:max-w-xs lg:justify-end lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
-          <Link
-            href={detailHref}
-            className="inline-flex min-h-10 items-center justify-center gap-1.5 border border-surface-300 bg-white px-3 py-2 text-xs font-bold text-surface-700 transition-colors hover:border-brand-orange-ink hover:text-brand-orange-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange-ink"
-          >
-            View
-            <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
-          </Link>
+          {hasMissingSourceRunLink ? (
+            <span className="inline-flex min-h-10 items-center justify-center border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-800">
+              Source-run link missing
+            </span>
+          ) : (
+            <Link
+              href={detailHref}
+              className="inline-flex min-h-10 items-center justify-center gap-1.5 border border-surface-300 bg-white px-3 py-2 text-xs font-bold text-surface-700 transition-colors hover:border-brand-orange-ink hover:text-brand-orange-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange-ink"
+            >
+              {sourceRunHref ? 'Review source run' : 'View'}
+              <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+            </Link>
+          )}
 
           {prompt.status === 'pending' ? (
             <>
-              <button
-                type="button"
-                onClick={() => approvePrompt(prompt.id)}
-                className="inline-flex min-h-10 items-center justify-center gap-1.5 bg-green-800 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-green-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700"
-              >
-                <CheckCircle className="h-3.5 w-3.5" aria-hidden="true" />
-                Approve
-              </button>
+              {!requiresSourceRunReview && (
+                <button
+                  type="button"
+                  onClick={() => approvePrompt(prompt.id)}
+                  className="inline-flex min-h-10 items-center justify-center gap-1.5 bg-green-800 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-green-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700"
+                >
+                  <CheckCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                  Approve
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => rejectPrompt(prompt.id)}
@@ -117,7 +134,7 @@ export default function AdminPromptRow({
               <XCircle className="h-3.5 w-3.5" aria-hidden="true" />
               Unpublish
             </button>
-          ) : prompt.status === 'rejected' ? (
+          ) : prompt.status === 'rejected' && !requiresSourceRunReview ? (
             <button
               type="button"
               onClick={() => approvePrompt(prompt.id)}

@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Visual QA Board - Reference Edit Planner</title>
+
+    <style>
+
+        :root {
+
+            --bg: #121212;
+
+            --surface: #1e1e1e;
+
+            --surface-2: #2a2a2a;
+
+            --border: #333;
+
+            --text: #e0e0e0;
+
+            --text-muted: #888;
+
+            --accent: #4da6ff;
+
+            --accent-hover: #3b8ce6;
+
+            --success: #4caf50;
+
+            --warning: #ff9800;
+
+            --danger: #f44336;
+
+        }
+
+
+
+        body {
+
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+            background-color: var(--bg);
+
+            color: var(--text);
+
+            margin: 0;
+
+            padding: 20px;
+
+            line-height: 1.6;
+
+        }
+
+
+
+        header {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            margin-bottom: 24px;
+
+            border-bottom: 1px solid var(--border);
+
+            padding-bottom: 16px;
+
+        }
+
+
+
+        h1 { margin: 0; font-size: 1.5rem; color: var(--accent); }
+
+        h2 { margin: 0 0 12px 0; font-size: 1.1rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+
+
+
+        .status-pill {
+
+            font-size: 0.8rem;
+
+            padding: 4px 10px;
+
+            border-radius: 12px;
+
+            background: var(--surface-2);
+
+            color: var(--success);
+
+            border: 1px solid var(--success);
+
+        }
+
+
+
+        .grid {
+
+            display: grid;
+
+            grid-template-columns: 1fr 1fr;
+
+            gap: 20px;
+
+            margin-bottom: 24px;
+
+        }
+
+
+
+        .card {
+
+            background: var(--surface);
+
+            border: 1px solid var(--border);
+
+            border-radius: 8px;
+
+            padding: 20px;
+
+        }
+
+
+
+        .full-width { grid-column: 1 / -1; }
+
+
+
+        label {
+
+            display: block;
+
+            font-weight: 600;
+
+            margin-bottom: 6px;
+
+            font-size: 0.9rem;
+
+        }
+
+
+
+        input[type="text"], textarea {
+
+            width: 100%;
+
+            background: var(--surface-2);
+
+            border: 1px solid var(--border);
+
+            border-radius: 4px;
+
+            color: var(--text);
+
+            padding: 10px;
+
+            font-family: inherit;
+
+            font-size: 0.95rem;
+
+            box-sizing: border-box;
+
+            resize: vertical;
+
+        }
+
+
+
+        textarea { min-height: 100px; }
+
+        input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--accent); }
+
+
+
+        .actions {
+
+            display: flex;
+
+            gap: 10px;
+
+            margin-bottom: 20px;
+
+            flex-wrap: wrap;
+
+        }
+
+
+
+        button {
+
+            padding: 10px 16px;
+
+            border: none;
+
+            border-radius: 4px;
+
+            cursor: pointer;
+
+            font-weight: 600;
+
+            font-size: 0.9rem;
+
+            transition: background 0.2s;
+
+        }
+
+
+
+        .btn-primary { background: var(--accent); color: #fff; }
+
+        .btn-primary:hover { background: var(--accent-hover); }
+
+        .btn-secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+
+        .btn-secondary:hover { background: var(--border); }
+
+        .btn-danger { background: var(--danger); color: #fff; }
+
+        .btn-danger:hover { opacity: 0.8; }
+
+
+
+        #receipt-preview {
+
+            background: #0d0d0d;
+
+            border: 1px solid var(--border);
+
+            padding: 20px;
+
+            border-radius: 8px;
+
+            font-family: "Courier New", Courier, monospace;
+
+            white-space: pre-wrap;
+
+            max-height: 400px;
+
+            overflow-y: auto;
+
+            font-size: 0.85rem;
+
+            color: #ccc;
+
+        }
+
+        
+
+        .metric-box {
+
+            background: var(--surface-2);
+
+            padding: 10px;
+
+            border-radius: 4px;
+
+            text-align: center;
+
+            margin-top: 10px;
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+
+
+    <header>
+
+        <h1>📸 Visual QA Board: Reference Edit Planner</h1>
+
+        <span id="save-status" class="status-pill">Saved locally</span>
+
+    </header>
+
+
+
+    <div class="card full-width" style="margin-bottom: 20px;">
+
+        <label for="project-name">Project / Subject Name</label>
+
+        <input type="text" id="project-name" placeholder="e.g., Client Headshot Retouch - Jane Doe">
+
+        <label for="ref-image" style="margin-top: 12px;">Reference Image Path / URL</label>
+
+        <input type="text" id="ref-image" placeholder="e.g., /Volumes/Photos/Jane_Raw_01.cr3 or https://...">
+
+    </div>
+
+
+
+    <div class="grid">
+
+        <div class="card">
+
+            <h2>Reference Traits</h2>
+
+            <label for="traits">Core characteristics of the original reference</label>
+
+            <textarea id="traits" placeholder="- Lighting: Rembrandt, soft key light from left&#10;- Texture: Visible skin pores, slight film grain&#10;- Color: Warm highlights, cool shadows"></textarea>
+
+        </div>
+
+
+
+        <div class="card">
+
+            <h2>Proposed Changes</h2>
+
+            <label for="changes">Specific edits and enhancements to apply</label>
+
+            <textarea id="changes" placeholder="- Dodge and burn under eyes&#10;- Shift background hue to deep teal&#10;- Enhance catchlights in eyes"></textarea>
+
+        </div>
+
+
+
+        <div class="card">
+
+            <h2>Protected Details (Identity & Composition)</h2>
+
+            <label for="protected">Elements that MUST NOT be altered</label>
+
+            <textarea id="protected" placeholder="- Identity: Mole on left cheek, asymmetrical jawline&#10;- Composition: Rule of thirds placement, headroom&#10;- Wardrobe: Exact fabric texture of the blazer"></textarea>
+
+        </div>
+
+
+
+        <div class="card">
+
+            <h2>Drift Risks</h2>
+
+            <label for="risks">Potential AI artifacts or unintended editing shifts</label>
+
+            <textarea id="risks" placeholder="- Skin smoothing might erase natural pores (plastic look)&#10;- AI upscaling might alter eye shape&#10;- Color grading might clip shadow details"></textarea>
+
+            <div class="metric-box" id="drift-metric">Calculated Drift Index: --</div>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="actions">
+
+        <button class="btn-primary" onclick="generateReceipt()">Generate Change Receipt</button>
+
+        <button class="btn-secondary" onclick="copyReceipt()">📋 Copy Markdown</button>
+
+        <button class="btn-secondary" onclick="exportMarkdown()">⬇️ Export .md</button>
+
+        <button class="btn-secondary" onclick="exportJSON()">⬇️ Export .json</button>
+
+        <button class="btn-danger" onclick="clearBoard()">🗑️ Clear Board</button>
+
+    </div>
+
+
+
+    <div class="card full-width">
+
+        <h2>Change Receipt Preview</h2>
+
+        <div id="receipt-preview">Click "Generate Change Receipt" to preview your tidy summary here...</div>
+
+    </div>
+
+
+
+    <script>
+
+        const fields = ['project-name', 'ref-image', 'traits', 'changes', 'protected', 'risks'];
+
+        let currentReceipt = '';
+
+
+
+        // Auto-save to localStorage
+
+        fields.forEach(id => {
+
+            const el = document.getElementById(id);
+
+            el.addEventListener('input', () => {
+
+                saveToLocalStorage();
+
+                updateDriftMetric();
+
+            });
+
+        });
+
+
+
+        function saveToLocalStorage() {
+
+            const data = {};
+
+            fields.forEach(id => data[id] = document.getElementById(id).value);
+
+            localStorage.setItem('visualQABoard', JSON.stringify(data));
+
+            flashSaveStatus();
+
+        }
+
+
+
+        function loadFromLocalStorage() {
+
+            const data = JSON.parse(localStorage.getItem('visualQABoard') || '{}');
+
+            fields.forEach(id => {
+
+                if (data[id]) document.getElementById(id).value = data[id];
+
+            });
+
+            updateDriftMetric();
+
+        }
+
+
+
+        function flashSaveStatus() {
+
+            const pill = document.getElementById('save-status');
+
+            pill.textContent = 'Saving...';
+
+            pill.style.color = 'var(--warning)';
+
+            pill.style.borderColor = 'var(--warning)';
+
+            setTimeout(() => {
+
+                pill.textContent = 'Saved locally';
+
+                pill.style.color = 'var(--success)';
+
+                pill.style.borderColor = 'var(--success)';
+
+            }, 500);
+
+        }
+
+
+
+        function updateDriftMetric() {
+
+            const protectedText = document.getElementById('protected').value;
+
+            const risksText = document.getElementById('risks').value;
+
+            
+
+            const pCount = protectedText.split('\n').filter(l => l.trim().length > 0).length;
+
+            const rCount = risksText.split('\n').filter(l => l.trim().length > 0).length;
+
+            
+
+            let index = 0;
+
+            if (pCount > 0 || rCount > 0) {
+
+                index = rCount / (pCount + rCount);
+
+            }
+
+            
+
+            const metricEl = document.getElementById('drift-metric');
+
+            metricEl.textContent = `Calculated Drift Index: ${(index * 100).toFixed(1)}%`;
+
+            metricEl.style.color = index > 0.5 ? 'var(--danger)' : (index > 0.25 ? 'var(--warning)' : 'var(--success)');
+
+        }
+
+
+
+        function generateReceipt() {
+
+            const get = id => document.getElementById(id).value || 'N/A';
+
+            const date = new Date().toISOString().split('T')[0];
+
+            
+
+            const formatList = (text) => {
+
+                return text.split('\n')
+
+                    .filter(l => l.trim().length > 0)
+
+                    .map(l => l.trim().startsWith('-') ? l.trim() : `- ${l.trim()}`)
+
+                    .join('\n') || '- None specified';
+
+            };
+
+
+
+            currentReceipt = `# Visual QA Change Receipt
+
+**Project:** ${get('project-name')}
+
+**Date:** ${date}
+
+**Reference:** \`${get('ref-image')}\`
+
+
+
+## 1. Reference Traits
+
+${formatList(get('traits'))}
+
+
+
+## 2. Proposed Changes
+
+${formatList(get('changes'))}
+
+
+
+## 3. Protected Details (Identity & Composition)
+
+${formatList(get('protected'))}
+
+
+
+## 4. Drift Risks & Mitigation
+
+${formatList(get('risks'))}
+
+
+
+---
+
+*Generated by Visual QA Board. Ensure all protected details are verified in the final render.*`;
+
+
+
+            document.getElementById('receipt-preview').textContent = currentReceipt;
+
+        }
+
+
+
+        function copyReceipt() {
+
+            if (!currentReceipt) generateReceipt();
+
+            navigator.clipboard.writeText(currentReceipt).then(() => {
+
+                alert('Markdown receipt copied to clipboard!');
+
+            });
+
+        }
+
+
+
+        function exportMarkdown() {
+
+            if (!currentReceipt) generateReceipt();
+
+            downloadFile(currentReceipt, `${document.getElementById('project-name').value || 'QA_Receipt'}.md`, 'text/markdown');
+
+        }
+
+
+
+        function exportJSON() {
+
+            const data = {};
+
+            fields.forEach(id => data[id] = document.getElementById(id).value);
+
+            data.generated_at = new Date().toISOString();
+
+            downloadFile(JSON.stringify(data, null, 2), `${document.getElementById('project-name').value || 'QA_Receipt'}.json`, 'application/json');
+
+        }
+
+
+
+        function downloadFile(content, fileName, mimeType) {
+
+            const blob = new Blob([content], { type: mimeType });
+
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+
+            a.href = url;
+
+            a.download = fileName.replace(/[^a-z0-9_\-\.]/gi, '_');
+
+            a.click();
+
+            URL.revokeObjectURL(url);
+
+        }
+
+
+
+        function clearBoard() {
+
+            if (confirm('Are you sure you want to clear the board? This cannot be undone.')) {
+
+                fields.forEach(id => document.getElementById(id).value = '');
+
+                localStorage.removeItem('visualQABoard');
+
+                document.getElementById('receipt-preview').textContent = 'Board cleared.';
+
+                currentReceipt = '';
+
+                updateDriftMetric();
+
+            }
+
+        }
+
+
+
+        // Initialize
+
+        loadFromLocalStorage();
+
+    </script>
+
+</body>
+
+</html>

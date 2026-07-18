@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recipe Content Readiness Board</title>
+  <style>
+    :root {
+      --bg-primary: #f8fafc;
+      --bg-card: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --success: #16a34a;
+      --warning: #ea580c;
+      --danger: #dc2626;
+      --radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      padding: 16px;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+    }
+
+    p.subtitle {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: var(--text-main);
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      background: var(--bg-card);
+      color: var(--text-main);
+    }
+
+    textarea {
+      resize: vertical;
+      height: 80px;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .channels-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .channel-checkbox {
+      display: none;
+    }
+
+    .channel-label {
+      display: block;
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      text-align: center;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      background: var(--bg-card);
+      user-select: none;
+    }
+
+    .channel-checkbox:checked + .channel-label {
+      background: #eff6ff;
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    button.btn-primary {
+      width: 100%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    button.btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .action-bar {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    button.btn-secondary {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    button.btn-secondary:hover {
+      background: var(--bg-primary);
+    }
+
+    .checklist-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .checklist-item:last-child {
+      border-bottom: none;
+    }
+
+    .checklist-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+      cursor: pointer;
+    }
+
+    .checklist-content {
+      flex: 1;
+    }
+
+    .checklist-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .checklist-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      margin-left: 6px;
+    }
+
+    .badge-danger { background: #fee2e2; color: var(--danger); }
+    .badge-warning { background: #ffedd5; color: var(--warning); }
+    .badge-info { background: #e0f2fe; color: var(--primary); }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1e293b;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-size: 0.875rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>Recipe Content Readiness Board</h1>
+      <p class="subtitle">Evaluate and export channel-specific marketing briefs</p>
+    </header>
+
+    <!-- Inputs Panel -->
+    <div class="card">
+      <div class="form-group">
+        <label for="recipeName">Recipe Name</label>
+        <input type="text" id="recipeName" placeholder="e.g., Crispy Chili Crisp Smash Burgers">
+      </div>
+
+      <div class="form-group">
+        <label for="servingNote">Key Serving Note / Hook</label>
+        <input type="text" id="servingNote" placeholder="e.g., Serve sizzling hot with extra dynamic crunch">
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label for="audience">Target Audience</label>
+          <select id="audience">
+            <option value="Busy Weeknight Cooks">Busy Weeknight Cooks</option>
+            <option value="Gourmet Hobbyists">Gourmet Hobbyists</option>
+            <option value="Health-Conscious Foodies">Health-Conscious Foodies</option>
+            <option value="Beginner Home Cooks">Beginner Home Cooks</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="complexity">Complexity</label>
+          <select id="complexity">
+            <option value="Quick & Easy">Quick & Easy</option>
+            <option value="Medium Effort">Medium Effort</option>
+            <option value="Weekend Project">Weekend Project</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Distribution Channels</label>
+        <div class="channels-group">
+          <input type="checkbox" id="ch-instagram" class="channel-checkbox" checked onchange="generateBoard()">
+          <label for="ch-instagram" class="channel-label">Instagram</label>
+
+          <input type="checkbox" id="ch-tiktok" class="channel-checkbox" checked onchange="generateBoard()">
+          <label for="ch-tiktok" class="channel-label">TikTok</label>
+
+          <input type="checkbox" id="ch-blog" class="channel-checkbox" checked onchange="generateBoard()">
+          <label for="ch-blog" class="channel-label">Blog/Web</label>
+
+          <input type="checkbox" id="ch-newsletter" class="channel-checkbox" onchange="generateBoard()">
+          <label for="ch-newsletter" class="channel-label">Newsletter</label>
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="generateBoard()">Analyze & Refresh Board</button>
+    </div>
+
+    <!-- Export Actions Layout (Hidden until generation) -->
+    <div id="action-bar" class="action-bar hidden">
+      <button class="btn-secondary" onclick="copyBrief()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+        Copy Brief
+      </button>
+      <button class="btn-secondary" onclick="downloadBrief()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+        Download .txt
+      </button>
+    </div>
+
+    <!-- Output Cards Container -->
+    <div id="output-container" class="hidden">
+      
+      <!-- Card 1: Title Promise & Hook -->
+      <div class="card">
+        <div class="card-title">Title Promise & Hook</div>
+        <div id="title-checklist"></div>
+      </div>
+
+      <!-- Card 2: Ingredient Clarity -->
+      <div class="card">
+        <div class="card-title">Ingredient Clarity</div>
+        <div id="ingredient-checklist"></div>
+      </div>
+
+      <!-- Card 3: Social Post Angles -->
+      <div class="card">
+        <div class="card-title">Social Post Angles</div>
+        <div id="social-checklist"></div>
+      </div>
+
+      <!-- Card 4: Hashtag Buckets -->
+      <div class="card">
+        <div class="card-title">Hashtag Buckets</div>
+        <div id="hashtag-checklist"></div>
+      </div>
+
+      <!-- Card 5: Missing Assets & Risk Flags -->
+      <div class="card">
+        <div class="card-title">Missing Assets & Risk Flags</div>
+        <div id="asset-checklist"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="toast" class="toast">Brief copied to clipboard!</div>
+
+  <script>
+    // In-memory structural generation template values
+    let generatedData = {};
+
+    function generateBoard() {
+      const recipe = document.getElementById('recipeName').value.trim() || 'Untitled Recipe';
+      const hook = document.getElementById('servingNote').value.trim() || 'Delicious homemade flavor';
+      const aud = document.getElementById('audience').value;
+      const comp = document.getElementById('complexity').value;
+
+      // Channels
+      const channels = [];
+      if(document.getElementById('ch-instagram').checked) channels.push('Instagram');
+      if(document.getElementById('ch-tiktok').checked) channels.push('TikTok');
+      if(document.getElementById('ch-blog').checked) channels.push('Blog/Web');
+      if(document.getElementById('ch-newsletter').checked) channels.push('Newsletter');
+
+      if(channels.length === 0) {
+        alert('Please toggle at least one distribution channel.');
+        return;
+      }
+
+      // Build Context-driven dynamic output structure
+      generatedData = {
+        recipe: recipe,
+        hook: hook,
+        audience: aud,
+        complexity: comp,
+        channels: channels,
+        titles: [
+          { t: `The Ultimate ${recipe} for ${aud}`, d: `Direct value framing optimized for web title tags.` },
+          { t: `Better than takeout ${recipe} (${comp})`, d: `High-curiosity click trigger for social channels.` }
+        ],
+        ingredients: [
+          { t: "Confirm specialized/niche item alternatives", d: `Provide immediate substitutes to accommodate ${aud}.` },
+          { t: "Metric vs Imperial clean toggle check", d: "Ensure scaling logic matches cross-regional expectations." }
+        ],
+        socialAngles: [],
+        hashtags: [],
+        risks: [
+          { t: "Missing Hero Header Asset", d: "Requires high-resolution landscape photo for main card presentation.", r: "High" }
+        ]
+      };
+
+      // Populate Channel-Specific logic paths
+      channels.forEach(ch => {
+        if(ch === 'Instagram') {
+          generatedData.socialAngles.push({ t: "IG Reel Carousel Anchor", d: `Visual asset step breakdown highlighting: "${hook}"` });
+          generatedData.hashtags.push({ t: "#Foodstagram #RecipeShare #HomeCooking", d: "Broad visibility tier" });
+          generatedData.risks.push({ t: "Missing vertical 9:16 asset for IG Stories", d: "Crucial for initial click-through traffic loop.", r: "Medium" });
+        }
+        if(ch === 'TikTok') {
+          generatedData.socialAngles.push({ t: "ASMR/First Bite Hook Trend", d: `Open video loop directly on: "${hook}" within 2.5 seconds.` });
+          generatedData.hashtags.push({ t: `#FoodTikTok #${recipe.replace(/\s+/g, '')} #EasyRecipes`, d: "Algorithmic niche tags" });
+          generatedData.risks.push({ t: "Missing fast-paced high BPM audio track matching", d: "Risk of low organic retention if audio hooks lag.", r: "High" });
+        }
+        if(ch === 'Blog/Web') {
+          generatedData.socialAngles.push({ t: "SEO Long-form Answer Box Target", d: `Format introductory copy to capture: "How do you make ${recipe} quickly?"` });
+          generatedData.hashtags.push({ t: "SEO Meta: Recipe Schema Format", d: "Structural JSON-LD payload confirmation marker" });
+          generatedData.risks.push({ t: "Missing Jump-to-Recipe functional logic link", d: "Increases bounce rates significantly for mobile users.", r: "High" });
+        }
+        if(ch === 'Newsletter') {
+          generatedData.socialAngles.push({ t: "Exclusive Insider Variation", d: `Positioning line: "The exact trick I use when making this ${recipe} for special occasions."` });
+          generatedData.hashtags.push({ t: "Subject Line: Pre-header optimization slot", d: "Value teaser line insertion check" });
+        }
+      });
+
+      // Render items out into distinct functional checklist blocks
+      renderChecklist('title-checklist', generatedData.titles);
+      renderChecklist('ingredient-checklist', generatedData.ingredients);
+      renderChecklist('social-checklist', generatedData.socialAngles);
+      renderChecklist('hashtag-checklist', generatedData.hashtags);
+      renderChecklist('asset-checklist', generatedData.risks, true);
+
+      // Unhide targeted element UI blocks
+      document.getElementById('action-bar').classList.remove('hidden');
+      document.getElementById('output-container').classList.remove('hidden');
+    }
+
+    function renderChecklist(elementId, items, isRisk = false) {
+      const container = document.getElementById(elementId);
+      container.innerHTML = '';
+      
+      items.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'checklist-item';
+        
+        let badgeHtml = '';
+        if (isRisk && item.r) {
+          const badgeClass = item.r === 'High' ? 'badge-danger' : 'badge-warning';
+          badgeHtml = `<span class="badge ${badgeClass}">${item.r} Risk</span>`;
+        }
+
+        div.innerHTML = `
+          <input type="checkbox" id="${elementId}-${index}">
+          <div class="checklist-content">
+            <div class="checklist-title">${item.t}${badgeHtml}</div>
+            <div class="checklist-desc">${item.d}</div>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function buildTextBrief() {
+      let txt = `RECIPE CONTENT READINESS BRIEF\n`;
+      txt += `====================================\n`;
+      txt += `Recipe: ${generatedData.recipe}\n`;
+      txt += `Hook/Serving Note: ${generatedData.hook}\n`;
+      txt += `Audience: ${generatedData.audience} (${generatedData.complexity})\n`;
+      txt += `Channels: ${generatedData.channels.join(', ')}\n\n`;
+
+      txt += `1. TITLE PROMISES\n`;
+      generatedData.titles.forEach(t => txt += `- [ ] ${t.t} (${t.d})\n`);
+      txt += `\n2. INGREDIENT CLARITY\n`;
+      generatedData.ingredients.forEach(i => txt += `- [ ] ${i.t} (${i.d})\n`);
+      txt += `\n3. SOCIAL POST ANGLES\n`;
+      generatedData.socialAngles.forEach(s => txt += `- [ ] ${s.t} (${s.d})\n`);
+      txt += `\n4. HASHTAG BUCKETS\n`;
+      generatedData.hashtags.forEach(h => txt += `- [ ] ${h.t} (${h.d})\n`);
+      txt += `\n5. MISSING ASSETS & RISK FLAGS\n`;
+      generatedData.risks.forEach(r => txt += `- [ ] [${r.r} Risk] ${r.t} (${r.d})\n`);
+
+      return txt;
+    }
+
+    function copyBrief() {
+      const text = buildTextBrief();
+      navigator.clipboard.writeText(text).then(() => {
+        const toast = document.getElementById('toast');
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2000);
+      });
+    }
+
+    function downloadBrief() {
+      const text = buildTextBrief();
+      const blob = new Blob([text], { type: 'text/plain' });
+      const anchor = document.createElement('a');
+      anchor.download = `${generatedData.recipe.toLowerCase().replace(/\s+/g, '-')}-readiness-brief.txt`;
+      anchor.href = window.URL.createObjectURL(blob);
+      anchor.click();
+      window.URL.revokeObjectURL(anchor.href);
+    }
+  </script>
+</body>
+</html>

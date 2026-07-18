@@ -46,10 +46,15 @@ export type SourceRunSubmitResult = {
 }
 
 export async function approvePrompt(id: string) {
-  await updatePromptStatus(id, 'approved')
   const sourceRun = await getSourceRunSubmissionByPromptIdForAdmin(id)
+  if (sourceRun) {
+    throw new Error(
+      `Generic approval is blocked for source-run projects. Review /admin/source-runs/${sourceRun.id} and publish its prepared showcase from there.`,
+    )
+  }
+
+  await updatePromptStatus(id, 'approved')
   revalidatePath('/admin')
-  if (sourceRun) revalidatePath(`/admin/source-runs/${sourceRun.id}`)
   revalidatePath('/browse')
   revalidatePath('/paths')
   revalidatePath('/')

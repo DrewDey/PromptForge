@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Research Claim Flipbook & Handoff Tool</title>
+
+    <style>
+
+        :root {
+
+            --bg-color: #f8f9fa;
+
+            --card-bg: #ffffff;
+
+            --text-primary: #212529;
+
+            --text-secondary: #6c757d;
+
+            --accent: #2563eb;
+
+            --accent-hover: #1d4ed8;
+
+            --risk-low: #16a34a;
+
+            --risk-medium: #ca8a04;
+
+            --risk-high: #dc2626;
+
+            --border: #dee2e6;
+
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+
+        }
+
+
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+            background-color: var(--bg-color);
+
+            color: var(--text-primary);
+
+            line-height: 1.6;
+
+            padding: 20px;
+
+            max-width: 900px;
+
+            margin: 0 auto;
+
+        }
+
+
+
+        header {
+
+            text-align: center;
+
+            margin-bottom: 30px;
+
+            padding-bottom: 20px;
+
+            border-bottom: 2px solid var(--border);
+
+        }
+
+        header h1 { font-size: 1.8rem; margin-bottom: 8px; }
+
+        header p { color: var(--text-secondary); font-size: 0.95rem; }
+
+
+
+        /* Tabs */
+
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
+
+        .tab-btn {
+
+            padding: 10px 20px;
+
+            background: none;
+
+            border: none;
+
+            border-bottom: 3px solid transparent;
+
+            cursor: pointer;
+
+            font-size: 1rem;
+
+            font-weight: 600;
+
+            color: var(--text-secondary);
+
+            transition: all 0.2s;
+
+        }
+
+        .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+        .tab-btn:hover { color: var(--accent); }
+
+
+
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+
+        .tab-content.active { display: block; }
+
+
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+
+
+        /* Forms */
+
+        .form-group { margin-bottom: 16px; }
+
+        label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.9rem; }
+
+        input, select, textarea {
+
+            width: 100%;
+
+            padding: 10px 12px;
+
+            border: 1px solid var(--border);
+
+            border-radius: 6px;
+
+            font-size: 1rem;
+
+            font-family: inherit;
+
+            transition: border-color 0.2s;
+
+        }
+
+        input:focus, select:focus, textarea:focus {
+
+            outline: none;
+
+            border-color: var(--accent);
+
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+
+        }
+
+        textarea { min-height: 100px; resize: vertical; }
+
+
+
+        .btn {
+
+            display: inline-flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            padding: 10px 20px;
+
+            background-color: var(--accent);
+
+            color: white;
+
+            border: none;
+
+            border-radius: 6px;
+
+            font-size: 1rem;
+
+            font-weight: 600;
+
+            cursor: pointer;
+
+            transition: background-color 0.2s;
+
+            gap: 8px;
+
+        }
+
+        .btn:hover { background-color: var(--accent-hover); }
+
+        .btn-secondary { background-color: var(--text-secondary); }
+
+        .btn-secondary:hover { background-color: #495057; }
+
+        .btn-danger { background-color: var(--risk-high); }
+
+        .btn-danger:hover { background-color: #b91c1c; }
+
+
+
+        /* Flipbook Viewer */
+
+        .flipbook-controls {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            margin-bottom: 20px;
+
+            flex-wrap: wrap;
+
+            gap: 10px;
+
+        }
+
+        .toggle-label {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 8px;
+
+            font-size: 0.95rem;
+
+            cursor: pointer;
+
+            user-select: none;
+
+        }
+
+
+
+        .card-container {
+
+            perspective: 1000px;
+
+            min-height: 400px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+        }
+
+        .flip-card {
+
+            background: var(--card-bg);
+
+            border-radius: 12px;
+
+            box-shadow: var(--shadow);
+
+            padding: 30px;
+
+            width: 100%;
+
+            max-width: 700px;
+
+            position: relative;
+
+            transition: transform 0.4s ease, opacity 0.4s ease;
+
+            border-left: 6px solid var(--border);
+
+        }
+
+        .flip-card.risk-low { border-left-color: var(--risk-low); }
+
+        .flip-card.risk-medium { border-left-color: var(--risk-medium); }
+
+        .flip-card.risk-high { border-left-color: var(--risk-high); }
+
+
+
+        .card-header {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: flex-start;
+
+            margin-bottom: 20px;
+
+            padding-bottom: 15px;
+
+            border-bottom: 1px solid var(--border);
+
+        }
+
+        .risk-badge {
+
+            padding: 4px 12px;
+
+            border-radius: 20px;
+
+            font-size: 0.8rem;
+
+            font-weight: 700;
+
+            text-transform: uppercase;
+
+            letter-spacing: 0.5px;
+
+            color: white;
+
+        }
+
+        .risk-low .risk-badge { background-color: var(--risk-low); }
+
+        .risk-medium .risk-badge { background-color: var(--risk-medium); }
+
+        .risk-high .risk-badge { background-color: var(--risk-high); }
+
+
+
+        .claim-text {
+
+            font-size: 1.25rem;
+
+            font-weight: 500;
+
+            margin-bottom: 20px;
+
+            line-height: 1.5;
+
+        }
+
+        .meta-grid {
+
+            display: grid;
+
+            grid-template-columns: 1fr 1fr;
+
+            gap: 15px;
+
+            margin-bottom: 20px;
+
+            font-size: 0.95rem;
+
+        }
+
+        .meta-item strong { display: block; color: var(--text-secondary); font-size: 0.85rem; text-transform: uppercase; margin-bottom: 4px; }
+
+        .freshness-warning {
+
+            background-color: #fef3c7;
+
+            color: #92400e;
+
+            padding: 10px 15px;
+
+            border-radius: 6px;
+
+            font-size: 0.9rem;
+
+            margin-top: 15px;
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 8px;
+
+        }
+
+        .freshness-warning.critical {
+
+            background-color: #fee2e2;
+
+            color: #991b1b;
+
+        }
+
+
+
+        .card-nav {
+
+            display: flex;
+
+            justify-content: center;
+
+            gap: 15px;
+
+            margin-top: 25px;
+
+        }
+
+        .empty-state {
+
+            text-align: center;
+
+            padding: 60px 20px;
+
+            color: var(--text-secondary);
+
+        }
+
+
+
+        /* Export Section */
+
+        .export-area {
+
+            width: 100%;
+
+            min-height: 300px;
+
+            font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
+
+            font-size: 0.9rem;
+
+            line-height: 1.5;
+
+            padding: 15px;
+
+            background-color: #f1f5f9;
+
+            border: 1px solid var(--border);
+
+            border-radius: 6px;
+
+            resize: vertical;
+
+            margin-bottom: 15px;
+
+        }
+
+
+
+        .math-note {
+
+            font-size: 0.85rem;
+
+            color: var(--text-secondary);
+
+            background: #eef2ff;
+
+            padding: 12px;
+
+            border-radius: 6px;
+
+            margin-top: 20px;
+
+            border-left: 3px solid var(--accent);
+
+        }
+
+
+
+        @media (max-width: 600px) {
+
+            .meta-grid { grid-template-columns: 1fr; }
+
+            .flipbook-controls { flex-direction: column; align-items: flex-start; }
+
+            body { padding: 15px; }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+
+
+<header>
+
+    <h1>📚 Research Claim Flipbook</h1>
+
+    <p>Paste claims, tag evidence, assess freshness risk, and generate clean editor handoffs. 100% offline.</p>
+
+</header>
+
+
+
+<div class="tabs">
+
+    <button class="tab-btn active" onclick="switchTab('input')">1. Add Claims</button>
+
+    <button class="tab-btn" onclick="switchTab('flipbook')">2. Review Flipbook</button>
+
+    <button class="tab-btn" onclick="switchTab('export')">3. Editor Handoff</button>
+
+</div>
+
+
+
+<!-- TAB 1: INPUT -->
+
+<div id="tab-input" class="tab-content active">
+
+    <form id="claimForm">
+
+        <div class="form-group">
+
+            <label for="claim">Claim / Quote</label>
+
+            <textarea id="claim" placeholder="e.g., 'Intermittent fasting reduces cardiovascular risk by 20%.'" required></textarea>
+
+        </div>
+
+        <div class="form-group">
+
+            <label for="source">Source Note / Citation</label>
+
+            <input type="text" id="source" placeholder="e.g., Smith et al., NEJM, 2019" required>
+
+        </div>
+
+        <div class="meta-grid">
+
+            <div class="form-group">
+
+                <label for="pubDate">Publication Date</label>
+
+                <input type="date" id="pubDate" required>
+
+            </div>
+
+            <div class="form-group">
+
+                <label for="evidenceType">Evidence Type</label>
+
+                <select id="evidenceType" required>
+
+                    <option value="meta-analysis">Meta-Analysis / Systematic Review</option>
+
+                    <option value="rct">Randomized Controlled Trial (RCT)</option>
+
+                    <option value="observational">Observational / Cohort Study</option>
+
+                    <option value="expert">Expert Opinion / Editorial</option>
+
+                    <option value="anecdotal">Anecdotal / Unknown / Blog</option>
+
+                </select>
+
+            </div>
+
+        </div>
+
+        <div class="form-group">
+
+            <label for="notes">Editor Notes (Optional)</label>
+
+            <textarea id="notes" placeholder="e.g., Check if this conflicts with the 2023 WHO guidelines." style="min-height: 60px;"></textarea>
+
+        </div>
+
+        <button type="submit" class="btn">➕ Add to Flipbook</button>
+
+    </form>
+
+
+
+    <div class="math-note">
+
+        <strong>How Risk is Calculated:</strong> 
+
+        Total Risk Score $R = A + E$, where $A$ is the Age Penalty ($0$ if $\le 2$ years, $+1$ if $2-5$ years, $+2$ if $>5$ years) and $E$ is the Evidence Penalty (Meta-analysis $= 0$, RCT $= 1$, Observational $= 2$, Expert $= 3$, Anecdotal $= 4$). 
+
+        Risk levels: $R \le 1$ (Low), $2 \le R \le 3$ (Medium), $R \ge 4$ (High).
+
+    </div>
+
+</div>
+
+
+
+<!-- TAB 2: FLIPBOOK -->
+
+<div id="tab-flipbook" class="tab-content">
+
+    <div class="flipbook-controls">
+
+        <div>
+
+            <span id="cardCounter" style="font-weight: 600; color: var(--text-secondary);">0 / 0</span>
+
+        </div>
+
+        <div style="display: flex; gap: 15px; align-items: center;">
+
+            <label class="toggle-label">
+
+                <input type="checkbox" id="sortRiskToggle" onchange="renderFlipbook()">
+
+                Sort by Highest Risk First
+
+            </label>
+
+            <button class="btn btn-danger" onclick="clearAllData()" style="padding: 6px 12px; font-size: 0.85rem;">Clear All</button>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="card-container" id="cardContainer">
+
+        <!-- Cards injected here via JS -->
+
+    </div>
+
+
+
+    <div class="card-nav" id="cardNav" style="display: none;">
+
+        <button class="btn btn-secondary" onclick="prevCard()">← Previous</button>
+
+        <button class="btn" onclick="nextCard()">Next →</button>
+
+    </div>
+
+</div>
+
+
+
+<!-- TAB 3: EXPORT -->
+
+<div id="tab-export" class="tab-content">
+
+    <p style="margin-bottom: 15px; color: var(--text-secondary);">This generates a clean, structured Markdown-ready handoff for your editorial CMS or team.</p>
+
+    <textarea id="exportText" class="export-area" readonly></textarea>
+
+    <div style="display: flex; gap: 10px;">
+
+        <button class="btn" onclick="copyToClipboard()">📋 Copy to Clipboard</button>
+
+        <button class="btn btn-secondary" onclick="generateExport()">🔄 Regenerate</button>
+
+    </div>
+
+    <p id="copyFeedback" style="color: var(--risk-low); font-weight: 600; margin-top: 10px; opacity: 0; transition: opacity 0.3s;">Copied successfully!</p>
+
+</div>
+
+
+
+<script>
+
+    // --- STATE MANAGEMENT ---
+
+    let claims = JSON.parse(localStorage.getItem('research_claims')) || [];
+
+    let currentIndex = 0;
+
+
+
+    // --- TAB SWITCHING ---
+
+    function switchTab(tabName) {
+
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+        
+
+        document.getElementById(`tab-${tabName}`).classList.add('active');
+
+        event.target.classList.add('active');
+
+
+
+        if (tabName === 'flipbook') renderFlipbook();
+
+        if (tabName === 'export') generateExport();
+
+    }
+
+
+
+    // --- RISK CALCULATION ---
+
+    function calculateRisk(pubDateStr, evidenceType) {
+
+        const pubDate = new Date(pubDateStr);
+
+        const now = new Date();
+
+        const yearsOld = (now - pubDate) / (1000 * 60 * 60 * 24 * 365.25);
+
+        
+
+        let agePenalty = 0;
+
+        let freshnessWarning = null;
+
+
+
+        if (yearsOld > 5) {
+
+            agePenalty = 2;
+
+            freshnessWarning = "Critical: Source is over 5 years old. Verify if newer data supersedes this.";
+
+        } else if (yearsOld > 2) {
+
+            agePenalty = 1;
+
+            freshnessWarning = "Warning: Source is 2-5 years old. Consider checking for recent updates.";
+
+        }
+
+
+
+        const evidenceScores = {
+
+            'meta-analysis': 0,
+
+            'rct': 1,
+
+            'observational': 2,
+
+            'expert': 3,
+
+            'anecdotal': 4
+
+        };
+
+        const evidencePenalty = evidenceScores[evidenceType] || 0;
+
+        const totalRisk = agePenalty + evidencePenalty;
+
+
+
+        let riskLevel = 'low';
+
+        if (totalRisk >= 4) riskLevel = 'high';
+
+        else if (totalRisk >= 2) riskLevel = 'medium';
+
+
+
+        return { totalRisk, riskLevel, yearsOld: yearsOld.toFixed(1), freshnessWarning };
+
+    }
+
+
+
+    // --- FORM HANDLING ---
+
+    document.getElementById('claimForm').addEventListener('submit', function(e) {
+
+        e.preventDefault();
+
+        
+
+        const claim = document.getElementById('claim').value.trim();
+
+        const source = document.getElementById('source').value.trim();
+
+        const pubDate = document.getElementById('pubDate').value;
+
+        const evidenceType = document.getElementById('evidenceType').value;
+
+        const notes = document.getElementById('notes').value.trim();
+
+
+
+        const riskData = calculateRisk(pubDate, evidenceType);
+
+
+
+        const newClaim = {
+
+            id: Date.now(),
+
+            claim,
+
+            source,
+
+            pubDate,
+
+            evidenceType,
+
+            notes,
+
+            riskScore: riskData.totalRisk,
+
+            riskLevel: riskData.riskLevel,
+
+            freshnessWarning: riskData.freshnessWarning,
+
+            yearsOld: riskData.yearsOld
+
+        };
+
+
+
+        claims.push(newClaim);
+
+        saveData();
+
+        
+
+        // Reset form
+
+        this.reset();
+
+        document.getElementById('claim').focus();
+
+        
+
+        alert('Claim added successfully! Switch to the "Review Flipbook" tab to view it.');
+
+    });
+
+
+
+    function saveData() {
+
+        localStorage.setItem('research_claims', JSON.stringify(claims));
+
+    }
+
+
+
+    function clearAllData() {
+
+        if (confirm('Are you sure you want to delete all claims? This cannot be undone.')) {
+
+            claims = [];
+
+            currentIndex = 0;
+
+            saveData();
+
+            renderFlipbook();
+
+        }
+
+    }
+
+
+
+    // --- FLIPBOOK RENDERING ---
+
+    function getSortedClaims() {
+
+        const sortRisk = document.getElementById('sortRiskToggle').checked;
+
+        if (sortRisk) {
+
+            return [...claims].sort((a, b) => b.riskScore - a.riskScore);
+
+        }
+
+        return claims;
+
+    }
+
+
+
+    function renderFlipbook() {
+
+        const container = document.getElementById('cardContainer');
+
+        const nav = document.getElementById('cardNav');
+
+        const counter = document.getElementById('cardCounter');
+
+        const sortedClaims = getSortedClaims();
+
+
+
+        if (sortedClaims.length === 0) {
+
+            container.innerHTML = `
+
+                <div class="empty-state">
+
+                    <h3>No claims added yet.</h3>
+
+                    <p>Go to the "Add Claims" tab to paste your first research claim.</p>
+
+                </div>
+
+            `;
+
+            nav.style.display = 'none';
+
+            counter.textContent = '0 / 0';
+
+            return;
+
+        }
+
+
+
+        // Ensure currentIndex is valid
+
+        if (currentIndex >= sortedClaims.length) currentIndex = sortedClaims.length - 1;
+
+        if (currentIndex < 0) currentIndex = 0;
+
+
+
+        const item = sortedClaims[currentIndex];
+
+        counter.textContent = `${currentIndex + 1} / ${sortedClaims.length}`;
+
+        nav.style.display = 'flex';
+
+
+
+        const evidenceLabels = {
+
+            'meta-analysis': 'Meta-Analysis / Systematic Review',
+
+            'rct': 'Randomized Controlled Trial (RCT)',
+
+            'observational': 'Observational / Cohort Study',
+
+            'expert': 'Expert Opinion / Editorial',
+
+            'anecdotal': 'Anecdotal / Unknown / Blog'
+
+        };
+
+
+
+        const warningHtml = item.freshnessWarning 
+
+            ? `<div class="freshness-warning ${item.riskLevel === 'high' ? 'critical' : ''}">⚠️ ${item.freshnessWarning}</div>` 
+
+            : `<div class="freshness-warning" style="background-color: #dcfce7; color: #166534;">✅ Source is fresh (${item.yearsOld} years old).</div>`;
+
+
+
+        container.innerHTML = `
+
+            <div class="flip-card risk-${item.riskLevel}" id="activeCard">
+
+                <div class="card-header">
+
+                    <span class="risk-badge">Risk: ${item.riskLevel.toUpperCase()} (Score: ${item.riskScore})</span>
+
+                    <button class="btn btn-danger" style="padding: 4px 10px; font-size: 0.8rem;" onclick="deleteClaim(${item.id})">Delete</button>
+
+                </div>
+
+                <div class="claim-text">"${item.claim}"</div>
+
+                <div class="meta-grid">
+
+                    <div class="meta-item">
+
+                        <strong>Source</strong>
+
+                        ${item.source}
+
+                    </div>
+
+                    <div class="meta-item">
+
+                        <strong>Evidence Type</strong>
+
+                        ${evidenceLabels[item.evidenceType]}
+
+                    </div>
+
+                    <div class="meta-item">
+
+                        <strong>Publication Date</strong>
+
+                        ${new Date(item.pubDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+
+                    </div>
+
+                    <div class="meta-item">
+
+                        <strong>Age</strong>
+
+                        ${item.yearsOld} years
+
+                    </div>
+
+                </div>
+
+                ${warningHtml}
+
+                ${item.notes ? `<div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed var(--border);"><strong>Editor Notes:</strong> ${item.notes}</div>` : ''}
+
+            </div>
+
+        `;
+
+    }
+
+
+
+    function nextCard() {
+
+        const sortedClaims = getSortedClaims();
+
+        if (currentIndex < sortedClaims.length - 1) {
+
+            currentIndex++;
+
+            animateCardTransition('left');
+
+        }
+
+    }
+
+
+
+    function prevCard() {
+
+        if (currentIndex > 0) {
+
+            currentIndex--;
+
+            animateCardTransition('right');
+
+        }
+
+    }
+
+
+
+    function animateCardTransition(direction) {
+
+        const card = document.getElementById('activeCard');
+
+        card.style.opacity = '0';
+
+        card.style.transform = direction === 'left' ? 'translateX(-20px) rotateY(-5deg)' : 'translateX(20px) rotateY(5deg)';
+
+        
+
+        setTimeout(() => {
+
+            renderFlipbook();
+
+            const newCard = document.getElementById('activeCard');
+
+            newCard.style.opacity = '0';
+
+            newCard.style.transform = direction === 'left' ? 'translateX(20px) rotateY(5deg)' : 'translateX(-20px) rotateY(-5deg)';
+
+            
+
+            // Force reflow
+
+            void newCard.offsetWidth; 
+
+            
+
+            newCard.style.opacity = '1';
+
+            newCard.style.transform = 'translateX(0) rotateY(0)';
+
+        }, 200);
+
+    }
+
+
+
+    function deleteClaim(id) {
+
+        if (confirm('Delete this claim?')) {
+
+            claims = claims.filter(c => c.id !== id);
+
+            if (currentIndex >= claims.length) currentIndex = Math.max(0, claims.length - 1);
+
+            saveData();
+
+            renderFlipbook();
+
+        }
+
+    }
+
+
+
+    // --- EXPORT HANDOFF ---
+
+    function generateExport() {
+
+        const sortedClaims = getSortedClaims();
+
+        if (sortedClaims.length === 0) {
+
+            document.getElementById('exportText').value = 'No claims to export.';
+
+            return;
+
+        }
+
+
+
+        let output = `# RESEARCH CLAIMS HANDOFF\n`;
+
+        output += `Generated: ${new Date().toLocaleString()}\n`;
+
+        output += `Total Claims: ${sortedClaims.length}\n`;
+
+        output += `Sort Order: ${document.getElementById('sortRiskToggle').checked ? 'Highest Risk First' : 'Chronological (Added)'}\n\n`;
+
+        output += `---\n\n`;
+
+
+
+        sortedClaims.forEach((item, index) => {
+
+            output += `### Claim ${index + 1} [${item.riskLevel.toUpperCase()} RISK]\n`;
+
+            output += `**Claim:** "${item.claim}"\n`;
+
+            output += `**Source:** ${item.source}\n`;
+
+            output += `**Date:** ${item.pubDate} (${item.yearsOld} years old)\n`;
+
+            output += `**Evidence:** ${item.evidenceType}\n`;
+
+            if (item.freshnessWarning) {
+
+                output += `**⚠️ Freshness Note:** ${item.freshnessWarning}\n`;
+
+            }
+
+            if (item.notes) {
+
+                output += `**Editor Notes:** ${item.notes}\n`;
+
+            }
+
+            output += `\n`;
+
+        });
+
+
+
+        document.getElementById('exportText').value = output;
+
+    }
+
+
+
+    function copyToClipboard() {
+
+        const exportText = document.getElementById('exportText');
+
+        exportText.select();
+
+        exportText.setSelectionRange(0, 99999); // For mobile
+
+        
+
+        navigator.clipboard.writeText(exportText.value).then(() => {
+
+            const feedback = document.getElementById('copyFeedback');
+
+            feedback.style.opacity = '1';
+
+            setTimeout(() => { feedback.style.opacity = '0'; }, 2000);
+
+        }).catch(err => {
+
+            alert('Failed to copy. Please select and copy manually.');
+
+        });
+
+    }
+
+
+
+    // Initialize
+
+    if (claims.length > 0) {
+
+        // Keep default tab, but ensure state is ready
+
+    }
+
+</script>
+
+
+
+</body>
+
+</html>

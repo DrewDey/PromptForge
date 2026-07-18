@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Micro Content Planner</title>
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #0f172a;
+            --primary: #4f46e5;
+            --border: #e2e8f0;
+            --warn: #ef4444;
+            --success: #10b981;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 12px; font-size: 14px; line-height: 1.4; }
+        h1, h2 { font-size: 1.2rem; margin-bottom: 12px; color: var(--primary); }
+        .section { background: var(--card); border-radius: 8px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border); }
+        label { display: block; font-weight: 600; margin: 8px 0 4px; }
+        input, textarea, select { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; background: #fff; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        
+        /* Calendar Styles */
+        .week-block { border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 12px; background: #fafafa; }
+        .week-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+        .status-badge { padding: 2px 6px; border-radius: 4px; font-size: 12px; color: #fff; }
+        .status-ok { background: var(--success); }
+        .status-over { background: var(--warn); }
+        
+        .days-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+        .day-card { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 8px; }
+        .day-name { font-weight: 600; color: #64748b; margin-bottom: 6px; font-size: 12px; text-transform: uppercase; }
+        
+        /* Slot Styles */
+        .slot { background: #f1f5f9; border-left: 3px solid var(--primary); padding: 6px; margin-bottom: 6px; border-radius: 0 4px 4px 0; font-size: 12px; cursor: pointer; }
+        .slot:hover { background: #e2e8f0; }
+        .slot-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        
+        /* Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); padding: 16px; align-items: center; justify-content: center; z-index: 100; }
+        .modal-content { background: #fff; padding: 16px; border-radius: 8px; width: 100%; max-width: 400px; max-height: 90vh; overflow-y: auto; }
+        .btn-group { display: flex; gap: 8px; margin-top: 12px; }
+        button { flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .btn-pri { background: var(--primary); color: #fff; }
+        .btn-sec { background: var(--border); color: var(--text); }
+        .btn-danger { background: var(--warn); color: #fff; }
+    </style>
+</head>
+<body>
+
+    <!-- Setup Panel -->
+    <div class="section">
+        <h1>Setup & Strategy</h1>
+        <div class="grid-2">
+            <div>
+                <label>Target Channels (comma separated)</label>
+                <input type="text" id="channelsInput" value="Instagram, LinkedIn, Newsletter">
+            </div>
+            <div>
+                <label>Weekly Limit (Max Posts)</label>
+                <input type="number" id="weeklyLimitInput" value="5">
+            </div>
+        </div>
+        <label>Campaign Themes (One per line for reference)</label>
+        <textarea id="themesInput" rows="2" placeholder="Week 1: Launch&#10;Week 2: Social Proof"></textarea>
+        <button class="btn-pri" style="margin-top:12px; width:auto;" onclick="setupCalendar()">Generate / Reset 4-Week Calendar</button>
+    </div>
+
+    <!-- Calendar Grid -->
+    <div class="section">
+        <h2>4-Week Content Calendar</h2>
+        <div id="calendarContainer"></div>
+    </div>
+
+    <!-- Brief Editor Modal -->
+    <div id="briefModal" class="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Edit Post Brief</h3>
+            <label>Channel</label>
+            <select id="modalChannel"></select>
+            <label>Post Title / Hook</label>
+            <input type="text" id="modalPostTitle">
+            <label>Caption / Copy Brief</label>
+            <textarea id="modalCopy" rows="5"></textarea>
+            
+            <div class="btn-group">
+                <button class="btn-pri" onclick="saveSlot()">Save</button>
+                <button class="btn-danger" onclick="deleteSlot()">Delete</button>
+                <button class="btn-sec" onclick="closeModal()">Close</button>
+            </div>
+            <div class="btn-group">
+                <button class="btn-sec" onclick="copyBriefText()">📋 Copy Text</button>
+                <button class="btn-sec" onclick="downloadBriefFile()">💾 Download Text File</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        let plannerData = JSON.parse(localStorage.getItem('micro_planner_data')) || {
+            limit: 5,
+            slots: [] // Elements format: { id: timestamp, week: 1-4, day: 'Monday', channel: '', title: '', copy: '' }
+        };
+
+        function init() {
+            if (plannerData.slots.length === 0) {
+                setupCalendar();
+            } else {
+                document.getElementById('weeklyLimitInput').value = plannerData.limit;
+                renderCalendar();
+            }
+        }
+
+        function setupCalendar() {
+            plannerData.limit = parseInt(document.getElementById('weeklyLimitInput').value) || 5;
+            // Retain existing slots if resetting layout, or clear if blank slate desired. 
+            // For safety, this retains matching metadata unless manually purged.
+            renderCalendar();
+        }
+
+        function saveData() {
+            plannerData.limit = parseInt(document.getElementById('weeklyLimitInput').value) || 5;
+            localStorage.setItem('micro_planner_data', JSON.stringify(plannerData));
+        }
+
+        function renderCalendar() {
+            saveData();
+            const container = document.getElementById('calendarContainer');
+            container.innerHTML = '';
+            
+            const limit = plannerData.limit;
+
+            for (let w = 1; w <= 4; w++) {
+                const weekSlots = plannerData.slots.filter(s => s.week === w);
+                const count = weekSlots.length;
+                const isOver = count > limit;
+                
+                const weekBlock = document.createElement('div');
+                weekBlock.className = 'week-block';
+                weekBlock.innerHTML = `
+                    <div class="week-header">
+                        <span>Week ${w}</span>
+                        <span class="status-badge ${isOver ? 'status-over' : 'status-ok'}">
+                            ${count} / ${limit} Posts ${isOver ? '(Overload)' : '(OK)'}
+                        </span>
+                    </div>
+                    <div class="days-grid" id="week-${w}-days"></div>
+                `;
+                container.appendChild(weekBlock);
+
+                const daysGrid = document.getElementById(`week-${w}-days`);
+                
+                DAYS.forEach(day => {
+                    const dayCard = document.createElement('div');
+                    dayCard.className = 'day-card';
+                    dayCard.innerHTML = `
+                        <div class="day-name">${day.substring(0,3)}</div>
+                        <div id="slots-${w}-${day}"></div>
+                        <button class="btn-sec" style="padding:4px; font-size:11px; margin-top:4px;" onclick="openNewSlot(${w}, '${day}')">+ Add</button>
+                    `;
+                    daysGrid.appendChild(dayCard);
+
+                    const slotContainer = document.getElementById(`slots-${w}-${day}`);
+                    const daySlots = weekSlots.filter(s => s.day === day);
+                    
+                    daySlots.forEach(slot => {
+                        const div = document.createElement('div');
+                        div.className = 'slot';
+                        div.onclick = (e) => { e.stopPropagation(); openEditSlot(slot.id); };
+                        div.innerHTML = `
+                            <div class="slot-title"><strong>[${slot.channel}]</strong> ${slot.title || '(Untitled)'}</div>
+                        `;
+                        slotContainer.appendChild(div);
+                    });
+                });
+            }
+        }
+
+        let currentSlotId = null;
+        let targetWeek = null;
+        let targetDay = null;
+
+        function populateChannelSelect() {
+            const select = document.getElementById('modalChannel');
+            select.innerHTML = '';
+            const channels = document.getElementById('channelsInput').value.split(',').map(c => c.trim());
+            channels.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c;
+                opt.textContent = c;
+                select.appendChild(opt);
+            });
+        }
+
+        function openNewSlot(week, day) {
+            currentSlotId = null;
+            targetWeek = week;
+            targetDay = day;
+            populateChannelSelect();
+            document.getElementById('modalTitle').textContent = `New Post - W${week} ${day}`;
+            document.getElementById('modalPostTitle').value = '';
+            document.getElementById('modalCopy').value = '';
+            document.getElementById('briefModal').style.display = 'flex';
+        }
+
+        function openEditSlot(id) {
+            currentSlotId = id;
+            const slot = plannerData.slots.find(s => s.id === id);
+            populateChannelSelect();
+            document.getElementById('modalTitle').textContent = `Edit Post - W${slot.week} ${slot.day}`;
+            document.getElementById('modalChannel').value = slot.channel;
+            document.getElementById('modalPostTitle').value = slot.title;
+            document.getElementById('modalCopy').value = slot.copy;
+            document.getElementById('briefModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('briefModal').style.display = 'none';
+        }
+
+        function saveSlot() {
+            const channel = document.getElementById('modalChannel').value;
+            const title = document.getElementById('modalPostTitle').value;
+            const copy = document.getElementById('modalCopy').value;
+
+            if (currentSlotId) {
+                const slot = plannerData.slots.find(s => s.id === currentSlotId);
+                slot.channel = channel;
+                slot.title = title;
+                slot.copy = copy;
+            } else {
+                plannerData.slots.push({
+                    id: Date.now(),
+                    week: targetWeek,
+                    day: targetDay,
+                    channel: channel,
+                    title: title,
+                    copy: copy
+                });
+            }
+            closeModal();
+            renderCalendar();
+        }
+
+        function deleteSlot() {
+            if (currentSlotId) {
+                plannerData.slots = plannerData.slots.filter(s => s.id !== currentSlotId);
+                closeModal();
+                renderCalendar();
+            }
+        }
+
+        function getBriefText() {
+            const channel = document.getElementById('modalChannel').value;
+            const title = document.getElementById('modalPostTitle').value;
+            const copy = document.getElementById('modalCopy').value;
+            return `CHANNEL: ${channel}\nTITLE/HOOK: ${title}\n\nCONTENT:\n${copy}`;
+        }
+
+        function copyBriefText() {
+            navigator.clipboard.writeText(getBriefText());
+            alert('Brief copied to clipboard');
+        }
+
+        function downloadBriefFile() {
+            const text = getBriefText();
+            const title = document.getElementById('modalPostTitle').value || 'brief';
+            const blob = new Blob([text], { type: 'text/plain' });
+            const anchor = document.createElement('a');
+            anchor.download = `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_brief.txt`;
+            anchor.href = window.URL.createObjectURL(blob);
+            anchor.click();
+            window.URL.revokeObjectURL(anchor.href);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Continuity Board</title>
+<style>
+  :root{
+    --bg:#1a1714; --panel:#221e1a; --panel2:#2a2520; --ink:#ece3d4;
+    --muted:#9b8f7e; --faint:#6f655a; --line:#3a342d; --accent:#c98a3b;
+    --accent2:#7ba05b; --warn:#cf6b5a; --lock:#8a7bb5;
+    --serif:Georgia,"Iowan Old Style",Cambria,serif;
+    --sans:ui-sans-serif,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  header{padding:18px 22px 12px;border-bottom:1px solid var(--line);
+    display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}
+  header h1{font-family:var(--serif);font-weight:600;font-size:22px;margin:0;letter-spacing:.3px}
+  header h1 .mk{color:var(--accent);margin-right:8px}
+  .scenefield{flex:1;min-width:200px}
+  .scenefield input{width:100%;background:transparent;border:none;border-bottom:1px dashed var(--line);
+    color:var(--ink);font-family:var(--serif);font-size:16px;font-style:italic;padding:4px 2px}
+  .scenefield input:focus{outline:none;border-bottom-color:var(--accent)}
+  .topbtns{display:flex;gap:8px}
+  nav{display:flex;gap:2px;padding:0 22px;border-bottom:1px solid var(--line);
+    background:var(--panel);flex-wrap:wrap}
+  nav button{background:none;border:none;color:var(--muted);padding:12px 16px;
+    font-size:13px;cursor:pointer;border-bottom:2px solid transparent;font-weight:500}
+  nav button:hover{color:var(--ink)}
+  nav button.active{color:var(--accent);border-bottom-color:var(--accent)}
+  main{padding:22px;max-width:1100px}
+  .panel{display:none}
+  .panel.active{display:block}
+  .panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;
+    flex-wrap:wrap;gap:10px}
+  .panel-head h2{font-family:var(--serif);font-weight:500;font-size:18px;margin:0}
+  .hint{color:var(--faint);font-size:12.5px;font-style:italic;max-width:560px}
+  button.btn{background:var(--panel2);border:1px solid var(--line);color:var(--ink);
+    padding:8px 13px;border-radius:7px;cursor:pointer;font-size:13px;font-weight:500}
+  button.btn:hover{border-color:var(--accent);color:var(--accent)}
+  button.btn.primary{background:var(--accent);border-color:var(--accent);color:#1a1714}
+  button.btn.primary:hover{background:#dd9a47}
+  button.btn.ghost{background:transparent}
+  .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+  .card.charcard{border-left:3px solid var(--accent)}
+  .card h3{margin:0 0 8px;font-family:var(--serif);font-size:16px;display:flex;
+    justify-content:space-between;align-items:center;gap:8px}
+  .role{color:var(--muted);font-size:12px;font-style:italic;font-family:var(--sans)}
+  .kv{margin:7px 0;font-size:13px}
+  .kv .lab{color:var(--faint);text-transform:uppercase;font-size:10px;letter-spacing:.7px;
+    display:block;margin-bottom:1px}
+  .kv .want{color:var(--accent)} .kv .need{color:var(--accent2)}
+  .kv .secret{color:var(--lock)}
+  .x{background:none;border:none;color:var(--faint);cursor:pointer;font-size:15px;padding:2px 4px}
+  .x:hover{color:var(--warn)}
+  .x.arm{color:var(--warn);font-size:11px;font-weight:600}
+  label{display:block;font-size:11px;color:var(--faint);text-transform:uppercase;
+    letter-spacing:.6px;margin:10px 0 4px}
+  input[type=text],textarea,select{width:100%;background:var(--bg);border:1px solid var(--line);
+    color:var(--ink);border-radius:6px;padding:8px;font-size:13px;font-family:var(--sans)}
+  textarea{resize:vertical;min-height:54px;line-height:1.45}
+  input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent)}
+  .formgrid{display:grid;gap:0 14px;grid-template-columns:1fr 1fr}
+  .full{grid-column:1/-1}
+  dialog{background:var(--panel);color:var(--ink);border:1px solid var(--line);
+    border-radius:12px;padding:0;max-width:520px;width:92vw}
+  dialog::backdrop{background:rgba(0,0,0,.6)}
+  .dlg-body{padding:20px}
+  .dlg-body h3{margin:0 0 4px;font-family:var(--serif);font-size:18px}
+  .dlg-foot{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:18px}
+  .dlg-status{color:var(--warn);font-size:12px;margin-right:auto}
+  .rel{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);
+    border-radius:10px;padding:12px 14px;margin-bottom:10px;flex-wrap:wrap}
+  .rel .pair{font-family:var(--serif);font-size:15px;min-width:180px}
+  .rel .arrow{color:var(--warn);margin:0 6px}
+  .meter{flex:1;height:8px;background:var(--bg);border-radius:5px;overflow:hidden;border:1px solid var(--line)}
+  .meter > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent),var(--warn))}
+  .relnote{color:var(--muted);font-size:12.5px;flex-basis:100%;margin-top:4px;font-style:italic}
+  .tval{color:var(--warn);font-weight:600;min-width:42px;text-align:right}
+  .beat{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:12px 14px 12px 38px;margin-bottom:10px;position:relative;cursor:grab}
+  .beat.dragging{opacity:.4} .beat.over{border-color:var(--accent);border-style:dashed}
+  .beat .grip{position:absolute;left:12px;top:14px;color:var(--faint);font-size:16px;line-height:1}
+  .beat .num{position:absolute;left:12px;bottom:12px;color:var(--faint);font-size:11px}
+  .beat .bt{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+  .beat h4{margin:0;font-family:var(--serif);font-size:15px;font-weight:500}
+  .tag{font-size:10px;text-transform:uppercase;letter-spacing:.6px;padding:2px 7px;
+    border-radius:10px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+  .beat .shift{color:var(--accent);font-size:13px;margin:6px 0}
+  .beat .who{font-size:12px;color:var(--muted)}
+  .beat .who b{color:var(--ink);font-weight:500}
+  .beat .nts{color:var(--faint);font-size:12.5px;margin-top:5px;white-space:pre-wrap}
+  .fact{display:flex;gap:10px;align-items:flex-start;background:var(--panel);
+    border:1px solid var(--line);border-radius:9px;padding:11px 13px;margin-bottom:9px}
+  .fact.locked{border-left:3px solid var(--lock)}
+  .fact .cat{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--faint);
+    border:1px solid var(--line);border-radius:9px;padding:2px 7px;white-space:nowrap;margin-top:1px}
+  .fact .txt{flex:1}
+  .lockbtn{background:none;border:none;cursor:pointer;font-size:14px;color:var(--faint)}
+  .lockbtn.on{color:var(--lock)}
+  .checkbeat{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:14px;margin-bottom:12px}
+  .checkbeat h4{margin:0 0 8px;font-family:var(--serif);font-size:15px}
+  .relfact{font-size:13px;padding:6px 10px;border-left:2px solid var(--line);margin:5px 0;color:var(--muted)}
+  .relfact.locked{border-left-color:var(--lock);color:var(--ink)}
+  .relfact .mini{color:var(--faint);font-size:11px}
+  .clean{color:var(--accent2);font-size:13px;font-style:italic}
+  .flagrow{display:flex;gap:8px;align-items:center;margin-top:8px}
+  .flagrow select{flex:1}
+  .flag{background:rgba(207,107,90,.12);border:1px solid var(--warn);border-radius:7px;
+    padding:7px 10px;font-size:12.5px;margin-top:7px;display:flex;justify-content:space-between;gap:8px}
+  .flag .warnicon{color:var(--warn)}
+  .handoff-out{background:var(--bg);border:1px solid var(--line);border-radius:10px;
+    padding:16px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;
+    line-height:1.6;white-space:pre-wrap;max-height:55vh;overflow:auto;color:var(--ink)}
+  .empty{color:var(--faint);font-style:italic;padding:30px 0;text-align:center}
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--accent);
+    color:#1a1714;padding:9px 18px;border-radius:8px;font-weight:600;font-size:13px;
+    opacity:0;transition:opacity .25s;pointer-events:none}
+  .toast.show{opacity:1}
+  .chiplist{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+  .chip{font-size:12px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;
+    cursor:pointer;color:var(--muted);user-select:none}
+  .chip.sel{background:var(--accent);color:#1a1714;border-color:var(--accent)}
+</style>
+</head>
+<body>
+<header>
+  <h1><span class="mk">◆</span>Continuity Board</h1>
+  <div class="scenefield">
+    <input id="sceneTitle" type="text" placeholder="Scene title — e.g. The Confrontation at the Pier">
+  </div>
+  <div class="topbtns">
+    <button class="btn ghost" id="btnExport">⬇ Save .json</button>
+    <button class="btn ghost" id="btnLoad">⬆ Load</button>
+    <input id="importer" type="file" accept=".json" style="display:none">
+  </div>
+</header>
+
+<nav>
+  <button class="tab active" data-p="chars">Characters</button>
+  <button class="tab" data-p="rels">Relationships</button>
+  <button class="tab" data-p="beats">Scene Beats</button>
+  <button class="tab" data-p="facts">Prior Facts</button>
+  <button class="tab" data-p="check">Contradiction Check</button>
+  <button class="tab" data-p="handoff">Handoff Note</button>
+</nav>
+
+<main>
+  <section class="panel active" id="p-chars">
+    <div class="panel-head">
+      <div><h2>Characters</h2><div class="hint">Want is what they chase; need is what the story makes them confront.</div></div>
+      <button class="btn primary" id="addChar">⊕ Add character</button>
+    </div>
+    <div class="grid" id="charGrid"></div>
+  </section>
+
+  <section class="panel" id="p-rels">
+    <div class="panel-head">
+      <div><h2>Relationship Tension</h2><div class="hint">Track the live friction between two characters. Higher = closer to rupture.</div></div>
+      <button class="btn primary" id="addRel">⊕ Add relationship</button>
+    </div>
+    <div id="relList"></div>
+  </section>
+
+  <section class="panel" id="p-beats">
+    <div class="panel-head">
+      <div><h2>Scene Beats</h2><div class="hint">Drag the ⬍ grip to reorder. Each beat should change something.</div></div>
+      <button class="btn primary" id="addBeat">⊕ Add beat</button>
+    </div>
+    <div id="beatList"></div>
+  </section>
+
+  <section class="panel" id="p-facts">
+    <div class="panel-head">
+      <div><h2>Prior Established Facts</h2><div class="hint">Lock 🔒 the ones that must not be contradicted.</div></div>
+      <button class="btn primary" id="addFact">⊕ Add fact</button>
+    </div>
+    <div id="factList"></div>
+  </section>
+
+  <section class="panel" id="p-check">
+    <div class="panel-head">
+      <div><h2>Contradiction Check</h2><div class="hint">For each beat, every prior fact that mentions a character in that beat is surfaced for you to verify. Locked facts are highlighted. You can also flag explicit conflicts.</div></div>
+      <button class="btn" id="btnRescan">↻ Re-scan</button>
+    </div>
+    <div id="checkList"></div>
+  </section>
+
+  <section class="panel" id="p-handoff">
+    <div class="panel-head">
+      <div><h2>Handoff Note</h2><div class="hint">Auto-built from the board. Add open threads, then copy or download for drafting the next scene.</div></div>
+      <div class="topbtns">
+        <button class="btn" id="btnCopy">⧉ Copy</button>
+        <button class="btn primary" id="btnDownload">⬇ Download .md</button>
+      </div>
+    </div>
+    <label>Open threads / questions for next scene</label>
+    <textarea id="openThreads" placeholder="Unresolved questions, planted setups awaiting payoff, where each character is heading..."></textarea>
+    <label style="margin-top:16px">Generated handoff</label>
+    <div class="handoff-out" id="handoffOut"></div>
+  </section>
+</main>
+
+<dialog id="charDialog"><div class="dlg-body">
+  <h3 id="charDlgTitle">Add character</h3>
+  <input type="hidden" id="cId">
+  <div class="formgrid">
+    <div><label>Name</label><input type="text" id="cName"></div>
+    <div><label>Role / archetype</label><input type="text" id="cRole" placeholder="protagonist, foil, antagonist…"></div>
+    <div><label>Wants (external goal)</label><input type="text" id="cWant"></div>
+    <div><label>Needs (inner truth)</label><input type="text" id="cNeed"></div>
+    <div class="full"><label>Current emotional state</label><input type="text" id="cState" placeholder="defensive, raw, falsely calm…"></div>
+    <div class="full"><label>Secret / withheld</label><input type="text" id="cSecret"></div>
+  </div>
+  <div class="dlg-foot">
+    <span class="dlg-status" id="charStatus"></span>
+    <button class="btn ghost" id="charCancel">Cancel</button>
+    <button class="btn primary" id="charSave">Save</button>
+  </div>
+</div></dialog>
+
+<dialog id="relDialog"><div class="dlg-body">
+  <h3 id="relDlgTitle">Add relationship</h3>
+  <input type="hidden" id="rId">
+  <div class="formgrid">
+    <div><label>Character A</label><select id="rA"></select></div>
+    <div><label>Character B</label><select id="rB"></select></div>
+  </div>
+  <label>Tension <span id="rTval">5</span>/10</label>
+  <input type="range" id="rTension" min="0" max="10" value="5" style="width:100%">
+  <label>Nature of the friction</label>
+  <textarea id="rNature" placeholder="Old betrayal neither has named. She thinks he chose the job over her."></textarea>
+  <div class="dlg-foot">
+    <span class="dlg-status" id="relStatus"></span>
+    <button class="btn ghost" id="relCancel">Cancel</button>
+    <button class="btn primary" id="relSave">Save</button>
+  </div>
+</div></dialog>
+
+<dialog id="beatDialog"><div class="dlg-body">
+  <h3 id="beatDlgTitle">Add beat</h3>
+  <input type="hidden" id="bId">
+  <div class="formgrid">
+    <div><label>Beat title</label><input type="text" id="bTitle"></div>
+    <div><label>Type</label><select id="bType">
+      <option>Setup</option><option>Turn</option><option>Reveal</option>
+      <option>Conflict</option><option>Decision</option><option>Reversal</option>
+      <option>Beat of calm</option><option>Exit / button</option>
+    </select></div>
+  </div>
+  <label>Characters in this beat</label>
+  <div class="chiplist" id="bChips"></div>
+  <label>What shifts (the change this beat earns)</label>
+  <input type="text" id="bShift" placeholder="Trust breaks; the alliance is now transactional.">
+  <label>Notes</label>
+  <textarea id="bNotes"></textarea>
+  <div class="dlg-foot">
+    <span class="dlg-status" id="beatStatus"></span>
+    <button class="btn ghost" id="beatCancel">Cancel</button>
+    <button class="btn primary" id="beatSave">Save</button>
+  </div>
+</div></dialog>
+
+<dialog id="factDialog"><div class="dlg-body">
+  <h3 id="factDlgTitle">Add prior fact</h3>
+  <input type="hidden" id="fId">
+  <label>Category</label>
+  <select id="fCat">
+    <option>Backstory</option><option>Timeline</option><option>Object / location</option>
+    <option>Relationship</option><option>Physical / world rule</option><option>Knowledge state</option>
+  </select>
+  <label>The fact</label>
+  <textarea id="fText" placeholder="Mira has never told Theo she was at the harbor that night."></textarea>
+  <div class="dlg-foot">
+    <span class="dlg-status" id="factStatus"></span>
+    <button class="btn ghost" id="factCancel">Cancel</button>
+    <button class="btn primary" id="factSave">Save</button>
+  </div>
+</div></dialog>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const KEY='continuity-board-v1';
+let state={sceneTitle:'',characters:[],relationships:[],beats:[],facts:[],flags:[],openThreads:''};
+const $=id=>document.getElementById(id);
+const uid=()=>Math.random().toString(36).slice(2,9);
+
+function load(){try{const r=localStorage.getItem(KEY);if(r)state=Object.assign(state,JSON.parse(r));}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+function nameOf(id){const c=state.characters.find(c=>c.id===id);return c?c.name:'?';}
+
+/* DOM builder: safe by construction — text always via textContent / text nodes */
+function el(tag,opts,...kids){
+  const n=document.createElement(tag);
+  if(opts){
+    for(const k in opts){
+      const v=opts[k];
+      if(v==null||v===false)continue;
+      if(k==='class')n.className=v;
+      else if(k==='text')n.textContent=v;
+      else if(k==='dataset')Object.assign(n.dataset,v);
+      else if(k.length>2&&k.slice(0,2)==='on'&&typeof v==='function')n.addEventListener(k.slice(2),v);
+      else if(k==='draggable')n.draggable=!!v;
+      else n.setAttribute(k,v);
+    }
+  }
+  for(const c of kids){
+    if(c==null||c===false)continue;
+    n.append(c&&c.nodeType?c:document.createTextNode(String(c)));
+  }
+  return n;
+}
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1600);}
+function setStatus(id,msg){const s=$(id);if(!s)return;s.textContent=msg||'';
+  if(msg){clearTimeout(s._t);s._t=setTimeout(()=>{s.textContent='';},2600);}}
+
+/* inline two-step delete check replacing the blocking browser dialog */
+function confirmBtn(onConfirm){
+  let armed=false,timer=null;
+  const b=el('button',{class:'x',title:'delete',text:'✕'});
+  b.addEventListener('click',()=>{
+    if(armed){clearTimeout(timer);onConfirm();return;}
+    armed=true;b.textContent='confirm ✕';b.classList.add('arm');
+    timer=setTimeout(()=>{armed=false;b.textContent='✕';b.classList.remove('arm');},2500);
+  });
+  return b;
+}
+
+/* ---- tabs ---- */
+document.querySelectorAll('nav .tab').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('nav .tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');$('p-'+b.dataset.p).classList.add('active');
+}));
+
+/* ---- static control wiring ---- */
+$('sceneTitle').addEventListener('input',e=>{state.sceneTitle=e.target.value;save();buildHandoff();});
+$('openThreads').addEventListener('input',e=>{state.openThreads=e.target.value;save();buildHandoff();});
+$('btnExport').addEventListener('click',exportJSON);
+$('btnLoad').addEventListener('click',()=>$('importer').click());
+$('importer').addEventListener('change',importJSON);
+$('addChar').addEventListener('click',()=>charDlg());
+$('addRel').addEventListener('click',()=>relDlg());
+$('addBeat').addEventListener('click',()=>beatDlg());
+$('addFact').addEventListener('click',()=>factDlg());
+$('btnRescan').addEventListener('click',render);
+$('btnCopy').addEventListener('click',copyHandoff);
+$('btnDownload').addEventListener('click',downloadHandoff);
+$('charCancel').addEventListener('click',()=>$('charDialog').close());
+$('charSave').addEventListener('click',saveChar);
+$('relCancel').addEventListener('click',()=>$('relDialog').close());
+$('relSave').addEventListener('click',saveRel);
+$('beatCancel').addEventListener('click',()=>$('beatDialog').close());
+$('beatSave').addEventListener('click',saveBeat);
+$('factCancel').addEventListener('click',()=>$('factDialog').close());
+$('factSave').addEventListener('click',saveFact);
+$('rTension').addEventListener('input',e=>{$('rTval').textContent=e.target.value;});
+
+/* ---- character dialog ---- */
+function charDlg(c){
+  $('charDlgTitle').textContent=c?'Edit character':'Add character';
+  $('cId').value=c?c.id:'';$('cName').value=c?c.name:'';$('cRole').value=c?c.role:'';
+  $('cWant').value=c?c.want:'';$('cNeed').value=c?c.need:'';$('cState').value=c?c.state:'';
+  $('cSecret').value=c?c.secret:'';setStatus('charStatus','');$('charDialog').showModal();
+}
+function saveChar(){
+  if(!$('cName').value.trim()){setStatus('charStatus','Name required');return;}
+  const o={id:$('cId').value||uid(),name:$('cName').value.trim(),role:$('cRole').value.trim(),
+    want:$('cWant').value.trim(),need:$('cNeed').value.trim(),state:$('cState').value.trim(),
+    secret:$('cSecret').value.trim()};
+  const i=state.characters.findIndex(c=>c.id===o.id);
+  if(i>=0)state.characters[i]=o;else state.characters.push(o);
+  $('charDialog').close();save();render();
+}
+function delChar(id){state.characters=state.characters.filter(c=>c.id!==id);save();render();}
+
+/* ---- relationship dialog ---- */
+function relDlg(r){
+  if(state.characters.length<2){toast('Add two characters first');return;}
+  $('relDlgTitle').textContent=r?'Edit relationship':'Add relationship';
+  const rA=$('rA'),rB=$('rB');
+  rA.replaceChildren();rB.replaceChildren();
+  state.characters.forEach(c=>{
+    rA.append(el('option',{value:c.id},c.name));
+    rB.append(el('option',{value:c.id},c.name));
+  });
+  $('rId').value=r?r.id:'';
+  rA.value=r?r.a:(state.characters[0]?state.characters[0].id:'');
+  rB.value=r?r.b:(state.characters[1]?state.characters[1].id:(state.characters[0]?state.characters[0].id:''));
+  $('rTension').value=r?r.tension:5;$('rTval').textContent=$('rTension').value;
+  $('rNature').value=r?r.nature:'';setStatus('relStatus','');$('relDialog').showModal();
+}
+function saveRel(){
+  if($('rA').value===$('rB').value){setStatus('relStatus','Pick two different characters');return;}
+  const o={id:$('rId').value||uid(),a:$('rA').value,b:$('rB').value,
+    tension:+$('rTension').value,nature:$('rNature').value.trim()};
+  const i=state.relationships.findIndex(x=>x.id===o.id);
+  if(i>=0)state.relationships[i]=o;else state.relationships.push(o);
+  $('relDialog').close();save();render();
+}
+function delRel(id){state.relationships=state.relationships.filter(r=>r.id!==id);save();render();}
+
+/* ---- beat dialog ---- */
+let chipSel=[];
+function beatDlg(b){
+  $('beatDlgTitle').textContent=b?'Edit beat':'Add beat';
+  $('bId').value=b?b.id:'';$('bTitle').value=b?b.title:'';$('bType').value=b?b.type:'Setup';
+  $('bShift').value=b?b.shift:'';$('bNotes').value=b?b.notes:'';
+  chipSel=b?b.chars.slice():[];
+  const wrap=$('bChips');wrap.replaceChildren();
+  if(state.characters.length){
+    state.characters.forEach(c=>{
+      const chip=el('span',{class:'chip'+(chipSel.includes(c.id)?' sel':''),
+        onclick:()=>{
+          if(chipSel.includes(c.id))chipSel=chipSel.filter(x=>x!==c.id);else chipSel.push(c.id);
+          chip.classList.toggle('sel');
+        }},c.name);
+      wrap.append(chip);
+    });
+  }else{
+    wrap.append(el('span',{class:'hint'},'No characters yet.'));
+  }
+  setStatus('beatStatus','');$('beatDialog').showModal();
+}
+function saveBeat(){
+  if(!$('bTitle').value.trim()){setStatus('beatStatus','Title required');return;}
+  const o={id:$('bId').value||uid(),title:$('bTitle').value.trim(),type:$('bType').value,
+    chars:chipSel.slice(),shift:$('bShift').value.trim(),notes:$('bNotes').value.trim()};
+  const i=state.beats.findIndex(x=>x.id===o.id);
+  if(i>=0)state.beats[i]=o;else state.beats.push(o);
+  $('beatDialog').close();save();render();
+}
+function delBeat(id){state.beats=state.beats.filter(b=>b.id!==id);
+  state.flags=state.flags.filter(f=>f.beatId!==id);save();render();}
+
+/* ---- fact dialog ---- */
+function factDlg(f){
+  $('factDlgTitle').textContent=f?'Edit fact':'Add prior fact';
+  $('fId').value=f?f.id:'';$('fCat').value=f?f.cat:'Backstory';$('fText').value=f?f.text:'';
+  setStatus('factStatus','');$('factDialog').showModal();
+}
+function saveFact(){
+  if(!$('fText').value.trim()){setStatus('factStatus','Fact text required');return;}
+  const ex=state.facts.find(x=>x.id===$('fId').value);
+  const o={id:$('fId').value||uid(),cat:$('fCat').value,text:$('fText').value.trim(),
+    locked:ex?ex.locked:false};
+  const i=state.facts.findIndex(x=>x.id===o.id);
+  if(i>=0)state.facts[i]=o;else state.facts.push(o);
+  $('factDialog').close();save();render();
+}
+function delFact(id){state.facts=state.facts.filter(f=>f.id!==id);
+  state.flags=state.flags.filter(f=>f.factId!==id);save();render();}
+function toggleLock(id){const f=state.facts.find(x=>x.id===id);if(f){f.locked=!f.locked;save();render();}}
+
+/* ---- flags ---- */
+function addFlag(beatId,sel){
+  const factId=sel.value;if(!factId)return;
+  if(state.flags.some(f=>f.beatId===beatId&&f.factId===factId)){toast('Already flagged');return;}
+  state.flags.push({beatId,factId});save();render();
+}
+function delFlag(beatId,factId){
+  state.flags=state.flags.filter(f=>!(f.beatId===beatId&&f.factId===factId));save();render();
+}
+
+/* ---- drag & drop ---- */
+let dragId=null;
+function clearOver(){document.querySelectorAll('.beat.over').forEach(b=>b.classList.remove('over'));}
+
+/* ---- edit shims ---- */
+function editChar(id){charDlg(state.characters.find(c=>c.id===id));}
+function editRel(id){relDlg(state.relationships.find(r=>r.id===id));}
+function editBeat(id){beatDlg(state.beats.find(b=>b.id===id));}
+function editFact(id){factDlg(state.facts.find(f=>f.id===id));}
+
+/* ---- builders ---- */
+function kv(lab,val,cls){
+  return el('div',{class:'kv'},
+    el('span',{class:'lab'},lab),
+    el('span',cls?{class:cls}:{},val));
+}
+function charCard(c){
+  const head=el('h3',{},c.name,confirmBtn(()=>delChar(c.id)));
+  const card=el('div',{class:'card charcard'},head);
+  if(c.role)card.append(el('div',{class:'role'},c.role));
+  if(c.want)card.append(kv('Wants',c.want,'want'));
+  if(c.need)card.append(kv('Needs',c.need,'need'));
+  if(c.state)card.append(kv('State now',c.state));
+  if(c.secret)card.append(kv('Secret',c.secret,'secret'));
+  card.append(el('div',{style:'margin-top:10px'},
+    el('button',{class:'btn ghost',onclick:()=>editChar(c.id)},'Edit')));
+  return card;
+}
+function relRow(r){
+  const meter=el('div',{class:'meter'},el('i',{style:'width:'+(r.tension*10)+'%'}));
+  const row=el('div',{class:'rel'},
+    el('div',{class:'pair'},nameOf(r.a),el('span',{class:'arrow'},'↔'),nameOf(r.b)),
+    meter,
+    el('div',{class:'tval'},r.tension+'/10'),
+    el('button',{class:'btn ghost',onclick:()=>editRel(r.id)},'Edit'),
+    confirmBtn(()=>delRel(r.id)));
+  if(r.nature)row.append(el('div',{class:'relnote'},r.nature));
+  return row;
+}
+function beatRow(b,i){
+  const row=el('div',{class:'beat',draggable:true,dataset:{id:b.id},
+    ondragstart:e=>{dragId=b.id;row.classList.add('dragging');e.dataTransfer.effectAllowed='move';},
+    ondragend:()=>{row.classList.remove('dragging');clearOver();dragId=null;},
+    ondragover:e=>{e.preventDefault();clearOver();if(b.id!==dragId)row.classList.add('over');},
+    ondrop:e=>{e.preventDefault();
+      if(!dragId||dragId===b.id)return;
+      const arr=state.beats,from=arr.findIndex(x=>x.id===dragId),to=arr.findIndex(x=>x.id===b.id);
+      const m=arr.splice(from,1)[0];arr.splice(to,0,m);save();render();}
+  });
+  row.append(el('span',{class:'grip'},'⬍'),el('span',{class:'num'},String(i+1)));
+  row.append(el('div',{class:'bt'},el('h4',{},b.title),el('span',{class:'tag'},b.type)));
+  if(b.shift)row.append(el('div',{class:'shift'},'→ '+b.shift));
+  if(b.chars.length){
+    const who=el('div',{class:'who'},el('b',{},'In play: '),b.chars.map(id=>nameOf(id)).join(', '));
+    row.append(who);
+  }
+  if(b.notes)row.append(el('div',{class:'nts'},b.notes));
+  row.append(el('div',{style:'margin-top:8px;display:flex;gap:8px'},
+    el('button',{class:'btn ghost',onclick:()=>editBeat(b.id)},'Edit'),
+    confirmBtn(()=>delBeat(b.id))));
+  return row;
+}
+function factRow(f){
+  const lock=el('button',{class:'lockbtn'+(f.locked?' on':''),title:f.locked?'locked':'lock',
+    onclick:()=>toggleLock(f.id)},f.locked?'🔒':'🔓');
+  return el('div',{class:'fact'+(f.locked?' locked':'')},
+    lock,
+    el('span',{class:'cat'},f.cat),
+    el('span',{class:'txt'},f.text),
+    el('button',{class:'btn ghost',onclick:()=>editFact(f.id)},'Edit'),
+    confirmBtn(()=>delFact(f.id)));
+}
+
+/* facts whose text mentions any character present in the beat */
+function factsForBeat(b){
+  const names=b.chars.map(id=>nameOf(id)).filter(n=>n&&n!=='?');
+  const blob=(b.title+' '+b.shift+' '+b.notes).toLowerCase();
+  state.characters.forEach(c=>{
+    if(c.name&&blob.includes(c.name.toLowerCase())&&!names.includes(c.name))names.push(c.name);
+  });
+  if(!names.length)return [];
+  return state.facts.filter(f=>{
+    const t=f.text.toLowerCase();
+    return names.some(n=>t.includes(n.toLowerCase()));
+  });
+}
+function checkRow(b,i){
+  const box=el('div',{class:'checkbeat'},el('h4',{},(i+1)+'. '+b.title));
+  const rel=factsForBeat(b);
+  if(rel.length){
+    rel.forEach(f=>{
+      const rf=el('div',{class:'relfact'+(f.locked?' locked':'')});
+      if(f.locked)rf.append('🔒 ');
+      rf.append(el('span',{class:'mini'},'['+f.cat+'] '),f.text);
+      box.append(rf);
+    });
+  }else{
+    box.append(el('div',{class:'clean'},'No prior facts touch these characters — nothing to reconcile.'));
+  }
+  state.flags.filter(fl=>fl.beatId===b.id).forEach(fl=>{
+    const f=state.facts.find(x=>x.id===fl.factId);if(!f)return;
+    box.append(el('div',{class:'flag'},
+      el('span',{},el('span',{class:'warnicon'},'⚑ '),'Conflicts with: '+f.text),
+      el('button',{class:'x',onclick:()=>delFlag(b.id,fl.factId)},'✕')));
+  });
+  if(state.facts.length){
+    const sel=el('select',{});
+    sel.append(el('option',{value:''},'Flag a conflict with a fact…'));
+    state.facts.forEach(f=>sel.append(el('option',{value:f.id},f.text.slice(0,60))));
+    box.append(el('div',{class:'flagrow'},sel,
+      el('button',{class:'btn',onclick:()=>addFlag(b.id,sel)},'⚑ Flag')));
+  }
+  return box;
+}
+
+/* ---- render ---- */
+function render(){
+  $('sceneTitle').value=state.sceneTitle||'';
+  $('openThreads').value=state.openThreads||'';
+
+  const cg=$('charGrid');cg.replaceChildren();
+  if(state.characters.length)state.characters.forEach(c=>cg.append(charCard(c)));
+  else cg.append(el('div',{class:'empty'},'No characters yet — add the people in this scene.'));
+
+  const rl=$('relList');rl.replaceChildren();
+  if(state.relationships.length)state.relationships.forEach(r=>rl.append(relRow(r)));
+  else rl.append(el('div',{class:'empty'},'No relationships mapped yet.'));
+
+  const bl=$('beatList');bl.replaceChildren();
+  if(state.beats.length)state.beats.forEach((b,i)=>bl.append(beatRow(b,i)));
+  else bl.append(el('div',{class:'empty'},"No beats yet — add the scene's moves and drag to sequence."));
+
+  const fl=$('factList');fl.replaceChildren();
+  if(state.facts.length)state.facts.forEach(f=>fl.append(factRow(f)));
+  else fl.append(el('div',{class:'empty'},"No prior facts logged. Add what's already canon."));
+
+  const ck=$('checkList');ck.replaceChildren();
+  if(state.beats.length)state.beats.forEach((b,i)=>ck.append(checkRow(b,i)));
+  else ck.append(el('div',{class:'empty'},'Add beats to run the check.'));
+
+  buildHandoff();
+  save();
+}
+
+/* ---- handoff (plain text via textContent) ---- */
+function buildHandoff(){
+  const L=[];
+  L.push('# SCENE HANDOFF — '+(state.sceneTitle||'(untitled scene)'));
+  L.push('');
+  L.push('## CHARACTERS IN PLAY');
+  if(state.characters.length)state.characters.forEach(c=>{
+    L.push('- '+c.name+(c.role?' ('+c.role+')':''));
+    if(c.want)L.push('    wants: '+c.want);
+    if(c.need)L.push('    needs: '+c.need);
+    if(c.state)L.push('    state now: '+c.state);
+    if(c.secret)L.push('    secret: '+c.secret);
+  });else L.push('- (none)');
+  L.push('');
+  L.push('## LIVE TENSIONS');
+  if(state.relationships.length)state.relationships.slice().sort((a,b)=>b.tension-a.tension)
+    .forEach(r=>L.push('- '+nameOf(r.a)+' <-> '+nameOf(r.b)+'  ['+r.tension+'/10]'+(r.nature?'  — '+r.nature:'')));
+  else L.push('- (none)');
+  L.push('');
+  L.push('## BEAT SEQUENCE');
+  if(state.beats.length)state.beats.forEach((b,i)=>{
+    L.push((i+1)+'. ['+b.type+'] '+b.title);
+    if(b.shift)L.push('    shift: '+b.shift);
+    if(b.chars.length)L.push('    in play: '+b.chars.map(id=>nameOf(id)).join(', '));
+    if(b.notes)L.push('    notes: '+b.notes.replace(/\n/g,' '));
+  });else L.push('(none)');
+  L.push('');
+  const locked=state.facts.filter(f=>f.locked);
+  L.push('## LOCKED FACTS (must hold)');
+  if(locked.length)locked.forEach(f=>L.push('- ['+f.cat+'] '+f.text));else L.push('- (none locked)');
+  const other=state.facts.filter(f=>!f.locked);
+  if(other.length){L.push('');L.push('## OTHER ESTABLISHED FACTS');
+    other.forEach(f=>L.push('- ['+f.cat+'] '+f.text));}
+  if(state.flags.length){L.push('');L.push('## FLAGGED CONFLICTS TO RESOLVE');
+    state.flags.forEach(fl=>{const b=state.beats.find(x=>x.id===fl.beatId);
+      const f=state.facts.find(x=>x.id===fl.factId);
+      if(b&&f)L.push('- Beat "'+b.title+'" vs fact: '+f.text);});}
+  L.push('');
+  L.push('## OPEN THREADS / NEXT SCENE');
+  L.push((state.openThreads||'').trim()||'(none noted)');
+  const out=L.join('\n');
+  $('handoffOut').textContent=out;
+  return out;
+}
+function copyHandoff(){
+  const t=buildHandoff();
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(()=>toast('Copied'),()=>fallbackCopy(t));
+  }else fallbackCopy(t);
+}
+function fallbackCopy(t){
+  const ta=el('textarea',{});ta.value=t;document.body.append(ta);ta.select();
+  try{document.execCommand('copy');toast('Copied');}catch(e){toast('Copy failed');}ta.remove();
+}
+function downloadHandoff(){
+  const t=buildHandoff();
+  const slug=(state.sceneTitle||'scene').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'scene';
+  dl(t,'handoff-'+slug+'.md','text/markdown');
+}
+
+/* ---- json ---- */
+function exportJSON(){dl(JSON.stringify(state,null,2),'continuity-board.json','application/json');}
+function importJSON(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result);
+    state=Object.assign({sceneTitle:'',characters:[],relationships:[],beats:[],facts:[],flags:[],openThreads:''},d);
+    save();render();toast('Loaded');}catch(err){toast('Invalid file');}};
+  r.readAsText(f);e.target.value='';
+}
+function dl(text,name,type){
+  const b=new Blob([text],{type});const u=URL.createObjectURL(b);
+  const a=el('a',{href:u,download:name});a.click();
+  setTimeout(()=>URL.revokeObjectURL(u),1000);
+}
+
+load();render();
+</script>
+</body>
+</html>

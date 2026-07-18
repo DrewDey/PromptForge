@@ -1,43 +1,204 @@
 {
   "31faf192-93d1-41d0-a74c-4402d4223937": [
-    { "modelLabel": "Sonnet 5 Max", "isCurrent": true, "runRole": "comparison-run", "capturedAt": "2026-07-11T20:30:30.459Z" },
-    { "modelLabel": "5.6 Sol Max", "isCurrent": true, "runRole": "comparison-run", "capturedAt": "2026-07-11T16:08:22.845Z" },
-    { "modelLabel": "Gemini 3.5 Flash", "isCurrent": true, "runRole": "comparison-run", "capturedAt": "2026-07-11T19:23:00.000Z" }
+    {
+      "serviceLabel": "Claude",
+      "modelLabel": "Sonnet 5 Max",
+      "modelSettings": "Claude web; visible selected model: Sonnet 5 Max; Max effort.",
+      "isCurrent": true,
+      "runRole": "comparison-run",
+      "capturedAt": "2026-07-11T20:30:30.459Z"
+    },
+    {
+      "serviceLabel": "ChatGPT",
+      "modelLabel": "5.6 Sol Max",
+      "modelSettings": "ChatGPT Work; visible model selector: 5.6 Sol Max; reasoning effort: Max.",
+      "isCurrent": true,
+      "runRole": "comparison-run",
+      "capturedAt": "2026-07-11T16:08:22.845Z"
+    },
+    {
+      "serviceLabel": "Gemini",
+      "modelLabel": "Gemini 3.5 Flash",
+      "modelSettings": "Gemini web app; selected model: 3.5 Flash; visible mode button: Flash.",
+      "isCurrent": true,
+      "runRole": "comparison-run",
+      "capturedAt": "2026-07-11T19:23:00.000Z"
+    }
   ],
   "0ddfc7cf-37bf-47ae-8fe0-d8d445ba1bee": [
-    { "modelLabel": "GPT-5.6 Luna", "isCurrent": true, "runRole": "comparison-run", "capturedAt": "2026-07-10T21:07:15.000Z" },
-    { "modelLabel": "Gemini 3.1 Pro", "isCurrent": true, "runRole": "comparison-run", "capturedAt": "2026-07-11T00:32:35.807Z" }
+    {
+      "serviceLabel": "ChatGPT",
+      "modelLabel": "GPT-5.6 Luna",
+      "modelSettings": "ChatGPT Work surface; Effort: Extra High; Speed: Standard.",
+      "isCurrent": true,
+      "runRole": "comparison-run",
+      "capturedAt": "2026-07-10T21:07:15.000Z"
+    },
+    {
+      "serviceLabel": "Gemini",
+      "modelLabel": "Gemini 3.1 Pro",
+      "modelSettings": "Gemini web; Pro mode.",
+      "isCurrent": true,
+      "runRole": "comparison-run",
+      "capturedAt": "2026-07-11T00:32:35.807Z"
+    }
   ],
   "dc5e67c3-42d0-4823-ae23-586b7d3985cb": [
-    { "modelLabel": "Fable 5 High", "isCurrent": true, "runRole": "comparison-run", "capturedAt": "2026-07-10T16:50:25.542Z" },
-    { "modelLabel": "Gemini 3.1 Pro", "isCurrent": true, "runRole": "comparison-run", "capturedAt": "2026-07-10T16:54:14.828Z" }
+    {
+      "serviceLabel": "Claude",
+      "modelLabel": "Fable 5 High",
+      "modelSettings": "Claude web; High reasoning.",
+      "isCurrent": true,
+      "runRole": "comparison-run",
+      "capturedAt": "2026-07-10T16:50:25.542Z"
+    },
+    {
+      "serviceLabel": "Gemini",
+      "modelLabel": "Gemini 3.1 Pro",
+      "modelSettings": "Gemini web; Pro mode.",
+      "isCurrent": true,
+      "runRole": "comparison-run",
+      "capturedAt": "2026-07-10T16:54:14.828Z"
+    }
   ],
   "e0e4e2b7-082e-4db1-9468-484fc3fd3a69": [
-    { "modelLabel": "Fable 5 High", "isCurrent": true, "runRole": "comparison-run", "capturedAt": "2026-07-10T22:11:34.259Z" },
-    { "modelLabel": "Gemini 3.1 Pro", "isCurrent": true, "runRole": "comparison-run", "capturedAt": "2026-07-11T00:50:23.000Z" }
+    {
+      "serviceLabel": "Claude",
+      "modelLabel": "Fable 5 High",
+      "modelSettings": "Claude web; High reasoning.",
+      "isCurrent": true,
+      "runRole": "comparison-run",
+      "capturedAt": "2026-07-10T22:11:34.259Z"
+    },
+    {
+      "serviceLabel": "Gemini",
+      "modelLabel": "Gemini 3.1 Pro",
+      "modelSettings": "Gemini web; Pro mode.",
+      "isCurrent": true,
+      "runRole": "comparison-run",
+      "capturedAt": "2026-07-11T00:50:23.000Z"
+    }
   ],
   "ca0c2e08-9e02-4725-90f5-58ef248fe4c7": [
-    { "modelLabel": "Sonnet 4.6 Max", "isCurrent": false, "runRole": "historical-baseline", "capturedAt": "2026-06-17T01:07:31.143Z" },
-    { "modelLabel": "GPT-5.6 Luna", "isCurrent": true, "runRole": "comparison-run", "capturedAt": "2026-07-10T22:14:37.000Z" },
-    { "modelLabel": "Gemini 3.1 Pro", "isCurrent": true, "runRole": "comparison-run", "capturedAt": "2026-07-11T05:26:38.953Z" }
+    {
+      "serviceLabel": "Claude",
+      "modelLabel": "Sonnet 4.6 Max",
+      "modelSettings": "Visible Claude model chip showed Sonnet 4.6 Max before prompts 1-4; Claude page also showed Fable 5 currently unavailable. No separate speed/thinking setting changed.",
+      "isCurrent": false,
+      "runRole": "historical-baseline",
+      "capturedAt": "2026-06-17T01:07:31.143Z"
+    },
+    {
+      "serviceLabel": "ChatGPT",
+      "modelLabel": "GPT-5.6 Luna",
+      "modelSettings": "ChatGPT Work surface; Effort: Extra High; Speed: Standard.",
+      "isCurrent": true,
+      "runRole": "comparison-run",
+      "capturedAt": "2026-07-10T22:14:37.000Z"
+    },
+    {
+      "serviceLabel": "Gemini",
+      "modelLabel": "Gemini 3.1 Pro",
+      "modelSettings": "Gemini web; Pro mode.",
+      "isCurrent": true,
+      "runRole": "comparison-run",
+      "capturedAt": "2026-07-11T05:26:38.953Z"
+    }
   ],
   "22bcc36b-497f-43f7-824f-3ccba9690da6": [
-    { "modelLabel": "GPT-5.5", "isCurrent": false, "runRole": "historical-baseline", "capturedAt": "2026-06-16T20:37:33Z" },
-    { "modelLabel": "Fable 5 High", "isCurrent": true, "runRole": "comparison-run", "capturedAt": "2026-07-10T22:11:34.259Z" },
-    { "modelLabel": "Gemini 3.1 Pro", "isCurrent": true, "runRole": "comparison-run", "capturedAt": "2026-07-11T00:39:04.030Z" }
+    {
+      "serviceLabel": "ChatGPT",
+      "modelLabel": "GPT-5.5",
+      "modelSettings": "Intelligence: Medium; visible ChatGPT menu before prompt showed GPT-5.5 with Intelligence options Instant, Medium, High, Extra High, and Pro Extended; Medium selected before prompting. No files or attachments used.",
+      "isCurrent": false,
+      "runRole": "historical-baseline",
+      "capturedAt": "2026-06-16T20:37:33Z"
+    },
+    {
+      "serviceLabel": "Claude",
+      "modelLabel": "Fable 5 High",
+      "modelSettings": "Claude web; High reasoning.",
+      "isCurrent": true,
+      "runRole": "comparison-run",
+      "capturedAt": "2026-07-10T22:11:34.259Z"
+    },
+    {
+      "serviceLabel": "Gemini",
+      "modelLabel": "Gemini 3.1 Pro",
+      "modelSettings": "Gemini web; Pro mode.",
+      "isCurrent": true,
+      "runRole": "comparison-run",
+      "capturedAt": "2026-07-11T00:39:04.030Z"
+    }
   ],
   "384ebd4d-88af-400b-b230-4eb771bb2194": [
-    { "modelLabel": "GPT-5.5", "isCurrent": false, "runRole": "historical-baseline", "capturedAt": "2026-06-15T03:48:23Z" },
-    { "modelLabel": "Fable 5 High", "isCurrent": true, "runRole": "comparison-run", "capturedAt": "2026-07-10T22:19:43.970Z" },
-    { "modelLabel": "Gemini 3.1 Pro", "isCurrent": true, "runRole": "comparison-run", "capturedAt": "2026-07-11T05:49:47.390Z" }
+    {
+      "serviceLabel": "ChatGPT",
+      "modelLabel": "GPT-5.5",
+      "modelSettings": "ChatGPT web; GPT-5.5 Thinking (public share model_slug: gpt-5-5-thinking); Intelligence: Extra High (public share thinking_effort: max). No files, connectors, remote tools, custom settings, or OpenRouter fallback used.",
+      "isCurrent": false,
+      "runRole": "historical-baseline",
+      "capturedAt": "2026-06-15T03:48:23Z"
+    },
+    {
+      "serviceLabel": "Claude",
+      "modelLabel": "Fable 5 High",
+      "modelSettings": "Claude web; High reasoning.",
+      "isCurrent": true,
+      "runRole": "comparison-run",
+      "capturedAt": "2026-07-10T22:19:43.970Z"
+    },
+    {
+      "serviceLabel": "Gemini",
+      "modelLabel": "Gemini 3.1 Pro",
+      "modelSettings": "Gemini web; Pro mode.",
+      "isCurrent": true,
+      "runRole": "comparison-run",
+      "capturedAt": "2026-07-11T05:49:47.390Z"
+    }
   ],
   "17c42c87-3709-4d5e-9ae3-d4ac4807bc4c": [
-    { "modelLabel": "Fable 5 High", "isCurrent": true, "runRole": "comparison-run", "capturedAt": "2026-07-10T22:53:59.500Z" },
-    { "modelLabel": "Gemini 3.1 Pro", "isCurrent": true, "runRole": "comparison-run", "capturedAt": "2026-07-11T05:59:00.025Z" }
+    {
+      "serviceLabel": "Claude",
+      "modelLabel": "Fable 5 High",
+      "modelSettings": "Claude web; High reasoning.",
+      "isCurrent": true,
+      "runRole": "comparison-run",
+      "capturedAt": "2026-07-10T22:53:59.500Z"
+    },
+    {
+      "serviceLabel": "Gemini",
+      "modelLabel": "Gemini 3.1 Pro",
+      "modelSettings": "Gemini web; Pro mode.",
+      "isCurrent": true,
+      "runRole": "comparison-run",
+      "capturedAt": "2026-07-11T05:59:00.025Z"
+    }
   ],
   "a7201847-c8d6-4e09-814b-0a382f8f8080": [
-    { "modelLabel": "Opus 4.8 Medium", "isCurrent": false, "runRole": "historical-baseline", "capturedAt": "2026-06-19T18:59:30.862Z" },
-    { "modelLabel": "GPT-5.6 Luna", "isCurrent": true, "runRole": "comparison-run", "capturedAt": "2026-07-10T21:11:31.000Z" },
-    { "modelLabel": "Gemini 3.1 Pro", "isCurrent": true, "runRole": "comparison-run", "capturedAt": "2026-07-10T21:04:08.519Z" }
+    {
+      "serviceLabel": "Claude",
+      "modelLabel": "Opus 4.8 Medium",
+      "modelSettings": "Visible Claude picker showed Model: Opus 4.8 Medium before prompt send; Opus 4.8 selected with Effort Medium and Thinking enabled; no OpenRouter, files, connectors, or external tools used in Claude.",
+      "isCurrent": false,
+      "runRole": "historical-baseline",
+      "capturedAt": "2026-06-19T18:59:30.862Z"
+    },
+    {
+      "serviceLabel": "ChatGPT",
+      "modelLabel": "GPT-5.6 Luna",
+      "modelSettings": "ChatGPT Work surface; Effort: Extra High; Speed: Standard.",
+      "isCurrent": true,
+      "runRole": "comparison-run",
+      "capturedAt": "2026-07-10T21:11:31.000Z"
+    },
+    {
+      "serviceLabel": "Gemini",
+      "modelLabel": "Gemini 3.1 Pro",
+      "modelSettings": "Gemini web; Pro mode.",
+      "isCurrent": true,
+      "runRole": "comparison-run",
+      "capturedAt": "2026-07-10T21:04:08.519Z"
+    }
   ]
 }

@@ -24,7 +24,7 @@ import {
   type DiscoveryIntent,
 } from '@/lib/path-discovery'
 import { ACTIVE_PROJECT_EXPLANATION } from '@/lib/discovery-activity.mjs'
-import { getPublicModelFacetValue, getPublicModelLabel, publicModelFilterMatchesLabel } from '@/lib/public-model-labels'
+import { getPublicModelFacetValue, publicModelFilterMatchesLabel } from '@/lib/public-model-labels'
 import { isPersistableProjectId } from '@/lib/project-engagement'
 import { BuildPathCard } from './BuildPathCard'
 
@@ -218,7 +218,7 @@ export async function BuildPathsDiscovery({
       if (!value || modelLabel === 'Unknown model') continue
       const current = modelCounts.get(value)
       modelCounts.set(value, {
-        label: current?.label ?? (getPublicModelLabel(modelLabel) || modelLabel),
+        label: current?.label ?? modelLabel,
         count: (current?.count ?? 0) + 1,
       })
     }
@@ -226,6 +226,13 @@ export async function BuildPathsDiscovery({
   const modelFacets = [...modelCounts.entries()]
     .map(([value, entry]) => ({ value, ...entry }))
     .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label))
+  const normalizedActiveModel = activeModel
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+  const activeModelFacet = modelFacets.find((model) => (
+    model.value === activeModel || model.value === normalizedActiveModel
+  ))
 
   function buildUrl(overrides: Partial<BuildPathsUrlParams>) {
     const next: Record<string, string | undefined> = {
@@ -368,8 +375,8 @@ export async function BuildPathsDiscovery({
                     {modelFacets.map((model) => (
                       <Link
                         key={model.value}
-                        href={buildUrl({ model: activeModel === model.value ? undefined : model.value, page: undefined })}
-                        className={getPublicModelFacetValue(activeModel) === model.value ? 'is-active' : ''}
+                        href={buildUrl({ model: activeModelFacet?.value === model.value ? undefined : model.value, page: undefined })}
+                        className={activeModelFacet?.value === model.value ? 'is-active' : ''}
                       >
                         <span>{model.label}</span><small>{model.count}</small>
                       </Link>
@@ -432,7 +439,7 @@ export async function BuildPathsDiscovery({
                 {activeIntent && <b>{DISCOVERY_INTENTS.find((intent) => intent.value === activeIntent)?.label}</b>}
                 {activeDomain && <b>{BROAD_DOMAINS.find((domain) => domain.slug === activeDomain)?.label}</b>}
                 {activeDifficulty && <b>{activeDifficulty}</b>}
-                {activeModel && <b>{getPublicModelLabel(activeModel)}</b>}
+                {activeModel && <b>{activeModelFacet?.label ?? activeModel}</b>}
                 {activeCompare && <b>Model comparisons</b>}
                 {activeArtifact && <b>Working artifacts</b>}
                 {activeFork && <b>Fork available</b>}

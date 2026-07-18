@@ -1,7 +1,9 @@
 import { getPreparedShowcaseProjectById } from './prepared-showcase-projects'
+import { getPreparedProjectModelIdentity } from './prepared-project-model-identities'
 import { getProjectHref } from './project-links'
 import { getPromptModelLabel } from './prompt-comparisons'
 import { getProjectModelProfileSummary } from './project-model-profile-summaries'
+import { getPublicModelIdentityLabel } from './public-model-labels'
 import {
   calculateDiscoveryActivity,
   countDistinctVerifiedModels,
@@ -148,6 +150,15 @@ const EDITORIAL_PRIORITY = new Map<string, number>([
   ...MODEL_COMPARISON_PROJECT_IDS.map((id, index) => [id, 22 - index] as const),
 ])
 
+function discoveryModelLabel(prompt: PromptWithRelations) {
+  const preparedIdentity = getPreparedProjectModelIdentity(prompt.id)
+  if (preparedIdentity) return preparedIdentity.publicLabel
+
+  const rawModel = prompt.model_used ?? prompt.model_recommendation
+  if (rawModel) return getPublicModelIdentityLabel({ model: rawModel })
+  return getPromptModelLabel(prompt)
+}
+
 function normalizedText(prompt: PromptWithRelations) {
   return [
     prompt.title,
@@ -225,11 +236,11 @@ export function buildPathDiscoveryCatalog(
   return prompts.map((prompt) => {
     const prepared = getPreparedShowcaseProjectById(prompt.id)
     const promptCount = prepared?.steps.length ?? prompt.steps?.length ?? 0
-    const modelLabel = getPromptModelLabel(prompt)
+    const modelLabel = discoveryModelLabel(prompt)
     const variantSummary = getProjectModelProfileSummary(prompt.id)
     const modelLabels = [...new Set([
       modelLabel,
-      ...variantSummary.map((variant) => variant.modelLabel),
+      ...variantSummary.map((variant) => variant.publicModelLabel),
     ].filter((label) => label !== 'Unknown model'))]
     const comparisonCount = Math.max(1, modelLabels.length)
     const modelRunCount = variantSummary.length

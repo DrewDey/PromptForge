@@ -20,10 +20,14 @@ import {
 } from 'lucide-react'
 import { getMyForgeDashboard } from '@/lib/data/my-forge'
 import { getProjectHref } from '@/lib/project-links'
+import { getPreparedProjectModelIdentity } from '@/lib/prepared-project-model-identities'
+import { getProjectModelVariantSet } from '@/lib/project-model-variants'
+import { getPublicModelIdentityLabel } from '@/lib/public-model-labels'
 import { canonicalMetadata } from '@/lib/site-url'
 import { profileAvatarClasses, profileMonogram } from '@/lib/profile-visuals'
 import type {
   MyForgeDashboard,
+  MyForgeProjectSummary,
   MyForgeSavedProject,
   MyForgeSourceRun,
   MyForgeUnfinishedFork,
@@ -53,6 +57,28 @@ function projectHref(projectId: string, sourceRunId?: string | null) {
   if (!sourceRunId) return href
   const separator = href.includes('?') ? '&' : '?'
   return `${href}${separator}run=${encodeURIComponent(sourceRunId)}#source-run-path`
+}
+
+function projectModelIdentity(
+  project: MyForgeProjectSummary,
+  sourceRunId?: string | null,
+) {
+  const variantSet = getProjectModelVariantSet(project.id)
+  const variant = variantSet?.variants.find((candidate) => (
+    candidate.sourceRunId === (sourceRunId ?? variantSet.defaultSourceRunId)
+  ))
+  if (variant) {
+    return getPublicModelIdentityLabel({
+      provider: variant.serviceLabel,
+      model: variant.modelLabel,
+      modelSettings: variant.modelSettings,
+    })
+  }
+
+  const preparedIdentity = getPreparedProjectModelIdentity(project.id)
+  if (preparedIdentity) return preparedIdentity.publicLabel
+
+  return getPublicModelIdentityLabel({ model: project.modelUsed })
 }
 
 function unfinishedForkHref(fork: MyForgeUnfinishedFork) {
@@ -363,7 +389,7 @@ function queueItemForFork(fork: MyForgeUnfinishedFork): WorkQueueItem {
     eyebrow: 'Unfinished fork',
     title: fork.project.title,
     body: response,
-    meta: `${fork.project.modelUsed || 'Source model on path'} · Started ${fork.state.forkStartedAt ? formatDate(fork.state.forkStartedAt) : 'recently'}`,
+    meta: `${projectModelIdentity(fork.project, fork.state.selectedSourceRunId) || 'Source model on path'} · Started ${fork.state.forkStartedAt ? formatDate(fork.state.forkStartedAt) : 'recently'}`,
     href: unfinishedForkHref(fork),
     action: 'Continue fork',
     icon: GitFork,
@@ -383,7 +409,7 @@ function queueItemForSaved(saved: MyForgeSavedProject): WorkQueueItem {
       : saved.state?.selectedStepNumber
         ? `Return to response ${String(saved.state.selectedStepNumber).padStart(2, '0')} and the exact artifact version you last opened.`
         : 'Open this saved path and choose the response or artifact you want to continue from.',
-    meta: `${saved.project.modelUsed || 'Model details on path'} · Saved ${formatDate(saved.savedAt)}`,
+    meta: `${projectModelIdentity(saved.project, sourceRunId) || 'Model details on path'} · Saved ${formatDate(saved.savedAt)}`,
     href: projectHref(saved.project.id, sourceRunId),
     action: hasUpdate ? 'View update' : saved.state?.resumeIsValid ? 'Resume path' : 'Open path',
     icon: hasUpdate ? Bot : Bookmark,

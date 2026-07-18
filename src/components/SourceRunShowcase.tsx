@@ -18,6 +18,7 @@ import {
   buildProtectedArtifactWrapperDocument,
   PROTECTED_ARTIFACT_DOWNLOAD_DATA_URL_LIMIT,
 } from '@/lib/protected-artifact-wrapper.mjs'
+import { getPublicModelIdentityLabel } from '@/lib/public-model-labels'
 import {
   buildProjectResponseForkHref,
   groupProjectForkNetworkBySourceStep,
@@ -1251,6 +1252,15 @@ export default function SourceRunShowcase({
   const [activeForkId, setActiveForkId] = useState<string | null>(null)
   const activeForkStageRef = useRef<HTMLDivElement | null>(null)
   const sourceRunPathRef = useRef<HTMLElement | null>(null)
+  const displayForkNetwork = useMemo(() => forkNetwork.map((fork) => ({
+    ...fork,
+    modelUsed: fork.modelUsed
+      ? getPublicModelIdentityLabel({
+          provider: fork.childProviderName,
+          model: fork.modelUsed,
+        })
+      : fork.modelUsed,
+  })), [forkNetwork])
   const selectedPackage =
     displayPackages.find((pkg) => pkg.id === selectedPackageId) ?? defaultPackage ?? packages[0]
   const selectedPrimaryPackage = packages.find((pkg) => pkg.id === selectedPackage?.id)
@@ -1266,13 +1276,13 @@ export default function SourceRunShowcase({
   const forkBranchesByStepId = useMemo(() => {
     const branches = new Map<string, ProjectForkNetworkItem[]>()
 
-    const grouped = groupProjectForkNetworkBySourceStep(forkSourceSteps, forkNetwork)
+    const grouped = groupProjectForkNetworkBySourceStep(forkSourceSteps, displayForkNetwork)
     for (const row of grouped.rows) {
       branches.set(row.step.id, row.forks)
     }
 
     return branches
-  }, [forkNetwork, forkSourceSteps])
+  }, [displayForkNetwork, forkSourceSteps])
   const activeForkContext = (() => {
     if (!allowForks || !activeForkId || !projectId) return null
 
@@ -1311,7 +1321,7 @@ export default function SourceRunShowcase({
 
     return null
   })()
-  const hasForkLane = allowForks && forkNetwork.length > 0
+  const hasForkLane = allowForks && displayForkNetwork.length > 0
   const pathRowClassName = hasForkLane
     ? 'grid min-w-0 gap-0 xl:grid-cols-[minmax(0,1fr)_320px]'
     : undefined

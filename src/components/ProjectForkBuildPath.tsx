@@ -292,7 +292,7 @@ function AncestryTrail({ ancestry }: { ancestry: ProjectForkBuildPathCrumb[] }) 
               </span>
             )}
             {crumb.modelLabel && (
-              <span className="hidden border border-surface-200 bg-surface-50 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.1em] text-surface-500 sm:inline">
+              <span className="hidden border border-surface-200 bg-surface-50 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.1em] text-surface-500 sm:inline" data-public-model-identity>
                 {crumb.modelLabel}
               </span>
             )}
@@ -541,7 +541,7 @@ export function ProjectForkBuildPath({
           )}
           <div className="mt-3 flex flex-wrap gap-2">
             {fork.modelUsed && (
-              <span className="border border-surface-200 bg-surface-50 px-2.5 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-surface-600">
+              <span className="border border-surface-200 bg-surface-50 px-2.5 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-surface-600" data-public-model-identity>
                 {fork.modelUsed}
               </span>
             )}

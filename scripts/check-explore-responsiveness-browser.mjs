@@ -133,13 +133,12 @@ async function measureLink(client, sessionId, config) {
       }));
     const matchingResources = resources.filter((entry) => {
       const resourceUrl = new URL(entry.name);
+      if (resourceUrl.origin !== target.origin) return false;
       if (resourceUrl.pathname !== target.pathname) return false;
       resourceUrl.searchParams.delete('_rsc');
       return resourceUrl.search === target.search;
     });
     const resource = matchingResources.toSorted((left, right) => (
-      right.decodedBodySize - left.decodedBodySize || right.startTime - left.startTime
-    ))[0] || resources.toSorted((left, right) => (
       right.decodedBodySize - left.decodedBodySize || right.startTime - left.startTime
     ))[0] || null;
     return {
@@ -155,6 +154,8 @@ async function measureLink(client, sessionId, config) {
       transferSize: resource?.transferSize ?? null,
       encodedBodySize: resource?.encodedBodySize ?? null,
       decodedBodySize: resource?.decodedBodySize ?? null,
+      networkMeasurementAvailable: resource !== null,
+      matchingRscResourceCount: matchingResources.length,
       rscResourceCount: resources.length,
       competingRscCount: resources.filter((entry) => entry !== resource).length,
       beforeTitle,
@@ -354,10 +355,11 @@ async function main() {
         ))
         const complete = interactions.map((interaction) => interaction.completeMs)
         const acknowledgements = interactions.map((interaction) => interaction.acknowledgementMs)
-        const ttfb = interactions.map((interaction) => (
+        const networkMeasurements = interactions.filter((interaction) => interaction.networkMeasurementAvailable)
+        const ttfb = networkMeasurements.map((interaction) => (
           interaction.responseStartMs - interaction.requestDispatchMs
         ))
-        const transfer = interactions.map((interaction) => (
+        const transfer = networkMeasurements.map((interaction) => (
           interaction.responseEndMs - interaction.responseStartMs
         ))
         measurementSummary.push({
@@ -368,9 +370,11 @@ async function main() {
           acknowledgementMissingRuns: acknowledgements.filter((value) => value === null).length,
           completeMedianMs: median(complete),
           completeRangeMs: [Math.min(...complete), Math.max(...complete)].map(roundMeasurement),
+          networkMeasurementAvailableRuns: networkMeasurements.length,
+          networkMeasurementMissingRuns: interactions.length - networkMeasurements.length,
           serverNetworkTtfbMedianMs: median(ttfb),
           transferMedianMs: median(transfer),
-          browserApplyMedianMs: median(interactions.map((interaction) => interaction.browserApplyMs)),
+          browserApplyMedianMs: median(networkMeasurements.map((interaction) => interaction.browserApplyMs)),
           competingRscMedian: median(interactions.map((interaction) => interaction.competingRscCount)),
         })
       }
@@ -379,7 +383,7 @@ async function main() {
     if (options.json) console.log(JSON.stringify({ baseUrl: options.baseUrl, summary: measurementSummary, results, failures }, null, 2))
     else {
       for (const entry of measurementSummary) {
-        console.log(`${entry.viewport} ${entry.label}: ack=${entry.acknowledgementMedianMs ?? 'none'}ms complete=${entry.completeMedianMs}ms range=${entry.completeRangeMs.join('-')}ms competing-rsc=${entry.competingRscMedian}`)
+        console.log(`${entry.viewport} ${entry.label}: ack=${entry.acknowledgementMedianMs ?? 'none'}ms complete=${entry.completeMedianMs}ms range=${entry.completeRangeMs.join('-')}ms network=${entry.networkMeasurementAvailableRuns}/${entry.runs} competing-rsc=${entry.competingRscMedian}`)
       }
     }
 

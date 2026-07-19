@@ -9,6 +9,7 @@ import {
   chromeExecutable,
   waitForWebSocketUrl,
 } from './measure-html-artifacts.mjs'
+import { isExpectedLocalActivationFailure } from './browser-guard-errors.mjs'
 
 function parseArgs(argv) {
   const options = {
@@ -418,10 +419,7 @@ async function main() {
       }
       if (message.method === 'Log.entryAdded' && message.params.entry?.level === 'error') {
         const entry = message.params.entry
-        const expectedLocalActivationFailure = (
-          entry.url?.includes('/api/activation-events') &&
-          entry.text.includes('503')
-        )
+        const expectedLocalActivationFailure = isExpectedLocalActivationFailure(options.baseUrl, entry)
         if (!expectedLocalActivationFailure) consoleErrors.push(entry.text)
       }
     }

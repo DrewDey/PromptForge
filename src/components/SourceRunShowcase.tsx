@@ -853,7 +853,7 @@ function ResponseForkHoverRail({
   return (
     <div
       data-response-fork-hover-rail
-      data-fork-existing-branch-origin="prompt"
+      data-fork-existing-branch-origin="response"
       data-fork-existing-branch-step={sourceStepId}
       className="hidden min-h-full items-start overflow-visible pt-10 xl:flex"
     >
@@ -1477,23 +1477,13 @@ export default function SourceRunShowcase({
                       variant="prompt"
                       stepId={step.id}
                       stepNumber={step.stepNumber}
-                      forks={stepForks}
-                      activeForkId={activeForkId}
-                      onSelectFork={(fork) => setActiveForkId(fork.id)}
                     >
                       <PromptText text={step.prompt} />
                     </PipeNode>
-                    {hasForkLane && (
-                      <ResponseForkHoverRail
-                        forks={stepForks}
-                        activeForkId={activeForkId}
-                        onSelectFork={(fork) => setActiveForkId(fork.id)}
-                        sourceStepId={step.id}
-                      />
-                    )}
+                    {hasForkLane && <div className="hidden xl:block" aria-hidden="true" />}
                   </div>
 
-                  <div className={pathRowClassName}>
+                  <div className={pathRowClassName} data-source-run-response-row={step.id}>
                     <PipeNode
                       eyebrow={`Response ${String(step.stepNumber).padStart(2, '0')}`}
                       title={step.title}
@@ -1504,6 +1494,9 @@ export default function SourceRunShowcase({
                       stepNumber={step.stepNumber}
                       forkHref={forkHref ?? undefined}
                       forkLabel={`Fork ${projectTitle ?? 'this path'} from response ${String(step.stepNumber).padStart(2, '0')}`}
+                      forks={stepForks}
+                      activeForkId={activeForkId}
+                      onSelectFork={(fork) => setActiveForkId(fork.id)}
                     >
                     <ResponsePackageCard
                       step={step}
@@ -1513,7 +1506,14 @@ export default function SourceRunShowcase({
                       providerName={providerName}
                     />
                     </PipeNode>
-                    {hasForkLane && <div className="hidden xl:block" aria-hidden="true" />}
+                    {hasForkLane && (
+                      <ResponseForkHoverRail
+                        forks={stepForks}
+                        activeForkId={activeForkId}
+                        onSelectFork={(fork) => setActiveForkId(fork.id)}
+                        sourceStepId={step.id}
+                      />
+                    )}
                   </div>
                 </Fragment>
               )

@@ -2,7 +2,10 @@
 
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { isExpectedLocalActivationFailure } from './browser-guard-errors.mjs'
+import {
+  isExpectedLocalActivationFailure,
+  isExpectedLocalActivationResponseFailure,
+} from './browser-guard-errors.mjs'
 
 const discoverySource = readFileSync('src/components/discovery/BuildPathsDiscovery.tsx', 'utf8')
 const cardSource = readFileSync('src/components/discovery/BuildPathCard.tsx', 'utf8')
@@ -11,6 +14,7 @@ const browserGuardSource = readFileSync('scripts/check-explore-responsiveness-br
 const localFailureGuardSources = [
   readFileSync('scripts/check-discovery-navigation-browser.mjs', 'utf8'),
   readFileSync('scripts/check-project-fork-page-browser.mjs', 'utf8'),
+  browserGuardSource,
 ]
 
 const localActivationFailure = {
@@ -40,6 +44,29 @@ assert.equal(isExpectedLocalActivationFailure('http://127.0.0.1:3012', {
   ...localActivationFailure,
   text: 'Failed to load resource: the server responded with a status of 500',
 }), false, 'other local statuses must remain fatal')
+
+const localActivationResponse = {
+  url: 'http://127.0.0.1:3012/api/activation-events',
+  status: 503,
+}
+assert.equal(
+  isExpectedLocalActivationResponseFailure('http://127.0.0.1:3012', localActivationResponse),
+  true,
+  'the exact configured local activation-event 503 should be ignored',
+)
+for (const [label, baseUrl, response] of [
+  ['same-origin 500', 'http://127.0.0.1:3012', { ...localActivationResponse, status: 500 }],
+  ['cross-origin 503', 'http://127.0.0.1:3012', { ...localActivationResponse, url: 'http://localhost:3012/api/activation-events' }],
+  ['activation-events-v2 404', 'http://127.0.0.1:3012', { url: 'http://127.0.0.1:3012/api/activation-events-v2', status: 404 }],
+  ['activation-events-v2 503', 'http://127.0.0.1:3012', { url: 'http://127.0.0.1:3012/api/activation-events-v2', status: 503 }],
+  ['hosted 503', 'https://pathforge-git-review.vercel.app', { url: 'https://pathforge-git-review.vercel.app/api/activation-events', status: 503 }],
+]) {
+  assert.equal(
+    isExpectedLocalActivationResponseFailure(baseUrl, response),
+    false,
+    `${label} must remain fatal`,
+  )
+}
 for (const guardSource of localFailureGuardSources) {
   assert.match(guardSource, /isExpectedLocalActivationFailure\((?:baseUrl|options\.baseUrl), entry\)/)
   assert.doesNotMatch(
@@ -48,6 +75,9 @@ for (const guardSource of localFailureGuardSources) {
     'browser guards must not restore a broad activation-event exception',
   )
 }
+assert.match(browserGuardSource, /isExpectedLocalActivationResponseFailure\(baseUrl, response\)/)
+assert.doesNotMatch(browserGuardSource, /baseUrl\.startsWith\(/)
+assert.doesNotMatch(browserGuardSource, /\.includes\('\/(?:_vercel|api\/activation-events)/)
 
 assert.match(navigationSource, /export function DiscoveryNavigationLink\([\s\S]*?prefetch = false,/)
 assert.match(navigationSource, /<Link[\s\S]*?prefetch=\{prefetch\}/)

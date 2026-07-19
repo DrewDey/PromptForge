@@ -502,7 +502,12 @@ async function main() {
             availableWidth: rootRect?.width || 0,
           };
         })()`,
-        (value) => value?.mode === 'child' && value.disclosureVisible,
+        (value) => (
+          value?.mode === 'child' &&
+          value.disclosureVisible &&
+          value.continuationWidth > 0 &&
+          value.availableWidth > 0
+        ),
         '390px child lineage layout',
       )
       if (mobile.overflow > 1) throw new Error(`390px child lineage overflows horizontally by ${mobile.overflow}px.`)

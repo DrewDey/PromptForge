@@ -1,5 +1,9 @@
 import Link from 'next/link'
 import { CheckCircle2, ChevronDown, TriangleAlert } from 'lucide-react'
+import ModelComparisonPreviewLink, {
+  ModelComparisonCurrentPreviewLink,
+  ModelComparisonViewportManager,
+} from '@/components/ModelComparisonPreviewLink'
 import type {
   ProjectModelVariant,
   ProjectModelVariantSet,
@@ -227,14 +231,20 @@ function ComparisonCard({
   variant,
   variantSet,
   otherVariant,
+  isPreviewed,
 }: {
   label: 'A' | 'B'
   variant: ProjectModelVariant
   variantSet: ProjectModelVariantSet
   otherVariant: ProjectModelVariant
+  isPreviewed: boolean
 }) {
   return (
-    <article className="border border-brand-blue/25 bg-white p-4" data-model-variant-comparison={label}>
+    <article
+      className="border border-brand-blue/25 bg-white p-4"
+      data-model-variant-comparison={label}
+      data-model-variant-source-run={variant.sourceRunId}
+    >
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-brand-blue">
@@ -254,13 +264,22 @@ function ComparisonCard({
         </div>
         <StatusBadge variant={variant} />
       </div>
-      <Link
-        href={`${runHref(variantSet.canonicalRoute, variant, otherVariant)}#final-result`}
-        aria-label={`Preview ${accessibleRunLabel(variant)} below`}
-        className="mt-4 inline-flex border border-brand-blue/30 px-3 py-2 text-xs font-black text-brand-blue hover:bg-blue-50"
-      >
-        Preview run {label} below
-      </Link>
+      {isPreviewed ? (
+        <ModelComparisonCurrentPreviewLink
+          ariaLabel={`Reveal the current preview for ${accessibleRunLabel(variant)} below`}
+          className="mt-4 inline-flex border border-brand-blue bg-brand-blue px-3 py-2 text-xs font-black text-white"
+        >
+          Previewing run {label} below
+        </ModelComparisonCurrentPreviewLink>
+      ) : (
+        <ModelComparisonPreviewLink
+          href={`${runHref(variantSet.canonicalRoute, variant, otherVariant)}#final-result`}
+          ariaLabel={`Preview ${accessibleRunLabel(variant)} below`}
+          className="mt-4 inline-flex border border-brand-blue/30 px-3 py-2 text-xs font-black text-brand-blue hover:bg-blue-50"
+        >
+          Preview run {label} below
+        </ModelComparisonPreviewLink>
+      )}
     </article>
   )
 }
@@ -274,6 +293,7 @@ export function PathForgeLabsModelComparison({
   activeVariant: ProjectModelVariant
   compareVariant: ProjectModelVariant
 }) {
+  const [runA, runB] = [activeVariant, compareVariant].sort(compareModelVariantRecords)
   const exitHref =
     activeVariant.sourceRunId === variantSet.defaultSourceRunId
       ? variantSet.canonicalRoute
@@ -281,6 +301,7 @@ export function PathForgeLabsModelComparison({
 
   return (
     <section className="border-b border-brand-blue/20 bg-[#f4f8ff] px-4 py-7 sm:px-6 lg:px-8" data-model-variant-comparison-panel>
+      <ModelComparisonViewportManager />
       <div className="mx-auto max-w-7xl">
         <div className="mb-4 flex flex-wrap items-start justify-between gap-4 border-l-4 border-brand-blue pl-4">
           <div>
@@ -300,8 +321,20 @@ export function PathForgeLabsModelComparison({
           </Link>
         </div>
         <div className="grid gap-3 md:grid-cols-2">
-          <ComparisonCard label="A" variant={activeVariant} variantSet={variantSet} otherVariant={compareVariant} />
-          <ComparisonCard label="B" variant={compareVariant} variantSet={variantSet} otherVariant={activeVariant} />
+          <ComparisonCard
+            label="A"
+            variant={runA}
+            variantSet={variantSet}
+            otherVariant={runB}
+            isPreviewed={runA.sourceRunId === activeVariant.sourceRunId}
+          />
+          <ComparisonCard
+            label="B"
+            variant={runB}
+            variantSet={variantSet}
+            otherVariant={runA}
+            isPreviewed={runB.sourceRunId === activeVariant.sourceRunId}
+          />
         </div>
       </div>
     </section>

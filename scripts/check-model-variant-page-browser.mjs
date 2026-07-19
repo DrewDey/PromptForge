@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 
 import { spawn } from 'node:child_process'
+import { once } from 'node:events'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { isExpectedLocalActivationFailure } from './browser-guard-errors.mjs'
 import {
   CdpClient,
   chromeExecutable,
@@ -17,6 +19,14 @@ function parseArgs(argv) {
     baseUrl = argv[++index] ?? ''
   }
   return new URL(baseUrl).origin
+}
+
+function isExpectedLocalFaviconFailure(baseUrl, entry) {
+  if (!/\b404\b/.test(entry?.text ?? '') || !entry?.url) return false
+  const base = new URL(baseUrl)
+  if (base.hostname !== 'localhost' && base.hostname !== '127.0.0.1') return false
+  const request = new URL(entry.url, base)
+  return request.origin === base.origin && request.pathname === '/favicon.ico'
 }
 
 async function waitForValue(client, sessionId, expression, predicate, label, timeoutMs = 12_000) {
@@ -48,6 +58,816 @@ async function navigate(client, sessionId, url) {
   )
 }
 
+async function stopChrome(child) {
+  if (child.exitCode !== null || child.signalCode !== null) return
+  const exitPromise = once(child, 'exit')
+  child.kill('SIGTERM')
+  const exited = await Promise.race([
+    exitPromise.then(() => true),
+    new Promise((resolve) => setTimeout(() => resolve(false), 2_000)),
+  ])
+  if (exited || child.exitCode !== null || child.signalCode !== null) return
+  child.kill('SIGKILL')
+  await exitPromise
+}
+
+const COMPARISON_SNAPSHOT_EXPRESSION = `(() => {
+  const cards=[...document.querySelectorAll('[data-model-variant-comparison]')];
+  const artifact=document.getElementById('final-result');
+  const frame=document.querySelector('[data-artifact-package-id]');
+  const selectorRows=[...document.querySelectorAll('[data-model-variant-run]')];
+  const params=new URLSearchParams(location.search);
+  const artifactRect=artifact?.getBoundingClientRect();
+  const frameRect=frame?.getBoundingClientRect();
+  return {
+    cards: cards.map((card)=>({
+      label: card.dataset.modelVariantComparison ?? '',
+      runId: card.dataset.modelVariantSourceRun ?? '',
+      current: Boolean(card.querySelector('[data-model-variant-preview-current]')),
+      currentHref: card.querySelector('[data-model-variant-preview-current]')?.href ?? '',
+      href: card.querySelector('[data-model-variant-preview-link]')?.href ?? '',
+    })),
+    artifact: artifactRect ? {
+      top: artifactRect.top,
+      width: artifactRect.width,
+      height: artifactRect.height,
+    } : null,
+    frame: frameRect ? {
+      top: frameRect.top,
+      width: frameRect.width,
+      height: frameRect.height,
+    } : null,
+    hash: location.hash,
+    historyLength: history.length,
+    scrollY: window.scrollY,
+    maxScrollY: Math.max(0, document.documentElement.scrollHeight - window.innerHeight),
+    url: location.href,
+    overflow: Math.max(0, document.documentElement.scrollWidth - window.innerWidth),
+    queryRun: params.get('run') ?? '',
+    queryCompare: params.get('compare') ?? '',
+    selectorActiveId: selectorRows.find((row)=>row.querySelector('[aria-current="page"]'))?.dataset.modelVariantRun ?? '',
+    packageId: frame?.dataset.artifactPackageId ?? '',
+    artifactPath: frame?.dataset.artifactPath ?? '',
+    artifactReady: Boolean(frame?.querySelector('iframe[srcdoc]')),
+    destinationHydrated: Boolean(
+      artifact?.querySelector('[data-artifact-package-id] iframe[srcdoc], [data-artifact-load-error]')
+    ),
+    controlsHydrated: Boolean(
+      document.querySelector('[data-model-variant-preview-link][data-model-variant-preview-hydrated="true"]')
+    ),
+  };
+})()`
+
+function assertComparisonGeometry(label, before, after) {
+  for (const region of ['artifact', 'frame']) {
+    for (const measurement of ['top', 'width', 'height']) {
+      const delta = Math.abs(after?.[region]?.[measurement] - before?.[region]?.[measurement])
+      if (!Number.isFinite(delta) || delta > 2) {
+        throw new Error(
+          `${label} changed ${region} ${measurement} by ${Number.isFinite(delta) ? delta.toFixed(2) : 'an invalid amount'}px.`,
+        )
+      }
+    }
+  }
+}
+
+function assertComparisonScrollPosition(label, before, after) {
+  const delta = Math.abs((after?.scrollY ?? Number.NaN) - (before?.scrollY ?? Number.NaN))
+  if (!Number.isFinite(delta) || delta > 1) {
+    throw new Error(
+      `${label} changed window.scrollY by ${Number.isFinite(delta) ? delta.toFixed(2) : 'an invalid amount'}px.`,
+    )
+  }
+}
+
+function assertComparisonCardOrder(label, expectedIds, snapshot) {
+  const actualIds = snapshot.cards.map((card) => card.runId)
+  if (JSON.stringify(actualIds) !== JSON.stringify(expectedIds)) {
+    throw new Error(`${label} changed the Run A / Run B identities.`)
+  }
+}
+
+function assertComparisonTruth(label, snapshot, expected) {
+  const currentRunId = snapshot.cards.find((card) => card.current)?.runId
+  const actual = {
+    currentRunId,
+    selectorActiveId: snapshot.selectorActiveId,
+    queryRun: snapshot.queryRun,
+    queryCompare: snapshot.queryCompare,
+    packageId: snapshot.packageId,
+    artifactPath: snapshot.artifactPath,
+  }
+  for (const [field, expectedValue] of Object.entries(expected)) {
+    if (actual[field] !== expectedValue) {
+      throw new Error(`${label} expected ${field}=${expectedValue}, received ${actual[field] ?? ''}.`)
+    }
+  }
+}
+
+async function positionArtifact(client, sessionId, desiredTop) {
+  await client.send('Runtime.evaluate', {
+    expression: `(() => {
+      const artifact=document.getElementById('final-result');
+      if (!artifact) return false;
+      window.scrollTo(0, window.scrollY + artifact.getBoundingClientRect().top - ${desiredTop});
+      return true;
+    })()`,
+  }, sessionId)
+  return waitForValue(
+    client,
+    sessionId,
+    COMPARISON_SNAPSHOT_EXPRESSION,
+    (value) => Math.abs((value?.artifact?.top ?? Number.POSITIVE_INFINITY) - desiredTop) <= 2,
+    `artifact positioned ${desiredTop}px below the viewport top`,
+  )
+}
+
+async function positionDeepInBuildPath(client, sessionId) {
+  const { result } = await client.send('Runtime.evaluate', {
+    expression: `(() => {
+      const artifact=document.getElementById('final-result');
+      if (!artifact) return null;
+      const artifactBottom=window.scrollY + artifact.getBoundingClientRect().bottom;
+      const maxScroll=Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      const target=Math.min(maxScroll, Math.ceil(artifactBottom + window.innerHeight * 0.75));
+      window.scrollTo(0, target);
+      return target;
+    })()`,
+    returnByValue: true,
+  }, sessionId)
+  const target = result.value
+  if (!Number.isFinite(target) || target <= 0) {
+    throw new Error('Could not calculate a deep build-path scroll position.')
+  }
+  return waitForValue(
+    client,
+    sessionId,
+    COMPARISON_SNAPSHOT_EXPRESSION,
+    (value) => Math.abs((value?.scrollY ?? Number.POSITIVE_INFINITY) - target) <= 1,
+    'deep build-path scroll position',
+  )
+}
+
+async function clickVisibleControl(client, sessionId, selector, label) {
+  const { result } = await client.send('Runtime.evaluate', {
+    expression: `(() => {
+      const element=document.querySelector(${JSON.stringify(selector)});
+      if (!element) return null;
+      const rect=element.getBoundingClientRect();
+      return {
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
+        visible: rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < innerHeight,
+      };
+    })()`,
+    returnByValue: true,
+  }, sessionId)
+  const point = result.value
+  if (!point?.visible) throw new Error(`${label} is not visible for a real pointer click.`)
+
+  await client.send('Input.dispatchMouseEvent', {
+    type: 'mouseMoved',
+    x: point.x,
+    y: point.y,
+  }, sessionId)
+  await client.send('Input.dispatchMouseEvent', {
+    type: 'mousePressed',
+    x: point.x,
+    y: point.y,
+    button: 'left',
+    clickCount: 1,
+  }, sessionId)
+  await client.send('Input.dispatchMouseEvent', {
+    type: 'mouseReleased',
+    x: point.x,
+    y: point.y,
+    button: 'left',
+    clickCount: 1,
+  }, sessionId)
+}
+
+async function settledComparisonSnapshot(client, sessionId, settleMs = 1_800) {
+  await client.send('Runtime.evaluate', {
+    expression: `new Promise((resolve)=>setTimeout(resolve, ${settleMs}))`,
+    awaitPromise: true,
+  }, sessionId)
+  const { result } = await client.send('Runtime.evaluate', {
+    expression: COMPARISON_SNAPSHOT_EXPRESSION,
+    returnByValue: true,
+  }, sessionId)
+  return result.value
+}
+
+async function verifyComparisonPreviewFlow(client, sessionId, baseUrl, viewport) {
+  await client.send('Emulation.setDeviceMetricsOverride', {
+    width: viewport.width,
+    height: viewport.height,
+    deviceScaleFactor: 1,
+    mobile: viewport.mobile,
+  }, sessionId)
+
+  await navigate(client, sessionId, `${baseUrl}/booking-flow-handoff-simulator-demo`)
+  const compareHref = await waitForValue(
+    client,
+    sessionId,
+    `document.querySelector('[data-model-variant-compare]')?.href ?? ''`,
+    Boolean,
+    `${viewport.label} model comparison link`,
+  )
+  await navigate(client, sessionId, `${compareHref}#final-result`)
+  await waitForValue(
+    client,
+    sessionId,
+    `Boolean(document.querySelector('[data-model-variant-comparison-panel]'))`,
+    Boolean,
+    `${viewport.label} model comparison panel`,
+  )
+
+  const initialControls = await waitForValue(
+    client,
+    sessionId,
+    COMPARISON_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.cards?.length === 2 &&
+      value.cards.filter((card) => card.current).length === 1 &&
+      value.cards.filter((card) => card.href).length === 1 &&
+      Boolean(value.artifact) &&
+      Boolean(value.frame) &&
+      value.artifactReady &&
+      value.controlsHydrated
+    ),
+    `${viewport.label} truthful comparison preview controls`,
+  )
+  const initialCardIds = initialControls.cards.map((card) => card.runId)
+  const initialCurrentId = initialControls.cards.find((card) => card.current)?.runId
+  const switchCard = initialControls.cards.find((card) => !card.current)
+  if (!initialCurrentId || !switchCard?.runId || !switchCard.href) {
+    throw new Error(`${viewport.label} comparison did not expose one current run and one destination run.`)
+  }
+
+  if (viewport.checkPageTop) {
+    await client.send('Runtime.evaluate', { expression: 'window.scrollTo(0, 0)' }, sessionId)
+    const pageTopInitial = await waitForValue(
+      client,
+      sessionId,
+      COMPARISON_SNAPSHOT_EXPRESSION,
+      (value) => (
+        value?.scrollY === 0 &&
+        value.artifact?.top > 2 &&
+        value.frame?.top > value.artifact.top &&
+        (
+          !viewport.requirePartiallyVisibleArtifact ||
+          (value.artifact.top < viewport.height && value.frame.top < viewport.height)
+        )
+      ),
+      `${viewport.label} artifact geometry at page top`,
+    )
+
+    if (viewport.realPageTopClick) {
+      await clickVisibleControl(
+        client,
+        sessionId,
+        '[data-model-variant-preview-link]',
+        `${viewport.label} inactive comparison control`,
+      )
+    } else {
+      await client.send('Runtime.evaluate', {
+        expression: `document.querySelector('[data-model-variant-preview-link]')?.click()`,
+      }, sessionId)
+    }
+    await waitForValue(
+      client,
+      sessionId,
+      COMPARISON_SNAPSHOT_EXPRESSION,
+      (value) => (
+        value?.cards?.find((card) => card.current)?.runId === switchCard.runId &&
+        value.selectorActiveId === switchCard.runId &&
+        value.queryRun === switchCard.runId &&
+        value.queryCompare === initialCurrentId &&
+        value.packageId !== pageTopInitial.packageId &&
+        value.artifactPath !== pageTopInitial.artifactPath &&
+        value.artifactReady
+      ),
+      `${viewport.label} page-top preview switch`,
+    )
+    const pageTopSwitched = await settledComparisonSnapshot(client, sessionId)
+    assertComparisonCardOrder(`${viewport.label} page-top switch`, initialCardIds, pageTopSwitched)
+    assertComparisonGeometry(`${viewport.label} page-top switch`, pageTopInitial, pageTopSwitched)
+    assertComparisonScrollPosition(`${viewport.label} page-top switch`, pageTopInitial, pageTopSwitched)
+    if (pageTopSwitched.historyLength !== pageTopInitial.historyLength + 1) {
+      throw new Error(`${viewport.label} page-top switch did not add exactly one history entry.`)
+    }
+
+    if (viewport.realPageTopClick) {
+      await clickVisibleControl(
+        client,
+        sessionId,
+        '[data-model-variant-preview-link]',
+        `${viewport.label} return comparison control`,
+      )
+    } else {
+      await client.send('Runtime.evaluate', {
+        expression: `document.querySelector('[data-model-variant-preview-link]')?.click()`,
+      }, sessionId)
+    }
+    await waitForValue(
+      client,
+      sessionId,
+      COMPARISON_SNAPSHOT_EXPRESSION,
+      (value) => (
+        value?.cards?.find((card) => card.current)?.runId === initialCurrentId &&
+        value.selectorActiveId === initialCurrentId &&
+        value.queryRun === initialCurrentId &&
+        value.queryCompare === switchCard.runId &&
+        value.packageId === pageTopInitial.packageId &&
+        value.artifactPath === pageTopInitial.artifactPath &&
+        value.artifactReady
+      ),
+      `${viewport.label} page-top preview return`,
+    )
+    const pageTopReturned = await settledComparisonSnapshot(client, sessionId)
+    assertComparisonCardOrder(`${viewport.label} page-top return`, initialCardIds, pageTopReturned)
+    assertComparisonGeometry(`${viewport.label} page-top return`, pageTopInitial, pageTopReturned)
+    assertComparisonScrollPosition(`${viewport.label} page-top return`, pageTopInitial, pageTopReturned)
+    if (pageTopReturned.historyLength !== pageTopInitial.historyLength + 2) {
+      throw new Error(`${viewport.label} page-top return did not add exactly one additional history entry.`)
+    }
+  }
+
+  const positionedForCurrentAction = await positionArtifact(client, sessionId, 200)
+  await client.send('Runtime.evaluate', {
+    expression: `document.querySelector('[data-model-variant-preview-current]')?.click()`,
+  }, sessionId)
+  const currentAction = await waitForValue(
+    client,
+    sessionId,
+    COMPARISON_SNAPSHOT_EXPRESSION,
+    (value) => Math.abs(value?.artifact?.top ?? Number.POSITIVE_INFINITY) <= 2,
+    `${viewport.label} current preview reveal`,
+  )
+  const expectedCurrentActionHistoryLength = positionedForCurrentAction.hash === '#final-result'
+    ? positionedForCurrentAction.historyLength
+    : positionedForCurrentAction.historyLength + 1
+  if (
+    currentAction.hash !== '#final-result' ||
+    currentAction.historyLength !== expectedCurrentActionHistoryLength
+  ) {
+    throw new Error(`${viewport.label} current preview action did not reveal the artifact predictably.`)
+  }
+  await client.send('Runtime.evaluate', {
+    expression: `document.querySelector('[data-model-variant-preview-current]')?.click()`,
+  }, sessionId)
+  const repeatedCurrentAction = await settledComparisonSnapshot(client, sessionId)
+  if (
+    repeatedCurrentAction.url !== currentAction.url ||
+    repeatedCurrentAction.historyLength !== currentAction.historyLength
+  ) {
+    throw new Error(`${viewport.label} repeated current preview action mutated URL history.`)
+  }
+
+  await client.send('Runtime.evaluate', { expression: 'history.back()' }, sessionId)
+  await waitForValue(
+    client,
+    sessionId,
+    COMPARISON_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.hash === positionedForCurrentAction.hash &&
+      Math.abs((value.scrollY ?? Number.POSITIVE_INFINITY) - positionedForCurrentAction.scrollY) <= 1
+    ),
+    `${viewport.label} hash-only Back restoration`,
+  )
+  const currentActionBack = await settledComparisonSnapshot(client, sessionId)
+  assertComparisonGeometry(`${viewport.label} hash-only Back`, positionedForCurrentAction, currentActionBack)
+  assertComparisonScrollPosition(`${viewport.label} hash-only Back`, positionedForCurrentAction, currentActionBack)
+  if (currentActionBack.historyLength !== currentAction.historyLength) {
+    throw new Error(`${viewport.label} hash-only Back changed history length.`)
+  }
+
+  await client.send('Runtime.evaluate', { expression: 'history.forward()' }, sessionId)
+  await waitForValue(
+    client,
+    sessionId,
+    COMPARISON_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.hash === '#final-result' &&
+      Math.abs((value.scrollY ?? Number.POSITIVE_INFINITY) - currentAction.scrollY) <= 1
+    ),
+    `${viewport.label} hash-only Forward restoration`,
+  )
+  const currentActionForward = await settledComparisonSnapshot(client, sessionId)
+  assertComparisonGeometry(`${viewport.label} hash-only Forward`, currentAction, currentActionForward)
+  assertComparisonScrollPosition(`${viewport.label} hash-only Forward`, currentAction, currentActionForward)
+  if (currentActionForward.historyLength !== currentAction.historyLength) {
+    throw new Error(`${viewport.label} hash-only Forward changed history length.`)
+  }
+
+  const comparisonInitial = await positionArtifact(client, sessionId, 200)
+  if (comparisonInitial.overflow > 1) {
+    throw new Error(`${viewport.label} comparison overflowed horizontally by ${comparisonInitial.overflow}px.`)
+  }
+  assertComparisonTruth(`${viewport.label} initial comparison`, comparisonInitial, {
+    currentRunId: initialCurrentId,
+    selectorActiveId: initialCurrentId,
+    queryRun: initialCurrentId,
+    queryCompare: switchCard.runId,
+    packageId: comparisonInitial.packageId,
+    artifactPath: comparisonInitial.artifactPath,
+  })
+
+  await client.send('Runtime.evaluate', {
+    expression: `document.querySelector('[data-model-variant-preview-link]')?.click()`,
+  }, sessionId)
+  await waitForValue(
+    client,
+    sessionId,
+    COMPARISON_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.cards?.find((card) => card.current)?.runId === switchCard.runId &&
+      value.cards.filter((card) => card.href).length === 1 &&
+      value.hash === '' &&
+      value.selectorActiveId === switchCard.runId &&
+      value.queryRun === switchCard.runId &&
+      value.queryCompare === initialCurrentId &&
+      value.packageId !== comparisonInitial.packageId &&
+      value.artifactPath !== comparisonInitial.artifactPath &&
+      value.artifactReady &&
+      Math.abs((value.artifact?.top ?? Number.POSITIVE_INFINITY) - comparisonInitial.artifact.top) <= 2
+    ),
+    `${viewport.label} switched preview at preserved artifact position`,
+  )
+  const comparisonSwitched = await settledComparisonSnapshot(client, sessionId)
+  assertComparisonCardOrder(`${viewport.label} preview switch`, initialCardIds, comparisonSwitched)
+  assertComparisonGeometry(`${viewport.label} preview switch`, comparisonInitial, comparisonSwitched)
+  assertComparisonScrollPosition(`${viewport.label} preview switch`, comparisonInitial, comparisonSwitched)
+  if (comparisonSwitched.historyLength !== comparisonInitial.historyLength + 1) {
+    throw new Error(`${viewport.label} preview switch did not add exactly one history entry.`)
+  }
+  assertComparisonTruth(`${viewport.label} preview switch`, comparisonSwitched, {
+    currentRunId: switchCard.runId,
+    selectorActiveId: switchCard.runId,
+    queryRun: switchCard.runId,
+    queryCompare: initialCurrentId,
+    packageId: comparisonSwitched.packageId,
+    artifactPath: comparisonSwitched.artifactPath,
+  })
+
+  await client.send('Runtime.evaluate', {
+    expression: `document.querySelector('[data-model-variant-preview-link]')?.click()`,
+  }, sessionId)
+  await waitForValue(
+    client,
+    sessionId,
+    COMPARISON_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.cards?.find((card) => card.current)?.runId === initialCurrentId &&
+      value.cards.filter((card) => card.href).length === 1 &&
+      value.hash === '' &&
+      value.selectorActiveId === initialCurrentId &&
+      value.queryRun === initialCurrentId &&
+      value.queryCompare === switchCard.runId &&
+      value.packageId === comparisonInitial.packageId &&
+      value.artifactPath === comparisonInitial.artifactPath &&
+      value.artifactReady &&
+      Math.abs((value.artifact?.top ?? Number.POSITIVE_INFINITY) - comparisonInitial.artifact.top) <= 2
+    ),
+    `${viewport.label} returned preview at preserved artifact position`,
+  )
+  const comparisonReturned = await settledComparisonSnapshot(client, sessionId)
+  assertComparisonCardOrder(`${viewport.label} preview return`, initialCardIds, comparisonReturned)
+  assertComparisonGeometry(`${viewport.label} preview return`, comparisonInitial, comparisonReturned)
+  assertComparisonScrollPosition(`${viewport.label} preview return`, comparisonInitial, comparisonReturned)
+  if (comparisonReturned.historyLength !== comparisonInitial.historyLength + 2) {
+    throw new Error(`${viewport.label} preview return did not add exactly one additional history entry.`)
+  }
+  assertComparisonTruth(`${viewport.label} preview return`, comparisonReturned, {
+    currentRunId: initialCurrentId,
+    selectorActiveId: initialCurrentId,
+    queryRun: initialCurrentId,
+    queryCompare: switchCard.runId,
+    packageId: comparisonInitial.packageId,
+    artifactPath: comparisonInitial.artifactPath,
+  })
+
+  await client.send('Runtime.evaluate', { expression: 'history.back()' }, sessionId)
+  await waitForValue(
+    client,
+    sessionId,
+    COMPARISON_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.cards?.find((card) => card.current)?.runId === switchCard.runId &&
+      value.selectorActiveId === switchCard.runId &&
+      value.queryRun === switchCard.runId &&
+      value.queryCompare === initialCurrentId &&
+      value.packageId === comparisonSwitched.packageId &&
+      value.artifactPath === comparisonSwitched.artifactPath &&
+      value.artifactReady &&
+      Math.abs((value.artifact?.top ?? Number.POSITIVE_INFINITY) - comparisonInitial.artifact.top) <= 2
+    ),
+    `${viewport.label} browser Back comparison preview`,
+  )
+  const comparisonBack = await settledComparisonSnapshot(client, sessionId)
+  assertComparisonCardOrder(`${viewport.label} browser Back`, initialCardIds, comparisonBack)
+  assertComparisonGeometry(`${viewport.label} browser Back`, comparisonInitial, comparisonBack)
+  assertComparisonScrollPosition(`${viewport.label} browser Back`, comparisonInitial, comparisonBack)
+  if (comparisonBack.historyLength !== comparisonReturned.historyLength) {
+    throw new Error(`${viewport.label} browser Back changed the history length.`)
+  }
+  assertComparisonTruth(`${viewport.label} browser Back`, comparisonBack, {
+    currentRunId: switchCard.runId,
+    selectorActiveId: switchCard.runId,
+    queryRun: switchCard.runId,
+    queryCompare: initialCurrentId,
+    packageId: comparisonSwitched.packageId,
+    artifactPath: comparisonSwitched.artifactPath,
+  })
+
+  await client.send('Runtime.evaluate', { expression: 'history.forward()' }, sessionId)
+  await waitForValue(
+    client,
+    sessionId,
+    COMPARISON_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.cards?.find((card) => card.current)?.runId === initialCurrentId &&
+      value.selectorActiveId === initialCurrentId &&
+      value.queryRun === initialCurrentId &&
+      value.queryCompare === switchCard.runId &&
+      value.packageId === comparisonInitial.packageId &&
+      value.artifactPath === comparisonInitial.artifactPath &&
+      value.artifactReady &&
+      Math.abs((value.artifact?.top ?? Number.POSITIVE_INFINITY) - comparisonInitial.artifact.top) <= 2
+    ),
+    `${viewport.label} browser Forward comparison preview`,
+  )
+  const comparisonForward = await settledComparisonSnapshot(client, sessionId)
+  assertComparisonCardOrder(`${viewport.label} browser Forward`, initialCardIds, comparisonForward)
+  assertComparisonGeometry(`${viewport.label} browser Forward`, comparisonInitial, comparisonForward)
+  assertComparisonScrollPosition(`${viewport.label} browser Forward`, comparisonInitial, comparisonForward)
+  if (comparisonForward.historyLength !== comparisonReturned.historyLength) {
+    throw new Error(`${viewport.label} browser Forward changed the history length.`)
+  }
+  assertComparisonTruth(`${viewport.label} browser Forward`, comparisonForward, {
+    currentRunId: initialCurrentId,
+    selectorActiveId: initialCurrentId,
+    queryRun: initialCurrentId,
+    queryCompare: switchCard.runId,
+    packageId: comparisonInitial.packageId,
+    artifactPath: comparisonInitial.artifactPath,
+  })
+
+  const deepInitial = await positionDeepInBuildPath(client, sessionId)
+  await client.send('Runtime.evaluate', {
+    expression: `document.querySelector('[data-model-variant-preview-link]')?.click()`,
+  }, sessionId)
+  await waitForValue(
+    client,
+    sessionId,
+    COMPARISON_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.cards?.find((card) => card.current)?.runId === switchCard.runId &&
+      value.queryRun === switchCard.runId &&
+      value.queryCompare === initialCurrentId &&
+      value.packageId === comparisonSwitched.packageId &&
+      value.artifactPath === comparisonSwitched.artifactPath &&
+      value.artifactReady
+    ),
+    `${viewport.label} deep build-path preview switch`,
+  )
+  const deepSwitched = await settledComparisonSnapshot(client, sessionId)
+  assertComparisonCardOrder(`${viewport.label} deep build-path switch`, initialCardIds, deepSwitched)
+  assertComparisonGeometry(`${viewport.label} deep build-path switch`, deepInitial, deepSwitched)
+  assertComparisonScrollPosition(`${viewport.label} deep build-path switch`, deepInitial, deepSwitched)
+  if (deepSwitched.historyLength !== deepInitial.historyLength + 1) {
+    throw new Error(`${viewport.label} deep build-path switch did not add exactly one history entry.`)
+  }
+  assertComparisonTruth(`${viewport.label} deep build-path switch`, deepSwitched, {
+    currentRunId: switchCard.runId,
+    selectorActiveId: switchCard.runId,
+    queryRun: switchCard.runId,
+    queryCompare: initialCurrentId,
+    packageId: comparisonSwitched.packageId,
+    artifactPath: comparisonSwitched.artifactPath,
+  })
+
+  await client.send('Runtime.evaluate', {
+    expression: `document.querySelector('[data-model-variant-preview-link]')?.click()`,
+  }, sessionId)
+  await waitForValue(
+    client,
+    sessionId,
+    COMPARISON_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.cards?.find((card) => card.current)?.runId === initialCurrentId &&
+      value.queryRun === initialCurrentId &&
+      value.queryCompare === switchCard.runId &&
+      value.packageId === comparisonInitial.packageId &&
+      value.artifactPath === comparisonInitial.artifactPath &&
+      value.artifactReady
+    ),
+    `${viewport.label} deep build-path preview return`,
+  )
+  const deepReturned = await settledComparisonSnapshot(client, sessionId)
+  assertComparisonCardOrder(`${viewport.label} deep build-path return`, initialCardIds, deepReturned)
+  assertComparisonGeometry(`${viewport.label} deep build-path return`, deepInitial, deepReturned)
+  assertComparisonScrollPosition(`${viewport.label} deep build-path return`, deepInitial, deepReturned)
+  if (deepReturned.historyLength !== deepInitial.historyLength + 2) {
+    throw new Error(`${viewport.label} deep build-path return did not add exactly one additional history entry.`)
+  }
+  assertComparisonTruth(`${viewport.label} deep build-path return`, deepReturned, {
+    currentRunId: initialCurrentId,
+    selectorActiveId: initialCurrentId,
+    queryRun: initialCurrentId,
+    queryCompare: switchCard.runId,
+    packageId: comparisonInitial.packageId,
+    artifactPath: comparisonInitial.artifactPath,
+  })
+
+  await client.send('Runtime.evaluate', { expression: 'history.back()' }, sessionId)
+  await waitForValue(
+    client,
+    sessionId,
+    COMPARISON_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.cards?.find((card) => card.current)?.runId === switchCard.runId &&
+      value.queryRun === switchCard.runId &&
+      value.queryCompare === initialCurrentId &&
+      value.packageId === comparisonSwitched.packageId &&
+      value.artifactReady
+    ),
+    `${viewport.label} deep build-path browser Back`,
+  )
+  const deepBack = await settledComparisonSnapshot(client, sessionId)
+  assertComparisonCardOrder(`${viewport.label} deep build-path browser Back`, initialCardIds, deepBack)
+  assertComparisonGeometry(`${viewport.label} deep build-path browser Back`, deepInitial, deepBack)
+  assertComparisonScrollPosition(`${viewport.label} deep build-path browser Back`, deepInitial, deepBack)
+  if (deepBack.historyLength !== deepReturned.historyLength) {
+    throw new Error(`${viewport.label} deep build-path browser Back changed the history length.`)
+  }
+
+  await client.send('Runtime.evaluate', { expression: 'history.forward()' }, sessionId)
+  await waitForValue(
+    client,
+    sessionId,
+    COMPARISON_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.cards?.find((card) => card.current)?.runId === initialCurrentId &&
+      value.queryRun === initialCurrentId &&
+      value.queryCompare === switchCard.runId &&
+      value.packageId === comparisonInitial.packageId &&
+      value.artifactReady
+    ),
+    `${viewport.label} deep build-path browser Forward`,
+  )
+  const deepForward = await settledComparisonSnapshot(client, sessionId)
+  assertComparisonCardOrder(`${viewport.label} deep build-path browser Forward`, initialCardIds, deepForward)
+  assertComparisonGeometry(`${viewport.label} deep build-path browser Forward`, deepInitial, deepForward)
+  assertComparisonScrollPosition(`${viewport.label} deep build-path browser Forward`, deepInitial, deepForward)
+  if (deepForward.historyLength !== deepReturned.historyLength) {
+    throw new Error(`${viewport.label} deep build-path browser Forward changed the history length.`)
+  }
+
+  if (viewport.checkInterruptedRestoration) {
+    await navigate(client, sessionId, `${baseUrl}/booking-flow-handoff-simulator-demo`)
+    const interruptedRoute = new URL(initialControls.url)
+    interruptedRoute.hash = ''
+    await navigate(client, sessionId, interruptedRoute.href)
+    await waitForValue(
+      client,
+      sessionId,
+      COMPARISON_SNAPSHOT_EXPRESSION,
+      (value) => (
+        value?.cards?.find((card) => card.current)?.runId === initialCurrentId &&
+        value.packageId === comparisonInitial.packageId &&
+        value.artifactReady &&
+        value.controlsHydrated
+      ),
+      `${viewport.label} clean interrupted-restoration source`,
+    )
+    await waitForValue(
+      client,
+      sessionId,
+      `(() => {
+        const link=document.querySelector('[data-model-variant-preview-link]');
+        link?.focus({preventScroll:true});
+        return document.activeElement === link;
+      })()`,
+      Boolean,
+      `${viewport.label} focused interrupted-restoration control`,
+    )
+    const interruptedInitial = await waitForValue(
+      client,
+      sessionId,
+      `(() => {
+        const maxScrollY=Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+        window.scrollTo(0, maxScrollY);
+        return ${COMPARISON_SNAPSHOT_EXPRESSION};
+      })()`,
+      (value) => value?.scrollY > 1_500 && Math.abs(value.scrollY - value.maxScrollY) <= 1,
+      `${viewport.label} interrupted-restoration source position`,
+    )
+    await client.send('Input.dispatchKeyEvent', {
+      type: 'keyDown',
+      key: 'Enter',
+      code: 'Enter',
+      windowsVirtualKeyCode: 13,
+      nativeVirtualKeyCode: 13,
+    }, sessionId)
+    await client.send('Input.dispatchKeyEvent', {
+      type: 'keyUp',
+      key: 'Enter',
+      code: 'Enter',
+      windowsVirtualKeyCode: 13,
+      nativeVirtualKeyCode: 13,
+    }, sessionId)
+    const afterInterruptedActivation = await waitForValue(
+      client,
+      sessionId,
+      COMPARISON_SNAPSHOT_EXPRESSION,
+      (value) => value?.historyLength === interruptedInitial.historyLength + 1,
+      `${viewport.label} interrupted-restoration key activation history entry`,
+    )
+    if (afterInterruptedActivation.queryRun !== switchCard.runId) {
+      const navigationHistory = await client.send('Page.getNavigationHistory', {}, sessionId)
+      throw new Error(
+        `${viewport.label} interrupted key activation landed on ${afterInterruptedActivation.url}; ` +
+        `navigation history ${JSON.stringify(navigationHistory)}.`,
+      )
+    }
+    await client.send('Input.dispatchMouseEvent', {
+      type: 'mouseWheel',
+      x: 10,
+      y: 10,
+      deltaX: 0,
+      deltaY: -1,
+    }, sessionId)
+    await client.send('Runtime.evaluate', { expression: 'window.scrollTo(0, 1000)' }, sessionId)
+    await waitForValue(
+      client,
+      sessionId,
+      COMPARISON_SNAPSHOT_EXPRESSION,
+      (value) => (
+        value?.cards?.find((card) => card.current)?.runId === switchCard.runId &&
+        value.packageId === comparisonSwitched.packageId &&
+        value.artifactReady &&
+        Math.abs((value.scrollY ?? Number.POSITIVE_INFINITY) - 1000) <= 1
+      ),
+      `${viewport.label} user-chosen interrupted-restoration position`,
+    )
+    const interruptedDestination = await settledComparisonSnapshot(client, sessionId)
+    if (Math.abs(interruptedDestination.scrollY - 1000) > 1) {
+      throw new Error(`${viewport.label} interrupted restoration overrode the user's scroll position.`)
+    }
+    if (interruptedDestination.historyLength !== interruptedInitial.historyLength + 1) {
+      throw new Error(`${viewport.label} interrupted restoration did not add exactly one history entry.`)
+    }
+
+    await client.send('Runtime.evaluate', { expression: 'history.back()' }, sessionId)
+    await waitForValue(
+      client,
+      sessionId,
+      COMPARISON_SNAPSHOT_EXPRESSION,
+      (value) => (
+        value?.cards?.find((card) => card.current)?.runId === initialCurrentId &&
+        value.packageId === comparisonInitial.packageId &&
+        value.artifactReady &&
+        Math.abs((value.scrollY ?? Number.POSITIVE_INFINITY) - interruptedInitial.scrollY) <= 1
+      ),
+      `${viewport.label} interrupted-restoration browser Back`,
+    )
+    const interruptedBack = await settledComparisonSnapshot(client, sessionId)
+    assertComparisonScrollPosition(
+      `${viewport.label} interrupted-restoration browser Back`,
+      interruptedInitial,
+      interruptedBack,
+    )
+    if (interruptedBack.historyLength !== interruptedDestination.historyLength) {
+      throw new Error(`${viewport.label} interrupted-restoration browser Back changed history length.`)
+    }
+
+    await client.send('Runtime.evaluate', { expression: 'history.forward()' }, sessionId)
+    await waitForValue(
+      client,
+      sessionId,
+      COMPARISON_SNAPSHOT_EXPRESSION,
+      (value) => (
+        value?.cards?.find((card) => card.current)?.runId === switchCard.runId &&
+        value.packageId === comparisonSwitched.packageId &&
+        value.artifactReady &&
+        Math.abs((value.scrollY ?? Number.POSITIVE_INFINITY) - interruptedDestination.scrollY) <= 1
+      ),
+      `${viewport.label} interrupted-restoration browser Forward`,
+    )
+    const interruptedForward = await settledComparisonSnapshot(client, sessionId)
+    assertComparisonScrollPosition(
+      `${viewport.label} interrupted-restoration browser Forward`,
+      interruptedDestination,
+      interruptedForward,
+    )
+    if (interruptedForward.historyLength !== interruptedDestination.historyLength) {
+      throw new Error(`${viewport.label} interrupted-restoration browser Forward changed history length.`)
+    }
+  }
+}
+
 async function main() {
   const baseUrl = parseArgs(process.argv.slice(2))
   const executable = chromeExecutable()
@@ -76,7 +896,12 @@ async function main() {
         consoleErrors.push(message.params.exceptionDetails?.text ?? 'Uncaught runtime exception')
       }
       if (message.method === 'Log.entryAdded' && message.params.entry?.level === 'error') {
-        consoleErrors.push(message.params.entry.text)
+        if (isExpectedLocalActivationFailure(baseUrl, message.params.entry)) return
+        if (isExpectedLocalFaviconFailure(baseUrl, message.params.entry)) return
+        consoleErrors.push([
+          message.params.entry.text,
+          message.params.entry.url ? `at ${message.params.entry.url}` : null,
+        ].filter(Boolean).join(' '))
       }
     }
     client.listeners.add(listener)
@@ -100,7 +925,6 @@ async function main() {
         const rows=[...document.querySelectorAll('[data-model-variant-run]')];
         return {
           ids: rows.map((row)=>row.dataset.modelVariantRun),
-          labels: rows.map((row)=>row.querySelector('.text-sm.font-black')?.textContent?.trim() ?? ''),
           activeId: rows.find((row)=>row.querySelector('[aria-current="page"]'))?.dataset.modelVariantRun ?? '',
           viewHref: rows.find((row)=>!row.querySelector('[aria-current="page"]'))?.querySelector('[data-model-variant-view]')?.href ?? '',
         };
@@ -112,12 +936,8 @@ async function main() {
         (value) => value?.ids?.length === 3 && Boolean(value.viewHref),
         'three model selector rows',
       )
-      const sortedLabels = [...initial.labels].sort(new Intl.Collator('en', {
-        numeric: true,
-        sensitivity: 'base',
-      }).compare)
-      if (JSON.stringify(initial.labels) !== JSON.stringify(sortedLabels)) {
-        throw new Error(`Model selector is not alphabetical: ${initial.labels.join(', ')}.`)
+      if (new Set(initial.ids).size !== initial.ids.length) {
+        throw new Error('Model selector rendered duplicate run identities.')
       }
 
       await navigate(client, sessionId, initial.viewHref)
@@ -173,21 +993,23 @@ async function main() {
         throw new Error(`Artifact frame has unexpected sandbox tokens: ${mountedPackage.sandbox}.`)
       }
 
-      const compareHref = await waitForValue(
-        client,
-        sessionId,
-        `document.querySelector('[data-model-variant-compare]')?.href ?? ''`,
-        Boolean,
-        'model comparison link',
-      )
-      await navigate(client, sessionId, compareHref)
-      await waitForValue(
-        client,
-        sessionId,
-        `Boolean(document.querySelector('[data-model-variant-comparison-panel]'))`,
-        Boolean,
-        'model comparison panel',
-      )
+      await verifyComparisonPreviewFlow(client, sessionId, baseUrl, {
+        label: 'desktop',
+        width: 1440,
+        height: 1000,
+        mobile: false,
+        checkPageTop: true,
+        realPageTopClick: true,
+        requirePartiallyVisibleArtifact: true,
+      })
+      await verifyComparisonPreviewFlow(client, sessionId, baseUrl, {
+        label: '390px',
+        width: 390,
+        height: 844,
+        mobile: true,
+        checkPageTop: true,
+        checkInterruptedRestoration: true,
+      })
 
       if (consoleErrors.length > 0) {
         throw new Error(`Model-variant browser flow logged errors: ${[...new Set(consoleErrors)].join(' | ')}`)
@@ -198,7 +1020,7 @@ async function main() {
     }
   } finally {
     client?.close()
-    child.kill('SIGTERM')
+    await stopChrome(child)
     rmSync(profile, { recursive: true, force: true, maxRetries: 8, retryDelay: 125 })
   }
 

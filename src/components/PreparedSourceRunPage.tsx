@@ -33,6 +33,7 @@ import type {
   ProjectModelVariantSet,
 } from '@/lib/project-model-variants'
 import { getProjectModelVariantSet } from '@/lib/project-model-variants'
+import { getPublicModelIdentityLabel } from '@/lib/public-model-labels'
 import type { SourceRunPackage, SourceRunPackageStep } from '@/lib/source-run-package'
 import { loadSourceRunPackage } from '@/lib/source-run-package'
 
@@ -70,6 +71,17 @@ function getProviderName(sourceRun: SourceRunPackage, project: PreparedShowcaseP
   if (project.modelUsed.toLowerCase().includes('gemini')) return 'Gemini'
   if (project.modelUsed.toLowerCase().includes('claude')) return 'Claude'
   return 'AI'
+}
+
+function sourceRunModelIdentity(
+  sourceRun: SourceRunPackage,
+  project: PreparedShowcaseProject,
+) {
+  return getPublicModelIdentityLabel({
+    provider: sourceRun.provider,
+    model: sourceRun.model ?? project.modelUsed,
+    modelSettings: sourceRun.model_settings,
+  })
 }
 
 function defaultStepNumber(sourceRun: SourceRunPackage) {
@@ -301,7 +313,7 @@ function buildPreparedForkContext({
       id: sourceProject.id,
       title: sourceProject.title,
       href: withModelRun(sourceRoute, childForkSource.sourceRunId),
-      modelLabel: sourcePackage.model,
+      modelLabel: sourceRunModelIdentity(sourcePackage, sourceProject),
     })
   }
 
@@ -309,7 +321,7 @@ function buildPreparedForkContext({
     id: project.id,
     title: project.title,
     href: route,
-    modelLabel: sourceRun.model ?? project.modelUsed,
+    modelLabel: sourceRunModelIdentity(sourceRun, project),
     isCurrent: true,
   })
 
@@ -359,7 +371,7 @@ function buildPreparedForkContext({
     description: project.description,
     authorUsername: project.authorUsername,
     authorDisplayName: project.authorDisplayName,
-    modelUsed: sourceRun.model ?? project.modelUsed,
+    modelUsed: sourceRunModelIdentity(sourceRun, project),
     createdAt: project.createdAt,
     forkSource,
     continuationSteps,
@@ -388,13 +400,17 @@ function RunSummary({
   project: PreparedShowcaseProject
   capturedAt: string
 }) {
+  const modelIdentity = sourceRunModelIdentity(sourceRun, project)
+
   return (
     <div className="grid gap-3 text-sm sm:grid-cols-2">
       <div className="border border-surface-200 bg-white px-4 py-3">
         <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
           Model
         </div>
-        <div className="mt-1 font-semibold text-surface-900">{sourceRun.model ?? project.modelUsed}</div>
+        <div className="mt-1 font-semibold text-surface-900" data-public-model-identity>
+          {modelIdentity}
+        </div>
       </div>
       <div className="border border-surface-200 bg-white px-4 py-3">
         <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">

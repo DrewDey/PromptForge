@@ -333,6 +333,7 @@ if (approvedForkReader) {
 
 const rendererPath = 'src/components/ProjectForkBuildPath.tsx'
 const renderer = parse(rendererPath)
+const rendererSource = read(rendererPath)
 assertExport(renderer, rendererPath, 'ProjectForkBuildPath')
 assertExport(renderer, rendererPath, 'ProjectForkBuildPathProps')
 assertExport(renderer, rendererPath, 'ProjectForkBuildPathMode')
@@ -360,7 +361,32 @@ for (const hook of [
   'data-project-fork-build-path',
   'data-fork-inherited-path',
   'data-fork-source-response',
+  'data-fork-source-response-id',
+  'data-fork-source-response-node',
+  'data-fork-source-prompt',
+  'data-fork-source-pipeline',
+  'data-fork-source-prompt-node',
+  'data-fork-desktop-layout',
+  'data-fork-source-lane',
+  'data-fork-connector-lane',
+  'data-fork-response-connector',
+  'data-fork-response-socket',
+  'data-fork-response-elbow',
+  'data-fork-continuation-elbow',
+  'data-fork-response-connector-vertical',
+  'data-fork-source-connector-endpoint',
+  'data-fork-continuation-connector-endpoint',
+  'data-fork-continuation-lane',
+  'data-fork-continuation-workspace',
   'data-fork-continuation',
+  'data-fork-continuation-prompt',
+  'data-fork-continuation-response',
+  'data-fork-continuation-pipeline',
+  'data-fork-continuation-prompt-node',
+  'data-fork-continuation-response-node',
+  'data-fork-continuation-incoming-arm',
+  'data-fork-continuation-prompt-card-arm',
+  'data-fork-continuation-response-card-arm',
   'data-fork-continuation-fork',
   'data-fork-display-artifact',
 ]) {
@@ -368,6 +394,24 @@ for (const hook of [
 }
 const rendererHasMobileDisclosure = jsxOpenings(renderer, 'details').length > 0 || hasJsxAttribute(renderer, 'aria-expanded')
 assert(rendererHasMobileDisclosure, `${rendererPath}: inherited history needs an accessible compact/mobile disclosure`)
+assert(
+  rendererSource.includes('lg:grid-cols-[minmax(250px,320px)_72px_minmax(0,1fr)]'),
+  `${rendererPath}: desktop lineage must retain explicit source, connector, and primary continuation columns`,
+)
+assert(
+  rendererSource.includes('data-fork-desktop-layout="branch"'),
+  `${rendererPath}: desktop lineage must identify the spatial branch layout for browser regression checks`,
+)
+assert(
+  rendererSource.includes('className="relative hidden min-h-[220px] lg:block"'),
+  `${rendererPath}: connector lane must remain desktop-only so mobile can stack without an empty branch column`,
+)
+assert(
+  rendererSource.includes('group/inherited mb-4') && rendererSource.includes('lg:hidden'),
+  `${rendererPath}: inherited history must retain its compact mobile disclosure`,
+)
+assert(!hasJsxAttribute(renderer, 'data-fork-prompt-connector'), `${rendererPath}: visual branch geometry must not regress to prompt-centered connector identity`)
+assert(rendererSource.includes("bg-[#2bd15f]") && rendererSource.includes('bg-brand-orange'), `${rendererPath}: selected fork paths must visibly transition from green source piping to orange continuation piping`)
 
 const showcasePath = 'src/components/SourceRunShowcase.tsx'
 const showcase = parse(showcasePath)
@@ -396,6 +440,19 @@ if (showcaseRenderers.length > 0) {
   }
 }
 assert(namedDeclarations(showcase, 'ResponseForkFocusStage').length === 0, `${showcasePath}: remove the divergent legacy fork focus renderer`)
+for (const hook of [
+  'data-fork-existing-branch-origin',
+  'data-fork-existing-branch-step',
+  'data-fork-existing-branch-pipe',
+  'data-fork-existing-branch-node',
+  'data-source-run-pipeline',
+  'data-source-run-pipe-node',
+  'data-source-run-card',
+  'data-source-run-prompt-row',
+  'data-source-run-response-row',
+]) {
+  assert(hasJsxAttribute(showcase, hook), `${showcasePath}: source-run fork geometry must expose ${hook}`)
+}
 
 const preparedPath = 'src/components/PreparedSourceRunPage.tsx'
 const prepared = parse(preparedPath)
@@ -447,6 +504,33 @@ assert(forkBrowserGuard.includes('grandchildSnapshot.trail.length !== 3'), 'fork
 assert(forkBrowserGuard.includes('/airlock-zero-swarm-shift-fork-demo'), 'fork browser guard must exercise nested-fork creation from a verified prepared child')
 assert(forkBrowserGuard.includes('data-fork-continuation-fork'), 'fork browser guard must inspect the continuation-level nested-fork action')
 assert(forkBrowserGuard.includes("nested.depth !== '1'"), 'fork browser guard must verify nested depth increments from the immediate parent')
+assert(forkBrowserGuard.includes('geometry.gridColumns?.length !== 3'), 'fork browser guard must fail when desktop branch geometry collapses below three columns')
+assert(forkBrowserGuard.includes('connector.width < 64'), 'fork browser guard must reject a decorative connector sliver')
+assert(forkBrowserGuard.includes('Math.abs(socket.width - 48) > 1'), 'fork browser guard must require an exact 48px response-edge socket')
+assert(forkBrowserGuard.includes('connectorHidden'), 'fork browser guard must verify the desktop connector collapses at 390px')
+assert(forkBrowserGuard.includes('/airlock-zero-blackout-shift-fork-demo'), 'fork browser guard must exercise the four-prompt Blackout continuation')
+assert(forkBrowserGuard.includes('/airlock-zero-hull-breach-fork-demo'), 'fork browser guard must exercise the seven-prompt Hull Breach continuation')
+assert(forkBrowserGuard.includes('/airlock-zero-reactor-run-demo'), 'fork browser guard must exercise the parent source-page existing-fork rail')
+assert(forkBrowserGuard.includes('2e526efa-191c-48ea-9ba0-5ff073403770') && forkBrowserGuard.includes('248f4672-d557-4b01-8756-c1cec7290925'), 'fork browser guard must exercise exact GPT and Gemini Reactor parent source runs')
+assert(forkBrowserGuard.includes('Reactor GPT selected Swarm Shift') && forkBrowserGuard.includes('Reactor Gemini selected Hull Breach'), 'fork browser guard must inspect hosted parent-selected Swarm and Hull states')
+assert(forkBrowserGuard.includes("assertResponseToPromptPipeline(blackoutSnapshot, 'Blackout child page', 10, [11, 12, 13, 14])"), 'fork browser guard must require response 10 to feed the complete 11-14 continuation')
+assert(forkBrowserGuard.includes("assertResponseToPromptPipeline(swarmSnapshot, 'Swarm Shift child page', 2, [3])"), 'fork browser guard must sample another exact one-prompt response-to-prompt child')
+assert(forkBrowserGuard.includes("assertResponseToPromptPipeline(hullSnapshot, 'Hull Breach child page', 2, [3, 4, 5, 6, 7, 8, 9])"), 'fork browser guard must sample another exact multi-prompt response-to-prompt child')
+assert(forkBrowserGuard.includes('sourceResponseDelta > 2'), 'fork browser guard must reject a connector that misses the exact inherited response center')
+assert(forkBrowserGuard.includes('continuationPromptDelta > 2'), 'fork browser guard must reject a connector that misses the first continuation prompt center')
+assert(forkBrowserGuard.includes('sourcePromptDelta < 24'), 'fork browser guard must fail if the connector remains prompt-centered')
+assert(forkBrowserGuard.includes('one continuous orange spine exactly from the first prompt center to the last response center'), 'fork browser guard must require prompt-response continuation-spine consistency')
+assert(forkBrowserGuard.includes('exactly one orange incoming arm at the first continuation prompt'), 'fork browser guard must reject orphan left-facing continuation stubs')
+assert(forkBrowserGuard.includes('full response-card center'), 'fork browser guard must center parent fork rails on the complete response card')
+assert(forkBrowserGuard.includes('promptOriginCount !== 0'), 'fork browser guard must reject a parent existing-fork rail mounted in any prompt row')
+assert(forkBrowserGuard.includes("segment?.color !== 'rgb(232, 122, 44)'"), 'fork browser guard must require a full orange continuation spine')
+assert(forkBrowserGuard.includes('sourceArmRect?.width < 40'), 'fork browser guard must reject an invisible or collapsed response-to-elbow arm')
+assert(forkBrowserGuard.includes("segment.color !== 'rgb(43, 209, 95)'"), 'fork browser guard must preserve both inherited green source-spine segments')
+assert(forkBrowserGuard.includes('green source spine continuity/termination deltas'), 'fork browser guard must prove green terminates at the exact response node')
+assert(forkBrowserGuard.includes('pipelineHidden') && forkBrowserGuard.includes('promptNodeHidden'), 'fork browser guard must ensure desktop pipe geometry stays hidden at 390px')
+assert(forkBrowserGuard.includes('rootScrollWidth > mobile.rootClientWidth + 1') && forkBrowserGuard.includes('continuation article escapes its grid track'), 'fork browser guard must reject masked internal overflow and oversized continuation articles at 390px')
+assert(forkBrowserGuard.includes('visualOffsetLeft') && forkBrowserGuard.includes('viewport screenshot clip'), 'fork browser guard must reject horizontally panned 390px capture surfaces')
+assert(forkBrowserGuard.includes('verifyMobileParentRail') && forkBrowserGuard.includes("'HP selected School Desk'"), 'fork browser guard must inspect response-row and selected-parent mobile states')
 
 const communityPath = 'src/components/ProjectCommunityPanel.tsx'
 const community = parse(communityPath)

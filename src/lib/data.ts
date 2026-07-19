@@ -80,6 +80,7 @@ import {
 import { getPreparedShowcaseProjectById } from './prepared-showcase-projects'
 import type { PreparedShowcaseProject, PreparedShowcaseStep } from './prepared-showcase-projects'
 import { getProjectRouteOverride } from './project-links'
+import { getPublicModelIdentityLabel } from './public-model-labels'
 import { loadSourceRunPackage } from './source-run-package'
 import {
   PROJECT_FORK_MAX_WIDTH,
@@ -542,10 +543,16 @@ function hydratePreparedForkItem(item: ProjectForkNetworkItem): ProjectForkNetwo
 
   let childProviderName: string | null = null
   let childSourceUrl = project.sourceUrl
+  let modelUsed = item.modelUsed
   if (project.sourceRunPackageFile) {
     const sourceRun = loadSourceRunPackage(project.sourceRunPackageFile)
     childProviderName = sourceRun.provider ?? null
     childSourceUrl = sourceRun.source_url ?? childSourceUrl
+    modelUsed = getPublicModelIdentityLabel({
+      provider: sourceRun.provider,
+      model: sourceRun.model ?? item.modelUsed,
+      modelSettings: sourceRun.model_settings,
+    }) || item.modelUsed
   }
 
   return {
@@ -553,6 +560,7 @@ function hydratePreparedForkItem(item: ProjectForkNetworkItem): ProjectForkNetwo
     childRoute: getProjectRouteOverride(project.id) ?? project.href,
     childSourceUrl,
     childProviderName,
+    modelUsed,
     continuationSteps: preparedForkContinuationSteps(project, item.forkSource),
   }
 }

@@ -9,6 +9,7 @@ import {
   getPrompts,
 } from '@/lib/data'
 import { getModelName } from '@/lib/models'
+import { getPublicModelIdentityLabel } from '@/lib/public-model-labels'
 import VoteBookmarkButtons from '@/components/VoteBookmarkButtons'
 import PromptCard from '@/components/PromptCard'
 import CodeBlock from '@/components/CodeBlock'
@@ -172,7 +173,10 @@ export default async function PromptDetailPage({
   }
 
   const hasSteps = prompt.steps && prompt.steps.length > 0
-  const modelDisplay = prompt.model_used ? getModelName(prompt.model_used) : prompt.model_recommendation
+  const rawModel = prompt.model_used ? getModelName(prompt.model_used) : prompt.model_recommendation
+  const modelDisplay = rawModel
+    ? getPublicModelIdentityLabel({ model: rawModel })
+    : ''
   const difficulty = difficultyConfig[prompt.difficulty] || difficultyConfig.beginner
   const existingForkSource = projectForkSourceFromSubmissionFields(prompt)
   const forkSourceSteps = toProjectForkSourceSteps(prompt)
@@ -357,7 +361,7 @@ export default async function PromptDetailPage({
             <span className="capitalize">{prompt.difficulty}</span>
           </span>
           {modelDisplay && (
-            <span className="inline-flex items-center gap-1.5 font-medium bg-surface-50 text-surface-700 px-2.5 py-1.5 border border-surface-200">
+            <span className="inline-flex items-center gap-1.5 font-medium bg-surface-50 text-surface-700 px-2.5 py-1.5 border border-surface-200" data-public-model-identity>
               <Cpu className="w-3 h-3 text-surface-400" aria-hidden="true" />
               {modelDisplay}
             </span>
@@ -789,7 +793,7 @@ export default async function PromptDetailPage({
                 {modelDisplay && (
                   <li className="flex items-center justify-between gap-3">
                     <span className="font-mono uppercase tracking-[0.14em] text-surface-400">Model</span>
-                    <span className="font-medium text-surface-700 truncate max-w-[11rem]" title={modelDisplay}>
+                    <span className="font-medium text-surface-700 truncate max-w-[11rem]" title={modelDisplay} data-public-model-identity>
                       {modelDisplay}
                     </span>
                   </li>

@@ -15,6 +15,7 @@ import Link from 'next/link'
 import { Cpu } from 'lucide-react'
 import { PromptWithRelations } from '@/lib/types'
 import { getPromptModelLabel } from '@/lib/prompt-comparisons'
+import { getPreparedProjectModelIdentity } from '@/lib/prepared-project-model-identities'
 import { getProjectHref } from '@/lib/project-links'
 
 const difficultyConfig = {
@@ -38,8 +39,13 @@ function resolveOutcome(prompt: PromptWithRelations): { text: string; source: 't
   return null
 }
 
+function promptModelIdentity(prompt: PromptWithRelations) {
+  return getPreparedProjectModelIdentity(prompt.id)?.publicLabel
+    ?? getPromptModelLabel(prompt)
+}
+
 export default function PromptCard({ prompt, featured = false }: { prompt: PromptWithRelations; featured?: boolean }) {
-  const modelDisplay = getPromptModelLabel(prompt)
+  const modelDisplay = promptModelIdentity(prompt)
   const difficulty = difficultyConfig[prompt.difficulty]
   const outcome = resolveOutcome(prompt)
 
@@ -167,7 +173,7 @@ export default function PromptCard({ prompt, featured = false }: { prompt: Promp
             {modelDisplay && modelDisplay !== 'Unknown model' && (
               <span className="text-[11px] text-surface-400 flex items-center gap-1 min-w-0">
                 <Cpu className="w-3 h-3 shrink-0" aria-hidden="true" />
-                <span className="truncate">{modelDisplay}</span>
+                <span className="truncate" data-public-model-identity>{modelDisplay}</span>
               </span>
             )}
           </div>

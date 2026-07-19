@@ -5,6 +5,7 @@ import type {
   ProjectModelVariantSet,
 } from '@/lib/project-model-variants'
 import { compareModelVariantRecords } from '@/lib/model-variant-ui.mjs'
+import { getPublicModelIdentityLabel } from '@/lib/public-model-labels'
 
 const RUN_TIMESTAMP_FORMATTER = new Intl.DateTimeFormat('en', {
   year: 'numeric',
@@ -49,8 +50,16 @@ function runTimestamp(variant: ProjectModelVariant) {
   return RUN_TIMESTAMP_FORMATTER.format(new Date(variant.capturedAt))
 }
 
+function modelIdentityLabel(variant: ProjectModelVariant) {
+  return getPublicModelIdentityLabel({
+    provider: variant.serviceLabel,
+    model: variant.modelLabel,
+    modelSettings: variant.modelSettings,
+  })
+}
+
 function accessibleRunLabel(variant: ProjectModelVariant) {
-  return `${variant.modelLabel} on ${variant.serviceLabel}, captured ${runTimestamp(variant)}; source run ${variant.sourceRunId}`
+  return `${modelIdentityLabel(variant)}, captured ${runTimestamp(variant)}; source run ${variant.sourceRunId}`
 }
 
 function StatusBadge({ variant }: { variant: ProjectModelVariant }) {
@@ -97,11 +106,14 @@ export default function PathForgeLabsModelRuns({
               Model result
             </div>
             <div className="mt-1 flex min-w-0 flex-wrap items-baseline gap-x-2">
-              <span className="truncate text-sm font-black text-surface-900">
-                {activeVariant.modelLabel}
+              <span
+                className="truncate text-sm font-black text-surface-900"
+                title={modelIdentityLabel(activeVariant)}
+                data-public-model-identity
+              >
+                {modelIdentityLabel(activeVariant)}
               </span>
               <span className="text-xs text-surface-500">
-                {activeVariant.serviceLabel} ·{' '}
                 <time dateTime={activeVariant.capturedAt}>{runTimestamp(activeVariant)}</time>
               </span>
             </div>
@@ -140,7 +152,9 @@ export default function PathForgeLabsModelRuns({
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-black text-surface-900">{variant.modelLabel}</span>
+                        <span className="text-sm font-black text-surface-900" data-public-model-identity>
+                          {modelIdentityLabel(variant)}
+                        </span>
                         {releaseLabel && (
                           <span className="font-mono text-[8px] font-bold uppercase tracking-[0.12em] text-brand-orange-dark">
                             {releaseLabel}
@@ -148,8 +162,6 @@ export default function PathForgeLabsModelRuns({
                         )}
                       </div>
                       <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-surface-500">
-                        <span>{variant.serviceLabel}</span>
-                        <span aria-hidden="true">·</span>
                         <time dateTime={variant.capturedAt}>{runTimestamp(variant)}</time>
                         <StatusBadge variant={variant} />
                       </div>
@@ -228,12 +240,14 @@ function ComparisonCard({
           <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-brand-blue">
             Run {label}
           </div>
-          <h3 className="mt-2 text-lg font-black text-surface-900">{variant.modelLabel}</h3>
+          <h3 className="mt-2 text-lg font-black text-surface-900" data-public-model-identity>
+            {modelIdentityLabel(variant)}
+          </h3>
           <p
             className="mt-1 max-w-xl text-xs leading-5 text-surface-500"
             title={variant.modelSettings}
           >
-            {variant.serviceLabel} · <time dateTime={variant.capturedAt}>{runTimestamp(variant)}</time>
+            Captured <time dateTime={variant.capturedAt}>{runTimestamp(variant)}</time>
             <br />
             {conciseModelSettings(variant)}
           </p>

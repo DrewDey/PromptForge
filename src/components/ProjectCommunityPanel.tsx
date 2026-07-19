@@ -2,7 +2,9 @@ import { MessageSquare } from 'lucide-react'
 import ProjectForkBuildPath from '@/components/ProjectForkBuildPath'
 import ProjectForkNetworkExplorer from '@/components/ProjectForkNetworkExplorer'
 import { getApprovedProjectForks, getPromptById } from '@/lib/data'
+import { getPreparedProjectModelIdentity } from '@/lib/prepared-project-model-identities'
 import { getProjectRouteOverride } from '@/lib/project-links'
+import { getPublicModelIdentityLabel } from '@/lib/public-model-labels'
 import {
   projectForkSourceFromSubmissionFields,
   resolveProjectForkTrail,
@@ -18,6 +20,20 @@ function sourceProjectHref(projectId: string, sourceRunId?: string) {
   const href = projectHref(projectId)
   if (!sourceRunId) return href
   return `${href}?${new URLSearchParams({ run: sourceRunId }).toString()}`
+}
+
+function projectModelIdentity(
+  projectId: string,
+  fallbackModel?: string | null,
+  fallbackProvider?: string | null,
+) {
+  const preparedIdentity = getPreparedProjectModelIdentity(projectId)
+  if (preparedIdentity) return preparedIdentity.publicLabel
+
+  return getPublicModelIdentityLabel({
+    provider: fallbackProvider,
+    model: fallbackModel,
+  })
 }
 
 export default async function ProjectCommunityPanel({
@@ -49,7 +65,7 @@ export default async function ProjectCommunityPanel({
       description: project.description,
       authorUsername: project.author?.username ?? null,
       authorDisplayName: project.author?.display_name ?? null,
-      modelUsed: project.model_used,
+      modelUsed: projectModelIdentity(project.id, project.model_used),
       createdAt: project.created_at,
       forkSource,
       continuationSteps,
@@ -57,7 +73,12 @@ export default async function ProjectCommunityPanel({
     }
     : null
   const approvedForks = showForkLineage && project && !forkSource
-    ? await getApprovedProjectForks(project.id)
+    ? (await getApprovedProjectForks(project.id)).map((fork) => ({
+        ...fork,
+        modelUsed: fork.modelUsed
+          ? projectModelIdentity(fork.id, fork.modelUsed, fork.childProviderName)
+          : fork.modelUsed,
+      }))
     : []
 
   return (

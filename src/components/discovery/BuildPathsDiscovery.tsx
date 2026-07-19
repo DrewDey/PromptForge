@@ -2,7 +2,6 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import {
   ArrowRight,
-  ArrowDownWideNarrow,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -24,9 +23,14 @@ import {
   type DiscoveryIntent,
 } from '@/lib/path-discovery'
 import { ACTIVE_PROJECT_EXPLANATION } from '@/lib/discovery-activity.mjs'
-import { getPublicModelFacetValue, getPublicModelLabel, publicModelFilterMatchesLabel } from '@/lib/public-model-labels'
+import { getPublicModelFacetValue, publicModelFilterMatchesLabel } from '@/lib/public-model-labels'
 import { isPersistableProjectId } from '@/lib/project-engagement'
 import { BuildPathCard } from './BuildPathCard'
+import {
+  DiscoveryNavigationFeedbackProvider,
+  DiscoveryNavigationLink,
+  DiscoverySortMenu,
+} from './DiscoveryNavigationFeedback'
 
 type SearchParamValue = string | string[] | undefined
 
@@ -218,7 +222,7 @@ export async function BuildPathsDiscovery({
       if (!value || modelLabel === 'Unknown model') continue
       const current = modelCounts.get(value)
       modelCounts.set(value, {
-        label: current?.label ?? (getPublicModelLabel(modelLabel) || modelLabel),
+        label: current?.label ?? modelLabel,
         count: (current?.count ?? 0) + 1,
       })
     }
@@ -226,6 +230,13 @@ export async function BuildPathsDiscovery({
   const modelFacets = [...modelCounts.entries()]
     .map(([value, entry]) => ({ value, ...entry }))
     .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label))
+  const normalizedActiveModel = activeModel
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+  const activeModelFacet = modelFacets.find((model) => (
+    model.value === activeModel || model.value === normalizedActiveModel
+  ))
 
   function buildUrl(overrides: Partial<BuildPathsUrlParams>) {
     const next: Record<string, string | undefined> = {
@@ -261,7 +272,8 @@ export async function BuildPathsDiscovery({
   ].filter(Boolean).length
 
   return (
-    <div className="pf-paths">
+    <DiscoveryNavigationFeedbackProvider>
+      <div className="pf-paths">
       <section className="path-hero">
         <div className="path-hero-inner">
           <div className="path-hero-copy">
@@ -299,20 +311,22 @@ export async function BuildPathsDiscovery({
 
           <nav className="path-intent-nav" aria-label="Browse by goal">
             {DISCOVERY_INTENTS.map((intent) => (
-              <Link
+              <DiscoveryNavigationLink
                 key={intent.value}
                 href={buildUrl({ intent: activeIntent === intent.value ? undefined : intent.value, page: undefined })}
+                navigationLabel={intent.label}
                 className={activeIntent === intent.value ? 'is-active' : ''}
               >
                 {intent.shortLabel}
-              </Link>
+              </DiscoveryNavigationLink>
             ))}
-            <Link
+            <DiscoveryNavigationLink
               href={buildUrl({ artifact: activeArtifact ? undefined : 'working', page: undefined })}
+              navigationLabel="Working artifacts"
               className={activeArtifact ? 'is-active' : ''}
             >
               <CheckCircle2 aria-hidden="true" /> Working artifacts
-            </Link>
+            </DiscoveryNavigationLink>
           </nav>
         </div>
       </section>
@@ -329,22 +343,30 @@ export async function BuildPathsDiscovery({
 
           <div className="path-catalog-toolbar">
             <div className="path-filter-row" aria-label="Filter by type">
-              <Link href={buildUrl({ domain: undefined, page: undefined })} className={!activeDomain ? 'is-active' : ''}>All</Link>
+              <DiscoveryNavigationLink
+                href={buildUrl({ domain: undefined, page: undefined })}
+                navigationLabel="All domains"
+                className={!activeDomain ? 'is-active' : ''}
+              >
+                All
+              </DiscoveryNavigationLink>
               {BROAD_DOMAINS.map((domain) => (
-                <Link
+                <DiscoveryNavigationLink
                   key={domain.slug}
                   href={buildUrl({ domain: activeDomain === domain.slug ? undefined : domain.slug, page: undefined })}
+                  navigationLabel={domain.label}
                   className={activeDomain === domain.slug ? 'is-active' : ''}
                 >
                   {domain.label}
-                </Link>
+                </DiscoveryNavigationLink>
               ))}
-              <Link
+              <DiscoveryNavigationLink
                 href={buildUrl({ compare: activeCompare ? undefined : 'models', page: undefined })}
+                navigationLabel="Compare models"
                 className={activeCompare ? 'is-active' : ''}
               >
                 Compare models
-              </Link>
+              </DiscoveryNavigationLink>
             </div>
 
             <div className="path-toolbar-actions">
@@ -354,68 +376,69 @@ export async function BuildPathsDiscovery({
                   <div>
                     <strong>Difficulty</strong>
                     {['beginner', 'intermediate', 'advanced'].map((difficulty) => (
-                      <Link
+                      <DiscoveryNavigationLink
                         key={difficulty}
                         href={buildUrl({ difficulty: activeDifficulty === difficulty ? undefined : difficulty, page: undefined })}
+                        navigationLabel={`${difficulty} difficulty`}
                         className={activeDifficulty === difficulty ? 'is-active' : ''}
                       >
                         {difficulty}
-                      </Link>
+                      </DiscoveryNavigationLink>
                     ))}
                   </div>
                   <div>
                     <strong>Model</strong>
                     {modelFacets.map((model) => (
-                      <Link
+                      <DiscoveryNavigationLink
                         key={model.value}
-                        href={buildUrl({ model: activeModel === model.value ? undefined : model.value, page: undefined })}
-                        className={getPublicModelFacetValue(activeModel) === model.value ? 'is-active' : ''}
+                        href={buildUrl({ model: activeModelFacet?.value === model.value ? undefined : model.value, page: undefined })}
+                        navigationLabel={`${model.label} model`}
+                        className={activeModelFacet?.value === model.value ? 'is-active' : ''}
                       >
                         <span>{model.label}</span><small>{model.count}</small>
-                      </Link>
+                      </DiscoveryNavigationLink>
                     ))}
                   </div>
                   <div>
                     <strong>Path features</strong>
-                    <Link
+                    <DiscoveryNavigationLink
                       href={buildUrl({ artifact: activeArtifact ? undefined : 'working', page: undefined })}
+                      navigationLabel="Working artifact"
                       className={activeArtifact ? 'is-active' : ''}
                     >
                       Working artifact
-                    </Link>
-                    <Link
+                    </DiscoveryNavigationLink>
+                    <DiscoveryNavigationLink
                       href={buildUrl({ fork: activeFork ? undefined : 'available', page: undefined })}
+                      navigationLabel="Fork available"
                       className={activeFork ? 'is-active' : ''}
                     >
                       Fork available
-                    </Link>
+                    </DiscoveryNavigationLink>
                   </div>
-                  {activeFilterCount > 0 && <Link href="/paths#all-paths" className="path-clear-filters">Clear all filters</Link>}
+                  {activeFilterCount > 0 && (
+                    <DiscoveryNavigationLink
+                      href="/paths#all-paths"
+                      navigationLabel="Clear all filters"
+                      className="path-clear-filters"
+                    >
+                      Clear all filters
+                    </DiscoveryNavigationLink>
+                  )}
                 </div>
               </details>
 
-              <details className="path-sort-menu">
-                <summary aria-label="Sort build paths">
-                  <ArrowDownWideNarrow aria-hidden="true" />
-                  <span>Sort</span>
-                  <strong>{DISCOVERY_SORT_OPTIONS.find((option) => option.value === activeSort)?.label}</strong>
-                </summary>
-                <div className="path-sort-popover">
-                  {DISCOVERY_SORT_OPTIONS.map((option) => (
-                    <Link
-                      key={option.value}
-                      href={buildUrl({
-                        sort: option.value === 'recommended' ? undefined : option.value,
-                        page: undefined,
-                      })}
-                      className={activeSort === option.value ? 'is-active' : ''}
-                      aria-current={activeSort === option.value ? 'true' : undefined}
-                    >
-                      {option.label}
-                    </Link>
-                  ))}
-                </div>
-              </details>
+              <DiscoverySortMenu
+                activeLabel={DISCOVERY_SORT_OPTIONS.find((option) => option.value === activeSort)?.label ?? 'Recommended'}
+                options={DISCOVERY_SORT_OPTIONS.map((option) => ({
+                  ...option,
+                  href: buildUrl({
+                    sort: option.value === 'recommended' ? undefined : option.value,
+                    page: undefined,
+                  }),
+                  isActive: activeSort === option.value,
+                }))}
+              />
             </div>
           </div>
 
@@ -432,12 +455,14 @@ export async function BuildPathsDiscovery({
                 {activeIntent && <b>{DISCOVERY_INTENTS.find((intent) => intent.value === activeIntent)?.label}</b>}
                 {activeDomain && <b>{BROAD_DOMAINS.find((domain) => domain.slug === activeDomain)?.label}</b>}
                 {activeDifficulty && <b>{activeDifficulty}</b>}
-                {activeModel && <b>{getPublicModelLabel(activeModel)}</b>}
+                {activeModel && <b>{activeModelFacet?.label ?? activeModel}</b>}
                 {activeCompare && <b>Model comparisons</b>}
                 {activeArtifact && <b>Working artifacts</b>}
                 {activeFork && <b>Fork available</b>}
               </div>
-              <Link href="/paths#all-paths">Reset</Link>
+              <DiscoveryNavigationLink href="/paths#all-paths" navigationLabel="Reset filters">
+                Reset
+              </DiscoveryNavigationLink>
             </div>
           )}
 
@@ -471,17 +496,18 @@ export async function BuildPathsDiscovery({
           {totalPages > 1 && (
             <nav className="path-pagination" aria-label="Build path pages">
               {activePage > 1 ? (
-                <Link href={buildUrl({ page: String(activePage - 1) })}><ChevronLeft aria-hidden="true" /> Previous</Link>
+                <Link href={buildUrl({ page: String(activePage - 1) })} prefetch={false}><ChevronLeft aria-hidden="true" /> Previous</Link>
               ) : <span><ChevronLeft aria-hidden="true" /> Previous</span>}
               <strong>Page {activePage} of {totalPages}</strong>
               {activePage < totalPages ? (
-                <Link href={buildUrl({ page: String(activePage + 1) })}>Next <ChevronRight aria-hidden="true" /></Link>
+                <Link href={buildUrl({ page: String(activePage + 1) })} prefetch={false}>Next <ChevronRight aria-hidden="true" /></Link>
               ) : <span>Next <ChevronRight aria-hidden="true" /></span>}
             </nav>
           )}
         </div>
       </section>
 
-    </div>
+      </div>
+    </DiscoveryNavigationFeedbackProvider>
   )
 }

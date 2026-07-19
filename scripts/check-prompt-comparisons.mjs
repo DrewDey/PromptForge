@@ -162,27 +162,27 @@ assert(!heuristicGroup?.promptFamilyId, 'heuristic comparison group should not i
 const publicLabelCases = [
   [
     'ChatGPT Instant visible composer setting (exact model not exposed)',
-    'ChatGPT Instant',
+    'ChatGPT · Instant · exact model not exposed',
   ],
   [
     'gpt-5-5-instant',
-    'ChatGPT 5.5 Instant',
+    'ChatGPT 5.5 · Instant',
   ],
   [
     'Latest 5.5 / gpt-5-5-thinking as exposed by ChatGPT message nodes',
-    'ChatGPT 5.5 Thinking',
+    'ChatGPT 5.5 · Thinking',
   ],
   [
     'GPT-5.5 Medium',
-    'ChatGPT 5.5 Medium',
+    'ChatGPT 5.5 · Medium',
   ],
   [
     '5.4 Instant',
-    'ChatGPT 5.4 Instant',
+    'ChatGPT 5.4 · Instant',
   ],
   [
     'Flash (visible Gemini mode picker; exact backend version not exposed)',
-    'Gemini Flash',
+    'Gemini Flash · exact version not exposed',
   ],
   [
     '3.5 Flash',
@@ -194,7 +194,7 @@ const publicLabelCases = [
   ],
   [
     'Sonnet 4.6 Max (visible Claude composer model label)',
-    'Claude Sonnet 4.6 Max',
+    'Claude Sonnet 4.6 · Max',
   ],
   [
     'gemini-2-5-pro',

@@ -18,7 +18,9 @@ for (const fileName of manifestFiles) {
   expected[candidate.canonicalProjectId] = candidate.variants
     .filter((variant) => variant.qualityStatus === 'verified')
     .map((variant) => ({
+      serviceLabel: variant.serviceLabel,
       modelLabel: variant.modelLabel,
+      modelSettings: variant.modelSettings,
       isCurrent: variant.isCurrent,
       runRole: variant.runRole,
       capturedAt: variant.capturedAt,

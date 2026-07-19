@@ -1,8 +1,9 @@
 import { getPromptModelLabel } from './prompt-comparisons'
 import { projectForkSourceFromSubmissionFields } from './project-forks'
 import { getProjectModelProfileSummary } from './project-model-profile-summaries'
+import { getPreparedProjectModelIdentity } from './prepared-project-model-identities'
 import { getPreparedShowcaseProjectById } from './prepared-showcase-projects'
-import { getPublicModelLabel } from './public-model-labels'
+import { getPublicModelIdentityLabel } from './public-model-labels'
 import type { Profile, PromptWithRelations } from './types'
 
 export { profileAvatarClasses, profileMonogram } from './profile-visuals'
@@ -75,7 +76,7 @@ function distinctModelLabels(labels: string[]) {
 
 function profileModelLabel(label: string) {
   const trimmed = label.trim()
-  return getPublicModelLabel(trimmed) || trimmed
+  return getPublicModelIdentityLabel({ model: trimmed }) || trimmed
 }
 
 function lastProjectOutcome(project: PromptWithRelations) {
@@ -92,13 +93,16 @@ export function getPublicProfileProjectEvidence(
   project: PromptWithRelations,
 ): PublicProfileProjectEvidence {
   const verifiedRuns = getProjectModelProfileSummary(project.id)
-  const defaultModelLabel = getPromptModelLabel(project)
+  const preparedProject = getPreparedShowcaseProjectById(project.id)
+  const projectedIdentity = getPreparedProjectModelIdentity(project.id)
+  const defaultModelLabel = projectedIdentity?.publicLabel
+    ?? profileModelLabel(getPromptModelLabel(project))
   const modelLabels = distinctModelLabels([
-    ...verifiedRuns.map((run) => run.modelLabel),
+    ...verifiedRuns.map((run) => run.publicModelLabel),
     ...(defaultModelLabel === 'Unknown model' ? [] : [defaultModelLabel]),
-  ].map(profileModelLabel))
+  ])
   const currentModelRunCount = verifiedRuns.filter((run) => run.isCurrent).length
-  const artifactPath = getPreparedShowcaseProjectById(project.id)?.artifactPath?.trim() || null
+  const artifactPath = preparedProject?.artifactPath?.trim() || null
 
   return {
     projectId: project.id,

@@ -1,0 +1,1390 @@
+{
+  "schemaVersion": 1,
+  "projectCount": 173,
+  "projects": {
+    "00a17dd4-5938-5ea9-866b-1355cc95376c": {
+      "sourceRunPackageFile": "reader-promise-evidence-ladder-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "High",
+      "setting": "High",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · High · exact model not exposed"
+    },
+    "01cc7c30-250d-5cbc-be4d-b5fa0d877ef8": {
+      "sourceRunPackageFile": "cookout-batch-card-sorter-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "3.5 Flash",
+      "setting": "Standard",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.5 Flash · Standard"
+    },
+    "04b067db-fb8c-5dc1-b818-01ff3686ce86": {
+      "sourceRunPackageFile": "draft-voice-consistency-meter-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "High",
+      "setting": "High",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · High · exact model not exposed"
+    },
+    "05960e84-6104-44ae-9168-695c32c16155": {
+      "sourceRunPackageFile": "neighborhood-snow-route-plow-puzzle-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "Not sure",
+      "setting": "Instant",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · Instant · exact model not exposed"
+    },
+    "069d354a-ec99-4ee4-aed4-aa1baaec8b29": {
+      "sourceRunPackageFile": "decision-matrix-gemini-flash-oneshot.json",
+      "provider": "Gemini",
+      "model": "Gemini Flash",
+      "setting": "",
+      "exactness": "version-unexposed",
+      "publicLabel": "Gemini Flash · exact version not exposed"
+    },
+    "0953b801-3290-5399-b93c-1e1199fe2e31": {
+      "sourceRunPackageFile": "collectible-card-shot-planner-claude-source-run.json",
+      "provider": "Claude",
+      "model": "Sonnet 4.6 Medium",
+      "setting": "Medium",
+      "exactness": "exact",
+      "publicLabel": "Claude Sonnet 4.6 · Medium"
+    },
+    "0b458697-ba46-58cb-b79e-0f021130ed9b": {
+      "sourceRunPackageFile": "phone-chat-screenshot-storyboard-studio-openrouter-kimi-source-run.json",
+      "provider": "OpenRouter",
+      "model": "Kimi K2.7 Code",
+      "setting": "",
+      "exactness": "exact",
+      "publicLabel": "Kimi K2.7 Code via OpenRouter"
+    },
+    "0d6d80be-0639-5749-ac95-d693eb3bc674": {
+      "sourceRunPackageFile": "meta-tag-ctr-card-duel-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "High",
+      "setting": "High",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · High · exact model not exposed"
+    },
+    "0d952707-ebc6-5756-9c6a-cdf7b908d29c": {
+      "sourceRunPackageFile": "prompt-pattern-swap-workshop-openrouter-claude-haiku-source-run.json",
+      "provider": "OpenRouter",
+      "model": "Claude Haiku 4.5",
+      "setting": "",
+      "exactness": "exact",
+      "publicLabel": "Claude Haiku 4.5 via OpenRouter"
+    },
+    "0ddfc7cf-37bf-47ae-8fe0-d8d445ba1bee": {
+      "sourceRunPackageFile": "booking-flow-handoff-simulator-claude-sonnet46-low-source-run.json",
+      "provider": "Claude",
+      "model": "Sonnet 4.6 Low",
+      "setting": "Medium",
+      "exactness": "exact",
+      "publicLabel": "Claude Sonnet 4.6 · Medium"
+    },
+    "103c8192-877d-5787-93bc-1bd897c751f5": {
+      "sourceRunPackageFile": "youtube-scene-budget-beat-sorter-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "3.5 Flash",
+      "setting": "Standard",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.5 Flash · Standard"
+    },
+    "10e2eb1e-2495-4bec-a633-c4b2fec1281f": {
+      "sourceRunPackageFile": "leftover-dinner-board-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "Gemini Flash (visible mode picker label: Flash; exact Gemini version not exposed in source UI)",
+      "setting": "",
+      "exactness": "version-unexposed",
+      "publicLabel": "Gemini Flash · exact version not exposed"
+    },
+    "12250a14-a7dd-5dfd-bb93-e0d2924fde20": {
+      "sourceRunPackageFile": "product-photo-prompt-card-studio-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "3.5 Flash",
+      "setting": "",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.5 Flash"
+    },
+    "14bef51f-3dad-4ad5-bbb4-4ac0bda6d249": {
+      "sourceRunPackageFile": "laundromat-sock-sorter-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "Not sure",
+      "setting": "Instant",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · Instant · exact model not exposed"
+    },
+    "1610bc23-6424-4119-9847-23c055538b75": {
+      "sourceRunPackageFile": "shared-errand-route-board-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "Gemini Flash (visible mode picker label: Flash; exact Gemini backend version not exposed in source UI)",
+      "setting": "",
+      "exactness": "version-unexposed",
+      "publicLabel": "Gemini Flash · exact version not exposed"
+    },
+    "1611a25d-432b-5535-a131-3d9f4da6251c": {
+      "sourceRunPackageFile": "headline-promise-bracket-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "High",
+      "setting": "High",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · High · exact model not exposed"
+    },
+    "1619e565-f8a4-47d7-adf0-884ca9d11d84": {
+      "sourceRunPackageFile": "reaction-trainer-gemini-pro-source-run.json",
+      "provider": "Gemini",
+      "model": "Gemini 3.1 Pro",
+      "setting": "Standard",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.1 Pro · Standard"
+    },
+    "16ad459d-00ba-524e-aa3a-e49cb4086570": {
+      "sourceRunPackageFile": "thumbnail-safe-zone-storyboard-claude-source-run.json",
+      "provider": "Claude",
+      "model": "Sonnet 4.6 Medium",
+      "setting": "Medium",
+      "exactness": "exact",
+      "publicLabel": "Claude Sonnet 4.6 · Medium"
+    },
+    "17c42c87-3709-4d5e-9ae3-d4ac4807bc4c": {
+      "sourceRunPackageFile": "t-shirt-print-alignment-press-chatgpt-medium-source-run.json",
+      "provider": "ChatGPT",
+      "model": "GPT-5.5",
+      "setting": "Medium",
+      "exactness": "exact",
+      "publicLabel": "ChatGPT 5.5 · Medium"
+    },
+    "180a37e5-392d-553f-a44e-fb01027c0185": {
+      "sourceRunPackageFile": "backwards-week-capacity-planner-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "High",
+      "setting": "High",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · High · exact model not exposed"
+    },
+    "18ba00dd-018b-481f-992e-8ab59b75a8b5": {
+      "sourceRunPackageFile": "garage-sale-tags-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "Gemini 3.5 Flash",
+      "setting": "Standard",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.5 Flash · Standard"
+    },
+    "18c8598b-f62a-4517-9b43-0d6c2bca7ab3": {
+      "sourceRunPackageFile": "tiny-parking-lot-cone-course-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "Not sure",
+      "setting": "Instant",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · Instant · exact model not exposed"
+    },
+    "1a9e656f-2fda-4df3-a319-37f72a9b5995": {
+      "sourceRunPackageFile": "tiny-farmers-market-booth-claude-source-run.json",
+      "provider": "Claude",
+      "model": "Sonnet 4.6 Max (visible Claude composer model label)",
+      "setting": "Max",
+      "exactness": "exact",
+      "publicLabel": "Claude Sonnet 4.6 · Max"
+    },
+    "1acdee0b-9c44-5488-b499-fd3f613cfc25": {
+      "sourceRunPackageFile": "competitor-content-gap-sprint-board-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "High",
+      "setting": "High",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · High · exact model not exposed"
+    },
+    "1ba1fdc3-4e8c-55b5-972e-e839d523f235": {
+      "sourceRunPackageFile": "bug-report-evidence-triage-board-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "Instant",
+      "setting": "Instant",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · Instant · exact model not exposed"
+    },
+    "1c0b20da-427e-4507-a95a-02a5332650ff": {
+      "sourceRunPackageFile": "pantry-shelf-life-rescue-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "Flash",
+      "setting": "",
+      "exactness": "version-unexposed",
+      "publicLabel": "Gemini Flash · exact version not exposed"
+    },
+    "1df01e0a-b61e-494d-be73-5b6153509810": {
+      "sourceRunPackageFile": "meeting-cost-calculator-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "ChatGPT web",
+      "setting": "",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · exact model not exposed"
+    },
+    "1e26ae19-9894-518c-bebd-f2a44b8442ad": {
+      "sourceRunPackageFile": "forum-reply-helpfulness-dial-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "High",
+      "setting": "High",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · High · exact model not exposed"
+    },
+    "1e7b4c60-b808-4b0b-93ac-a49f8c611289": {
+      "sourceRunPackageFile": "mini-metro-signal-desk-claude-source-run.json",
+      "provider": "Claude",
+      "model": "Sonnet 4.6",
+      "setting": "Low",
+      "exactness": "exact",
+      "publicLabel": "Claude Sonnet 4.6 · Low"
+    },
+    "1f9b23ea-e3bc-5b0b-950a-1487038d03e8": {
+      "sourceRunPackageFile": "recipe-yield-card-packager-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "3.5 Flash",
+      "setting": "Standard",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.5 Flash · Standard"
+    },
+    "204ab7fd-996c-5304-9fe5-918f46bf045b": {
+      "sourceRunPackageFile": "content-calendar-collision-resolver-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "3.5 Flash",
+      "setting": "",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.5 Flash"
+    },
+    "20ffe0fe-6589-5000-af34-73f4855c616e": {
+      "sourceRunPackageFile": "serp-snippet-race-board-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "High",
+      "setting": "High",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · High · exact model not exposed"
+    },
+    "228c13b6-d83e-58c6-be24-04a839133255": {
+      "sourceRunPackageFile": "portfolio-case-study-proof-cards-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "Extra High",
+      "setting": "Extra High",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · Extra High · exact model not exposed"
+    },
+    "22b50da6-baea-418b-accb-99eea5bed603": {
+      "sourceRunPackageFile": "corner-store-change-rush-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "Not sure",
+      "setting": "Instant",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · Instant · exact model not exposed"
+    },
+    "22bcc36b-497f-43f7-824f-3ccba9690da6": {
+      "sourceRunPackageFile": "rental-walkthrough-red-flag-scorecard-chatgpt-gpt55-medium-source-run.json",
+      "provider": "ChatGPT",
+      "model": "GPT-5.5",
+      "setting": "Medium",
+      "exactness": "exact",
+      "publicLabel": "ChatGPT 5.5 · Medium"
+    },
+    "231a3692-ff5b-5075-b2ef-305f5b3a98b7": {
+      "sourceRunPackageFile": "faq-answer-freshness-flashcards-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "High",
+      "setting": "High",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · High · exact model not exposed"
+    },
+    "26cfbe40-608e-4701-b27f-995f1259fe8a": {
+      "sourceRunPackageFile": "lunchbox-conveyor-sorter-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "ChatGPT Instant visible composer setting; assistant message nodes exposed gpt-5-5-thinking",
+      "setting": "Instant",
+      "exactness": "exact",
+      "publicLabel": "ChatGPT 5.5 · Instant"
+    },
+    "271a2352-bbc2-414f-8aa1-7d398bc7d6df": {
+      "sourceRunPackageFile": "tiny-window-herb-light-planner-claude-source-run.json",
+      "provider": "Claude",
+      "model": "Sonnet 4.6",
+      "setting": "Low",
+      "exactness": "exact",
+      "publicLabel": "Claude Sonnet 4.6 · Low"
+    },
+    "29d00ca2-a3e7-5606-b87b-1ab624543225": {
+      "sourceRunPackageFile": "pantry-reel-shot-list-cards-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "3.5 Flash",
+      "setting": "Standard",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.5 Flash · Standard"
+    },
+    "2a2a8461-6aea-520c-80fb-d6a1c774df10": {
+      "sourceRunPackageFile": "article-angle-triage-sprint-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "High",
+      "setting": "High",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · High · exact model not exposed"
+    },
+    "2aa02694-4f3c-5621-b831-df239d2716b0": {
+      "sourceRunPackageFile": "sticker-sheet-style-drift-mixer-claude-source-run.json",
+      "provider": "Claude",
+      "model": "Sonnet 4.6 Medium",
+      "setting": "Medium",
+      "exactness": "exact",
+      "publicLabel": "Claude Sonnet 4.6 · Medium"
+    },
+    "2b50105f-f72e-57e0-9141-fd437eb9ab38": {
+      "sourceRunPackageFile": "long-thread-tldr-fact-deck-openrouter-nex-source-run.json",
+      "provider": "OpenRouter",
+      "model": "Nex AGI: Nex-N2-Pro (free)",
+      "setting": "",
+      "exactness": "exact",
+      "publicLabel": "Nex AGI: Nex-N2-Pro (free) via OpenRouter"
+    },
+    "2b7af826-9d4f-4046-be73-0d18813b0317": {
+      "sourceRunPackageFile": "mini-harbor-tugboat-switcher-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "ChatGPT Instant visible composer setting; assistant message nodes exposed gpt-5-5-thinking",
+      "setting": "Instant",
+      "exactness": "exact",
+      "publicLabel": "ChatGPT 5.5 · Instant"
+    },
+    "31faf192-93d1-41d0-a74c-4402d4223937": {
+      "sourceRunPackageFile": "model-variants/airlock-zero-reactor-run-chatgpt-56-sol-max-source-run.json",
+      "provider": "ChatGPT",
+      "model": "5.6 Sol Max",
+      "setting": "Max",
+      "exactness": "exact",
+      "publicLabel": "ChatGPT 5.6 Sol · Max"
+    },
+    "33ba2dc8-da35-5b55-9ab1-6bde7481ab8a": {
+      "sourceRunPackageFile": "moodboard-contact-sheet-planner-claude-source-run.json",
+      "provider": "Claude",
+      "model": "Sonnet 4.6 Medium",
+      "setting": "Medium",
+      "exactness": "exact",
+      "publicLabel": "Claude Sonnet 4.6 · Medium"
+    },
+    "340c795a-5ce1-402d-a5f5-cdfd5a934aea": {
+      "sourceRunPackageFile": "small-clinic-callback-queue-board-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "Flash",
+      "setting": "",
+      "exactness": "version-unexposed",
+      "publicLabel": "Gemini Flash · exact version not exposed"
+    },
+    "37d7d169-5516-40d6-9135-64f2389b26ba": {
+      "sourceRunPackageFile": "tiny-diner-ticket-time-trial-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "Not sure",
+      "setting": "Instant",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · Instant · exact model not exposed"
+    },
+    "37eeb534-c943-55ce-9612-c453cadf4644": {
+      "sourceRunPackageFile": "article-freshness-rewrite-triage-wheel-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "High",
+      "setting": "High",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · High · exact model not exposed"
+    },
+    "384ebd4d-88af-400b-b230-4eb771bb2194": {
+      "sourceRunPackageFile": "security-cam-anomaly-timeline-chatgpt-extra-high-source-run.json",
+      "provider": "ChatGPT",
+      "model": "GPT-5.5",
+      "setting": "Extra High",
+      "exactness": "exact",
+      "publicLabel": "ChatGPT 5.5 · Extra High"
+    },
+    "38a7646e-63ce-5be8-b07e-abbfc92af790": {
+      "sourceRunPackageFile": "cookbook-promo-readiness-cards-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "3.5 Flash",
+      "setting": "",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.5 Flash"
+    },
+    "3931d0b4-5b45-4d25-8f5e-110199785dec": {
+      "sourceRunPackageFile": "porch-plant-watering-planner-claude-source-run.json",
+      "provider": "Claude",
+      "model": "Sonnet 4.6 Max (visible Claude composer model label)",
+      "setting": "Max",
+      "exactness": "exact",
+      "publicLabel": "Claude Sonnet 4.6 · Max"
+    },
+    "3afad9bf-1fa4-484d-a694-aca0d19faa3f": {
+      "sourceRunPackageFile": "word-ladder-sprint-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "Latest 5.5 / gpt-5-5-thinking as exposed by ChatGPT message nodes",
+      "setting": "Instant",
+      "exactness": "exact",
+      "publicLabel": "ChatGPT 5.5 · Instant"
+    },
+    "3d50a55d-f842-5a43-a2c3-d2d1767fbd99": {
+      "sourceRunPackageFile": "visual-prompt-ingredient-balance-studio-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "Medium",
+      "setting": "Medium",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · Medium · exact model not exposed"
+    },
+    "405252a7-ef8c-5e33-b582-eb44642eb4db": {
+      "sourceRunPackageFile": "offer-salvage-triage-desk-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "High",
+      "setting": "High",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · High · exact model not exposed"
+    },
+    "41103f11-55a7-40b5-927a-d27e5c1b5d91": {
+      "sourceRunPackageFile": "fridge-leftover-label-printer-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "Flash",
+      "setting": "",
+      "exactness": "version-unexposed",
+      "publicLabel": "Gemini Flash · exact version not exposed"
+    },
+    "44b2376b-1fa9-5c68-8eaa-09719e61e814": {
+      "sourceRunPackageFile": "carousel-hook-continuity-checker-claude-source-run.json",
+      "provider": "Claude",
+      "model": "Sonnet 4.6 Medium",
+      "setting": "Medium",
+      "exactness": "exact",
+      "publicLabel": "Claude Sonnet 4.6 · Medium"
+    },
+    "44eb1b20-3bd7-5e9b-8f90-670558a25802": {
+      "sourceRunPackageFile": "faq-gap-sprint-board-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "High",
+      "setting": "High",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · High · exact model not exposed"
+    },
+    "46761ccf-1c02-500b-afb9-84d9bb0f90cc": {
+      "sourceRunPackageFile": "product-objection-qa-shelf-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "High",
+      "setting": "High",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · High · exact model not exposed"
+    },
+    "467c3376-fdb1-5d67-a23d-339f97b5c80b": {
+      "sourceRunPackageFile": "recipe-pop-up-menu-profit-cards-gemini-a4fd2166-source-run.json",
+      "provider": "Gemini",
+      "model": "Flash",
+      "setting": "",
+      "exactness": "version-unexposed",
+      "publicLabel": "Gemini Flash · exact version not exposed"
+    },
+    "4897777e-9a29-5b1a-8f49-c6a103c48591": {
+      "sourceRunPackageFile": "thumbnail-crop-proof-studio-claude-source-run.json",
+      "provider": "Claude",
+      "model": "Sonnet 4.6 Medium",
+      "setting": "Medium",
+      "exactness": "exact",
+      "publicLabel": "Claude Sonnet 4.6 · Medium"
+    },
+    "4a4836b3-e249-5e50-ad41-1bdc5745395b": {
+      "sourceRunPackageFile": "character-scene-beat-continuity-board-claude-source-run.json",
+      "provider": "Claude",
+      "model": "Opus 4.8 High",
+      "setting": "High",
+      "exactness": "exact",
+      "publicLabel": "Claude Opus 4.8 · High"
+    },
+    "4ab1f7a7-2ea7-5232-b7e6-ab0e289a08ed": {
+      "sourceRunPackageFile": "landing-page-proof-receipt-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "Instant",
+      "setting": "Instant",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · Instant · exact model not exposed"
+    },
+    "4ccfb1ab-c282-5729-92cd-5668a94937c5": {
+      "sourceRunPackageFile": "pantry-substitution-confidence-stack-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "3.5 Flash",
+      "setting": "",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.5 Flash"
+    },
+    "4cd3777e-7889-5845-810f-0670e26e3c01": {
+      "sourceRunPackageFile": "local-micro-adventure-route-mixer-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "3.5 Flash",
+      "setting": "Standard",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.5 Flash · Standard"
+    },
+    "4de36e55-33e3-51b4-a928-79f025322888": {
+      "sourceRunPackageFile": "youtube-broll-coverage-card-dealer-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "High",
+      "setting": "High",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · High · exact model not exposed"
+    },
+    "4e6448bc-16f1-4638-9ba0-1ef72321ac67": {
+      "sourceRunPackageFile": "neighborhood-potluck-balancer-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "Flash",
+      "setting": "",
+      "exactness": "version-unexposed",
+      "publicLabel": "Gemini Flash · exact version not exposed"
+    },
+    "4e8fbf3f-4b1c-5e3e-afd0-3cbb70630c56": {
+      "sourceRunPackageFile": "blog-refresh-brief-sorter-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "High",
+      "setting": "High",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · High · exact model not exposed"
+    },
+    "51c3a865-afe8-4827-85c9-1bd056bc7efd": {
+      "sourceRunPackageFile": "tiny-loop-sequencer-claude-source-run.json",
+      "provider": "OpenRouter",
+      "model": "Anthropic Claude Haiku Latest (~anthropic/claude-haiku-latest); visible upstream response model: Claude Haiku 4.5",
+      "setting": "",
+      "exactness": "exact",
+      "publicLabel": "Claude Haiku 4.5 via OpenRouter"
+    },
+    "54a0dce9-3825-4444-9e40-8cc44a7e84c5": {
+      "sourceRunPackageFile": "popup-dinner-seating-mixer-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "Flash",
+      "setting": "",
+      "exactness": "version-unexposed",
+      "publicLabel": "Gemini Flash · exact version not exposed"
+    },
+    "56e1646d-0dad-40d3-a194-682691e27eb1": {
+      "sourceRunPackageFile": "follow-up-crm-chatgpt-gpt55-instant-source-run.json",
+      "provider": "ChatGPT",
+      "model": "Latest 5.5",
+      "setting": "Instant",
+      "exactness": "exact",
+      "publicLabel": "ChatGPT 5.5 · Instant"
+    },
+    "5b1157e4-448e-5962-8ffc-0e61f0a844a9": {
+      "sourceRunPackageFile": "travel-poster-landmark-layer-game-claude-source-run.json",
+      "provider": "Claude",
+      "model": "Haiku 4.5 Extended",
+      "setting": "Extended",
+      "exactness": "exact",
+      "publicLabel": "Claude Haiku 4.5 · Extended"
+    },
+    "5c12cf80-6586-484a-b3c8-51bc94269508": {
+      "sourceRunPackageFile": "flashcard-cram-gemini-31-pro-source-run.json",
+      "provider": "Gemini",
+      "model": "Gemini 3.1 Pro",
+      "setting": "Standard",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.1 Pro · Standard"
+    },
+    "5ccad8ed-ee7c-4a80-9b00-b1a439d986ad": {
+      "sourceRunPackageFile": "rainy-window-cafe-rush-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "ChatGPT Instant visible composer setting; assistant message nodes exposed gpt-5-5-thinking",
+      "setting": "Instant",
+      "exactness": "exact",
+      "publicLabel": "ChatGPT 5.5 · Instant"
+    },
+    "600d0e72-81aa-58b2-ae09-d6d14c4d7ed8": {
+      "sourceRunPackageFile": "campaign-caption-ingredient-mixer-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "3.5 Flash",
+      "setting": "Standard",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.5 Flash · Standard"
+    },
+    "60196676-ace8-54d0-95a1-848b819802dc": {
+      "sourceRunPackageFile": "keyword-garden-sprint-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "High",
+      "setting": "High",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · High · exact model not exposed"
+    },
+    "610d9854-ac70-5349-a9a3-86535e870b78": {
+      "sourceRunPackageFile": "recipe-pop-up-menu-profit-cards-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "3.5 Flash",
+      "setting": "",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.5 Flash"
+    },
+    "6324a886-6903-5f14-a393-f42c5c67dbf9": {
+      "sourceRunPackageFile": "fridge-tetris-meal-prep-planner-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "3.5 Flash",
+      "setting": "Standard",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.5 Flash · Standard"
+    },
+    "6682ccb0-8927-5ea7-a22d-b5e785d8d852": {
+      "sourceRunPackageFile": "community-answer-evidence-balance-openrouter-nemotron-source-run.json",
+      "provider": "OpenRouter",
+      "model": "NVIDIA: Nemotron 3 Ultra",
+      "setting": "",
+      "exactness": "exact",
+      "publicLabel": "NVIDIA: Nemotron 3 Ultra via OpenRouter"
+    },
+    "67275201-0297-4a7e-8e29-a414f259678d": {
+      "sourceRunPackageFile": "bike-courier-light-run-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "GPT-5.5 Thinking",
+      "setting": "Instant",
+      "exactness": "exact",
+      "publicLabel": "ChatGPT 5.5 · Instant"
+    },
+    "67563a99-93ce-4a51-843b-094d1ddf0844": {
+      "sourceRunPackageFile": "breakroom-snack-restock-planner-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "Flash",
+      "setting": "",
+      "exactness": "version-unexposed",
+      "publicLabel": "Gemini Flash · exact version not exposed"
+    },
+    "6c890a3d-ee2d-5aae-aca1-b85507f19ee7": {
+      "sourceRunPackageFile": "travel-poster-layout-stamp-game-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "3.1 Pro",
+      "setting": "",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.1 Pro"
+    },
+    "6cbf2cce-57df-4f64-b50c-1a18e6cb2155": {
+      "sourceRunPackageFile": "airlock-zero-hull-breach-gemini-35-flash-fork.json",
+      "provider": "Gemini",
+      "model": "Gemini 3.5 Flash",
+      "setting": "",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.5 Flash"
+    },
+    "6ff98445-8abf-5162-a069-19a88c5b3577": {
+      "sourceRunPackageFile": "poster-shot-stack-planner-claude-source-run.json",
+      "provider": "Claude",
+      "model": "Sonnet 4.6 Medium",
+      "setting": "Medium",
+      "exactness": "exact",
+      "publicLabel": "Claude Sonnet 4.6 · Medium"
+    },
+    "7117026d-fe76-5fbb-97c1-023d620de328": {
+      "sourceRunPackageFile": "logo-brief-constraint-mixer-claude-source-run.json",
+      "provider": "Claude",
+      "model": "Sonnet 4.6 Medium",
+      "setting": "Medium",
+      "exactness": "exact",
+      "publicLabel": "Claude Sonnet 4.6 · Medium"
+    },
+    "722acfd1-975a-4e23-9ede-d3047f8223a1": {
+      "sourceRunPackageFile": "pocket-pirate-map-decoder-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "ChatGPT Instant visible composer setting; assistant message nodes exposed gpt-5-5-thinking",
+      "setting": "Instant",
+      "exactness": "exact",
+      "publicLabel": "ChatGPT 5.5 · Instant"
+    },
+    "74c87e37-be6e-503b-8d3e-6f634d12d49a": {
+      "sourceRunPackageFile": "leftover-lunchbox-rotation-builder-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "3.5 Flash",
+      "setting": "Standard",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.5 Flash · Standard"
+    },
+    "77da18f4-bf8d-4fef-bdac-c14ff4ea3920": {
+      "sourceRunPackageFile": "hp-10bii-financial-calculator-claude-opus-48.json",
+      "provider": "Claude",
+      "model": "Claude Opus 4.8 Max",
+      "setting": "Max",
+      "exactness": "exact",
+      "publicLabel": "Claude Opus 4.8 · Max"
+    },
+    "77dfe78d-6a3d-47f6-9384-2881958098df": {
+      "sourceRunPackageFile": "airlock-zero-blackout-shift-claude-sonnet-5-max-fork.json",
+      "provider": "Claude",
+      "model": "Sonnet 5 Max",
+      "setting": "Max",
+      "exactness": "exact",
+      "publicLabel": "Claude Sonnet 5 · Max"
+    },
+    "7a830ddb-43df-45d1-bfaf-8b504aeb69e8": {
+      "sourceRunPackageFile": "roommate-freezer-board-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "Flash",
+      "setting": "",
+      "exactness": "version-unexposed",
+      "publicLabel": "Gemini Flash · exact version not exposed"
+    },
+    "7c402b59-59ec-5b7e-a8fe-a4e9d9b01ca3": {
+      "sourceRunPackageFile": "short-video-hook-beat-sheet-timer-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "3.5 Flash",
+      "setting": "",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.5 Flash"
+    },
+    "7ddfa200-b853-45a9-b239-fe639a47aecf": {
+      "sourceRunPackageFile": "tiny-crosswalk-timing-trainer-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "Not sure",
+      "setting": "Instant",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · Instant · exact model not exposed"
+    },
+    "7e66ba1b-2553-5c73-bdab-54eaccbd08e9": {
+      "sourceRunPackageFile": "album-cover-composition-planner-claude-source-run.json",
+      "provider": "Claude",
+      "model": "Sonnet 4.6 Medium",
+      "setting": "Medium",
+      "exactness": "exact",
+      "publicLabel": "Claude Sonnet 4.6 · Medium"
+    },
+    "81f2b617-2de5-404f-aa88-c94443f213bd": {
+      "sourceRunPackageFile": "weekend-plan-checklist-chatgpt-6prompt-fixed.json",
+      "provider": "chatgpt",
+      "model": "ChatGPT web, Instant mode visible",
+      "setting": "Instant",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · Instant · exact model not exposed"
+    },
+    "82b126ca-8529-5a9c-b2df-b9b5daa09ad3": {
+      "sourceRunPackageFile": "reference-image-change-checklist-deck-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "3.5 Flash",
+      "setting": "Standard",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.5 Flash · Standard"
+    },
+    "83c80a17-d9a8-5c76-bc01-1150c9fa3091": {
+      "sourceRunPackageFile": "short-video-hook-continuity-board-claude-source-run.json",
+      "provider": "Claude",
+      "model": "Sonnet 4.6 Medium",
+      "setting": "Medium",
+      "exactness": "exact",
+      "publicLabel": "Claude Sonnet 4.6 · Medium"
+    },
+    "84039f36-82c9-43fd-aa2d-cf90e1b96678": {
+      "sourceRunPackageFile": "tiny-birthday-rsvp-table-planner-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "Flash",
+      "setting": "",
+      "exactness": "version-unexposed",
+      "publicLabel": "Gemini Flash · exact version not exposed"
+    },
+    "85e4b36b-3236-495e-b8d0-b94ea168a645": {
+      "sourceRunPackageFile": "pocket-rally-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "Latest 5.5 / gpt-5-5-thinking as exposed by ChatGPT message nodes",
+      "setting": "Instant",
+      "exactness": "exact",
+      "publicLabel": "ChatGPT 5.5 · Instant"
+    },
+    "862fd975-74ab-493a-adb5-80cbf031c0c2": {
+      "sourceRunPackageFile": "airlock-zero-swarm-shift-gpt-56-sol-max-fork.json",
+      "provider": "ChatGPT",
+      "model": "5.6 Sol Max",
+      "setting": "Max",
+      "exactness": "exact",
+      "publicLabel": "ChatGPT 5.6 Sol · Max"
+    },
+    "86f12905-67b4-4f54-8de3-4f40105e42f0": {
+      "sourceRunPackageFile": "tic-tac-toe-gemini-flash-basic.json",
+      "provider": "Gemini",
+      "model": "Gemini Flash",
+      "setting": "",
+      "exactness": "version-unexposed",
+      "publicLabel": "Gemini Flash · exact version not exposed"
+    },
+    "878d99cd-ffd8-5b6a-a676-1e4ae031d1bc": {
+      "sourceRunPackageFile": "visual-prompt-drift-inspector-claude-source-run.json",
+      "provider": "Claude",
+      "model": "Sonnet 4.6 Medium",
+      "setting": "Medium",
+      "exactness": "exact",
+      "publicLabel": "Claude Sonnet 4.6 · Medium"
+    },
+    "890021c7-61f2-48f6-b133-fcb23176dcdf": {
+      "sourceRunPackageFile": "star-map-scavenger-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "Latest 5.5 / gpt-5-5-thinking as exposed by ChatGPT message nodes",
+      "setting": "Thinking",
+      "exactness": "exact",
+      "publicLabel": "ChatGPT 5.5 · Thinking"
+    },
+    "8a421904-3f28-5088-ae28-93c57745d96f": {
+      "sourceRunPackageFile": "recipe-leftover-caption-pack-sorter-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "3.5 Flash",
+      "setting": "",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.5 Flash"
+    },
+    "8a90dbfc-3387-52a5-81a3-8cd9f4716038": {
+      "sourceRunPackageFile": "client-email-reply-risk-meter-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "High",
+      "setting": "High",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · High · exact model not exposed"
+    },
+    "8b91d2d7-636d-5a1f-ae0f-f3cbc8c6e48f": {
+      "sourceRunPackageFile": "search-brief-gap-mapper-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "High",
+      "setting": "High",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · High · exact model not exposed"
+    },
+    "8c6c15ca-6477-4224-9409-a245518e32f8": {
+      "sourceRunPackageFile": "micro-dungeon-route-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "Latest 5.5 / gpt-5-5-thinking as exposed by ChatGPT message nodes",
+      "setting": "Thinking",
+      "exactness": "exact",
+      "publicLabel": "ChatGPT 5.5 · Thinking"
+    },
+    "8dafdf83-1942-5d1b-b28b-527d76088be7": {
+      "sourceRunPackageFile": "pocket-ad-shot-storyboarder-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "3.5 Flash",
+      "setting": "Standard",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.5 Flash · Standard"
+    },
+    "8e4206ad-ddf9-5c62-be51-711b0ec48ca1": {
+      "sourceRunPackageFile": "back-cover-blurb-beat-mapper-claude-source-run.json",
+      "provider": "Claude",
+      "model": "Sonnet 4.6 Medium",
+      "setting": "Medium",
+      "exactness": "exact",
+      "publicLabel": "Claude Sonnet 4.6 · Medium"
+    },
+    "8f5f4f1c-9f59-4f18-9a5e-61c4c3f4f901": {
+      "sourceRunPackageFile": "snake-gpt55-pro-oneshot-source-run.json",
+      "provider": "ChatGPT",
+      "model": "Latest 5.5 / Extended Pro",
+      "setting": "Pro Extended",
+      "exactness": "exact",
+      "publicLabel": "ChatGPT 5.5 · Pro Extended"
+    },
+    "905e6a36-4e93-5cc1-96a7-5a9032964890": {
+      "sourceRunPackageFile": "four-week-content-gap-heatmap-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "3.5 Flash",
+      "setting": "Standard",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.5 Flash · Standard"
+    },
+    "91b50a4d-78ae-557f-be3d-77a02842473c": {
+      "sourceRunPackageFile": "source-citation-freshness-flipbook-openrouter-qwen-source-run.json",
+      "provider": "OpenRouter",
+      "model": "Qwen3.7 Plus",
+      "setting": "",
+      "exactness": "exact",
+      "publicLabel": "Qwen3.7 Plus via OpenRouter"
+    },
+    "97392e06-bb6b-4b91-8f58-d164015bd24a": {
+      "sourceRunPackageFile": "neighborhood-lost-and-found-claim-board-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "Flash",
+      "setting": "",
+      "exactness": "version-unexposed",
+      "publicLabel": "Gemini Flash · exact version not exposed"
+    },
+    "98b7087a-ceb7-5e03-930f-9661634c9389": {
+      "sourceRunPackageFile": "micro-launch-promise-sorter-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "5.4 Instant",
+      "setting": "Instant",
+      "exactness": "exact",
+      "publicLabel": "ChatGPT 5.4 · Instant"
+    },
+    "9dcefba3-beef-40c3-915f-19047b321876": {
+      "sourceRunPackageFile": "tiny-ferry-loading-puzzle-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "Not sure",
+      "setting": "Instant",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · Instant · exact model not exposed"
+    },
+    "a4c6d007-23a7-5c38-add2-78baccd45eb3": {
+      "sourceRunPackageFile": "pocket-zine-collage-layout-studio-claude-source-run.json",
+      "provider": "Claude",
+      "model": "Sonnet 4.6 Medium",
+      "setting": "Medium",
+      "exactness": "exact",
+      "publicLabel": "Claude Sonnet 4.6 · Medium"
+    },
+    "a60a806f-b289-4bc7-9430-20342279f3ff": {
+      "sourceRunPackageFile": "swish-city-claude-opus-4-8-source-run.json",
+      "provider": "Claude",
+      "model": "Claude Opus 4.8 Max",
+      "setting": "Max",
+      "exactness": "exact",
+      "publicLabel": "Claude Opus 4.8 · Max"
+    },
+    "a7201847-c8d6-4e09-814b-0a382f8f8080": {
+      "sourceRunPackageFile": "tiny-festival-set-time-clash-game-claude-opus48-medium-source-run.json",
+      "provider": "Claude",
+      "model": "Opus 4.8 Medium",
+      "setting": "Medium",
+      "exactness": "exact",
+      "publicLabel": "Claude Opus 4.8 · Medium"
+    },
+    "a905d920-74f3-5c58-88cf-322c40d63b94": {
+      "sourceRunPackageFile": "search-result-snippet-proof-lab-openrouter-source-run.json",
+      "provider": "OpenRouter",
+      "model": "Devstral 2 2512",
+      "setting": "",
+      "exactness": "exact",
+      "publicLabel": "Devstral 2 2512 via OpenRouter"
+    },
+    "a9803d23-c5bb-5414-b7d0-4d5b7ee7cdb8": {
+      "sourceRunPackageFile": "reference-photo-fidelity-tile-board-openrouter-deepseek-source-run.json",
+      "provider": "OpenRouter",
+      "model": "DeepSeek V4 Pro",
+      "setting": "",
+      "exactness": "exact",
+      "publicLabel": "DeepSeek V4 Pro via OpenRouter"
+    },
+    "aa456f6a-80fd-4530-b3d2-9647ddbf1530": {
+      "sourceRunPackageFile": "puzzle-box-escape-claude-sonnet-46-max-source-run.json",
+      "provider": "Claude",
+      "model": "Sonnet 4.6 Max",
+      "setting": "Max",
+      "exactness": "exact",
+      "publicLabel": "Claude Sonnet 4.6 · Max"
+    },
+    "ac459234-bbdd-53ff-b56c-8f13cde8ba93": {
+      "sourceRunPackageFile": "instagram-caption-cta-mix-board-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "3.5 Flash",
+      "setting": "Standard",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.5 Flash · Standard"
+    },
+    "ac630382-fbff-426a-b4ac-14d54d1d2a9f": {
+      "sourceRunPackageFile": "mini-golf-windmill-putt-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "ChatGPT Instant visible composer setting; exact underlying model not exposed",
+      "setting": "Instant",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · Instant · exact model not exposed"
+    },
+    "acbf0f92-034d-5bea-8af2-3108026ff93a": {
+      "sourceRunPackageFile": "tiny-pixel-stamp-card-maker-chatgpt-recovered-source-run.json",
+      "provider": "ChatGPT",
+      "model": "Latest • 5.5",
+      "setting": "Instant",
+      "exactness": "exact",
+      "publicLabel": "ChatGPT 5.5 · Instant"
+    },
+    "aeb88293-c246-4547-933e-929ae52609aa": {
+      "sourceRunPackageFile": "porch-light-moth-maze-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "ChatGPT Instant visible composer setting; assistant message nodes exposed gpt-5-5-thinking",
+      "setting": "Instant",
+      "exactness": "exact",
+      "publicLabel": "ChatGPT 5.5 · Instant"
+    },
+    "b01f5f7a-6e08-44fa-bccc-78132f9427bd": {
+      "sourceRunPackageFile": "roommate-chore-draft-board-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "Flash (visible Gemini mode picker; exact backend version not exposed)",
+      "setting": "",
+      "exactness": "version-unexposed",
+      "publicLabel": "Gemini Flash · exact version not exposed"
+    },
+    "b2f6d319-e0fa-50e1-ae2c-6591afae049d": {
+      "sourceRunPackageFile": "proposal-red-flag-heatmap-claude-source-run.json",
+      "provider": "Claude",
+      "model": "Sonnet 4.6 Medium",
+      "setting": "Medium",
+      "exactness": "exact",
+      "publicLabel": "Claude Sonnet 4.6 · Medium"
+    },
+    "b715f7ff-5675-4df1-bac2-063406bada78": {
+      "sourceRunPackageFile": "trip-packing-gemini-pro-source-run.json",
+      "provider": "Gemini",
+      "model": "Gemini 3.1 Pro",
+      "setting": "",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.1 Pro"
+    },
+    "b8f70cdc-171a-48dd-8fb2-ae4172ab8f6d": {
+      "sourceRunPackageFile": "moving-day-box-labeler-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "Flash",
+      "setting": "",
+      "exactness": "version-unexposed",
+      "publicLabel": "Gemini Flash · exact version not exposed"
+    },
+    "ba044a13-91f7-548f-8f65-d9a5560b8bf1": {
+      "sourceRunPackageFile": "visual-brief-consistency-board-claude-source-run.json",
+      "provider": "Claude",
+      "model": "Sonnet 4.6 Medium",
+      "setting": "Medium",
+      "exactness": "exact",
+      "publicLabel": "Claude Sonnet 4.6 · Medium"
+    },
+    "bb6b5df1-b7db-5f88-bf16-53864a60f79b": {
+      "sourceRunPackageFile": "voiceover-emotion-tag-timing-board-claude-source-run.json",
+      "provider": "Claude",
+      "model": "Sonnet 4.6 Medium",
+      "setting": "Medium",
+      "exactness": "exact",
+      "publicLabel": "Claude Sonnet 4.6 · Medium"
+    },
+    "bc57af32-b214-5fa5-b9e9-8e106bbebba5": {
+      "sourceRunPackageFile": "product-claim-shelf-audit-cards-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "3.5 Flash",
+      "setting": "Standard",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.5 Flash · Standard"
+    },
+    "bf6c897d-2e9a-4f1b-b1b2-4d7874025b83": {
+      "sourceRunPackageFile": "potluck-table-planner-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "Flash (visible Gemini mode picker; exact backend version not exposed)",
+      "setting": "",
+      "exactness": "version-unexposed",
+      "publicLabel": "Gemini Flash · exact version not exposed"
+    },
+    "c07da71e-4a26-5c0a-b4ec-b1a10274e4b8": {
+      "sourceRunPackageFile": "youtube-cold-open-beat-board-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "High",
+      "setting": "High",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · High · exact model not exposed"
+    },
+    "c1a5fc1f-923a-52f8-af81-21c0bfbfb74e": {
+      "sourceRunPackageFile": "product-photo-shot-list-tile-sorter-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "High",
+      "setting": "High",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · High · exact model not exposed"
+    },
+    "c25c6b5b-70a8-58c4-bba3-d9bff00424ec": {
+      "sourceRunPackageFile": "product-description-shelf-card-stress-tester-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "High",
+      "setting": "High",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · High · exact model not exposed"
+    },
+    "c299bd76-a336-54af-954a-c6bcac84187e": {
+      "sourceRunPackageFile": "interview-answer-proof-drill-cards-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "Instant",
+      "setting": "Instant",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · Instant · exact model not exposed"
+    },
+    "c50bb0ba-1e12-4a4f-a75f-8a62d3426a42": {
+      "sourceRunPackageFile": "tiny-train-platform-dispatcher-claude-source-run.json",
+      "provider": "Claude",
+      "model": "Sonnet 4.6 Max (visible Claude composer model label)",
+      "setting": "Max",
+      "exactness": "exact",
+      "publicLabel": "Claude Sonnet 4.6 · Max"
+    },
+    "c61d8bc9-7bcd-5a3d-b94a-98c7f42f6975": {
+      "sourceRunPackageFile": "youtube-title-tag-safe-zone-board-claude-source-run.json",
+      "provider": "Claude",
+      "model": "Sonnet 4.6 Medium",
+      "setting": "Medium",
+      "exactness": "exact",
+      "publicLabel": "Claude Sonnet 4.6 · Medium"
+    },
+    "c6f92d30-1129-514c-97f9-fc759461865b": {
+      "sourceRunPackageFile": "potluck-allergen-label-mixer-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "3.5 Flash",
+      "setting": "Standard",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.5 Flash · Standard"
+    },
+    "c98c2cdc-7f6f-5fc0-afcd-cac0e4546aab": {
+      "sourceRunPackageFile": "icon-set-style-consistency-tiles-claude-source-run.json",
+      "provider": "Claude",
+      "model": "Sonnet 4.6 Medium",
+      "setting": "Medium",
+      "exactness": "exact",
+      "publicLabel": "Claude Sonnet 4.6 · Medium"
+    },
+    "ca0c2e08-9e02-4725-90f5-58ef248fe4c7": {
+      "sourceRunPackageFile": "gym-mirror-progress-shot-consistency-studio-claude-sonnet46-max-source-run.json",
+      "provider": "Claude",
+      "model": "Sonnet 4.6 Max",
+      "setting": "Max",
+      "exactness": "exact",
+      "publicLabel": "Claude Sonnet 4.6 · Max"
+    },
+    "caa5c869-d1fa-5d28-9eae-52374d7e91d0": {
+      "sourceRunPackageFile": "reference-image-change-receipt-board-openrouter-source-run.json",
+      "provider": "OpenRouter",
+      "model": "Qwen3.7 Max",
+      "setting": "",
+      "exactness": "exact",
+      "publicLabel": "Qwen3.7 Max via OpenRouter"
+    },
+    "d18cac24-5508-5b6a-9b8d-fdb9bd000595": {
+      "sourceRunPackageFile": "accidental-snapshot-shot-list-lab-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "3.1 Pro",
+      "setting": "Standard",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.1 Pro · Standard"
+    },
+    "d572c127-40fc-5e0c-8a17-d5314f3883c4": {
+      "sourceRunPackageFile": "article-claim-evidence-ladder-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "High",
+      "setting": "High",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · High · exact model not exposed"
+    },
+    "d6153b04-1fc6-5715-a1f3-25380226a1c1": {
+      "sourceRunPackageFile": "search-result-promise-proof-board-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "High",
+      "setting": "High",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · High · exact model not exposed"
+    },
+    "d7acd884-a01f-5cba-b6d0-2242e9c51a33": {
+      "sourceRunPackageFile": "micro-image-brief-consistency-tiles-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "Medium",
+      "setting": "Medium",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · Medium · exact model not exposed"
+    },
+    "d7e643e2-4f10-4b74-98f6-61fa730e4776": {
+      "sourceRunPackageFile": "rooftop-courier-switchbacks-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "Not sure",
+      "setting": "Instant",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · Instant · exact model not exposed"
+    },
+    "d80dffab-ffd6-46b2-9643-4f8521766f9b": {
+      "sourceRunPackageFile": "lane-defense-chatgpt-gpt55-heavy-oneshot.json",
+      "provider": "chatgpt",
+      "model": "Latest 5.5 / Thinking Heavy (ChatGPT UI)",
+      "setting": "Thinking Heavy",
+      "exactness": "exact",
+      "publicLabel": "ChatGPT 5.5 · Thinking Heavy"
+    },
+    "d95f6e11-e661-40b7-a162-31f5a5b5906e": {
+      "sourceRunPackageFile": "tiny-airport-gate-boarding-sorter-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "Not sure",
+      "setting": "Instant",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · Instant · exact model not exposed"
+    },
+    "dc5e67c3-42d0-4823-ae23-586b7d3985cb": {
+      "sourceRunPackageFile": "sleep-sound-mixer-chatgpt-56-luna-extra-high-source-run.json",
+      "provider": "ChatGPT",
+      "model": "GPT-5.6 Luna",
+      "setting": "Extra High",
+      "exactness": "exact",
+      "publicLabel": "ChatGPT 5.6 Luna · Extra High"
+    },
+    "de86c0ef-91ae-5f34-a8d7-5b3cf5dd5aed": {
+      "sourceRunPackageFile": "prompt-remix-recipe-card-game-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "3.5 Flash",
+      "setting": "Standard",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.5 Flash · Standard"
+    },
+    "e02e85b8-1a29-4906-9eae-8ac6d9533840": {
+      "sourceRunPackageFile": "mailroom-cart-route-puzzle-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "Not sure",
+      "setting": "Instant",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · Instant · exact model not exposed"
+    },
+    "e0e4e2b7-082e-4db1-9468-484fc3fd3a69": {
+      "sourceRunPackageFile": "first-principles-claim-ladder-game-chatgpt-gpt55-medium-source-run.json",
+      "provider": "ChatGPT",
+      "model": "GPT-5.5",
+      "setting": "Medium",
+      "exactness": "exact",
+      "publicLabel": "ChatGPT 5.5 · Medium"
+    },
+    "e148a2a7-2878-55a2-ae75-8d6108e64cd6": {
+      "sourceRunPackageFile": "four-week-content-calendar-capacity-grid-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "3.5 Flash",
+      "setting": "",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.5 Flash"
+    },
+    "e1b37075-94ef-5a97-9ce9-87f9e2553d80": {
+      "sourceRunPackageFile": "search-result-promise-proof-board-chatgpt-source-run.preexisting-20260613.json",
+      "provider": "ChatGPT",
+      "model": "High",
+      "setting": "High",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · High · exact model not exposed"
+    },
+    "e201d3a1-53bf-51b0-b49e-a4ceae2387cc": {
+      "sourceRunPackageFile": "scope-creep-change-order-calculator-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "3.5 Flash",
+      "setting": "Standard",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.5 Flash · Standard"
+    },
+    "e30cbde6-e805-5350-9cf3-8b41a8e72f37": {
+      "sourceRunPackageFile": "chapter-scope-map-tiny-books-claude-source-run.json",
+      "provider": "Claude",
+      "model": "Sonnet 4.6 Medium",
+      "setting": "Medium",
+      "exactness": "exact",
+      "publicLabel": "Claude Sonnet 4.6 · Medium"
+    },
+    "e36dc75c-523d-58da-abf5-a1d3df7ca503": {
+      "sourceRunPackageFile": "keyword-intent-cluster-sprint-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "3.5 Flash",
+      "setting": "",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.5 Flash"
+    },
+    "e3f1d1a7-1d18-4a7b-ba54-045526cd2661": {
+      "sourceRunPackageFile": "weekend-plan-checklist-chatgpt-family-road-trip-fork.json",
+      "provider": "chatgpt",
+      "model": "ChatGPT web, Instant mode visible",
+      "setting": "Instant",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · Instant · exact model not exposed"
+    },
+    "e502847f-5834-5199-aec7-233720b14a27": {
+      "sourceRunPackageFile": "recipe-launch-card-studio-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "3.5 Flash",
+      "setting": "Standard",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.5 Flash · Standard"
+    },
+    "e8379e86-d14b-573c-b174-ae50b7d99782": {
+      "sourceRunPackageFile": "thumbnail-safe-zone-storyboard-claude-20260612-source-run.json",
+      "provider": "Claude",
+      "model": "Sonnet 4.6 Medium",
+      "setting": "Medium",
+      "exactness": "exact",
+      "publicLabel": "Claude Sonnet 4.6 · Medium"
+    },
+    "e907b8dc-5a62-4c34-b68b-32718542f937": {
+      "sourceRunPackageFile": "weekend-yard-sale-table-mapper-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "Flash",
+      "setting": "",
+      "exactness": "version-unexposed",
+      "publicLabel": "Gemini Flash · exact version not exposed"
+    },
+    "ebd1faed-aa6e-46b1-9239-6b8d88eefffa": {
+      "sourceRunPackageFile": "after-school-pickup-roster-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "Flash",
+      "setting": "",
+      "exactness": "version-unexposed",
+      "publicLabel": "Gemini Flash · exact version not exposed"
+    },
+    "ecebe6f1-c71e-47eb-ba99-5b98b91eac1f": {
+      "sourceRunPackageFile": "bake-sale-margin-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "Gemini 3.1 Flash-Lite",
+      "setting": "Standard",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.1 Flash Lite · Standard"
+    },
+    "ed38c814-6160-524a-bed2-f1164606727a": {
+      "sourceRunPackageFile": "homepage-claim-evidence-sorter-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "High",
+      "setting": "High",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · High · exact model not exposed"
+    },
+    "efefc0a9-6eef-523f-a530-a5c4e191db03": {
+      "sourceRunPackageFile": "seo-content-promise-coverage-board-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "GPT-5.5 Medium",
+      "setting": "Medium",
+      "exactness": "exact",
+      "publicLabel": "ChatGPT 5.5 · Medium"
+    },
+    "f25f83df-29c5-4d07-97b8-e7f6d2a902b8": {
+      "sourceRunPackageFile": "school-desk-hp-10bii-calculator-claude-5-fable-max-fork.json",
+      "provider": "Claude",
+      "model": "Fable 5 Max (Claude)",
+      "setting": "Max",
+      "exactness": "exact",
+      "publicLabel": "Claude Fable 5 · Max"
+    },
+    "f40f03de-e10c-592a-9ccf-e109a4884a09": {
+      "sourceRunPackageFile": "leftover-ingredient-swap-cards-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "3.5 Flash",
+      "setting": "Standard",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.5 Flash · Standard"
+    },
+    "f47235e3-28d5-4a25-9057-f9665e30acdf": {
+      "sourceRunPackageFile": "gta-style-fps-chatgpt-gpt55-heavy-five-prompt.json",
+      "provider": "chatgpt",
+      "model": "Latest 5.5 / Heavy (ChatGPT UI)",
+      "setting": "Heavy",
+      "exactness": "exact",
+      "publicLabel": "ChatGPT 5.5 · Heavy"
+    },
+    "f55c21d5-0d8a-4854-921a-822f82e13346": {
+      "sourceRunPackageFile": "utility-bill-balance-board-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "Flash",
+      "setting": "",
+      "exactness": "version-unexposed",
+      "publicLabel": "Gemini Flash · exact version not exposed"
+    },
+    "f78d76e0-a86c-59cd-944e-f455b0ae1e77": {
+      "sourceRunPackageFile": "internal-link-rescue-map-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "High",
+      "setting": "High",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · High · exact model not exposed"
+    },
+    "f9699186-9197-53e3-a7c6-435510c6060f": {
+      "sourceRunPackageFile": "pocket-cover-prompt-board-chatgpt-source-run.json",
+      "provider": "ChatGPT",
+      "model": "Instant",
+      "setting": "Instant",
+      "exactness": "model-unexposed",
+      "publicLabel": "ChatGPT · Instant · exact model not exposed"
+    },
+    "faca349b-c756-55ac-84c1-d4d2f0478792": {
+      "sourceRunPackageFile": "recipe-promo-batch-qa-board-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "3.5 Flash",
+      "setting": "Standard",
+      "exactness": "exact",
+      "publicLabel": "Gemini 3.5 Flash · Standard"
+    },
+    "fcfebde3-a18f-4baf-9c62-982dc29d7a42": {
+      "sourceRunPackageFile": "tiny-invoice-nudge-board-gemini-source-run.json",
+      "provider": "Gemini",
+      "model": "Flash",
+      "setting": "",
+      "exactness": "version-unexposed",
+      "publicLabel": "Gemini Flash · exact version not exposed"
+    }
+  }
+}

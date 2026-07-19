@@ -380,8 +380,13 @@ for (const hook of [
   'data-fork-continuation-workspace',
   'data-fork-continuation',
   'data-fork-continuation-prompt',
+  'data-fork-continuation-response',
   'data-fork-continuation-pipeline',
   'data-fork-continuation-prompt-node',
+  'data-fork-continuation-response-node',
+  'data-fork-continuation-incoming-arm',
+  'data-fork-continuation-prompt-card-arm',
+  'data-fork-continuation-response-card-arm',
   'data-fork-continuation-fork',
   'data-fork-display-artifact',
 ]) {
@@ -442,6 +447,7 @@ for (const hook of [
   'data-fork-existing-branch-node',
   'data-source-run-pipeline',
   'data-source-run-pipe-node',
+  'data-source-run-card',
   'data-source-run-prompt-row',
   'data-source-run-response-row',
 ]) {
@@ -513,7 +519,9 @@ assert(forkBrowserGuard.includes("assertResponseToPromptPipeline(hullSnapshot, '
 assert(forkBrowserGuard.includes('sourceResponseDelta > 2'), 'fork browser guard must reject a connector that misses the exact inherited response center')
 assert(forkBrowserGuard.includes('continuationPromptDelta > 2'), 'fork browser guard must reject a connector that misses the first continuation prompt center')
 assert(forkBrowserGuard.includes('sourcePromptDelta < 24'), 'fork browser guard must fail if the connector remains prompt-centered')
-assert(forkBrowserGuard.includes('one-prompt continuation renders a vertical orange overhang'), 'fork browser guard must reject any single-prompt vertical spine overhang')
+assert(forkBrowserGuard.includes('one continuous orange spine exactly from the first prompt center to the last response center'), 'fork browser guard must require prompt-response continuation-spine consistency')
+assert(forkBrowserGuard.includes('exactly one orange incoming arm at the first continuation prompt'), 'fork browser guard must reject orphan left-facing continuation stubs')
+assert(forkBrowserGuard.includes('full response-card center'), 'fork browser guard must center parent fork rails on the complete response card')
 assert(forkBrowserGuard.includes('promptOriginCount !== 0'), 'fork browser guard must reject a parent existing-fork rail mounted in any prompt row')
 assert(forkBrowserGuard.includes("segment?.color !== 'rgb(232, 122, 44)'"), 'fork browser guard must require a full orange continuation spine')
 assert(forkBrowserGuard.includes('sourceArmRect?.width < 40'), 'fork browser guard must reject an invisible or collapsed response-to-elbow arm')

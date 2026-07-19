@@ -440,12 +440,14 @@ function ArtifactActions({
 
 function ContinuationStepCard({
   step,
+  isFirst,
   providerName,
   artifactOpenHrefs,
   selectedArtifactPath,
   onDisplayArtifact,
 }: {
   step: ProjectForkContinuationStep
+  isFirst: boolean
   providerName?: string | null
   artifactOpenHrefs?: Record<string, string | undefined>
   selectedArtifactPath?: string | null
@@ -471,12 +473,16 @@ function ContinuationStepCard({
           />
           <span
             className="absolute -left-10 top-1/2 hidden h-7 w-10 -translate-y-1/2 border-y-4 border-[#8f3f0a] bg-brand-orange shadow-[inset_0_5px_0_rgba(255,255,255,0.18),inset_0_-5px_0_rgba(0,0,0,0.16)] lg:block"
+            data-fork-continuation-prompt-card-arm={step.id}
             aria-hidden="true"
           />
-          <span
-            className="absolute -left-[104px] top-1/2 hidden h-7 w-4 -translate-y-1/2 border-y-4 border-[#8f3f0a] bg-brand-orange shadow-[inset_0_5px_0_rgba(255,255,255,0.18),inset_0_-5px_0_rgba(0,0,0,0.16)] lg:block"
-            aria-hidden="true"
-          />
+          {isFirst && (
+            <span
+              className="absolute -left-[104px] top-1/2 hidden h-7 w-4 -translate-y-1/2 border-y-4 border-[#8f3f0a] bg-brand-orange shadow-[inset_0_5px_0_rgba(255,255,255,0.18),inset_0_-5px_0_rgba(0,0,0,0.16)] lg:block"
+              data-fork-continuation-incoming-arm={step.id}
+              aria-hidden="true"
+            />
+          )}
           <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-brand-orange-ink">
             Prompt {stepLabel(step.stepNumber)} · Fork continuation
           </div>
@@ -500,15 +506,31 @@ function ContinuationStepCard({
           </div>
         </div>
 
-        <div className="mx-4 mb-4 border-l-2 border-brand-orange bg-surface-50 p-3 sm:mx-5 sm:mb-5 sm:p-4">
-          <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-surface-500">
-            Response {stepLabel(step.stepNumber)}
-          </div>
-          <p className="mt-2 break-words text-sm font-bold leading-6 text-surface-700 [overflow-wrap:anywhere]">
-            {compactText(step.responseText, 'The complete response is preserved in this branch.', 180)}
-          </p>
-          <div className="mt-3">
-            <ExactText label="Show exact response" text={step.responseText} />
+        <div
+          className="relative mb-4 sm:mb-5"
+          data-fork-continuation-response={step.id}
+          data-fork-continuation-response-step-number={step.stepNumber}
+        >
+          <span
+            className="absolute -left-[88px] top-1/2 hidden h-14 w-12 -translate-y-1/2 border-4 border-[#8f3f0a] bg-brand-orange shadow-[inset_6px_0_0_rgba(255,255,255,0.28),inset_-6px_0_0_rgba(0,0,0,0.18)] lg:block"
+            data-fork-continuation-response-node={step.id}
+            aria-hidden="true"
+          />
+          <span
+            className="absolute -left-10 top-1/2 hidden h-7 w-14 -translate-y-1/2 border-y-4 border-[#8f3f0a] bg-brand-orange shadow-[inset_0_5px_0_rgba(255,255,255,0.18),inset_0_-5px_0_rgba(0,0,0,0.16)] sm:w-[60px] lg:block"
+            data-fork-continuation-response-card-arm={step.id}
+            aria-hidden="true"
+          />
+          <div className="mx-4 border-l-2 border-brand-orange bg-surface-50 p-3 sm:mx-5 sm:p-4">
+            <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-surface-500">
+              Response {stepLabel(step.stepNumber)}
+            </div>
+            <p className="mt-2 break-words text-sm font-bold leading-6 text-surface-700 [overflow-wrap:anywhere]">
+              {compactText(step.responseText, 'The complete response is preserved in this branch.', 180)}
+            </p>
+            <div className="mt-3">
+              <ExactText label="Show exact response" text={step.responseText} />
+            </div>
           </div>
         </div>
 
@@ -595,17 +617,20 @@ export function ProjectForkBuildPath({
     const continuationWorkspace = desktopPath.querySelector<HTMLElement>(
       '[data-fork-continuation-workspace]',
     )
-    const continuationPrompts = continuationSteps.flatMap((step) => {
+    const continuationPairs = continuationSteps.flatMap((step) => {
       const prompt = desktopPath.querySelector<HTMLElement>(
         `[data-fork-continuation-prompt="${CSS.escape(step.id)}"]`,
       )
-      return prompt ? [prompt] : []
+      const response = desktopPath.querySelector<HTMLElement>(
+        `[data-fork-continuation-response="${CSS.escape(step.id)}"]`,
+      )
+      return prompt && response ? [{ prompt, response }] : []
     })
     if (
       !sourceResponse ||
       !continuationPrompt ||
       !continuationWorkspace ||
-      continuationPrompts.length !== continuationSteps.length
+      continuationPairs.length !== continuationSteps.length
     ) {
       return clearMeasurements()
     }
@@ -629,33 +654,28 @@ export function ProjectForkBuildPath({
           : next
       ))
 
-      if (continuationPrompts.length > 1) {
-        const workspaceRect = continuationWorkspace.getBoundingClientRect()
-        const firstRect = continuationPrompts[0].getBoundingClientRect()
-        const lastRect = continuationPrompts.at(-1)?.getBoundingClientRect()
-        if (lastRect) {
-          const firstCenter = firstRect.top - workspaceRect.top + firstRect.height / 2
-          const lastCenter = lastRect.top - workspaceRect.top + lastRect.height / 2
-          const nextSpine = {
-            sourceStepId: forkPoint.id,
-            firstStepId: firstContinuation.id,
-            lastStepId: continuationSteps.at(-1)?.id ?? firstContinuation.id,
-            top: firstCenter,
-            height: Math.max(0, lastCenter - firstCenter),
-          }
-          setContinuationSpine((previous) => (
-            previous?.sourceStepId === nextSpine.sourceStepId &&
-            previous.firstStepId === nextSpine.firstStepId &&
-            previous.lastStepId === nextSpine.lastStepId &&
-            Math.abs(previous.top - nextSpine.top) < 0.5 &&
-            Math.abs(previous.height - nextSpine.height) < 0.5
-              ? previous
-              : nextSpine
-          ))
-        }
-      } else {
-        setContinuationSpine(null)
+      const workspaceRect = continuationWorkspace.getBoundingClientRect()
+      const firstRect = continuationPairs[0].prompt.getBoundingClientRect()
+      const lastRect = continuationPairs.at(-1)?.response.getBoundingClientRect()
+      if (!lastRect) return
+      const firstCenter = firstRect.top - workspaceRect.top + firstRect.height / 2
+      const lastCenter = lastRect.top - workspaceRect.top + lastRect.height / 2
+      const nextSpine = {
+        sourceStepId: forkPoint.id,
+        firstStepId: firstContinuation.id,
+        lastStepId: continuationSteps.at(-1)?.id ?? firstContinuation.id,
+        top: firstCenter,
+        height: Math.max(0, lastCenter - firstCenter),
       }
+      setContinuationSpine((previous) => (
+        previous?.sourceStepId === nextSpine.sourceStepId &&
+        previous.firstStepId === nextSpine.firstStepId &&
+        previous.lastStepId === nextSpine.lastStepId &&
+        Math.abs(previous.top - nextSpine.top) < 0.5 &&
+        Math.abs(previous.height - nextSpine.height) < 0.5
+          ? previous
+          : nextSpine
+      ))
     }
 
     alignResponseToPrompt()
@@ -664,7 +684,10 @@ export function ProjectForkBuildPath({
     observer.observe(sourceResponse)
     observer.observe(continuationPrompt)
     observer.observe(continuationWorkspace)
-    continuationPrompts.forEach((prompt) => observer.observe(prompt))
+    continuationPairs.forEach(({ prompt, response }) => {
+      observer.observe(prompt)
+      observer.observe(response)
+    })
     window.addEventListener('resize', alignResponseToPrompt)
 
     return () => {
@@ -677,7 +700,6 @@ export function ProjectForkBuildPath({
     continuationSpine &&
     forkPoint &&
     firstContinuation &&
-    continuationSteps.length > 1 &&
     continuationSpine.sourceStepId === forkPoint.id &&
     continuationSpine.firstStepId === firstContinuation.id &&
     continuationSpine.lastStepId === continuationSteps.at(-1)?.id
@@ -900,10 +922,11 @@ export function ProjectForkBuildPath({
                     aria-hidden="true"
                   />
                 )}
-                {continuationSteps.map((step) => (
+                {continuationSteps.map((step, index) => (
                   <ContinuationStepCard
                     key={step.id}
                     step={step}
+                    isFirst={index === 0}
                     providerName={fork.childProviderName}
                     artifactOpenHrefs={artifactOpenHrefs}
                     selectedArtifactPath={selectedArtifactPath}

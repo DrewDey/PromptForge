@@ -170,6 +170,10 @@ const lineageSnapshotExpression = `(() => {
     id: node.getAttribute('data-fork-continuation-prompt'),
     stepNumber: Number(node.getAttribute('data-fork-continuation-prompt-step-number')),
   }));
+  const continuationResponses=[...root.querySelectorAll('[data-fork-continuation-response]')].map((node)=>({
+    id: node.getAttribute('data-fork-continuation-response'),
+    stepNumber: Number(node.getAttribute('data-fork-continuation-response-step-number')),
+  }));
   const artifactPaths=unique([...root.querySelectorAll('[data-fork-display-artifact]')].map((node)=>node.getAttribute('data-fork-display-artifact')));
   const trail=[...root.querySelectorAll('nav[aria-label="Fork lineage"] li')].map((node)=>node.textContent?.trim() || '').filter(Boolean);
   const desktopPath=root.querySelector('[data-fork-desktop-path]');
@@ -189,6 +193,10 @@ const lineageSnapshotExpression = `(() => {
   const sourcePromptNode=desktopPath?.querySelector('[data-fork-source-prompt-node]');
   const sourceResponseNode=desktopPath?.querySelector('[data-fork-source-response-node]');
   const continuationPromptNodes=[...desktopPath?.querySelectorAll('[data-fork-continuation-prompt-node]') || []];
+  const continuationResponseNodes=[...desktopPath?.querySelectorAll('[data-fork-continuation-response-node]') || []];
+  const continuationIncomingArms=[...desktopPath?.querySelectorAll('[data-fork-continuation-incoming-arm]') || []];
+  const continuationPromptCardArms=[...desktopPath?.querySelectorAll('[data-fork-continuation-prompt-card-arm]') || []];
+  const continuationResponseCardArms=[...desktopPath?.querySelectorAll('[data-fork-continuation-response-card-arm]') || []];
   const sourcePipelines=[...desktopPath?.querySelectorAll('[data-fork-source-pipeline]') || []];
   const continuationPipelines=[...desktopPath?.querySelectorAll('[data-fork-continuation-pipeline]') || []];
   const sourcePromptRect=desktopSourcePrompt?.getBoundingClientRect();
@@ -220,6 +228,8 @@ const lineageSnapshotExpression = `(() => {
   };
   const continuationPromptCenters=[...desktopPath?.querySelectorAll('[data-fork-continuation-prompt]') || []]
     .map((node)=>centerY(node.getBoundingClientRect()));
+  const continuationResponseCenters=[...desktopPath?.querySelectorAll('[data-fork-continuation-response]') || []]
+    .map((node)=>centerY(node.getBoundingClientRect()));
   const firstContinuationNodeRect=continuationPromptNodes[0]?.getBoundingClientRect();
   return {
     count: roots.length,
@@ -229,6 +239,7 @@ const lineageSnapshotExpression = `(() => {
     sourceResponses,
     continuation,
     continuationPrompts,
+    continuationResponses,
     artifactPaths,
     trail,
     connector: {
@@ -295,7 +306,8 @@ const lineageSnapshotExpression = `(() => {
         color: getComputedStyle(node).backgroundColor,
       })),
       continuationPromptCenters,
-      continuationNodes: continuationPromptNodes.map((node)=>{
+      continuationResponseCenters,
+      continuationPromptNodes: continuationPromptNodes.map((node)=>{
         const nodeRect=node.getBoundingClientRect();
         const prompt=root.querySelector('[data-fork-continuation-prompt="'+CSS.escape(node.getAttribute('data-fork-continuation-prompt-node') || '')+'"]');
         const promptRect=prompt?.getBoundingClientRect();
@@ -306,6 +318,36 @@ const lineageSnapshotExpression = `(() => {
           promptDelta: promptRect ? Math.abs(centerY(nodeRect) - centerY(promptRect)) : null,
         };
       }),
+      continuationResponseNodes: continuationResponseNodes.map((node)=>{
+        const nodeRect=node.getBoundingClientRect();
+        const response=root.querySelector('[data-fork-continuation-response="'+CSS.escape(node.getAttribute('data-fork-continuation-response-node') || '')+'"]');
+        const responseRect=response?.getBoundingClientRect();
+        return {
+          id: node.getAttribute('data-fork-continuation-response-node'),
+          rect: rect(node),
+          color: getComputedStyle(node).backgroundColor,
+          responseDelta: responseRect ? Math.abs(centerY(nodeRect) - centerY(responseRect)) : null,
+        };
+      }),
+      continuationIncomingArms: continuationIncomingArms.map((node)=>({
+        id: node.getAttribute('data-fork-continuation-incoming-arm'),
+        rect: rect(node),
+        color: getComputedStyle(node).backgroundColor,
+      })),
+      continuationCardArms: [
+        ...continuationPromptCardArms.map((node)=>({
+          kind:'prompt',
+          id:node.getAttribute('data-fork-continuation-prompt-card-arm'),
+          rect:rect(node),
+          color:getComputedStyle(node).backgroundColor,
+        })),
+        ...continuationResponseCardArms.map((node)=>({
+          kind:'response',
+          id:node.getAttribute('data-fork-continuation-response-card-arm'),
+          rect:rect(node),
+          color:getComputedStyle(node).backgroundColor,
+        })),
+      ],
     },
     desktopGeometry: {
       layout: desktopPath?.getAttribute('data-fork-desktop-layout') || '',
@@ -455,33 +497,65 @@ function assertResponseToPromptPipeline(snapshot, label, expectedSourceNumber, e
       `${pipeline.sourceContinuityGap}px/${pipeline.sourceTerminationDelta}px.`,
     )
   }
-  if (pipeline.continuationNodes.some((node) => node.color !== 'rgb(232, 122, 44)' || node.rect?.width < 44 || node.rect?.height < 52 || !Number.isFinite(node.promptDelta) || node.promptDelta > 2)) {
+  if (pipeline.continuationPromptNodes.some((node) => node.color !== 'rgb(232, 122, 44)' || node.rect?.width < 44 || node.rect?.height < 52 || !Number.isFinite(node.promptDelta) || node.promptDelta > 2)) {
     throw new Error(`${label} continuation prompt nodes are not orange and prompt-centered.`)
   }
-  if (pipeline.continuationNodes.length !== expectedContinuationNumbers.length) {
-    throw new Error(`${label} rendered ${pipeline.continuationNodes.length} prompt nodes for ${expectedContinuationNumbers.length} continuation prompts.`)
+  if (pipeline.continuationResponseNodes.some((node) => node.color !== 'rgb(232, 122, 44)' || node.rect?.width < 44 || node.rect?.height < 52 || !Number.isFinite(node.responseDelta) || node.responseDelta > 2)) {
+    throw new Error(`${label} continuation response nodes are not orange and response-centered.`)
   }
-  if (expectedContinuationNumbers.length === 1) {
-    if (pipeline.continuation.length !== 0) {
-      throw new Error(`${label} one-prompt continuation renders a vertical orange overhang.`)
+  if (
+    pipeline.continuationPromptNodes.length !== expectedContinuationNumbers.length ||
+    pipeline.continuationResponseNodes.length !== expectedContinuationNumbers.length ||
+    snapshot.continuationResponses.length !== expectedContinuationNumbers.length
+  ) {
+    throw new Error(
+      `${label} rendered ${pipeline.continuationPromptNodes.length} prompt nodes and ` +
+      `${pipeline.continuationResponseNodes.length} response nodes for ${expectedContinuationNumbers.length} continuation pairs.`,
+    )
+  }
+  const continuationResponseNumbers = snapshot.continuationResponses.map((response) => response.stepNumber)
+  if (JSON.stringify(continuationResponseNumbers) !== JSON.stringify(expectedContinuationNumbers)) {
+    throw new Error(`${label} continuation responses are ${JSON.stringify(continuationResponseNumbers)} instead of ${JSON.stringify(expectedContinuationNumbers)}.`)
+  }
+  if (
+    pipeline.continuationIncomingArms.length !== 1 ||
+    pipeline.continuationIncomingArms[0]?.id !== snapshot.continuationPrompts[0]?.id ||
+    pipeline.continuationIncomingArms[0]?.color !== 'rgb(232, 122, 44)'
+  ) {
+    throw new Error(`${label} must expose exactly one orange incoming arm at the first continuation prompt.`)
+  }
+  if (
+    pipeline.continuationCardArms.length !== expectedContinuationNumbers.length * 2 ||
+    pipeline.continuationCardArms.some((arm) => arm.color !== 'rgb(232, 122, 44)' || arm.rect?.width < 36)
+  ) {
+    throw new Error(`${label} prompt/response card arms are missing, collapsed, or not orange.`)
+  }
+  for (let index = 0; index < expectedContinuationNumbers.length; index += 1) {
+    const promptCenter = pipeline.continuationPromptCenters[index]
+    const responseCenter = pipeline.continuationResponseCenters[index]
+    const nextPromptCenter = pipeline.continuationPromptCenters[index + 1]
+    if (!Number.isFinite(promptCenter) || !Number.isFinite(responseCenter) || promptCenter >= responseCenter) {
+      throw new Error(`${label} continuation pair ${expectedContinuationNumbers[index]} does not progress prompt to response.`)
     }
-  } else {
-    const segment = pipeline.continuation[0]
-    const firstPromptCenter = pipeline.continuationPromptCenters[0]
-    const lastPromptCenter = pipeline.continuationPromptCenters.at(-1)
-    if (
-      pipeline.continuation.length !== 1 ||
-      segment?.color !== 'rgb(232, 122, 44)' ||
-      segment.rect?.width < 28 ||
-      segment.firstStep !== snapshot.continuationPrompts[0]?.id ||
-      segment.lastStep !== snapshot.continuationPrompts.at(-1)?.id ||
-      !Number.isFinite(firstPromptCenter) ||
-      !Number.isFinite(lastPromptCenter) ||
-      Math.abs(segment.rect?.top - firstPromptCenter) > 2 ||
-      Math.abs(segment.rect?.bottom - lastPromptCenter) > 2
-    ) {
-      throw new Error(`${label} does not render one continuous orange spine exactly from the first prompt center to the last.`)
+    if (Number.isFinite(nextPromptCenter) && responseCenter >= nextPromptCenter) {
+      throw new Error(`${label} continuation response ${expectedContinuationNumbers[index]} does not precede the next prompt.`)
     }
+  }
+  const segment = pipeline.continuation[0]
+  const firstPromptCenter = pipeline.continuationPromptCenters[0]
+  const lastResponseCenter = pipeline.continuationResponseCenters.at(-1)
+  if (
+    pipeline.continuation.length !== 1 ||
+    segment?.color !== 'rgb(232, 122, 44)' ||
+    segment.rect?.width < 28 ||
+    segment.firstStep !== snapshot.continuationPrompts[0]?.id ||
+    segment.lastStep !== snapshot.continuationResponses.at(-1)?.id ||
+    !Number.isFinite(firstPromptCenter) ||
+    !Number.isFinite(lastResponseCenter) ||
+    Math.abs(segment.rect?.top - firstPromptCenter) > 2 ||
+    Math.abs(segment.rect?.bottom - lastResponseCenter) > 2
+  ) {
+    throw new Error(`${label} does not render one continuous orange spine exactly from the first prompt center to the last response center.`)
   }
 }
 
@@ -632,6 +706,7 @@ async function verifyParentExistingForkRail(client, sessionId, label) {
       const row=rail?.closest('[data-source-run-response-row]');
       const prompt=row?.querySelector('[data-source-run-node="prompt"]');
       const response=row?.querySelector('[data-source-run-node="response"]');
+      const responseCard=response?.querySelector('[data-source-run-card="response"]');
       const orangePipe=rail?.querySelector('[data-fork-existing-branch-pipe]');
       const orangeNode=rail?.querySelector('[data-fork-existing-branch-node]');
       const greenPipes=[...document.querySelectorAll('[data-source-run-pipeline]')];
@@ -643,9 +718,9 @@ async function verifyParentExistingForkRail(client, sessionId, label) {
       };
       const center=(value)=>value ? value.top + value.height / 2 : null;
       const socketRect=rect(socket);
-      const greenNodeRect=rect(greenNode);
+      const responseCardRect=rect(responseCard);
       return {
-        found:Boolean(rail && response && orangePipe && orangeNode && greenPipes.length > 0 && greenNode),
+        found:Boolean(rail && response && responseCard && orangePipe && orangeNode && greenPipes.length > 0 && greenNode),
         railFound:Boolean(rail),
         responseFound:Boolean(response),
         orangePipeFound:Boolean(orangePipe),
@@ -661,7 +736,7 @@ async function verifyParentExistingForkRail(client, sessionId, label) {
         orangeNode:orangeNode ? getComputedStyle(orangeNode).backgroundColor : '',
         greenPipes:greenPipes.map((node)=>getComputedStyle(node).backgroundColor),
         greenNode:greenNode ? getComputedStyle(greenNode).backgroundColor : '',
-        socketNodeDelta:socketRect && greenNodeRect ? Math.abs(center(socketRect)-center(greenNodeRect)) : null,
+        socketResponseCardDelta:socketRect && responseCardRect ? Math.abs(center(socketRect)-center(responseCardRect)) : null,
       };
     })()`,
     (value) => value?.found,
@@ -679,8 +754,8 @@ async function verifyParentExistingForkRail(client, sessionId, label) {
   if (snapshot.greenPipes.some((color) => color !== 'rgb(43, 209, 95)') || snapshot.greenNode !== 'rgb(43, 209, 95)') {
     throw new Error(`${label} main source spine is not green.`)
   }
-  if (!Number.isFinite(snapshot.socketNodeDelta) || snapshot.socketNodeDelta > 2) {
-    throw new Error(`${label} existing-fork socket misses the source response node by ${snapshot.socketNodeDelta}px.`)
+  if (!Number.isFinite(snapshot.socketResponseCardDelta) || snapshot.socketResponseCardDelta > 2) {
+    throw new Error(`${label} existing-fork socket misses the full response-card center by ${snapshot.socketResponseCardDelta}px.`)
   }
 }
 
@@ -845,6 +920,7 @@ async function verifyMobileLineage(client, sessionId, mode, label, screenshotPat
       const continuationLane=root?.querySelector('[data-fork-continuation-lane]');
       const pipeline=root?.querySelector('[data-fork-continuation-pipeline]');
       const promptNode=root?.querySelector('[data-fork-continuation-prompt-node]');
+      const responseNode=root?.querySelector('[data-fork-continuation-response-node]');
       const rootRect=root?.getBoundingClientRect();
       const continuationRect=continuationLane?.getBoundingClientRect();
       const workspace=root?.querySelector('[data-fork-continuation-workspace]');
@@ -880,6 +956,7 @@ async function verifyMobileLineage(client, sessionId, mode, label, screenshotPat
         connectorHidden:Boolean(connectorLane && getComputedStyle(connectorLane).display === 'none'),
         pipelineHidden:Boolean(!pipeline || getComputedStyle(pipeline).display === 'none'),
         promptNodeHidden:Boolean(promptNode && getComputedStyle(promptNode).display === 'none'),
+        responseNodeHidden:Boolean(responseNode && getComputedStyle(responseNode).display === 'none'),
         continuationWidth:continuationRect?.width || 0,
         availableWidth:rootRect?.width || 0,
         rootClientWidth:root?.clientWidth || 0,
@@ -898,7 +975,7 @@ async function verifyMobileLineage(client, sessionId, mode, label, screenshotPat
   if (mobile.visualOffsetLeft !== 0 || mobile.visualPageLeft !== 0) {
     throw new Error(`${label} 390px visual viewport is horizontally panned by ${mobile.visualOffsetLeft}px/${mobile.visualPageLeft}px.`)
   }
-  if (!mobile.desktopHidden || !mobile.connectorHidden || !mobile.pipelineHidden || !mobile.promptNodeHidden) {
+  if (!mobile.desktopHidden || !mobile.connectorHidden || !mobile.pipelineHidden || !mobile.promptNodeHidden || !mobile.responseNodeHidden) {
     throw new Error(`${label} 390px lineage leaked desktop source, connector, or pipeline geometry.`)
   }
   if (mobile.continuationWidth > mobile.availableWidth) {

@@ -855,7 +855,7 @@ function ResponseForkHoverRail({
       data-response-fork-hover-rail
       data-fork-existing-branch-origin="response"
       data-fork-existing-branch-step={sourceStepId}
-      className="hidden min-h-full items-start overflow-visible pt-10 xl:flex"
+      className="hidden min-h-full items-center overflow-visible xl:flex"
     >
       <span
         data-response-fork-socket
@@ -947,7 +947,7 @@ function PipeNode({
         aria-hidden="true"
       />
       <div className="absolute left-11 top-[54px] h-7 w-12 border-y-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_0_5px_0_rgba(255,255,255,0.18),inset_0_-5px_0_rgba(0,0,0,0.16)]" />
-      <div className={cardClassName}>
+      <div className={cardClassName} data-source-run-card={variant}>
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-surface-500">

@@ -333,6 +333,7 @@ if (approvedForkReader) {
 
 const rendererPath = 'src/components/ProjectForkBuildPath.tsx'
 const renderer = parse(rendererPath)
+const rendererSource = read(rendererPath)
 assertExport(renderer, rendererPath, 'ProjectForkBuildPath')
 assertExport(renderer, rendererPath, 'ProjectForkBuildPathProps')
 assertExport(renderer, rendererPath, 'ProjectForkBuildPathMode')
@@ -360,6 +361,12 @@ for (const hook of [
   'data-project-fork-build-path',
   'data-fork-inherited-path',
   'data-fork-source-response',
+  'data-fork-desktop-layout',
+  'data-fork-source-lane',
+  'data-fork-connector-lane',
+  'data-fork-response-connector',
+  'data-fork-response-socket',
+  'data-fork-continuation-lane',
   'data-fork-continuation',
   'data-fork-continuation-fork',
   'data-fork-display-artifact',
@@ -368,6 +375,22 @@ for (const hook of [
 }
 const rendererHasMobileDisclosure = jsxOpenings(renderer, 'details').length > 0 || hasJsxAttribute(renderer, 'aria-expanded')
 assert(rendererHasMobileDisclosure, `${rendererPath}: inherited history needs an accessible compact/mobile disclosure`)
+assert(
+  rendererSource.includes('lg:grid-cols-[minmax(250px,320px)_72px_minmax(0,1fr)]'),
+  `${rendererPath}: desktop lineage must retain explicit source, connector, and primary continuation columns`,
+)
+assert(
+  rendererSource.includes('data-fork-desktop-layout="branch"'),
+  `${rendererPath}: desktop lineage must identify the spatial branch layout for browser regression checks`,
+)
+assert(
+  rendererSource.includes('className="relative hidden min-h-[220px] lg:block"'),
+  `${rendererPath}: connector lane must remain desktop-only so mobile can stack without an empty branch column`,
+)
+assert(
+  rendererSource.includes('group/inherited mb-4') && rendererSource.includes('lg:hidden'),
+  `${rendererPath}: inherited history must retain its compact mobile disclosure`,
+)
 
 const showcasePath = 'src/components/SourceRunShowcase.tsx'
 const showcase = parse(showcasePath)
@@ -447,6 +470,10 @@ assert(forkBrowserGuard.includes('grandchildSnapshot.trail.length !== 3'), 'fork
 assert(forkBrowserGuard.includes('/airlock-zero-swarm-shift-fork-demo'), 'fork browser guard must exercise nested-fork creation from a verified prepared child')
 assert(forkBrowserGuard.includes('data-fork-continuation-fork'), 'fork browser guard must inspect the continuation-level nested-fork action')
 assert(forkBrowserGuard.includes("nested.depth !== '1'"), 'fork browser guard must verify nested depth increments from the immediate parent')
+assert(forkBrowserGuard.includes('geometry.gridColumns?.length !== 3'), 'fork browser guard must fail when desktop branch geometry collapses below three columns')
+assert(forkBrowserGuard.includes('connector.width < 64'), 'fork browser guard must reject a decorative connector sliver')
+assert(forkBrowserGuard.includes('socket.width < 44'), 'fork browser guard must require a legible response socket')
+assert(forkBrowserGuard.includes('connectorHidden'), 'fork browser guard must verify the desktop connector collapses at 390px')
 
 const communityPath = 'src/components/ProjectCommunityPanel.tsx'
 const community = parse(communityPath)

@@ -246,7 +246,7 @@ function InheritedPath({
             </span>
             <ChevronRight className="h-4 w-4 shrink-0 transition-transform group-open/history:rotate-90" aria-hidden="true" />
           </summary>
-          <div className="grid gap-3 border-t border-surface-200 bg-surface-50 p-3 md:grid-cols-2">
+          <div className="grid gap-3 border-t border-surface-200 bg-surface-50 p-3">
             {earlierSteps.map((step) => (
               <InheritedStepCard key={step.id} step={step} isForkPoint={false} />
             ))}
@@ -626,30 +626,51 @@ export function ProjectForkBuildPath({
 
         <div
           ref={desktopPathRef}
-          className="relative grid gap-5"
+          className="grid gap-4 lg:grid-cols-[minmax(250px,320px)_72px_minmax(0,1fr)] lg:items-stretch"
           data-fork-desktop-path
+          data-fork-desktop-layout="branch"
         >
-          <aside className="relative hidden border border-surface-200 bg-surface-50 p-4 lg:block" data-fork-inherited-path>
+          <aside
+            className="relative hidden border-2 border-surface-900 bg-white p-4 shadow-[0_16px_38px_rgba(24,24,27,0.07)] lg:block"
+            data-fork-inherited-path
+            data-fork-source-lane
+          >
             <div className="mb-3 font-mono text-[10px] font-black uppercase tracking-[0.14em] text-brand-orange-ink">
-              Inherited source path
+              Inherited source path · Left lane
             </div>
             <InheritedPath steps={visibleInheritedSteps} forkPointId={forkPoint?.id} />
           </aside>
 
-          {forkPoint && (
-            <div
-              className={[
-                'pointer-events-none absolute -left-1 hidden h-10 w-1 -translate-y-1/2 bg-brand-orange transition-[top,opacity] duration-150 lg:block',
-                forkSocket?.stepId === forkPoint.id ? 'opacity-100' : 'opacity-0',
-              ].join(' ')}
-              style={{ top: forkSocket?.stepId === forkPoint.id ? forkSocket.y : '50%' }}
-              data-fork-response-connector
-              data-fork-response-connector-step={forkPoint.id}
-              aria-hidden="true"
-            />
-          )}
+          <div
+            className="relative hidden min-h-[220px] lg:block"
+            data-fork-connector-lane
+            aria-hidden="true"
+          >
+            {forkPoint && (
+              <div
+                className={[
+                  'pointer-events-none absolute left-0 right-0 h-6 -translate-y-1/2 transition-[top,opacity] duration-150',
+                  forkSocket?.stepId === forkPoint.id ? 'opacity-100' : 'opacity-0',
+                ].join(' ')}
+                style={{ top: forkSocket?.stepId === forkPoint.id ? forkSocket.y : '50%' }}
+                data-fork-response-connector
+                data-fork-response-connector-step={forkPoint.id}
+              >
+                <div className="absolute inset-x-0 top-1/2 h-4 -translate-y-1/2 border-y-2 border-surface-900 bg-brand-orange shadow-[inset_0_3px_0_rgba(255,255,255,0.3),inset_0_-3px_0_rgba(0,0,0,0.12)]" />
+                <div
+                  className="absolute left-1/2 top-1/2 grid h-12 w-12 -translate-x-1/2 -translate-y-1/2 place-items-center border-4 border-surface-900 bg-primary-50 shadow-[0_0_0_7px_rgba(232,122,44,0.16)]"
+                  data-fork-response-socket
+                >
+                  <span className="h-3.5 w-3.5 border-2 border-surface-900 bg-brand-orange" />
+                </div>
+              </div>
+            )}
+          </div>
 
-          <div className="min-w-0 border border-surface-200 bg-surface-50 p-3 sm:p-4">
+          <div
+            className="min-w-0 border-2 border-surface-900 bg-surface-50 p-3 shadow-[0_16px_38px_rgba(24,24,27,0.07)] sm:p-4"
+            data-fork-continuation-lane
+          >
             <div className="mb-4 border-b border-surface-200 pb-3">
               <div className="font-mono text-[10px] font-black uppercase tracking-[0.14em] text-brand-orange-ink">
                 Active fork continuation

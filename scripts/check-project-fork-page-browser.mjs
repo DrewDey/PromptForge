@@ -80,11 +80,26 @@ const lineageSnapshotExpression = `(() => {
   const trail=[...root.querySelectorAll('nav[aria-label="Fork lineage"] li')].map((node)=>node.textContent?.trim() || '').filter(Boolean);
   const desktopPath=root.querySelector('[data-fork-desktop-path]');
   const desktopSourceResponse=desktopPath?.querySelector('aside [data-fork-source-response="true"]');
+  const sourceLane=desktopPath?.querySelector('[data-fork-source-lane]');
+  const connectorLane=desktopPath?.querySelector('[data-fork-connector-lane]');
+  const continuationLane=desktopPath?.querySelector('[data-fork-continuation-lane]');
   const connector=desktopPath?.querySelector('[data-fork-response-connector]');
-  const sourceRect=desktopSourceResponse?.getBoundingClientRect();
+  const socket=desktopPath?.querySelector('[data-fork-response-socket]');
+  const sourceResponseRect=desktopSourceResponse?.getBoundingClientRect();
   const connectorRect=connector?.getBoundingClientRect();
-  const sourceCenter=sourceRect ? sourceRect.top + sourceRect.height / 2 : null;
+  const sourceCenter=sourceResponseRect ? sourceResponseRect.top + sourceResponseRect.height / 2 : null;
   const connectorCenter=connectorRect ? connectorRect.top + connectorRect.height / 2 : null;
+  const rect=(node)=>{
+    const value=node?.getBoundingClientRect();
+    return value ? {
+      left: value.left,
+      right: value.right,
+      top: value.top,
+      bottom: value.bottom,
+      width: value.width,
+      height: value.height,
+    } : null;
+  };
   return {
     count: roots.length,
     mode: root.getAttribute('data-project-fork-build-path-mode'),
@@ -101,8 +116,46 @@ const lineageSnapshotExpression = `(() => {
       connectorCenter,
       delta: sourceCenter === null || connectorCenter === null ? null : Math.abs(sourceCenter - connectorCenter),
     },
+    desktopGeometry: {
+      layout: desktopPath?.getAttribute('data-fork-desktop-layout') || '',
+      gridColumns: desktopPath ? getComputedStyle(desktopPath).gridTemplateColumns.trim().split(' ').filter(Boolean) : [],
+      sourceLane: rect(sourceLane),
+      connectorLane: rect(connectorLane),
+      continuationLane: rect(continuationLane),
+      connector: rect(connector),
+      socket: rect(socket),
+    },
   };
 })()`
+
+function assertDesktopBranchGeometry(snapshot, label) {
+  const geometry = snapshot.desktopGeometry
+  if (geometry?.layout !== 'branch') throw new Error(`${label} is missing the explicit desktop branch layout contract.`)
+  if (geometry.gridColumns?.length !== 3) {
+    throw new Error(`${label} rendered ${geometry.gridColumns?.length ?? 0} desktop grid columns instead of three.`)
+  }
+  const { sourceLane, connectorLane, continuationLane, connector, socket } = geometry
+  if (![sourceLane, connectorLane, continuationLane, connector, socket].every(Boolean)) {
+    throw new Error(`${label} did not render all source, connector, socket, and continuation geometry.`)
+  }
+  if (sourceLane.width < 240) throw new Error(`${label} source lane collapsed to ${sourceLane.width}px.`)
+  if (connectorLane.width < 64) throw new Error(`${label} connector lane collapsed to ${connectorLane.width}px.`)
+  if (continuationLane.width <= sourceLane.width) {
+    throw new Error(`${label} continuation lane (${continuationLane.width}px) did not retain the primary workspace over the ${sourceLane.width}px source lane.`)
+  }
+  if (sourceLane.right > connectorLane.left + 1 || connectorLane.right > continuationLane.left + 1) {
+    throw new Error(`${label} source, connector, and continuation lanes are not ordered left to right.`)
+  }
+  if (Math.abs(sourceLane.top - continuationLane.top) > 2) {
+    throw new Error(`${label} desktop source and continuation lanes do not share a coherent top edge.`)
+  }
+  if (connector.width < 64 || connector.height < 20) {
+    throw new Error(`${label} response connector is only ${connector.width}x${connector.height}px.`)
+  }
+  if (socket.width < 44 || socket.height < 44) {
+    throw new Error(`${label} response socket is only ${socket.width}x${socket.height}px.`)
+  }
+}
 
 function assertLineageSnapshot(snapshot, mode, label) {
   if (!snapshot) throw new Error(`${label} did not mount the shared fork workspace.`)
@@ -120,6 +173,7 @@ function assertLineageSnapshot(snapshot, mode, label) {
   if (!Number.isFinite(snapshot.connector.delta) || snapshot.connector.delta > 2) {
     throw new Error(`${label} connector misses the exact response center by ${snapshot.connector.delta}px.`)
   }
+  assertDesktopBranchGeometry(snapshot, label)
 }
 
 async function selectOnlyBranch(client, sessionId, label) {
@@ -167,6 +221,9 @@ async function waitForLineage(client, sessionId, mode, label) {
       value.mode === mode &&
       value.continuation?.length > 0 &&
       value.connector?.visible &&
+      value.desktopGeometry?.gridColumns?.length === 3 &&
+      value.desktopGeometry?.connector?.width >= 64 &&
+      value.desktopGeometry?.socket?.width >= 44 &&
       Number.isFinite(value.connector?.delta) &&
       value.connector.delta <= 2
     ),
@@ -360,7 +417,12 @@ async function main() {
         consoleErrors.push(message.params.exceptionDetails?.text ?? 'Uncaught runtime exception')
       }
       if (message.method === 'Log.entryAdded' && message.params.entry?.level === 'error') {
-        consoleErrors.push(message.params.entry.text)
+        const entry = message.params.entry
+        const expectedLocalActivationFailure = (
+          entry.url?.includes('/api/activation-events') &&
+          entry.text.includes('503')
+        )
+        if (!expectedLocalActivationFailure) consoleErrors.push(entry.text)
       }
     }
     client.listeners.add(listener)
@@ -428,11 +490,18 @@ async function main() {
           const root=document.querySelector('[data-project-fork-build-path]');
           const disclosure=root?.querySelector('details[data-fork-inherited-path]');
           const desktopPath=[...root?.querySelectorAll('aside[data-fork-inherited-path]') || []][0];
+          const connectorLane=root?.querySelector('[data-fork-connector-lane]');
+          const continuationLane=root?.querySelector('[data-fork-continuation-lane]');
+          const rootRect=root?.getBoundingClientRect();
+          const continuationRect=continuationLane?.getBoundingClientRect();
           return {
             mode: root?.getAttribute('data-project-fork-build-path-mode') || '',
             overflow: document.documentElement.scrollWidth - window.innerWidth,
             disclosureVisible: Boolean(disclosure && getComputedStyle(disclosure).display !== 'none'),
             desktopHidden: Boolean(desktopPath && getComputedStyle(desktopPath).display === 'none'),
+            connectorHidden: Boolean(connectorLane && getComputedStyle(connectorLane).display === 'none'),
+            continuationWidth: continuationRect?.width || 0,
+            availableWidth: rootRect?.width || 0,
           };
         })()`,
         (value) => value?.mode === 'child' && value.disclosureVisible,
@@ -440,6 +509,10 @@ async function main() {
       )
       if (mobile.overflow > 1) throw new Error(`390px child lineage overflows horizontally by ${mobile.overflow}px.`)
       if (!mobile.desktopHidden) throw new Error('390px child lineage did not collapse the desktop inherited rail.')
+      if (!mobile.connectorHidden) throw new Error('390px child lineage did not collapse the desktop connector lane.')
+      if (mobile.continuationWidth <= 0 || mobile.continuationWidth > mobile.availableWidth) {
+        throw new Error(`390px continuation width ${mobile.continuationWidth}px is not contained by its ${mobile.availableWidth}px fork workspace.`)
+      }
 
       await client.send('Emulation.setDeviceMetricsOverride', {
         width: 1440,

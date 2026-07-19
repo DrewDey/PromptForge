@@ -173,8 +173,46 @@ function InheritedStepCard({
   isForkPoint: boolean
 }) {
   return (
-    <article className="grid gap-2" data-fork-inherited-step={step.id}>
-      <div className="border border-surface-200 border-l-2 border-l-brand-orange bg-white px-3 py-2.5">
+    <article
+      className={[
+        'grid gap-2',
+        isForkPoint ? 'relative lg:pl-[72px]' : '',
+      ].join(' ')}
+      data-fork-inherited-step={step.id}
+    >
+      {isForkPoint && (
+        <div
+          className="absolute bottom-0 left-[20px] top-0 hidden w-8 border-x-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_5px_0_0_rgba(255,255,255,0.24),inset_-5px_0_0_rgba(0,0,0,0.2)] lg:block"
+          data-fork-source-pipeline
+          aria-hidden="true"
+        />
+      )}
+      <div
+        className={[
+          'relative border border-surface-200 border-l-2 bg-white px-3 py-2.5',
+          isForkPoint ? 'border-l-[#2bd15f]' : 'border-l-brand-orange',
+        ].join(' ')}
+        data-fork-source-prompt={isForkPoint ? step.id : undefined}
+        data-fork-source-prompt-step-number={isForkPoint ? step.stepNumber : undefined}
+      >
+        {isForkPoint && (
+          <>
+            <span
+              className="absolute -left-[72px] top-1/2 hidden h-14 w-12 -translate-y-1/2 border-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_6px_0_0_rgba(255,255,255,0.28),inset_-6px_0_0_rgba(0,0,0,0.18)] lg:block"
+              data-fork-source-prompt-node={step.id}
+              aria-hidden="true"
+            />
+            <span
+              className="absolute -left-7 top-1/2 hidden h-7 w-7 -translate-y-1/2 border-y-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_0_5px_0_rgba(255,255,255,0.18),inset_0_-5px_0_rgba(0,0,0,0.16)] lg:block"
+              aria-hidden="true"
+            />
+            <span
+              className="absolute left-full top-1/2 z-10 hidden h-7 w-8 -translate-y-1/2 border-y-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_0_5px_0_rgba(255,255,255,0.18),inset_0_-5px_0_rgba(0,0,0,0.16)] lg:block"
+              data-fork-source-prompt-branch={step.id}
+              aria-hidden="true"
+            />
+          </>
+        )}
         <div className="font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-brand-orange-ink">
           Prompt {stepLabel(step.stepNumber)}
         </div>
@@ -386,61 +424,95 @@ function ContinuationStepCard({
   artifactOpenHrefs,
   selectedArtifactPath,
   onDisplayArtifact,
+  terminal,
 }: {
   step: ProjectForkContinuationStep
   providerName?: string | null
   artifactOpenHrefs?: Record<string, string | undefined>
   selectedArtifactPath?: string | null
   onDisplayArtifact?: (artifactPath: string, artifactTitle: string, artifactId: string) => void
+  terminal: boolean
 }) {
   const artifacts = continuationArtifacts(step)
 
   return (
     <article
-      className="border border-surface-200 bg-white p-4 shadow-[0_18px_44px_rgba(24,24,27,0.07)] sm:p-5"
+      className="relative lg:pl-[88px]"
       data-fork-continuation={step.id}
     >
-      <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-brand-orange-ink">
-        Prompt {stepLabel(step.stepNumber)} · Fork continuation
-      </div>
-      <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
-        <h4 className="text-lg font-black text-surface-900">{step.promptTitle}</h4>
-        {step.forkHref && (
-          <Link
-            href={step.forkHref}
-            aria-label={`Fork this branch from response ${stepLabel(step.stepNumber)}`}
-            data-fork-continuation-fork={step.id}
-            className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 border border-brand-orange bg-white px-3 py-2 text-xs font-black uppercase tracking-[0.1em] text-brand-orange-ink transition hover:bg-primary-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
-          >
-            <GitFork className="h-3.5 w-3.5" aria-hidden="true" />
-            Fork here
-            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-          </Link>
-        )}
-      </div>
-      <div className="mt-3">
-        <ExactText label="Show exact prompt" text={step.promptText} />
-      </div>
-
-      <div className="mt-4 border-l-2 border-brand-orange bg-surface-50 p-3 sm:p-4">
-        <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-surface-500">
-          Response {stepLabel(step.stepNumber)}
-        </div>
-        <p className="mt-2 text-sm font-bold leading-6 text-surface-700">
-          {compactText(step.responseText, 'The complete response is preserved in this branch.', 180)}
-        </p>
-        <div className="mt-3">
-          <ExactText label="Show exact response" text={step.responseText} />
-        </div>
-      </div>
-
-      <ArtifactActions
-        artifacts={artifacts}
-        providerName={providerName}
-        artifactOpenHrefs={artifactOpenHrefs}
-        selectedArtifactPath={selectedArtifactPath}
-        onDisplayArtifact={onDisplayArtifact}
+      <span
+        className={[
+          'absolute left-[22px] top-0 hidden w-8 border-x-4 border-[#8f3f0a] bg-brand-orange shadow-[inset_5px_0_0_rgba(255,255,255,0.24),inset_-5px_0_0_rgba(0,0,0,0.2)] lg:block',
+          terminal ? 'bottom-1/2' : '-bottom-4',
+        ].join(' ')}
+        data-fork-continuation-pipeline={step.id}
+        aria-hidden="true"
       />
+
+      <div className="border border-surface-200 bg-white shadow-[0_18px_44px_rgba(24,24,27,0.07)]">
+        <div
+          className="relative p-4 sm:p-5"
+          data-fork-continuation-prompt={step.id}
+          data-fork-continuation-prompt-step-number={step.stepNumber}
+        >
+          <span
+            className="absolute -left-[88px] top-1/2 hidden h-14 w-12 -translate-y-1/2 border-4 border-[#8f3f0a] bg-brand-orange shadow-[inset_6px_0_0_rgba(255,255,255,0.28),inset_-6px_0_0_rgba(0,0,0,0.18)] lg:block"
+            data-fork-continuation-prompt-node={step.id}
+            aria-hidden="true"
+          />
+          <span
+            className="absolute -left-10 top-1/2 hidden h-7 w-10 -translate-y-1/2 border-y-4 border-[#8f3f0a] bg-brand-orange shadow-[inset_0_5px_0_rgba(255,255,255,0.18),inset_0_-5px_0_rgba(0,0,0,0.16)] lg:block"
+            aria-hidden="true"
+          />
+          <span
+            className="absolute -left-[104px] top-1/2 hidden h-7 w-4 -translate-y-1/2 border-y-4 border-[#8f3f0a] bg-brand-orange shadow-[inset_0_5px_0_rgba(255,255,255,0.18),inset_0_-5px_0_rgba(0,0,0,0.16)] lg:block"
+            aria-hidden="true"
+          />
+          <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-brand-orange-ink">
+            Prompt {stepLabel(step.stepNumber)} · Fork continuation
+          </div>
+          <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
+            <h4 className="text-lg font-black text-surface-900">{step.promptTitle}</h4>
+            {step.forkHref && (
+              <Link
+                href={step.forkHref}
+                aria-label={`Fork this branch from response ${stepLabel(step.stepNumber)}`}
+                data-fork-continuation-fork={step.id}
+                className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 border border-brand-orange bg-white px-3 py-2 text-xs font-black uppercase tracking-[0.1em] text-brand-orange-ink transition hover:bg-primary-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+              >
+                <GitFork className="h-3.5 w-3.5" aria-hidden="true" />
+                Fork here
+                <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+              </Link>
+            )}
+          </div>
+          <div className="mt-3">
+            <ExactText label="Show exact prompt" text={step.promptText} />
+          </div>
+        </div>
+
+        <div className="mx-4 mb-4 border-l-2 border-brand-orange bg-surface-50 p-3 sm:mx-5 sm:mb-5 sm:p-4">
+          <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-surface-500">
+            Response {stepLabel(step.stepNumber)}
+          </div>
+          <p className="mt-2 text-sm font-bold leading-6 text-surface-700">
+            {compactText(step.responseText, 'The complete response is preserved in this branch.', 180)}
+          </p>
+          <div className="mt-3">
+            <ExactText label="Show exact response" text={step.responseText} />
+          </div>
+        </div>
+
+        <div className="px-4 pb-4 sm:px-5 sm:pb-5">
+          <ArtifactActions
+            artifacts={artifacts}
+            providerName={providerName}
+            artifactOpenHrefs={artifactOpenHrefs}
+            selectedArtifactPath={selectedArtifactPath}
+            onDisplayArtifact={onDisplayArtifact}
+          />
+        </div>
+      </div>
     </article>
   )
 }
@@ -470,48 +542,66 @@ export function ProjectForkBuildPath({
     ? sourceSteps.slice(0, forkPointIndex + 1)
     : sourceSteps
   const continuationSteps = fork.continuationSteps ?? []
+  const firstContinuation = continuationSteps[0]
   const branchTarget = branchHref ?? fork.childRoute ?? null
   const forkNumber = fork.forkSource.sourceStepNumber
   const label = mode === 'child' ? 'Fork build path' : 'Selected branch'
   const desktopPathRef = useRef<HTMLDivElement | null>(null)
-  const [forkSocket, setForkSocket] = useState<{ stepId: string; y: number } | null>(null)
+  const [forkConnector, setForkConnector] = useState<{
+    sourceStepId: string
+    continuationStepId: string
+    sourceY: number
+    continuationY: number
+  } | null>(null)
 
   useEffect(() => {
     const desktopPath = desktopPathRef.current
-    if (!desktopPath || !forkPoint) {
+    if (!desktopPath || !forkPoint || !firstContinuation) {
       return undefined
     }
 
-    const forkResponse = desktopPath.querySelector<HTMLElement>(
-      '[data-fork-source-response="true"]',
+    const sourcePrompt = desktopPath.querySelector<HTMLElement>(
+      `[data-fork-source-prompt="${CSS.escape(forkPoint.id)}"]`,
     )
-    if (!forkResponse) {
+    const continuationPrompt = desktopPath.querySelector<HTMLElement>(
+      `[data-fork-continuation-prompt="${CSS.escape(firstContinuation.id)}"]`,
+    )
+    if (!sourcePrompt || !continuationPrompt) {
       return undefined
     }
 
-    const alignSocket = () => {
+    const alignPrompts = () => {
       const pathRect = desktopPath.getBoundingClientRect()
-      const responseRect = forkResponse.getBoundingClientRect()
-      const responseCenter = responseRect.top - pathRect.top + responseRect.height / 2
-      const clampedCenter = Math.max(28, Math.min(pathRect.height - 28, responseCenter))
-      setForkSocket((current) => (
-        current?.stepId === forkPoint.id && Math.abs(current.y - clampedCenter) < 0.5
-          ? current
-          : { stepId: forkPoint.id, y: clampedCenter }
+      const sourceRect = sourcePrompt.getBoundingClientRect()
+      const continuationRect = continuationPrompt.getBoundingClientRect()
+      const next = {
+        sourceStepId: forkPoint.id,
+        continuationStepId: firstContinuation.id,
+        sourceY: sourceRect.top - pathRect.top + sourceRect.height / 2,
+        continuationY: continuationRect.top - pathRect.top + continuationRect.height / 2,
+      }
+      setForkConnector((previous) => (
+        previous?.sourceStepId === next.sourceStepId &&
+        previous.continuationStepId === next.continuationStepId &&
+        Math.abs(previous.sourceY - next.sourceY) < 0.5 &&
+        Math.abs(previous.continuationY - next.continuationY) < 0.5
+          ? previous
+          : next
       ))
     }
 
-    alignSocket()
-    const observer = new ResizeObserver(alignSocket)
+    alignPrompts()
+    const observer = new ResizeObserver(alignPrompts)
     observer.observe(desktopPath)
-    observer.observe(forkResponse)
-    window.addEventListener('resize', alignSocket)
+    observer.observe(sourcePrompt)
+    observer.observe(continuationPrompt)
+    window.addEventListener('resize', alignPrompts)
 
     return () => {
       observer.disconnect()
-      window.removeEventListener('resize', alignSocket)
+      window.removeEventListener('resize', alignPrompts)
     }
-  }, [fork.id, forkPoint])
+  }, [firstContinuation, fork.id, forkPoint])
 
   return (
     <section
@@ -646,20 +736,48 @@ export function ProjectForkBuildPath({
             data-fork-connector-lane
             aria-hidden="true"
           >
-            {forkPoint && (
+            {forkPoint && continuationSteps[0] && (
               <div
                 className={[
-                  'pointer-events-none absolute left-0 right-0 h-6 -translate-y-1/2 transition-[top,opacity] duration-150',
-                  forkSocket?.stepId === forkPoint.id ? 'opacity-100' : 'opacity-0',
+                  'pointer-events-none absolute -left-4 -right-4 transition-[top,height,opacity] duration-150',
+                  forkConnector?.sourceStepId === forkPoint.id &&
+                  forkConnector.continuationStepId === continuationSteps[0].id
+                    ? 'opacity-100'
+                    : 'opacity-0',
                 ].join(' ')}
-                style={{ top: forkSocket?.stepId === forkPoint.id ? forkSocket.y : '50%' }}
-                data-fork-response-connector
-                data-fork-response-connector-step={forkPoint.id}
+                style={{
+                  top: forkConnector
+                    ? Math.min(forkConnector.sourceY, forkConnector.continuationY) - 24
+                    : '50%',
+                  height: forkConnector
+                    ? Math.abs(forkConnector.continuationY - forkConnector.sourceY) + 48
+                    : 48,
+                }}
+                data-fork-prompt-connector
+                data-fork-prompt-connector-source-step={forkPoint.id}
+                data-fork-prompt-connector-target-step={continuationSteps[0].id}
               >
-                <div className="absolute inset-x-0 top-1/2 h-4 -translate-y-1/2 border-y-2 border-surface-900 bg-brand-orange shadow-[inset_0_3px_0_rgba(255,255,255,0.3),inset_0_-3px_0_rgba(0,0,0,0.12)]" />
                 <div
-                  className="absolute left-1/2 top-1/2 grid h-12 w-12 -translate-x-1/2 -translate-y-1/2 place-items-center border-4 border-surface-900 bg-primary-50 shadow-[0_0_0_7px_rgba(232,122,44,0.16)]"
-                  data-fork-response-socket
+                  className="absolute left-0 right-1/2 h-4 -translate-y-1/2 border-y-2 border-[#07551f] bg-[#2bd15f] shadow-[inset_0_3px_0_rgba(255,255,255,0.3),inset_0_-3px_0_rgba(0,0,0,0.12)]"
+                  style={{ top: forkConnector ? forkConnector.sourceY - Math.min(forkConnector.sourceY, forkConnector.continuationY) + 24 : 24 }}
+                  data-fork-source-connector-endpoint
+                />
+                <div
+                  className="absolute left-1/2 w-4 -translate-x-1/2 border-x-2 border-[#8f3f0a] bg-brand-orange shadow-[inset_3px_0_0_rgba(255,255,255,0.25),inset_-3px_0_0_rgba(0,0,0,0.12)]"
+                  style={{
+                    top: forkConnector ? Math.min(forkConnector.sourceY, forkConnector.continuationY) - Math.min(forkConnector.sourceY, forkConnector.continuationY) + 24 : 24,
+                    height: forkConnector ? Math.max(4, Math.abs(forkConnector.continuationY - forkConnector.sourceY)) : 4,
+                  }}
+                />
+                <div
+                  className="absolute left-1/2 right-0 h-4 -translate-y-1/2 border-y-2 border-[#8f3f0a] bg-brand-orange shadow-[inset_0_3px_0_rgba(255,255,255,0.3),inset_0_-3px_0_rgba(0,0,0,0.12)]"
+                  style={{ top: forkConnector ? forkConnector.continuationY - Math.min(forkConnector.sourceY, forkConnector.continuationY) + 24 : 24 }}
+                  data-fork-continuation-connector-endpoint
+                />
+                <div
+                  className="absolute left-1/2 grid h-12 w-12 -translate-x-1/2 -translate-y-1/2 place-items-center border-4 border-surface-900 bg-primary-50 shadow-[0_0_0_7px_rgba(232,122,44,0.16)]"
+                  style={{ top: forkConnector ? forkConnector.sourceY - Math.min(forkConnector.sourceY, forkConnector.continuationY) + 24 : 24 }}
+                  data-fork-prompt-socket
                 >
                   <span className="h-3.5 w-3.5 border-2 border-surface-900 bg-brand-orange" />
                 </div>
@@ -688,7 +806,7 @@ export function ProjectForkBuildPath({
 
             {continuationSteps.length > 0 ? (
               <div className="grid gap-4">
-                {continuationSteps.map((step) => (
+                {continuationSteps.map((step, index) => (
                   <ContinuationStepCard
                     key={step.id}
                     step={step}
@@ -696,6 +814,7 @@ export function ProjectForkBuildPath({
                     artifactOpenHrefs={artifactOpenHrefs}
                     selectedArtifactPath={selectedArtifactPath}
                     onDisplayArtifact={onDisplayArtifact}
+                    terminal={index === continuationSteps.length - 1}
                   />
                 ))}
               </div>

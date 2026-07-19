@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { spawn } from 'node:child_process'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import {
@@ -18,6 +18,9 @@ function parseArgs(argv) {
     childRoute: '/school-desk-hp-calculator-fork-demo#source-run-path',
     grandchildRoute: '/qa/fork-lineage-grandchild-fixture#source-run-path',
     nestedChildRoute: '/airlock-zero-swarm-shift-fork-demo#source-run-path',
+    sourceParentRoute: '/airlock-zero-reactor-run-demo?run=562f5775-9739-4704-be3e-d85efbbd2a5c#source-run-path',
+    blackoutChildRoute: '/airlock-zero-blackout-shift-fork-demo#source-run-path',
+    screenshotDir: null,
   }
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -29,6 +32,9 @@ function parseArgs(argv) {
     else if (key === '--child-route') options.childRoute = value
     else if (key === '--grandchild-route') options.grandchildRoute = value
     else if (key === '--nested-child-route') options.nestedChildRoute = value
+    else if (key === '--source-parent-route') options.sourceParentRoute = value
+    else if (key === '--blackout-child-route') options.blackoutChildRoute = value
+    else if (key === '--screenshot-dir') options.screenshotDir = path.resolve(value)
     else throw new Error(`Unknown argument: ${key}`)
     index += 1
   }
@@ -77,19 +83,39 @@ const lineageSnapshotExpression = `(() => {
   const inherited=unique([...root.querySelectorAll('[data-fork-inherited-step]')].map((node)=>node.getAttribute('data-fork-inherited-step')));
   const sourceResponses=unique([...root.querySelectorAll('[data-fork-source-response]')].map((node)=>node.closest('[data-fork-inherited-step]')?.getAttribute('data-fork-inherited-step')));
   const continuation=unique([...root.querySelectorAll('[data-fork-continuation]')].map((node)=>node.getAttribute('data-fork-continuation')));
+  const continuationPrompts=[...root.querySelectorAll('[data-fork-continuation-prompt]')].map((node)=>({
+    id: node.getAttribute('data-fork-continuation-prompt'),
+    stepNumber: Number(node.getAttribute('data-fork-continuation-prompt-step-number')),
+  }));
   const artifactPaths=unique([...root.querySelectorAll('[data-fork-display-artifact]')].map((node)=>node.getAttribute('data-fork-display-artifact')));
   const trail=[...root.querySelectorAll('nav[aria-label="Fork lineage"] li')].map((node)=>node.textContent?.trim() || '').filter(Boolean);
   const desktopPath=root.querySelector('[data-fork-desktop-path]');
+  const desktopSourcePrompt=desktopPath?.querySelector('aside [data-fork-source-prompt]');
   const desktopSourceResponse=desktopPath?.querySelector('aside [data-fork-source-response="true"]');
   const sourceLane=desktopPath?.querySelector('[data-fork-source-lane]');
   const connectorLane=desktopPath?.querySelector('[data-fork-connector-lane]');
   const continuationLane=desktopPath?.querySelector('[data-fork-continuation-lane]');
-  const connector=desktopPath?.querySelector('[data-fork-response-connector]');
-  const socket=desktopPath?.querySelector('[data-fork-response-socket]');
+  const connector=desktopPath?.querySelector('[data-fork-prompt-connector]');
+  const socket=desktopPath?.querySelector('[data-fork-prompt-socket]');
+  const sourceEndpoint=desktopPath?.querySelector('[data-fork-source-connector-endpoint]');
+  const continuationEndpoint=desktopPath?.querySelector('[data-fork-continuation-connector-endpoint]');
+  const firstContinuationPrompt=desktopPath?.querySelector('[data-fork-continuation-prompt]');
+  const sourcePromptNode=desktopPath?.querySelector('[data-fork-source-prompt-node]');
+  const continuationPromptNodes=[...desktopPath?.querySelectorAll('[data-fork-continuation-prompt-node]') || []];
+  const sourcePipeline=desktopPath?.querySelector('[data-fork-source-pipeline]');
+  const continuationPipelines=[...desktopPath?.querySelectorAll('[data-fork-continuation-pipeline]') || []];
+  const sourcePromptRect=desktopSourcePrompt?.getBoundingClientRect();
   const sourceResponseRect=desktopSourceResponse?.getBoundingClientRect();
+  const firstContinuationPromptRect=firstContinuationPrompt?.getBoundingClientRect();
   const connectorRect=connector?.getBoundingClientRect();
-  const sourceCenter=sourceResponseRect ? sourceResponseRect.top + sourceResponseRect.height / 2 : null;
-  const connectorCenter=connectorRect ? connectorRect.top + connectorRect.height / 2 : null;
+  const sourceEndpointRect=sourceEndpoint?.getBoundingClientRect();
+  const continuationEndpointRect=continuationEndpoint?.getBoundingClientRect();
+  const centerY=(value)=>value ? value.top + value.height / 2 : null;
+  const sourcePromptCenter=centerY(sourcePromptRect);
+  const sourceResponseCenter=centerY(sourceResponseRect);
+  const continuationPromptCenter=centerY(firstContinuationPromptRect);
+  const sourceEndpointCenter=centerY(sourceEndpointRect);
+  const continuationEndpointCenter=centerY(continuationEndpointRect);
   const rect=(node)=>{
     const value=node?.getBoundingClientRect();
     return value ? {
@@ -108,18 +134,43 @@ const lineageSnapshotExpression = `(() => {
     inherited,
     sourceResponses,
     continuation,
+    continuationPrompts,
     artifactPaths,
     trail,
     connector: {
-      step: connector?.getAttribute('data-fork-response-connector-step') || '',
+      sourceStep: connector?.getAttribute('data-fork-prompt-connector-source-step') || '',
+      targetStep: connector?.getAttribute('data-fork-prompt-connector-target-step') || '',
       visible: Boolean(connectorRect && connectorRect.width > 0 && connectorRect.height > 0 && Number.parseFloat(getComputedStyle(connector).opacity) > 0),
-      sourceCenter,
-      connectorCenter,
-      delta: sourceCenter === null || connectorCenter === null ? null : Math.abs(sourceCenter - connectorCenter),
+      sourcePromptCenter,
+      sourceResponseCenter,
+      continuationPromptCenter,
+      sourceEndpointCenter,
+      continuationEndpointCenter,
+      sourcePromptDelta: sourcePromptCenter === null || sourceEndpointCenter === null ? null : Math.abs(sourcePromptCenter - sourceEndpointCenter),
+      sourceResponseDelta: sourceResponseCenter === null || sourceEndpointCenter === null ? null : Math.abs(sourceResponseCenter - sourceEndpointCenter),
+      continuationPromptDelta: continuationPromptCenter === null || continuationEndpointCenter === null ? null : Math.abs(continuationPromptCenter - continuationEndpointCenter),
+    },
+    pipeline: {
+      source: rect(sourcePipeline),
+      sourceColor: sourcePipeline ? getComputedStyle(sourcePipeline).backgroundColor : '',
+      sourceNode: rect(sourcePromptNode),
+      sourceNodeColor: sourcePromptNode ? getComputedStyle(sourcePromptNode).backgroundColor : '',
+      continuation: continuationPipelines.map((node)=>({ rect: rect(node), color: getComputedStyle(node).backgroundColor })),
+      continuationNodes: continuationPromptNodes.map((node)=>{
+        const nodeRect=node.getBoundingClientRect();
+        const prompt=root.querySelector('[data-fork-continuation-prompt="'+CSS.escape(node.getAttribute('data-fork-continuation-prompt-node') || '')+'"]');
+        const promptRect=prompt?.getBoundingClientRect();
+        return {
+          id: node.getAttribute('data-fork-continuation-prompt-node'),
+          rect: rect(node),
+          color: getComputedStyle(node).backgroundColor,
+          promptDelta: promptRect ? Math.abs(centerY(nodeRect) - centerY(promptRect)) : null,
+        };
+      }),
     },
     desktopGeometry: {
       layout: desktopPath?.getAttribute('data-fork-desktop-layout') || '',
-      gridColumns: desktopPath ? getComputedStyle(desktopPath).gridTemplateColumns.trim().split(' ').filter(Boolean) : [],
+      gridColumns: desktopPath ? getComputedStyle(desktopPath).gridTemplateColumns.trim().split(/\\s+/).filter(Boolean) : [],
       sourceLane: rect(sourceLane),
       connectorLane: rect(connectorLane),
       continuationLane: rect(continuationLane),
@@ -151,10 +202,61 @@ function assertDesktopBranchGeometry(snapshot, label) {
     throw new Error(`${label} desktop source and continuation lanes do not share a coherent top edge.`)
   }
   if (connector.width < 64 || connector.height < 20) {
-    throw new Error(`${label} response connector is only ${connector.width}x${connector.height}px.`)
+    throw new Error(`${label} prompt connector is only ${connector.width}x${connector.height}px.`)
   }
   if (socket.width < 44 || socket.height < 44) {
-    throw new Error(`${label} response socket is only ${socket.width}x${socket.height}px.`)
+    throw new Error(`${label} prompt socket is only ${socket.width}x${socket.height}px.`)
+  }
+}
+
+function assertPromptPipeline(snapshot, label, expectedSourceNumber, expectedContinuationNumbers) {
+  const sourcePrompt = snapshot.connector?.sourceStep
+  const targetPrompt = snapshot.connector?.targetStep
+  if (!sourcePrompt || !targetPrompt) throw new Error(`${label} omitted prompt-step connector identity.`)
+  if (sourcePrompt !== snapshot.sourceResponses[0]) {
+    throw new Error(`${label} connector source ${sourcePrompt} drifted from truthful response provenance ${snapshot.sourceResponses[0]}.`)
+  }
+  if (targetPrompt !== snapshot.continuationPrompts[0]?.id) {
+    throw new Error(`${label} connector targets ${targetPrompt} instead of first continuation prompt ${snapshot.continuationPrompts[0]?.id || '(missing)'}.`)
+  }
+  if (!Number.isFinite(snapshot.connector.sourcePromptDelta) || snapshot.connector.sourcePromptDelta > 2) {
+    throw new Error(`${label} source endpoint misses the inherited prompt center by ${snapshot.connector.sourcePromptDelta}px.`)
+  }
+  if (!Number.isFinite(snapshot.connector.continuationPromptDelta) || snapshot.connector.continuationPromptDelta > 2) {
+    throw new Error(`${label} continuation endpoint misses the first prompt center by ${snapshot.connector.continuationPromptDelta}px.`)
+  }
+  if (!Number.isFinite(snapshot.connector.sourceResponseDelta) || snapshot.connector.sourceResponseDelta < 8) {
+    throw new Error(`${label} connector still appears response-centered (${snapshot.connector.sourceResponseDelta}px from the response center).`)
+  }
+  if (!sourcePrompt.endsWith(`:step:${expectedSourceNumber}`)) {
+    throw new Error(`${label} inherited prompt identity is ${sourcePrompt} instead of prompt ${expectedSourceNumber}.`)
+  }
+  const continuationNumbers = snapshot.continuationPrompts.map((prompt) => prompt.stepNumber)
+  if (JSON.stringify(continuationNumbers) !== JSON.stringify(expectedContinuationNumbers)) {
+    throw new Error(`${label} continuation prompts are ${JSON.stringify(continuationNumbers)} instead of ${JSON.stringify(expectedContinuationNumbers)}.`)
+  }
+  const pipeline = snapshot.pipeline
+  if (!pipeline?.source || pipeline.source.width < 28 || pipeline.source.height < 80) {
+    throw new Error(`${label} did not render a substantial inherited source spine.`)
+  }
+  if (pipeline.sourceColor !== 'rgb(43, 209, 95)' || pipeline.sourceNodeColor !== 'rgb(43, 209, 95)') {
+    throw new Error(`${label} inherited spine/node lost the green source-path language.`)
+  }
+  if (pipeline.continuation.length !== expectedContinuationNumbers.length || pipeline.continuationNodes.length !== expectedContinuationNumbers.length) {
+    throw new Error(`${label} rendered ${pipeline.continuation.length} orange spine segments and ${pipeline.continuationNodes.length} prompt nodes for ${expectedContinuationNumbers.length} prompts.`)
+  }
+  if (pipeline.continuation.some((segment) => segment.color !== 'rgb(232, 122, 44)' || segment.rect?.width < 28 || segment.rect?.height < 40)) {
+    throw new Error(`${label} continuation spine is missing a substantial orange segment.`)
+  }
+  if (pipeline.continuationNodes.some((node) => node.color !== 'rgb(232, 122, 44)' || node.rect?.width < 44 || node.rect?.height < 52 || !Number.isFinite(node.promptDelta) || node.promptDelta > 2)) {
+    throw new Error(`${label} continuation prompt nodes are not orange and prompt-centered.`)
+  }
+  for (let index = 1; index < pipeline.continuation.length; index += 1) {
+    const previous = pipeline.continuation[index - 1].rect
+    const current = pipeline.continuation[index].rect
+    if (!previous || !current || previous.bottom < current.top - 1) {
+      throw new Error(`${label} orange continuation spine breaks between prompts ${expectedContinuationNumbers[index - 1]} and ${expectedContinuationNumbers[index]}.`)
+    }
   }
 }
 
@@ -167,13 +269,7 @@ function assertLineageSnapshot(snapshot, mode, label) {
   if (snapshot.sourceResponses.length !== 1) throw new Error(`${label} did not identify exactly one source response.`)
   if (snapshot.continuation.length === 0) throw new Error(`${label} did not show the child continuation.`)
   if (snapshot.artifactPaths.length === 0) throw new Error(`${label} did not expose an inline child artifact action.`)
-  if (!snapshot.connector?.visible) throw new Error(`${label} did not render the exact-response connector.`)
-  if (snapshot.connector.step !== snapshot.sourceResponses[0]) {
-    throw new Error(`${label} connector targets ${snapshot.connector.step || '(missing)'} instead of ${snapshot.sourceResponses[0]}.`)
-  }
-  if (!Number.isFinite(snapshot.connector.delta) || snapshot.connector.delta > 2) {
-    throw new Error(`${label} connector misses the exact response center by ${snapshot.connector.delta}px.`)
-  }
+  if (!snapshot.connector?.visible) throw new Error(`${label} did not render the prompt-to-prompt connector.`)
   assertDesktopBranchGeometry(snapshot, label)
 }
 
@@ -225,8 +321,10 @@ async function waitForLineage(client, sessionId, mode, label) {
       value.desktopGeometry?.gridColumns?.length === 3 &&
       value.desktopGeometry?.connector?.width >= 64 &&
       value.desktopGeometry?.socket?.width >= 44 &&
-      Number.isFinite(value.connector?.delta) &&
-      value.connector.delta <= 2
+      Number.isFinite(value.connector?.sourcePromptDelta) &&
+      value.connector.sourcePromptDelta <= 2 &&
+      Number.isFinite(value.connector?.continuationPromptDelta) &&
+      value.connector.continuationPromptDelta <= 2
     ),
     `${label} shared lineage workspace`,
   )
@@ -270,7 +368,7 @@ async function verifyConnectorAfterSourceExpansion(client, sessionId, label) {
   const expanded = await client.send('Runtime.evaluate', {
     expression: `(() => {
       const summary=document.querySelector(
-        '[data-fork-desktop-path] aside [data-fork-source-response="true"] details summary'
+        '[data-fork-desktop-path] aside [data-fork-source-prompt] details summary'
       );
       if (!summary) return false;
       summary.click();
@@ -279,7 +377,7 @@ async function verifyConnectorAfterSourceExpansion(client, sessionId, label) {
     returnByValue: true,
   }, sessionId)
   if (!expanded.result.value) {
-    throw new Error(`${label} did not expose the exact source-response disclosure.`)
+    throw new Error(`${label} did not expose the exact source-prompt disclosure.`)
   }
 
   const snapshot = await waitForValue(
@@ -288,14 +386,167 @@ async function verifyConnectorAfterSourceExpansion(client, sessionId, label) {
     lineageSnapshotExpression,
     (value) => (
       value?.connector?.visible &&
-      Number.isFinite(value.connector?.delta) &&
-      value.connector.delta <= 2
+      Number.isFinite(value.connector?.sourcePromptDelta) &&
+      value.connector.sourcePromptDelta <= 2 &&
+      Number.isFinite(value.connector?.continuationPromptDelta) &&
+      value.connector.continuationPromptDelta <= 2
     ),
-    `${label} connector realignment after source-response expansion`,
+    `${label} connector realignment after source-prompt expansion`,
   )
-  if (snapshot.connector.step !== snapshot.sourceResponses[0]) {
-    throw new Error(`${label} connector changed source responses after disclosure expansion.`)
+  if (snapshot.connector.sourceStep !== snapshot.sourceResponses[0]) {
+    throw new Error(`${label} connector changed source provenance after prompt disclosure expansion.`)
   }
+}
+
+async function verifyParentExistingForkRail(client, sessionId, label) {
+  const snapshot = await waitForValue(
+    client,
+    sessionId,
+    `(() => {
+      const rail=document.querySelector('[data-fork-existing-branch-origin="prompt"]');
+      const row=rail?.parentElement;
+      const prompt=row?.querySelector('[data-source-run-node="prompt"]');
+      const response=row?.querySelector('[data-source-run-node="response"]');
+      const orangePipe=rail?.querySelector('[data-fork-existing-branch-pipe]');
+      const orangeNode=rail?.querySelector('[data-fork-existing-branch-node]');
+      const greenPipe=prompt?.querySelector('[data-source-run-pipeline="prompt"]');
+      const greenNode=prompt?.querySelector('[data-source-run-pipe-node="prompt"]');
+      const socket=rail?.querySelector('[data-response-fork-socket]');
+      const rect=(node)=>{
+        const value=node?.getBoundingClientRect();
+        return value ? { top:value.top, height:value.height, width:value.width } : null;
+      };
+      const center=(value)=>value ? value.top + value.height / 2 : null;
+      const socketRect=rect(socket);
+      const greenNodeRect=rect(greenNode);
+      return {
+        found:Boolean(rail && prompt && orangePipe && orangeNode && greenPipe && greenNode),
+        railFound:Boolean(rail),
+        promptFound:Boolean(prompt),
+        orangePipeFound:Boolean(orangePipe),
+        orangeNodeFound:Boolean(orangeNode),
+        greenPipeFound:Boolean(greenPipe),
+        greenNodeFound:Boolean(greenNode),
+        promptRow:prompt?.getAttribute('data-source-run-node') || '',
+        responseInRow:Boolean(response),
+        step:rail?.getAttribute('data-fork-existing-branch-step') || '',
+        promptStep:prompt?.getAttribute('data-source-run-step-id') || '',
+        orangePipe:orangePipe ? getComputedStyle(orangePipe).backgroundColor : '',
+        orangeNode:orangeNode ? getComputedStyle(orangeNode).backgroundColor : '',
+        greenPipe:greenPipe ? getComputedStyle(greenPipe).backgroundColor : '',
+        greenNode:greenNode ? getComputedStyle(greenNode).backgroundColor : '',
+        socketNodeDelta:socketRect && greenNodeRect ? Math.abs(center(socketRect)-center(greenNodeRect)) : null,
+      };
+    })()`,
+    (value) => value?.found,
+    `${label} prompt-origin existing-fork rail`,
+  )
+  if (snapshot.promptRow !== 'prompt' || snapshot.responseInRow) {
+    throw new Error(`${label} existing-fork rail is not isolated to the prompt row.`)
+  }
+  if (!snapshot.step || snapshot.step !== snapshot.promptStep) {
+    throw new Error(`${label} existing-fork rail lost its prompt-step identity.`)
+  }
+  if (snapshot.orangePipe !== 'rgb(232, 122, 44)' || snapshot.orangeNode !== 'rgb(232, 122, 44)') {
+    throw new Error(`${label} existing-fork branch is not orange.`)
+  }
+  if (snapshot.greenPipe !== 'rgb(43, 209, 95)' || snapshot.greenNode !== 'rgb(43, 209, 95)') {
+    throw new Error(`${label} main source spine is not green.`)
+  }
+  if (!Number.isFinite(snapshot.socketNodeDelta) || snapshot.socketNodeDelta > 2) {
+    throw new Error(`${label} existing-fork socket misses the source prompt node by ${snapshot.socketNodeDelta}px.`)
+  }
+}
+
+async function captureElement(client, sessionId, selector, destination) {
+  const clip = await waitForValue(
+    client,
+    sessionId,
+    `(() => {
+      const node=document.querySelector(${JSON.stringify(selector)});
+      if (!node) return null;
+      const rect=node.getBoundingClientRect();
+      return {
+        x:Math.max(0, rect.left + window.scrollX),
+        y:Math.max(0, rect.top + window.scrollY),
+        width:Math.ceil(rect.width),
+        height:Math.ceil(rect.height),
+        scale:1,
+      };
+    })()`,
+    (value) => value?.width > 0 && value?.height > 0,
+    `screenshot target ${selector}`,
+  )
+  const { data } = await client.send('Page.captureScreenshot', {
+    format: 'png',
+    captureBeyondViewport: true,
+    fromSurface: true,
+    clip,
+  }, sessionId)
+  writeFileSync(destination, Buffer.from(data, 'base64'))
+}
+
+async function captureViewport(client, sessionId, selector, destination) {
+  await client.send('Runtime.evaluate', {
+    expression: `(() => {
+      const node=document.querySelector(${JSON.stringify(selector)});
+      if (node) {
+        const top=node.getBoundingClientRect().top+window.scrollY;
+        window.scrollTo({ left:0, top, behavior:'instant' });
+        document.documentElement.scrollLeft=0;
+        document.body.scrollLeft=0;
+      }
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+      return Boolean(node);
+    })()`,
+    returnByValue: true,
+  }, sessionId)
+  await new Promise((resolve) => setTimeout(resolve, 100))
+  const { data } = await client.send('Page.captureScreenshot', {
+    format: 'png',
+    fromSurface: true,
+  }, sessionId)
+  writeFileSync(destination, Buffer.from(data, 'base64'))
+}
+
+async function verifyMobileFork(client, sessionId, url, label, screenshotPath) {
+  await navigate(client, sessionId, url)
+  const mobile = await waitForValue(
+    client,
+    sessionId,
+    `(() => {
+      const root=document.querySelector('[data-project-fork-build-path]');
+      const disclosure=root?.querySelector('details[data-fork-inherited-path]');
+      const desktopPath=[...root?.querySelectorAll('aside[data-fork-inherited-path]') || []][0];
+      const connectorLane=root?.querySelector('[data-fork-connector-lane]');
+      const continuationLane=root?.querySelector('[data-fork-continuation-lane]');
+      const pipeline=root?.querySelector('[data-fork-continuation-pipeline]');
+      const promptNode=root?.querySelector('[data-fork-continuation-prompt-node]');
+      const rootRect=root?.getBoundingClientRect();
+      const continuationRect=continuationLane?.getBoundingClientRect();
+      return {
+        mode:root?.getAttribute('data-project-fork-build-path-mode') || '',
+        overflow:document.documentElement.scrollWidth-window.innerWidth,
+        disclosureVisible:Boolean(disclosure && getComputedStyle(disclosure).display !== 'none'),
+        desktopHidden:Boolean(desktopPath && getComputedStyle(desktopPath).display === 'none'),
+        connectorHidden:Boolean(connectorLane && getComputedStyle(connectorLane).display === 'none'),
+        pipelineHidden:Boolean(pipeline && getComputedStyle(pipeline).display === 'none'),
+        promptNodeHidden:Boolean(promptNode && getComputedStyle(promptNode).display === 'none'),
+        continuationWidth:continuationRect?.width || 0,
+        availableWidth:rootRect?.width || 0,
+      };
+    })()`,
+    (value) => value?.mode === 'child' && value.disclosureVisible && value.continuationWidth > 0 && value.availableWidth > 0,
+    `${label} 390px lineage layout`,
+  )
+  if (mobile.overflow > 1) throw new Error(`${label} 390px lineage overflows horizontally by ${mobile.overflow}px.`)
+  if (!mobile.desktopHidden || !mobile.connectorHidden || !mobile.pipelineHidden || !mobile.promptNodeHidden) {
+    throw new Error(`${label} 390px lineage leaked desktop source, connector, or pipeline geometry.`)
+  }
+  if (mobile.continuationWidth > mobile.availableWidth) {
+    throw new Error(`${label} 390px continuation width ${mobile.continuationWidth}px exceeds its ${mobile.availableWidth}px workspace.`)
+  }
+  if (screenshotPath) await captureViewport(client, sessionId, '[data-project-fork-build-path]', screenshotPath)
 }
 
 async function verifyNestedForkCreation(client, sessionId, nestedChildUrl) {
@@ -392,6 +643,10 @@ async function main() {
   const childUrl = new URL(options.childRoute, options.baseUrl).href
   const grandchildUrl = new URL(options.grandchildRoute, options.baseUrl).href
   const nestedChildUrl = new URL(options.nestedChildRoute, options.baseUrl).href
+  const sourceParentUrl = new URL(options.sourceParentRoute, options.baseUrl).href
+  const blackoutChildUrl = new URL(options.blackoutChildRoute, options.baseUrl).href
+  if (options.screenshotDir) mkdirSync(options.screenshotDir, { recursive: true })
+  const screenshot = (name) => options.screenshotDir ? path.join(options.screenshotDir, name) : null
   const executable = chromeExecutable()
   if (!executable) throw new Error('Chrome was not found for the project-fork browser guard.')
 
@@ -442,11 +697,35 @@ async function main() {
       await selectOnlyBranch(client, sessionId, 'parent page')
       const parentSnapshot = await waitForLineage(client, sessionId, 'parent', 'parent page')
       assertLineageSnapshot(parentSnapshot, 'parent', 'Parent page')
+      assertPromptPipeline(parentSnapshot, 'Parent page', 2, [3])
       await verifyArtifactDisplay(client, sessionId, parentSnapshot, 'Parent page')
+      if (screenshot('hp-school-desk-selected-desktop.png')) {
+        await captureElement(client, sessionId, '[data-project-fork-build-path]', screenshot('hp-school-desk-selected-desktop.png'))
+      }
+
+      await navigate(client, sessionId, blackoutChildUrl)
+      const blackoutSnapshot = await waitForLineage(client, sessionId, 'child', 'Blackout child page')
+      assertLineageSnapshot(blackoutSnapshot, 'child', 'Blackout child page')
+      assertPromptPipeline(blackoutSnapshot, 'Blackout child page', 10, [11, 12, 13, 14])
+      if (screenshot('airlock-blackout-child-desktop.png')) {
+        await captureElement(client, sessionId, '[data-project-fork-build-path]', screenshot('airlock-blackout-child-desktop.png'))
+      }
+
+      await navigate(client, sessionId, sourceParentUrl)
+      await verifyParentExistingForkRail(client, sessionId, 'Source parent page')
+      if (screenshot('parent-existing-fork-desktop.png')) {
+        await captureElement(
+          client,
+          sessionId,
+          '[data-source-run-prompt-row]:has([data-fork-existing-branch-origin="prompt"])',
+          screenshot('parent-existing-fork-desktop.png'),
+        )
+      }
 
       await navigate(client, sessionId, childUrl)
       const childSnapshot = await waitForLineage(client, sessionId, 'child', 'child page')
       assertLineageSnapshot(childSnapshot, 'child', 'Child page')
+      assertPromptPipeline(childSnapshot, 'Child page', 2, [3])
       if (JSON.stringify(childSnapshot.inherited) !== JSON.stringify(parentSnapshot.inherited)) {
         throw new Error('Parent and child pages did not preserve the same inherited source path.')
       }
@@ -480,42 +759,8 @@ async function main() {
         deviceScaleFactor: 1,
         mobile: true,
       }, sessionId)
-      await navigate(client, sessionId, childUrl)
-      const mobile = await waitForValue(
-        client,
-        sessionId,
-        `(() => {
-          const root=document.querySelector('[data-project-fork-build-path]');
-          const disclosure=root?.querySelector('details[data-fork-inherited-path]');
-          const desktopPath=[...root?.querySelectorAll('aside[data-fork-inherited-path]') || []][0];
-          const connectorLane=root?.querySelector('[data-fork-connector-lane]');
-          const continuationLane=root?.querySelector('[data-fork-continuation-lane]');
-          const rootRect=root?.getBoundingClientRect();
-          const continuationRect=continuationLane?.getBoundingClientRect();
-          return {
-            mode: root?.getAttribute('data-project-fork-build-path-mode') || '',
-            overflow: document.documentElement.scrollWidth - window.innerWidth,
-            disclosureVisible: Boolean(disclosure && getComputedStyle(disclosure).display !== 'none'),
-            desktopHidden: Boolean(desktopPath && getComputedStyle(desktopPath).display === 'none'),
-            connectorHidden: Boolean(connectorLane && getComputedStyle(connectorLane).display === 'none'),
-            continuationWidth: continuationRect?.width || 0,
-            availableWidth: rootRect?.width || 0,
-          };
-        })()`,
-        (value) => (
-          value?.mode === 'child' &&
-          value.disclosureVisible &&
-          value.continuationWidth > 0 &&
-          value.availableWidth > 0
-        ),
-        '390px child lineage layout',
-      )
-      if (mobile.overflow > 1) throw new Error(`390px child lineage overflows horizontally by ${mobile.overflow}px.`)
-      if (!mobile.desktopHidden) throw new Error('390px child lineage did not collapse the desktop inherited rail.')
-      if (!mobile.connectorHidden) throw new Error('390px child lineage did not collapse the desktop connector lane.')
-      if (mobile.continuationWidth <= 0 || mobile.continuationWidth > mobile.availableWidth) {
-        throw new Error(`390px continuation width ${mobile.continuationWidth}px is not contained by its ${mobile.availableWidth}px fork workspace.`)
-      }
+      await verifyMobileFork(client, sessionId, childUrl, 'School Desk child', screenshot('hp-school-desk-child-mobile-390.png'))
+      await verifyMobileFork(client, sessionId, blackoutChildUrl, 'Blackout child', screenshot('airlock-blackout-child-mobile-390.png'))
 
       await client.send('Emulation.setDeviceMetricsOverride', {
         width: 1440,
@@ -531,8 +776,8 @@ async function main() {
 
       console.log(
         modelRunIsolationVerified
-          ? 'Parent/child/grandchild fork lineage, artifact display, three-run isolation, and mobile browser guard passed.'
-          : 'Parent/child/grandchild fork lineage, artifact display, and mobile browser guard passed; model-run isolation was not applicable on this route.',
+          ? 'Prompt-to-prompt parent/child/grandchild lineage, green-to-orange pipelines, parent branch color, artifact display, three-run isolation, and two-route mobile browser guard passed.'
+          : 'Prompt-to-prompt parent/child/grandchild lineage, green-to-orange pipelines, parent branch color, artifact display, and two-route mobile browser guard passed; model-run isolation was not applicable on this route.',
       )
     } catch (error) {
       const browserEvidence = [...new Set(consoleErrors)].join(' | ')

@@ -361,13 +361,21 @@ for (const hook of [
   'data-project-fork-build-path',
   'data-fork-inherited-path',
   'data-fork-source-response',
+  'data-fork-source-prompt',
+  'data-fork-source-pipeline',
+  'data-fork-source-prompt-node',
   'data-fork-desktop-layout',
   'data-fork-source-lane',
   'data-fork-connector-lane',
-  'data-fork-response-connector',
-  'data-fork-response-socket',
+  'data-fork-prompt-connector',
+  'data-fork-prompt-socket',
+  'data-fork-source-connector-endpoint',
+  'data-fork-continuation-connector-endpoint',
   'data-fork-continuation-lane',
   'data-fork-continuation',
+  'data-fork-continuation-prompt',
+  'data-fork-continuation-pipeline',
+  'data-fork-continuation-prompt-node',
   'data-fork-continuation-fork',
   'data-fork-display-artifact',
 ]) {
@@ -391,6 +399,8 @@ assert(
   rendererSource.includes('group/inherited mb-4') && rendererSource.includes('lg:hidden'),
   `${rendererPath}: inherited history must retain its compact mobile disclosure`,
 )
+assert(!hasJsxAttribute(renderer, 'data-fork-response-connector'), `${rendererPath}: visual branch geometry must not regress to response-centered connector identity`)
+assert(rendererSource.includes("bg-[#2bd15f]") && rendererSource.includes('bg-brand-orange'), `${rendererPath}: selected fork paths must visibly transition from green source piping to orange continuation piping`)
 
 const showcasePath = 'src/components/SourceRunShowcase.tsx'
 const showcase = parse(showcasePath)
@@ -419,6 +429,17 @@ if (showcaseRenderers.length > 0) {
   }
 }
 assert(namedDeclarations(showcase, 'ResponseForkFocusStage').length === 0, `${showcasePath}: remove the divergent legacy fork focus renderer`)
+for (const hook of [
+  'data-fork-existing-branch-origin',
+  'data-fork-existing-branch-step',
+  'data-fork-existing-branch-pipe',
+  'data-fork-existing-branch-node',
+  'data-source-run-pipeline',
+  'data-source-run-pipe-node',
+  'data-source-run-prompt-row',
+]) {
+  assert(hasJsxAttribute(showcase, hook), `${showcasePath}: source-run fork geometry must expose ${hook}`)
+}
 
 const preparedPath = 'src/components/PreparedSourceRunPage.tsx'
 const prepared = parse(preparedPath)
@@ -472,8 +493,17 @@ assert(forkBrowserGuard.includes('data-fork-continuation-fork'), 'fork browser g
 assert(forkBrowserGuard.includes("nested.depth !== '1'"), 'fork browser guard must verify nested depth increments from the immediate parent')
 assert(forkBrowserGuard.includes('geometry.gridColumns?.length !== 3'), 'fork browser guard must fail when desktop branch geometry collapses below three columns')
 assert(forkBrowserGuard.includes('connector.width < 64'), 'fork browser guard must reject a decorative connector sliver')
-assert(forkBrowserGuard.includes('socket.width < 44'), 'fork browser guard must require a legible response socket')
+assert(forkBrowserGuard.includes('socket.width < 44'), 'fork browser guard must require a legible prompt socket')
 assert(forkBrowserGuard.includes('connectorHidden'), 'fork browser guard must verify the desktop connector collapses at 390px')
+assert(forkBrowserGuard.includes('/airlock-zero-blackout-shift-fork-demo'), 'fork browser guard must exercise the four-prompt Blackout continuation')
+assert(forkBrowserGuard.includes('/airlock-zero-reactor-run-demo'), 'fork browser guard must exercise the parent source-page existing-fork rail')
+assert(forkBrowserGuard.includes("assertPromptPipeline(blackoutSnapshot, 'Blackout child page', 10, [11, 12, 13, 14])"), 'fork browser guard must require prompt 10 to feed the complete 11-14 continuation')
+assert(forkBrowserGuard.includes('sourcePromptDelta > 2'), 'fork browser guard must reject a connector that misses the inherited prompt center')
+assert(forkBrowserGuard.includes('continuationPromptDelta > 2'), 'fork browser guard must reject a connector that misses the first continuation prompt center')
+assert(forkBrowserGuard.includes('sourceResponseDelta < 8'), 'fork browser guard must fail if the connector remains response-centered')
+assert(forkBrowserGuard.includes("segment.color !== 'rgb(232, 122, 44)'"), 'fork browser guard must require a full orange continuation spine')
+assert(forkBrowserGuard.includes("pipeline.sourceColor !== 'rgb(43, 209, 95)'"), 'fork browser guard must preserve the inherited green source spine')
+assert(forkBrowserGuard.includes('pipelineHidden') && forkBrowserGuard.includes('promptNodeHidden'), 'fork browser guard must ensure desktop pipe geometry stays hidden at 390px')
 
 const communityPath = 'src/components/ProjectCommunityPanel.tsx'
 const community = parse(communityPath)

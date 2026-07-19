@@ -766,23 +766,23 @@ function ResponseForkBranchCard({
       type="button"
       onClick={() => onSelect(fork)}
       className={[
-        'group/fork-branch-card relative block min-w-0 w-full border bg-white px-3 py-2 text-left transition hover:border-[#07551f] hover:bg-[#effdf3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2bd15f]',
-        isActive ? 'border-[#07551f] bg-[#effdf3] ring-2 ring-[#2bd15f]/30' : 'border-[#07551f]/25',
+        'group/fork-branch-card relative block min-w-0 w-full border bg-white px-3 py-2 text-left transition hover:border-brand-orange hover:bg-primary-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
+        isActive ? 'border-brand-orange bg-primary-50 ring-2 ring-brand-orange/30' : 'border-brand-orange/25',
       ].join(' ')}
       aria-label={`Show fork options for ${authorLabel}`}
       aria-pressed={isActive}
       title={tooltip}
     >
       <span className="flex items-center justify-between gap-2">
-        <span className="truncate text-sm font-black text-surface-900 group-hover/fork-branch-card:text-[#07551f]">
+        <span className="truncate text-sm font-black text-surface-900 group-hover/fork-branch-card:text-brand-orange-ink">
           {authorLabel}
         </span>
-        <ArrowRight className="h-3.5 w-3.5 shrink-0 text-[#07551f] transition group-hover/fork-branch-card:translate-x-0.5" aria-hidden="true" />
+        <ArrowRight className="h-3.5 w-3.5 shrink-0 text-brand-orange-ink transition group-hover/fork-branch-card:translate-x-0.5" aria-hidden="true" />
       </span>
       <span className="mt-1 block truncate text-xs leading-5 text-surface-600">
         {compactForkText(fork.description, fork.title, 76)}
       </span>
-      <span className="mt-2 block font-mono text-[10px] font-black uppercase tracking-[0.12em] text-[#07551f]">
+      <span className="mt-2 block font-mono text-[10px] font-black uppercase tracking-[0.12em] text-brand-orange-ink">
         View branch options
       </span>
     </button>
@@ -813,11 +813,11 @@ function ResponseForkBranchPanel({
       {hasForks && (
         <div
           className={compact
-            ? 'min-w-0 border border-[#07551f]/25 bg-[#f8fff9] p-3'
-            : 'min-w-0 border-2 border-[#07551f] bg-[#f8fff9] p-3 shadow-[0_18px_44px_rgba(7,85,31,0.16)]'}
+            ? 'min-w-0 border border-brand-orange/25 bg-primary-50 p-3'
+            : 'min-w-0 border-2 border-brand-orange bg-primary-50 p-3 shadow-[0_18px_44px_rgba(232,122,44,0.16)]'}
           data-response-fork-destination-panel
         >
-          <div className="font-mono text-[10px] font-black uppercase tracking-[0.14em] text-[#07551f]">
+          <div className="font-mono text-[10px] font-black uppercase tracking-[0.14em] text-brand-orange-ink">
             Forks from this response
           </div>
           <div className="mt-2 grid gap-2">
@@ -840,10 +840,12 @@ function ResponseForkHoverRail({
   forks,
   activeForkId,
   onSelectFork,
+  sourceStepId,
 }: {
   forks: ProjectForkNetworkItem[]
   activeForkId?: string | null
   onSelectFork: (fork: ProjectForkNetworkItem) => void
+  sourceStepId: string
 }) {
   const hasForks = forks.length > 0
   if (!hasForks) return <div className="hidden xl:block" aria-hidden="true" />
@@ -851,20 +853,28 @@ function ResponseForkHoverRail({
   return (
     <div
       data-response-fork-hover-rail
-      className="hidden min-h-full items-center overflow-visible xl:flex"
+      data-fork-existing-branch-origin="prompt"
+      data-fork-existing-branch-step={sourceStepId}
+      className="hidden min-h-full items-start overflow-visible pt-10 xl:flex"
     >
       <span
         data-response-fork-socket
         data-response-fork-existing-branch="true"
-        className="relative z-10 -ml-6 grid h-12 w-12 shrink-0 place-items-center border-4 border-[#07551f] bg-[#effdf3] shadow-[0_0_0_7px_rgba(43,209,95,0.16)] transition duration-300 motion-safe:animate-pulse group-hover/source-fork-node:shadow-[0_0_0_8px_rgba(43,209,95,0.18)] group-focus-within/source-fork-node:shadow-[0_0_0_8px_rgba(43,209,95,0.18)]"
+        className="relative z-10 -ml-6 grid h-12 w-12 shrink-0 place-items-center border-4 border-[#8f3f0a] bg-primary-50 shadow-[0_0_0_7px_rgba(232,122,44,0.16)] transition duration-300 motion-safe:animate-pulse group-hover/source-fork-node:shadow-[0_0_0_8px_rgba(232,122,44,0.18)] group-focus-within/source-fork-node:shadow-[0_0_0_8px_rgba(232,122,44,0.18)]"
         aria-hidden="true"
       >
-        <span className="h-4 w-4 border-2 border-[#07551f] bg-[#2bd15f]" />
+        <span
+          className="h-4 w-4 border-2 border-[#8f3f0a] bg-brand-orange"
+          data-fork-existing-branch-node
+        />
       </span>
 
       <div className="relative h-12 w-20 shrink-0" data-response-fork-middle-pipe aria-hidden="true">
-        <span className="absolute left-0 top-1/2 h-5 w-full origin-left -translate-y-1/2 scale-x-0 border-y-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_0_5px_0_rgba(255,255,255,0.2),inset_0_-5px_0_rgba(0,0,0,0.16)] transition-transform duration-300 scale-x-100 group-hover/source-fork-node:scale-x-100 group-focus-within/source-fork-node:scale-x-100" />
-        <span className="absolute right-[-2px] top-1/2 h-9 w-9 -translate-y-1/2 border-4 border-[#07551f] bg-[#effdf3] shadow-[0_0_0_6px_rgba(43,209,95,0.16)]" />
+        <span
+          className="absolute left-0 top-1/2 h-5 w-full origin-left -translate-y-1/2 scale-x-0 border-y-4 border-[#8f3f0a] bg-brand-orange shadow-[inset_0_5px_0_rgba(255,255,255,0.2),inset_0_-5px_0_rgba(0,0,0,0.16)] transition-transform duration-300 scale-x-100 group-hover/source-fork-node:scale-x-100 group-focus-within/source-fork-node:scale-x-100"
+          data-fork-existing-branch-pipe
+        />
+        <span className="absolute right-[-2px] top-1/2 h-9 w-9 -translate-y-1/2 border-4 border-[#8f3f0a] bg-primary-50 shadow-[0_0_0_6px_rgba(232,122,44,0.16)]" />
       </div>
 
       <div className="-translate-x-2">
@@ -890,6 +900,8 @@ function PipeNode({
   forks = [],
   activeForkId,
   onSelectFork,
+  stepId,
+  stepNumber,
 }: {
   eyebrow: string
   title: string
@@ -902,6 +914,8 @@ function PipeNode({
   forks?: ProjectForkNetworkItem[]
   activeForkId?: string | null
   onSelectFork?: (fork: ProjectForkNetworkItem) => void
+  stepId: string
+  stepNumber: number
 }) {
   const cardClassName = [
     'relative border bg-white p-5 shadow-[0_18px_44px_rgba(24,24,27,0.07)]',
@@ -914,11 +928,24 @@ function PipeNode({
   const articleClassName = 'group/source-fork-node relative pl-[88px]'
 
   return (
-    <article className={articleClassName} data-source-run-node={variant}>
+    <article
+      className={articleClassName}
+      data-source-run-node={variant}
+      data-source-run-step-id={stepId}
+      data-source-run-step-number={stepNumber}
+    >
       {!terminal && (
-        <div className="absolute left-[22px] top-[80px] h-[calc(100%+30px)] w-8 border-x-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_5px_0_0_rgba(255,255,255,0.24),inset_-5px_0_0_rgba(0,0,0,0.2)]" />
+        <div
+          className="absolute left-[22px] top-[80px] h-[calc(100%+30px)] w-8 border-x-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_5px_0_0_rgba(255,255,255,0.24),inset_-5px_0_0_rgba(0,0,0,0.2)]"
+          data-source-run-pipeline={variant}
+          aria-hidden="true"
+        />
       )}
-      <div className="absolute left-0 top-8 h-16 w-12 border-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_6px_0_0_rgba(255,255,255,0.28),inset_-6px_0_0_rgba(0,0,0,0.18)]" />
+      <div
+        className="absolute left-0 top-8 h-16 w-12 border-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_6px_0_0_rgba(255,255,255,0.28),inset_-6px_0_0_rgba(0,0,0,0.18)]"
+        data-source-run-pipe-node={variant}
+        aria-hidden="true"
+      />
       <div className="absolute left-11 top-[54px] h-7 w-12 border-y-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_0_5px_0_rgba(255,255,255,0.18),inset_0_-5px_0_rgba(0,0,0,0.16)]" />
       <div className={cardClassName}>
         <div className="flex items-start justify-between gap-4">
@@ -942,10 +969,10 @@ function PipeNode({
           )}
         </div>
         <div className="mt-4 text-sm leading-6 text-surface-700">{children}</div>
-        {canFork && forkHref && hasExistingForks && onSelectFork && (
+        {hasExistingForks && onSelectFork && (
           <div className="relative xl:hidden">
-            <span className="absolute left-0 top-8 h-2 w-8 -translate-y-1/2 border-y border-[#07551f] bg-[#2bd15f]" aria-hidden="true" />
-            <span className="absolute left-6 top-8 h-4 w-4 -translate-y-1/2 border-2 border-[#07551f] bg-white" aria-hidden="true" />
+            <span className="absolute left-0 top-8 h-2 w-8 -translate-y-1/2 border-y border-[#8f3f0a] bg-brand-orange" aria-hidden="true" />
+            <span className="absolute left-6 top-8 h-4 w-4 -translate-y-1/2 border-2 border-[#8f3f0a] bg-white" aria-hidden="true" />
             <div className="pl-9">
               <ResponseForkBranchPanel
                 forks={forks}
@@ -1442,16 +1469,28 @@ export default function SourceRunShowcase({
 
               return (
                 <Fragment key={step.id}>
-                  <div className={pathRowClassName}>
+                  <div className={pathRowClassName} data-source-run-prompt-row={step.id}>
                     <PipeNode
                       eyebrow={`Prompt ${String(step.stepNumber).padStart(2, '0')}`}
                       title={step.title}
                       terminal={false}
                       variant="prompt"
+                      stepId={step.id}
+                      stepNumber={step.stepNumber}
+                      forks={stepForks}
+                      activeForkId={activeForkId}
+                      onSelectFork={(fork) => setActiveForkId(fork.id)}
                     >
                       <PromptText text={step.prompt} />
                     </PipeNode>
-                    {hasForkLane && <div className="hidden xl:block" aria-hidden="true" />}
+                    {hasForkLane && (
+                      <ResponseForkHoverRail
+                        forks={stepForks}
+                        activeForkId={activeForkId}
+                        onSelectFork={(fork) => setActiveForkId(fork.id)}
+                        sourceStepId={step.id}
+                      />
+                    )}
                   </div>
 
                   <div className={pathRowClassName}>
@@ -1461,11 +1500,10 @@ export default function SourceRunShowcase({
                       terminal={index === steps.length - 1}
                       variant="response"
                       selected={Boolean(selectedStepPackage)}
+                      stepId={step.id}
+                      stepNumber={step.stepNumber}
                       forkHref={forkHref ?? undefined}
                       forkLabel={`Fork ${projectTitle ?? 'this path'} from response ${String(step.stepNumber).padStart(2, '0')}`}
-                      forks={stepForks}
-                      activeForkId={activeForkId}
-                      onSelectFork={(fork) => setActiveForkId(fork.id)}
                     >
                     <ResponsePackageCard
                       step={step}
@@ -1475,13 +1513,7 @@ export default function SourceRunShowcase({
                       providerName={providerName}
                     />
                     </PipeNode>
-                    {hasForkLane && (
-                      <ResponseForkHoverRail
-                        forks={stepForks}
-                        activeForkId={activeForkId}
-                        onSelectFork={(fork) => setActiveForkId(fork.id)}
-                      />
-                    )}
+                    {hasForkLane && <div className="hidden xl:block" aria-hidden="true" />}
                   </div>
                 </Fragment>
               )

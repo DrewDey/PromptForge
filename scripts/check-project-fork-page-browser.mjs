@@ -65,9 +65,31 @@ async function waitForValue(client, sessionId, expression, predicate, label, tim
   throw new Error(`${label} timed out; last value was ${JSON.stringify(lastValue)}.`)
 }
 
-async function navigate(client, sessionId, url) {
-  await client.send('Page.navigate', { url }, sessionId)
+async function navigate(client, sessionId, url, navigationOptions = {}) {
   const expected = new URL(url)
+  const canonicalFallback = navigationOptions.canonicalFallback
+    ? {
+        ...navigationOptions.canonicalFallback,
+        url: new URL(navigationOptions.canonicalFallback.url),
+      }
+    : null
+  if (
+    canonicalFallback &&
+    (
+      !canonicalFallback.sourceRunId ||
+      !canonicalFallback.modelIdentity ||
+      canonicalFallback.url.origin !== expected.origin ||
+      canonicalFallback.url.pathname !== expected.pathname ||
+      canonicalFallback.url.search !== '' ||
+      canonicalFallback.url.hash !== '' ||
+      expected.searchParams.get('run') !== canonicalFallback.sourceRunId ||
+      expected.hash !== '#source-run-path'
+    )
+  ) {
+    throw new Error(`Invalid canonical navigation fallback for ${url}.`)
+  }
+
+  await client.send('Page.navigate', { url }, sessionId)
   await waitForValue(
     client,
     sessionId,
@@ -78,14 +100,55 @@ async function navigate(client, sessionId, url) {
         search: expected.search,
         hash: expected.hash,
       })};
-      return document.readyState === 'complete' &&
-        location.origin === expected.origin &&
+      const fallback=${JSON.stringify(canonicalFallback
+        ? {
+            origin: canonicalFallback.url.origin,
+            pathname: canonicalFallback.url.pathname,
+            search: canonicalFallback.url.search,
+            hash: canonicalFallback.url.hash,
+            sourceRunId: canonicalFallback.sourceRunId,
+            modelIdentity: canonicalFallback.modelIdentity,
+          }
+        : null)};
+      const exactLocation=location.origin === expected.origin &&
         location.pathname === expected.pathname &&
         location.search === expected.search &&
-        location.hash === expected.hash &&
+        location.hash === expected.hash;
+      const canonicalLocation=Boolean(fallback) &&
+        location.origin === fallback.origin &&
+        location.pathname === fallback.pathname &&
+        location.search === fallback.search &&
+        location.hash === fallback.hash;
+      const activeRun=fallback
+        ? document.querySelector('[data-model-variant-run="' + CSS.escape(fallback.sourceRunId) + '"]')
+        : null;
+      const activeModelIdentity=activeRun
+        ?.querySelector('[data-public-model-identity]')
+        ?.textContent?.trim() || '';
+      const selectedModelIdentity=document
+        .querySelector('[data-model-variant-selector] summary [data-public-model-identity]')
+        ?.textContent?.trim() || '';
+      const canonicalRunProven=!canonicalLocation || Boolean(
+        activeRun?.querySelector('[aria-current="page"]') &&
+        activeModelIdentity === fallback.modelIdentity &&
+        selectedModelIdentity === fallback.modelIdentity
+      );
+      const ready=document.readyState === 'complete' &&
+        (exactLocation || canonicalLocation) &&
+        canonicalRunProven &&
         Boolean(document.querySelector('#source-run-path'));
+      return {
+        ready,
+        href:location.href,
+        exactLocation,
+        canonicalLocation,
+        canonicalRunProven,
+        activeModelIdentity,
+        selectedModelIdentity,
+        activeRunCurrent:Boolean(activeRun?.querySelector('[aria-current="page"]')),
+      };
     })()`,
-    Boolean,
+    (value) => value?.ready === true,
     `build path at ${url}`,
   )
 }
@@ -622,21 +685,18 @@ async function verifyParentExistingForkRail(client, sessionId, label) {
 }
 
 async function captureElement(client, sessionId, selector, destination) {
-  await client.send('Runtime.evaluate', {
-    expression: `(() => {
-      window.scrollTo({ left:0, top:0, behavior:'instant' });
-      document.documentElement.scrollLeft=0;
-      document.documentElement.scrollTop=0;
-      document.body.scrollLeft=0;
-      document.body.scrollTop=0;
-      return true;
-    })()`,
-    returnByValue: true,
-  }, sessionId)
+  const resetDocumentOriginExpression = `(() => {
+    window.scrollTo({ left:0, top:0, behavior:'instant' });
+    document.documentElement.scrollLeft=0;
+    document.documentElement.scrollTop=0;
+    document.body.scrollLeft=0;
+    document.body.scrollTop=0;
+    return { windowX:window.scrollX, windowY:window.scrollY, documentY:document.documentElement.scrollTop, bodyY:document.body.scrollTop };
+  })()`
   await waitForValue(
     client,
     sessionId,
-    `({ windowX:window.scrollX, windowY:window.scrollY, documentY:document.documentElement.scrollTop, bodyY:document.body.scrollTop })`,
+    resetDocumentOriginExpression,
     (value) => value?.windowX === 0 && value.windowY === 0 && value.documentY === 0 && value.bodyY === 0,
     `document origin before screenshot ${selector}`,
   )
@@ -649,10 +709,22 @@ async function captureElement(client, sessionId, selector, destination) {
     returnByValue: true,
     awaitPromise: true,
   }, sessionId)
+  await waitForValue(
+    client,
+    sessionId,
+    resetDocumentOriginExpression,
+    (value) => value?.windowX === 0 && value.windowY === 0 && value.documentY === 0 && value.bodyY === 0,
+    `stable document origin before screenshot ${selector}`,
+  )
   const clip = await waitForValue(
     client,
     sessionId,
     `(() => {
+      window.scrollTo({ left:0, top:0, behavior:'instant' });
+      document.documentElement.scrollLeft=0;
+      document.documentElement.scrollTop=0;
+      document.body.scrollLeft=0;
+      document.body.scrollTop=0;
       document.querySelectorAll('nextjs-portal').forEach((node)=>node.remove());
       const node=document.querySelector(${JSON.stringify(selector)});
       if (!node) return null;
@@ -858,8 +930,16 @@ async function verifyMobileFork(client, sessionId, url, label, screenshotPath) {
   await verifyMobileLineage(client, sessionId, 'child', label, screenshotPath)
 }
 
-async function verifyMobileParentRail(client, sessionId, url, label, screenshotPath) {
-  await navigate(client, sessionId, url)
+async function verifyMobileParentRail(
+  client,
+  sessionId,
+  url,
+  label,
+  screenshotPath,
+  navigationOptions,
+  evidenceMode = 'element',
+) {
+  await navigate(client, sessionId, url, navigationOptions)
   const snapshot = await waitForValue(
     client,
     sessionId,
@@ -881,8 +961,12 @@ async function verifyMobileParentRail(client, sessionId, url, label, screenshotP
   if (snapshot.promptRow || !snapshot.desktopRailHidden || snapshot.overflow > 1) {
     throw new Error(`${label} did not keep its compact fork panel in the response row without horizontal overflow.`)
   }
+  if (evidenceMode !== 'element' && evidenceMode !== 'viewport') {
+    throw new Error(`${label} uses unsupported mobile rail evidence mode ${evidenceMode}.`)
+  }
   if (screenshotPath) {
-    await captureElement(
+    const capture = evidenceMode === 'viewport' ? captureViewport : captureElement
+    await capture(
       client,
       sessionId,
       '[data-source-run-response-row]:has([data-response-fork-branch-panel])',
@@ -1073,6 +1157,7 @@ async function main() {
           sourceNumber: 10,
           continuationNumbers: [11, 12, 13, 14],
           slug: 'airlock-reactor-claude-blackout',
+          mobileRailEvidenceMode: 'viewport',
         },
         {
           url: swarmParentUrl,
@@ -1080,6 +1165,13 @@ async function main() {
           sourceNumber: 2,
           continuationNumbers: [3],
           slug: 'airlock-reactor-gpt-swarm',
+          navigationOptions: {
+            canonicalFallback: {
+              url: new URL('/airlock-zero-reactor-run-demo', options.baseUrl).href,
+              sourceRunId: '2e526efa-191c-48ea-9ba0-5ff073403770',
+              modelIdentity: 'ChatGPT 5.6 Sol · Max',
+            },
+          },
         },
         {
           url: hullParentUrl,
@@ -1092,7 +1184,7 @@ async function main() {
 
       if (!isLocalEnvironment) {
         for (const fixture of hostedParentFixtures) {
-          await navigate(client, sessionId, fixture.url)
+          await navigate(client, sessionId, fixture.url, fixture.navigationOptions)
           await verifyParentExistingForkRail(client, sessionId, `${fixture.label} source parent`)
           if (screenshot(`${fixture.slug}-response-row-desktop.png`)) {
             await captureElement(
@@ -1213,6 +1305,8 @@ async function main() {
             fixture.url,
             `${fixture.label} response rail`,
             screenshot(`${fixture.slug}-response-row-mobile-390.png`),
+            fixture.navigationOptions,
+            fixture.mobileRailEvidenceMode,
           )
           await selectOnlyBranch(client, sessionId, `${fixture.label} mobile`)
           await verifyMobileLineage(

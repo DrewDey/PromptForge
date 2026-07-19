@@ -496,11 +496,11 @@ export async function BuildPathsDiscovery({
           {totalPages > 1 && (
             <nav className="path-pagination" aria-label="Build path pages">
               {activePage > 1 ? (
-                <Link href={buildUrl({ page: String(activePage - 1) })}><ChevronLeft aria-hidden="true" /> Previous</Link>
+                <Link href={buildUrl({ page: String(activePage - 1) })} prefetch={false}><ChevronLeft aria-hidden="true" /> Previous</Link>
               ) : <span><ChevronLeft aria-hidden="true" /> Previous</span>}
               <strong>Page {activePage} of {totalPages}</strong>
               {activePage < totalPages ? (
-                <Link href={buildUrl({ page: String(activePage + 1) })}>Next <ChevronRight aria-hidden="true" /></Link>
+                <Link href={buildUrl({ page: String(activePage + 1) })} prefetch={false}>Next <ChevronRight aria-hidden="true" /></Link>
               ) : <span>Next <ChevronRight aria-hidden="true" /></span>}
             </nav>
           )}

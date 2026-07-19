@@ -75,6 +75,7 @@ function isModifiedActivation(event: MouseEvent<HTMLAnchorElement>) {
 
 export function DiscoveryNavigationLink({
   href,
+  prefetch = false,
   navigationKind = 'filter',
   navigationLabel,
   className = '',
@@ -111,6 +112,7 @@ export function DiscoveryNavigationLink({
     <Link
       {...props}
       href={href}
+      prefetch={prefetch}
       onClick={handleClick}
       className={[className, isThisNavigationPending ? 'is-pending' : ''].filter(Boolean).join(' ')}
       aria-busy={isThisNavigationPending || undefined}

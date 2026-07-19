@@ -31,6 +31,7 @@
     "check:activation-analytics": "node scripts/check-activation-analytics.mjs",
     "check:discovery-activity": "node scripts/check-discovery-activity.mjs",
     "check:discovery-browser": "node scripts/check-discovery-navigation-browser.mjs",
+    "check:explore-responsiveness": "node scripts/check-explore-responsiveness.mjs",
     "check:output-tracing": "node scripts/check-output-file-tracing.mjs",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",

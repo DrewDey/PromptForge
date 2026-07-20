@@ -4,7 +4,7 @@ import { getProjectHref } from './project-links'
 import { getPromptModelLabel } from './prompt-comparisons'
 import { getProjectModelProfileSummary } from './project-model-profile-summaries'
 import { getProjectModelVariantSet } from './project-model-variants'
-import { getPublicModelIdentityLabel } from './public-model-labels'
+import { getPublicModelIdentity, getPublicModelIdentityLabel } from './public-model-labels'
 import {
   calculateDiscoveryActivity,
   countDistinctVerifiedModels,
@@ -35,11 +35,13 @@ export type DiscoveryPreview =
 export type BuildPathModelVariant = {
   sourceRunId: string
   publicModelLabel: string
+  providerLabel: string
   capturedAt: string
   capturedAtLabel: string
   artifactPath: string | null
   href: string
   promptCount: number
+  activityProjectCount: number
 }
 
 export type BuildPathDiscoveryItem = {
@@ -202,11 +204,12 @@ function cardModelVariants({
   const variants = (variantSet?.variants ?? [])
     .filter((variant) => variant.qualityStatus === 'verified')
     .map((variant): BuildPathModelVariant | null => {
-      const publicModelLabel = getPublicModelIdentityLabel({
+      const publicModelIdentity = getPublicModelIdentity({
         provider: variant.serviceLabel,
         model: variant.modelLabel,
         modelSettings: variant.modelSettings,
       })
+      const publicModelLabel = publicModelIdentity.label
       if (
         publicModelLabel === 'Unknown model' ||
         !Number.isFinite(Date.parse(variant.capturedAt))
@@ -215,6 +218,7 @@ function cardModelVariants({
       return {
         sourceRunId: variant.sourceRunId,
         publicModelLabel,
+        providerLabel: publicModelIdentity.provider || variant.serviceLabel,
         capturedAt: variant.capturedAt,
         capturedAtLabel: CAPTURED_DATE_FORMATTER.format(new Date(variant.capturedAt)),
         artifactPath: normalizedArtifactPath(variant.finalArtifactPath),
@@ -224,6 +228,7 @@ function cardModelVariants({
           variant.sourceRunId,
         ),
         promptCount: variant.promptCount,
+        activityProjectCount: 0,
       }
     })
     .filter((variant): variant is BuildPathModelVariant => variant !== null)
@@ -244,14 +249,17 @@ function cardModelVariants({
   const capturedAt = Number.isFinite(Date.parse(fallbackCapturedAt))
     ? fallbackCapturedAt
     : prompt.created_at
+  const fallbackIdentity = getPublicModelIdentity({ model: modelLabel })
   return [{
     sourceRunId: fallbackSourceRunId,
     publicModelLabel: modelLabel,
+    providerLabel: fallbackIdentity.provider || 'Other',
     capturedAt,
     capturedAtLabel: CAPTURED_DATE_FORMATTER.format(new Date(capturedAt)),
     artifactPath,
     href: fallbackHref,
     promptCount: promptCount || 1,
+    activityProjectCount: 0,
   }]
 }
 
@@ -338,7 +346,7 @@ export function buildPathDiscoveryCatalog(
     }
   }
 
-  return prompts.map((prompt) => {
+  const catalog = prompts.map((prompt) => {
     const prepared = getPreparedShowcaseProjectById(prompt.id)
     const promptCount = prepared?.steps.length ?? prompt.steps?.length ?? 0
     const modelLabel = discoveryModelLabel(prompt)
@@ -432,6 +440,25 @@ export function buildPathDiscoveryCatalog(
       preview,
     }
   })
+
+  const projectsByProvider = new Map<string, number>()
+  for (const item of catalog) {
+    const seenProviders = new Set<string>()
+    for (const variant of item.modelVariants) {
+      const key = variant.providerLabel.toLowerCase()
+      if (seenProviders.has(key)) continue
+      seenProviders.add(key)
+      projectsByProvider.set(key, (projectsByProvider.get(key) ?? 0) + 1)
+    }
+  }
+
+  return catalog.map((item) => ({
+    ...item,
+    modelVariants: item.modelVariants.map((variant) => ({
+      ...variant,
+      activityProjectCount: projectsByProvider.get(variant.providerLabel.toLowerCase()) ?? 0,
+    })),
+  }))
 }
 
 export function recommendedOrder(items: BuildPathDiscoveryItem[]) {

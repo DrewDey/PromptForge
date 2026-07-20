@@ -23,10 +23,8 @@ export type BuildPathCardClientItem = {
   title: string
   description: string
   categoryLabel: string
-  modelLabel: string
   authorName: string
   modelRunCount: number
-  verifiedModelCount: number
   variantsAreVerified: boolean
   hasWorkingArtifact: boolean
   hasFork: boolean
@@ -54,6 +52,8 @@ type InteractiveBuildPathCardProps = {
   engagement?: BuildPathCardEngagement
 }
 
+type ModelOrder = 'new' | 'active'
+
 type ModelSelectorProps = {
   cardId: string
   title: string
@@ -64,6 +64,26 @@ type ModelSelectorProps = {
   onMenuOpenChange: (open: boolean) => void
   onSelect: (sourceRunId: string) => void
   onCycle: (direction: -1 | 1) => void
+  orderMode: ModelOrder
+  onOrderModeChange: (order: ModelOrder) => void
+}
+
+function orderModelVariants(
+  variants: BuildPathModelVariant[],
+  orderMode: ModelOrder,
+) {
+  return variants.toSorted((left, right) => {
+    if (orderMode === 'active') {
+      const activityDifference = right.activityProjectCount - left.activityProjectCount
+      if (activityDifference !== 0) return activityDifference
+    }
+
+    return (
+      Date.parse(right.capturedAt) - Date.parse(left.capturedAt) ||
+      left.publicModelLabel.localeCompare(right.publicModelLabel) ||
+      left.sourceRunId.localeCompare(right.sourceRunId)
+    )
+  })
 }
 
 function LazyProjectPreview({
@@ -132,6 +152,8 @@ function ModelSelector({
   onMenuOpenChange,
   onSelect,
   onCycle,
+  orderMode,
+  onOrderModeChange,
 }: ModelSelectorProps) {
   const selectorRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -140,6 +162,9 @@ function ModelSelector({
   const activityNoteId = `${cardId}-activity-note`
   const hiddenCount = Math.max(0, variants.length - 1)
   const canCycle = variants.length > 1
+  const selectedPosition = variants.findIndex((variant) => (
+    variant.sourceRunId === selectedVariant.sourceRunId
+  )) + 1
 
   useEffect(() => {
     if (!menuOpen) return
@@ -179,14 +204,18 @@ function ModelSelector({
   return (
     <div
       ref={selectorRef}
-      className="path-model-selector"
+      className={`path-model-selector${canCycle ? ' has-multiple-models' : ''}`}
       data-path-model-selector
+      data-model-count={variants.length}
       data-model-menu-open={menuOpen ? 'true' : 'false'}
       role="group"
       aria-label={`Choose the model artifact shown for ${title}`}
       aria-describedby={activityNoteId}
     >
       <div className="path-model-selector-rail">
+        <span className="path-model-total" data-model-total>
+          <strong>{variants.length}</strong> {variants.length === 1 ? 'model' : 'models'}
+        </span>
         <button
           type="button"
           className="path-model-cycle"
@@ -207,14 +236,14 @@ function ModelSelector({
           data-model-list-trigger
         >
           <span className="path-model-identity">
-            <small>Shown</small>
+            <small>Showing {selectedPosition} of {variants.length}</small>
             <strong title={selectedVariant.publicModelLabel}>{selectedVariant.publicModelLabel}</strong>
             <em>
               {hiddenCount > 0
-                ? `+${hiddenCount} more ${hiddenCount === 1 ? 'model' : 'models'}`
+                ? `${variants.length} ${variantsAreVerified ? 'verified ' : ''}models total`
                 : variantsAreVerified
-                  ? 'Only verified model'
-                  : 'Only recorded model'}
+                  ? '1 verified model total'
+                  : '1 recorded model total'}
             </em>
           </span>
           <span className="path-model-date">
@@ -233,14 +262,35 @@ function ModelSelector({
         >
           <ChevronRight aria-hidden="true" />
         </button>
-        <div className="path-model-order" data-model-order="captured-descending">
-          <span>Order <strong>New</strong></span>
-          <span aria-hidden="true">|</span>
-          <span aria-disabled="true">Active 🔒</span>
+        <div
+          className="path-model-order"
+          data-model-order={orderMode === 'active' ? 'published-project-usage' : 'captured-descending'}
+        >
+          <span>Order</span>
+          <button
+            type="button"
+            aria-pressed={orderMode === 'new'}
+            disabled={!canCycle}
+            onClick={() => onOrderModeChange('new')}
+            data-model-order-option="new"
+          >
+            New
+          </button>
+          <button
+            type="button"
+            aria-pressed={orderMode === 'active'}
+            disabled={!canCycle}
+            onClick={() => onOrderModeChange('active')}
+            data-model-order-option="active"
+          >
+            Active
+          </button>
         </div>
       </div>
       <span id={activityNoteId} className="sr-only">
-        Models are ordered newest first. Per-version activity is not tracked yet, so Active ordering is unavailable.
+        {canCycle
+          ? 'New orders by capture date. Active orders by how many published PathForge projects use each model provider, with newest capture breaking ties.'
+          : 'Only one model is available for this project, so ordering does not change.'}
       </span>
 
       {menuOpen ? (
@@ -248,12 +298,14 @@ function ModelSelector({
           id={menuId}
           className="path-model-menu"
           role="region"
-          aria-label={`${variantsAreVerified ? 'Verified' : 'Recorded'} model artifacts, newest first`}
+          aria-label={`${variantsAreVerified ? 'Verified' : 'Recorded'} model artifacts, ${
+            orderMode === 'active' ? 'most used first' : 'newest first'
+          }`}
           data-model-list
         >
           <div className="path-model-menu-heading">
             <span>{variantsAreVerified ? 'Verified' : 'Recorded'} artifacts</span>
-            <span>Newest first</span>
+            <span>{orderMode === 'active' ? 'Most used first' : 'Newest first'}</span>
           </div>
           {variants.map((variant) => {
             const selected = variant.sourceRunId === selectedVariant.sourceRunId
@@ -275,12 +327,21 @@ function ModelSelector({
                 <span>
                   <small>Captured</small>
                   <time dateTime={variant.capturedAt}>{variant.capturedAtLabel}</time>
+                  <small>{variant.providerLabel}: {variant.activityProjectCount} published {variant.activityProjectCount === 1 ? 'project' : 'projects'}</small>
                 </span>
               </button>
             )
           })}
           <p className="path-model-activity-note">
-            <strong>Active order unavailable.</strong> Per-version activity is not tracked yet.
+            {canCycle ? (
+              orderMode === 'active' ? (
+                <><strong>Active order.</strong> Ranked by real provider presence across published projects; newest capture breaks ties.</>
+              ) : (
+                <><strong>New order.</strong> Ranked by verified capture date, newest first.</>
+              )
+            ) : (
+              <><strong>One model.</strong> Add another verified model run to enable ordering.</>
+            )}
           </p>
         </div>
       ) : null}
@@ -297,9 +358,6 @@ function PathAnatomy({
 }) {
   const parts = [
     `${promptCount || 1} ${promptCount === 1 ? 'prompt' : 'prompts'}`,
-    item.verifiedModelCount > 0
-      ? `${item.verifiedModelCount} verified ${item.verifiedModelCount === 1 ? 'model' : 'models'}`
-      : item.modelLabel,
     item.forkCount > 0
       ? `${item.forkCount} ${item.forkCount === 1 ? 'fork' : 'forks'}`
       : item.isFork
@@ -311,13 +369,11 @@ function PathAnatomy({
 }
 
 function cardLinkLabel(item: BuildPathCardClientItem, selectedVariant: BuildPathModelVariant) {
-  const hiddenCount = Math.max(0, item.modelVariants.length - 1)
+  const modelCount = item.modelVariants.length
   return [
     `Explore ${item.title}.`,
     `Showing ${selectedVariant.publicModelLabel}, captured ${selectedVariant.capturedAtLabel}.`,
-    hiddenCount > 0
-      ? `${hiddenCount} more ${item.variantsAreVerified ? 'verified ' : ''}${hiddenCount === 1 ? 'model' : 'models'} available.`
-      : null,
+    `${modelCount} ${item.variantsAreVerified ? 'verified ' : ''}${modelCount === 1 ? 'model' : 'models'} in this project.`,
   ].filter(Boolean).join(' ')
 }
 
@@ -336,13 +392,23 @@ export function InteractiveBuildPathCard({
   const variants = item.modelVariants
   const [selectedSourceRunId, setSelectedSourceRunId] = useState(variants[0].sourceRunId)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [orderMode, setOrderMode] = useState<ModelOrder>('new')
+  const orderedVariants = orderModelVariants(variants, orderMode)
   const selectedVariant = variants.find((variant) => variant.sourceRunId === selectedSourceRunId)
     ?? variants[0]
 
   const cycleVariant = (direction: -1 | 1) => {
-    const currentIndex = variants.findIndex((variant) => variant.sourceRunId === selectedVariant.sourceRunId)
-    const nextIndex = (currentIndex + direction + variants.length) % variants.length
-    setSelectedSourceRunId(variants[nextIndex].sourceRunId)
+    const currentIndex = orderedVariants.findIndex((variant) => variant.sourceRunId === selectedVariant.sourceRunId)
+    const nextIndex = (currentIndex + direction + orderedVariants.length) % orderedVariants.length
+    setSelectedSourceRunId(orderedVariants[nextIndex].sourceRunId)
+    setMenuOpen(false)
+  }
+
+  const changeOrderMode = (nextOrder: ModelOrder) => {
+    if (variants.length < 2 || nextOrder === orderMode) return
+    const nextVariants = orderModelVariants(variants, nextOrder)
+    setOrderMode(nextOrder)
+    setSelectedSourceRunId(nextVariants[0].sourceRunId)
     setMenuOpen(false)
   }
 
@@ -357,6 +423,7 @@ export function InteractiveBuildPathCard({
       data-path-model-card={item.id}
       data-selected-source-run={selectedVariant.sourceRunId}
       data-selected-artifact={selectedVariant.artifactPath ?? ''}
+      data-model-order-mode={orderMode}
     >
       <div className="path-card-link">
         <div className="path-card-stage" data-path-card-stage>
@@ -426,13 +493,15 @@ export function InteractiveBuildPathCard({
       <ModelSelector
         cardId={item.id}
         title={item.title}
-        variants={variants}
+        variants={orderedVariants}
         variantsAreVerified={item.variantsAreVerified}
         selectedVariant={selectedVariant}
         menuOpen={menuOpen}
         onMenuOpenChange={setMenuOpen}
         onSelect={selectVariant}
         onCycle={cycleVariant}
+        orderMode={orderMode}
+        onOrderModeChange={changeOrderMode}
       />
 
       {engagement && (

@@ -152,7 +152,8 @@ const SNAPSHOT_EXPRESSION = `(() => {
     ? document.elementFromPoint(menuRect.left+Math.min(18,menuRect.width/2),menuRect.top+Math.min(18,menuRect.height/2))
     : null;
   const primaryLink=card?.querySelector('[data-path-card-primary-link]');
-  const activeOrder=selector?.querySelector('[data-model-order] span:last-child');
+  const activeOrder=selector?.querySelector('[data-model-order-option="active"]');
+  const newOrder=selector?.querySelector('[data-model-order-option="new"]');
   const activityNoteId=selector?.getAttribute('aria-describedby');
   const protectedFrame=card?.querySelector('[data-artifact-path]');
   return {
@@ -162,15 +163,20 @@ const SNAPSHOT_EXPRESSION = `(() => {
     overflow:Math.max(0,document.documentElement.scrollWidth-window.innerWidth),
     nextDialog:Boolean(document.querySelector('[data-nextjs-dialog]')),
     selected:card?.dataset.selectedSourceRun || '',
+    orderMode:card?.dataset.modelOrderMode || '',
     artifact:card?.dataset.selectedArtifact || '',
     promptCount:Number(card?.querySelector('[data-selected-prompt-count]')?.dataset.selectedPromptCount),
     href:primaryLink ? new URL(primaryLink.href).pathname+new URL(primaryLink.href).search : '',
     nestedInteractive:Boolean(primaryLink?.querySelector('a,button,input,select,textarea,summary,details,iframe,[tabindex]:not([tabindex="-1"]),[role="button"],[role="link"]')),
     incompleteMenuPattern:Boolean(selector?.querySelector('[aria-haspopup="menu"], [role="menu"], [role="menuitemradio"]')),
     triggerText:trigger?.textContent?.replace(/\\s+/g,' ').trim() || '',
+    modelCount:Number(selector?.dataset.modelCount || 0),
+    modelTotal:selector?.querySelector('[data-model-total]')?.textContent?.replace(/\\s+/g,' ').trim() || '',
     orderText:selector?.querySelector('[data-model-order]')?.textContent?.replace(/\\s+/g,' ').trim() || '',
     activeOrderTag:activeOrder?.tagName || '',
-    activeOrderDisabled:activeOrder?.getAttribute('aria-disabled') || '',
+    activeOrderDisabled:Boolean(activeOrder?.disabled),
+    activeOrderPressed:activeOrder?.getAttribute('aria-pressed') || '',
+    newOrderPressed:newOrder?.getAttribute('aria-pressed') || '',
     activityNote:activityNoteId ? document.getElementById(activityNoteId)?.textContent?.replace(/\\s+/g,' ').trim() || '' : '',
     menuOpen:selector?.dataset.modelMenuOpen || '',
     optionIds:[...(menu?.querySelectorAll('[data-model-option]') || [])].map((option)=>option.dataset.sourceRunId),
@@ -180,6 +186,7 @@ const SNAPSHOT_EXPRESSION = `(() => {
     focusedTrigger:document.activeElement === trigger,
     focusedOptionId:document.activeElement?.dataset?.sourceRunId || '',
     controlSizes:[...(selector?.querySelectorAll('[data-model-cycle], [data-model-list-trigger]') || [])].map(rect),
+    orderControlSizes:[...(selector?.querySelectorAll('[data-model-order-option]') || [])].map(rect),
     previewMounted:card?.querySelector('[data-path-card-preview-mounted]')?.dataset.pathCardPreviewMounted || '',
     protectedArtifact:protectedFrame?.dataset.artifactPath || '',
     artifactReady:Boolean(protectedFrame?.querySelector('iframe[srcdoc]')),
@@ -275,6 +282,120 @@ async function prepareFixture(client, sessionId, options) {
   )
 }
 
+async function verifyCompareModelCatalog(client, sessionId, options, viewport) {
+  await client.send('Emulation.setDeviceMetricsOverride', {
+    width: viewport.width,
+    height: viewport.height,
+    deviceScaleFactor: 1,
+    mobile: viewport.mobile,
+  }, sessionId)
+  const targetUrl = new URL(`${options.baseUrl}/paths?compare=models`)
+  targetUrl.searchParams.set('qa-guard', String(++navigationSequence))
+  const targetHref = targetUrl.toString()
+  const domReady = client.waitFor('Page.domContentEventFired', sessionId, 20_000)
+  await client.send('Page.navigate', { url: targetHref }, sessionId)
+  await domReady
+  await waitForValue(
+    client,
+    sessionId,
+    `({
+      href:location.href,
+      cards:document.querySelectorAll('[data-path-model-card]').length,
+      skeletons:document.querySelectorAll('.skeleton-shimmer').length
+    })`,
+    (value) => value?.href === targetHref && value.cards === 8 && value.skeletons === 0,
+    `${viewport.name} rendered multi-model Explore results`,
+    20_000,
+  )
+  await new Promise((resolve) => setTimeout(resolve, 750))
+  await waitForValue(
+    client,
+    sessionId,
+    `({
+      href:location.href,
+      cards:document.querySelectorAll('[data-path-model-card]').length,
+      skeletons:document.querySelectorAll('.skeleton-shimmer').length
+    })`,
+    (value) => value?.href === targetHref && value.cards === 8 && value.skeletons === 0,
+    `${viewport.name} stable rendered multi-model Explore results`,
+    20_000,
+  )
+  await controlPoint(client, sessionId, '[data-path-model-card]')
+  const stateExpression = `(() => {
+    const cards=[...document.querySelectorAll('[data-path-model-card]')];
+    const selectors=cards.map((card)=>card.querySelector('[data-path-model-selector]'));
+    const visibleCards=cards.filter((card)=>{
+      const rect=card.getBoundingClientRect();
+      return rect.top < window.innerHeight && rect.bottom > 0;
+    });
+    const visiblePreviewsSettled=visibleCards.length > 0 && visibleCards.every((card)=>{
+      const mount=card.querySelector('[data-path-card-preview-mounted]');
+      const frame=card.querySelector('[data-artifact-fit-mode]');
+      return mount?.dataset.pathCardPreviewMounted === 'true' &&
+        Boolean(frame?.querySelector('iframe[srcdoc]')) &&
+        !frame?.querySelector('[data-artifact-loading]') &&
+        frame?.dataset.artifactFitMode !== 'loading';
+    });
+    return {
+      href:location.href,
+      ready:document.readyState,
+      skeletons:document.querySelectorAll('.skeleton-shimmer').length,
+      heading:document.querySelector('.path-section-heading h2')?.textContent?.trim() || '',
+      cardCount:cards.length,
+      visibleCardCount:visibleCards.length,
+      visiblePreviewsSettled,
+      selectorCounts:selectors.map((selector)=>Number(selector?.dataset.modelCount || 0)),
+      visibleTotals:selectors.map((selector)=>selector?.querySelector('[data-model-total]')?.textContent?.replace(/\\s+/g,' ').trim() || ''),
+      compareCount:document.querySelector('.path-filter-count')?.textContent?.trim() || '',
+      footerText:cards.map((card)=>card.querySelector('.path-card-anatomy')?.textContent?.replace(/\\s+/g,' ').trim() || ''),
+      overflow:Math.max(0,document.documentElement.scrollWidth-window.innerWidth),
+      nextDialog:Boolean(document.querySelector('[data-nextjs-dialog]')),
+    };
+  })()`
+  const compareIsSettled = (value) => (
+    value?.href === targetHref &&
+    value.ready === 'complete' &&
+    value.skeletons === 0 &&
+    value.cardCount === 8 &&
+    value.visiblePreviewsSettled
+  )
+  await waitForValue(
+    client,
+    sessionId,
+    stateExpression,
+    compareIsSettled,
+    `${viewport.name} eight multi-model Explore results`,
+    20_000,
+  )
+  await new Promise((resolve) => setTimeout(resolve, 500))
+  const state = await waitForValue(
+    client,
+    sessionId,
+    stateExpression,
+    compareIsSettled,
+    `${viewport.name} stable multi-model Explore results`,
+    20_000,
+  )
+  if (
+    state.heading !== '8 paths match.' ||
+    state.compareCount !== '8' ||
+    state.selectorCounts.some((count) => count < 2) ||
+    state.visibleTotals.some((label) => !/^\d+ models$/.test(label))
+  ) {
+    throw new Error(`${viewport.name} Compare models did not expose eight clearly counted multi-model projects: ${JSON.stringify(state)}.`)
+  }
+  if (state.footerText.some((text) => /ChatGPT|Gemini|Claude|GPT-/i.test(text))) {
+    throw new Error(`${viewport.name} lower card footer still duplicates the selected model name.`)
+  }
+  if (state.overflow !== 0 || state.nextDialog) {
+    throw new Error(`${viewport.name} Compare models rendered overflow or a Next.js error dialog.`)
+  }
+  if (options.screenshotDir) {
+    await screenshot(client, sessionId, path.join(options.screenshotDir, `${viewport.name}-compare-models.png`))
+  }
+  console.log(`[${viewport.name}] Compare models catalog passed`)
+}
+
 async function verifyViewport(client, sessionId, options, viewport) {
   await client.send('Emulation.setDeviceMetricsOverride', {
     width: viewport.width,
@@ -295,17 +416,25 @@ async function verifyViewport(client, sessionId, options, viewport) {
     initial.promptCount !== 3 ||
     initial.href !== `/booking-flow-handoff-simulator-demo?run=${GEMINI_RUN}`
   ) throw new Error(`${viewport.name} did not start on the exact newest Gemini receipt.`)
-  if (!initial.triggerText.includes('Gemini 3.1 Pro') || !initial.triggerText.includes('+1 more model') || !initial.triggerText.includes('Jul 11, 2026')) {
-    throw new Error(`${viewport.name} omitted the selected model, hidden count, or capture date.`)
+  if (!initial.triggerText.includes('Gemini 3.1 Pro') || !initial.triggerText.includes('2 verified models total') || !initial.triggerText.includes('Jul 11, 2026')) {
+    throw new Error(`${viewport.name} omitted the selected model, total model count, or capture date.`)
   }
-  if (!initial.orderText.includes('Order New') || !initial.orderText.includes('Active 🔒')) {
-    throw new Error(`${viewport.name} did not show New and locked Active ordering.`)
+  if (initial.modelCount !== 2 || initial.modelTotal !== '2 models') {
+    throw new Error(`${viewport.name} did not expose the exact model count before opening the selector.`)
   }
-  if (initial.activeOrderTag !== 'SPAN' || initial.activeOrderDisabled !== 'true') {
-    throw new Error(`${viewport.name} exposed unavailable Active ordering as an interactive control.`)
+  if (!['Order', 'New', 'Active'].every((label) => initial.orderText.includes(label))) {
+    throw new Error(`${viewport.name} did not show the New and Active ordering controls.`)
   }
-  if (!initial.activityNote.includes('Per-version activity is not tracked yet')) {
-    throw new Error(`${viewport.name} omitted the reason Active ordering is unavailable.`)
+  if (
+    initial.activeOrderTag !== 'BUTTON' ||
+    initial.activeOrderDisabled ||
+    initial.activeOrderPressed !== 'false' ||
+    initial.newOrderPressed !== 'true'
+  ) {
+    throw new Error(`${viewport.name} did not expose working New and Active buttons for a multi-model card.`)
+  }
+  if (!initial.activityNote.includes('model provider')) {
+    throw new Error(`${viewport.name} omitted the truthful Active-order definition.`)
   }
   if (initial.nestedInteractive || initial.incompleteMenuPattern) {
     throw new Error(`${viewport.name} retained nested controls or an incomplete ARIA menu pattern.`)
@@ -316,6 +445,30 @@ async function verifyViewport(client, sessionId, options, viewport) {
   if (options.screenshotDir) {
     await screenshot(client, sessionId, path.join(options.screenshotDir, `${viewport.name}-initial.png`))
   }
+
+  const beforeActiveOrder = await snapshot(client, sessionId)
+  await pointerClick(client, sessionId, '[data-model-order-option="active"]')
+  const activeOrdered = await waitForValue(
+    client,
+    sessionId,
+    SNAPSHOT_EXPRESSION,
+    (value) => value?.orderMode === 'active' && value.selected === CHATGPT_RUN,
+    `${viewport.name} Active provider ordering`,
+  )
+  if (activeOrdered.activeOrderPressed !== 'true' || activeOrdered.newOrderPressed !== 'false') {
+    throw new Error(`${viewport.name} did not visibly select Active ordering.`)
+  }
+  assertRectStable(`${viewport.name} switching to Active order`, beforeActiveOrder, activeOrdered)
+
+  await pointerClick(client, sessionId, '[data-model-order-option="new"]')
+  const newestOrdered = await waitForValue(
+    client,
+    sessionId,
+    SNAPSHOT_EXPRESSION,
+    (value) => value?.orderMode === 'new' && value.selected === GEMINI_RUN,
+    `${viewport.name} New capture ordering`,
+  )
+  assertRectStable(`${viewport.name} switching back to New order`, activeOrdered, newestOrdered)
 
   const beforeMenu = await snapshot(client, sessionId)
   await pointerClick(client, sessionId, '[data-model-list-trigger]')
@@ -408,7 +561,7 @@ async function verifyViewport(client, sessionId, options, viewport) {
   })()`)
   await pressKey(client, sessionId, 'Enter')
   await waitForValue(client, sessionId, SNAPSHOT_EXPRESSION, (value) => value?.menuOpen === 'true', `${viewport.name} keyboard open`)
-  for (let index = 0; index < 3; index += 1) await pressKey(client, sessionId, 'Tab')
+  for (let index = 0; index < 5; index += 1) await pressKey(client, sessionId, 'Tab')
   await waitForValue(
     client,
     sessionId,
@@ -479,6 +632,11 @@ async function main() {
       client.send('Runtime.enable', {}, sessionId),
       client.send('Log.enable', {}, sessionId),
     ])
+
+    for (const viewport of [
+      { name: 'desktop', width: 1440, height: 1000, mobile: false },
+      { name: 'mobile-390', width: 390, height: 844, mobile: true },
+    ]) await verifyCompareModelCatalog(client, sessionId, options, viewport)
 
     const results = []
     for (const viewport of [

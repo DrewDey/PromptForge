@@ -5,17 +5,9 @@ import {
   InteractiveBuildPathCard,
   type BuildPathCardClientItem,
 } from '@/components/discovery/InteractiveBuildPathCard'
+import { getCategories, getPrompts } from '@/lib/data'
+import { buildPathDiscoveryCatalog } from '@/lib/path-discovery'
 import { getPreparedShowcaseProjectBySourceRunId } from '@/lib/prepared-showcase-projects'
-import {
-  getProjectModelProfileSummary,
-  type PublicProjectModelProfileRunSummary,
-} from '@/lib/project-model-profile-summaries'
-import {
-  getProjectModelVariantSet,
-  type ProjectModelVariant,
-} from '@/lib/project-model-variants'
-import type { BuildPathModelVariant } from '@/lib/path-discovery'
-import { isPublicModelLabel } from '@/lib/public-model-labels'
 import styles from './page.module.css'
 import '../../browse.css'
 
@@ -27,78 +19,23 @@ const EXPECTED_VERIFIED_SOURCE_RUN_IDS = new Set([
   'c42eebed94a0395e',
 ])
 
-const CAPTURED_DATE_FORMATTER = new Intl.DateTimeFormat('en', {
-  year: 'numeric',
-  month: 'short',
-  day: 'numeric',
-  timeZone: 'UTC',
-})
-
 export const metadata: Metadata = {
   title: 'Pull-Down Model Index | PathForge QA',
   description: 'The selected production model selector using two verified Booking Flow artifacts.',
   robots: { index: false, follow: false },
 }
 
-function normalizedArtifactPath(value: string) {
-  return value.replace(/^public\//, '/').split('#', 1)[0]
-}
-
-function publicLabelForVariant(
-  variant: ProjectModelVariant,
-  profiles: PublicProjectModelProfileRunSummary[],
-) {
-  const publicLabel = profiles.find((profile) => (
-    profile.modelLabel === variant.modelLabel &&
-    profile.serviceLabel === variant.serviceLabel &&
-    profile.modelSettings === variant.modelSettings
-  ))?.publicModelLabel.trim() ?? ''
-
-  return isPublicModelLabel(publicLabel) ? publicLabel : null
-}
-
-function browserVariant(
-  variant: ProjectModelVariant,
-  profiles: PublicProjectModelProfileRunSummary[],
-  canonicalRoute: string,
-  defaultSourceRunId: string,
-): BuildPathModelVariant | null {
-  const publicModelLabel = publicLabelForVariant(variant, profiles)
-  const capturedAt = new Date(variant.capturedAt)
-  const artifactPath = normalizedArtifactPath(variant.finalArtifactPath)
-  if (!publicModelLabel || !artifactPath || Number.isNaN(capturedAt.getTime())) return null
-
-  return {
-    sourceRunId: variant.sourceRunId,
-    publicModelLabel,
-    capturedAt: variant.capturedAt,
-    capturedAtLabel: CAPTURED_DATE_FORMATTER.format(capturedAt),
-    artifactPath,
-    href: variant.sourceRunId === defaultSourceRunId
-      ? canonicalRoute
-      : `${canonicalRoute}?${new URLSearchParams({ run: variant.sourceRunId }).toString()}`,
-    promptCount: variant.promptCount,
-  }
-}
-
-export default function PathCardConceptsPage() {
+export default async function PathCardConceptsPage() {
   if (process.env.VERCEL_ENV === 'production') notFound()
 
   const project = getPreparedShowcaseProjectBySourceRunId(BOOKING_FLOW_PROJECT_SOURCE_RUN_ID)
-  const variantSet = getProjectModelVariantSet(BOOKING_FLOW_PROJECT_ID)
-  if (!project || !variantSet) notFound()
+  const [categories, prompts] = await Promise.all([getCategories(), getPrompts({ sort: 'newest' })])
+  const discoveryItem = buildPathDiscoveryCatalog(prompts, categories).find((item) => (
+    item.id === BOOKING_FLOW_PROJECT_ID
+  ))
+  if (!project || !discoveryItem) notFound()
 
-  const profiles = getProjectModelProfileSummary(BOOKING_FLOW_PROJECT_ID)
-  const variants = variantSet.variants
-    .filter((variant) => variant.qualityStatus === 'verified')
-    .map((variant) => browserVariant(
-      variant,
-      profiles,
-      variantSet.canonicalRoute,
-      variantSet.defaultSourceRunId,
-    ))
-    .filter((variant): variant is BuildPathModelVariant => variant !== null)
-    .sort((left, right) => Date.parse(right.capturedAt) - Date.parse(left.capturedAt))
+  const variants = discoveryItem.modelVariants
 
   const hasExactFixture = (
     variants.length === EXPECTED_VERIFIED_SOURCE_RUN_IDS.size &&
@@ -111,18 +48,16 @@ export default function PathCardConceptsPage() {
     id: project.id,
     title: project.title,
     description: project.description,
-    categoryLabel: project.categorySlug === 'personal' ? 'Personal & Fun' : 'Productivity',
-    modelLabel: variants[0].publicModelLabel,
+    categoryLabel: discoveryItem.categoryLabel,
     authorName: project.authorDisplayName,
-    modelRunCount: variants.length,
-    verifiedModelCount: variants.length,
+    modelRunCount: discoveryItem.modelRunCount,
     variantsAreVerified: true,
     hasWorkingArtifact: true,
-    hasFork: false,
-    isFork: false,
-    forkCount: 0,
-    isActive: true,
-    preview: 'utility',
+    hasFork: discoveryItem.hasFork,
+    isFork: discoveryItem.isFork,
+    forkCount: discoveryItem.forkCount,
+    isActive: discoveryItem.isActive,
+    preview: discoveryItem.preview,
     modelVariants: variants,
   }
 
@@ -147,7 +82,7 @@ export default function PathCardConceptsPage() {
           <ul>
             <li>Distinct verified model identities only.</li>
             <li>Newest capture is shown first.</li>
-            <li>Active ordering stays locked until per-version activity exists.</li>
+            <li>New orders by capture date; Active orders by real published-project usage.</li>
             <li>The Forge Slab dimensions stay fixed while artifacts change.</li>
           </ul>
         </aside>

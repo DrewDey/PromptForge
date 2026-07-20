@@ -291,7 +291,7 @@
   height: 252px;
   overflow: hidden;
   background: #dedbd2;
-  padding: 68px 16px 22px 11px;
+  padding: 76px 16px 22px 11px;
 }
 
 .pf-paths .path-card-backplate {
@@ -351,7 +351,7 @@
 
 .pf-paths .path-model-selector {
   position: absolute;
-  top: 8px;
+  top: 10px;
   right: 7px;
   z-index: 6;
   width: calc(100% - 14px);
@@ -364,13 +364,48 @@
   position: relative;
   display: grid;
   width: calc(100% - 14px);
-  height: 56px;
+  height: 64px;
   grid-template-columns: 44px minmax(0,1fr) 44px;
   margin-inline: 7px;
   overflow: visible;
   border: 1px solid #81745f;
   background: #f8f4e9;
   box-shadow: 0 3px 8px rgba(47,38,24,.12);
+}
+
+.pf-paths .path-model-total {
+  position: absolute;
+  top: -9px;
+  right: 47px;
+  z-index: 4;
+  display: inline-flex;
+  height: 19px;
+  min-width: 78px;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border: 1px solid #81745f;
+  border-bottom: 0;
+  background: #ead7aa;
+  padding: 0 12px 0 8px;
+  clip-path: polygon(0 0, 84% 0, 100% 100%, 0 100%);
+  color: #5e4823;
+  font-size: 7.5px;
+  font-weight: 850;
+  letter-spacing: .07em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.pf-paths .path-model-total strong {
+  color: #2f2618;
+  font-size: 9px;
+}
+
+.pf-paths .path-model-selector.has-multiple-models .path-model-total {
+  border-color: #b76a24;
+  background: #f2ca7f;
+  color: #713b12;
 }
 
 .pf-paths .path-model-selector-rail::after {
@@ -403,7 +438,7 @@
 .pf-paths .path-model-cycle {
   display: grid;
   min-width: 44px;
-  min-height: 56px;
+  min-height: 64px;
   place-items: center;
   border: 0;
   background: transparent;
@@ -419,13 +454,13 @@
   position: relative;
   display: grid;
   min-width: 0;
-  min-height: 56px;
+  min-height: 64px;
   grid-template-columns: minmax(0,1.25fr) minmax(64px,.75fr) 12px;
   gap: 5px;
   align-items: center;
   border: 0;
   background: transparent;
-  padding: 3px 6px 13px;
+  padding: 7px 7px 22px;
   text-align: left;
 }
 
@@ -434,13 +469,13 @@
 .pf-paths .path-model-identity,
 .pf-paths .path-model-date { display: grid; min-width: 0; align-content: center; line-height: 1; }
 .pf-paths .path-model-identity small,
-.pf-paths .path-model-date small { color: #7a5a2e; font-size: 5.5px; font-weight: 850; letter-spacing: .11em; }
+.pf-paths .path-model-date small { color: #7a5a2e; font-size: 6px; font-weight: 850; letter-spacing: .1em; }
 
 .pf-paths .path-model-identity strong {
   min-width: 0;
   margin-top: 2px;
   overflow: hidden;
-  font-size: 7.5px;
+  font-size: 8.5px;
   font-weight: 900;
   letter-spacing: .01em;
   line-height: 1.05;
@@ -452,7 +487,7 @@
   margin-top: 2px;
   overflow: hidden;
   color: #625845;
-  font-size: 5.5px;
+  font-size: 6px;
   font-style: normal;
   font-weight: 800;
   letter-spacing: .05em;
@@ -472,25 +507,48 @@
 .pf-paths .path-model-order {
   position: absolute;
   right: 45px;
-  bottom: 1px;
+  bottom: 0;
   display: flex;
-  height: 11px;
+  height: 21px;
   align-items: center;
-  gap: 3px;
+  gap: 0;
   color: #6a6255;
-  font-size: 5px;
+  font-size: 5.5px;
   font-weight: 800;
   letter-spacing: .06em;
   line-height: 1;
-  pointer-events: none;
+  pointer-events: auto;
 }
 
-.pf-paths .path-model-order strong { color: #244e73; }
-.pf-paths .path-model-order span:last-child { color: #84786a; }
+.pf-paths .path-model-order > span {
+  padding-right: 4px;
+  color: #6a6255;
+}
+
+.pf-paths .path-model-order button {
+  min-width: 44px;
+  min-height: 21px;
+  border: 0;
+  border-left: 1px solid rgba(64,51,31,.2);
+  background: rgba(255,255,255,.28);
+  padding: 0 6px;
+  color: #675d4e;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: .05em;
+}
+
+.pf-paths .path-model-order button[aria-pressed="true"] {
+  background: #244e73;
+  color: #fff;
+}
+
+.pf-paths .path-model-order button:hover:not(:disabled) { background: #dce8f2; color: #1d3f5e; }
+.pf-paths .path-model-order button:disabled { cursor: default; opacity: .38; }
 
 .pf-paths .path-model-menu {
   position: absolute;
-  top: 69px;
+  top: 77px;
   right: 7px;
   z-index: 12;
   width: calc(100% - 14px);
@@ -749,6 +807,24 @@
   border-color: var(--path-ink);
   background: var(--path-ink);
   color: #fff;
+}
+
+.pf-paths .path-filter-count {
+  display: inline-grid;
+  min-width: 20px;
+  height: 20px;
+  place-items: center;
+  border: 1px solid currentColor;
+  background: #fff;
+  padding-inline: 4px;
+  color: var(--path-ink);
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+
+.pf-paths .path-filter-row a.is-active .path-filter-count {
+  background: var(--path-orange);
+  color: var(--path-ink);
 }
 
 .pf-paths .path-toolbar-actions {

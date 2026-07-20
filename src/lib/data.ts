@@ -77,6 +77,7 @@ import {
   UTILITY_BILL_BALANCE_PROJECT_ID,
   BLOCK_BIKE_COURIER_PROJECT_ID,
 } from './featured-projects'
+import { CURATED_SOURCE_RUN_SHOWCASE_PROJECTS } from './curated-source-run-showcases'
 import { getPreparedShowcaseProjectById } from './prepared-showcase-projects'
 import type { PreparedShowcaseProject, PreparedShowcaseStep } from './prepared-showcase-projects'
 import { getProjectRouteOverride } from './project-links'
@@ -198,6 +199,7 @@ const APPROVED_PROJECT_IDS = new Set([
   ROOMMATE_FREEZER_BOARD_PROJECT_ID,
   UTILITY_BILL_BALANCE_PROJECT_ID,
   BLOCK_BIKE_COURIER_PROJECT_ID,
+  ...CURATED_SOURCE_RUN_SHOWCASE_PROJECTS.map((project) => project.id),
 ])
 const PUBLIC_LIBRARY_START_AT = '2026-05-28T00:00:00.000Z'
 const publicMockPrompts = mockPrompts.filter((prompt) => APPROVED_PROJECT_IDS.has(prompt.id))

@@ -24,7 +24,6 @@ function clientItem(item: BuildPathDiscoveryItem): BuildPathCardClientItem {
     categoryLabel: item.categoryLabel,
     authorName: item.authorName,
     modelRunCount: item.modelRunCount,
-    variantsAreVerified: item.verifiedModelCount > 0,
     hasWorkingArtifact: item.hasWorkingArtifact,
     hasFork: item.hasFork,
     isFork: item.isFork,

@@ -11,6 +11,7 @@ import {
   ListFilter,
 } from 'lucide-react'
 import VoteBookmarkButtons from '@/components/VoteBookmarkButtons'
+import { ModelVariantKnownIssue } from '@/components/ModelVariantKnownIssue'
 import { ProjectPreview } from '@/components/ProjectPreview'
 import type {
   BuildPathModelVariant,
@@ -25,7 +26,6 @@ export type BuildPathCardClientItem = {
   categoryLabel: string
   authorName: string
   modelRunCount: number
-  variantsAreVerified: boolean
   hasWorkingArtifact: boolean
   hasFork: boolean
   isFork: boolean
@@ -58,7 +58,6 @@ type ModelSelectorProps = {
   cardId: string
   title: string
   variants: BuildPathModelVariant[]
-  variantsAreVerified: boolean
   selectedVariant: BuildPathModelVariant
   menuOpen: boolean
   onMenuOpenChange: (open: boolean) => void
@@ -146,7 +145,6 @@ function ModelSelector({
   cardId,
   title,
   variants,
-  variantsAreVerified,
   selectedVariant,
   menuOpen,
   onMenuOpenChange,
@@ -165,6 +163,15 @@ function ModelSelector({
   const selectedPosition = variants.findIndex((variant) => (
     variant.sourceRunId === selectedVariant.sourceRunId
   )) + 1
+  const verifiedCount = variants.filter((variant) => variant.qualityStatus === 'verified').length
+  const knownIssueVariants = variants.filter((variant) => (
+    variant.qualityStatus === 'known-issue' && variant.knownIssueExplanation
+  ))
+  const knownIssueCount = knownIssueVariants.length
+  const projectKnownIssueExplanation = knownIssueVariants
+    .map((variant) => `${variant.publicModelLabel}: ${variant.knownIssueExplanation}`)
+    .join(' ')
+  const projectKnownIssueId = `${cardId}-card-known-issues`
 
   useEffect(() => {
     if (!menuOpen) return
@@ -216,6 +223,15 @@ function ModelSelector({
         <span className="path-model-total" data-model-total>
           <strong>{variants.length}</strong> {variants.length === 1 ? 'model' : 'models'}
         </span>
+        {knownIssueCount > 0 && projectKnownIssueExplanation ? (
+          <ModelVariantKnownIssue
+            id={projectKnownIssueId}
+            explanation={projectKnownIssueExplanation}
+            label={`${knownIssueCount} ${knownIssueCount === 1 ? 'issue' : 'issues'}`}
+            className="path-model-card-issue"
+            focusable
+          />
+        ) : null}
         <button
           type="button"
           className="path-model-cycle"
@@ -229,21 +245,20 @@ function ModelSelector({
         <button
           ref={triggerRef}
           type="button"
-          className="path-model-trigger"
           onClick={() => onMenuOpenChange(!menuOpen)}
           aria-expanded={menuOpen}
           aria-controls={menuId}
+          aria-describedby={selectedVariant.knownIssueExplanation ? projectKnownIssueId : undefined}
+          className="path-model-trigger"
           data-model-list-trigger
         >
           <span className="path-model-identity">
             <small>Showing {selectedPosition} of {variants.length}</small>
             <strong title={selectedVariant.publicModelLabel}>{selectedVariant.publicModelLabel}</strong>
             <em>
-              {hiddenCount > 0
-                ? `${variants.length} ${variantsAreVerified ? 'verified ' : ''}models total`
-                : variantsAreVerified
-                  ? '1 verified model total'
-                  : '1 recorded model total'}
+              {selectedVariant.qualityStatus === 'known-issue' ? 'Known issue' : selectedVariant.qualityStatus === 'verified' ? 'Verified' : 'Recorded'}
+              {' · '}
+              {hiddenCount > 0 ? `${variants.length} models total` : '1 model total'}
             </em>
           </span>
           <span className="path-model-date">
@@ -298,22 +313,24 @@ function ModelSelector({
           id={menuId}
           className="path-model-menu"
           role="region"
-          aria-label={`${variantsAreVerified ? 'Verified' : 'Recorded'} model artifacts, ${
+          aria-label={`${variants.length} recorded model results, ${verifiedCount} verified, ${
             orderMode === 'active' ? 'most used first' : 'newest first'
           }`}
           data-model-list
         >
           <div className="path-model-menu-heading">
-            <span>{variantsAreVerified ? 'Verified' : 'Recorded'} artifacts</span>
+            <span>{variants.length} model {variants.length === 1 ? 'result' : 'results'} · {verifiedCount} verified</span>
             <span>{orderMode === 'active' ? 'Most used first' : 'Newest first'}</span>
           </div>
           {variants.map((variant) => {
             const selected = variant.sourceRunId === selectedVariant.sourceRunId
+            const issueId = `${cardId}-${variant.sourceRunId}-known-issue`
             return (
               <button
                 type="button"
                 aria-pressed={selected}
-                className="path-model-option"
+                aria-describedby={variant.knownIssueExplanation ? issueId : undefined}
+                className={`path-model-option${variant.qualityStatus === 'known-issue' ? ' model-known-issue-owner' : ''}`}
                 key={variant.sourceRunId}
                 onClick={() => selectAndReturnFocus(variant.sourceRunId)}
                 data-model-option
@@ -323,12 +340,24 @@ function ModelSelector({
                 <span>
                   <small>{selected ? 'Shown' : 'Available'}</small>
                   <strong>{variant.publicModelLabel}</strong>
+                  {!variant.knownIssueExplanation ? (
+                    <small className="path-model-verified-label">
+                      {variant.qualityStatus === 'verified' ? 'Verified' : 'Recorded'}
+                    </small>
+                  ) : null}
                 </span>
                 <span>
                   <small>Captured</small>
                   <time dateTime={variant.capturedAt}>{variant.capturedAtLabel}</time>
                   <small>{variant.providerLabel}: {variant.activityProjectCount} published {variant.activityProjectCount === 1 ? 'project' : 'projects'}</small>
                 </span>
+                {variant.knownIssueExplanation ? (
+                  <ModelVariantKnownIssue
+                    id={issueId}
+                    explanation={variant.knownIssueExplanation}
+                    inlineOnMobile
+                  />
+                ) : null}
               </button>
             )
           })}
@@ -337,10 +366,10 @@ function ModelSelector({
               orderMode === 'active' ? (
                 <><strong>Active order.</strong> Ranked by real provider presence across published projects; newest capture breaks ties.</>
               ) : (
-                <><strong>New order.</strong> Ranked by verified capture date, newest first.</>
+                <><strong>New order.</strong> Ranked by capture date, newest first.</>
               )
             ) : (
-              <><strong>One model.</strong> Add another verified model run to enable ordering.</>
+              <><strong>One model.</strong> Add another model run to enable ordering.</>
             )}
           </p>
         </div>
@@ -373,7 +402,10 @@ function cardLinkLabel(item: BuildPathCardClientItem, selectedVariant: BuildPath
   return [
     `Explore ${item.title}.`,
     `Showing ${selectedVariant.publicModelLabel}, captured ${selectedVariant.capturedAtLabel}.`,
-    `${modelCount} ${item.variantsAreVerified ? 'verified ' : ''}${modelCount === 1 ? 'model' : 'models'} in this project.`,
+    `${modelCount} ${modelCount === 1 ? 'model' : 'models'} in this project.`,
+    selectedVariant.knownIssueExplanation
+      ? `Known issue: ${selectedVariant.knownIssueExplanation}`
+      : null,
   ].filter(Boolean).join(' ')
 }
 
@@ -408,7 +440,10 @@ export function InteractiveBuildPathCard({
     if (variants.length < 2 || nextOrder === orderMode) return
     const nextVariants = orderModelVariants(variants, nextOrder)
     setOrderMode(nextOrder)
-    setSelectedSourceRunId(nextVariants[0].sourceRunId)
+    setSelectedSourceRunId(
+      nextVariants.find((variant) => variant.qualityStatus === 'verified')?.sourceRunId ??
+      nextVariants[0].sourceRunId,
+    )
     setMenuOpen(false)
   }
 
@@ -494,7 +529,6 @@ export function InteractiveBuildPathCard({
         cardId={item.id}
         title={item.title}
         variants={orderedVariants}
-        variantsAreVerified={item.variantsAreVerified}
         selectedVariant={selectedVariant}
         menuOpen={menuOpen}
         onMenuOpenChange={setMenuOpen}

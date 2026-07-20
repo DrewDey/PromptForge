@@ -3,7 +3,10 @@ import { getPreparedProjectModelIdentity } from './prepared-project-model-identi
 import { getProjectHref } from './project-links'
 import { getPromptModelLabel } from './prompt-comparisons'
 import { getProjectModelProfileSummary } from './project-model-profile-summaries'
-import { getProjectModelVariantSet } from './project-model-variants'
+import {
+  getProjectModelVariantKnownIssueExplanation,
+  getProjectModelVariantSet,
+} from './project-model-variants'
 import { getPublicModelIdentity, getPublicModelIdentityLabel } from './public-model-labels'
 import {
   calculateDiscoveryActivity,
@@ -42,6 +45,8 @@ export type BuildPathModelVariant = {
   href: string
   promptCount: number
   activityProjectCount: number
+  qualityStatus: 'verified' | 'known-issue' | 'recorded'
+  knownIssueExplanation: string | null
 }
 
 export type BuildPathDiscoveryItem = {
@@ -190,6 +195,7 @@ function cardModelVariants({
   fallbackHref,
   fallbackSourceRunId,
   fallbackCapturedAt,
+  fallbackVerified,
 }: {
   prompt: PromptWithRelations
   modelLabel: string
@@ -198,11 +204,10 @@ function cardModelVariants({
   fallbackHref: string
   fallbackSourceRunId: string
   fallbackCapturedAt: string
+  fallbackVerified: boolean
 }): BuildPathModelVariant[] {
   const variantSet = getProjectModelVariantSet(prompt.id)
-  const distinctLabels = new Set<string>()
-  const variants = (variantSet?.variants ?? [])
-    .filter((variant) => variant.qualityStatus === 'verified')
+  const candidates = (variantSet?.variants ?? [])
     .map((variant): BuildPathModelVariant | null => {
       const publicModelIdentity = getPublicModelIdentity({
         provider: variant.serviceLabel,
@@ -229,20 +234,34 @@ function cardModelVariants({
         ),
         promptCount: variant.promptCount,
         activityProjectCount: 0,
+        qualityStatus: variant.qualityStatus,
+        knownIssueExplanation: getProjectModelVariantKnownIssueExplanation(variant),
       }
     })
     .filter((variant): variant is BuildPathModelVariant => variant !== null)
+
+  const distinctVariants = new Map<string, BuildPathModelVariant>()
+  for (const variant of candidates) {
+    const key = variant.publicModelLabel.toLocaleLowerCase()
+    const existing = distinctVariants.get(key)
+    if (
+      !existing ||
+      (existing.qualityStatus !== 'verified' && variant.qualityStatus === 'verified') ||
+      (
+        existing.qualityStatus === variant.qualityStatus &&
+        Date.parse(variant.capturedAt) > Date.parse(existing.capturedAt)
+      )
+    ) {
+      distinctVariants.set(key, variant)
+    }
+  }
+
+  const variants = [...distinctVariants.values()]
     .sort((left, right) => (
       Date.parse(right.capturedAt) - Date.parse(left.capturedAt) ||
       left.publicModelLabel.localeCompare(right.publicModelLabel) ||
       left.sourceRunId.localeCompare(right.sourceRunId)
     ))
-    .filter((variant) => {
-      const key = variant.publicModelLabel.toLocaleLowerCase()
-      if (distinctLabels.has(key)) return false
-      distinctLabels.add(key)
-      return true
-    })
 
   if (variants.length > 0) return variants
 
@@ -260,6 +279,8 @@ function cardModelVariants({
     href: fallbackHref,
     promptCount: promptCount || 1,
     activityProjectCount: 0,
+    qualityStatus: fallbackVerified ? 'verified' : 'recorded',
+    knownIssueExplanation: null,
   }]
 }
 
@@ -371,6 +392,7 @@ export function buildPathDiscoveryCatalog(
       fallbackHref: href,
       fallbackSourceRunId: prepared?.sourceRunId ?? `project-${prompt.id}`,
       fallbackCapturedAt: prepared?.createdAt ?? prompt.created_at,
+      fallbackVerified: verifiedModelCount > 0,
     })
     const hasWorkingArtifact = Boolean(artifactPath)
     const isFork = Boolean(
@@ -445,6 +467,7 @@ export function buildPathDiscoveryCatalog(
   for (const item of catalog) {
     const seenProviders = new Set<string>()
     for (const variant of item.modelVariants) {
+      if (variant.qualityStatus !== 'verified') continue
       const key = variant.providerLabel.toLowerCase()
       if (seenProviders.has(key)) continue
       seenProviders.add(key)
@@ -456,7 +479,9 @@ export function buildPathDiscoveryCatalog(
     ...item,
     modelVariants: item.modelVariants.map((variant) => ({
       ...variant,
-      activityProjectCount: projectsByProvider.get(variant.providerLabel.toLowerCase()) ?? 0,
+      activityProjectCount: variant.qualityStatus === 'verified'
+        ? projectsByProvider.get(variant.providerLabel.toLowerCase()) ?? 0
+        : 0,
     })),
   }))
 }

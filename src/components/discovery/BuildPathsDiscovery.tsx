@@ -168,6 +168,8 @@ export async function BuildPathsDiscovery({
     getPrompts({ sort: 'newest' }),
   ])
   const catalog = buildPathDiscoveryCatalog(prompts, categories)
+  // Compare Models follows the visible distinct-model selector. Disclosed
+  // known-issue history remains a model result instead of disappearing here.
   const multiModelPathCount = catalog.filter((item) => item.modelVariants.length > 1).length
   let isLoggedIn = false
   let votedPromptIds = new Set<string>()

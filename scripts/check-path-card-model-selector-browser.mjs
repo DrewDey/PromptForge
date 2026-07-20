@@ -13,10 +13,14 @@ import {
 } from './measure-html-artifacts.mjs'
 
 const PROJECT_ID = '0ddfc7cf-37bf-47ae-8fe0-d8d445ba1bee'
+const CALMING_PROJECT_ID = 'dc5e67c3-42d0-4823-ae23-586b7d3985cb'
 const GEMINI_RUN = '4fcd2293646af036'
 const CHATGPT_RUN = 'c42eebed94a0395e'
+const SONNET_RUN = '08c8b725-4228-4b24-a6e6-5d7fcf78457c'
 const GEMINI_ARTIFACT = '/artifacts/booking-flow-handoff-simulator-gemini-31-pro-repair-2.html'
 const CHATGPT_ARTIFACT = '/artifacts/booking-flow-handoff-simulator-chatgpt-gpt56-luna-final.html'
+const SONNET_ARTIFACT = '/artifacts/booking-flow-handoff-simulator-claude-sonnet46-low.html'
+const CALMING_EXACT_ISSUE = 'Presets move the visible master control without applying the same value to the live master gain.'
 let navigationSequence = 0
 
 function parseArgs(argv) {
@@ -156,6 +160,7 @@ const SNAPSHOT_EXPRESSION = `(() => {
   const newOrder=selector?.querySelector('[data-model-order-option="new"]');
   const activityNoteId=selector?.getAttribute('aria-describedby');
   const protectedFrame=card?.querySelector('[data-artifact-path]');
+  const headerRect=document.querySelector('header')?.getBoundingClientRect();
   return {
     cardCount:document.querySelectorAll('[data-path-model-card]').length,
     selectorCount:document.querySelectorAll('[data-path-model-selector]').length,
@@ -182,6 +187,18 @@ const SNAPSHOT_EXPRESSION = `(() => {
     optionIds:[...(menu?.querySelectorAll('[data-model-option]') || [])].map((option)=>option.dataset.sourceRunId),
     optionModels:[...(menu?.querySelectorAll('[data-model-option] strong') || [])].map((entry)=>entry.textContent?.trim()),
     optionDates:[...(menu?.querySelectorAll('[data-model-option] time') || [])].map((entry)=>entry.textContent?.trim()),
+    knownIssueCount:selector?.querySelectorAll('[data-model-known-issue]').length || 0,
+    knownIssueExplanations:[...(selector?.querySelectorAll('[data-known-issue-explanation]') || [])].map((entry)=>entry.dataset.knownIssueExplanation || ''),
+    visibleKnownIssueTooltips:[...(selector?.querySelectorAll('[role="tooltip"]') || [])].filter((entry)=>{
+      const style=getComputedStyle(entry);
+      return style.visibility === 'visible' && Number(style.opacity) > 0;
+    }).map((entry)=>entry.textContent?.replace(/\\s+/g,' ').trim() || ''),
+    visibleKnownIssueTooltipRects:[...(selector?.querySelectorAll('[role="tooltip"]') || [])].filter((entry)=>{
+      const style=getComputedStyle(entry);
+      return style.visibility === 'visible' && Number(style.opacity) > 0;
+    }).map(rect),
+    cardIssueFocused:document.activeElement === selector?.querySelector('.path-model-card-issue'),
+    stickyHeaderBottom:headerRect ? headerRect.bottom : 0,
     menuVisible:Boolean(menu && menuHit && menu.contains(menuHit)),
     focusedTrigger:document.activeElement === trigger,
     focusedOptionId:document.activeElement?.dataset?.sourceRunId || '',
@@ -324,6 +341,8 @@ async function verifyCompareModelCatalog(client, sessionId, options, viewport) {
   const stateExpression = `(() => {
     const cards=[...document.querySelectorAll('[data-path-model-card]')];
     const selectors=cards.map((card)=>card.querySelector('[data-path-model-selector]'));
+    const calmingCard=cards.find((card)=>card.dataset.pathModelCard === '${CALMING_PROJECT_ID}');
+    const calmingSelector=calmingCard?.querySelector('[data-path-model-selector]');
     const visibleCards=cards.filter((card)=>{
       const rect=card.getBoundingClientRect();
       return rect.top < window.innerHeight && rect.bottom > 0;
@@ -345,6 +364,9 @@ async function verifyCompareModelCatalog(client, sessionId, options, viewport) {
       visibleCardCount:visibleCards.length,
       visiblePreviewsSettled,
       selectorCounts:selectors.map((selector)=>Number(selector?.dataset.modelCount || 0)),
+      calmingModelCount:Number(calmingSelector?.dataset.modelCount || 0),
+      calmingIssueCount:calmingSelector?.querySelectorAll('[data-model-known-issue]').length || 0,
+      calmingIssueExplanations:[...(calmingSelector?.querySelectorAll('[data-known-issue-explanation]') || [])].map((entry)=>entry.dataset.knownIssueExplanation || ''),
       visibleTotals:selectors.map((selector)=>selector?.querySelector('[data-model-total]')?.textContent?.replace(/\\s+/g,' ').trim() || ''),
       compareCount:document.querySelector('.path-filter-count')?.textContent?.trim() || '',
       footerText:cards.map((card)=>card.querySelector('.path-card-anatomy')?.textContent?.replace(/\\s+/g,' ').trim() || ''),
@@ -384,6 +406,13 @@ async function verifyCompareModelCatalog(client, sessionId, options, viewport) {
   ) {
     throw new Error(`${viewport.name} Compare models did not expose eight clearly counted multi-model projects: ${JSON.stringify(state)}.`)
   }
+  if (
+    state.calmingModelCount !== 3 ||
+    state.calmingIssueCount < 1 ||
+    !state.calmingIssueExplanations.some((explanation) => explanation.includes(CALMING_EXACT_ISSUE))
+  ) {
+    throw new Error(`${viewport.name} Calming Mixer did not expose all three models and its explained known issue: ${JSON.stringify(state)}.`)
+  }
   if (state.footerText.some((text) => /ChatGPT|Gemini|Claude|GPT-/i.test(text))) {
     throw new Error(`${viewport.name} lower card footer still duplicates the selected model name.`)
   }
@@ -393,7 +422,173 @@ async function verifyCompareModelCatalog(client, sessionId, options, viewport) {
   if (options.screenshotDir) {
     await screenshot(client, sessionId, path.join(options.screenshotDir, `${viewport.name}-compare-models.png`))
   }
+  const calmingIssueSelector = `[data-path-model-card="${CALMING_PROJECT_ID}"] .path-model-card-issue`
+  await pointerClick(client, sessionId, calmingIssueSelector)
+  const calmingIssueTooltip = await waitForValue(
+    client,
+    sessionId,
+    `(() => {
+      const issue=document.querySelector(${JSON.stringify(`[data-path-model-card="${CALMING_PROJECT_ID}"] .path-model-card-issue`)});
+      const tooltip=issue?.querySelector('[role="tooltip"]');
+      const tooltipStyle=tooltip ? getComputedStyle(tooltip) : null;
+      const tooltipRect=tooltip?.getBoundingClientRect();
+      const headerRect=document.querySelector('header')?.getBoundingClientRect();
+      return {
+        text:tooltip?.textContent?.replace(/\\s+/g,' ').trim() || '',
+        visible:Boolean(tooltipStyle && tooltipStyle.visibility === 'visible' && Number(tooltipStyle.opacity) > 0),
+        rect:tooltipRect ? {x:tooltipRect.x,y:tooltipRect.y,width:tooltipRect.width,height:tooltipRect.height} : null,
+        stickyHeaderBottom:headerRect?.bottom || 0,
+      };
+    })()`,
+    (value) => value?.visible && value.text.includes(CALMING_EXACT_ISSUE),
+    `${viewport.name} Calming Mixer card issue tooltip`,
+  )
+  if (
+    !calmingIssueTooltip.rect ||
+    calmingIssueTooltip.rect.x < 0 ||
+    calmingIssueTooltip.rect.y < calmingIssueTooltip.stickyHeaderBottom ||
+    calmingIssueTooltip.rect.x + calmingIssueTooltip.rect.width > viewport.width ||
+    calmingIssueTooltip.rect.y + calmingIssueTooltip.rect.height > viewport.height
+  ) {
+    throw new Error(`${viewport.name} Calming Mixer card issue tooltip escaped the usable viewport: ${JSON.stringify(calmingIssueTooltip)}.`)
+  }
+  if (options.screenshotDir) {
+    await new Promise((resolve) => setTimeout(resolve, 200))
+    await screenshot(client, sessionId, path.join(options.screenshotDir, `${viewport.name}-calming-card-issue-tooltip.png`))
+  }
   console.log(`[${viewport.name}] Compare models catalog passed`)
+}
+
+async function verifyKnownIssueProjectMenu(client, sessionId, options, viewport) {
+  await client.send('Emulation.setDeviceMetricsOverride', {
+    width: viewport.width,
+    height: viewport.height,
+    deviceScaleFactor: 1,
+    mobile: viewport.mobile,
+  }, sessionId)
+  const targetUrl = new URL(`${options.baseUrl}/calming-sleep-sound-mixer-demo`)
+  targetUrl.searchParams.set('run', 'cf73efd5-2fb6-48fe-a9fd-a1a0df336d18')
+  targetUrl.searchParams.set('qa-guard', String(++navigationSequence))
+  const domReady = client.waitFor('Page.domContentEventFired', sessionId, 20_000)
+  await client.send('Page.navigate', { url: targetUrl.toString() }, sessionId)
+  await domReady
+  await waitForValue(
+    client,
+    sessionId,
+    `({
+      href:location.href,
+      ready:document.readyState,
+      selector:Boolean(document.querySelector('[data-model-variant-selector]')),
+      issue:Boolean(document.querySelector('[data-model-variant-selector] [data-model-known-issue]')),
+      skeletons:document.querySelectorAll('.skeleton-shimmer').length
+    })`,
+    (value) => (
+      value?.href === targetUrl.toString() &&
+      value.ready === 'complete' &&
+      value.selector &&
+      value.issue &&
+      value.skeletons === 0
+    ),
+    `${viewport.name} known-issue project selector`,
+    20_000,
+  )
+  await waitForValue(
+    client,
+    sessionId,
+    `(() => {
+      const frame=document.querySelector('[data-artifact-fit-mode]');
+      return {
+        iframe:Boolean(frame?.querySelector('iframe[srcdoc]')),
+        loading:Boolean(document.querySelector('[data-artifact-loading]')),
+        fit:frame?.dataset.artifactFitMode || ''
+      };
+    })()`,
+    (value) => value?.iframe && !value.loading && value.fit && value.fit !== 'loading',
+    `${viewport.name} settled known-issue project artifact`,
+    20_000,
+  )
+
+  await evaluate(
+    client,
+    sessionId,
+    `document.querySelector('[data-model-variant-selector] summary')?.click()`,
+  )
+  await waitForValue(
+    client,
+    sessionId,
+    `Boolean(document.querySelector('[data-model-variant-selector] details[open]'))`,
+    Boolean,
+    `${viewport.name} open known-issue project menu`,
+  )
+  if (!viewport.mobile) {
+    await evaluate(
+      client,
+      sessionId,
+      `document.querySelector('[data-model-variant-run="cf73efd5-2fb6-48fe-a9fd-a1a0df336d18"] [data-model-known-issue]')?.focus()`,
+    )
+  }
+  const state = await waitForValue(
+    client,
+    sessionId,
+    `(() => {
+      const selector=document.querySelector('[data-model-variant-selector]');
+      const summary=selector?.querySelector('summary');
+      const rows=[...document.querySelectorAll('[data-model-variant-run]')];
+      const issue=selector?.querySelector('[data-model-variant-run="cf73efd5-2fb6-48fe-a9fd-a1a0df336d18"] [data-model-known-issue]');
+      const tooltip=issue?.querySelector('[role="tooltip"]');
+      const style=tooltip ? getComputedStyle(tooltip) : null;
+      return {
+        summaryText:summary?.textContent?.replace(/\\s+/g,' ').trim() || '',
+        rows:rows.map((row)=>row.dataset.modelVariantRun),
+        explanation:issue?.dataset.knownIssueExplanation || '',
+        tooltipText:tooltip?.textContent?.replace(/\\s+/g,' ').trim() || '',
+        tooltipVisible:Boolean(style && style.visibility === 'visible' && Number(style.opacity) > 0),
+        skeletons:document.querySelectorAll('.skeleton-shimmer').length,
+        artifactReady:Boolean(document.querySelector('[data-artifact-fit-mode] iframe[srcdoc]')),
+        overflow:Math.max(0,document.documentElement.scrollWidth-window.innerWidth),
+        nextDialog:Boolean(document.querySelector('[data-nextjs-dialog]')),
+      };
+    })()`,
+    (value) => (
+      value?.rows?.length === 3 &&
+      value.tooltipVisible &&
+      value.skeletons === 0 &&
+      value.artifactReady
+    ),
+    `${viewport.name} explained known-issue model row`,
+  )
+  if (
+    !state.summaryText.includes('Known issue') ||
+    !state.explanation.includes(CALMING_EXACT_ISSUE) ||
+    !state.tooltipText.includes('Historical run preserved for comparison')
+  ) {
+    throw new Error(`${viewport.name} project dropdown omitted its source-backed issue explanation.`)
+  }
+  if (state.overflow !== 0 || state.nextDialog) {
+    throw new Error(`${viewport.name} known-issue project menu rendered overflow or a Next.js error dialog.`)
+  }
+  if (viewport.mobile) {
+    await evaluate(
+      client,
+      sessionId,
+      `document.querySelector('[data-model-variant-run="cf73efd5-2fb6-48fe-a9fd-a1a0df336d18"]')?.scrollIntoView({block:'center'})`,
+    )
+    await waitForValue(
+      client,
+      sessionId,
+      `(() => {
+        const row=document.querySelector('[data-model-variant-run="cf73efd5-2fb6-48fe-a9fd-a1a0df336d18"]');
+        const rect=row?.getBoundingClientRect();
+        return rect ? {top:rect.top,bottom:rect.bottom,height:innerHeight} : null;
+      })()`,
+      (value) => value && value.top >= 0 && value.bottom <= value.height,
+      `${viewport.name} visible known-issue project row`,
+    )
+  }
+  if (options.screenshotDir) {
+    await screenshot(client, sessionId, path.join(options.screenshotDir, `${viewport.name}-known-issue-project-menu.png`))
+  }
+  console.log(`[${viewport.name}] known-issue project menu passed`)
 }
 
 async function verifyViewport(client, sessionId, options, viewport) {
@@ -416,10 +611,10 @@ async function verifyViewport(client, sessionId, options, viewport) {
     initial.promptCount !== 3 ||
     initial.href !== `/booking-flow-handoff-simulator-demo?run=${GEMINI_RUN}`
   ) throw new Error(`${viewport.name} did not start on the exact newest Gemini receipt.`)
-  if (!initial.triggerText.includes('Gemini 3.1 Pro') || !initial.triggerText.includes('2 verified models total') || !initial.triggerText.includes('Jul 11, 2026')) {
+  if (!initial.triggerText.includes('Gemini 3.1 Pro') || !initial.triggerText.includes('Verified · 3 models total') || !initial.triggerText.includes('Jul 11, 2026')) {
     throw new Error(`${viewport.name} omitted the selected model, total model count, or capture date.`)
   }
-  if (initial.modelCount !== 2 || initial.modelTotal !== '2 models') {
+  if (initial.modelCount !== 3 || initial.modelTotal !== '3 models') {
     throw new Error(`${viewport.name} did not expose the exact model count before opening the selector.`)
   }
   if (!['Order', 'New', 'Active'].every((label) => initial.orderText.includes(label))) {
@@ -436,6 +631,12 @@ async function verifyViewport(client, sessionId, options, viewport) {
   if (!initial.activityNote.includes('model provider')) {
     throw new Error(`${viewport.name} omitted the truthful Active-order definition.`)
   }
+  if (
+    initial.knownIssueCount !== 1 ||
+    !initial.knownIssueExplanations.some((explanation) => /FAILED state/i.test(explanation))
+  ) {
+    throw new Error(`${viewport.name} card-level issue indicator did not explain the preserved Sonnet defect.`)
+  }
   if (initial.nestedInteractive || initial.incompleteMenuPattern) {
     throw new Error(`${viewport.name} retained nested controls or an incomplete ARIA menu pattern.`)
   }
@@ -446,13 +647,101 @@ async function verifyViewport(client, sessionId, options, viewport) {
     await screenshot(client, sessionId, path.join(options.screenshotDir, `${viewport.name}-initial.png`))
   }
 
+  if (!viewport.mobile) {
+    const issuePoint = await controlPoint(client, sessionId, '.path-model-card-issue')
+    if (!issuePoint?.hit) throw new Error(`${viewport.name} known-issue indicator could not be hovered.`)
+    await client.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: issuePoint.x, y: issuePoint.y }, sessionId)
+    const hoveredIssue = await waitForValue(
+      client,
+      sessionId,
+      SNAPSHOT_EXPRESSION,
+      (value) => value?.visibleKnownIssueTooltips?.some((text) => /FAILED state/i.test(text)),
+      `${viewport.name} known-issue tooltip`,
+    )
+    if (!hoveredIssue.visibleKnownIssueTooltips.some((text) => /Historical run preserved/i.test(text))) {
+      throw new Error(`${viewport.name} known-issue tooltip omitted its historical comparison context.`)
+    }
+    const tooltipRect = hoveredIssue.visibleKnownIssueTooltipRects[0]
+    await client.send('Input.dispatchMouseEvent', {
+      type: 'mouseMoved',
+      x: tooltipRect.x + tooltipRect.width / 2,
+      y: tooltipRect.y + tooltipRect.height / 2,
+    }, sessionId)
+    await waitForValue(
+      client,
+      sessionId,
+      SNAPSHOT_EXPRESSION,
+      (value) => value?.visibleKnownIssueTooltips?.some((text) => /FAILED state/i.test(text)),
+      `${viewport.name} hoverable known-issue tooltip`,
+    )
+    if (options.screenshotDir) {
+      await new Promise((resolve) => setTimeout(resolve, 200))
+      await screenshot(client, sessionId, path.join(options.screenshotDir, `${viewport.name}-card-issue-tooltip.png`))
+    }
+    await pressKey(client, sessionId, 'Escape')
+    await waitForValue(
+      client,
+      sessionId,
+      SNAPSHOT_EXPRESSION,
+      (value) => value?.visibleKnownIssueTooltips.length === 0,
+      `${viewport.name} Escape-dismissed hovered known-issue tooltip`,
+    )
+    await evaluate(client, sessionId, `document.querySelector('.path-model-card-issue')?.focus()`)
+    await client.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: viewport.width - 2, y: viewport.height - 2 }, sessionId)
+    await waitForValue(
+      client,
+      sessionId,
+      SNAPSHOT_EXPRESSION,
+      (value) => value?.cardIssueFocused && value.visibleKnownIssueTooltips.length > 0,
+      `${viewport.name} focused known-issue tooltip`,
+    )
+    await pressKey(client, sessionId, 'Escape')
+    await waitForValue(
+      client,
+      sessionId,
+      SNAPSHOT_EXPRESSION,
+      (value) => value?.cardIssueFocused && value.visibleKnownIssueTooltips.length === 0,
+      `${viewport.name} Escape-dismissed known-issue tooltip`,
+    )
+  } else {
+    await pointerClick(client, sessionId, '.path-model-card-issue')
+    const focusedIssue = await waitForValue(
+      client,
+      sessionId,
+      SNAPSHOT_EXPRESSION,
+      (value) => value?.visibleKnownIssueTooltips?.some((text) => /FAILED state/i.test(text)),
+      `${viewport.name} tapped known-issue tooltip`,
+    )
+    const tooltipOutsideViewport = focusedIssue.visibleKnownIssueTooltipRects.some((rect) => (
+      rect.x < 0 ||
+      rect.y < focusedIssue.stickyHeaderBottom ||
+      rect.x + rect.width > viewport.width ||
+      rect.y + rect.height > viewport.height
+    ))
+    if (tooltipOutsideViewport) {
+      throw new Error(`${viewport.name} tapped known-issue tooltip escaped the viewport: ${JSON.stringify(focusedIssue.visibleKnownIssueTooltipRects)}.`)
+    }
+    if (options.screenshotDir) {
+      await new Promise((resolve) => setTimeout(resolve, 200))
+      await screenshot(client, sessionId, path.join(options.screenshotDir, `${viewport.name}-card-issue-tooltip.png`))
+    }
+    await pressKey(client, sessionId, 'Escape')
+    await waitForValue(
+      client,
+      sessionId,
+      SNAPSHOT_EXPRESSION,
+      (value) => value?.cardIssueFocused && value.visibleKnownIssueTooltips.length === 0,
+      `${viewport.name} Escape-dismissed tapped known-issue tooltip`,
+    )
+  }
+
   const beforeActiveOrder = await snapshot(client, sessionId)
   await pointerClick(client, sessionId, '[data-model-order-option="active"]')
   const activeOrdered = await waitForValue(
     client,
     sessionId,
     SNAPSHOT_EXPRESSION,
-    (value) => value?.orderMode === 'active' && value.selected === CHATGPT_RUN,
+    (value) => value?.orderMode === 'active' && value.selected === GEMINI_RUN,
     `${viewport.name} Active provider ordering`,
   )
   if (activeOrdered.activeOrderPressed !== 'true' || activeOrdered.newOrderPressed !== 'false') {
@@ -476,15 +765,32 @@ async function verifyViewport(client, sessionId, options, viewport) {
     client,
     sessionId,
     SNAPSHOT_EXPRESSION,
-    (value) => value?.menuOpen === 'true' && value.optionIds?.length === 2,
-    `${viewport.name} two-option model list`,
+    (value) => value?.menuOpen === 'true' && value.optionIds?.length === 3,
+    `${viewport.name} three-option model list`,
   )
-  assertEqual(`${viewport.name} newest-first run order`, menuOpen.optionIds, [GEMINI_RUN, CHATGPT_RUN])
-  assertEqual(`${viewport.name} model labels`, menuOpen.optionModels, ['Gemini 3.1 Pro', 'ChatGPT 5.6 Luna · Extra High'])
-  assertEqual(`${viewport.name} capture dates`, menuOpen.optionDates, ['Jul 11, 2026', 'Jul 10, 2026'])
+  assertEqual(`${viewport.name} newest-first run order`, menuOpen.optionIds, [GEMINI_RUN, CHATGPT_RUN, SONNET_RUN])
+  assertEqual(`${viewport.name} capture dates`, menuOpen.optionDates, ['Jul 11, 2026', 'Jul 10, 2026', 'Jun 19, 2026'])
+  if (
+    menuOpen.optionModels.length !== 3 ||
+    !menuOpen.optionModels[0].includes('Gemini 3.1 Pro') ||
+    !menuOpen.optionModels[1].includes('ChatGPT 5.6 Luna') ||
+    !menuOpen.optionModels[2].includes('Sonnet 4.6')
+  ) {
+    throw new Error(`${viewport.name} model list omitted one of the three recorded model identities.`)
+  }
+  if (!menuOpen.knownIssueExplanations.some((explanation) => /FAILED state/i.test(explanation))) {
+    throw new Error(`${viewport.name} open menu omitted the Sonnet issue explanation.`)
+  }
+  if (
+    viewport.mobile &&
+    !menuOpen.visibleKnownIssueTooltips.some((text) => /FAILED state/i.test(text))
+  ) {
+    throw new Error(`${viewport.name} did not show the known-issue explanation inline.`)
+  }
   if (!menuOpen.menuVisible) throw new Error(`${viewport.name} menu is clipped or covered.`)
   assertRectStable(`${viewport.name} opening the model list`, beforeMenu, menuOpen)
   if (options.screenshotDir) {
+    await new Promise((resolve) => setTimeout(resolve, 200))
     await screenshot(client, sessionId, path.join(options.screenshotDir, `${viewport.name}-menu-open.png`))
   }
 
@@ -530,6 +836,51 @@ async function verifyViewport(client, sessionId, options, viewport) {
     await screenshot(client, sessionId, path.join(options.screenshotDir, `${viewport.name}-switched.png`))
   }
 
+  await pointerClick(client, sessionId, '[data-model-list-trigger]')
+  await waitForValue(client, sessionId, SNAPSHOT_EXPRESSION, (value) => value?.menuOpen === 'true', `${viewport.name} known-issue list`)
+  const beforeKnownIssueSwitch = await snapshot(client, sessionId)
+  await pointerClick(client, sessionId, `[data-model-option][data-source-run-id="${SONNET_RUN}"]`)
+  const knownIssueSelected = await waitForValue(
+    client,
+    sessionId,
+    SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.selected === SONNET_RUN &&
+      value.previewMounted === 'true' &&
+      value.focusedTrigger
+    ),
+    `${viewport.name} known-issue model selection`,
+  )
+  if (
+    knownIssueSelected.artifact !== SONNET_ARTIFACT ||
+    knownIssueSelected.promptCount !== 4 ||
+    knownIssueSelected.href !== `/booking-flow-handoff-simulator-demo?run=${SONNET_RUN}` ||
+    !knownIssueSelected.triggerText.includes('Sonnet 4.6') ||
+    !knownIssueSelected.triggerText.includes('Known issue') ||
+    !knownIssueSelected.knownIssueExplanations.some((explanation) => /FAILED state/i.test(explanation))
+  ) {
+    throw new Error(`${viewport.name} did not keep the known-issue run selectable and truthfully labeled.`)
+  }
+  assertRectStable(`${viewport.name} switching to the known-issue model`, beforeKnownIssueSwitch, knownIssueSelected)
+  await waitForValue(
+    client,
+    sessionId,
+    `(() => {
+      const frame=document.querySelector('[data-artifact-path]');
+      return {
+        path:frame?.dataset.artifactPath || '',
+        iframe:Boolean(frame?.querySelector('iframe[srcdoc]')),
+        fit:frame?.dataset.artifactFitMode || ''
+      };
+    })()`,
+    (value) => value?.path.includes(SONNET_ARTIFACT) && value.iframe && value.fit && value.fit !== 'loading',
+    `${viewport.name} settled known-issue preview`,
+  )
+  if (options.screenshotDir) {
+    await screenshot(client, sessionId, path.join(options.screenshotDir, `${viewport.name}-known-issue-selected.png`))
+  }
+
+  await prepareFixture(client, sessionId, options)
   await pointerClick(client, sessionId, '[data-model-list-trigger]')
   await waitForValue(client, sessionId, SNAPSHOT_EXPRESSION, (value) => value?.menuOpen === 'true', `${viewport.name} reopened list`)
   await pressKey(client, sessionId, 'Escape')
@@ -636,7 +987,10 @@ async function main() {
     for (const viewport of [
       { name: 'desktop', width: 1440, height: 1000, mobile: false },
       { name: 'mobile-390', width: 390, height: 844, mobile: true },
-    ]) await verifyCompareModelCatalog(client, sessionId, options, viewport)
+    ]) {
+      await verifyCompareModelCatalog(client, sessionId, options, viewport)
+      await verifyKnownIssueProjectMenu(client, sessionId, options, viewport)
+    }
 
     const results = []
     for (const viewport of [

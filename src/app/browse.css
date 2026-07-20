@@ -408,6 +408,26 @@
   color: #713b12;
 }
 
+.pf-paths .path-model-card-issue {
+  position: absolute;
+  top: -9px;
+  left: 0;
+  z-index: 5;
+}
+
+.pf-paths .path-model-card-issue .model-known-issue-chip {
+  min-height: 19px;
+  border-color: #b76a24;
+  background: #fff1cf;
+  padding: 2px 7px;
+  font-size: 6.5px;
+}
+
+.pf-paths .path-model-card-issue .model-known-issue-chip svg {
+  width: 9px;
+  height: 9px;
+}
+
 .pf-paths .path-model-selector-rail::after {
   position: absolute;
   bottom: -10px;
@@ -552,7 +572,7 @@
   right: 7px;
   z-index: 12;
   width: calc(100% - 14px);
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid #81745f;
   border-top: 2px solid #81745f;
   background: #fffdf8;
@@ -596,6 +616,19 @@
 .pf-paths .path-model-option small { color: #84622f; font-size: 5.5px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
 .pf-paths .path-model-option strong { font-size: 8px; font-weight: 900; line-height: 1.18; }
 .pf-paths .path-model-option time { font-size: 7px; font-weight: 750; }
+.pf-paths .path-model-option .model-known-issue-chip {
+  min-height: 18px;
+  width: fit-content;
+  padding: 2px 5px;
+  font-size: 5.5px;
+}
+.pf-paths .path-model-option .model-known-issue-chip svg { width: 8px; height: 8px; }
+.pf-paths .path-model-option > .model-known-issue {
+  grid-column: 1 / -1;
+  justify-self: start;
+  text-align: left;
+}
+.pf-paths .path-model-verified-label { color: #16733a !important; }
 
 .pf-paths .path-model-activity-note {
   margin: 0;
@@ -1223,6 +1256,16 @@
 }
 
 @media (max-width: 720px) {
+  .pf-paths .path-model-card-issue > .model-known-issue-tooltip {
+    top: calc(100% + 8px);
+    bottom: auto;
+  }
+
+  .pf-paths .path-model-card-issue > .model-known-issue-tooltip::after {
+    top: -9px;
+    bottom: auto;
+  }
+
   .pf-paths .path-container,
   .pf-paths .path-hero-inner {
     width: min(100% - 28px, 1200px);

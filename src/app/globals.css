@@ -119,6 +119,129 @@ body {
   outline: none;
 }
 
+/* Shared model-history warning. Known-issue runs stay visible and carry their
+ * source-backed explanation everywhere the run can be selected. */
+.model-known-issue {
+  position: relative;
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  color: #92400e;
+  font-family: var(--font-mono);
+  text-transform: none;
+}
+
+.model-known-issue:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.model-known-issue-chip {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #f59e0b;
+  background: #fffbeb;
+  padding: 3px 7px;
+  color: #92400e;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.model-known-issue-chip svg {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+}
+
+.model-known-issue-tooltip {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 8px);
+  z-index: 100;
+  width: min(310px, calc(100vw - 32px));
+  visibility: hidden;
+  border: 1px solid #d97706;
+  background: #fffbeb;
+  padding: 9px 10px;
+  color: #78350f;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.5;
+  opacity: 0;
+  pointer-events: auto;
+  text-align: left;
+  text-transform: none;
+  white-space: normal;
+  box-shadow: 0 12px 28px rgba(120, 53, 15, .18);
+  transition: opacity 150ms ease, visibility 150ms ease;
+}
+
+.model-known-issue-tooltip::after {
+  position: absolute;
+  right: 0;
+  bottom: -9px;
+  left: 0;
+  height: 9px;
+  content: '';
+}
+
+.model-known-issue-placement-end > .model-known-issue-tooltip {
+  right: 0;
+  left: auto;
+}
+
+.model-known-issue:hover > .model-known-issue-tooltip,
+.model-known-issue:focus > .model-known-issue-tooltip,
+.model-known-issue:focus-visible > .model-known-issue-tooltip,
+.model-known-issue-owner:focus-visible .model-known-issue-tooltip,
+.model-known-issue-owner:focus-within .model-known-issue-tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+@media (max-width: 720px), (hover: none) and (pointer: coarse) {
+  .model-known-issue-inline-mobile {
+    display: grid;
+    width: 100%;
+    gap: 5px;
+  }
+
+  .model-known-issue-inline-mobile > .model-known-issue-chip {
+    width: fit-content;
+  }
+
+  .model-known-issue-inline-mobile > .model-known-issue-tooltip {
+    position: static;
+    display: block;
+    width: 100%;
+    visibility: visible;
+    border-color: #f3d49c;
+    background: #fff8e8;
+    padding: 7px 8px;
+    font-size: 10px;
+    opacity: 1;
+    box-shadow: none;
+  }
+
+  .model-known-issue-inline-mobile > .model-known-issue-tooltip::after {
+    display: none;
+  }
+}
+
+.model-known-issue.is-tooltip-dismissed > .model-known-issue-tooltip {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* Pipe animation */
 @keyframes pipeDraw {
   from { height: 0; }

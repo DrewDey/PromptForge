@@ -14,14 +14,15 @@ import '../../browse.css'
 const BOOKING_FLOW_PROJECT_ID = '0ddfc7cf-37bf-47ae-8fe0-d8d445ba1bee'
 const BOOKING_FLOW_PROJECT_SOURCE_RUN_ID = '08c8b725-4228-4b24-a6e6-5d7fcf78457c'
 const BOOKING_FLOW_GEMINI_SOURCE_RUN_ID = '4fcd2293646af036'
-const EXPECTED_VERIFIED_SOURCE_RUN_IDS = new Set([
+const EXPECTED_SOURCE_RUN_IDS = new Set([
+  BOOKING_FLOW_PROJECT_SOURCE_RUN_ID,
   BOOKING_FLOW_GEMINI_SOURCE_RUN_ID,
   'c42eebed94a0395e',
 ])
 
 export const metadata: Metadata = {
   title: 'Pull-Down Model Index | PathForge QA',
-  description: 'The selected production model selector using two verified Booking Flow artifacts.',
+  description: 'The selected production model selector using all three recorded Booking Flow artifacts.',
   robots: { index: false, follow: false },
 }
 
@@ -38,8 +39,8 @@ export default async function PathCardConceptsPage() {
   const variants = discoveryItem.modelVariants
 
   const hasExactFixture = (
-    variants.length === EXPECTED_VERIFIED_SOURCE_RUN_IDS.size &&
-    variants.every((variant) => EXPECTED_VERIFIED_SOURCE_RUN_IDS.has(variant.sourceRunId)) &&
+    variants.length === EXPECTED_SOURCE_RUN_IDS.size &&
+    variants.every((variant) => EXPECTED_SOURCE_RUN_IDS.has(variant.sourceRunId)) &&
     variants[0]?.sourceRunId === BOOKING_FLOW_GEMINI_SOURCE_RUN_ID
   )
   if (!hasExactFixture) notFound()
@@ -51,7 +52,6 @@ export default async function PathCardConceptsPage() {
     categoryLabel: discoveryItem.categoryLabel,
     authorName: project.authorDisplayName,
     modelRunCount: discoveryItem.modelRunCount,
-    variantsAreVerified: true,
     hasWorkingArtifact: true,
     hasFork: discoveryItem.hasFork,
     isFork: discoveryItem.isFork,
@@ -80,7 +80,8 @@ export default async function PathCardConceptsPage() {
         <aside>
           <strong>Production rules</strong>
           <ul>
-            <li>Distinct verified model identities only.</li>
+            <li>Every distinct recorded model identity, including disclosed known issues.</li>
+            <li>Known issues retain a visible warning and source-backed explanation.</li>
             <li>Newest capture is shown first.</li>
             <li>New orders by capture date; Active orders by real published-project usage.</li>
             <li>The Forge Slab dimensions stay fixed while artifacts change.</li>

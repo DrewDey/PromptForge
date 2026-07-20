@@ -12,6 +12,11 @@ import {
   waitForWebSocketUrl,
 } from './measure-html-artifacts.mjs'
 
+const BOOKING_ARTIFACT_BY_RUN = {
+  '4fcd2293646af036': '/artifacts/booking-flow-handoff-simulator-gemini-31-pro-repair-2.html',
+  c42eebed94a0395e: '/artifacts/booking-flow-handoff-simulator-chatgpt-gpt56-luna-final.html',
+}
+
 function parseArgs(argv) {
   let baseUrl = 'http://127.0.0.1:3011'
   for (let index = 0; index < argv.length; index += 1) {
@@ -209,32 +214,50 @@ async function positionDeepInBuildPath(client, sessionId) {
 }
 
 async function clickVisibleControl(client, sessionId, selector, label) {
-  const { result } = await client.send('Runtime.evaluate', {
-    expression: `(() => {
+  const pointExpression = `(async () => {
       const element=document.querySelector(${JSON.stringify(selector)});
       if (!element) return null;
+      const first=element.getBoundingClientRect();
+      await new Promise((resolve)=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       const rect=element.getBoundingClientRect();
+      const x=rect.left+rect.width/2;
+      const y=rect.top+rect.height/2;
+      const hit=document.elementFromPoint(x,y);
       return {
-        x: rect.left + rect.width / 2,
-        y: rect.top + rect.height / 2,
+        x,
+        y,
         visible: rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < innerHeight,
+        stable: Math.abs(first.x-rect.x) <= 0.5 && Math.abs(first.y-rect.y) <= 0.5 &&
+          Math.abs(first.width-rect.width) <= 0.5 && Math.abs(first.height-rect.height) <= 0.5,
+        hit: Boolean(hit && (hit === element || element.contains(hit))),
       };
-    })()`,
-    returnByValue: true,
-  }, sessionId)
-  const point = result.value
-  if (!point?.visible) throw new Error(`${label} is not visible for a real pointer click.`)
+    })()`
+  let point = await waitForValue(
+    client,
+    sessionId,
+    pointExpression,
+    (value) => value?.visible && value.stable && value.hit,
+    `${label} stable pointer target`,
+  )
 
   await client.send('Input.dispatchMouseEvent', {
     type: 'mouseMoved',
     x: point.x,
     y: point.y,
   }, sessionId)
+  point = await waitForValue(
+    client,
+    sessionId,
+    pointExpression,
+    (value) => value?.visible && value.stable && value.hit,
+    `${label} pointer target after hover`,
+  )
   await client.send('Input.dispatchMouseEvent', {
     type: 'mousePressed',
     x: point.x,
     y: point.y,
     button: 'left',
+    buttons: 1,
     clickCount: 1,
   }, sessionId)
   await client.send('Input.dispatchMouseEvent', {
@@ -242,6 +265,7 @@ async function clickVisibleControl(client, sessionId, selector, label) {
     x: point.x,
     y: point.y,
     button: 'left',
+    buttons: 0,
     clickCount: 1,
   }, sessionId)
 }
@@ -287,15 +311,22 @@ async function verifyComparisonPreviewFlow(client, sessionId, baseUrl, viewport)
     client,
     sessionId,
     COMPARISON_SNAPSHOT_EXPRESSION,
-    (value) => (
-      value?.cards?.length === 2 &&
-      value.cards.filter((card) => card.current).length === 1 &&
-      value.cards.filter((card) => card.href).length === 1 &&
-      Boolean(value.artifact) &&
-      Boolean(value.frame) &&
-      value.artifactReady &&
-      value.controlsHydrated
-    ),
+    (value) => {
+      const currentRunId = value?.cards?.find((card) => card.current)?.runId
+      return (
+        value?.cards?.length === 2 &&
+        value.cards.filter((card) => card.current).length === 1 &&
+        value.cards.filter((card) => card.href).length === 1 &&
+        Boolean(value.artifact) &&
+        Boolean(value.frame) &&
+        value.artifactReady &&
+        value.destinationHydrated &&
+        value.controlsHydrated &&
+        value.selectorActiveId === currentRunId &&
+        value.queryRun === currentRunId &&
+        value.artifactPath === BOOKING_ARTIFACT_BY_RUN[currentRunId]
+      )
+    },
     `${viewport.label} truthful comparison preview controls`,
   )
   const initialCardIds = initialControls.cards.map((card) => card.runId)
@@ -345,7 +376,7 @@ async function verifyComparisonPreviewFlow(client, sessionId, baseUrl, viewport)
         value.queryRun === switchCard.runId &&
         value.queryCompare === initialCurrentId &&
         value.packageId !== pageTopInitial.packageId &&
-        value.artifactPath !== pageTopInitial.artifactPath &&
+        value.artifactPath === BOOKING_ARTIFACT_BY_RUN[switchCard.runId] &&
         value.artifactReady
       ),
       `${viewport.label} page-top preview switch`,
@@ -380,7 +411,7 @@ async function verifyComparisonPreviewFlow(client, sessionId, baseUrl, viewport)
         value.queryRun === initialCurrentId &&
         value.queryCompare === switchCard.runId &&
         value.packageId === pageTopInitial.packageId &&
-        value.artifactPath === pageTopInitial.artifactPath &&
+        value.artifactPath === BOOKING_ARTIFACT_BY_RUN[initialCurrentId] &&
         value.artifactReady
       ),
       `${viewport.label} page-top preview return`,

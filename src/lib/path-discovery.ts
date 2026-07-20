@@ -3,6 +3,7 @@ import { getPreparedProjectModelIdentity } from './prepared-project-model-identi
 import { getProjectHref } from './project-links'
 import { getPromptModelLabel } from './prompt-comparisons'
 import { getProjectModelProfileSummary } from './project-model-profile-summaries'
+import { getProjectModelVariantSet } from './project-model-variants'
 import { getPublicModelIdentityLabel } from './public-model-labels'
 import {
   calculateDiscoveryActivity,
@@ -31,6 +32,16 @@ export type DiscoveryPreview =
   | 'studio'
   | 'utility'
 
+export type BuildPathModelVariant = {
+  sourceRunId: string
+  publicModelLabel: string
+  capturedAt: string
+  capturedAtLabel: string
+  artifactPath: string | null
+  href: string
+  promptCount: number
+}
+
 export type BuildPathDiscoveryItem = {
   prompt: PromptWithRelations
   id: string
@@ -42,6 +53,7 @@ export type BuildPathDiscoveryItem = {
   difficulty: PromptWithRelations['difficulty']
   modelLabel: string
   modelLabels: string[]
+  modelVariants: BuildPathModelVariant[]
   authorName: string
   authorUsername: string | null
   promptCount: number
@@ -150,6 +162,99 @@ const EDITORIAL_PRIORITY = new Map<string, number>([
   ...MODEL_COMPARISON_PROJECT_IDS.map((id, index) => [id, 22 - index] as const),
 ])
 
+const CAPTURED_DATE_FORMATTER = new Intl.DateTimeFormat('en', {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+  timeZone: 'UTC',
+})
+
+function normalizedArtifactPath(value: string | null | undefined) {
+  if (!value) return null
+  const normalized = value.replace(/^public\//, '/').split('#', 1)[0]
+  return normalized.startsWith('/artifacts/') ? normalized : null
+}
+
+function variantHref(canonicalRoute: string, defaultSourceRunId: string, sourceRunId: string) {
+  if (sourceRunId === defaultSourceRunId) return canonicalRoute
+  return `${canonicalRoute}?${new URLSearchParams({ run: sourceRunId }).toString()}`
+}
+
+function cardModelVariants({
+  prompt,
+  modelLabel,
+  artifactPath,
+  promptCount,
+  fallbackHref,
+  fallbackSourceRunId,
+  fallbackCapturedAt,
+}: {
+  prompt: PromptWithRelations
+  modelLabel: string
+  artifactPath: string | null
+  promptCount: number
+  fallbackHref: string
+  fallbackSourceRunId: string
+  fallbackCapturedAt: string
+}): BuildPathModelVariant[] {
+  const variantSet = getProjectModelVariantSet(prompt.id)
+  const distinctLabels = new Set<string>()
+  const variants = (variantSet?.variants ?? [])
+    .filter((variant) => variant.qualityStatus === 'verified')
+    .map((variant): BuildPathModelVariant | null => {
+      const publicModelLabel = getPublicModelIdentityLabel({
+        provider: variant.serviceLabel,
+        model: variant.modelLabel,
+        modelSettings: variant.modelSettings,
+      })
+      if (
+        publicModelLabel === 'Unknown model' ||
+        !Number.isFinite(Date.parse(variant.capturedAt))
+      ) return null
+
+      return {
+        sourceRunId: variant.sourceRunId,
+        publicModelLabel,
+        capturedAt: variant.capturedAt,
+        capturedAtLabel: CAPTURED_DATE_FORMATTER.format(new Date(variant.capturedAt)),
+        artifactPath: normalizedArtifactPath(variant.finalArtifactPath),
+        href: variantHref(
+          variantSet?.canonicalRoute ?? fallbackHref,
+          variantSet?.defaultSourceRunId ?? fallbackSourceRunId,
+          variant.sourceRunId,
+        ),
+        promptCount: variant.promptCount,
+      }
+    })
+    .filter((variant): variant is BuildPathModelVariant => variant !== null)
+    .sort((left, right) => (
+      Date.parse(right.capturedAt) - Date.parse(left.capturedAt) ||
+      left.publicModelLabel.localeCompare(right.publicModelLabel) ||
+      left.sourceRunId.localeCompare(right.sourceRunId)
+    ))
+    .filter((variant) => {
+      const key = variant.publicModelLabel.toLocaleLowerCase()
+      if (distinctLabels.has(key)) return false
+      distinctLabels.add(key)
+      return true
+    })
+
+  if (variants.length > 0) return variants
+
+  const capturedAt = Number.isFinite(Date.parse(fallbackCapturedAt))
+    ? fallbackCapturedAt
+    : prompt.created_at
+  return [{
+    sourceRunId: fallbackSourceRunId,
+    publicModelLabel: modelLabel,
+    capturedAt,
+    capturedAtLabel: CAPTURED_DATE_FORMATTER.format(new Date(capturedAt)),
+    artifactPath,
+    href: fallbackHref,
+    promptCount: promptCount || 1,
+  }]
+}
+
 function discoveryModelLabel(prompt: PromptWithRelations) {
   const preparedIdentity = getPreparedProjectModelIdentity(prompt.id)
   if (preparedIdentity) return preparedIdentity.publicLabel
@@ -249,6 +354,16 @@ export function buildPathDiscoveryCatalog(
     )
     const preview = previewForPrompt(prompt)
     const artifactPath = prepared?.artifactPath ?? null
+    const href = getProjectHref(prompt)
+    const modelVariants = cardModelVariants({
+      prompt,
+      modelLabel,
+      artifactPath,
+      promptCount,
+      fallbackHref: href,
+      fallbackSourceRunId: prepared?.sourceRunId ?? `project-${prompt.id}`,
+      fallbackCapturedAt: prepared?.createdAt ?? prompt.created_at,
+    })
     const hasWorkingArtifact = Boolean(artifactPath)
     const isFork = Boolean(
       prepared?.forkSource ||
@@ -289,7 +404,7 @@ export function buildPathDiscoveryCatalog(
     return {
       prompt,
       id: prompt.id,
-      href: getProjectHref(prompt),
+      href,
       title: prompt.title,
       description: prompt.description,
       outcome: prompt.result_content,
@@ -297,6 +412,7 @@ export function buildPathDiscoveryCatalog(
       difficulty: prompt.difficulty,
       modelLabel,
       modelLabels,
+      modelVariants,
       authorName: prompt.author?.display_name || prompt.author?.username || 'PathForge builder',
       authorUsername: prompt.author?.username ?? null,
       promptCount,

@@ -13,6 +13,7 @@
     "check:model-variants": "node scripts/check-project-model-variants.mjs && node scripts/check-project-model-profile-summaries.mjs && node scripts/check-model-variant-ui-behavior.mjs && node scripts/check-project-model-variant-origin.mjs && node scripts/check-project-model-variant-lineage.mjs && node scripts/check-project-model-variant-cohort.mjs && node scripts/check-project-model-variant-active.mjs && node scripts/check-project-model-variant-release-evidence.mjs",
     "check:model-variant-ui": "node scripts/check-model-variant-ui-behavior.mjs",
     "check:model-variant-browser": "node scripts/check-model-variant-page-browser.mjs",
+    "check:path-card-model-selector-browser": "node scripts/check-path-card-model-selector-browser.mjs",
     "check:artifact-sandbox": "node scripts/check-protected-artifact-sandbox.mjs",
     "check:model-variant-lineage": "node scripts/check-project-model-variant-lineage.mjs",
     "build:model-variant-launch": "node scripts/build-project-model-variant-manifests.mjs",

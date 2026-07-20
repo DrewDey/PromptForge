@@ -1,0 +1,503 @@
+#!/usr/bin/env node
+
+import { spawn } from 'node:child_process'
+import { once } from 'node:events'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
+import { isExpectedLocalActivationFailure } from './browser-guard-errors.mjs'
+import {
+  CdpClient,
+  chromeExecutable,
+  waitForWebSocketUrl,
+} from './measure-html-artifacts.mjs'
+
+const PROJECT_ID = '0ddfc7cf-37bf-47ae-8fe0-d8d445ba1bee'
+const GEMINI_RUN = '4fcd2293646af036'
+const CHATGPT_RUN = 'c42eebed94a0395e'
+const GEMINI_ARTIFACT = '/artifacts/booking-flow-handoff-simulator-gemini-31-pro-repair-2.html'
+const CHATGPT_ARTIFACT = '/artifacts/booking-flow-handoff-simulator-chatgpt-gpt56-luna-final.html'
+let navigationSequence = 0
+
+function parseArgs(argv) {
+  const options = { baseUrl: 'http://127.0.0.1:3011', screenshotDir: '' }
+  for (let index = 0; index < argv.length; index += 1) {
+    const key = argv[index]
+    const value = argv[index + 1]
+    if (!value) throw new Error(`Missing value after ${key}.`)
+    if (key === '--base-url') options.baseUrl = new URL(value).origin
+    else if (key === '--screenshot-dir') options.screenshotDir = path.resolve(value)
+    else throw new Error(`Unknown argument: ${key}`)
+    index += 1
+  }
+  if (options.screenshotDir) mkdirSync(options.screenshotDir, { recursive: true })
+  return options
+}
+
+function localFaviconFailure(baseUrl, entry) {
+  if (!/\b404\b/.test(entry?.text ?? '') || !entry?.url) return false
+  const base = new URL(baseUrl)
+  const request = new URL(entry.url, base)
+  return request.origin === base.origin && request.pathname === '/favicon.ico'
+}
+
+async function withTimeout(promise, label, timeoutMs = 15_000) {
+  let timeout
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        timeout = setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs}ms.`)), timeoutMs)
+      }),
+    ])
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
+async function evaluate(client, sessionId, expression) {
+  const { result, exceptionDetails } = await withTimeout(
+    client.send('Runtime.evaluate', {
+      expression,
+      returnByValue: true,
+      awaitPromise: true,
+    }, sessionId),
+    'Runtime.evaluate',
+  )
+  if (exceptionDetails) throw new Error(exceptionDetails.text ?? 'Browser evaluation failed.')
+  return result.value
+}
+
+async function waitForValue(client, sessionId, expression, predicate, label, timeoutMs = 15_000) {
+  const deadline = Date.now() + timeoutMs
+  let lastValue
+  while (Date.now() < deadline) {
+    lastValue = await evaluate(client, sessionId, expression)
+    if (predicate(lastValue)) return lastValue
+    await new Promise((resolve) => setTimeout(resolve, 75))
+  }
+  throw new Error(`${label} timed out; last value was ${JSON.stringify(lastValue)}.`)
+}
+
+async function navigate(client, sessionId, url) {
+  const targetUrl = new URL(url)
+  targetUrl.searchParams.set('qa-guard', String(++navigationSequence))
+  const domReady = client.waitFor('Page.domContentEventFired', sessionId, 20_000)
+  await client.send('Page.navigate', { url: targetUrl.toString() }, sessionId)
+  await domReady
+  await client.send('Page.bringToFront', {}, sessionId)
+  await waitForValue(
+    client,
+    sessionId,
+    `({
+      ready:document.readyState,
+      cards:document.querySelectorAll('[data-path-model-card]').length,
+      selected:document.querySelector('[data-path-model-card]')?.dataset.selectedSourceRun,
+      trigger:Boolean(document.querySelector('[data-model-list-trigger]'))
+    })`,
+    (value) => value?.ready !== 'loading' && value.cards === 1 && value.selected === GEMINI_RUN && value.trigger,
+    'hydrated selected model card',
+  )
+}
+
+function assertEqual(label, actual, expected) {
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+    throw new Error(`${label} expected ${JSON.stringify(expected)}, received ${JSON.stringify(actual)}.`)
+  }
+}
+
+function assertRectStable(label, before, after, tolerance = 1) {
+  for (const field of ['x', 'y']) {
+    const delta = Math.abs((after?.shell?.[field] ?? Number.NaN) - (before?.shell?.[field] ?? Number.NaN))
+    if (!Number.isFinite(delta) || delta > tolerance) {
+      throw new Error(`${label} moved the card ${field} position by ${Number.isFinite(delta) ? delta.toFixed(2) : 'NaN'}px.`)
+    }
+  }
+  const scrollDelta = Math.abs((after?.scrollY ?? Number.NaN) - (before?.scrollY ?? Number.NaN))
+  if (!Number.isFinite(scrollDelta) || scrollDelta > tolerance) {
+    throw new Error(`${label} changed the page scroll position by ${Number.isFinite(scrollDelta) ? scrollDelta.toFixed(2) : 'NaN'}px.`)
+  }
+  for (const region of ['shell', 'stage', 'preview', 'backplate']) {
+    for (const field of ['width', 'height']) {
+      const delta = Math.abs((after?.[region]?.[field] ?? Number.NaN) - (before?.[region]?.[field] ?? Number.NaN))
+      if (!Number.isFinite(delta) || delta > tolerance) {
+        throw new Error(`${label} changed ${region}.${field} by ${Number.isFinite(delta) ? delta.toFixed(2) : 'NaN'}px.`)
+      }
+    }
+  }
+  for (const region of ['stage', 'preview', 'backplate']) {
+    for (const field of ['x', 'y']) {
+      const beforeOffset = (before?.[region]?.[field] ?? Number.NaN) - (before?.shell?.[field] ?? Number.NaN)
+      const afterOffset = (after?.[region]?.[field] ?? Number.NaN) - (after?.shell?.[field] ?? Number.NaN)
+      const delta = Math.abs(afterOffset - beforeOffset)
+      if (!Number.isFinite(delta) || delta > tolerance) {
+        throw new Error(`${label} changed ${region}.${field} inside the card by ${Number.isFinite(delta) ? delta.toFixed(2) : 'NaN'}px.`)
+      }
+    }
+  }
+}
+
+const SNAPSHOT_EXPRESSION = `(() => {
+  const rect=(element)=>{
+    if (!element) return null;
+    const value=element.getBoundingClientRect();
+    return {x:value.x,y:value.y,width:value.width,height:value.height};
+  };
+  const card=document.querySelector('[data-path-model-card="${PROJECT_ID}"]');
+  const selector=card?.querySelector('[data-path-model-selector]');
+  const trigger=selector?.querySelector('[data-model-list-trigger]');
+  const menu=selector?.querySelector('[data-model-list]');
+  const menuRect=menu?.getBoundingClientRect();
+  const menuHit=menuRect
+    ? document.elementFromPoint(menuRect.left+Math.min(18,menuRect.width/2),menuRect.top+Math.min(18,menuRect.height/2))
+    : null;
+  const primaryLink=card?.querySelector('[data-path-card-primary-link]');
+  const activeOrder=selector?.querySelector('[data-model-order] span:last-child');
+  const activityNoteId=selector?.getAttribute('aria-describedby');
+  const protectedFrame=card?.querySelector('[data-artifact-path]');
+  return {
+    cardCount:document.querySelectorAll('[data-path-model-card]').length,
+    selectorCount:document.querySelectorAll('[data-path-model-selector]').length,
+    scrollY:window.scrollY,
+    overflow:Math.max(0,document.documentElement.scrollWidth-window.innerWidth),
+    nextDialog:Boolean(document.querySelector('[data-nextjs-dialog]')),
+    selected:card?.dataset.selectedSourceRun || '',
+    artifact:card?.dataset.selectedArtifact || '',
+    promptCount:Number(card?.querySelector('[data-selected-prompt-count]')?.dataset.selectedPromptCount),
+    href:primaryLink ? new URL(primaryLink.href).pathname+new URL(primaryLink.href).search : '',
+    nestedInteractive:Boolean(primaryLink?.querySelector('a,button,input,select,textarea,summary,details,iframe,[tabindex]:not([tabindex="-1"]),[role="button"],[role="link"]')),
+    incompleteMenuPattern:Boolean(selector?.querySelector('[aria-haspopup="menu"], [role="menu"], [role="menuitemradio"]')),
+    triggerText:trigger?.textContent?.replace(/\\s+/g,' ').trim() || '',
+    orderText:selector?.querySelector('[data-model-order]')?.textContent?.replace(/\\s+/g,' ').trim() || '',
+    activeOrderTag:activeOrder?.tagName || '',
+    activeOrderDisabled:activeOrder?.getAttribute('aria-disabled') || '',
+    activityNote:activityNoteId ? document.getElementById(activityNoteId)?.textContent?.replace(/\\s+/g,' ').trim() || '' : '',
+    menuOpen:selector?.dataset.modelMenuOpen || '',
+    optionIds:[...(menu?.querySelectorAll('[data-model-option]') || [])].map((option)=>option.dataset.sourceRunId),
+    optionModels:[...(menu?.querySelectorAll('[data-model-option] strong') || [])].map((entry)=>entry.textContent?.trim()),
+    optionDates:[...(menu?.querySelectorAll('[data-model-option] time') || [])].map((entry)=>entry.textContent?.trim()),
+    menuVisible:Boolean(menu && menuHit && menu.contains(menuHit)),
+    focusedTrigger:document.activeElement === trigger,
+    focusedOptionId:document.activeElement?.dataset?.sourceRunId || '',
+    controlSizes:[...(selector?.querySelectorAll('[data-model-cycle], [data-model-list-trigger]') || [])].map(rect),
+    previewMounted:card?.querySelector('[data-path-card-preview-mounted]')?.dataset.pathCardPreviewMounted || '',
+    protectedArtifact:protectedFrame?.dataset.artifactPath || '',
+    artifactReady:Boolean(protectedFrame?.querySelector('iframe[srcdoc]')),
+    fitMode:protectedFrame?.dataset.artifactFitMode || '',
+    shell:rect(card),
+    stage:rect(card?.querySelector('[data-path-card-stage]')),
+    preview:rect(card?.querySelector('[data-path-card-preview]')),
+    backplate:rect(card?.querySelector('[data-path-card-backplate]')),
+  };
+})()`
+
+async function snapshot(client, sessionId) {
+  return evaluate(client, sessionId, SNAPSHOT_EXPRESSION)
+}
+
+async function controlPoint(client, sessionId, selector) {
+  return evaluate(client, sessionId, `(async () => {
+    const control=document.querySelector(${JSON.stringify(selector)});
+    if (!(control instanceof HTMLElement)) return null;
+    let rect=control.getBoundingClientRect();
+    if (rect.top < 0 || rect.bottom > window.innerHeight || rect.left < 0 || rect.right > window.innerWidth) {
+      control.scrollIntoView({block:'center',inline:'center'});
+      await new Promise((resolve)=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+      rect=control.getBoundingClientRect();
+    }
+    const x=rect.left+rect.width/2;
+    const y=rect.top+rect.height/2;
+    const hit=document.elementFromPoint(x,y);
+    return {x,y,width:rect.width,height:rect.height,hit:Boolean(hit && (hit === control || control.contains(hit)))};
+  })()`)
+}
+
+async function pointerClick(client, sessionId, selector) {
+  const point = await controlPoint(client, sessionId, selector)
+  if (!point?.hit) throw new Error(`Pointer hit-testing failed for ${selector}.`)
+  await client.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: point.x, y: point.y }, sessionId)
+  await client.send('Input.dispatchMouseEvent', {
+    type: 'mousePressed', x: point.x, y: point.y, button: 'left', buttons: 1, clickCount: 1,
+  }, sessionId)
+  await client.send('Input.dispatchMouseEvent', {
+    type: 'mouseReleased', x: point.x, y: point.y, button: 'left', buttons: 0, clickCount: 1,
+  }, sessionId)
+}
+
+async function pressKey(client, sessionId, key) {
+  const definitions = {
+    Enter: { code: 'Enter', keyCode: 13, text: '\r' },
+    Escape: { code: 'Escape', keyCode: 27 },
+    Tab: { code: 'Tab', keyCode: 9 },
+  }
+  const definition = definitions[key]
+  if (!definition) throw new Error(`Unsupported key: ${key}`)
+  await client.send('Input.dispatchKeyEvent', {
+    type: definition.text ? 'keyDown' : 'rawKeyDown',
+    key,
+    code: definition.code,
+    windowsVirtualKeyCode: definition.keyCode,
+    nativeVirtualKeyCode: definition.keyCode,
+    ...(definition.text ? { text: definition.text, unmodifiedText: definition.text } : {}),
+  }, sessionId)
+  await client.send('Input.dispatchKeyEvent', {
+    type: 'keyUp', key, code: definition.code,
+    windowsVirtualKeyCode: definition.keyCode,
+    nativeVirtualKeyCode: definition.keyCode,
+  }, sessionId)
+}
+
+async function screenshot(client, sessionId, file) {
+  const result = await client.send('Page.captureScreenshot', {
+    format: 'png',
+    captureBeyondViewport: false,
+  }, sessionId)
+  writeFileSync(file, Buffer.from(result.data, 'base64'))
+}
+
+async function prepareFixture(client, sessionId, options) {
+  await navigate(client, sessionId, `${options.baseUrl}/qa/path-card-concepts`)
+  await controlPoint(client, sessionId, '[data-path-model-card]')
+  await waitForValue(
+    client,
+    sessionId,
+    `(() => {
+      const mount=document.querySelector('[data-path-card-preview-mounted]');
+      const frame=document.querySelector('[data-artifact-path]');
+      return {
+        mounted:mount?.dataset.pathCardPreviewMounted,
+        iframe:Boolean(frame?.querySelector('iframe[srcdoc]')),
+        fit:frame?.dataset.artifactFitMode || ''
+      };
+    })()`,
+    (value) => value?.mounted === 'true' && value.iframe && value.fit && value.fit !== 'loading',
+    'settled real artifact preview',
+  )
+}
+
+async function verifyViewport(client, sessionId, options, viewport) {
+  await client.send('Emulation.setDeviceMetricsOverride', {
+    width: viewport.width,
+    height: viewport.height,
+    deviceScaleFactor: 1,
+    mobile: viewport.mobile,
+  }, sessionId)
+  await prepareFixture(client, sessionId, options)
+
+  const initial = await snapshot(client, sessionId)
+  assertEqual(`${viewport.name} fixture counts`, [initial.cardCount, initial.selectorCount], [1, 1])
+  if (initial.overflow !== 0 || initial.nextDialog) {
+    throw new Error(`${viewport.name} rendered overflow or a Next.js error dialog.`)
+  }
+  if (
+    initial.selected !== GEMINI_RUN ||
+    initial.artifact !== GEMINI_ARTIFACT ||
+    initial.promptCount !== 3 ||
+    initial.href !== `/booking-flow-handoff-simulator-demo?run=${GEMINI_RUN}`
+  ) throw new Error(`${viewport.name} did not start on the exact newest Gemini receipt.`)
+  if (!initial.triggerText.includes('Gemini 3.1 Pro') || !initial.triggerText.includes('+1 more model') || !initial.triggerText.includes('Jul 11, 2026')) {
+    throw new Error(`${viewport.name} omitted the selected model, hidden count, or capture date.`)
+  }
+  if (!initial.orderText.includes('Order New') || !initial.orderText.includes('Active 🔒')) {
+    throw new Error(`${viewport.name} did not show New and locked Active ordering.`)
+  }
+  if (initial.activeOrderTag !== 'SPAN' || initial.activeOrderDisabled !== 'true') {
+    throw new Error(`${viewport.name} exposed unavailable Active ordering as an interactive control.`)
+  }
+  if (!initial.activityNote.includes('Per-version activity is not tracked yet')) {
+    throw new Error(`${viewport.name} omitted the reason Active ordering is unavailable.`)
+  }
+  if (initial.nestedInteractive || initial.incompleteMenuPattern) {
+    throw new Error(`${viewport.name} retained nested controls or an incomplete ARIA menu pattern.`)
+  }
+  if (viewport.mobile && initial.controlSizes.some((rect) => rect.width < 44 || rect.height < 44)) {
+    throw new Error(`${viewport.name} has a selector control smaller than 44px.`)
+  }
+  if (options.screenshotDir) {
+    await screenshot(client, sessionId, path.join(options.screenshotDir, `${viewport.name}-initial.png`))
+  }
+
+  const beforeMenu = await snapshot(client, sessionId)
+  await pointerClick(client, sessionId, '[data-model-list-trigger]')
+  const menuOpen = await waitForValue(
+    client,
+    sessionId,
+    SNAPSHOT_EXPRESSION,
+    (value) => value?.menuOpen === 'true' && value.optionIds?.length === 2,
+    `${viewport.name} two-option model list`,
+  )
+  assertEqual(`${viewport.name} newest-first run order`, menuOpen.optionIds, [GEMINI_RUN, CHATGPT_RUN])
+  assertEqual(`${viewport.name} model labels`, menuOpen.optionModels, ['Gemini 3.1 Pro', 'ChatGPT 5.6 Luna · Extra High'])
+  assertEqual(`${viewport.name} capture dates`, menuOpen.optionDates, ['Jul 11, 2026', 'Jul 10, 2026'])
+  if (!menuOpen.menuVisible) throw new Error(`${viewport.name} menu is clipped or covered.`)
+  assertRectStable(`${viewport.name} opening the model list`, beforeMenu, menuOpen)
+  if (options.screenshotDir) {
+    await screenshot(client, sessionId, path.join(options.screenshotDir, `${viewport.name}-menu-open.png`))
+  }
+
+  const beforeSwitch = await snapshot(client, sessionId)
+  await pointerClick(client, sessionId, `[data-model-option][data-source-run-id="${CHATGPT_RUN}"]`)
+  const switched = await waitForValue(
+    client,
+    sessionId,
+    SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.selected === CHATGPT_RUN &&
+      value.previewMounted === 'true' &&
+      value.focusedTrigger
+    ),
+    `${viewport.name} ChatGPT model selection and focus return`,
+  )
+  if (
+    switched.artifact !== CHATGPT_ARTIFACT ||
+    switched.promptCount !== 1 ||
+    switched.href !== '/booking-flow-handoff-simulator-demo' ||
+    !switched.triggerText.includes('ChatGPT 5.6 Luna · Extra High') ||
+    !switched.triggerText.includes('Jul 10, 2026')
+  ) throw new Error(`${viewport.name} did not atomically update the artifact, receipt, identity, date, and route.`)
+  if (!switched.focusedTrigger) throw new Error(`${viewport.name} did not return focus to the selector trigger.`)
+  assertRectStable(`${viewport.name} switching the selected model`, beforeSwitch, switched)
+
+  await waitForValue(
+    client,
+    sessionId,
+    `(() => {
+      const frame=document.querySelector('[data-artifact-path]');
+      return {
+        path:frame?.dataset.artifactPath || '',
+        iframe:Boolean(frame?.querySelector('iframe[srcdoc]')),
+        fit:frame?.dataset.artifactFitMode || ''
+      };
+    })()`,
+    (value) => value?.path.includes(CHATGPT_ARTIFACT) && value.iframe && value.fit && value.fit !== 'loading',
+    `${viewport.name} settled ChatGPT preview`,
+  )
+  if (options.screenshotDir) {
+    await new Promise((resolve) => setTimeout(resolve, 350))
+    await screenshot(client, sessionId, path.join(options.screenshotDir, `${viewport.name}-switched.png`))
+  }
+
+  await pointerClick(client, sessionId, '[data-model-list-trigger]')
+  await waitForValue(client, sessionId, SNAPSHOT_EXPRESSION, (value) => value?.menuOpen === 'true', `${viewport.name} reopened list`)
+  await pressKey(client, sessionId, 'Escape')
+  await waitForValue(
+    client,
+    sessionId,
+    SNAPSHOT_EXPRESSION,
+    (value) => value?.menuOpen === 'false' && value.focusedTrigger,
+    `${viewport.name} Escape close and focus return`,
+  )
+
+  await prepareFixture(client, sessionId, options)
+  await controlPoint(client, sessionId, '[data-model-cycle="next"]')
+  const beforeCycle = await snapshot(client, sessionId)
+  await pointerClick(client, sessionId, '[data-model-cycle="next"]')
+  const cycled = await waitForValue(client, sessionId, SNAPSHOT_EXPRESSION, (value) => value?.selected === CHATGPT_RUN, `${viewport.name} next cycle`)
+  await controlPoint(client, sessionId, '[data-model-cycle="previous"]')
+  const beforeCycleBack = await snapshot(client, sessionId)
+  await pointerClick(client, sessionId, '[data-model-cycle="previous"]')
+  const cycledBack = await waitForValue(client, sessionId, SNAPSHOT_EXPRESSION, (value) => value?.selected === GEMINI_RUN, `${viewport.name} previous cycle`)
+  assertRectStable(`${viewport.name} next cycle`, beforeCycle, cycled)
+  assertRectStable(`${viewport.name} previous cycle`, beforeCycleBack, cycledBack)
+
+  await prepareFixture(client, sessionId, options)
+  await evaluate(client, sessionId, `(() => {
+    const trigger=document.querySelector('[data-model-list-trigger]');
+    trigger?.focus();
+    return document.activeElement === trigger;
+  })()`)
+  await pressKey(client, sessionId, 'Enter')
+  await waitForValue(client, sessionId, SNAPSHOT_EXPRESSION, (value) => value?.menuOpen === 'true', `${viewport.name} keyboard open`)
+  for (let index = 0; index < 3; index += 1) await pressKey(client, sessionId, 'Tab')
+  await waitForValue(
+    client,
+    sessionId,
+    SNAPSHOT_EXPRESSION,
+    (value) => value?.focusedOptionId === CHATGPT_RUN,
+    `${viewport.name} keyboard focus on ChatGPT option`,
+  )
+  await pressKey(client, sessionId, 'Enter')
+  await waitForValue(
+    client,
+    sessionId,
+    SNAPSHOT_EXPRESSION,
+    (value) => value?.selected === CHATGPT_RUN && value.focusedTrigger,
+    `${viewport.name} keyboard selection and focus return`,
+  )
+
+  console.log(`[${viewport.name}] model selector passed`)
+  return { viewport: viewport.name, stage: initial.stage, controls: initial.controlSizes }
+}
+
+async function stopChrome(child) {
+  if (child.exitCode !== null || child.signalCode !== null) return
+  const exitPromise = once(child, 'exit')
+  child.kill('SIGTERM')
+  const exited = await Promise.race([
+    exitPromise.then(() => true),
+    new Promise((resolve) => setTimeout(() => resolve(false), 2_000)),
+  ])
+  if (!exited && child.exitCode === null && child.signalCode === null) child.kill('SIGKILL')
+}
+
+async function main() {
+  const options = parseArgs(process.argv.slice(2))
+  const executable = chromeExecutable()
+  if (!executable) throw new Error('Chrome was not found for the path-card model-selector guard.')
+
+  const profile = mkdtempSync(path.join(tmpdir(), 'pathforge-path-card-model-selector-'))
+  const child = spawn(executable, [
+    '--headless=new',
+    '--disable-gpu',
+    '--no-sandbox',
+    '--remote-debugging-port=0',
+    `--user-data-dir=${profile}`,
+    'about:blank',
+  ], { stdio: ['ignore', 'ignore', 'pipe'] })
+
+  let client
+  try {
+    client = new CdpClient(await waitForWebSocketUrl(child))
+    await client.ready()
+    const { targetId } = await client.send('Target.createTarget', { url: 'about:blank' })
+    const { sessionId } = await client.send('Target.attachToTarget', { targetId, flatten: true })
+    const consoleErrors = []
+    client.listeners.add((message) => {
+      if (message.sessionId !== sessionId) return
+      if (message.method === 'Runtime.exceptionThrown') {
+        consoleErrors.push(message.params.exceptionDetails?.text ?? 'Uncaught runtime exception')
+      }
+      if (message.method === 'Log.entryAdded' && message.params.entry?.level === 'error') {
+        if (isExpectedLocalActivationFailure(options.baseUrl, message.params.entry)) return
+        if (localFaviconFailure(options.baseUrl, message.params.entry)) return
+        consoleErrors.push(message.params.entry.text)
+      }
+    })
+
+    await Promise.all([
+      client.send('Page.enable', {}, sessionId),
+      client.send('Runtime.enable', {}, sessionId),
+      client.send('Log.enable', {}, sessionId),
+    ])
+
+    const results = []
+    for (const viewport of [
+      { name: 'desktop', width: 1440, height: 1000, mobile: false },
+      { name: 'mobile-390', width: 390, height: 844, mobile: true },
+    ]) results.push(await verifyViewport(client, sessionId, options, viewport))
+
+    if (consoleErrors.length > 0) {
+      throw new Error(`Browser console errors:\n${consoleErrors.join('\n')}`)
+    }
+    console.log(JSON.stringify({ ok: true, results }, null, 2))
+  } finally {
+    client?.close()
+    await stopChrome(child)
+    rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
+  }
+}
+
+main().catch((error) => {
+  console.error(error instanceof Error ? error.stack : error)
+  process.exitCode = 1
+})

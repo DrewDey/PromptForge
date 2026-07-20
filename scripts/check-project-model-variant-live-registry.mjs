@@ -7,7 +7,8 @@ import { ALL_MODEL_VARIANT_MANIFESTS } from './project-model-variant-cohort-conf
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const EXPECTED_SUPABASE_PROJECT_REF = 'iccjwlwkaqnxifuxljla'
-const TIMEOUT_MS = 15_000
+const TIMEOUT_MS = 30_000
+const FETCH_ATTEMPTS = 2
 
 function loadEnvFile(filePath) {
   if (!existsSync(filePath)) return
@@ -26,6 +27,24 @@ function readJson(relativePath) {
 
 function fail(message) {
   throw new Error(`Model-variant live registry check failed: ${message}`)
+}
+
+async function fetchRegistry(query, headers) {
+  let lastError
+  for (let attempt = 1; attempt <= FETCH_ATTEMPTS; attempt += 1) {
+    try {
+      return await fetch(query, {
+        headers,
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      })
+    } catch (error) {
+      lastError = error
+      if (attempt < FETCH_ATTEMPTS) {
+        await new Promise((resolve) => setTimeout(resolve, 750))
+      }
+    }
+  }
+  throw lastError
 }
 
 async function main() {
@@ -69,12 +88,9 @@ async function main() {
   query.searchParams.set('project_id', `in.(${projectIds.join(',')})`)
   query.searchParams.set('status', 'in.(published,historical)')
 
-  const response = await fetch(query, {
-    headers: {
-      apikey: anonKey,
-      authorization: `Bearer ${anonKey}`,
-    },
-    signal: AbortSignal.timeout(TIMEOUT_MS),
+  const response = await fetchRegistry(query, {
+    apikey: anonKey,
+    authorization: `Bearer ${anonKey}`,
   })
   if (!response.ok) fail(`Supabase returned HTTP ${response.status}.`)
   const rows = await response.json()

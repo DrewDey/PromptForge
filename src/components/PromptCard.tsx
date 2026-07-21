@@ -27,7 +27,12 @@ const difficultyConfig = {
 function resolveOutcome(prompt: PromptWithRelations): { text: string; source: 'top' | 'step'; stepIndex: number; stepTotal: number } | null {
   const top = prompt.result_content?.trim()
   if (top) {
-    return { text: top, source: 'top', stepIndex: 0, stepTotal: prompt.steps?.length ?? 0 }
+    return {
+      text: top,
+      source: 'top',
+      stepIndex: 0,
+      stepTotal: prompt.prompt_step_count ?? prompt.steps?.length ?? 0,
+    }
   }
   const steps = prompt.steps ?? []
   for (let i = steps.length - 1; i >= 0; i--) {

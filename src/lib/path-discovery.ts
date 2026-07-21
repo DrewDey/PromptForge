@@ -3,7 +3,11 @@ import { getPreparedProjectModelIdentity } from './prepared-project-model-identi
 import { getProjectHref } from './project-links'
 import { getPromptModelLabel } from './prompt-comparisons'
 import { getProjectModelProfileSummary } from './project-model-profile-summaries'
-import { getPublicModelIdentityLabel } from './public-model-labels'
+import {
+  getProjectModelVariantKnownIssueExplanation,
+  getProjectModelVariantSet,
+} from './project-model-variants'
+import { getPublicModelIdentity, getPublicModelIdentityLabel } from './public-model-labels'
 import {
   calculateDiscoveryActivity,
   countDistinctVerifiedModels,
@@ -31,6 +35,20 @@ export type DiscoveryPreview =
   | 'studio'
   | 'utility'
 
+export type BuildPathModelVariant = {
+  sourceRunId: string
+  publicModelLabel: string
+  providerLabel: string
+  capturedAt: string
+  capturedAtLabel: string
+  artifactPath: string | null
+  href: string
+  promptCount: number
+  activityProjectCount: number
+  qualityStatus: 'verified' | 'known-issue' | 'recorded'
+  knownIssueExplanation: string | null
+}
+
 export type BuildPathDiscoveryItem = {
   prompt: PromptWithRelations
   id: string
@@ -42,6 +60,7 @@ export type BuildPathDiscoveryItem = {
   difficulty: PromptWithRelations['difficulty']
   modelLabel: string
   modelLabels: string[]
+  modelVariants: BuildPathModelVariant[]
   authorName: string
   authorUsername: string | null
   promptCount: number
@@ -150,6 +169,121 @@ const EDITORIAL_PRIORITY = new Map<string, number>([
   ...MODEL_COMPARISON_PROJECT_IDS.map((id, index) => [id, 22 - index] as const),
 ])
 
+const CAPTURED_DATE_FORMATTER = new Intl.DateTimeFormat('en', {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+  timeZone: 'UTC',
+})
+
+function normalizedArtifactPath(value: string | null | undefined) {
+  if (!value) return null
+  const normalized = value.replace(/^public\//, '/').split('#', 1)[0]
+  return normalized.startsWith('/artifacts/') ? normalized : null
+}
+
+function variantHref(canonicalRoute: string, defaultSourceRunId: string, sourceRunId: string) {
+  if (sourceRunId === defaultSourceRunId) return canonicalRoute
+  return `${canonicalRoute}?${new URLSearchParams({ run: sourceRunId }).toString()}`
+}
+
+function cardModelVariants({
+  prompt,
+  modelLabel,
+  artifactPath,
+  promptCount,
+  fallbackHref,
+  fallbackSourceRunId,
+  fallbackCapturedAt,
+  fallbackVerified,
+}: {
+  prompt: PromptWithRelations
+  modelLabel: string
+  artifactPath: string | null
+  promptCount: number
+  fallbackHref: string
+  fallbackSourceRunId: string
+  fallbackCapturedAt: string
+  fallbackVerified: boolean
+}): BuildPathModelVariant[] {
+  const variantSet = getProjectModelVariantSet(prompt.id)
+  const candidates = (variantSet?.variants ?? [])
+    .map((variant): BuildPathModelVariant | null => {
+      const publicModelIdentity = getPublicModelIdentity({
+        provider: variant.serviceLabel,
+        model: variant.modelLabel,
+        modelSettings: variant.modelSettings,
+      })
+      const publicModelLabel = publicModelIdentity.label
+      if (
+        publicModelLabel === 'Unknown model' ||
+        !Number.isFinite(Date.parse(variant.capturedAt))
+      ) return null
+
+      return {
+        sourceRunId: variant.sourceRunId,
+        publicModelLabel,
+        providerLabel: publicModelIdentity.provider || variant.serviceLabel,
+        capturedAt: variant.capturedAt,
+        capturedAtLabel: CAPTURED_DATE_FORMATTER.format(new Date(variant.capturedAt)),
+        artifactPath: normalizedArtifactPath(variant.finalArtifactPath),
+        href: variantHref(
+          variantSet?.canonicalRoute ?? fallbackHref,
+          variantSet?.defaultSourceRunId ?? fallbackSourceRunId,
+          variant.sourceRunId,
+        ),
+        promptCount: variant.promptCount,
+        activityProjectCount: 0,
+        qualityStatus: variant.qualityStatus,
+        knownIssueExplanation: getProjectModelVariantKnownIssueExplanation(variant),
+      }
+    })
+    .filter((variant): variant is BuildPathModelVariant => variant !== null)
+
+  const distinctVariants = new Map<string, BuildPathModelVariant>()
+  for (const variant of candidates) {
+    const key = variant.publicModelLabel.toLocaleLowerCase()
+    const existing = distinctVariants.get(key)
+    if (
+      !existing ||
+      (existing.qualityStatus !== 'verified' && variant.qualityStatus === 'verified') ||
+      (
+        existing.qualityStatus === variant.qualityStatus &&
+        Date.parse(variant.capturedAt) > Date.parse(existing.capturedAt)
+      )
+    ) {
+      distinctVariants.set(key, variant)
+    }
+  }
+
+  const variants = [...distinctVariants.values()]
+    .sort((left, right) => (
+      Date.parse(right.capturedAt) - Date.parse(left.capturedAt) ||
+      left.publicModelLabel.localeCompare(right.publicModelLabel) ||
+      left.sourceRunId.localeCompare(right.sourceRunId)
+    ))
+
+  if (variants.length > 0) return variants
+
+  const capturedAt = Number.isFinite(Date.parse(fallbackCapturedAt))
+    ? fallbackCapturedAt
+    : prompt.created_at
+  const fallbackIdentity = getPublicModelIdentity({ model: modelLabel })
+  return [{
+    sourceRunId: fallbackSourceRunId,
+    publicModelLabel: modelLabel,
+    providerLabel: fallbackIdentity.provider || 'Other',
+    capturedAt,
+    capturedAtLabel: CAPTURED_DATE_FORMATTER.format(new Date(capturedAt)),
+    artifactPath,
+    href: fallbackHref,
+    promptCount: promptCount || 1,
+    activityProjectCount: 0,
+    qualityStatus: fallbackVerified ? 'verified' : 'recorded',
+    knownIssueExplanation: null,
+  }]
+}
+
 function discoveryModelLabel(prompt: PromptWithRelations) {
   const preparedIdentity = getPreparedProjectModelIdentity(prompt.id)
   if (preparedIdentity) return preparedIdentity.publicLabel
@@ -233,9 +367,9 @@ export function buildPathDiscoveryCatalog(
     }
   }
 
-  return prompts.map((prompt) => {
+  const catalog = prompts.map((prompt) => {
     const prepared = getPreparedShowcaseProjectById(prompt.id)
-    const promptCount = prepared?.steps.length ?? prompt.steps?.length ?? 0
+    const promptCount = prepared?.steps.length ?? prompt.prompt_step_count ?? prompt.steps?.length ?? 0
     const modelLabel = discoveryModelLabel(prompt)
     const variantSummary = getProjectModelProfileSummary(prompt.id)
     const modelLabels = [...new Set([
@@ -249,6 +383,17 @@ export function buildPathDiscoveryCatalog(
     )
     const preview = previewForPrompt(prompt)
     const artifactPath = prepared?.artifactPath ?? null
+    const href = getProjectHref(prompt)
+    const modelVariants = cardModelVariants({
+      prompt,
+      modelLabel,
+      artifactPath,
+      promptCount,
+      fallbackHref: href,
+      fallbackSourceRunId: prepared?.sourceRunId ?? `project-${prompt.id}`,
+      fallbackCapturedAt: prepared?.createdAt ?? prompt.created_at,
+      fallbackVerified: verifiedModelCount > 0,
+    })
     const hasWorkingArtifact = Boolean(artifactPath)
     const isFork = Boolean(
       prepared?.forkSource ||
@@ -289,7 +434,7 @@ export function buildPathDiscoveryCatalog(
     return {
       prompt,
       id: prompt.id,
-      href: getProjectHref(prompt),
+      href,
       title: prompt.title,
       description: prompt.description,
       outcome: prompt.result_content,
@@ -297,6 +442,7 @@ export function buildPathDiscoveryCatalog(
       difficulty: prompt.difficulty,
       modelLabel,
       modelLabels,
+      modelVariants,
       authorName: prompt.author?.display_name || prompt.author?.username || 'PathForge builder',
       authorUsername: prompt.author?.username ?? null,
       promptCount,
@@ -316,6 +462,28 @@ export function buildPathDiscoveryCatalog(
       preview,
     }
   })
+
+  const projectsByProvider = new Map<string, number>()
+  for (const item of catalog) {
+    const seenProviders = new Set<string>()
+    for (const variant of item.modelVariants) {
+      if (variant.qualityStatus !== 'verified') continue
+      const key = variant.providerLabel.toLowerCase()
+      if (seenProviders.has(key)) continue
+      seenProviders.add(key)
+      projectsByProvider.set(key, (projectsByProvider.get(key) ?? 0) + 1)
+    }
+  }
+
+  return catalog.map((item) => ({
+    ...item,
+    modelVariants: item.modelVariants.map((variant) => ({
+      ...variant,
+      activityProjectCount: variant.qualityStatus === 'verified'
+        ? projectsByProvider.get(variant.providerLabel.toLowerCase()) ?? 0
+        : 0,
+    })),
+  }))
 }
 
 export function recommendedOrder(items: BuildPathDiscoveryItem[]) {

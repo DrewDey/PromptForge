@@ -611,6 +611,83 @@ CREATE POLICY "Authenticated users read public variants or admins read all"
     )
   );
 
+CREATE OR REPLACE FUNCTION public.read_public_model_variant_registry(
+  checked_source_run_ids TEXT[]
+)
+RETURNS TABLE (
+  project_id UUID,
+  source_run_id TEXT,
+  source_package_sha256 TEXT,
+  opening_prompt_sha256 TEXT,
+  comparison_contract_sha256 TEXT,
+  status TEXT,
+  quality_status TEXT,
+  is_current BOOLEAN,
+  is_default BOOLEAN
+)
+LANGUAGE SQL
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT
+    variant.project_id,
+    variant.source_run_id,
+    variant.source_package_sha256,
+    variant.opening_prompt_sha256,
+    variant.comparison_contract_sha256,
+    variant.status,
+    variant.quality_status,
+    variant.is_current,
+    variant.is_default
+  FROM public.project_model_variants AS variant
+  INNER JOIN public.prompts AS prompt
+    ON prompt.id = variant.project_id
+    AND prompt.status = 'approved'
+  WHERE pg_catalog.cardinality(checked_source_run_ids) BETWEEN 1 AND 100
+    AND variant.source_run_id = ANY (checked_source_run_ids)
+    AND variant.status IN ('published', 'historical')
+  ORDER BY variant.source_run_id;
+$$;
+
+REVOKE ALL ON FUNCTION public.read_public_model_variant_registry(TEXT[])
+  FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.read_public_model_variant_registry(TEXT[])
+  TO anon, authenticated, service_role;
+
+-- Public catalog/profile reads need exact prompt cardinality without transferring
+-- the multi-megabyte prompt-step bodies. Keep the privileged projection narrow,
+-- approved-only, and bounded to one public list page.
+CREATE OR REPLACE FUNCTION public.read_public_prompt_step_counts(
+  checked_prompt_ids UUID[]
+)
+RETURNS TABLE (
+  prompt_id UUID,
+  step_count INTEGER
+)
+LANGUAGE SQL
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT
+    prompt.id AS prompt_id,
+    COUNT(step.id)::INTEGER AS step_count
+  FROM public.prompts AS prompt
+  LEFT JOIN public.prompt_steps AS step
+    ON step.prompt_id = prompt.id
+  WHERE pg_catalog.cardinality(checked_prompt_ids) BETWEEN 1 AND 300
+    AND prompt.id = ANY (checked_prompt_ids)
+    AND prompt.status = 'approved'
+  GROUP BY prompt.id
+  ORDER BY prompt.id;
+$$;
+
+REVOKE ALL ON FUNCTION public.read_public_prompt_step_counts(UUID[])
+  FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.read_public_prompt_step_counts(UUID[])
+  TO anon, authenticated, service_role;
+
 CREATE OR REPLACE FUNCTION publish_project_model_variant_release(
   target_project_id UUID,
   release_rows JSONB

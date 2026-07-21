@@ -276,6 +276,34 @@ function validateMetrics(
   }
 }
 
+export function getProjectModelVariantKnownIssueExplanation(
+  variant: Pick<
+    ProjectModelVariant,
+    'sourceRunId' | 'qualityStatus' | 'repairPromptCount' | 'firstPassMetrics' | 'finalMetrics'
+  >,
+) {
+  if (variant.qualityStatus !== 'known-issue') return null
+
+  // With no repair prompts, the first-pass finding is also the final defect and
+  // is usually the most precise description. Repaired runs must use final-state
+  // evidence so already-fixed first-pass defects are never presented as current.
+  const issueMetrics = variant.repairPromptCount === 0
+    ? variant.firstPassMetrics
+    : variant.finalMetrics
+  const explanation = issueMetrics.notes
+    .map((note) => note.trim())
+    .filter(Boolean)
+    .join(' ')
+
+  if (!explanation) {
+    throw new Error(
+      `Known-issue model variant ${variant.sourceRunId} needs a user-facing explanation.`,
+    )
+  }
+
+  return explanation
+}
+
 function prepareVariantSet(rawSet: RawProjectModelVariantSet): ProjectModelVariantSet {
   if (rawSet.schemaVersion !== 1) {
     throw new Error(`Unsupported model-variant schema version: ${rawSet.schemaVersion}.`)
@@ -334,6 +362,7 @@ function prepareVariantSet(rawSet: RawProjectModelVariantSet): ProjectModelVaria
     }
     validateMetrics(variant.firstPassMetrics, `${variant.sourceRunId}.firstPassMetrics`)
     validateMetrics(variant.finalMetrics, `${variant.sourceRunId}.finalMetrics`)
+    getProjectModelVariantKnownIssueExplanation(variant)
     if (
       variant.qualityStatus === 'verified' &&
       (

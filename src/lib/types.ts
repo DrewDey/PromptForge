@@ -79,6 +79,8 @@ export type PromptWithRelations = Prompt & {
   category?: Category
   author?: Profile
   steps?: PromptStep[]
+  /** Exact public step cardinality when list reads intentionally omit step bodies. */
+  prompt_step_count?: number
   images?: ProjectImage[]
 }
 

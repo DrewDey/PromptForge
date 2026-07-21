@@ -7,7 +7,8 @@ import { ALL_MODEL_VARIANT_MANIFESTS } from './project-model-variant-cohort-conf
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const EXPECTED_SUPABASE_PROJECT_REF = 'iccjwlwkaqnxifuxljla'
-const TIMEOUT_MS = 15_000
+const LIVE_REGISTRY_DEADLINE_MS = 20_000
+const MAX_LIVE_REGISTRY_DEADLINE_MS = 25_000
 
 function loadEnvFile(filePath) {
   if (!existsSync(filePath)) return
@@ -28,7 +29,24 @@ function fail(message) {
   throw new Error(`Model-variant live registry check failed: ${message}`)
 }
 
+function assertLiveRegistryDeadlineBudget() {
+  if (
+    !Number.isInteger(LIVE_REGISTRY_DEADLINE_MS) ||
+    LIVE_REGISTRY_DEADLINE_MS <= 0 ||
+    LIVE_REGISTRY_DEADLINE_MS > MAX_LIVE_REGISTRY_DEADLINE_MS
+  ) {
+    fail(
+      `live query deadline must remain between 1ms and ${MAX_LIVE_REGISTRY_DEADLINE_MS}ms; ` +
+      `received ${LIVE_REGISTRY_DEADLINE_MS}ms.`,
+    )
+  }
+}
+
 async function main() {
+  // This assertion runs even when the live query is skipped locally, so a
+  // future timeout increase cannot silently exceed Vercel's build watchdog.
+  assertLiveRegistryDeadlineBudget()
+
   if (process.env.VERCEL !== '1') {
     console.log('Skipped live model-variant registry check outside Vercel.')
     return
@@ -58,27 +76,51 @@ async function main() {
       opening_prompt_sha256: manifest.contract.openingPromptSha256,
       comparison_contract_sha256: manifest.contract.sha256,
       expected_status: variant.runRole === 'historical-baseline' ? 'historical' : 'published',
+      expected_quality_status: variant.qualityStatus.replaceAll('-', '_'),
     })),
   )
   const projectIds = [...new Set(manifests.map((manifest) => manifest.canonicalProjectId))]
-  const query = new URL('/rest/v1/project_model_variants', supabaseUrl)
-  query.searchParams.set(
-    'select',
-    'project_id,source_run_id,source_package_sha256,opening_prompt_sha256,comparison_contract_sha256,status,quality_status,is_current,is_default',
-  )
-  query.searchParams.set('project_id', `in.(${projectIds.join(',')})`)
-  query.searchParams.set('status', 'in.(published,historical)')
+  const checkedSourceRunIds = expectedVariants.map((variant) => variant.source_run_id)
+  const checkedSourceRunIdSet = new Set(checkedSourceRunIds)
+  if (checkedSourceRunIdSet.size !== expectedVariants.length) {
+    fail('checked manifests contain duplicate source-run IDs.')
+  }
+  const query = new URL('/rest/v1/rpc/read_public_model_variant_registry', supabaseUrl)
 
-  const response = await fetch(query, {
-    headers: {
-      apikey: anonKey,
-      authorization: `Bearer ${anonKey}`,
-    },
-    signal: AbortSignal.timeout(TIMEOUT_MS),
-  })
+  let response
+  try {
+    response = await fetch(query, {
+      method: 'POST',
+      headers: {
+        apikey: anonKey,
+        authorization: `Bearer ${anonKey}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ checked_source_run_ids: checkedSourceRunIds }),
+      signal: AbortSignal.timeout(LIVE_REGISTRY_DEADLINE_MS),
+    })
+  } catch (error) {
+    if (error instanceof Error && error.name === 'TimeoutError') {
+      fail(`live Supabase query exceeded the ${LIVE_REGISTRY_DEADLINE_MS}ms build deadline.`)
+    }
+    throw error
+  }
   if (!response.ok) fail(`Supabase returned HTTP ${response.status}.`)
   const rows = await response.json()
   if (!Array.isArray(rows)) fail('Supabase response was not an array.')
+  if (rows.length !== expectedVariants.length) {
+    fail(`expected ${expectedVariants.length} checked rows; received ${rows.length}.`)
+  }
+
+  const returnedSourceRunIds = rows.map((row) => row.source_run_id)
+  if (new Set(returnedSourceRunIds).size !== rows.length) {
+    fail('Supabase returned duplicate checked source-run IDs.')
+  }
+  for (const sourceRunId of returnedSourceRunIds) {
+    if (!checkedSourceRunIdSet.has(sourceRunId)) {
+      fail(`Supabase returned unexpected source run ${sourceRunId}.`)
+    }
+  }
 
   const rowsBySourceRunId = new Map(rows.map((row) => [row.source_run_id, row]))
   for (const expected of expectedVariants) {
@@ -96,6 +138,9 @@ async function main() {
     }
     if (actual.status !== expected.expected_status) {
       fail(`${expected.source_run_id} has mismatched public status.`)
+    }
+    if (actual.quality_status !== expected.expected_quality_status) {
+      fail(`${expected.source_run_id} has mismatched quality status.`)
     }
   }
 

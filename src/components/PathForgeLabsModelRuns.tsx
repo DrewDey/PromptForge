@@ -1,9 +1,15 @@
 import Link from 'next/link'
-import { CheckCircle2, ChevronDown, TriangleAlert } from 'lucide-react'
+import { CheckCircle2, ChevronDown } from 'lucide-react'
+import ModelComparisonPreviewLink, {
+  ModelComparisonCurrentPreviewLink,
+  ModelComparisonViewportManager,
+} from '@/components/ModelComparisonPreviewLink'
+import { ModelVariantKnownIssue } from '@/components/ModelVariantKnownIssue'
 import type {
   ProjectModelVariant,
   ProjectModelVariantSet,
 } from '@/lib/project-model-variants'
+import { getProjectModelVariantKnownIssueExplanation } from '@/lib/project-model-variants'
 import { compareModelVariantRecords } from '@/lib/model-variant-ui.mjs'
 import { getPublicModelIdentityLabel } from '@/lib/public-model-labels'
 
@@ -59,19 +65,41 @@ function modelIdentityLabel(variant: ProjectModelVariant) {
 }
 
 function accessibleRunLabel(variant: ProjectModelVariant) {
-  return `${modelIdentityLabel(variant)}, captured ${runTimestamp(variant)}; source run ${variant.sourceRunId}`
+  const knownIssueExplanation = getProjectModelVariantKnownIssueExplanation(variant)
+  return [
+    `${modelIdentityLabel(variant)}, captured ${runTimestamp(variant)}; source run ${variant.sourceRunId}`,
+    knownIssueExplanation ? `Known issue: ${knownIssueExplanation}` : 'Verified',
+  ].join('. ')
 }
 
-function StatusBadge({ variant }: { variant: ProjectModelVariant }) {
+function StatusBadge({
+  variant,
+  id,
+  focusable = false,
+  inlineOnMobile = false,
+}: {
+  variant: ProjectModelVariant
+  id: string
+  focusable?: boolean
+  inlineOnMobile?: boolean
+}) {
   const verified = variant.qualityStatus === 'verified'
+  const knownIssueExplanation = getProjectModelVariantKnownIssueExplanation(variant)
+  if (knownIssueExplanation) {
+    return (
+      <ModelVariantKnownIssue
+        id={id}
+        explanation={knownIssueExplanation}
+        focusable={focusable}
+        inlineOnMobile={inlineOnMobile}
+        placement="end"
+      />
+    )
+  }
+
   return (
-    <span className={[
-      'inline-flex items-center gap-1 border px-2 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.12em]',
-      verified
-        ? 'border-brand-blue/30 bg-blue-50 text-brand-blue-dark'
-        : 'border-amber-300 bg-amber-50 text-amber-800',
-    ].join(' ')}>
-      {verified ? <CheckCircle2 className="h-3 w-3" /> : <TriangleAlert className="h-3 w-3" />}
+    <span className="inline-flex items-center gap-1 border border-brand-blue/30 bg-blue-50 px-2 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-brand-blue-dark">
+      {verified ? <CheckCircle2 className="h-3 w-3" /> : null}
       {statusLabel(variant)}
     </span>
   )
@@ -90,6 +118,8 @@ export default function PathForgeLabsModelRuns({
     (variant) => variant.runRole === 'historical-baseline',
   )
   const orderedVariants = [...variantSet.variants].sort(compareModelVariantRecords)
+  const activeKnownIssueExplanation = getProjectModelVariantKnownIssueExplanation(activeVariant)
+  const activeKnownIssueId = `active-model-${activeVariant.sourceRunId}-known-issue`
 
   return (
     <aside
@@ -100,7 +130,10 @@ export default function PathForgeLabsModelRuns({
         key={`${activeVariant.sourceRunId}:${compareSourceRunId ?? ''}`}
         className="group relative"
       >
-        <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-4 border border-surface-300 bg-white px-4 py-3 shadow-[0_8px_24px_rgba(15,23,42,0.06)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue">
+        <summary
+          className={`flex min-h-16 cursor-pointer list-none items-center justify-between gap-4 border border-surface-300 bg-white px-4 py-3 shadow-[0_8px_24px_rgba(15,23,42,0.06)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue${activeKnownIssueExplanation ? ' model-known-issue-owner' : ''}`}
+          aria-describedby={activeKnownIssueExplanation ? activeKnownIssueId : undefined}
+        >
           <div className="min-w-0">
             <div className="font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-surface-500">
               Model result
@@ -116,6 +149,13 @@ export default function PathForgeLabsModelRuns({
               <span className="text-xs text-surface-500">
                 <time dateTime={activeVariant.capturedAt}>{runTimestamp(activeVariant)}</time>
               </span>
+              {activeKnownIssueExplanation ? (
+                <StatusBadge
+                  variant={activeVariant}
+                  id={activeKnownIssueId}
+                  inlineOnMobile
+                />
+              ) : null}
             </div>
           </div>
           <span className="inline-flex shrink-0 items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-brand-blue">
@@ -132,7 +172,7 @@ export default function PathForgeLabsModelRuns({
             <div className="text-sm font-black text-surface-900">Choose a model result</div>
           </div>
 
-          <div className="max-h-80 divide-y divide-surface-200 overflow-y-auto">
+          <div className="max-h-80 divide-y divide-surface-200 overflow-y-auto sm:max-h-none sm:overflow-visible">
             {orderedVariants.map((variant) => {
               const isActive = variant.sourceRunId === activeVariant.sourceRunId
               const isDefault = variant.sourceRunId === variantSet.defaultSourceRunId
@@ -143,6 +183,8 @@ export default function PathForgeLabsModelRuns({
                   : variant.runRole === 'historical-baseline'
                     ? 'Original'
                     : 'Previous'
+              const knownIssueExplanation = getProjectModelVariantKnownIssueExplanation(variant)
+              const knownIssueId = `model-menu-${variant.sourceRunId}-known-issue`
               return (
                 <div
                   key={variant.sourceRunId}
@@ -161,9 +203,14 @@ export default function PathForgeLabsModelRuns({
                           </span>
                         )}
                       </div>
-                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-surface-500">
+                      <div className={`mt-1 flex flex-wrap items-center gap-2 text-xs text-surface-500${knownIssueExplanation ? ' model-known-issue-owner' : ''}`}>
                         <time dateTime={variant.capturedAt}>{runTimestamp(variant)}</time>
-                        <StatusBadge variant={variant} />
+                        <StatusBadge
+                          variant={variant}
+                          id={knownIssueId}
+                          focusable={Boolean(knownIssueExplanation)}
+                          inlineOnMobile
+                        />
                       </div>
                     </div>
 
@@ -227,15 +274,23 @@ function ComparisonCard({
   variant,
   variantSet,
   otherVariant,
+  isPreviewed,
 }: {
   label: 'A' | 'B'
   variant: ProjectModelVariant
   variantSet: ProjectModelVariantSet
   otherVariant: ProjectModelVariant
+  isPreviewed: boolean
 }) {
+  const knownIssueExplanation = getProjectModelVariantKnownIssueExplanation(variant)
+  const knownIssueId = `comparison-${label}-${variant.sourceRunId}-known-issue`
   return (
-    <article className="border border-brand-blue/25 bg-white p-4" data-model-variant-comparison={label}>
-      <div className="flex items-start justify-between gap-3">
+    <article
+      className="border border-brand-blue/25 bg-white p-4"
+      data-model-variant-comparison={label}
+      data-model-variant-source-run={variant.sourceRunId}
+    >
+      <div className={`flex items-start justify-between gap-3${knownIssueExplanation ? ' model-known-issue-owner' : ''}`}>
         <div>
           <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-brand-blue">
             Run {label}
@@ -252,15 +307,29 @@ function ComparisonCard({
             {conciseModelSettings(variant)}
           </p>
         </div>
-        <StatusBadge variant={variant} />
+        <StatusBadge
+          variant={variant}
+          id={knownIssueId}
+          focusable={Boolean(knownIssueExplanation)}
+          inlineOnMobile
+        />
       </div>
-      <Link
-        href={`${runHref(variantSet.canonicalRoute, variant, otherVariant)}#final-result`}
-        aria-label={`Preview ${accessibleRunLabel(variant)} below`}
-        className="mt-4 inline-flex border border-brand-blue/30 px-3 py-2 text-xs font-black text-brand-blue hover:bg-blue-50"
-      >
-        Preview run {label} below
-      </Link>
+      {isPreviewed ? (
+        <ModelComparisonCurrentPreviewLink
+          ariaLabel={`Reveal the current preview for ${accessibleRunLabel(variant)} below`}
+          className="mt-4 inline-flex border border-brand-blue bg-brand-blue px-3 py-2 text-xs font-black text-white"
+        >
+          Previewing run {label} below
+        </ModelComparisonCurrentPreviewLink>
+      ) : (
+        <ModelComparisonPreviewLink
+          href={`${runHref(variantSet.canonicalRoute, variant, otherVariant)}#final-result`}
+          ariaLabel={`Preview ${accessibleRunLabel(variant)} below`}
+          className="mt-4 inline-flex border border-brand-blue/30 px-3 py-2 text-xs font-black text-brand-blue hover:bg-blue-50"
+        >
+          Preview run {label} below
+        </ModelComparisonPreviewLink>
+      )}
     </article>
   )
 }
@@ -274,6 +343,7 @@ export function PathForgeLabsModelComparison({
   activeVariant: ProjectModelVariant
   compareVariant: ProjectModelVariant
 }) {
+  const [runA, runB] = [activeVariant, compareVariant].sort(compareModelVariantRecords)
   const exitHref =
     activeVariant.sourceRunId === variantSet.defaultSourceRunId
       ? variantSet.canonicalRoute
@@ -281,6 +351,7 @@ export function PathForgeLabsModelComparison({
 
   return (
     <section className="border-b border-brand-blue/20 bg-[#f4f8ff] px-4 py-7 sm:px-6 lg:px-8" data-model-variant-comparison-panel>
+      <ModelComparisonViewportManager />
       <div className="mx-auto max-w-7xl">
         <div className="mb-4 flex flex-wrap items-start justify-between gap-4 border-l-4 border-brand-blue pl-4">
           <div>
@@ -300,8 +371,20 @@ export function PathForgeLabsModelComparison({
           </Link>
         </div>
         <div className="grid gap-3 md:grid-cols-2">
-          <ComparisonCard label="A" variant={activeVariant} variantSet={variantSet} otherVariant={compareVariant} />
-          <ComparisonCard label="B" variant={compareVariant} variantSet={variantSet} otherVariant={activeVariant} />
+          <ComparisonCard
+            label="A"
+            variant={runA}
+            variantSet={variantSet}
+            otherVariant={runB}
+            isPreviewed={runA.sourceRunId === activeVariant.sourceRunId}
+          />
+          <ComparisonCard
+            label="B"
+            variant={runB}
+            variantSet={variantSet}
+            otherVariant={runA}
+            isPreviewed={runB.sourceRunId === activeVariant.sourceRunId}
+          />
         </div>
       </div>
     </section>

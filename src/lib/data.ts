@@ -77,6 +77,7 @@ import {
   UTILITY_BILL_BALANCE_PROJECT_ID,
   BLOCK_BIKE_COURIER_PROJECT_ID,
 } from './featured-projects'
+import { CURATED_SOURCE_RUN_SHOWCASE_PROJECTS } from './curated-source-run-showcases'
 import { getPreparedShowcaseProjectById } from './prepared-showcase-projects'
 import type { PreparedShowcaseProject, PreparedShowcaseStep } from './prepared-showcase-projects'
 import { getProjectRouteOverride } from './project-links'
@@ -92,6 +93,7 @@ import {
   type ProjectForkSource,
 } from './project-forks'
 import { forkColumnsMissing, omitForkFields } from './data/fork-column-compat'
+import { attachExactPublicPromptStepCounts } from './data/public-prompt-step-counts'
 export { sourceRunForkColumnsMissing } from './data/fork-column-compat'
 import {
   readWithFallback,
@@ -198,8 +200,13 @@ const APPROVED_PROJECT_IDS = new Set([
   ROOMMATE_FREEZER_BOARD_PROJECT_ID,
   UTILITY_BILL_BALANCE_PROJECT_ID,
   BLOCK_BIKE_COURIER_PROJECT_ID,
+  ...CURATED_SOURCE_RUN_SHOWCASE_PROJECTS.map((project) => project.id),
 ])
 const PUBLIC_LIBRARY_START_AT = '2026-05-28T00:00:00.000Z'
+const PUBLIC_PROMPT_LIST_PAGE_SIZE = 300
+const PUBLIC_PROMPT_LIST_MAX_PAGES = 10
+const PUBLIC_PROMPT_LIST_SELECT =
+  '*, category:categories(*), author:profiles!prompts_author_id_fkey(*)'
 const publicMockPrompts = mockPrompts.filter((prompt) => APPROVED_PROJECT_IDS.has(prompt.id))
 const publicMockSteps = mockSteps.filter((step) => APPROVED_PROJECT_IDS.has(step.prompt_id))
 const publicMockCategories = mockCategories.map((category) => ({
@@ -229,6 +236,7 @@ function normalizeProjectPresentation<T extends PromptWithRelations>(prompt: T):
       tools_used: preparedProject.toolsUsed,
       tags: preparedProject.tags,
       steps: preparedProject.steps.map((step) => preparedStepToPromptStep(step, preparedProject)),
+      prompt_step_count: preparedProject.steps.length,
     }
   }
 
@@ -251,19 +259,32 @@ function preparedStepToPromptStep(step: PreparedShowcaseStep, project: PreparedS
 // ---- Categories ----
 
 export async function getCategories(): Promise<Category[]> {
-  return readWithFallback(publicMockCategories, async () => {
-    const { createClient } = await import('./supabase/server')
-    const supabase = await createClient()
-    const { data } = await supabase.from('categories').select('*').order('name')
+  return readWithFallback(publicMockCategories, async (signal) => {
+    const { createPublicReadClient } = await import('./supabase/server')
+    const supabase = await createPublicReadClient()
+    const { data } = await supabase
+      .from('categories')
+      .select('*')
+      .order('name')
+      .retry(false)
+      .abortSignal(signal)
+      .throwOnError()
     return data ?? []
   })
 }
 
 export async function getCategoryBySlug(slug: string): Promise<Category | null> {
-  return readWithFallback(publicMockCategories.find(c => c.slug === slug) ?? null, async () => {
-    const { createClient } = await import('./supabase/server')
-    const supabase = await createClient()
-    const { data } = await supabase.from('categories').select('*').eq('slug', slug).single()
+  return readWithFallback(publicMockCategories.find(c => c.slug === slug) ?? null, async (signal) => {
+    const { createPublicReadClient } = await import('./supabase/server')
+    const supabase = await createPublicReadClient()
+    const { data } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('slug', slug)
+      .retry(false)
+      .abortSignal(signal)
+      .throwOnError()
+      .single()
     return data
   })
 }
@@ -347,17 +368,20 @@ export async function getPrompts(options?: {
   limit?: number
   sort?: 'newest' | 'popular'
 }): Promise<PromptWithRelations[]> {
-  return readWithFallback(getMockPrompts(options), async () => {
-    const { createClient } = await import('./supabase/server')
-    const supabase = await createClient()
-    let query = supabase
-      .from('prompts')
-      .select('*, category:categories(*), author:profiles!prompts_author_id_fkey(*), steps:prompt_steps(*)')
+  const requestedLimit = options?.limit
+  const maximumCheckedRows = PUBLIC_PROMPT_LIST_PAGE_SIZE * PUBLIC_PROMPT_LIST_MAX_PAGES
+  if (
+    requestedLimit !== undefined &&
+    (!Number.isInteger(requestedLimit) || requestedLimit <= 0 || requestedLimit > maximumCheckedRows)
+  ) {
+    throw new RangeError(`Public prompt limits must be between 1 and ${maximumCheckedRows}.`)
+  }
 
+  return readWithFallback(getMockPrompts(options), async (signal) => {
+    const { createPublicReadClient } = await import('./supabase/server')
+    const supabase = await createPublicReadClient()
     const status = options?.status ?? 'approved'
-    if (status !== 'all') {
-      query = query.eq('status', status)
-    }
+    let categoryId: string | undefined
 
     // Category filtering — look up category ID from slug
     if (options?.categorySlug) {
@@ -365,26 +389,72 @@ export async function getPrompts(options?: {
         .from('categories')
         .select('id')
         .eq('slug', options.categorySlug)
+        .retry(false)
+        .abortSignal(signal)
+        .throwOnError()
         .single()
-      if (cat) query = query.eq('category_id', cat.id)
+      categoryId = cat?.id
     }
 
-    if (options?.difficulty) query = query.eq('difficulty', options.difficulty)
+    const databaseProjects: PromptWithRelations[] = []
+    for (let pageIndex = 0; pageIndex < PUBLIC_PROMPT_LIST_MAX_PAGES; pageIndex += 1) {
+      const pageStart = pageIndex * PUBLIC_PROMPT_LIST_PAGE_SIZE
+      const pageEnd = pageStart + PUBLIC_PROMPT_LIST_PAGE_SIZE - 1
+      let query = supabase
+        .from('prompts')
+        .select(PUBLIC_PROMPT_LIST_SELECT)
 
-    // Search title, description, and tags
-    if (options?.search) {
-      const s = options.search
-      query = query.or(`title.ilike.%${s}%,description.ilike.%${s}%,tags.cs.{${s}}`)
+      if (status !== 'all') query = query.eq('status', status)
+      if (categoryId) query = query.eq('category_id', categoryId)
+      if (options?.difficulty) query = query.eq('difficulty', options.difficulty)
+      if (options?.search) {
+        const s = options.search
+        query = query.or(`title.ilike.%${s}%,description.ilike.%${s}%,tags.cs.{${s}}`)
+      }
+      query = options?.sort === 'popular'
+        ? query.order('vote_count', { ascending: false })
+        : query.order('created_at', { ascending: false })
+      query = query.order('id', { ascending: true })
+
+      const { data: pageData } = await query
+        .range(pageStart, pageEnd)
+        .retry(false)
+        .abortSignal(signal)
+        .throwOnError()
+      const rawPage = pageData ?? []
+      const remaining = requestedLimit === undefined
+        ? Number.POSITIVE_INFINITY
+        : requestedLimit - databaseProjects.length
+      const publicPage = rawPage
+        .filter(isPublicLibraryPrompt)
+        .slice(0, remaining)
+
+      if (publicPage.length > 0) {
+        const { data: stepCountRows } = await supabase
+          .rpc('read_public_prompt_step_counts', {
+            checked_prompt_ids: publicPage.map((project) => project.id),
+          })
+          .retry(false)
+          .abortSignal(signal)
+          .throwOnError()
+        databaseProjects.push(...attachExactPublicPromptStepCounts(
+          publicPage as PromptWithRelations[],
+          stepCountRows,
+        ).map(normalizeProjectPresentation))
+      }
+
+      if (
+        rawPage.length < PUBLIC_PROMPT_LIST_PAGE_SIZE ||
+        (requestedLimit !== undefined && databaseProjects.length >= requestedLimit)
+      ) {
+        break
+      }
+      if (pageIndex === PUBLIC_PROMPT_LIST_MAX_PAGES - 1) {
+        throw new Error(`Public prompt list exceeded ${maximumCheckedRows} checked rows.`)
+      }
     }
 
-    if (options?.sort === 'popular') {
-      query = query.order('vote_count', { ascending: false })
-    } else {
-      query = query.order('created_at', { ascending: false })
-    }
-    const { data } = await query
-    const filtered = (data ?? []).filter(isPublicLibraryPrompt).map(normalizeProjectPresentation)
-    const merged = mergeWithPublicMockPrompts(filtered, options)
+    const merged = mergeWithPublicMockPrompts(databaseProjects, options)
     return options?.limit ? merged.slice(0, options.limit) : merged
   })
 }
@@ -409,19 +479,24 @@ export async function getPromptById(id: string): Promise<PromptWithRelations | n
   const resolvedId = id === SNAKE_PROJECT_LEGACY_ID ? SNAKE_PROJECT_ID : id
   const mockPrompt = publicMockPrompts.find(p => p.id === resolvedId)
   const fallback = mockPrompt ? attachRelations(mockPrompt) : null
-  return readWithFallback(fallback, async () => {
-    const { createClient } = await import('./supabase/server')
-    const supabase = await createClient()
+  return readWithFallback(fallback, async (signal) => {
+    const { createPublicReadClient } = await import('./supabase/server')
+    const supabase = await createPublicReadClient()
     const { data } = await supabase
       .from('prompts')
       .select('*, category:categories(*), author:profiles!prompts_author_id_fkey(*), steps:prompt_steps(*)')
       .eq('id', resolvedId)
+      .retry(false)
+      .abortSignal(signal)
+      .throwOnError()
       .maybeSingle()
 
     if (!data) return fallback
     if (data.status === 'approved' && isPublicLibraryPrompt(data)) return normalizeProjectPresentation(data)
 
+    signal.throwIfAborted()
     const { data: { user } } = await supabase.auth.getUser()
+    signal.throwIfAborted()
     if (!user) return fallback
     if (data.author_id === user.id) return normalizeProjectPresentation(data)
 
@@ -429,6 +504,9 @@ export async function getPromptById(id: string): Promise<PromptWithRelations | n
       .from('profiles')
       .select('role')
       .eq('id', user.id)
+      .retry(false)
+      .abortSignal(signal)
+      .throwOnError()
       .maybeSingle()
 
     if (profile?.role === 'admin') return normalizeProjectPresentation(data)
@@ -452,13 +530,16 @@ export async function getProfileByUsername(username: string): Promise<Profile | 
         },
       }
     : null
-  return readWithFallback(fallback, async () => {
-    const { createClient } = await import('./supabase/server')
-    const supabase = await createClient()
+  return readWithFallback(fallback, async (signal) => {
+    const { createPublicReadClient } = await import('./supabase/server')
+    const supabase = await createPublicReadClient()
     const { data } = await supabase
       .from('profiles')
       .select('*, provenance:profile_provenance(kind)')
       .ilike('username', username.replace(/[\\%_]/g, (character) => `\\${character}`))
+      .retry(false)
+      .abortSignal(signal)
+      .throwOnError()
       .single()
     return data ? data as Profile : fallback
   })
@@ -640,9 +721,9 @@ export async function getApprovedProjectForks(
     sourceRunId,
   )
 
-  return readWithFallback(fallbackForks, async () => {
-    const { createClient } = await import('./supabase/server')
-    const supabase = await createClient()
+  return readWithFallback(fallbackForks, async (signal) => {
+    const { createPublicReadClient } = await import('./supabase/server')
+    const supabase = await createPublicReadClient()
     let query = supabase
       .from('prompts')
       .select('id,title,description,model_used,created_at,status,author:profiles!prompts_author_id_fkey(username,display_name),steps:prompt_steps(id,step_number,title,content,result_content),fork_source_project_id,fork_source_project_title,fork_source_model_variant_id,fork_source_run_id,fork_source_step_id,fork_source_step_number,fork_source_artifact_path,fork_source_artifact_sha256,fork_parent_submission_id,prompt_family_id,fork_depth,fork_branch_index')
@@ -652,6 +733,8 @@ export async function getApprovedProjectForks(
     const { data, error } = await query
       .order('fork_branch_index', { ascending: true })
       .order('created_at', { ascending: true })
+      .retry(false)
+      .abortSignal(signal)
 
     if (forkColumnsMissing(error)) return fallbackForks
     if (error) throw error
@@ -706,16 +789,48 @@ export async function getProjectsByAuthor(authorId: string, username?: string): 
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .map(attachRelations)
 
-  return readWithFallback(fallback, async () => {
-    const { createClient } = await import('./supabase/server')
-    const supabase = await createClient()
-    const { data } = await supabase
-      .from('prompts')
-      .select('*, category:categories(*), author:profiles!prompts_author_id_fkey(*), steps:prompt_steps(*)')
-      .eq('author_id', authorId)
-      .eq('status', 'approved')
-      .order('created_at', { ascending: false })
-    const dbProjects = (data ?? []).filter(isPublicLibraryPrompt).map(normalizeProjectPresentation)
+  return readWithFallback(fallback, async (signal) => {
+    const { createPublicReadClient } = await import('./supabase/server')
+    const supabase = await createPublicReadClient()
+    const dbProjects: PromptWithRelations[] = []
+    const maximumCheckedRows = PUBLIC_PROMPT_LIST_PAGE_SIZE * PUBLIC_PROMPT_LIST_MAX_PAGES
+    for (let pageIndex = 0; pageIndex < PUBLIC_PROMPT_LIST_MAX_PAGES; pageIndex += 1) {
+      const pageStart = pageIndex * PUBLIC_PROMPT_LIST_PAGE_SIZE
+      const pageEnd = pageStart + PUBLIC_PROMPT_LIST_PAGE_SIZE - 1
+      const { data: pageData } = await supabase
+        .from('prompts')
+        .select(PUBLIC_PROMPT_LIST_SELECT)
+        .eq('author_id', authorId)
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: true })
+        .range(pageStart, pageEnd)
+        .retry(false)
+        .abortSignal(signal)
+        .throwOnError()
+      const rawPage = pageData ?? []
+      const publicPage = rawPage.filter(isPublicLibraryPrompt)
+
+      if (publicPage.length > 0) {
+        const { data: stepCountRows } = await supabase
+          .rpc('read_public_prompt_step_counts', {
+            checked_prompt_ids: publicPage.map((project) => project.id),
+          })
+          .retry(false)
+          .abortSignal(signal)
+          .throwOnError()
+        dbProjects.push(...attachExactPublicPromptStepCounts(
+          publicPage as PromptWithRelations[],
+          stepCountRows,
+        ).map(normalizeProjectPresentation))
+      }
+
+      if (rawPage.length < PUBLIC_PROMPT_LIST_PAGE_SIZE) break
+      if (pageIndex === PUBLIC_PROMPT_LIST_MAX_PAGES - 1) {
+        throw new Error(`Public author project list exceeded ${maximumCheckedRows} checked rows.`)
+      }
+    }
+
     const seen = new Set(dbProjects.map(prompt => prompt.id))
     return [...dbProjects, ...fallback.filter(prompt => !seen.has(prompt.id))]
   })
@@ -732,14 +847,17 @@ export async function getAuthorStats(authorId: string, username?: string) {
     memberSince: mockProfiles.find(p => p.id === authorId || p.username === username)?.created_at ?? '',
   }
 
-  return readWithFallback(fallback, async () => {
-    const { createClient } = await import('./supabase/server')
-    const supabase = await createClient()
+  return readWithFallback(fallback, async (signal) => {
+    const { createPublicReadClient } = await import('./supabase/server')
+    const supabase = await createPublicReadClient()
     const { data: prompts } = await supabase
       .from('prompts')
       .select('id, created_at, vote_count, bookmark_count, category_id, categories(name, icon)')
       .eq('author_id', authorId)
       .eq('status', 'approved')
+      .retry(false)
+      .abortSignal(signal)
+      .throwOnError()
 
     const dbItems = (prompts ?? []).filter(isPublicLibraryPrompt)
     const seen = new Set(dbItems.map(prompt => prompt.id))
@@ -853,15 +971,31 @@ export async function getUserVotesAndBookmarks(promptIds: string[]): Promise<{ v
   const persistablePromptIds = promptIds.filter(isPersistableProjectId)
   if (persistablePromptIds.length === 0) return { votes: new Set(), bookmarks: new Set() }
 
-  return readWithFallback({ votes: new Set<string>(), bookmarks: new Set<string>() }, async () => {
-    const { createClient } = await import('./supabase/server')
-    const supabase = await createClient()
+  return readWithFallback({ votes: new Set<string>(), bookmarks: new Set<string>() }, async (signal) => {
+    const { createPublicReadClient } = await import('./supabase/server')
+    const supabase = await createPublicReadClient()
+    signal.throwIfAborted()
     const { data: { user } } = await supabase.auth.getUser()
+    signal.throwIfAborted()
     if (!user) return { votes: new Set(), bookmarks: new Set() }
 
     const [votesRes, bookmarksRes] = await Promise.all([
-      supabase.from('votes').select('prompt_id').eq('user_id', user.id).in('prompt_id', persistablePromptIds),
-      supabase.from('bookmarks').select('prompt_id').eq('user_id', user.id).in('prompt_id', persistablePromptIds),
+      supabase
+        .from('votes')
+        .select('prompt_id')
+        .eq('user_id', user.id)
+        .in('prompt_id', persistablePromptIds)
+        .retry(false)
+        .abortSignal(signal)
+        .throwOnError(),
+      supabase
+        .from('bookmarks')
+        .select('prompt_id')
+        .eq('user_id', user.id)
+        .in('prompt_id', persistablePromptIds)
+        .retry(false)
+        .abortSignal(signal)
+        .throwOnError(),
     ])
 
     return {

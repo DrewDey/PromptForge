@@ -1158,6 +1158,7 @@ const PROTECTED_VIEWER_SNAPSHOT_EXPRESSION = `(() => {
   const rootRect=root?.getBoundingClientRect();
   const frameRect=frame?.getBoundingClientRect();
   const iframeRect=iframe?.getBoundingClientRect();
+  const scroller=root?.parentElement;
   return {
     mode:root?.dataset.artifactViewerMode ?? '',
     rootWidth:rootRect?.width ?? null,
@@ -1169,10 +1170,15 @@ const PROTECTED_VIEWER_SNAPSHOT_EXPRESSION = `(() => {
     heightMode:frame?.dataset.artifactHeightMode ?? '',
     fitMode:frame?.dataset.artifactFitMode ?? '',
     heightPending:frame?.dataset.artifactHeightPending === 'true',
+    measuredWidth:Number(frame?.dataset.artifactMeasuredWidth ?? Number.NaN),
+    measuredHeight:Number(frame?.dataset.artifactMeasuredHeight ?? Number.NaN),
+    virtualWidth:Number(frame?.dataset.artifactVirtualWidth ?? Number.NaN),
     artifactReady:Boolean(iframe?.srcdoc),
     scrolling:iframe?.getAttribute('scrolling') ?? '',
     documentWidth:document.documentElement.scrollWidth,
     viewportWidth:window.innerWidth,
+    scrollerWidth:scroller?.clientWidth ?? null,
+    scrollerScrollWidth:scroller?.scrollWidth ?? null,
     readablePressed:document.querySelector('[data-artifact-viewer-mode-control="readable"]')?.getAttribute('aria-pressed') ?? '',
     fitWholePressed:document.querySelector('[data-artifact-viewer-mode-control="fit-whole"]')?.getAttribute('aria-pressed') ?? '',
     artifactFitsFrame:Boolean(
@@ -1210,6 +1216,8 @@ async function verifyProtectedArtifactViewerModes(client, sessionId, baseUrl, vi
       value.fitWholePressed === 'false' &&
       value.scale >= 0.99 &&
       value.scrolling === 'no' &&
+      Number.isFinite(value.measuredWidth) &&
+      value.measuredWidth > 0 &&
       value.frameHeight > viewport.height * 1.2
     ),
     `${viewport.label} protected viewer readable mode`,
@@ -1244,7 +1252,7 @@ async function verifyProtectedArtifactViewerModes(client, sessionId, baseUrl, vi
   await client.send('Runtime.evaluate', {
     expression: `document.querySelector('[data-artifact-viewer-mode-control="readable"]')?.click()`,
   }, sessionId)
-  await waitForValue(
+  const readableReturn = await waitForValue(
     client,
     sessionId,
     PROTECTED_VIEWER_SNAPSHOT_EXPRESSION,
@@ -1254,11 +1262,18 @@ async function verifyProtectedArtifactViewerModes(client, sessionId, baseUrl, vi
       !value.heightPending &&
       value.readablePressed === 'true' &&
       value.scale >= 0.99 &&
-      value.frameHeight > viewport.height * 1.2
+      value.frameHeight > viewport.height * 1.2 &&
+      Math.abs(value.measuredWidth - readable.measuredWidth) <= 2 &&
+      Math.abs(value.rootWidth - readable.rootWidth) <= 2 &&
+      Math.abs(value.frameWidth - readable.frameWidth) <= 2 &&
+      value.scrollerScrollWidth <= readable.scrollerScrollWidth + 2
     ),
     `${viewport.label} protected viewer readable return`,
     20_000,
   )
+  if (readableReturn.scrollerScrollWidth > readableReturn.scrollerWidth + 2) {
+    throw new Error(`${viewport.label} readable return introduced horizontal viewer overflow.`)
+  }
 }
 
 async function positionArtifact(client, sessionId, desiredTop) {

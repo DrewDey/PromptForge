@@ -933,6 +933,8 @@ mustInclude(sharedComponent, sharedComponentContent, 'frameSize.width / Math.max
 mustInclude(sharedComponent, sharedComponentContent, 'Math.ceil(artifactSize.height * fitScale)', 'project-page artifact frames must expand downward to the scaled rendered height')
 mustInclude(sharedComponent, sharedComponentContent, "data-artifact-height-mode={usesMeasuredContentHeight ? 'measured-content' : 'fixed-viewport'}", 'artifact frames must expose whether content height or a fixed viewport controls their bottom edge')
 mustInclude(sharedComponent, sharedComponentContent, 'viewportHeight: window.innerHeight', 'artifact measurements must report their actual viewport height for feedback-loop detection')
+mustInclude(sharedComponent, sharedComponentContent, 'viewportWidth: window.innerWidth', 'artifact measurements must report their viewport width so stale fit-whole reports can be rejected')
+mustInclude(sharedComponent, sharedComponentContent, "frameRef.current?.dataset.artifactFitMode === 'scaled'", 'scaled fit-whole measurements must not overwrite readable artifact dimensions')
 mustInclude(sharedComponent, sharedComponentContent, 'nextSize.height > current.size.height + 4', 'self-referential viewport-height growth must trip the stable guarded-scroll fallback')
 mustInclude(sharedComponent, sharedComponentContent, 'guardedArtifactPackageIds.has(selectedArtifactIdentity)', 'feedback-loop protection must remain latched independently for every selected artifact path identity')
 mustInclude(sharedComponent, sharedComponentContent, 'next.add(artifactIdentity)', 'feedback-loop protection must retain earlier path-identity latches when another artifact trips the guard')

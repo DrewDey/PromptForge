@@ -92,6 +92,7 @@ type MeasuredArtifact = {
   packageId: string
   artifactPath: string
   size: ArtifactSize & {
+    viewportWidth: number
     viewportHeight: number
   }
 }
@@ -331,6 +332,7 @@ function artifactFitProbeSource() {
       type: 'pathforge-artifact-size',
       width,
       height,
+      viewportWidth: window.innerWidth,
       viewportHeight: window.innerHeight,
     }, '*');
     window.dispatchEvent(new Event('pathforge-artifact-size-reported'));
@@ -621,16 +623,32 @@ export function ProtectedArtifactFrame({
       if (data.type !== 'pathforge-artifact-size') return
       const width = Number(data.width)
       const height = Number(data.height)
+      const viewportWidth = Number(data.viewportWidth)
       const viewportHeight = Number(data.viewportHeight)
       if (
         !Number.isFinite(width) ||
         !Number.isFinite(height) ||
+        !Number.isFinite(viewportWidth) ||
         !Number.isFinite(viewportHeight)
+      ) return
+
+      // Fit-whole temporarily gives the iframe a much wider virtual viewport
+      // before scaling it down. That responsive canvas is presentation state,
+      // not the artifact's natural readable width. Never let it overwrite the
+      // readable measurement, and reject a queued report if the iframe has
+      // already changed viewport again during a rapid mode switch.
+      if (
+        viewerFitControls &&
+        (
+          frameRef.current?.dataset.artifactFitMode === 'scaled' ||
+          Math.abs((iframeRef.current?.clientWidth ?? viewportWidth) - viewportWidth) >= 4
+        )
       ) return
 
       const nextSize = {
         width: Math.max(1, Math.ceil(width)),
         height: Math.max(1, Math.ceil(height)),
+        viewportWidth: Math.max(1, Math.ceil(viewportWidth)),
         viewportHeight: Math.max(1, Math.ceil(viewportHeight)),
       }
       if (usesMeasuredContentHeight) {
@@ -673,6 +691,7 @@ export function ProtectedArtifactFrame({
         current.artifactPath === artifactPath &&
         Math.abs(current.size.width - nextSize.width) < 4 &&
         Math.abs(current.size.height - nextSize.height) < 4 &&
+        Math.abs(current.size.viewportWidth - nextSize.viewportWidth) < 4 &&
         Math.abs(current.size.viewportHeight - nextSize.viewportHeight) < 4
       ) return
 
@@ -686,7 +705,12 @@ export function ProtectedArtifactFrame({
       window.removeEventListener('message', handleMessage)
       window.clearTimeout(measurementSettleTimer)
     }
-  }, [selectedPackage.artifactPath, selectedPackage.id, usesMeasuredContentHeight])
+  }, [
+    selectedPackage.artifactPath,
+    selectedPackage.id,
+    usesMeasuredContentHeight,
+    viewerFitControls,
+  ])
 
   const guardedFromMeasuredHeightFeedback = guardedArtifactPackageIds.has(selectedArtifactIdentity)
   const measuredWidthFitScale = frameSize && artifactSize

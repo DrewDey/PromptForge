@@ -76,6 +76,7 @@ async function main() {
       opening_prompt_sha256: manifest.contract.openingPromptSha256,
       comparison_contract_sha256: manifest.contract.sha256,
       expected_status: variant.runRole === 'historical-baseline' ? 'historical' : 'published',
+      expected_quality_status: variant.qualityStatus.replaceAll('-', '_'),
     })),
   )
   const projectIds = [...new Set(manifests.map((manifest) => manifest.canonicalProjectId))]
@@ -137,6 +138,9 @@ async function main() {
     }
     if (actual.status !== expected.expected_status) {
       fail(`${expected.source_run_id} has mismatched public status.`)
+    }
+    if (actual.quality_status !== expected.expected_quality_status) {
+      fail(`${expected.source_run_id} has mismatched quality status.`)
     }
   }
 

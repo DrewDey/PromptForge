@@ -11,6 +11,7 @@ const read = (relativePath) => readFileSync(path.join(root, relativePath), 'utf8
 
 const shared = read('src/lib/data/shared.ts')
 const server = read('src/lib/supabase/server.ts')
+const promptStepCounts = read('src/lib/data/public-prompt-step-counts.ts')
 const dataSources = [
   ['src/lib/data.ts', read('src/lib/data.ts')],
   ['src/lib/data/public-profiles.ts', read('src/lib/data/public-profiles.ts')],
@@ -143,13 +144,31 @@ for (const [fileName, source] of dataSources) {
     )
     assert.match(
       prompts,
-      /query = query\.limit\(options\?\.limit \?\? PUBLIC_PROMPT_LIST_MAX\)/,
-      'public project lists must apply their bound inside PostgREST',
+      /\.range\(pageStart, pageEnd\)/,
+      'public project lists must page inside PostgREST',
     )
     assert.match(
       prompts,
-      /if \(options\?\.categorySlug\) \{[\s\S]*?\.from\('categories'\)[\s\S]*?\.abortSignal\(signal\)\s*\.throwOnError\(\)[\s\S]*?if \(cat\) query = query\.eq\('category_id', cat\.id\)/,
+      /read_public_prompt_step_counts/,
+      'public project lists must restore exact step cardinality through the bounded projection',
+    )
+    assert.match(
+      prompts,
+      /Public prompt list exceeded \$\{maximumCheckedRows\} checked rows/,
+      'public project lists must fail instead of returning a silently truncated catalog',
+    )
+    assert.match(
+      prompts,
+      /if \(options\?\.categorySlug\) \{[\s\S]*?\.from\('categories'\)[\s\S]*?\.abortSignal\(signal\)\s*\.throwOnError\(\)[\s\S]*?categoryId = cat\?\.id/,
       'category-filter lookup errors must reject the whole read so curated filtering wins',
+    )
+
+    const authorProjects = functionBody(sourceFile, 'getProjectsByAuthor')
+    assert.match(authorProjects, /\.range\(pageStart, pageEnd\)/)
+    assert.match(authorProjects, /read_public_prompt_step_counts/)
+    assert.match(
+      authorProjects,
+      /Public author project list exceeded \$\{maximumCheckedRows\} checked rows/,
     )
 
     const forks = functionBody(sourceFile, 'getApprovedProjectForks')
@@ -172,11 +191,28 @@ for (const [fileName, source] of dataSources) {
     )
     assert.match(
       authorProjects,
-      /\.limit\(PUBLIC_PROFILE_PROJECT_LIST_MAX\)/,
-      'public profile project lists must remain database-bounded',
+      /\.range\(pageStart, pageEnd\)/,
+      'public profile project lists must remain page-bounded',
+    )
+    assert.match(authorProjects, /read_public_prompt_step_counts/)
+    assert.match(
+      authorProjects,
+      /Public profile project list exceeded \$\{maximumCheckedRows\} checked rows/,
+      'public profile project lists must fail instead of returning silent truncation',
     )
   }
 }
+
+assert.match(
+  promptStepCounts,
+  /rows\.length !== projects\.length/,
+  'step-count attachment must require exact row cardinality',
+)
+assert.match(
+  promptStepCounts,
+  /counts\.has\(row\.prompt_id\)/,
+  'step-count attachment must reject duplicate rows',
+)
 
 const disabledRetryCount = dataSources.reduce(
   (total, [, source]) => total + (source.match(/\.retry\(false\)/g) ?? []).length,

@@ -369,7 +369,7 @@ export function buildPathDiscoveryCatalog(
 
   const catalog = prompts.map((prompt) => {
     const prepared = getPreparedShowcaseProjectById(prompt.id)
-    const promptCount = prepared?.steps.length ?? prompt.steps?.length ?? 0
+    const promptCount = prepared?.steps.length ?? prompt.prompt_step_count ?? prompt.steps?.length ?? 0
     const modelLabel = discoveryModelLabel(prompt)
     const variantSummary = getProjectModelProfileSummary(prompt.id)
     const modelLabels = [...new Set([

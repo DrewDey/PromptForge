@@ -425,6 +425,8 @@ function validateUiWiring() {
   mustInclude('scripts/check-project-model-variant-live-registry.mjs', 'checked manifests contain duplicate source-run IDs', 'Vercel must reject duplicate source-run evidence before live verification')
   mustInclude('scripts/check-project-model-variant-live-registry.mjs', 'expectedVariants.length', 'Vercel must require the exact checked live-registry cardinality')
   mustInclude('scripts/check-project-model-variant-live-registry.mjs', 'Supabase returned unexpected source run', 'Vercel must reject live-registry rows outside the checked manifests')
+  mustInclude('scripts/check-project-model-variant-live-registry.mjs', 'expected_quality_status: variant.qualityStatus.replaceAll', 'Vercel must derive every checked quality status from the manifest')
+  mustInclude('scripts/check-project-model-variant-live-registry.mjs', 'actual.quality_status !== expected.expected_quality_status', 'Vercel must reject verified/known-issue drift for every checked source run')
   mustInclude('scripts/check-project-model-variant-live-registry.mjs', 'missing checked source run', 'Vercel must fail before build when database-first evidence is incomplete')
   mustInclude('supabase/project-model-variants.sql', 'read_public_model_variant_registry', 'the canonical model-variant schema must define the bounded public registry RPC')
   mustInclude('supabase/migrations/20260721033000_public_model_variant_registry_rpc.sql', "prompt.status = 'approved'", 'the registry RPC must expose only approved canonical projects')

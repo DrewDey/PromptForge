@@ -106,7 +106,10 @@ export function getPublicProfileProjectEvidence(
 
   return {
     projectId: project.id,
-    promptCount: Math.max(project.steps?.length ?? 0, 1),
+    promptCount: Math.max(
+      preparedProject?.steps.length ?? project.prompt_step_count ?? project.steps?.length ?? 0,
+      1,
+    ),
     modelLabels,
     verifiedModelRunCount: verifiedRuns.length,
     currentModelRunCount,

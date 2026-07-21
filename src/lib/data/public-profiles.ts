@@ -14,9 +14,11 @@ import type {
   PromptStep,
   PromptWithRelations,
 } from '../types'
+import { attachExactPublicPromptStepCounts } from './public-prompt-step-counts'
 import { readWithFallback } from './shared'
 
-const PUBLIC_PROFILE_PROJECT_LIST_MAX = 300
+const PUBLIC_PROFILE_PROJECT_LIST_PAGE_SIZE = 300
+const PUBLIC_PROFILE_PROJECT_LIST_MAX_PAGES = 10
 const PUBLIC_PROFILE_PROJECT_LIST_SELECT =
   '*, category:categories(*), author:profiles!prompts_author_id_fkey(*)'
 const PUBLIC_LIBRARY_START_AT = '2026-05-28T00:00:00.000Z'
@@ -61,6 +63,7 @@ function normalizeProjectPresentation<T extends PromptWithRelations>(project: T)
     steps: prepared.steps.map((step) => (
       preparedStepToPromptStep(step, prepared.id, prepared.createdAt)
     )),
+    prompt_step_count: prepared.steps.length,
   }
 }
 
@@ -123,19 +126,47 @@ export async function getPublicProjectsByAuthor(
   return readWithFallback(fallback, async (signal) => {
     const { createPublicReadClient } = await import('../supabase/server')
     const supabase = await createPublicReadClient()
-    const { data } = await supabase
-      .from('prompts')
-      .select(PUBLIC_PROFILE_PROJECT_LIST_SELECT)
-      .eq('author_id', authorId)
-      .eq('status', 'approved')
-      .order('created_at', { ascending: false })
-      .limit(PUBLIC_PROFILE_PROJECT_LIST_MAX)
-      .retry(false)
-      .abortSignal(signal)
-      .throwOnError()
-    const databaseProjects = (data ?? [])
-      .filter(isPublicLibraryProject)
-      .map((project) => normalizeProjectPresentation(project as PromptWithRelations))
+    const databaseProjects: PromptWithRelations[] = []
+    const maximumCheckedRows = (
+      PUBLIC_PROFILE_PROJECT_LIST_PAGE_SIZE * PUBLIC_PROFILE_PROJECT_LIST_MAX_PAGES
+    )
+    for (let pageIndex = 0; pageIndex < PUBLIC_PROFILE_PROJECT_LIST_MAX_PAGES; pageIndex += 1) {
+      const pageStart = pageIndex * PUBLIC_PROFILE_PROJECT_LIST_PAGE_SIZE
+      const pageEnd = pageStart + PUBLIC_PROFILE_PROJECT_LIST_PAGE_SIZE - 1
+      const { data: pageData } = await supabase
+        .from('prompts')
+        .select(PUBLIC_PROFILE_PROJECT_LIST_SELECT)
+        .eq('author_id', authorId)
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: true })
+        .range(pageStart, pageEnd)
+        .retry(false)
+        .abortSignal(signal)
+        .throwOnError()
+      const rawPage = pageData ?? []
+      const publicPage = rawPage.filter(isPublicLibraryProject)
+
+      if (publicPage.length > 0) {
+        const { data: stepCountRows } = await supabase
+          .rpc('read_public_prompt_step_counts', {
+            checked_prompt_ids: publicPage.map((project) => project.id),
+          })
+          .retry(false)
+          .abortSignal(signal)
+          .throwOnError()
+        databaseProjects.push(...attachExactPublicPromptStepCounts(
+          publicPage as PromptWithRelations[],
+          stepCountRows,
+        ).map(normalizeProjectPresentation))
+      }
+
+      if (rawPage.length < PUBLIC_PROFILE_PROJECT_LIST_PAGE_SIZE) break
+      if (pageIndex === PUBLIC_PROFILE_PROJECT_LIST_MAX_PAGES - 1) {
+        throw new Error(`Public profile project list exceeded ${maximumCheckedRows} checked rows.`)
+      }
+    }
+
     const seen = new Set(databaseProjects.map((project) => project.id))
     return [...databaseProjects, ...fallback.filter((project) => !seen.has(project.id))]
   })

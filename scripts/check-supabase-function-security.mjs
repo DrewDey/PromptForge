@@ -17,6 +17,57 @@ function rejectText(file, source, unexpected, reason) {
   }
 }
 
+function requireBoundedPublicDefiner({
+  file,
+  source,
+  signature,
+  inputBound,
+  requiredPredicates,
+}) {
+  const functionName = signature.slice(0, signature.indexOf('('))
+  const functionStart = source.indexOf(`CREATE OR REPLACE FUNCTION ${functionName}(`)
+  if (functionStart === -1) {
+    throw new Error(`${file}: missing bounded public function ${functionName}`)
+  }
+  const nextFunction = source.indexOf('CREATE OR REPLACE FUNCTION ', functionStart + 1)
+  const scopedSource = source.slice(
+    functionStart,
+    nextFunction === -1 ? source.length : nextFunction,
+  )
+  requireText(
+    file,
+    scopedSource,
+    `SECURITY DEFINER\nSET search_path = ''`,
+    `${signature} must execute with an immutable empty search_path`,
+  )
+  requireText(
+    file,
+    scopedSource,
+    `REVOKE ALL ON FUNCTION ${signature}\n  FROM PUBLIC;`,
+    `${signature} must revoke the default PUBLIC execution grant`,
+  )
+  requireText(
+    file,
+    scopedSource,
+    `GRANT EXECUTE ON FUNCTION ${signature}\n  TO anon, authenticated, service_role;`,
+    `${signature} must expose only the checked read-only API roles`,
+  )
+  requireText(
+    file,
+    scopedSource,
+    inputBound,
+    `${signature} must retain its exact input-cardinality bound`,
+  )
+  for (const predicate of requiredPredicates) {
+    requireText(
+      file,
+      scopedSource,
+      predicate,
+      `${signature} is missing required public-row predicate ${predicate}`,
+    )
+  }
+}
+
 const migrations = readdirSync('supabase/migrations')
   .filter((file) => file.endsWith('_harden_privileged_function_execution.sql'))
 if (migrations.length !== 1) {
@@ -109,6 +160,49 @@ for (const [expected, reason] of [
 ]) {
   requireText(sourceRunSqlFile, sourceRunSql, expected, reason)
   requireText(migrationFile, migration, expected, reason)
+}
+
+const publicModelRegistryMigrationFile =
+  'supabase/migrations/20260721033000_public_model_variant_registry_rpc.sql'
+const publicPromptStepCountsMigrationFile =
+  'supabase/migrations/20260721034500_public_prompt_step_counts_rpc.sql'
+const boundedPublicDefiners = [
+  {
+    signature: 'public.read_public_model_variant_registry(TEXT[])',
+    inputBound: 'pg_catalog.cardinality(checked_source_run_ids) BETWEEN 1 AND 100',
+    requiredPredicates: [
+      "prompt.status = 'approved'",
+      "variant.status IN ('published', 'historical')",
+    ],
+    sources: [
+      [publicModelRegistryMigrationFile, read(publicModelRegistryMigrationFile)],
+      ['supabase/schema.sql', read('supabase/schema.sql')],
+    ],
+  },
+  {
+    signature: 'public.read_public_prompt_step_counts(UUID[])',
+    inputBound: 'pg_catalog.cardinality(checked_prompt_ids) BETWEEN 1 AND 300',
+    requiredPredicates: [
+      "prompt.status = 'approved'",
+      'COUNT(step.id)::INTEGER AS step_count',
+    ],
+    sources: [
+      [publicPromptStepCountsMigrationFile, read(publicPromptStepCountsMigrationFile)],
+      ['supabase/schema.sql', read('supabase/schema.sql')],
+    ],
+  },
+]
+
+for (const boundedFunction of boundedPublicDefiners) {
+  for (const [file, source] of boundedFunction.sources) {
+    requireBoundedPublicDefiner({
+      file,
+      source,
+      signature: boundedFunction.signature,
+      inputBound: boundedFunction.inputBound,
+      requiredPredicates: boundedFunction.requiredPredicates,
+    })
+  }
 }
 
 for (const file of ['supabase/schema.sql', 'supabase/project-model-variants.sql']) {

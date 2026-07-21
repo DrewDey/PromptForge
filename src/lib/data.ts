@@ -93,6 +93,7 @@ import {
   type ProjectForkSource,
 } from './project-forks'
 import { forkColumnsMissing, omitForkFields } from './data/fork-column-compat'
+import { attachExactPublicPromptStepCounts } from './data/public-prompt-step-counts'
 export { sourceRunForkColumnsMissing } from './data/fork-column-compat'
 import {
   readWithFallback,
@@ -202,7 +203,8 @@ const APPROVED_PROJECT_IDS = new Set([
   ...CURATED_SOURCE_RUN_SHOWCASE_PROJECTS.map((project) => project.id),
 ])
 const PUBLIC_LIBRARY_START_AT = '2026-05-28T00:00:00.000Z'
-const PUBLIC_PROMPT_LIST_MAX = 300
+const PUBLIC_PROMPT_LIST_PAGE_SIZE = 300
+const PUBLIC_PROMPT_LIST_MAX_PAGES = 10
 const PUBLIC_PROMPT_LIST_SELECT =
   '*, category:categories(*), author:profiles!prompts_author_id_fkey(*)'
 const publicMockPrompts = mockPrompts.filter((prompt) => APPROVED_PROJECT_IDS.has(prompt.id))
@@ -234,6 +236,7 @@ function normalizeProjectPresentation<T extends PromptWithRelations>(prompt: T):
       tools_used: preparedProject.toolsUsed,
       tags: preparedProject.tags,
       steps: preparedProject.steps.map((step) => preparedStepToPromptStep(step, preparedProject)),
+      prompt_step_count: preparedProject.steps.length,
     }
   }
 
@@ -365,17 +368,20 @@ export async function getPrompts(options?: {
   limit?: number
   sort?: 'newest' | 'popular'
 }): Promise<PromptWithRelations[]> {
+  const requestedLimit = options?.limit
+  const maximumCheckedRows = PUBLIC_PROMPT_LIST_PAGE_SIZE * PUBLIC_PROMPT_LIST_MAX_PAGES
+  if (
+    requestedLimit !== undefined &&
+    (!Number.isInteger(requestedLimit) || requestedLimit <= 0 || requestedLimit > maximumCheckedRows)
+  ) {
+    throw new RangeError(`Public prompt limits must be between 1 and ${maximumCheckedRows}.`)
+  }
+
   return readWithFallback(getMockPrompts(options), async (signal) => {
     const { createPublicReadClient } = await import('./supabase/server')
     const supabase = await createPublicReadClient()
-    let query = supabase
-      .from('prompts')
-      .select(PUBLIC_PROMPT_LIST_SELECT)
-
     const status = options?.status ?? 'approved'
-    if (status !== 'all') {
-      query = query.eq('status', status)
-    }
+    let categoryId: string | undefined
 
     // Category filtering — look up category ID from slug
     if (options?.categorySlug) {
@@ -387,29 +393,68 @@ export async function getPrompts(options?: {
         .abortSignal(signal)
         .throwOnError()
         .single()
-      if (cat) query = query.eq('category_id', cat.id)
+      categoryId = cat?.id
     }
 
-    if (options?.difficulty) query = query.eq('difficulty', options.difficulty)
+    const databaseProjects: PromptWithRelations[] = []
+    for (let pageIndex = 0; pageIndex < PUBLIC_PROMPT_LIST_MAX_PAGES; pageIndex += 1) {
+      const pageStart = pageIndex * PUBLIC_PROMPT_LIST_PAGE_SIZE
+      const pageEnd = pageStart + PUBLIC_PROMPT_LIST_PAGE_SIZE - 1
+      let query = supabase
+        .from('prompts')
+        .select(PUBLIC_PROMPT_LIST_SELECT)
 
-    // Search title, description, and tags
-    if (options?.search) {
-      const s = options.search
-      query = query.or(`title.ilike.%${s}%,description.ilike.%${s}%,tags.cs.{${s}}`)
+      if (status !== 'all') query = query.eq('status', status)
+      if (categoryId) query = query.eq('category_id', categoryId)
+      if (options?.difficulty) query = query.eq('difficulty', options.difficulty)
+      if (options?.search) {
+        const s = options.search
+        query = query.or(`title.ilike.%${s}%,description.ilike.%${s}%,tags.cs.{${s}}`)
+      }
+      query = options?.sort === 'popular'
+        ? query.order('vote_count', { ascending: false })
+        : query.order('created_at', { ascending: false })
+      query = query.order('id', { ascending: true })
+
+      const { data: pageData } = await query
+        .range(pageStart, pageEnd)
+        .retry(false)
+        .abortSignal(signal)
+        .throwOnError()
+      const rawPage = pageData ?? []
+      const remaining = requestedLimit === undefined
+        ? Number.POSITIVE_INFINITY
+        : requestedLimit - databaseProjects.length
+      const publicPage = rawPage
+        .filter(isPublicLibraryPrompt)
+        .slice(0, remaining)
+
+      if (publicPage.length > 0) {
+        const { data: stepCountRows } = await supabase
+          .rpc('read_public_prompt_step_counts', {
+            checked_prompt_ids: publicPage.map((project) => project.id),
+          })
+          .retry(false)
+          .abortSignal(signal)
+          .throwOnError()
+        databaseProjects.push(...attachExactPublicPromptStepCounts(
+          publicPage as PromptWithRelations[],
+          stepCountRows,
+        ).map(normalizeProjectPresentation))
+      }
+
+      if (
+        rawPage.length < PUBLIC_PROMPT_LIST_PAGE_SIZE ||
+        (requestedLimit !== undefined && databaseProjects.length >= requestedLimit)
+      ) {
+        break
+      }
+      if (pageIndex === PUBLIC_PROMPT_LIST_MAX_PAGES - 1) {
+        throw new Error(`Public prompt list exceeded ${maximumCheckedRows} checked rows.`)
+      }
     }
 
-    if (options?.sort === 'popular') {
-      query = query.order('vote_count', { ascending: false })
-    } else {
-      query = query.order('created_at', { ascending: false })
-    }
-    query = query.limit(options?.limit ?? PUBLIC_PROMPT_LIST_MAX)
-    const { data } = await query
-      .retry(false)
-      .abortSignal(signal)
-      .throwOnError()
-    const filtered = (data ?? []).filter(isPublicLibraryPrompt).map(normalizeProjectPresentation)
-    const merged = mergeWithPublicMockPrompts(filtered, options)
+    const merged = mergeWithPublicMockPrompts(databaseProjects, options)
     return options?.limit ? merged.slice(0, options.limit) : merged
   })
 }
@@ -747,17 +792,45 @@ export async function getProjectsByAuthor(authorId: string, username?: string): 
   return readWithFallback(fallback, async (signal) => {
     const { createPublicReadClient } = await import('./supabase/server')
     const supabase = await createPublicReadClient()
-    const { data } = await supabase
-      .from('prompts')
-      .select(PUBLIC_PROMPT_LIST_SELECT)
-      .eq('author_id', authorId)
-      .eq('status', 'approved')
-      .order('created_at', { ascending: false })
-      .limit(PUBLIC_PROMPT_LIST_MAX)
-      .retry(false)
-      .abortSignal(signal)
-      .throwOnError()
-    const dbProjects = (data ?? []).filter(isPublicLibraryPrompt).map(normalizeProjectPresentation)
+    const dbProjects: PromptWithRelations[] = []
+    const maximumCheckedRows = PUBLIC_PROMPT_LIST_PAGE_SIZE * PUBLIC_PROMPT_LIST_MAX_PAGES
+    for (let pageIndex = 0; pageIndex < PUBLIC_PROMPT_LIST_MAX_PAGES; pageIndex += 1) {
+      const pageStart = pageIndex * PUBLIC_PROMPT_LIST_PAGE_SIZE
+      const pageEnd = pageStart + PUBLIC_PROMPT_LIST_PAGE_SIZE - 1
+      const { data: pageData } = await supabase
+        .from('prompts')
+        .select(PUBLIC_PROMPT_LIST_SELECT)
+        .eq('author_id', authorId)
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: true })
+        .range(pageStart, pageEnd)
+        .retry(false)
+        .abortSignal(signal)
+        .throwOnError()
+      const rawPage = pageData ?? []
+      const publicPage = rawPage.filter(isPublicLibraryPrompt)
+
+      if (publicPage.length > 0) {
+        const { data: stepCountRows } = await supabase
+          .rpc('read_public_prompt_step_counts', {
+            checked_prompt_ids: publicPage.map((project) => project.id),
+          })
+          .retry(false)
+          .abortSignal(signal)
+          .throwOnError()
+        dbProjects.push(...attachExactPublicPromptStepCounts(
+          publicPage as PromptWithRelations[],
+          stepCountRows,
+        ).map(normalizeProjectPresentation))
+      }
+
+      if (rawPage.length < PUBLIC_PROMPT_LIST_PAGE_SIZE) break
+      if (pageIndex === PUBLIC_PROMPT_LIST_MAX_PAGES - 1) {
+        throw new Error(`Public author project list exceeded ${maximumCheckedRows} checked rows.`)
+      }
+    }
+
     const seen = new Set(dbProjects.map(prompt => prompt.id))
     return [...dbProjects, ...fallback.filter(prompt => !seen.has(prompt.id))]
   })

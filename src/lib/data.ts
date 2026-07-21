@@ -256,7 +256,13 @@ export async function getCategories(): Promise<Category[]> {
   return readWithFallback(publicMockCategories, async (signal) => {
     const { createPublicReadClient } = await import('./supabase/server')
     const supabase = await createPublicReadClient()
-    const { data } = await supabase.from('categories').select('*').order('name').retry(false).abortSignal(signal)
+    const { data } = await supabase
+      .from('categories')
+      .select('*')
+      .order('name')
+      .retry(false)
+      .abortSignal(signal)
+      .throwOnError()
     return data ?? []
   })
 }
@@ -265,7 +271,14 @@ export async function getCategoryBySlug(slug: string): Promise<Category | null> 
   return readWithFallback(publicMockCategories.find(c => c.slug === slug) ?? null, async (signal) => {
     const { createPublicReadClient } = await import('./supabase/server')
     const supabase = await createPublicReadClient()
-    const { data } = await supabase.from('categories').select('*').eq('slug', slug).retry(false).abortSignal(signal).single()
+    const { data } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('slug', slug)
+      .retry(false)
+      .abortSignal(signal)
+      .throwOnError()
+      .single()
     return data
   })
 }
@@ -369,6 +382,7 @@ export async function getPrompts(options?: {
         .eq('slug', options.categorySlug)
         .retry(false)
         .abortSignal(signal)
+        .throwOnError()
         .single()
       if (cat) query = query.eq('category_id', cat.id)
     }
@@ -386,7 +400,10 @@ export async function getPrompts(options?: {
     } else {
       query = query.order('created_at', { ascending: false })
     }
-    const { data } = await query.retry(false).abortSignal(signal)
+    const { data } = await query
+      .retry(false)
+      .abortSignal(signal)
+      .throwOnError()
     const filtered = (data ?? []).filter(isPublicLibraryPrompt).map(normalizeProjectPresentation)
     const merged = mergeWithPublicMockPrompts(filtered, options)
     return options?.limit ? merged.slice(0, options.limit) : merged
@@ -422,6 +439,7 @@ export async function getPromptById(id: string): Promise<PromptWithRelations | n
       .eq('id', resolvedId)
       .retry(false)
       .abortSignal(signal)
+      .throwOnError()
       .maybeSingle()
 
     if (!data) return fallback
@@ -439,6 +457,7 @@ export async function getPromptById(id: string): Promise<PromptWithRelations | n
       .eq('id', user.id)
       .retry(false)
       .abortSignal(signal)
+      .throwOnError()
       .maybeSingle()
 
     if (profile?.role === 'admin') return normalizeProjectPresentation(data)
@@ -471,6 +490,7 @@ export async function getProfileByUsername(username: string): Promise<Profile | 
       .ilike('username', username.replace(/[\\%_]/g, (character) => `\\${character}`))
       .retry(false)
       .abortSignal(signal)
+      .throwOnError()
       .single()
     return data ? data as Profile : fallback
   })
@@ -731,6 +751,7 @@ export async function getProjectsByAuthor(authorId: string, username?: string): 
       .order('created_at', { ascending: false })
       .retry(false)
       .abortSignal(signal)
+      .throwOnError()
     const dbProjects = (data ?? []).filter(isPublicLibraryPrompt).map(normalizeProjectPresentation)
     const seen = new Set(dbProjects.map(prompt => prompt.id))
     return [...dbProjects, ...fallback.filter(prompt => !seen.has(prompt.id))]
@@ -758,6 +779,7 @@ export async function getAuthorStats(authorId: string, username?: string) {
       .eq('status', 'approved')
       .retry(false)
       .abortSignal(signal)
+      .throwOnError()
 
     const dbItems = (prompts ?? []).filter(isPublicLibraryPrompt)
     const seen = new Set(dbItems.map(prompt => prompt.id))
@@ -880,8 +902,22 @@ export async function getUserVotesAndBookmarks(promptIds: string[]): Promise<{ v
     if (!user) return { votes: new Set(), bookmarks: new Set() }
 
     const [votesRes, bookmarksRes] = await Promise.all([
-      supabase.from('votes').select('prompt_id').eq('user_id', user.id).in('prompt_id', persistablePromptIds).retry(false).abortSignal(signal),
-      supabase.from('bookmarks').select('prompt_id').eq('user_id', user.id).in('prompt_id', persistablePromptIds).retry(false).abortSignal(signal),
+      supabase
+        .from('votes')
+        .select('prompt_id')
+        .eq('user_id', user.id)
+        .in('prompt_id', persistablePromptIds)
+        .retry(false)
+        .abortSignal(signal)
+        .throwOnError(),
+      supabase
+        .from('bookmarks')
+        .select('prompt_id')
+        .eq('user_id', user.id)
+        .in('prompt_id', persistablePromptIds)
+        .retry(false)
+        .abortSignal(signal)
+        .throwOnError(),
     ])
 
     return {

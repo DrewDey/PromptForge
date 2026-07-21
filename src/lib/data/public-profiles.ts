@@ -106,6 +106,7 @@ export async function getPublicProfileByUsername(username: string): Promise<Prof
       .ilike('username', username.replace(/[\\%_]/g, (character) => `\\${character}`))
       .retry(false)
       .abortSignal(signal)
+      .throwOnError()
       .single()
     return data ? data as Profile : fallback
   })
@@ -127,6 +128,7 @@ export async function getPublicProjectsByAuthor(
       .order('created_at', { ascending: false })
       .retry(false)
       .abortSignal(signal)
+      .throwOnError()
     const databaseProjects = (data ?? [])
       .filter(isPublicLibraryProject)
       .map((project) => normalizeProjectPresentation(project as PromptWithRelations))

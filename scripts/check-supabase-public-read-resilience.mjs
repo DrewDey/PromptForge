@@ -4,6 +4,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import ts from 'typescript'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const read = (relativePath) => readFileSync(path.join(root, relativePath), 'utf8')
@@ -11,8 +12,8 @@ const read = (relativePath) => readFileSync(path.join(root, relativePath), 'utf8
 const shared = read('src/lib/data/shared.ts')
 const server = read('src/lib/supabase/server.ts')
 const dataSources = [
-  read('src/lib/data.ts'),
-  read('src/lib/data/public-profiles.ts'),
+  ['src/lib/data.ts', read('src/lib/data.ts')],
+  ['src/lib/data/public-profiles.ts', read('src/lib/data/public-profiles.ts')],
 ]
 const packageJson = read('package.json')
 
@@ -45,48 +46,144 @@ assert.match(
   'the auth/write client must retain its existing default retry behavior',
 )
 
-let fallbackReadCount = 0
-for (const source of dataSources) {
-  const reads = source.match(/readWithFallback\(/g) ?? []
-  const signalCallbacks = source.match(/async \(signal\) => \{/g) ?? []
-  const publicClients = source.match(/createPublicReadClient\(\)/g) ?? []
-  fallbackReadCount += reads.length
-
-  assert.equal(
-    signalCallbacks.length,
-    reads.length,
-    'every fallback read must accept the shared abort signal',
-  )
-  assert.equal(
-    publicClients.length,
-    reads.length,
-    'every fallback read must use the no-retry public client',
-  )
-  assert.doesNotMatch(
-    source,
-    /readWithFallback\([\s\S]{0,200}?async \(\) =>/,
-    'fallback reads must not discard the abort signal',
-  )
+function functionBody(sourceFile, name) {
+  let body = null
+  sourceFile.forEachChild((node) => {
+    if (ts.isFunctionDeclaration(node) && node.name?.text === name && node.body) {
+      body = node.body.getText(sourceFile)
+    }
+  })
+  assert.ok(body, `expected ${name} function body`)
+  return body
 }
 
-const abortSignalCount = dataSources.reduce(
-  (total, source) => total + (source.match(/\.abortSignal\(signal\)/g) ?? []).length,
-  0,
-)
+let fallbackReadCount = 0
+let abortSignalCount = 0
+let explicitlyInspectedErrorCount = 0
+for (const [fileName, source] of dataSources) {
+  const sourceFile = ts.createSourceFile(
+    fileName,
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS,
+  )
+
+  function visit(node) {
+    if (
+      ts.isCallExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === 'readWithFallback'
+    ) {
+      fallbackReadCount += 1
+      const callback = node.arguments[1]
+      assert.ok(
+        callback && ts.isArrowFunction(callback),
+        `${fileName}: fallback read must use an arrow-function callback`,
+      )
+      assert.equal(
+        callback.parameters[0]?.name.getText(sourceFile),
+        'signal',
+        `${fileName}: fallback read must accept the shared abort signal`,
+      )
+
+      const callbackSource = callback.body.getText(sourceFile)
+      assert.match(
+        callbackSource,
+        /createPublicReadClient\(\)/,
+        `${fileName}: fallback read must use the scoped public-read client`,
+      )
+      const callbackAbortCount = (callbackSource.match(/\.abortSignal\(signal\)/g) ?? []).length
+      const callbackRetryCount = (callbackSource.match(/\.retry\(false\)/g) ?? []).length
+      const callbackThrowCount = (callbackSource.match(/\.throwOnError\(\)/g) ?? []).length
+      const inspectsForkCompatibilityError = (
+        callbackSource.includes('if (forkColumnsMissing(error)) return fallbackForks') &&
+        callbackSource.includes('if (error) throw error')
+      )
+      const callbackInspectedErrorCount = inspectsForkCompatibilityError ? 1 : 0
+      assert.ok(
+        callbackAbortCount > 0,
+        `${fileName}: fallback read must abort at least one PostgREST query`,
+      )
+      assert.equal(
+        callbackRetryCount,
+        callbackAbortCount,
+        `${fileName}: every abortable fallback query must disable PostgREST retries`,
+      )
+      assert.equal(
+        callbackThrowCount + callbackInspectedErrorCount,
+        callbackAbortCount,
+        `${fileName}: every abortable fallback query must reject or explicitly inspect fast PostgREST errors`,
+      )
+      if (!inspectsForkCompatibilityError) {
+        assert.doesNotMatch(
+          callbackSource,
+          /\.abortSignal\(signal\)(?!\s*\.throwOnError\(\))/,
+          `${fileName}: throwOnError must be chained directly after every abort signal`,
+        )
+      }
+      abortSignalCount += callbackAbortCount
+      explicitlyInspectedErrorCount += callbackInspectedErrorCount
+    }
+    ts.forEachChild(node, visit)
+  }
+  visit(sourceFile)
+
+  if (fileName === 'src/lib/data.ts') {
+    const categories = functionBody(sourceFile, 'getCategories')
+    assert.match(categories, /\.from\('categories'\)/)
+    assert.match(categories, /\.abortSignal\(signal\)\s*\.throwOnError\(\)/)
+    assert.match(categories, /return data \?\? \[\]/)
+
+    const prompts = functionBody(sourceFile, 'getPrompts')
+    assert.match(
+      prompts,
+      /if \(options\?\.categorySlug\) \{[\s\S]*?\.from\('categories'\)[\s\S]*?\.abortSignal\(signal\)\s*\.throwOnError\(\)[\s\S]*?if \(cat\) query = query\.eq\('category_id', cat\.id\)/,
+      'category-filter lookup errors must reject the whole read so curated filtering wins',
+    )
+
+    const forks = functionBody(sourceFile, 'getApprovedProjectForks')
+    assert.match(
+      forks,
+      /\.abortSignal\(signal\)[\s\S]*?if \(forkColumnsMissing\(error\)\) return fallbackForks[\s\S]*?if \(error\) throw error/,
+      'fork reads must preserve the missing-column compatibility fallback before throwing other errors',
+    )
+    assert.doesNotMatch(
+      forks,
+      /\.abortSignal\(signal\)\s*\.throwOnError\(\)/,
+      'fork reads must inspect resolved errors so missing-column compatibility remains reachable',
+    )
+  }
+}
+
 const disabledRetryCount = dataSources.reduce(
-  (total, source) => total + (source.match(/\.retry\(false\)/g) ?? []).length,
+  (total, [, source]) => total + (source.match(/\.retry\(false\)/g) ?? []).length,
   0,
 )
-assert.ok(fallbackReadCount > 0, 'expected checked public fallback reads')
-assert.ok(
-  abortSignalCount >= fallbackReadCount,
-  'every fallback read must abort at least one PostgREST query',
+const thrownErrorCount = dataSources.reduce(
+  (total, [, source]) => total + (source.match(/\.throwOnError\(\)/g) ?? []).length,
+  0,
+)
+const sourceAbortSignalCount = dataSources.reduce(
+  (total, [, source]) => total + (source.match(/\.abortSignal\(signal\)/g) ?? []).length,
+  0,
+)
+assert.equal(
+  abortSignalCount,
+  sourceAbortSignalCount,
+  'all abortable public reads must live inside checked fallback callbacks',
+)
+assert.equal(
+  thrownErrorCount + explicitlyInspectedErrorCount,
+  abortSignalCount,
+  'every abortable fallback query must reject or explicitly inspect fast PostgREST errors',
 )
 assert.equal(
   disabledRetryCount,
   abortSignalCount,
   'every abortable fallback query must explicitly disable PostgREST retries',
 )
+assert.ok(fallbackReadCount > 0, 'expected checked public fallback reads')
 assert.match(
   packageJson,
   /"prebuild": "[^"]*npm run check:supabase-public-reads/,

@@ -92,6 +92,17 @@ function isExpectedLocalFaviconFailure(baseUrl, entry) {
   return request.origin === base.origin && request.pathname === '/favicon.ico'
 }
 
+function isExpectedLocalMissingArtifactFailure(baseUrl, entry) {
+  if (!/\b404\b/.test(entry?.text ?? '') || !entry?.url) return false
+  const base = new URL(baseUrl)
+  if (base.hostname !== 'localhost' && base.hostname !== '127.0.0.1') return false
+  const request = new URL(entry.url, base)
+  return (
+    request.origin === base.origin &&
+    request.pathname === '/qa/artifact-height-guards/missing'
+  )
+}
+
 async function waitForValue(client, sessionId, expression, predicate, label, timeoutMs = 12_000) {
   const deadline = Date.now() + timeoutMs
   let lastValue
@@ -211,6 +222,7 @@ const COMPARISON_SNAPSHOT_EXPRESSION = `(() => {
     measuredHeight: Number(frame?.dataset.artifactMeasuredHeight ?? Number.NaN),
     measuredWidth: Number(frame?.dataset.artifactMeasuredWidth ?? Number.NaN),
     renderedHeight: Number(frame?.dataset.artifactRenderedHeight ?? Number.NaN),
+    heightPending: frame?.dataset.artifactHeightPending === 'true',
     artifactReady: Boolean(frame?.querySelector('iframe[srcdoc]')),
     destinationHydrated: Boolean(
       artifact?.querySelector('[data-artifact-package-id] iframe[srcdoc], [data-artifact-load-error]')
@@ -512,6 +524,551 @@ async function verifyArtifactHeightGuardFixtures(client, sessionId, baseUrl) {
   }
 }
 
+function assertContinuousViewportSamples(label, transition, expectedAnchors, {
+  requirePending = true,
+  maxElapsedMs = 6_000,
+} = {}) {
+  if (!transition?.samples?.length) {
+    throw new Error(`${label} did not record any transition frames.`)
+  }
+  if (requirePending && !transition.samples.some((sample) => sample.heightPending)) {
+    throw new Error(`${label} never exposed the deliberately delayed pending state.`)
+  }
+  for (const sample of transition.samples) {
+    for (const [field, expected] of Object.entries(expectedAnchors)) {
+      assertNear(`${label} ${field} at ${sample.elapsed.toFixed(0)}ms`, sample[field], expected)
+    }
+  }
+  if (!transition.settled) {
+    throw new Error(
+      `${label} did not settle before the browser deadline. ` +
+      `Last frame: ${JSON.stringify(transition.final ?? null)}`,
+    )
+  }
+  if (transition.elapsed > maxElapsedMs) {
+    throw new Error(`${label} took ${transition.elapsed.toFixed(0)}ms to settle.`)
+  }
+}
+
+function assertDelayedPostPaintMeasurement(label, transition, artifactPath) {
+  const measuredSamples = transition.samples.filter((sample) => (
+    sample.artifactPath === artifactPath &&
+    Number.isFinite(sample.measuredHeight) &&
+    sample.measuredHeight > 0
+  ))
+  const firstMeasurement = measuredSamples[0]
+  const changedMeasurement = measuredSamples.find((sample) => (
+    Math.abs(sample.measuredHeight - firstMeasurement?.measuredHeight) >= 100
+  ))
+  if (!firstMeasurement || !changedMeasurement) {
+    throw new Error(`${label} did not expose the delayed post-paint height change.`)
+  }
+  if (!changedMeasurement.heightPending) {
+    throw new Error(`${label} released its pending state before the post-paint height change.`)
+  }
+  if ((transition.final?.frameHeight ?? 0) < 890) {
+    throw new Error(`${label} did not render the final post-paint artifact height.`)
+  }
+}
+
+async function positionQaSelectionControl(client, sessionId, packageId, label) {
+  return waitForValue(
+    client,
+    sessionId,
+    `(async () => {
+      const selector='[data-artifact-package-select="'+CSS.escape(${JSON.stringify(packageId)})+'"]';
+      const control=document.querySelector(selector);
+      if (!control) return null;
+      control.scrollIntoView({block:'center'});
+      await new Promise((resolve)=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+      const row=control.closest('[data-source-run-response-row]');
+      return {
+        controlTop: control.getBoundingClientRect().top,
+        rowTop: row?.getBoundingClientRect().top ?? null,
+        sourceRunPathTop: document.getElementById('source-run-path')?.getBoundingClientRect().top ?? null,
+      };
+    })()`,
+    (value) => (
+      Number.isFinite(value?.controlTop) &&
+      Number.isFinite(value?.rowTop) &&
+      Number.isFinite(value?.sourceRunPathTop)
+    ),
+    label,
+  )
+}
+
+async function sampleQaSelectionTransition(
+  client,
+  sessionId,
+  { packageId, artifactPath, expectedFitMode, label },
+) {
+  const { result } = await withTimeout(
+    label,
+    8_000,
+    () => client.send('Runtime.evaluate', {
+      expression: `(async () => {
+        const packageId=${JSON.stringify(packageId)};
+        const artifactPath=${JSON.stringify(artifactPath)};
+        const expectedFitMode=${JSON.stringify(expectedFitMode)};
+        const selector='[data-artifact-package-select="'+CSS.escape(packageId)+'"]';
+        const initialControl=document.querySelector(selector);
+        const initialRow=initialControl?.closest('[data-source-run-response-row]');
+        if (!initialControl || !initialRow) return {error:'missing-control', samples:[]};
+        const initial={
+          controlTop: initialControl.getBoundingClientRect().top,
+          rowTop: initialRow.getBoundingClientRect().top,
+          sourceRunPathTop: document.getElementById('source-run-path')?.getBoundingClientRect().top ?? null,
+          frameHeight: document.querySelector('[data-artifact-package-id]')?.getBoundingClientRect().height ?? null,
+        };
+        const samples=[];
+        const startedAt=performance.now();
+        let settledFrames=0;
+        initialControl.click();
+        while (performance.now()-startedAt < 7_000) {
+          await new Promise((resolve)=>requestAnimationFrame(resolve));
+          const control=document.querySelector(selector);
+          const row=control?.closest('[data-source-run-response-row]');
+          const frame=document.querySelector('[data-artifact-package-id]');
+          const fitMode=frame?.dataset.artifactFitMode ?? '';
+          const heightGuard=frame?.dataset.artifactHeightGuard ?? '';
+          const heightPending=frame?.dataset.artifactHeightPending === 'true';
+          const settled=Boolean(
+            frame?.dataset.artifactPackageId === packageId &&
+            frame?.dataset.artifactPath === artifactPath &&
+            !heightPending &&
+            (fitMode === expectedFitMode || (!expectedFitMode && (
+              fitMode === 'native' || fitMode === 'scaled' || fitMode === 'blocked' || heightGuard !== 'none'
+            )))
+          );
+          samples.push({
+            elapsed: performance.now()-startedAt,
+            controlTop: control?.getBoundingClientRect().top ?? null,
+            rowTop: row?.getBoundingClientRect().top ?? null,
+            sourceRunPathTop: document.getElementById('source-run-path')?.getBoundingClientRect().top ?? null,
+            frameHeight: frame?.getBoundingClientRect().height ?? null,
+            artifactPath: frame?.dataset.artifactPath ?? '',
+            heightPending,
+            fitMode,
+            heightGuard,
+            measuredHeight: Number(frame?.dataset.artifactMeasuredHeight ?? Number.NaN),
+            measuredWidth: Number(frame?.dataset.artifactMeasuredWidth ?? Number.NaN),
+            loadError: frame?.querySelector('[data-artifact-load-error]')?.getAttribute('data-artifact-load-error') ?? '',
+          });
+          settledFrames=settled ? settledFrames+1 : 0;
+          if (settledFrames >= 3) {
+            return {
+              initial,
+              samples,
+              settled:true,
+              elapsed:performance.now()-startedAt,
+              final:samples.at(-1),
+            };
+          }
+        }
+        return {
+          initial,
+          samples,
+          settled:false,
+          elapsed:performance.now()-startedAt,
+          final:samples.at(-1),
+        };
+      })()`,
+      returnByValue: true,
+      awaitPromise: true,
+    }, sessionId),
+  )
+  return result.value
+}
+
+async function sampleQaRapidReturnTransition(
+  client,
+  sessionId,
+  { packageId, slowPackageId, artifactPath, expectedFitMode, label },
+) {
+  const { result } = await withTimeout(
+    label,
+    8_000,
+    () => client.send('Runtime.evaluate', {
+      expression: `(async () => {
+        const packageId=${JSON.stringify(packageId)};
+        const slowPackageId=${JSON.stringify(slowPackageId)};
+        const artifactPath=${JSON.stringify(artifactPath)};
+        const expectedFitMode=${JSON.stringify(expectedFitMode)};
+        const selector='[data-artifact-package-select="'+CSS.escape(packageId)+'"]';
+        const slowSelector='[data-artifact-package-select="'+CSS.escape(slowPackageId)+'"]';
+        const initialControl=document.querySelector(selector);
+        const slowControl=document.querySelector(slowSelector);
+        if (!initialControl || !slowControl) return {error:'missing-rapid-return-control', samples:[]};
+
+        slowControl.click();
+        let intermediateSeen=false;
+        const intermediateStartedAt=performance.now();
+        while (performance.now()-intermediateStartedAt < 1_500) {
+          await new Promise((resolve)=>requestAnimationFrame(resolve));
+          const frame=document.querySelector('[data-artifact-package-id]');
+          if (
+            frame?.dataset.artifactPackageId === slowPackageId &&
+            frame.dataset.artifactHeightPending === 'true' &&
+            frame.dataset.artifactFitMode === 'loading'
+          ) {
+            intermediateSeen=true;
+            break;
+          }
+        }
+        if (!intermediateSeen) return {error:'slow-intermediate-did-not-mount', samples:[]};
+
+        const initialRow=initialControl.closest('[data-source-run-response-row]');
+        const initial={
+          controlTop:initialControl.getBoundingClientRect().top,
+          rowTop:initialRow?.getBoundingClientRect().top ?? null,
+          sourceRunPathTop:document.getElementById('source-run-path')?.getBoundingClientRect().top ?? null,
+          frameHeight:document.querySelector('[data-artifact-package-id]')?.getBoundingClientRect().height ?? null,
+        };
+        const samples=[];
+        const startedAt=performance.now();
+        let settledFrames=0;
+        initialControl.click();
+        while (performance.now()-startedAt < 7_000) {
+          await new Promise((resolve)=>requestAnimationFrame(resolve));
+          const control=document.querySelector(selector);
+          const row=control?.closest('[data-source-run-response-row]');
+          const frame=document.querySelector('[data-artifact-package-id]');
+          const fitMode=frame?.dataset.artifactFitMode ?? '';
+          const heightGuard=frame?.dataset.artifactHeightGuard ?? '';
+          const heightPending=frame?.dataset.artifactHeightPending === 'true';
+          const settled=Boolean(
+            frame?.dataset.artifactPackageId === packageId &&
+            frame?.dataset.artifactPath === artifactPath &&
+            !heightPending &&
+            (fitMode === expectedFitMode || (!expectedFitMode && (
+              fitMode === 'native' || fitMode === 'scaled' || fitMode === 'blocked' || heightGuard !== 'none'
+            )))
+          );
+          samples.push({
+            elapsed:performance.now()-startedAt,
+            controlTop:control?.getBoundingClientRect().top ?? null,
+            rowTop:row?.getBoundingClientRect().top ?? null,
+            sourceRunPathTop:document.getElementById('source-run-path')?.getBoundingClientRect().top ?? null,
+            frameHeight:frame?.getBoundingClientRect().height ?? null,
+            artifactPath:frame?.dataset.artifactPath ?? '',
+            heightPending,
+            fitMode,
+            heightGuard,
+            measuredHeight:Number(frame?.dataset.artifactMeasuredHeight ?? Number.NaN),
+            loadError:frame?.querySelector('[data-artifact-load-error]')?.getAttribute('data-artifact-load-error') ?? '',
+          });
+          settledFrames=settled ? settledFrames+1 : 0;
+          if (settledFrames >= 3) {
+            return {
+              initial,
+              samples,
+              settled:true,
+              intermediateSeen,
+              elapsed:performance.now()-startedAt,
+              final:samples.at(-1),
+            };
+          }
+        }
+        return {
+          initial,
+          samples,
+          settled:false,
+          intermediateSeen,
+          elapsed:performance.now()-startedAt,
+          final:samples.at(-1),
+        };
+      })()`,
+      returnByValue: true,
+      awaitPromise: true,
+    }, sessionId),
+  )
+  return result.value
+}
+
+async function sampleQaRouteTransition(
+  client,
+  sessionId,
+  { runId, artifactPath, expectedFitMode, label },
+) {
+  const { result } = await withTimeout(
+    label,
+    8_000,
+    () => client.send('Runtime.evaluate', {
+      expression: `(async () => {
+        const runId=${JSON.stringify(runId)};
+        const artifactPath=${JSON.stringify(artifactPath)};
+        const expectedFitMode=${JSON.stringify(expectedFitMode)};
+        const link=document.querySelector('[data-qa-route-run="'+CSS.escape(runId)+'"] [data-model-variant-view]');
+        const artifact=document.getElementById('final-result');
+        if (!link || !artifact) return {error:'missing-route-control', samples:[]};
+        const initial={
+          packageId:document.querySelector('[data-artifact-package-id]')?.dataset.artifactPackageId ?? '',
+          artifactTop:artifact.getBoundingClientRect().top,
+          sourceRunPathTop:document.getElementById('source-run-path')?.getBoundingClientRect().top ?? null,
+          scrollY:window.scrollY,
+          frameHeight:document.querySelector('[data-artifact-package-id]')?.getBoundingClientRect().height ?? null,
+        };
+        const samples=[];
+        const startedAt=performance.now();
+        let settledFrames=0;
+        link.click();
+        while (performance.now()-startedAt < 7_000) {
+          await new Promise((resolve)=>requestAnimationFrame(resolve));
+          const currentArtifact=document.getElementById('final-result');
+          const sourceRunPath=document.getElementById('source-run-path');
+          const frame=currentArtifact?.querySelector('[data-artifact-package-id]');
+          const fitMode=frame?.dataset.artifactFitMode ?? '';
+          const heightGuard=frame?.dataset.artifactHeightGuard ?? '';
+          const heightPending=frame?.dataset.artifactHeightPending === 'true';
+          const settled=Boolean(
+            new URLSearchParams(location.search).get('run') === runId &&
+            frame?.dataset.artifactPath === artifactPath &&
+            !heightPending &&
+            (fitMode === expectedFitMode || (!expectedFitMode && (
+              fitMode === 'native' || fitMode === 'scaled' || fitMode === 'blocked' || heightGuard !== 'none'
+            )))
+          );
+          samples.push({
+            elapsed:performance.now()-startedAt,
+            artifactTop:currentArtifact?.getBoundingClientRect().top ?? null,
+            sourceRunPathTop:sourceRunPath?.getBoundingClientRect().top ?? null,
+            scrollY:window.scrollY,
+            frameHeight:frame?.getBoundingClientRect().height ?? null,
+            packageId:frame?.dataset.artifactPackageId ?? '',
+            artifactPath:frame?.dataset.artifactPath ?? '',
+            heightPending,
+            fitMode,
+            measuredHeight: Number(frame?.dataset.artifactMeasuredHeight ?? Number.NaN),
+            loadError:frame?.querySelector('[data-artifact-load-error]')?.getAttribute('data-artifact-load-error') ?? '',
+          });
+          settledFrames=settled ? settledFrames+1 : 0;
+          if (settledFrames >= 3) {
+            return {
+              initial,
+              samples,
+              settled:true,
+              elapsed:performance.now()-startedAt,
+              final:samples.at(-1),
+            };
+          }
+        }
+        return {
+          initial,
+          samples,
+          settled:false,
+          elapsed:performance.now()-startedAt,
+          final:samples.at(-1),
+        };
+      })()`,
+      returnByValue: true,
+      awaitPromise: true,
+    }, sessionId),
+  )
+  return result.value
+}
+
+async function verifyPendingArtifactViewportFixtures(client, sessionId, baseUrl, viewport) {
+  await client.send('Emulation.setDeviceMetricsOverride', {
+    width: viewport.width,
+    height: viewport.height,
+    deviceScaleFactor: 1,
+    mobile: viewport.mobile,
+  }, sessionId)
+
+  await navigateRaw(client, sessionId, `${baseUrl}/qa/artifact-height-guards?case=pending`)
+  const initialSelection = await waitForValue(
+    client,
+    sessionId,
+    COMPARISON_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.artifactPath === '/qa/artifact-height-guards/tall' &&
+      value.fitMode === 'native' &&
+      !value.heightPending &&
+      value.frame?.height >= 1_490
+    ),
+    `${viewport.label} tall selection fixture`,
+  )
+
+  await positionQaSelectionControl(
+    client,
+    sessionId,
+    'qa-pending:delayed',
+    `${viewport.label} delayed selection control`,
+  )
+  const delayedSelection = await sampleQaSelectionTransition(client, sessionId, {
+    packageId: 'qa-pending:delayed',
+    artifactPath: '/qa/artifact-height-guards/delayed',
+    expectedFitMode: 'native',
+    label: `${viewport.label} delayed same-page selection`,
+  })
+  assertContinuousViewportSamples(
+    `${viewport.label} delayed same-page selection`,
+    delayedSelection,
+    {
+      controlTop: delayedSelection.initial?.controlTop,
+      rowTop: delayedSelection.initial?.rowTop,
+      sourceRunPathTop: delayedSelection.initial?.sourceRunPathTop,
+    },
+  )
+  assertDelayedPostPaintMeasurement(
+    `${viewport.label} delayed same-page selection`,
+    delayedSelection,
+    '/qa/artifact-height-guards/delayed',
+  )
+  if (Math.abs(delayedSelection.final.frameHeight - initialSelection.frame.height) < 500) {
+    throw new Error(`${viewport.label} delayed fixture did not exercise a material height contraction.`)
+  }
+
+  await positionQaSelectionControl(
+    client,
+    sessionId,
+    'qa-pending:remount',
+    `${viewport.label} remount selection control`,
+  )
+  const remountSelection = await sampleQaSelectionTransition(client, sessionId, {
+    packageId: 'qa-pending:remount',
+    artifactPath: '/qa/artifact-height-guards/remount',
+    expectedFitMode: 'native',
+    label: `${viewport.label} initial remount selection`,
+  })
+  assertContinuousViewportSamples(
+    `${viewport.label} initial remount selection`,
+    remountSelection,
+    {
+      controlTop: remountSelection.initial?.controlTop,
+      rowTop: remountSelection.initial?.rowTop,
+      sourceRunPathTop: remountSelection.initial?.sourceRunPathTop,
+    },
+  )
+  assertDelayedPostPaintMeasurement(
+    `${viewport.label} initial remount selection`,
+    remountSelection,
+    '/qa/artifact-height-guards/remount',
+  )
+
+  const rapidReturn = await sampleQaRapidReturnTransition(client, sessionId, {
+    packageId: 'qa-pending:remount',
+    slowPackageId: 'qa-pending:slow',
+    artifactPath: '/qa/artifact-height-guards/remount',
+    expectedFitMode: 'native',
+    label: `${viewport.label} rapid remount return`,
+  })
+  assertContinuousViewportSamples(
+    `${viewport.label} rapid remount return`,
+    rapidReturn,
+    {
+      controlTop: rapidReturn.initial?.controlTop,
+      rowTop: rapidReturn.initial?.rowTop,
+      sourceRunPathTop: rapidReturn.initial?.sourceRunPathTop,
+    },
+  )
+  assertDelayedPostPaintMeasurement(
+    `${viewport.label} rapid remount return`,
+    rapidReturn,
+    '/qa/artifact-height-guards/remount',
+  )
+  if (!rapidReturn.intermediateSeen || (rapidReturn.final?.frameHeight ?? 0) < 1_090) {
+    throw new Error(`${viewport.label} rapid remount return did not prove a fresh document generation.`)
+  }
+
+  await positionQaSelectionControl(
+    client,
+    sessionId,
+    'qa-pending:missing',
+    `${viewport.label} missing selection control`,
+  )
+  const missingSelection = await sampleQaSelectionTransition(client, sessionId, {
+    packageId: 'qa-pending:missing',
+    artifactPath: '/qa/artifact-height-guards/missing',
+    expectedFitMode: 'blocked',
+    label: `${viewport.label} missing same-page selection`,
+  })
+  assertContinuousViewportSamples(
+    `${viewport.label} missing same-page selection`,
+    missingSelection,
+    {
+      controlTop: missingSelection.initial?.controlTop,
+      rowTop: missingSelection.initial?.rowTop,
+      sourceRunPathTop: missingSelection.initial?.sourceRunPathTop,
+    },
+    { requirePending: false, maxElapsedMs: 2_000 },
+  )
+  if (!missingSelection.final.loadError) {
+    throw new Error(`${viewport.label} missing selection did not render a protected load error.`)
+  }
+
+  await navigateRaw(client, sessionId, `${baseUrl}/qa/artifact-height-guards?case=route&run=tall`)
+  await waitForValue(
+    client,
+    sessionId,
+    COMPARISON_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.artifactPath === '/qa/artifact-height-guards/tall' &&
+      value.fitMode === 'native' &&
+      !value.heightPending &&
+      value.viewControlsHydrated
+    ),
+    `${viewport.label} tall route fixture`,
+  )
+  await waitForValue(
+    client,
+    sessionId,
+    `(() => {
+      const sourceRunPath=document.getElementById('source-run-path');
+      if (!sourceRunPath) return null;
+      window.scrollTo(0, window.scrollY + sourceRunPath.getBoundingClientRect().top + 20);
+      const artifact=document.getElementById('final-result');
+      return {
+        sourceRunPathTop:sourceRunPath.getBoundingClientRect().top,
+        artifactBottom:artifact?.getBoundingClientRect().bottom ?? null,
+      };
+    })()`,
+    (value) => (
+      Math.abs((value?.sourceRunPathTop ?? Number.POSITIVE_INFINITY) + 20) <= 2 &&
+      (value?.artifactBottom ?? Number.POSITIVE_INFINITY) < 0
+    ),
+    `${viewport.label} deep pending route position`,
+  )
+  const delayedRoute = await sampleQaRouteTransition(client, sessionId, {
+    runId: 'delayed',
+    artifactPath: '/qa/artifact-height-guards/delayed',
+    expectedFitMode: 'native',
+    label: `${viewport.label} delayed model route`,
+  })
+  assertContinuousViewportSamples(
+    `${viewport.label} delayed model route`,
+    delayedRoute,
+    { sourceRunPathTop: delayedRoute.initial?.sourceRunPathTop },
+  )
+  assertDelayedPostPaintMeasurement(
+    `${viewport.label} delayed model route`,
+    delayedRoute,
+    '/qa/artifact-height-guards/delayed',
+  )
+  if (
+    delayedRoute.initial?.packageId !== 'artifact-height-route:shared' ||
+    delayedRoute.final?.packageId !== delayedRoute.initial.packageId
+  ) {
+    throw new Error(`${viewport.label} delayed model route did not exercise shared package IDs.`)
+  }
+
+  const missingRoute = await sampleQaRouteTransition(client, sessionId, {
+    runId: 'missing',
+    artifactPath: '/qa/artifact-height-guards/missing',
+    expectedFitMode: 'blocked',
+    label: `${viewport.label} missing model route`,
+  })
+  assertContinuousViewportSamples(
+    `${viewport.label} missing model route`,
+    missingRoute,
+    { sourceRunPathTop: missingRoute.initial?.sourceRunPathTop },
+    { requirePending: false, maxElapsedMs: 2_000 },
+  )
+  if (!missingRoute.final.loadError) {
+    throw new Error(`${viewport.label} missing model route did not render a protected load error.`)
+  }
+}
+
 async function positionArtifact(client, sessionId, desiredTop) {
   await client.send('Runtime.evaluate', {
     expression: `(() => {
@@ -614,6 +1171,13 @@ async function clickVisibleControl(client, sessionId, selector, label) {
 }
 
 async function settledComparisonSnapshot(client, sessionId, settleMs = 1_800) {
+  await waitForValue(
+    client,
+    sessionId,
+    COMPARISON_SNAPSHOT_EXPRESSION,
+    (value) => Boolean(value?.destinationHydrated && !value.heightPending),
+    'comparison artifact measurement quiet window',
+  )
   await withTimeout(
     'comparison settle delay',
     settleMs + CDP_COMMAND_TIMEOUT_MS,
@@ -1288,6 +1852,7 @@ async function main() {
       if (message.method === 'Log.entryAdded' && message.params.entry?.level === 'error') {
         if (isExpectedLocalActivationFailure(baseUrl, message.params.entry)) return
         if (isExpectedLocalFaviconFailure(baseUrl, message.params.entry)) return
+        if (isExpectedLocalMissingArtifactFailure(baseUrl, message.params.entry)) return
         consoleErrors.push([
           message.params.entry.text,
           message.params.entry.url ? `at ${message.params.entry.url}` : null,
@@ -1336,6 +1901,22 @@ async function main() {
         ))
         await runPhase('artifact height guard fixtures', SELECTOR_PHASE_TIMEOUT_MS, () => (
           verifyArtifactHeightGuardFixtures(client, sessionId, baseUrl)
+        ))
+        await runPhase('desktop pending viewport anchoring', SELECTOR_PHASE_TIMEOUT_MS, () => (
+          verifyPendingArtifactViewportFixtures(client, sessionId, baseUrl, {
+            label: 'desktop pending viewport',
+            width: 1440,
+            height: 1000,
+            mobile: false,
+          })
+        ))
+        await runPhase('390px pending viewport anchoring', SELECTOR_PHASE_TIMEOUT_MS, () => (
+          verifyPendingArtifactViewportFixtures(client, sessionId, baseUrl, {
+            label: '390px pending viewport',
+            width: 390,
+            height: 844,
+            mobile: true,
+          })
         ))
 
         await runPhase('model selector and rapid artifact switch', SELECTOR_PHASE_TIMEOUT_MS, async () => {

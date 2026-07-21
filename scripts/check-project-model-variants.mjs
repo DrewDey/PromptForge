@@ -340,6 +340,10 @@ function validateUiWiring() {
   mustInclude('src/components/ModelComparisonPreviewLink.tsx', "kind: 'comparison-preview' | 'model-view'", 'comparison and model-view navigation must share one bounded viewport-restoration path')
   mustInclude('src/components/ModelComparisonPreviewLink.tsx', "anchorId: anchor?.id === 'source-run-path' ? 'source-run-path' : anchor ? 'final-result' : null", 'model-view navigation must choose the visible artifact or Build Path as its viewport anchor')
   mustInclude('src/components/ModelComparisonPreviewLink.tsx', 'window.scrollY + destinationAnchorTop - desiredPosition.anchorTop', 'model-view navigation must compensate for changing content height above the active viewport anchor')
+  mustInclude('src/components/ModelComparisonPreviewLink.tsx', "frame?.dataset.artifactHeightPending === 'true'", 'model-view navigation must observe the complete pending measurement interval')
+  mustInclude('src/components/ModelComparisonPreviewLink.tsx', "fitMode === 'blocked'", 'model-view navigation must settle promptly when protected artifact loading fails')
+  mustInclude('src/components/ModelComparisonPreviewLink.tsx', 'const heightStable = destinationSettled', 'model-view navigation must keep restoring until the destination frame height is stable')
+  mustInclude('src/components/ModelComparisonPreviewLink.tsx', 'stableFrames >= 2', 'model-view navigation must verify multiple stable frames before releasing the viewport anchor')
   mustInclude('src/components/PathForgeLabsModelRuns.tsx', 'Same exact brief, two model runs', 'comparison UI must explain invariant prompt parity')
 
   mustInclude('src/components/PreparedSourceRunPage.tsx', 'const usesModelVariants = Boolean(modelVariantSet && activeModelVariant)', 'prepared model pages must distinguish exact model-run branch scope')

@@ -50,6 +50,8 @@ function restoreComparisonScroll(
   const startedAt = window.performance.now()
   let animationFrame = 0
   let active = true
+  let previousFrameHeight: number | null = null
+  let stableFrames = 0
   const userInputEvents: Array<keyof WindowEventMap> = ['keydown', 'pointerdown', 'touchstart', 'wheel']
   const removeUserInputListeners = () => {
     for (const eventName of userInputEvents) {
@@ -77,8 +79,19 @@ function restoreComparisonScroll(
     if (!active) return
 
     const artifact = document.getElementById('final-result')
-    const destinationReady = Boolean(
-      artifact?.querySelector('[data-artifact-package-id] iframe[srcdoc], [data-artifact-load-error]'),
+    const frame = artifact?.querySelector<HTMLElement>('[data-artifact-package-id]')
+    const fitMode = frame?.dataset.artifactFitMode
+    const heightGuard = frame?.dataset.artifactHeightGuard
+    const heightPending = frame?.dataset.artifactHeightPending === 'true'
+    const destinationSettled = Boolean(
+      frame?.querySelector('iframe[srcdoc], [data-artifact-load-error]') &&
+      !heightPending &&
+      (
+        fitMode === 'native' ||
+        fitMode === 'scaled' ||
+        fitMode === 'blocked' ||
+        heightGuard !== 'none'
+      ),
     )
     const maxScrollY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
     const timedOut = window.performance.now() - startedAt >= SCROLL_RESTORE_TIMEOUT_MS
@@ -90,24 +103,37 @@ function restoreComparisonScroll(
       : desiredPosition.scrollY
     const desiredScrollY = Math.max(0, anchoredScrollY)
 
-    if ((destinationReady && maxScrollY >= desiredScrollY - 1) || timedOut) {
-      const restoredScrollY = Math.min(desiredScrollY, maxScrollY)
-      window.scrollTo(0, restoredScrollY)
-      const restoredAnchorTop = desiredPosition.anchorId
-        ? document.getElementById(desiredPosition.anchorId)?.getBoundingClientRect().top
-        : undefined
-      const anchorRestored = anchoredScrollY < 0 || desiredPosition.anchorTop === null || (
-        restoredAnchorTop !== undefined &&
-        Math.abs(restoredAnchorTop - desiredPosition.anchorTop) <= 1
+    const restoredScrollY = Math.min(desiredScrollY, maxScrollY)
+    window.scrollTo(0, restoredScrollY)
+    const restoredAnchorTop = desiredPosition.anchorId
+      ? document.getElementById(desiredPosition.anchorId)?.getBoundingClientRect().top
+      : undefined
+    const anchorConstrainedByBoundary = anchoredScrollY < 0 || desiredScrollY > maxScrollY
+    const anchorRestored = anchorConstrainedByBoundary || desiredPosition.anchorTop === null || (
+      restoredAnchorTop !== undefined &&
+      Math.abs(restoredAnchorTop - desiredPosition.anchorTop) <= 1
+    )
+    const frameHeight = frame?.getBoundingClientRect().height ?? null
+    const heightStable = destinationSettled && frameHeight !== null && previousFrameHeight !== null && (
+      Math.abs(frameHeight - previousFrameHeight) <= 1
+    )
+    stableFrames = heightStable ? stableFrames + 1 : 0
+    previousFrameHeight = frameHeight
+    if (
+      timedOut ||
+      (
+        destinationSettled &&
+        Math.abs(window.scrollY - restoredScrollY) <= 1 &&
+        anchorRestored &&
+        stableFrames >= 2
       )
-      if ((Math.abs(window.scrollY - restoredScrollY) <= 1 && anchorRestored) || timedOut) {
-        comparisonScrollPositions.set(destination, captureViewportPosition())
-        if (pendingComparisonScroll?.destination === destination) {
-          pendingComparisonScroll = null
-        }
-        cleanup()
-        return
+    ) {
+      comparisonScrollPositions.set(destination, captureViewportPosition())
+      if (pendingComparisonScroll?.destination === destination) {
+        pendingComparisonScroll = null
       }
+      cleanup()
+      return
     }
 
     animationFrame = window.requestAnimationFrame(restoreWhenReady)

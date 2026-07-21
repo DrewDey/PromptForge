@@ -202,6 +202,9 @@ const APPROVED_PROJECT_IDS = new Set([
   ...CURATED_SOURCE_RUN_SHOWCASE_PROJECTS.map((project) => project.id),
 ])
 const PUBLIC_LIBRARY_START_AT = '2026-05-28T00:00:00.000Z'
+const PUBLIC_PROMPT_LIST_MAX = 300
+const PUBLIC_PROMPT_LIST_SELECT =
+  '*, category:categories(*), author:profiles!prompts_author_id_fkey(*)'
 const publicMockPrompts = mockPrompts.filter((prompt) => APPROVED_PROJECT_IDS.has(prompt.id))
 const publicMockSteps = mockSteps.filter((step) => APPROVED_PROJECT_IDS.has(step.prompt_id))
 const publicMockCategories = mockCategories.map((category) => ({
@@ -367,7 +370,7 @@ export async function getPrompts(options?: {
     const supabase = await createPublicReadClient()
     let query = supabase
       .from('prompts')
-      .select('*, category:categories(*), author:profiles!prompts_author_id_fkey(*), steps:prompt_steps(*)')
+      .select(PUBLIC_PROMPT_LIST_SELECT)
 
     const status = options?.status ?? 'approved'
     if (status !== 'all') {
@@ -400,6 +403,7 @@ export async function getPrompts(options?: {
     } else {
       query = query.order('created_at', { ascending: false })
     }
+    query = query.limit(options?.limit ?? PUBLIC_PROMPT_LIST_MAX)
     const { data } = await query
       .retry(false)
       .abortSignal(signal)
@@ -745,10 +749,11 @@ export async function getProjectsByAuthor(authorId: string, username?: string): 
     const supabase = await createPublicReadClient()
     const { data } = await supabase
       .from('prompts')
-      .select('*, category:categories(*), author:profiles!prompts_author_id_fkey(*), steps:prompt_steps(*)')
+      .select(PUBLIC_PROMPT_LIST_SELECT)
       .eq('author_id', authorId)
       .eq('status', 'approved')
       .order('created_at', { ascending: false })
+      .limit(PUBLIC_PROMPT_LIST_MAX)
       .retry(false)
       .abortSignal(signal)
       .throwOnError()

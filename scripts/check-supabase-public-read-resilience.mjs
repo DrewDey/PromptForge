@@ -136,6 +136,16 @@ for (const [fileName, source] of dataSources) {
     assert.match(categories, /return data \?\? \[\]/)
 
     const prompts = functionBody(sourceFile, 'getPrompts')
+    assert.doesNotMatch(
+      prompts,
+      /steps:prompt_steps/,
+      'public project lists must not hydrate every prompt-step body',
+    )
+    assert.match(
+      prompts,
+      /query = query\.limit\(options\?\.limit \?\? PUBLIC_PROMPT_LIST_MAX\)/,
+      'public project lists must apply their bound inside PostgREST',
+    )
     assert.match(
       prompts,
       /if \(options\?\.categorySlug\) \{[\s\S]*?\.from\('categories'\)[\s\S]*?\.abortSignal\(signal\)\s*\.throwOnError\(\)[\s\S]*?if \(cat\) query = query\.eq\('category_id', cat\.id\)/,
@@ -152,6 +162,18 @@ for (const [fileName, source] of dataSources) {
       forks,
       /\.abortSignal\(signal\)\s*\.throwOnError\(\)/,
       'fork reads must inspect resolved errors so missing-column compatibility remains reachable',
+    )
+  } else if (fileName === 'src/lib/data/public-profiles.ts') {
+    const authorProjects = functionBody(sourceFile, 'getPublicProjectsByAuthor')
+    assert.doesNotMatch(
+      authorProjects,
+      /steps:prompt_steps/,
+      'public profile project lists must not hydrate every prompt-step body',
+    )
+    assert.match(
+      authorProjects,
+      /\.limit\(PUBLIC_PROFILE_PROJECT_LIST_MAX\)/,
+      'public profile project lists must remain database-bounded',
     )
   }
 }

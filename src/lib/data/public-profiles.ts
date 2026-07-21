@@ -16,6 +16,9 @@ import type {
 } from '../types'
 import { readWithFallback } from './shared'
 
+const PUBLIC_PROFILE_PROJECT_LIST_MAX = 300
+const PUBLIC_PROFILE_PROJECT_LIST_SELECT =
+  '*, category:categories(*), author:profiles!prompts_author_id_fkey(*)'
 const PUBLIC_LIBRARY_START_AT = '2026-05-28T00:00:00.000Z'
 
 function isPublicLibraryProject(project: { id: string; created_at?: string | null }) {
@@ -122,10 +125,11 @@ export async function getPublicProjectsByAuthor(
     const supabase = await createPublicReadClient()
     const { data } = await supabase
       .from('prompts')
-      .select('*, category:categories(*), author:profiles!prompts_author_id_fkey(*), steps:prompt_steps(*)')
+      .select(PUBLIC_PROFILE_PROJECT_LIST_SELECT)
       .eq('author_id', authorId)
       .eq('status', 'approved')
       .order('created_at', { ascending: false })
+      .limit(PUBLIC_PROFILE_PROJECT_LIST_MAX)
       .retry(false)
       .abortSignal(signal)
       .throwOnError()

@@ -3,6 +3,7 @@ import { CheckCircle2, ChevronDown } from 'lucide-react'
 import ModelComparisonPreviewLink, {
   ModelComparisonCurrentPreviewLink,
   ModelComparisonViewportManager,
+  ModelVariantViewLink,
 } from '@/components/ModelComparisonPreviewLink'
 import { ModelVariantKnownIssue } from '@/components/ModelVariantKnownIssue'
 import type {
@@ -126,6 +127,9 @@ export default function PathForgeLabsModelRuns({
       className="relative w-full lg:w-[340px] lg:shrink-0"
       data-model-variant-selector
     >
+      <ModelComparisonViewportManager
+        navigationKey={`${activeVariant.sourceRunId}:${compareSourceRunId ?? ''}`}
+      />
       <details
         key={`${activeVariant.sourceRunId}:${compareSourceRunId ?? ''}`}
         className="group relative"
@@ -224,14 +228,13 @@ export default function PathForgeLabsModelRuns({
                       </span>
                     ) : (
                       <div className="flex shrink-0 items-center gap-2">
-                        <Link
+                        <ModelVariantViewLink
                           href={viewRunHref(variantSet, variant)}
-                          aria-label={`View ${accessibleRunLabel(variant)}`}
+                          ariaLabel={`View ${accessibleRunLabel(variant)}`}
                           className="border border-brand-blue bg-brand-blue px-2.5 py-1.5 text-[11px] font-bold text-white hover:bg-brand-blue-dark"
-                          data-model-variant-view
                         >
                           View run
-                        </Link>
+                        </ModelVariantViewLink>
                         <Link
                           href={runHref(variantSet.canonicalRoute, activeVariant, variant)}
                           aria-label={`Compare ${accessibleRunLabel(activeVariant)} with ${accessibleRunLabel(variant)}`}
@@ -351,7 +354,6 @@ export function PathForgeLabsModelComparison({
 
   return (
     <section className="border-b border-brand-blue/20 bg-[#f4f8ff] px-4 py-7 sm:px-6 lg:px-8" data-model-variant-comparison-panel>
-      <ModelComparisonViewportManager />
       <div className="mx-auto max-w-7xl">
         <div className="mb-4 flex flex-wrap items-start justify-between gap-4 border-l-4 border-brand-blue pl-4">
           <div>

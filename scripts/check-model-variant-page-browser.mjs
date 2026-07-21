@@ -17,11 +17,26 @@ const BOOKING_ARTIFACT_BY_RUN = {
   c42eebed94a0395e: '/artifacts/booking-flow-handoff-simulator-chatgpt-gpt56-luna-final.html',
 }
 
+const CALMING_SLEEP_RUNS = {
+  claude: {
+    id: '5a9ad307-177d-4939-b3ed-cabecb236deb',
+    artifactPath: '/artifacts/sleep-sound-mixer-claude-fable-5-high-final.html',
+  },
+  chatgpt: {
+    id: 'cf73efd5-2fb6-48fe-a9fd-a1a0df336d18',
+    artifactPath: '/artifacts/sleep-sound-mixer-chatgpt-56-luna-extra-high.html',
+  },
+  gemini: {
+    id: '7d9524c0ede185b2',
+    artifactPath: '/artifacts/sleep-sound-mixer-gemini-31-pro-final.html',
+  },
+}
+
 const CDP_COMMAND_TIMEOUT_MS = 8_000
 const CHROME_BOOT_TIMEOUT_MS = 15_000
-const SELECTOR_PHASE_TIMEOUT_MS = 30_000
+const SELECTOR_PHASE_TIMEOUT_MS = 55_000
 const COMPARISON_PHASE_TIMEOUT_MS = 75_000
-const OVERALL_ASSERTION_TIMEOUT_MS = 165_000
+const OVERALL_ASSERTION_TIMEOUT_MS = 240_000
 
 function errorMessage(error) {
   return error instanceof Error ? error.message : String(error)
@@ -98,7 +113,7 @@ async function waitForValue(client, sessionId, expression, predicate, label, tim
   throw new Error(`${label} timed out; last value was ${JSON.stringify(lastValue)}.`)
 }
 
-async function navigate(client, sessionId, url) {
+async function navigateRaw(client, sessionId, url) {
   const loaded = client.waitFor('Page.loadEventFired', sessionId)
   await withTimeout(
     `navigation dispatch for ${url}`,
@@ -106,6 +121,10 @@ async function navigate(client, sessionId, url) {
     () => client.send('Page.navigate', { url }, sessionId),
   )
   await withTimeout(`page load for ${url}`, 15_000, () => loaded)
+}
+
+async function navigate(client, sessionId, url) {
+  await navigateRaw(client, sessionId, url)
   await waitForValue(
     client,
     sessionId,
@@ -135,10 +154,14 @@ const COMPARISON_SNAPSHOT_EXPRESSION = `(() => {
   const cards=[...document.querySelectorAll('[data-model-variant-comparison]')];
   const artifact=document.getElementById('final-result');
   const frame=document.querySelector('[data-artifact-package-id]');
+  const iframe=frame?.querySelector('iframe');
+  const sourceRunPath=document.getElementById('source-run-path');
   const selectorRows=[...document.querySelectorAll('[data-model-variant-run]')];
   const params=new URLSearchParams(location.search);
   const artifactRect=artifact?.getBoundingClientRect();
   const frameRect=frame?.getBoundingClientRect();
+  const iframeRect=iframe?.getBoundingClientRect();
+  const sourceRunPathRect=sourceRunPath?.getBoundingClientRect();
   return {
     cards: cards.map((card)=>({
       label: card.dataset.modelVariantComparison ?? '',
@@ -149,13 +172,26 @@ const COMPARISON_SNAPSHOT_EXPRESSION = `(() => {
     })),
     artifact: artifactRect ? {
       top: artifactRect.top,
+      bottom: artifactRect.bottom,
       width: artifactRect.width,
       height: artifactRect.height,
     } : null,
     frame: frameRect ? {
       top: frameRect.top,
+      bottom: frameRect.bottom,
       width: frameRect.width,
       height: frameRect.height,
+    } : null,
+    iframe: iframeRect ? {
+      top: iframeRect.top,
+      bottom: iframeRect.bottom,
+      width: iframeRect.width,
+      height: iframeRect.height,
+      scrolling: iframe?.getAttribute('scrolling') ?? '',
+    } : null,
+    sourceRunPath: sourceRunPathRect ? {
+      top: sourceRunPathRect.top,
+      bottom: sourceRunPathRect.bottom,
     } : null,
     hash: location.hash,
     historyLength: history.length,
@@ -168,6 +204,13 @@ const COMPARISON_SNAPSHOT_EXPRESSION = `(() => {
     selectorActiveId: selectorRows.find((row)=>row.querySelector('[aria-current="page"]'))?.dataset.modelVariantRun ?? '',
     packageId: frame?.dataset.artifactPackageId ?? '',
     artifactPath: frame?.dataset.artifactPath ?? '',
+    heightMode: frame?.dataset.artifactHeightMode ?? '',
+    heightGuard: frame?.dataset.artifactHeightGuard ?? '',
+    fitMode: frame?.dataset.artifactFitMode ?? '',
+    fitScale: Number(frame?.dataset.artifactScale ?? Number.NaN),
+    measuredHeight: Number(frame?.dataset.artifactMeasuredHeight ?? Number.NaN),
+    measuredWidth: Number(frame?.dataset.artifactMeasuredWidth ?? Number.NaN),
+    renderedHeight: Number(frame?.dataset.artifactRenderedHeight ?? Number.NaN),
     artifactReady: Boolean(frame?.querySelector('iframe[srcdoc]')),
     destinationHydrated: Boolean(
       artifact?.querySelector('[data-artifact-package-id] iframe[srcdoc], [data-artifact-load-error]')
@@ -175,12 +218,16 @@ const COMPARISON_SNAPSHOT_EXPRESSION = `(() => {
     controlsHydrated: Boolean(
       document.querySelector('[data-model-variant-preview-link][data-model-variant-preview-hydrated="true"]')
     ),
+    viewControlsHydrated: Boolean(
+      document.querySelector('[data-model-variant-view][data-model-variant-view-hydrated="true"]')
+    ),
+    documentHeight: document.documentElement.scrollHeight,
   };
 })()`
 
 function assertComparisonGeometry(label, before, after) {
   for (const region of ['artifact', 'frame']) {
-    for (const measurement of ['top', 'width', 'height']) {
+    for (const measurement of ['top', 'width']) {
       const delta = Math.abs(after?.[region]?.[measurement] - before?.[region]?.[measurement])
       if (!Number.isFinite(delta) || delta > 2) {
         throw new Error(
@@ -220,6 +267,247 @@ function assertComparisonTruth(label, snapshot, expected) {
   for (const [field, expectedValue] of Object.entries(expected)) {
     if (actual[field] !== expectedValue) {
       throw new Error(`${label} expected ${field}=${expectedValue}, received ${actual[field] ?? ''}.`)
+    }
+  }
+}
+
+function assertNear(label, actual, expected, tolerance = 2) {
+  const delta = Math.abs(actual - expected)
+  if (!Number.isFinite(delta) || delta > tolerance) {
+    throw new Error(
+      `${label} expected ${expected.toFixed(2)}, received ${Number.isFinite(actual) ? actual.toFixed(2) : 'an invalid value'}.`,
+    )
+  }
+}
+
+function assertNormalMeasuredArtifact(label, snapshot) {
+  if (snapshot.heightMode !== 'measured-content' || snapshot.heightGuard !== 'none') {
+    throw new Error(
+      `${label} expected unguarded measured-content height, received ${snapshot.heightMode}/${snapshot.heightGuard}.`,
+    )
+  }
+  if (!['native', 'scaled'].includes(snapshot.fitMode)) {
+    throw new Error(`${label} did not settle into a normal fit mode: ${snapshot.fitMode}.`)
+  }
+  if (!snapshot.artifactReady || !snapshot.frame || !snapshot.iframe) {
+    throw new Error(`${label} did not mount a ready protected artifact frame.`)
+  }
+
+  const expectedScale = Math.min(1, snapshot.frame.width / snapshot.measuredWidth)
+  const expectedHeight = Math.ceil(snapshot.measuredHeight * expectedScale)
+  assertNear(`${label} width-only fit scale`, snapshot.fitScale, expectedScale, 0.002)
+  assertNear(`${label} rendered-height marker`, snapshot.renderedHeight, expectedHeight)
+  assertNear(`${label} frame height`, snapshot.frame.height, expectedHeight)
+  assertNear(`${label} iframe bottom`, snapshot.iframe.bottom, snapshot.frame.bottom)
+  if (snapshot.iframe.scrolling !== 'no') {
+    throw new Error(`${label} unexpectedly enabled internal artifact scrolling.`)
+  }
+  if (snapshot.overflow > 1) {
+    throw new Error(`${label} introduced ${snapshot.overflow}px of page-level horizontal overflow.`)
+  }
+}
+
+function assertBuildPathAttachment(label, before, after) {
+  const beforeGap = before.sourceRunPath?.top - before.artifact?.bottom
+  const afterGap = after.sourceRunPath?.top - after.artifact?.bottom
+  assertNear(`${label} artifact-to-Build-Path gap`, afterGap, beforeGap)
+
+  const sourceRunDelta = after.sourceRunPath?.top - before.sourceRunPath?.top
+  const artifactBottomDelta = after.artifact?.bottom - before.artifact?.bottom
+  assertNear(`${label} Build Path movement`, sourceRunDelta, artifactBottomDelta)
+}
+
+function assertBuildPathViewportGeometry(label, before, after) {
+  assertNear(`${label} artifact width`, after.artifact?.width, before.artifact?.width)
+  assertNear(`${label} frame width`, after.frame?.width, before.frame?.width)
+  assertNear(
+    `${label} Build Path viewport anchor`,
+    after.sourceRunPath?.top,
+    before.sourceRunPath?.top,
+  )
+}
+
+async function openModelMenuAndClickRun(client, sessionId, runId, label) {
+  await clickVisibleControl(
+    client,
+    sessionId,
+    '[data-model-variant-selector] summary',
+    `${label} Change menu`,
+  )
+  const selector = `[data-model-variant-run="${runId}"] [data-model-variant-view]`
+  await waitForValue(
+    client,
+    sessionId,
+    `(() => {
+      const link=document.querySelector(${JSON.stringify(selector)});
+      const scroller=link?.closest('[data-model-variant-menu]')?.querySelector('.overflow-y-auto');
+      if (!link || !scroller) return false;
+      const row=link.closest('[data-model-variant-run]');
+      if (row) scroller.scrollTop=Math.max(0, row.offsetTop-scroller.clientHeight/2);
+      return true;
+    })()`,
+    Boolean,
+    `${label} destination control`,
+  )
+  await clickVisibleControl(client, sessionId, selector, `${label} View run`)
+}
+
+async function verifyCalmingArtifactFrameFlow(client, sessionId, baseUrl, viewport) {
+  await client.send('Emulation.setDeviceMetricsOverride', {
+    width: viewport.width,
+    height: viewport.height,
+    deviceScaleFactor: 1,
+    mobile: viewport.mobile,
+  }, sessionId)
+
+  const route = `${baseUrl}/calming-sleep-sound-mixer-demo`
+  await navigate(client, sessionId, route)
+  await client.send('Runtime.evaluate', { expression: 'window.scrollTo(0, 0)' }, sessionId)
+  await openModelMenuAndClickRun(
+    client,
+    sessionId,
+    CALMING_SLEEP_RUNS.gemini.id,
+    `${viewport.label} Claude-to-Gemini`,
+  )
+
+  await waitForValue(
+    client,
+    sessionId,
+    COMPARISON_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.selectorActiveId === CALMING_SLEEP_RUNS.gemini.id &&
+      value.queryRun === CALMING_SLEEP_RUNS.gemini.id &&
+      value.artifactPath === CALMING_SLEEP_RUNS.gemini.artifactPath &&
+      value.artifactReady &&
+      value.viewControlsHydrated &&
+      value.fitMode !== 'loading'
+    ),
+    `${viewport.label} settled Gemini artifact`,
+  )
+  const geminiSettled = await settledComparisonSnapshot(client, sessionId)
+  assertNormalMeasuredArtifact(`${viewport.label} Gemini artifact`, geminiSettled)
+
+  await client.send('Runtime.evaluate', { expression: 'history.back()' }, sessionId)
+  await waitForValue(
+    client,
+    sessionId,
+    COMPARISON_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.selectorActiveId === CALMING_SLEEP_RUNS.claude.id &&
+      value.artifactPath === CALMING_SLEEP_RUNS.claude.artifactPath &&
+      value.artifactReady &&
+      value.fitMode !== 'loading'
+    ),
+    `${viewport.label} browser Back to Claude`,
+  )
+  const claudeSettled = await settledComparisonSnapshot(client, sessionId)
+  assertNormalMeasuredArtifact(`${viewport.label} Claude artifact`, claudeSettled)
+  assertComparisonGeometry(`${viewport.label} Claude-to-Gemini viewport anchor`, claudeSettled, geminiSettled)
+  assertBuildPathAttachment(`${viewport.label} Claude-to-Gemini`, claudeSettled, geminiSettled)
+  if (Math.abs(claudeSettled.frame.height - geminiSettled.frame.height) < 400) {
+    throw new Error(`${viewport.label} Claude and Gemini frames did not resize materially.`)
+  }
+
+  await client.send('Runtime.evaluate', { expression: 'history.forward()' }, sessionId)
+  await waitForValue(
+    client,
+    sessionId,
+    COMPARISON_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.selectorActiveId === CALMING_SLEEP_RUNS.gemini.id &&
+      value.artifactPath === CALMING_SLEEP_RUNS.gemini.artifactPath &&
+      value.artifactReady &&
+      value.fitMode !== 'loading'
+    ),
+    `${viewport.label} browser Forward to Gemini`,
+  )
+  const geminiForwardSettled = await settledComparisonSnapshot(client, sessionId)
+  assertComparisonGeometry(
+    `${viewport.label} Gemini browser Forward anchor`,
+    geminiSettled,
+    geminiForwardSettled,
+  )
+
+  if (viewport.mobile) {
+    await navigate(
+      client,
+      sessionId,
+      `${route}?run=${CALMING_SLEEP_RUNS.chatgpt.id}`,
+    )
+    await client.send('Runtime.evaluate', { expression: 'window.scrollTo(0, 0)' }, sessionId)
+    const pageTopChatGpt = await settledComparisonSnapshot(client, sessionId)
+    assertNormalMeasuredArtifact(`${viewport.label} page-top ChatGPT artifact`, pageTopChatGpt)
+    await openModelMenuAndClickRun(
+      client,
+      sessionId,
+      CALMING_SLEEP_RUNS.claude.id,
+      `${viewport.label} page-top boundary`,
+    )
+    await waitForValue(
+      client,
+      sessionId,
+      COMPARISON_SNAPSHOT_EXPRESSION,
+      (value) => (
+        value?.selectorActiveId === CALMING_SLEEP_RUNS.claude.id &&
+        value.artifactPath === CALMING_SLEEP_RUNS.claude.artifactPath &&
+        value.artifactReady &&
+        value.fitMode !== 'loading'
+      ),
+      `${viewport.label} page-top boundary destination`,
+    )
+    const pageTopClaudeSettled = await settledComparisonSnapshot(client, sessionId)
+    if (pageTopClaudeSettled.scrollY !== 0) {
+      throw new Error(`${viewport.label} page-top boundary attempted to overscroll above the document.`)
+    }
+    if (pageTopClaudeSettled.artifact.top >= pageTopChatGpt.artifact.top - 50) {
+      throw new Error(`${viewport.label} did not expose the truthful page-top upstream-content boundary.`)
+    }
+    assertBuildPathAttachment(
+      `${viewport.label} page-top ChatGPT-to-Claude`,
+      pageTopChatGpt,
+      pageTopClaudeSettled,
+    )
+  }
+
+  return { claude: claudeSettled, gemini: geminiSettled }
+}
+
+async function verifyArtifactHeightGuardFixtures(client, sessionId, baseUrl) {
+  for (const fixture of [
+    { name: 'feedback', expectedGuard: 'feedback-loop' },
+    { name: 'limits', expectedGuard: 'measurement-limit' },
+  ]) {
+    await navigateRaw(client, sessionId, `${baseUrl}/qa/artifact-height-guards?case=${fixture.name}`)
+    const ready = await waitForValue(
+      client,
+      sessionId,
+      COMPARISON_SNAPSHOT_EXPRESSION,
+      (value) => (
+        value?.heightMode === 'measured-content' &&
+        value.heightGuard === fixture.expectedGuard &&
+        value.fitMode === 'guarded-scroll' &&
+        value.artifactReady
+      ),
+      `${fixture.name} artifact-height guard`,
+    )
+    const first = await settledComparisonSnapshot(client, sessionId, 600)
+    const second = await settledComparisonSnapshot(client, sessionId, 1_000)
+    if (ready.iframe?.scrolling !== 'auto' || second.iframe?.scrolling !== 'auto') {
+      throw new Error(`${fixture.name} guard did not enable bounded internal scrolling.`)
+    }
+    if (second.frame.height < 500 || second.frame.height > 761) {
+      throw new Error(`${fixture.name} guard escaped its fixed fallback frame: ${second.frame.height}px.`)
+    }
+    assertNear(`${fixture.name} stable guarded frame`, second.frame.height, first.frame.height, 1)
+    assertNear(`${fixture.name} stable document height`, second.documentHeight, first.documentHeight, 1)
+    assertNear(
+      `${fixture.name} guarded artifact-to-Build-Path gap`,
+      second.sourceRunPath.top - second.artifact.bottom,
+      first.sourceRunPath.top - first.artifact.bottom,
+      1,
+    )
+    if (fixture.name === 'limits' && (second.measuredHeight <= 6_000 || second.measuredWidth <= 14_000)) {
+      throw new Error('Raw measurement fixture did not exceed both protected limits.')
     }
   }
 }
@@ -728,8 +1016,7 @@ async function verifyComparisonPreviewFlow(client, sessionId, baseUrl, viewport)
   )
   const deepSwitched = await settledComparisonSnapshot(client, sessionId)
   assertComparisonCardOrder(`${viewport.label} deep build-path switch`, initialCardIds, deepSwitched)
-  assertComparisonGeometry(`${viewport.label} deep build-path switch`, deepInitial, deepSwitched)
-  assertComparisonScrollPosition(`${viewport.label} deep build-path switch`, deepInitial, deepSwitched)
+  assertBuildPathViewportGeometry(`${viewport.label} deep build-path switch`, deepInitial, deepSwitched)
   if (deepSwitched.historyLength !== deepInitial.historyLength + 1) {
     throw new Error(`${viewport.label} deep build-path switch did not add exactly one history entry.`)
   }
@@ -761,8 +1048,7 @@ async function verifyComparisonPreviewFlow(client, sessionId, baseUrl, viewport)
   )
   const deepReturned = await settledComparisonSnapshot(client, sessionId)
   assertComparisonCardOrder(`${viewport.label} deep build-path return`, initialCardIds, deepReturned)
-  assertComparisonGeometry(`${viewport.label} deep build-path return`, deepInitial, deepReturned)
-  assertComparisonScrollPosition(`${viewport.label} deep build-path return`, deepInitial, deepReturned)
+  assertBuildPathViewportGeometry(`${viewport.label} deep build-path return`, deepInitial, deepReturned)
   if (deepReturned.historyLength !== deepInitial.historyLength + 2) {
     throw new Error(`${viewport.label} deep build-path return did not add exactly one additional history entry.`)
   }
@@ -791,8 +1077,7 @@ async function verifyComparisonPreviewFlow(client, sessionId, baseUrl, viewport)
   )
   const deepBack = await settledComparisonSnapshot(client, sessionId)
   assertComparisonCardOrder(`${viewport.label} deep build-path browser Back`, initialCardIds, deepBack)
-  assertComparisonGeometry(`${viewport.label} deep build-path browser Back`, deepInitial, deepBack)
-  assertComparisonScrollPosition(`${viewport.label} deep build-path browser Back`, deepInitial, deepBack)
+  assertBuildPathViewportGeometry(`${viewport.label} deep build-path browser Back`, deepInitial, deepBack)
   if (deepBack.historyLength !== deepReturned.historyLength) {
     throw new Error(`${viewport.label} deep build-path browser Back changed the history length.`)
   }
@@ -813,8 +1098,7 @@ async function verifyComparisonPreviewFlow(client, sessionId, baseUrl, viewport)
   )
   const deepForward = await settledComparisonSnapshot(client, sessionId)
   assertComparisonCardOrder(`${viewport.label} deep build-path browser Forward`, initialCardIds, deepForward)
-  assertComparisonGeometry(`${viewport.label} deep build-path browser Forward`, deepInitial, deepForward)
-  assertComparisonScrollPosition(`${viewport.label} deep build-path browser Forward`, deepInitial, deepForward)
+  assertBuildPathViewportGeometry(`${viewport.label} deep build-path browser Forward`, deepInitial, deepForward)
   if (deepForward.historyLength !== deepReturned.historyLength) {
     throw new Error(`${viewport.label} deep build-path browser Forward changed the history length.`)
   }
@@ -1026,6 +1310,34 @@ async function main() {
           }, sessionId),
         ]))
 
+        await runPhase('desktop dynamic artifact frame', SELECTOR_PHASE_TIMEOUT_MS, () => (
+          verifyCalmingArtifactFrameFlow(client, sessionId, baseUrl, {
+            label: 'desktop artifact frame',
+            width: 1440,
+            height: 1000,
+            mobile: false,
+          })
+        ))
+        await runPhase('tablet dynamic artifact frame', SELECTOR_PHASE_TIMEOUT_MS, () => (
+          verifyCalmingArtifactFrameFlow(client, sessionId, baseUrl, {
+            label: 'tablet artifact frame',
+            width: 768,
+            height: 1024,
+            mobile: false,
+          })
+        ))
+        await runPhase('390px dynamic artifact frame', SELECTOR_PHASE_TIMEOUT_MS, () => (
+          verifyCalmingArtifactFrameFlow(client, sessionId, baseUrl, {
+            label: '390px artifact frame',
+            width: 390,
+            height: 844,
+            mobile: true,
+          })
+        ))
+        await runPhase('artifact height guard fixtures', SELECTOR_PHASE_TIMEOUT_MS, () => (
+          verifyArtifactHeightGuardFixtures(client, sessionId, baseUrl)
+        ))
+
         await runPhase('model selector and rapid artifact switch', SELECTOR_PHASE_TIMEOUT_MS, async () => {
           const route = `${baseUrl}/t-shirt-print-alignment-press-game-demo`
           await navigate(client, sessionId, route)
@@ -1063,20 +1375,62 @@ async function main() {
           const packageIds = await waitForValue(
             client,
             sessionId,
-            `[...document.querySelectorAll('[data-artifact-package-select]')].map((button)=>button.dataset.artifactPackageSelect)`,
+            `[...document.querySelectorAll('[data-artifact-package-select]')]
+              .filter((button)=>{
+                const rect=button.getBoundingClientRect();
+                return rect.width > 0 && rect.height > 0;
+              })
+              .map((button)=>button.dataset.artifactPackageSelect)`,
             (value) => Array.isArray(value) && value.length >= 2,
             'multiple selectable artifact packages',
           )
-          const rapidSequence = [packageIds[0], packageIds[1], packageIds.at(-1)]
-          const expectedPackageId = rapidSequence.at(-1)
-          await client.send('Runtime.evaluate', {
-            expression: `(() => {
-          for (const id of ${JSON.stringify(rapidSequence)}) {
-            document.querySelector('[data-artifact-package-select="'+CSS.escape(id)+'"]')?.click();
+          const mountedBeforeRapidSwitch = await waitForValue(
+            client,
+            sessionId,
+            `document.querySelector('[data-artifact-package-id]')?.dataset.artifactPackageId ?? ''`,
+            Boolean,
+            'initial mounted artifact package',
+          )
+          const expectedPackageId = packageIds.find((id) => id !== mountedBeforeRapidSwitch)
+          if (!expectedPackageId) {
+            throw new Error('Rapid artifact switch fixture did not expose a different destination package.')
           }
+          const targetSelector = `[data-artifact-package-select="${expectedPackageId}"]`
+          const selectionAnchor = await waitForValue(
+            client,
+            sessionId,
+            `(async () => {
+          const button=document.querySelector('[data-artifact-package-select="'+CSS.escape(${JSON.stringify(expectedPackageId)})+'"]');
+          const row=button?.closest('[data-source-run-response-row]');
+          if (!button || !row) return null;
+          button.scrollIntoView({ block: 'center' });
+          await new Promise((resolve)=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+          const positionedRect=button.getBoundingClientRect();
+          if (positionedRect.top < 140 || positionedRect.bottom > innerHeight - 80) {
+            window.scrollBy(0, positionedRect.top - 240);
+            await new Promise((resolve)=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+          }
+          return {
+            controlTop: button.getBoundingClientRect().top,
+            controlWidth: button.getBoundingClientRect().width,
+            controlHeight: button.getBoundingClientRect().height,
+            rowTop: row.getBoundingClientRect().top,
+            sourceRunPathTop: document.getElementById('source-run-path')?.getBoundingClientRect().top ?? null,
+          };
         })()`,
+            (value) => (
+              Number.isFinite(value?.controlTop) &&
+              value.controlWidth > 0 &&
+              value.controlHeight > 0 &&
+              Number.isFinite(value?.rowTop) &&
+              Number.isFinite(value?.sourceRunPathTop)
+            ),
+            'artifact switch clicked-control anchor',
+          )
+          await client.send('Runtime.evaluate', {
+            expression: `document.querySelector(${JSON.stringify(targetSelector)})?.click()`,
           }, sessionId)
-          const mountedPackage = await waitForValue(
+          const anchoredPackage = await waitForValue(
             client,
             sessionId,
             `(() => {
@@ -1088,18 +1442,69 @@ async function main() {
             error: document.querySelector('[data-artifact-load-error]')?.getAttribute('data-artifact-load-error') ?? '',
             iframe: Boolean(frame?.querySelector('iframe[srcdoc]')),
             sandbox: frame?.querySelector('iframe')?.getAttribute('sandbox') ?? '',
+            controlTop: document.querySelector('[data-artifact-package-select="'+CSS.escape(${JSON.stringify(expectedPackageId)})+'"]')?.getBoundingClientRect().top ?? null,
+            rowTop: document.querySelector('[data-artifact-package-select="'+CSS.escape(${JSON.stringify(expectedPackageId)})+'"]')?.closest('[data-source-run-response-row]')?.getBoundingClientRect().top ?? null,
+            sourceRunPathTop: document.getElementById('source-run-path')?.getBoundingClientRect().top ?? null,
           };
         })()`,
-            (value) => value?.id === expectedPackageId && !value.loading && value.iframe,
-            'final rapidly selected artifact',
+            (value) => (
+              value?.id === expectedPackageId &&
+              !value.loading &&
+              value.iframe &&
+              Math.abs(value.controlTop - selectionAnchor.controlTop) <= 2 &&
+              Math.abs(value.rowTop - selectionAnchor.rowTop) <= 2 &&
+              Math.abs(value.sourceRunPathTop - selectionAnchor.sourceRunPathTop) <= 2
+            ),
+            `settled artifact at clicked control (control ${selectionAnchor.controlTop}, row ${selectionAnchor.rowTop})`,
+            20_000,
           )
-          if (mountedPackage.error) throw new Error(`Artifact switch rendered ${mountedPackage.error}.`)
-          if (!mountedPackage.path.startsWith('/artifacts/')) {
-            throw new Error(`Artifact switch mounted an invalid path: ${mountedPackage.path}.`)
+          if (anchoredPackage.error) throw new Error(`Artifact switch rendered ${anchoredPackage.error}.`)
+          if (!anchoredPackage.path.startsWith('/artifacts/')) {
+            throw new Error(`Artifact switch mounted an invalid path: ${anchoredPackage.path}.`)
           }
-          if (mountedPackage.sandbox !== 'allow-scripts allow-pointer-lock') {
-            throw new Error(`Artifact frame has unexpected sandbox tokens: ${mountedPackage.sandbox}.`)
+          if (anchoredPackage.sandbox !== 'allow-scripts allow-pointer-lock') {
+            throw new Error(`Artifact frame has unexpected sandbox tokens: ${anchoredPackage.sandbox}.`)
           }
+          assertNear(
+            'Artifact switch clicked-control viewport anchor',
+            anchoredPackage.controlTop,
+            selectionAnchor.controlTop,
+          )
+          assertNear(
+            'Artifact switch response-row viewport anchor',
+            anchoredPackage.rowTop,
+            selectionAnchor.rowTop,
+          )
+
+          const rapidSequence = [
+            mountedBeforeRapidSwitch,
+            expectedPackageId,
+            mountedBeforeRapidSwitch,
+          ]
+          await client.send('Runtime.evaluate', {
+            expression: `(async () => {
+          for (const id of ${JSON.stringify(rapidSequence)}) {
+            document.querySelector('[data-artifact-package-select="'+CSS.escape(id)+'"]')?.click();
+            await new Promise((resolve)=>requestAnimationFrame(resolve));
+          }
+        })()`,
+            awaitPromise: true,
+          }, sessionId)
+          await waitForValue(
+            client,
+            sessionId,
+            `(() => {
+          const frame=document.querySelector('[data-artifact-package-id]');
+          return {
+            id: frame?.dataset.artifactPackageId ?? '',
+            loading: Boolean(document.querySelector('[data-artifact-loading]')),
+            iframe: Boolean(frame?.querySelector('iframe[srcdoc]')),
+          };
+        })()`,
+            (value) => value?.id === mountedBeforeRapidSwitch && !value.loading && value.iframe,
+            'final rapidly selected artifact package',
+            20_000,
+          )
         })
 
         await runPhase('desktop comparison flow', COMPARISON_PHASE_TIMEOUT_MS, () => (

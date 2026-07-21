@@ -155,6 +155,16 @@ const SNAPSHOT_EXPRESSION = `(() => {
   const menuHit=menuRect
     ? document.elementFromPoint(menuRect.left+Math.min(18,menuRect.width/2),menuRect.top+Math.min(18,menuRect.height/2))
     : null;
+  const hitTest=(element)=>{
+    if (!element) return null;
+    const value=element.getBoundingClientRect();
+    const hit=document.elementFromPoint(value.left+value.width/2,value.top+value.height/2);
+    return {
+      control:element.dataset.modelCycle || element.dataset.modelOrderOption || (element.matches('[data-model-list-trigger]') ? 'trigger' : 'issue'),
+      hit:Boolean(hit && (hit === element || element.contains(hit))),
+      hitClass:hit?.className || hit?.tagName || ''
+    };
+  };
   const primaryLink=card?.querySelector('[data-path-card-primary-link]');
   const activeOrder=selector?.querySelector('[data-model-order-option="active"]');
   const newOrder=selector?.querySelector('[data-model-order-option="new"]');
@@ -204,6 +214,9 @@ const SNAPSHOT_EXPRESSION = `(() => {
     focusedOptionId:document.activeElement?.dataset?.sourceRunId || '',
     controlSizes:[...(selector?.querySelectorAll('[data-model-cycle], [data-model-list-trigger]') || [])].map(rect),
     orderControlSizes:[...(selector?.querySelectorAll('[data-model-order-option]') || [])].map(rect),
+    issueDisclosureSizes:[...(selector?.querySelectorAll('.path-model-card-issue') || [])].map(rect),
+    selectorControlHitTests:[...(selector?.querySelectorAll('[data-model-cycle], [data-model-list-trigger], [data-model-order-option]') || [])].map(hitTest),
+    issueDisclosureHitTests:[...(selector?.querySelectorAll('.path-model-card-issue') || [])].map(hitTest),
     previewMounted:card?.querySelector('[data-path-card-preview-mounted]')?.dataset.pathCardPreviewMounted || '',
     protectedArtifact:protectedFrame?.dataset.artifactPath || '',
     artifactReady:Boolean(protectedFrame?.querySelector('iframe[srcdoc]')),
@@ -339,6 +352,10 @@ async function verifyCompareModelCatalog(client, sessionId, options, viewport) {
   )
   await controlPoint(client, sessionId, '[data-path-model-card]')
   const stateExpression = `(() => {
+    const rect=(element)=>{
+      const value=element.getBoundingClientRect();
+      return {x:value.x,y:value.y,width:value.width,height:value.height};
+    };
     const cards=[...document.querySelectorAll('[data-path-model-card]')];
     const selectors=cards.map((card)=>card.querySelector('[data-path-model-selector]'));
     const calmingCard=cards.find((card)=>card.dataset.pathModelCard === '${CALMING_PROJECT_ID}');
@@ -367,6 +384,8 @@ async function verifyCompareModelCatalog(client, sessionId, options, viewport) {
       calmingModelCount:Number(calmingSelector?.dataset.modelCount || 0),
       calmingIssueCount:calmingSelector?.querySelectorAll('[data-model-known-issue]').length || 0,
       calmingIssueExplanations:[...(calmingSelector?.querySelectorAll('[data-known-issue-explanation]') || [])].map((entry)=>entry.dataset.knownIssueExplanation || ''),
+      orderControlSizes:selectors.flatMap((selector)=>[...(selector?.querySelectorAll('[data-model-order-option]') || [])].map(rect)),
+      issueDisclosureSizes:selectors.flatMap((selector)=>[...(selector?.querySelectorAll('.path-model-card-issue') || [])].map(rect)),
       visibleTotals:selectors.map((selector)=>selector?.querySelector('[data-model-total]')?.textContent?.replace(/\\s+/g,' ').trim() || ''),
       compareCount:document.querySelector('.path-filter-count')?.textContent?.trim() || '',
       footerText:cards.map((card)=>card.querySelector('.path-card-anatomy')?.textContent?.replace(/\\s+/g,' ').trim() || ''),
@@ -419,6 +438,22 @@ async function verifyCompareModelCatalog(client, sessionId, options, viewport) {
   if (state.overflow !== 0 || state.nextDialog) {
     throw new Error(`${viewport.name} Compare models rendered overflow or a Next.js error dialog.`)
   }
+  if (
+    viewport.mobile && (
+      state.orderControlSizes.length !== state.cardCount * 2 ||
+      state.orderControlSizes.some((rect) => rect.width < 44 || rect.height < 44)
+    )
+  ) {
+    throw new Error(`${viewport.name} Compare models contains a New or Active target smaller than 44px: ${JSON.stringify(state.orderControlSizes)}.`)
+  }
+  if (
+    viewport.mobile && (
+      state.issueDisclosureSizes.length < 1 ||
+      state.issueDisclosureSizes.some((rect) => rect.width < 44 || rect.height < 44)
+    )
+  ) {
+    throw new Error(`${viewport.name} Compare models contains a known-issue target smaller than 44px: ${JSON.stringify(state.issueDisclosureSizes)}.`)
+  }
   if (options.screenshotDir) {
     await screenshot(client, sessionId, path.join(options.screenshotDir, `${viewport.name}-compare-models.png`))
   }
@@ -429,15 +464,25 @@ async function verifyCompareModelCatalog(client, sessionId, options, viewport) {
     sessionId,
     `(() => {
       const issue=document.querySelector(${JSON.stringify(`[data-path-model-card="${CALMING_PROJECT_ID}"] .path-model-card-issue`)});
+      const calmingSelector=issue?.closest('[data-path-model-selector]');
       const tooltip=issue?.querySelector('[role="tooltip"]');
       const tooltipStyle=tooltip ? getComputedStyle(tooltip) : null;
       const tooltipRect=tooltip?.getBoundingClientRect();
       const headerRect=document.querySelector('header')?.getBoundingClientRect();
+      const controlHits=[...(calmingSelector?.querySelectorAll('[data-model-cycle], [data-model-list-trigger], [data-model-order-option]') || [])].map((control)=>{
+        const rect=control.getBoundingClientRect();
+        const hit=document.elementFromPoint(rect.left+rect.width/2,rect.top+rect.height/2);
+        return {
+          control:control.dataset.modelCycle || control.dataset.modelOrderOption || 'trigger',
+          hit:Boolean(hit && (hit === control || control.contains(hit)))
+        };
+      });
       return {
         text:tooltip?.textContent?.replace(/\\s+/g,' ').trim() || '',
         visible:Boolean(tooltipStyle && tooltipStyle.visibility === 'visible' && Number(tooltipStyle.opacity) > 0),
         rect:tooltipRect ? {x:tooltipRect.x,y:tooltipRect.y,width:tooltipRect.width,height:tooltipRect.height} : null,
         stickyHeaderBottom:headerRect?.bottom || 0,
+        controlHits,
       };
     })()`,
     (value) => value?.visible && value.text.includes(CALMING_EXACT_ISSUE),
@@ -451,6 +496,9 @@ async function verifyCompareModelCatalog(client, sessionId, options, viewport) {
     calmingIssueTooltip.rect.y + calmingIssueTooltip.rect.height > viewport.height
   ) {
     throw new Error(`${viewport.name} Calming Mixer card issue tooltip escaped the usable viewport: ${JSON.stringify(calmingIssueTooltip)}.`)
+  }
+  if (calmingIssueTooltip.controlHits.some((entry) => !entry.hit)) {
+    throw new Error(`${viewport.name} Calming Mixer issue tooltip obscured selector controls: ${JSON.stringify(calmingIssueTooltip.controlHits)}.`)
   }
   if (options.screenshotDir) {
     await new Promise((resolve) => setTimeout(resolve, 200))
@@ -643,6 +691,22 @@ async function verifyViewport(client, sessionId, options, viewport) {
   if (viewport.mobile && initial.controlSizes.some((rect) => rect.width < 44 || rect.height < 44)) {
     throw new Error(`${viewport.name} has a selector control smaller than 44px.`)
   }
+  if (
+    viewport.mobile && (
+      initial.orderControlSizes.length !== 2 ||
+      initial.orderControlSizes.some((rect) => rect.width < 44 || rect.height < 44)
+    )
+  ) {
+    throw new Error(`${viewport.name} has a New or Active order control smaller than 44px: ${JSON.stringify(initial.orderControlSizes)}.`)
+  }
+  if (
+    viewport.mobile && (
+      initial.issueDisclosureSizes.length !== 1 ||
+      initial.issueDisclosureSizes.some((rect) => rect.width < 44 || rect.height < 44)
+    )
+  ) {
+    throw new Error(`${viewport.name} has a known-issue disclosure target smaller than 44px: ${JSON.stringify(initial.issueDisclosureSizes)}.`)
+  }
   if (options.screenshotDir) {
     await screenshot(client, sessionId, path.join(options.screenshotDir, `${viewport.name}-initial.png`))
   }
@@ -712,6 +776,13 @@ async function verifyViewport(client, sessionId, options, viewport) {
       (value) => value?.visibleKnownIssueTooltips?.some((text) => /FAILED state/i.test(text)),
       `${viewport.name} tapped known-issue tooltip`,
     )
+    const obscuredSelectorControls = focusedIssue.selectorControlHitTests.filter((entry) => !entry?.hit)
+    if (obscuredSelectorControls.length > 0) {
+      throw new Error(`${viewport.name} known-issue tooltip obscured selector controls: ${JSON.stringify(obscuredSelectorControls)}.`)
+    }
+    if (focusedIssue.issueDisclosureHitTests.some((entry) => !entry?.hit)) {
+      throw new Error(`${viewport.name} known-issue disclosure lost its own hit target while open: ${JSON.stringify(focusedIssue.issueDisclosureHitTests)}.`)
+    }
     const tooltipOutsideViewport = focusedIssue.visibleKnownIssueTooltipRects.some((rect) => (
       rect.x < 0 ||
       rect.y < focusedIssue.stickyHeaderBottom ||
@@ -930,7 +1001,13 @@ async function verifyViewport(client, sessionId, options, viewport) {
   )
 
   console.log(`[${viewport.name}] model selector passed`)
-  return { viewport: viewport.name, stage: initial.stage, controls: initial.controlSizes }
+  return {
+    viewport: viewport.name,
+    stage: initial.stage,
+    controls: initial.controlSizes,
+    orderControls: initial.orderControlSizes,
+    issueDisclosures: initial.issueDisclosureSizes,
+  }
 }
 
 async function stopChrome(child) {

@@ -7,8 +7,8 @@ import { ALL_MODEL_VARIANT_MANIFESTS } from './project-model-variant-cohort-conf
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const EXPECTED_SUPABASE_PROJECT_REF = 'iccjwlwkaqnxifuxljla'
-const TIMEOUT_MS = 30_000
-const FETCH_ATTEMPTS = 2
+const LIVE_REGISTRY_DEADLINE_MS = 20_000
+const MAX_LIVE_REGISTRY_DEADLINE_MS = 25_000
 
 function loadEnvFile(filePath) {
   if (!existsSync(filePath)) return
@@ -29,25 +29,24 @@ function fail(message) {
   throw new Error(`Model-variant live registry check failed: ${message}`)
 }
 
-async function fetchRegistry(query, headers) {
-  let lastError
-  for (let attempt = 1; attempt <= FETCH_ATTEMPTS; attempt += 1) {
-    try {
-      return await fetch(query, {
-        headers,
-        signal: AbortSignal.timeout(TIMEOUT_MS),
-      })
-    } catch (error) {
-      lastError = error
-      if (attempt < FETCH_ATTEMPTS) {
-        await new Promise((resolve) => setTimeout(resolve, 750))
-      }
-    }
+function assertLiveRegistryDeadlineBudget() {
+  if (
+    !Number.isInteger(LIVE_REGISTRY_DEADLINE_MS) ||
+    LIVE_REGISTRY_DEADLINE_MS <= 0 ||
+    LIVE_REGISTRY_DEADLINE_MS > MAX_LIVE_REGISTRY_DEADLINE_MS
+  ) {
+    fail(
+      `live query deadline must remain between 1ms and ${MAX_LIVE_REGISTRY_DEADLINE_MS}ms; ` +
+      `received ${LIVE_REGISTRY_DEADLINE_MS}ms.`,
+    )
   }
-  throw lastError
 }
 
 async function main() {
+  // This assertion runs even when the live query is skipped locally, so a
+  // future timeout increase cannot silently exceed Vercel's build watchdog.
+  assertLiveRegistryDeadlineBudget()
+
   if (process.env.VERCEL !== '1') {
     console.log('Skipped live model-variant registry check outside Vercel.')
     return
@@ -88,10 +87,21 @@ async function main() {
   query.searchParams.set('project_id', `in.(${projectIds.join(',')})`)
   query.searchParams.set('status', 'in.(published,historical)')
 
-  const response = await fetchRegistry(query, {
-    apikey: anonKey,
-    authorization: `Bearer ${anonKey}`,
-  })
+  let response
+  try {
+    response = await fetch(query, {
+      headers: {
+        apikey: anonKey,
+        authorization: `Bearer ${anonKey}`,
+      },
+      signal: AbortSignal.timeout(LIVE_REGISTRY_DEADLINE_MS),
+    })
+  } catch (error) {
+    if (error instanceof Error && error.name === 'TimeoutError') {
+      fail(`live Supabase query exceeded the ${LIVE_REGISTRY_DEADLINE_MS}ms build deadline.`)
+    }
+    throw error
+  }
   if (!response.ok) fail(`Supabase returned HTTP ${response.status}.`)
   const rows = await response.json()
   if (!Array.isArray(rows)) fail('Supabase response was not an array.')

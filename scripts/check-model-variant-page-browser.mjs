@@ -339,6 +339,22 @@ function assertBuildPathViewportGeometry(label, before, after) {
   )
 }
 
+function assertVisibleCameraGeometry(label, before, after, viewportHeight) {
+  const seamTop = before.sourceRunPath?.top
+  if (Number.isFinite(seamTop) && seamTop >= 0 && seamTop <= viewportHeight) {
+    assertBuildPathViewportGeometry(label, before, after)
+    return
+  }
+  if (before.scrollY <= 1 && after.scrollY <= 1) {
+    assertNear(`${label} artifact width`, after.artifact?.width, before.artifact?.width)
+    assertNear(`${label} frame width`, after.frame?.width, before.frame?.width)
+    assertBuildPathAttachment(label, before, after)
+    return
+  }
+  assertComparisonGeometry(label, before, after)
+  assertComparisonScrollPosition(label, before, after)
+}
+
 async function openModelMenuAndClickRun(client, sessionId, runId, label) {
   await clickVisibleControl(
     client,
@@ -804,6 +820,7 @@ async function sampleQaRouteTransition(
         const initial={
           packageId:document.querySelector('[data-artifact-package-id]')?.dataset.artifactPackageId ?? '',
           artifactTop:artifact.getBoundingClientRect().top,
+          artifactBottom:artifact.getBoundingClientRect().bottom,
           sourceRunPathTop:document.getElementById('source-run-path')?.getBoundingClientRect().top ?? null,
           scrollY:window.scrollY,
           frameHeight:document.querySelector('[data-artifact-package-id]')?.getBoundingClientRect().height ?? null,
@@ -813,7 +830,7 @@ async function sampleQaRouteTransition(
         let settledFrames=0;
         link.click();
         while (performance.now()-startedAt < 7_000) {
-          await new Promise((resolve)=>requestAnimationFrame(resolve));
+          await new Promise((resolve)=>requestAnimationFrame(()=>setTimeout(resolve, 0)));
           const currentArtifact=document.getElementById('final-result');
           const sourceRunPath=document.getElementById('source-run-path');
           const frame=currentArtifact?.querySelector('[data-artifact-package-id]');
@@ -831,6 +848,7 @@ async function sampleQaRouteTransition(
           samples.push({
             elapsed:performance.now()-startedAt,
             artifactTop:currentArtifact?.getBoundingClientRect().top ?? null,
+            artifactBottom:currentArtifact?.getBoundingClientRect().bottom ?? null,
             sourceRunPathTop:sourceRunPath?.getBoundingClientRect().top ?? null,
             scrollY:window.scrollY,
             frameHeight:frame?.getBoundingClientRect().height ?? null,
@@ -865,6 +883,30 @@ async function sampleQaRouteTransition(
     }, sessionId),
   )
   return result.value
+}
+
+async function positionQaArtifactPathSeam(client, sessionId, viewport, label) {
+  const desiredTop = Math.round(viewport.height * 0.62)
+  return waitForValue(
+    client,
+    sessionId,
+    `(() => {
+      const sourceRunPath=document.getElementById('source-run-path');
+      const artifact=document.getElementById('final-result');
+      if (!sourceRunPath || !artifact) return null;
+      window.scrollTo(0, window.scrollY + sourceRunPath.getBoundingClientRect().top - ${desiredTop});
+      return {
+        sourceRunPathTop:sourceRunPath.getBoundingClientRect().top,
+        artifactBottom:artifact.getBoundingClientRect().bottom,
+      };
+    })()`,
+    (value) => (
+      Math.abs((value?.sourceRunPathTop ?? Number.POSITIVE_INFINITY) - desiredTop) <= 2 &&
+      value?.artifactBottom > 0 &&
+      value.artifactBottom < viewport.height
+    ),
+    label,
+  )
 }
 
 async function verifyPendingArtifactViewportFixtures(client, sessionId, baseUrl, viewport) {
@@ -1010,6 +1052,46 @@ async function verifyPendingArtifactViewportFixtures(client, sessionId, baseUrl,
     ),
     `${viewport.label} tall route fixture`,
   )
+  const visibleSeam = await positionQaArtifactPathSeam(
+    client,
+    sessionId,
+    viewport,
+    `${viewport.label} visible artifact-path seam`,
+  )
+  const delayedSeamRoute = await sampleQaRouteTransition(client, sessionId, {
+    runId: 'delayed',
+    artifactPath: '/qa/artifact-height-guards/delayed',
+    expectedFitMode: 'native',
+    label: `${viewport.label} visible-seam contraction route`,
+  })
+  assertContinuousViewportSamples(
+    `${viewport.label} visible-seam contraction route`,
+    delayedSeamRoute,
+    {
+      sourceRunPathTop: visibleSeam.sourceRunPathTop,
+      artifactBottom: visibleSeam.artifactBottom,
+    },
+  )
+  assertDelayedPostPaintMeasurement(
+    `${viewport.label} visible-seam contraction route`,
+    delayedSeamRoute,
+    '/qa/artifact-height-guards/delayed',
+  )
+  const tallSeamReturn = await sampleQaRouteTransition(client, sessionId, {
+    runId: 'tall',
+    artifactPath: '/qa/artifact-height-guards/tall',
+    expectedFitMode: 'native',
+    label: `${viewport.label} visible-seam expansion route`,
+  })
+  assertContinuousViewportSamples(
+    `${viewport.label} visible-seam expansion route`,
+    tallSeamReturn,
+    {
+      sourceRunPathTop: visibleSeam.sourceRunPathTop,
+      artifactBottom: visibleSeam.artifactBottom,
+    },
+    { requirePending: false },
+  )
   await waitForValue(
     client,
     sessionId,
@@ -1067,6 +1149,116 @@ async function verifyPendingArtifactViewportFixtures(client, sessionId, baseUrl,
   if (!missingRoute.final.loadError) {
     throw new Error(`${viewport.label} missing model route did not render a protected load error.`)
   }
+}
+
+const PROTECTED_VIEWER_SNAPSHOT_EXPRESSION = `(() => {
+  const root=document.querySelector('[data-artifact-viewer-mode]');
+  const frame=root?.querySelector('[data-artifact-package-id]');
+  const iframe=frame?.querySelector('iframe');
+  const rootRect=root?.getBoundingClientRect();
+  const frameRect=frame?.getBoundingClientRect();
+  const iframeRect=iframe?.getBoundingClientRect();
+  return {
+    mode:root?.dataset.artifactViewerMode ?? '',
+    rootWidth:rootRect?.width ?? null,
+    frameWidth:frameRect?.width ?? null,
+    frameHeight:frameRect?.height ?? null,
+    iframeWidth:iframeRect?.width ?? null,
+    iframeHeight:iframeRect?.height ?? null,
+    scale:Number(frame?.dataset.artifactScale ?? Number.NaN),
+    heightMode:frame?.dataset.artifactHeightMode ?? '',
+    fitMode:frame?.dataset.artifactFitMode ?? '',
+    heightPending:frame?.dataset.artifactHeightPending === 'true',
+    artifactReady:Boolean(iframe?.srcdoc),
+    scrolling:iframe?.getAttribute('scrolling') ?? '',
+    documentWidth:document.documentElement.scrollWidth,
+    viewportWidth:window.innerWidth,
+    readablePressed:document.querySelector('[data-artifact-viewer-mode-control="readable"]')?.getAttribute('aria-pressed') ?? '',
+    fitWholePressed:document.querySelector('[data-artifact-viewer-mode-control="fit-whole"]')?.getAttribute('aria-pressed') ?? '',
+    artifactFitsFrame:Boolean(
+      frameRect && iframeRect &&
+      iframeRect.width <= frameRect.width + 2 &&
+      iframeRect.height <= frameRect.height + 2
+    ),
+  };
+})()`
+
+async function verifyProtectedArtifactViewerModes(client, sessionId, baseUrl, viewport) {
+  await client.send('Emulation.setDeviceMetricsOverride', {
+    width: viewport.width,
+    height: viewport.height,
+    deviceScaleFactor: 1,
+    mobile: viewport.mobile,
+  }, sessionId)
+
+  const viewerUrl = new URL('/artifact-viewer', baseUrl)
+  viewerUrl.searchParams.set('path', CALMING_SLEEP_RUNS.claude.artifactPath)
+  viewerUrl.searchParams.set('title', 'Calming sleep sound mixer')
+  viewerUrl.searchParams.set('provider', 'Claude')
+  await navigateRaw(client, sessionId, viewerUrl.href)
+
+  const readable = await waitForValue(
+    client,
+    sessionId,
+    PROTECTED_VIEWER_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.mode === 'readable' &&
+      value.heightMode === 'measured-content' &&
+      !value.heightPending &&
+      value.artifactReady &&
+      value.readablePressed === 'true' &&
+      value.fitWholePressed === 'false' &&
+      value.scale >= 0.99 &&
+      value.scrolling === 'no' &&
+      value.frameHeight > viewport.height * 1.2
+    ),
+    `${viewport.label} protected viewer readable mode`,
+    20_000,
+  )
+  await client.send('Runtime.evaluate', {
+    expression: `document.querySelector('[data-artifact-viewer-mode-control="fit-whole"]')?.click()`,
+  }, sessionId)
+  const fitWhole = await waitForValue(
+    client,
+    sessionId,
+    PROTECTED_VIEWER_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.mode === 'fit-whole' &&
+      value.heightMode === 'fixed-viewport' &&
+      value.fitWholePressed === 'true' &&
+      value.readablePressed === 'false' &&
+      value.artifactReady &&
+      value.fitMode === 'scaled' &&
+      value.scale < readable.scale - 0.05 &&
+      value.scrolling === 'no' &&
+      value.artifactFitsFrame &&
+      value.documentWidth <= value.viewportWidth + 2
+    ),
+    `${viewport.label} protected viewer fit-whole mode`,
+    20_000,
+  )
+  if (fitWhole.frameHeight > viewport.height) {
+    throw new Error(`${viewport.label} fit-whole artifact frame exceeded the visible window.`)
+  }
+
+  await client.send('Runtime.evaluate', {
+    expression: `document.querySelector('[data-artifact-viewer-mode-control="readable"]')?.click()`,
+  }, sessionId)
+  await waitForValue(
+    client,
+    sessionId,
+    PROTECTED_VIEWER_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.mode === 'readable' &&
+      value.heightMode === 'measured-content' &&
+      !value.heightPending &&
+      value.readablePressed === 'true' &&
+      value.scale >= 0.99 &&
+      value.frameHeight > viewport.height * 1.2
+    ),
+    `${viewport.label} protected viewer readable return`,
+    20_000,
+  )
 }
 
 async function positionArtifact(client, sessionId, desiredTop) {
@@ -1298,8 +1490,12 @@ async function verifyComparisonPreviewFlow(client, sessionId, baseUrl, viewport)
     )
     const pageTopSwitched = await settledComparisonSnapshot(client, sessionId)
     assertComparisonCardOrder(`${viewport.label} page-top switch`, initialCardIds, pageTopSwitched)
-    assertComparisonGeometry(`${viewport.label} page-top switch`, pageTopInitial, pageTopSwitched)
-    assertComparisonScrollPosition(`${viewport.label} page-top switch`, pageTopInitial, pageTopSwitched)
+    assertVisibleCameraGeometry(
+      `${viewport.label} page-top switch`,
+      pageTopInitial,
+      pageTopSwitched,
+      viewport.height,
+    )
     if (pageTopSwitched.historyLength !== pageTopInitial.historyLength + 1) {
       throw new Error(`${viewport.label} page-top switch did not add exactly one history entry.`)
     }
@@ -1333,8 +1529,12 @@ async function verifyComparisonPreviewFlow(client, sessionId, baseUrl, viewport)
     )
     const pageTopReturned = await settledComparisonSnapshot(client, sessionId)
     assertComparisonCardOrder(`${viewport.label} page-top return`, initialCardIds, pageTopReturned)
-    assertComparisonGeometry(`${viewport.label} page-top return`, pageTopInitial, pageTopReturned)
-    assertComparisonScrollPosition(`${viewport.label} page-top return`, pageTopInitial, pageTopReturned)
+    assertVisibleCameraGeometry(
+      `${viewport.label} page-top return`,
+      pageTopInitial,
+      pageTopReturned,
+      viewport.height,
+    )
     if (pageTopReturned.historyLength !== pageTopInitial.historyLength + 2) {
       throw new Error(`${viewport.label} page-top return did not add exactly one additional history entry.`)
     }
@@ -1901,6 +2101,22 @@ async function main() {
         ))
         await runPhase('artifact height guard fixtures', SELECTOR_PHASE_TIMEOUT_MS, () => (
           verifyArtifactHeightGuardFixtures(client, sessionId, baseUrl)
+        ))
+        await runPhase('desktop protected viewer modes', SELECTOR_PHASE_TIMEOUT_MS, () => (
+          verifyProtectedArtifactViewerModes(client, sessionId, baseUrl, {
+            label: 'desktop',
+            width: 1440,
+            height: 1000,
+            mobile: false,
+          })
+        ))
+        await runPhase('390px protected viewer modes', SELECTOR_PHASE_TIMEOUT_MS, () => (
+          verifyProtectedArtifactViewerModes(client, sessionId, baseUrl, {
+            label: '390px',
+            width: 390,
+            height: 844,
+            mobile: true,
+          })
         ))
         await runPhase('desktop pending viewport anchoring', SELECTOR_PHASE_TIMEOUT_MS, () => (
           verifyPendingArtifactViewportFixtures(client, sessionId, baseUrl, {

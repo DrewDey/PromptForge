@@ -1,16 +1,22 @@
 'use client'
 
-import { type ReactNode, useLayoutEffect, useRef } from 'react'
+import { type ReactNode, useLayoutEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 type PendingComparisonScroll = {
   destination: string
+  position: ModelVariantViewportPosition
+}
+
+type ModelVariantViewportPosition = {
   scrollY: number
+  anchorId: 'final-result' | 'source-run-path' | null
+  anchorTop: number | null
 }
 
 let pendingComparisonScroll: PendingComparisonScroll | null = null
-const comparisonScrollPositions = new Map<string, number>()
+const comparisonScrollPositions = new Map<string, ModelVariantViewportPosition>()
 const SCROLL_RESTORE_TIMEOUT_MS = 12_000
 let renderedComparisonRoute = ''
 let renderedComparisonLocation = ''
@@ -23,10 +29,29 @@ function routeLocation(url: URL) {
   return `${url.pathname}${url.search}`
 }
 
-function restoreComparisonScroll(destination: string, desiredScrollY: number) {
+function captureViewportPosition(): ModelVariantViewportPosition {
+  const artifact = document.getElementById('final-result')
+  const sourceRunPath = document.getElementById('source-run-path')
+  const artifactRect = artifact?.getBoundingClientRect()
+  const anchor = artifactRect && artifactRect.bottom > 0
+    ? artifact
+    : sourceRunPath ?? artifact
+  return {
+    scrollY: window.scrollY,
+    anchorId: anchor?.id === 'source-run-path' ? 'source-run-path' : anchor ? 'final-result' : null,
+    anchorTop: anchor?.getBoundingClientRect().top ?? null,
+  }
+}
+
+function restoreComparisonScroll(
+  destination: string,
+  desiredPosition: ModelVariantViewportPosition,
+) {
   const startedAt = window.performance.now()
   let animationFrame = 0
   let active = true
+  let previousFrameHeight: number | null = null
+  let stableFrames = 0
   const userInputEvents: Array<keyof WindowEventMap> = ['keydown', 'pointerdown', 'touchstart', 'wheel']
   const removeUserInputListeners = () => {
     for (const eventName of userInputEvents) {
@@ -54,23 +79,61 @@ function restoreComparisonScroll(destination: string, desiredScrollY: number) {
     if (!active) return
 
     const artifact = document.getElementById('final-result')
-    const destinationReady = Boolean(
-      artifact?.querySelector('[data-artifact-package-id] iframe[srcdoc], [data-artifact-load-error]'),
+    const frame = artifact?.querySelector<HTMLElement>('[data-artifact-package-id]')
+    const fitMode = frame?.dataset.artifactFitMode
+    const heightGuard = frame?.dataset.artifactHeightGuard
+    const heightPending = frame?.dataset.artifactHeightPending === 'true'
+    const destinationSettled = Boolean(
+      frame?.querySelector('iframe[srcdoc], [data-artifact-load-error]') &&
+      !heightPending &&
+      (
+        fitMode === 'native' ||
+        fitMode === 'scaled' ||
+        fitMode === 'blocked' ||
+        heightGuard !== 'none'
+      ),
     )
     const maxScrollY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
     const timedOut = window.performance.now() - startedAt >= SCROLL_RESTORE_TIMEOUT_MS
+    const destinationAnchorTop = desiredPosition.anchorId
+      ? document.getElementById(desiredPosition.anchorId)?.getBoundingClientRect().top
+      : undefined
+    const anchoredScrollY = desiredPosition.anchorTop !== null && destinationAnchorTop !== undefined
+      ? window.scrollY + destinationAnchorTop - desiredPosition.anchorTop
+      : desiredPosition.scrollY
+    const desiredScrollY = Math.max(0, anchoredScrollY)
 
-    if ((destinationReady && maxScrollY >= desiredScrollY - 1) || timedOut) {
-      const restoredScrollY = Math.min(desiredScrollY, maxScrollY)
-      window.scrollTo(0, restoredScrollY)
-      if (Math.abs(window.scrollY - restoredScrollY) <= 1 || timedOut) {
-        comparisonScrollPositions.set(destination, restoredScrollY)
-        if (pendingComparisonScroll?.destination === destination) {
-          pendingComparisonScroll = null
-        }
-        cleanup()
-        return
+    const restoredScrollY = Math.min(desiredScrollY, maxScrollY)
+    window.scrollTo(0, restoredScrollY)
+    const restoredAnchorTop = desiredPosition.anchorId
+      ? document.getElementById(desiredPosition.anchorId)?.getBoundingClientRect().top
+      : undefined
+    const anchorConstrainedByBoundary = anchoredScrollY < 0 || desiredScrollY > maxScrollY
+    const anchorRestored = anchorConstrainedByBoundary || desiredPosition.anchorTop === null || (
+      restoredAnchorTop !== undefined &&
+      Math.abs(restoredAnchorTop - desiredPosition.anchorTop) <= 1
+    )
+    const frameHeight = frame?.getBoundingClientRect().height ?? null
+    const heightStable = destinationSettled && frameHeight !== null && previousFrameHeight !== null && (
+      Math.abs(frameHeight - previousFrameHeight) <= 1
+    )
+    stableFrames = heightStable ? stableFrames + 1 : 0
+    previousFrameHeight = frameHeight
+    if (
+      timedOut ||
+      (
+        destinationSettled &&
+        Math.abs(window.scrollY - restoredScrollY) <= 1 &&
+        anchorRestored &&
+        stableFrames >= 2
+      )
+    ) {
+      comparisonScrollPositions.set(destination, captureViewportPosition())
+      if (pendingComparisonScroll?.destination === destination) {
+        pendingComparisonScroll = null
       }
+      cleanup()
+      return
     }
 
     animationFrame = window.requestAnimationFrame(restoreWhenReady)
@@ -79,7 +142,11 @@ function restoreComparisonScroll(destination: string, desiredScrollY: number) {
   return cleanup
 }
 
-export function ModelComparisonViewportManager() {
+export function ModelComparisonViewportManager({
+  navigationKey = '',
+}: {
+  navigationKey?: string
+}) {
   useLayoutEffect(() => {
     const previousScrollRestoration = window.history.scrollRestoration
     window.history.scrollRestoration = 'manual'
@@ -87,20 +154,20 @@ export function ModelComparisonViewportManager() {
 
     const handlePopState = () => {
       if (renderedComparisonLocation) {
-        comparisonScrollPositions.set(renderedComparisonLocation, window.scrollY)
+        comparisonScrollPositions.set(renderedComparisonLocation, captureViewportPosition())
       }
       const destinationUrl = new URL(window.location.href)
       const destination = relativeLocation(destinationUrl)
-      const scrollY = comparisonScrollPositions.get(destination)
-      if (scrollY === undefined) return
+      const position = comparisonScrollPositions.get(destination)
+      if (position === undefined) return
       pendingComparisonScroll = {
         destination,
-        scrollY,
+        position,
       }
       if (routeLocation(destinationUrl) === renderedComparisonRoute) {
         renderedComparisonLocation = destination
         directRestorationCleanup?.()
-        directRestorationCleanup = restoreComparisonScroll(destination, scrollY)
+        directRestorationCleanup = restoreComparisonScroll(destination, position)
       }
     }
 
@@ -111,6 +178,35 @@ export function ModelComparisonViewportManager() {
       directRestorationCleanup?.()
     }
   }, [])
+
+  useLayoutEffect(() => {
+    let currentUrl = new URL(window.location.href)
+    let currentLocation = relativeLocation(currentUrl)
+    const pending = pendingComparisonScroll
+    const pendingRouteMatches = Boolean(
+      pending && routeLocation(new URL(pending.destination, currentUrl)) === routeLocation(currentUrl),
+    )
+    if (pendingRouteMatches && pending && pending.destination !== currentLocation) {
+      window.history.replaceState(window.history.state, '', pending.destination)
+      currentUrl = new URL(window.location.href)
+      currentLocation = relativeLocation(currentUrl)
+    }
+    for (const link of document.querySelectorAll('[data-model-variant-preview-link]')) {
+      link.setAttribute('data-model-variant-preview-hydrated', 'true')
+    }
+    for (const link of document.querySelectorAll('[data-model-variant-view]')) {
+      link.setAttribute('data-model-variant-view-hydrated', 'true')
+    }
+    renderedComparisonRoute = routeLocation(currentUrl)
+    renderedComparisonLocation = currentLocation
+    const pendingMatchesCurrent = pending?.destination === currentLocation
+    const desiredPosition = pendingMatchesCurrent && pending
+      ? pending.position
+      : comparisonScrollPositions.get(currentLocation)
+    if (desiredPosition === undefined) return
+
+    return restoreComparisonScroll(currentLocation, desiredPosition)
+  }, [navigationKey])
 
   return null
 }
@@ -141,8 +237,12 @@ export function ModelComparisonCurrentPreviewLink({
         const artifactScrollY = artifact
           ? Math.min(maxScrollY, window.scrollY + artifact.getBoundingClientRect().top)
           : window.scrollY
-        comparisonScrollPositions.set(relativeLocation(currentUrl), window.scrollY)
-        comparisonScrollPositions.set(relativeLocation(destinationUrl), artifactScrollY)
+        comparisonScrollPositions.set(relativeLocation(currentUrl), captureViewportPosition())
+        comparisonScrollPositions.set(relativeLocation(destinationUrl), {
+          scrollY: artifactScrollY,
+          anchorId: 'final-result',
+          anchorTop: 0,
+        })
         window.requestAnimationFrame(() => {
           renderedComparisonLocation = relativeLocation(new URL(window.location.href))
         })
@@ -153,47 +253,23 @@ export function ModelComparisonCurrentPreviewLink({
   )
 }
 
-export default function ModelComparisonPreviewLink({
+function ViewportPreservingRouteLink({
   href,
   ariaLabel,
   className,
   children,
+  kind,
 }: {
   href: string
   ariaLabel: string
   className: string
   children: ReactNode
+  kind: 'comparison-preview' | 'model-view'
 }) {
   const router = useRouter()
-  const linkRef = useRef<HTMLAnchorElement>(null)
-
-  useLayoutEffect(() => {
-    let currentUrl = new URL(window.location.href)
-    let currentLocation = relativeLocation(currentUrl)
-    const pending = pendingComparisonScroll
-    const pendingRouteMatches = Boolean(
-      pending && routeLocation(new URL(pending.destination, currentUrl)) === routeLocation(currentUrl),
-    )
-    if (pendingRouteMatches && pending && pending.destination !== currentLocation) {
-      window.history.replaceState(window.history.state, '', pending.destination)
-      currentUrl = new URL(window.location.href)
-      currentLocation = relativeLocation(currentUrl)
-    }
-    linkRef.current?.setAttribute('data-model-variant-preview-hydrated', 'true')
-    renderedComparisonRoute = routeLocation(currentUrl)
-    renderedComparisonLocation = currentLocation
-    const pendingMatchesCurrent = pending?.destination === currentLocation
-    const desiredScrollY = pendingMatchesCurrent && pending
-      ? pending.scrollY
-      : comparisonScrollPositions.get(currentLocation)
-    if (desiredScrollY === undefined) return
-
-    return restoreComparisonScroll(currentLocation, desiredScrollY)
-  }, [href])
 
   return (
     <Link
-      ref={linkRef}
       href={href}
       scroll={false}
       onClick={(event) => {
@@ -208,24 +284,72 @@ export default function ModelComparisonPreviewLink({
 
         event.preventDefault()
         const currentLocation = relativeLocation(new URL(window.location.href))
-        const desiredScrollY = window.scrollY
+        const desiredPosition = captureViewportPosition()
         const finalDestinationUrl = new URL(href, window.location.href)
         finalDestinationUrl.hash = ''
         const navigationDestination = relativeLocation(finalDestinationUrl)
-        comparisonScrollPositions.set(currentLocation, desiredScrollY)
-        comparisonScrollPositions.set(navigationDestination, desiredScrollY)
+        comparisonScrollPositions.set(currentLocation, desiredPosition)
+        comparisonScrollPositions.set(navigationDestination, desiredPosition)
         pendingComparisonScroll = {
           destination: navigationDestination,
-          scrollY: desiredScrollY,
+          position: desiredPosition,
         }
         event.currentTarget.blur()
         router.push(navigationDestination, { scroll: false })
       }}
       aria-label={ariaLabel}
       className={className}
-      data-model-variant-preview-link
+      data-model-variant-preview-link={kind === 'comparison-preview' ? '' : undefined}
+      data-model-variant-view={kind === 'model-view' ? '' : undefined}
+      data-model-variant-viewport-link
     >
       {children}
     </Link>
+  )
+}
+
+export function ModelVariantViewLink({
+  href,
+  ariaLabel,
+  className,
+  children,
+}: {
+  href: string
+  ariaLabel: string
+  className: string
+  children: ReactNode
+}) {
+  return (
+    <ViewportPreservingRouteLink
+      href={href}
+      ariaLabel={ariaLabel}
+      className={className}
+      kind="model-view"
+    >
+      {children}
+    </ViewportPreservingRouteLink>
+  )
+}
+
+export default function ModelComparisonPreviewLink({
+  href,
+  ariaLabel,
+  className,
+  children,
+}: {
+  href: string
+  ariaLabel: string
+  className: string
+  children: ReactNode
+}) {
+  return (
+    <ViewportPreservingRouteLink
+      href={href}
+      ariaLabel={ariaLabel}
+      className={className}
+      kind="comparison-preview"
+    >
+      {children}
+    </ViewportPreservingRouteLink>
   )
 }

@@ -20,16 +20,23 @@ export function compareModelVariantRecords(left, right) {
 }
 
 /**
- * @template {{ packageId: string }} T
+ * @template {{ packageId: string, artifactPath: string }} T
  * @param {string} selectedPackageId
+ * @param {string} selectedArtifactPath
  * @param {T | null} loadedArtifact
  * @returns {T | null}
  */
-export function currentArtifactLoad(selectedPackageId, loadedArtifact) {
-  return loadedArtifact?.packageId === selectedPackageId ? loadedArtifact : null
+export function currentArtifactLoad(selectedPackageId, selectedArtifactPath, loadedArtifact) {
+  return (
+    loadedArtifact?.packageId === selectedPackageId &&
+    loadedArtifact.artifactPath === selectedArtifactPath
+  ) ? loadedArtifact : null
 }
 
-/** @param {string} selectedPackageId */
-export function artifactDocumentKey(selectedPackageId) {
-  return `${selectedPackageId}:document`
+/**
+ * @param {string} selectedPackageId
+ * @param {string} artifactPath
+ */
+export function artifactDocumentKey(selectedPackageId, artifactPath) {
+  return `${selectedPackageId}:${artifactPath}:document`
 }

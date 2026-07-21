@@ -83,10 +83,27 @@ assert.deepEqual(
   'sorting the selector must not mutate its manifest history',
 )
 
-const promptTwoLoad = { packageId: 'prompt-2', srcDoc: '<p>two</p>', error: null }
-const promptThreeLoad = { packageId: 'prompt-3', srcDoc: '<p>three</p>', error: null }
-assert.equal(currentArtifactLoad('prompt-3', promptTwoLoad), null)
-assert.equal(currentArtifactLoad('prompt-3', promptThreeLoad), promptThreeLoad)
-assert.notEqual(artifactDocumentKey('prompt-2'), artifactDocumentKey('prompt-3'))
+const promptTwoLoad = {
+  packageId: 'prompt-2',
+  artifactPath: '/artifacts/two.html',
+  srcDoc: '<p>two</p>',
+  error: null,
+}
+const promptThreeLoad = {
+  packageId: 'prompt-3',
+  artifactPath: '/artifacts/three.html',
+  srcDoc: '<p>three</p>',
+  error: null,
+}
+assert.equal(currentArtifactLoad('prompt-3', '/artifacts/three.html', promptTwoLoad), null)
+assert.equal(
+  currentArtifactLoad('prompt-3', '/artifacts/three.html', promptThreeLoad),
+  promptThreeLoad,
+)
+assert.equal(currentArtifactLoad('prompt-3', '/artifacts/other.html', promptThreeLoad), null)
+assert.notEqual(
+  artifactDocumentKey('shared-package', '/artifacts/two.html'),
+  artifactDocumentKey('shared-package', '/artifacts/three.html'),
+)
 
 console.log('Model-variant UI behavior guard passed.')

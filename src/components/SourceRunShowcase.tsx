@@ -2,7 +2,7 @@
 
 import { Fragment, type CSSProperties, type ReactNode } from 'react'
 import Link from 'next/link'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { ArrowRight, CheckCircle2, ExternalLink, GitFork } from 'lucide-react'
 import CopyButton from '@/app/prompt/[id]/CopyButton'
 import MyForgeResumeTracker from '@/components/MyForgeResumeTracker'
@@ -83,22 +83,28 @@ type ArtifactSize = {
 
 type LoadedArtifactSource = {
   packageId: string
+  artifactPath: string
   srcDoc: string | null
   error: 'fetch-failed' | 'response-invalid' | 'too-large' | null
 }
 
 type MeasuredArtifact = {
   packageId: string
-  size: ArtifactSize
+  artifactPath: string
+  size: ArtifactSize & {
+    viewportHeight: number
+  }
 }
 
 const ARTIFACT_FRAME_HEIGHT = 'clamp(520px, calc(100svh - 160px), 760px)'
+const MAX_MEASURED_ARTIFACT_FRAME_HEIGHT = 2400
 const MAX_AUTO_FIT_ARTIFACT_HEIGHT = 6000
 const MAX_AUTO_FIT_ARTIFACT_WIDTH = 14000
 const MAX_AUTO_FIT_HTML_BYTES = 2_000_000
 const MAX_ARTIFACT_STORAGE_BYTES = 1_000_000
 const MAX_ARTIFACT_STORAGE_ENTRIES = 500
 const MAX_ARTIFACT_STORAGE_KEY_LENGTH = 1024
+const ARTIFACT_MEASUREMENT_SETTLE_MS = 1100
 const ARTIFACT_STORAGE_PREFIX = 'pathforge:artifact-storage:v1'
 const ARTIFACT_CSP = [
   "default-src 'none'",
@@ -321,17 +327,23 @@ function artifactFitProbeSource() {
     const body = document.body;
     const width = Math.max(doc ? doc.scrollWidth : 0, body ? body.scrollWidth : 0, window.innerWidth);
     const height = Math.max(doc ? doc.scrollHeight : 0, body ? body.scrollHeight : 0, window.innerHeight);
-    window.parent.postMessage({ type: 'pathforge-artifact-size', width, height }, '*');
+    window.parent.postMessage({
+      type: 'pathforge-artifact-size',
+      width,
+      height,
+      viewportHeight: window.innerHeight,
+    }, '*');
+    window.dispatchEvent(new Event('pathforge-artifact-size-reported'));
   };
 
   let scheduled = false;
   const schedule = () => {
     if (scheduled) return;
     scheduled = true;
-    window.requestAnimationFrame(() => {
+    window.setTimeout(() => {
       scheduled = false;
       sendSize();
-    });
+    }, 0);
   };
 
   window.addEventListener('load', schedule);
@@ -379,7 +391,7 @@ export function ProtectedArtifactFrame({
   selectedPackage,
   providerName,
   showOpenAction = true,
-  frameHeight = ARTIFACT_FRAME_HEIGHT,
+  frameHeight,
   contextLabel,
   bare = false,
   frameId = 'final-result',
@@ -394,16 +406,45 @@ export function ProtectedArtifactFrame({
 }) {
   const frameRef = useRef<HTMLDivElement | null>(null)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
+  const artifactDocumentGenerationRef = useRef(0)
   const lastDownloadAtRef = useRef(-Infinity)
+  const measuredArtifactRef = useRef<MeasuredArtifact | null>(null)
+  const expansionFeedbackCountRef = useRef(new Map<string, number>())
   const [frameSize, setFrameSize] = useState<ArtifactSize | null>(null)
   const [loadedArtifact, setLoadedArtifact] = useState<LoadedArtifactSource | null>(null)
   const [measuredArtifact, setMeasuredArtifact] = useState<MeasuredArtifact | null>(null)
-  const activeLoadedArtifact = currentArtifactLoad(selectedPackage.id, loadedArtifact)
+  const [settledArtifactPackageId, setSettledArtifactPackageId] = useState<string | null>(null)
+  const [artifactDocumentGeneration, setArtifactDocumentGeneration] = useState(0)
+  const [settledArtifactDocumentGeneration, setSettledArtifactDocumentGeneration] = useState(-1)
+  const [guardedArtifactPackageIds, setGuardedArtifactPackageIds] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  )
+  const selectedArtifactIdentity = artifactDocumentKey(
+    selectedPackage.id,
+    selectedPackage.artifactPath,
+  )
+  const activeLoadedArtifact = currentArtifactLoad(
+    selectedPackage.id,
+    selectedPackage.artifactPath,
+    loadedArtifact,
+  )
   const srcDoc = activeLoadedArtifact?.srcDoc ?? null
   const loadError = activeLoadedArtifact?.error ?? null
   const sourceResolved = Boolean(activeLoadedArtifact)
-  const artifactSize =
-    measuredArtifact?.packageId === selectedPackage.id ? measuredArtifact.size : null
+  const artifactSize = (
+    measuredArtifact?.packageId === selectedPackage.id &&
+    measuredArtifact.artifactPath === selectedPackage.artifactPath
+  ) ? measuredArtifact.size : null
+  const artifactDocumentRemounted =
+    settledArtifactDocumentGeneration !== artifactDocumentGeneration
+  const usesMeasuredContentHeight = !bare && frameHeight === undefined
+  const fallbackFrameHeight = frameHeight ?? ARTIFACT_FRAME_HEIGHT
+  const setIframeElement = useCallback((node: HTMLIFrameElement | null) => {
+    iframeRef.current = node
+    if (!node) return
+    artifactDocumentGenerationRef.current += 1
+    setArtifactDocumentGeneration(artifactDocumentGenerationRef.current)
+  }, [])
 
   useEffect(() => {
     const frame = frameRef.current
@@ -439,6 +480,7 @@ export function ProtectedArtifactFrame({
   useEffect(() => {
     const controller = new AbortController()
     const packageId = selectedPackage.id
+    const artifactPath = selectedPackage.artifactPath
 
     async function loadArtifact() {
       try {
@@ -456,6 +498,7 @@ export function ProtectedArtifactFrame({
           if (!controller.signal.aborted) {
             setLoadedArtifact({
               packageId,
+              artifactPath,
               srcDoc: null,
               error: 'response-invalid',
             })
@@ -467,6 +510,7 @@ export function ProtectedArtifactFrame({
           if (!controller.signal.aborted) {
             setLoadedArtifact({
               packageId,
+              artifactPath,
               srcDoc: null,
               error: 'too-large',
             })
@@ -480,6 +524,7 @@ export function ProtectedArtifactFrame({
           if (!controller.signal.aborted) {
             setLoadedArtifact({
               packageId,
+              artifactPath,
               srcDoc: null,
               error: 'too-large',
             })
@@ -496,6 +541,7 @@ export function ProtectedArtifactFrame({
           const protectedArtifactDocument = injectArtifactFitProbe(html, storageSnapshots)
           setLoadedArtifact({
             packageId,
+            artifactPath,
             srcDoc: buildProtectedArtifactWrapperDocument(protectedArtifactDocument),
             error: null,
           })
@@ -504,6 +550,7 @@ export function ProtectedArtifactFrame({
         if (controller.signal.aborted) return
         setLoadedArtifact({
           packageId,
+          artifactPath,
           srcDoc: null,
           error: 'fetch-failed',
         })
@@ -519,6 +566,9 @@ export function ProtectedArtifactFrame({
 
   useEffect(() => {
     const packageId = selectedPackage.id
+    const artifactPath = selectedPackage.artifactPath
+    const artifactIdentity = artifactDocumentKey(packageId, artifactPath)
+    let measurementSettleTimer = 0
 
     function handleMessage(event: MessageEvent) {
       if (event.source !== iframeRef.current?.contentWindow) return
@@ -564,40 +614,109 @@ export function ProtectedArtifactFrame({
       if (data.type !== 'pathforge-artifact-size') return
       const width = Number(data.width)
       const height = Number(data.height)
-      if (!Number.isFinite(width) || !Number.isFinite(height)) return
+      const viewportHeight = Number(data.viewportHeight)
+      if (
+        !Number.isFinite(width) ||
+        !Number.isFinite(height) ||
+        !Number.isFinite(viewportHeight)
+      ) return
 
       const nextSize = {
         width: Math.max(1, Math.ceil(width)),
         height: Math.max(1, Math.ceil(height)),
+        viewportHeight: Math.max(1, Math.ceil(viewportHeight)),
       }
-
-      setMeasuredArtifact((current) => {
-        if (
-          current?.packageId === packageId &&
-          Math.abs(current.size.width - nextSize.width) < 4 &&
-          Math.abs(current.size.height - nextSize.height) < 4
-        ) {
-          return current
+      if (usesMeasuredContentHeight) {
+        const documentGeneration = artifactDocumentGenerationRef.current
+        window.clearTimeout(measurementSettleTimer)
+        setSettledArtifactPackageId(null)
+        measurementSettleTimer = window.setTimeout(() => {
+          setSettledArtifactPackageId(packageId)
+          setSettledArtifactDocumentGeneration(documentGeneration)
+        }, ARTIFACT_MEASUREMENT_SETTLE_MS)
+      }
+      const current = measuredArtifactRef.current
+      const followsExpandedViewport = Boolean(
+        usesMeasuredContentHeight &&
+        current?.packageId === packageId &&
+        current.artifactPath === artifactPath &&
+        Math.abs(nextSize.viewportHeight - current.size.height) < 4 &&
+        nextSize.height > current.size.height + 4
+      )
+      if (followsExpandedViewport) {
+        const expansionCount = (expansionFeedbackCountRef.current.get(artifactIdentity) ?? 0) + 1
+        expansionFeedbackCountRef.current.set(artifactIdentity, expansionCount)
+        if (expansionCount < 2) {
+          const nextMeasurement = { packageId, artifactPath, size: nextSize }
+          measuredArtifactRef.current = nextMeasurement
+          setMeasuredArtifact(nextMeasurement)
+          return
         }
+        setGuardedArtifactPackageIds((current) => {
+          if (current.has(artifactIdentity)) return current
+          const next = new Set(current)
+          next.add(artifactIdentity)
+          return next
+        })
+        return
+      }
+      expansionFeedbackCountRef.current.delete(artifactIdentity)
+      if (
+        current?.packageId === packageId &&
+        current.artifactPath === artifactPath &&
+        Math.abs(current.size.width - nextSize.width) < 4 &&
+        Math.abs(current.size.height - nextSize.height) < 4 &&
+        Math.abs(current.size.viewportHeight - nextSize.viewportHeight) < 4
+      ) return
 
-        return { packageId, size: nextSize }
-      })
+      const nextMeasurement = { packageId, artifactPath, size: nextSize }
+      measuredArtifactRef.current = nextMeasurement
+      setMeasuredArtifact(nextMeasurement)
     }
 
     window.addEventListener('message', handleMessage)
-    return () => window.removeEventListener('message', handleMessage)
-  }, [selectedPackage.artifactPath, selectedPackage.id])
+    return () => {
+      window.removeEventListener('message', handleMessage)
+      window.clearTimeout(measurementSettleTimer)
+    }
+  }, [selectedPackage.artifactPath, selectedPackage.id, usesMeasuredContentHeight])
 
+  const guardedFromMeasuredHeightFeedback = guardedArtifactPackageIds.has(selectedArtifactIdentity)
+  const measuredWidthFitScale = frameSize && artifactSize
+    ? Math.min(
+        1,
+        frameSize.width / Math.max(artifactSize.width, 1),
+      )
+    : 1
+  const measuredRenderedHeight = artifactSize
+    ? Math.max(1, Math.ceil(artifactSize.height * measuredWidthFitScale))
+    : undefined
+  const exceedsMeasuredFrameHeightLimit = Boolean(
+    usesMeasuredContentHeight &&
+    measuredRenderedHeight &&
+    measuredRenderedHeight > MAX_MEASURED_ARTIFACT_FRAME_HEIGHT
+  )
+  const exceedsRawMeasurementLimit = Boolean(
+    artifactSize && (
+      artifactSize.height > MAX_AUTO_FIT_ARTIFACT_HEIGHT ||
+      artifactSize.width > MAX_AUTO_FIT_ARTIFACT_WIDTH
+    )
+  )
   const canAutoFit =
     Boolean(srcDoc && frameSize && artifactSize) &&
+    !guardedFromMeasuredHeightFeedback &&
+    !exceedsMeasuredFrameHeightLimit &&
+    !exceedsRawMeasurementLimit &&
     (artifactSize?.height ?? 0) <= MAX_AUTO_FIT_ARTIFACT_HEIGHT &&
     (artifactSize?.width ?? 0) <= MAX_AUTO_FIT_ARTIFACT_WIDTH
   const fitScale = canAutoFit && frameSize && artifactSize
-    ? Math.min(
-        1,
-        frameSize.height / Math.max(artifactSize.height, 1),
-        frameSize.width / Math.max(artifactSize.width, 1),
-      )
+    ? usesMeasuredContentHeight
+      ? measuredWidthFitScale
+      : Math.min(
+          1,
+          frameSize.height / Math.max(artifactSize.height, 1),
+          frameSize.width / Math.max(artifactSize.width, 1),
+        )
     : 1
   const shouldScale = canAutoFit && fitScale < 0.995
   const virtualWidth = shouldScale && frameSize
@@ -606,6 +725,16 @@ export function ProtectedArtifactFrame({
   const virtualHeight = shouldScale && artifactSize
     ? Math.ceil(artifactSize.height)
     : undefined
+  const measuredFrameHeight = usesMeasuredContentHeight && canAutoFit && artifactSize
+    ? Math.max(1, Math.ceil(artifactSize.height * fitScale))
+    : undefined
+  const heightGuardMode = guardedFromMeasuredHeightFeedback
+    ? 'feedback-loop'
+    : exceedsRawMeasurementLimit
+      ? 'measurement-limit'
+      : exceedsMeasuredFrameHeightLimit
+        ? 'expansion-limit'
+        : 'none'
   const iframeStyle: CSSProperties = shouldScale
     ? {
         width: `${virtualWidth}px`,
@@ -624,6 +753,17 @@ export function ProtectedArtifactFrame({
     : canAutoFit
       ? shouldScale ? 'scaled' : 'native'
       : srcDoc ? 'guarded-scroll' : 'loading'
+  const artifactMeasurementPending = Boolean(
+    usesMeasuredContentHeight &&
+    !loadError &&
+    (
+      !srcDoc ||
+      !artifactSize ||
+      artifactDocumentRemounted ||
+      settledArtifactPackageId !== selectedPackage.id
+    ),
+  )
+  const renderedFrameHeight = measuredFrameHeight
 
   return (
     <div
@@ -666,10 +806,14 @@ export function ProtectedArtifactFrame({
         data-artifact-measured-width={artifactSize?.width ?? ''}
         data-artifact-virtual-height={virtualHeight ?? ''}
         data-artifact-virtual-width={virtualWidth ?? ''}
+        data-artifact-height-mode={usesMeasuredContentHeight ? 'measured-content' : 'fixed-viewport'}
+        data-artifact-height-guard={heightGuardMode}
+        data-artifact-height-pending={artifactMeasurementPending ? 'true' : 'false'}
+        data-artifact-rendered-height={renderedFrameHeight ?? ''}
         data-artifact-package-id={selectedPackage.id}
         data-artifact-path={selectedPackage.artifactPath}
         className="relative w-full overflow-hidden bg-[#111827]"
-        style={{ height: frameHeight }}
+        style={{ height: renderedFrameHeight ? `${renderedFrameHeight}px` : fallbackFrameHeight }}
       >
         {loadError ? (
           <div
@@ -688,8 +832,8 @@ export function ProtectedArtifactFrame({
           </div>
         ) : sourceResolved ? (
           <iframe
-            ref={iframeRef}
-            key={artifactDocumentKey(selectedPackage.id)}
+            ref={setIframeElement}
+            key={selectedArtifactIdentity}
             title={`${selectedPackage.artifactTitle} generated from a ${providerName} source run`}
             srcDoc={srcDoc ?? undefined}
             sandbox="allow-scripts allow-pointer-lock"
@@ -1028,7 +1172,7 @@ function ResponsePackageCard({
   step: SourceRunShowcaseStep
   artifactPackages: ArtifactPackage[]
   selectedPackage?: ArtifactPackage
-  onSelect?: (packageId: string) => void
+  onSelect?: (packageId: string, anchorElement?: HTMLElement) => void
   providerName: string
 }) {
   const copyText = step.responseCopyText ?? step.response
@@ -1070,7 +1214,7 @@ function ResponsePackageCard({
       {canSelectPackage ? (
         <button
           type="button"
-          onClick={() => onSelect?.(detailPackage.id)}
+          onClick={(event) => onSelect?.(detailPackage.id, event.currentTarget)}
           aria-pressed={selected}
           data-artifact-package-select={detailPackage.id}
           className={[
@@ -1107,7 +1251,7 @@ function ResponsePackageCard({
                     <button
                       key={pkg.id}
                       type="button"
-                      onClick={() => onSelect(pkg.id)}
+                      onClick={(event) => onSelect(pkg.id, event.currentTarget)}
                       aria-pressed={packageSelected}
                       data-artifact-version-select={pkg.id}
                       className={[
@@ -1279,6 +1423,10 @@ export default function SourceRunShowcase({
   const [activeForkId, setActiveForkId] = useState<string | null>(null)
   const activeForkStageRef = useRef<HTMLDivElement | null>(null)
   const sourceRunPathRef = useRef<HTMLElement | null>(null)
+  const pendingArtifactSelectionViewportRef = useRef<{
+    anchorElement: HTMLElement
+    anchorTop: number
+  } | null>(null)
   const displayForkNetwork = useMemo(() => forkNetwork.map((fork) => ({
     ...fork,
     modelUsed: fork.modelUsed
@@ -1291,6 +1439,15 @@ export default function SourceRunShowcase({
   const selectedPackage =
     displayPackages.find((pkg) => pkg.id === selectedPackageId) ?? defaultPackage ?? packages[0]
   const selectedPrimaryPackage = packages.find((pkg) => pkg.id === selectedPackage?.id)
+  const selectArtifactPackage = (packageId: string, clickedElement?: HTMLElement) => {
+    if (packageId === selectedPackage?.id) return
+    const anchorElement = clickedElement ?? sourceRunPathRef.current
+    const anchorTop = anchorElement?.getBoundingClientRect().top
+    pendingArtifactSelectionViewportRef.current = !anchorElement || anchorTop === undefined
+      ? null
+      : { anchorElement, anchorTop }
+    setSelectedPackageId(packageId)
+  }
   const forkSourceSteps = useMemo<ProjectForkSourceStep[]>(() => steps.map((step) => ({
     id: step.id,
     stepNumber: step.stepNumber,
@@ -1362,6 +1519,99 @@ export default function SourceRunShowcase({
     sourceRunPathRef.current?.setAttribute('data-source-run-showcase-hydrated', 'true')
   }, [])
 
+  useLayoutEffect(() => {
+    const pending = pendingArtifactSelectionViewportRef.current
+    if (!pending) return
+
+    const startedAt = window.performance.now()
+    let active = true
+    let animationFrame = 0
+    let previousFrameHeight: number | null = null
+    let stableFrames = 0
+    const userInputEvents: Array<keyof WindowEventMap> = [
+      'keydown',
+      'pointerdown',
+      'touchstart',
+      'wheel',
+    ]
+    const cleanup = () => {
+      if (!active) return
+      active = false
+      window.cancelAnimationFrame(animationFrame)
+      for (const eventName of userInputEvents) {
+        window.removeEventListener(eventName, stopForUserInput)
+      }
+    }
+    function stopForUserInput() {
+      pendingArtifactSelectionViewportRef.current = null
+      cleanup()
+    }
+    for (const eventName of userInputEvents) {
+      window.addEventListener(eventName, stopForUserInput, { passive: true, once: true })
+    }
+
+    const restoreWhenReady = () => {
+      if (!active) return
+
+      const sourceRunPath = sourceRunPathRef.current
+      const frame = document.querySelector<HTMLElement>('[data-artifact-package-id]')
+      const framePackageId = frame?.dataset.artifactPackageId
+      const fitMode = frame?.dataset.artifactFitMode
+      const heightGuard = frame?.dataset.artifactHeightGuard
+      const heightPending = frame?.dataset.artifactHeightPending === 'true'
+      const destinationSettled = Boolean(
+        sourceRunPath &&
+        framePackageId === selectedPackageId &&
+        frame?.querySelector('iframe[srcdoc], [data-artifact-load-error]') &&
+        !heightPending &&
+        (
+          fitMode === 'native' ||
+          fitMode === 'scaled' ||
+          fitMode === 'blocked' ||
+          heightGuard !== 'none'
+        ),
+      )
+      const timedOut = window.performance.now() - startedAt >= 12_000
+
+      const anchorElement = pending.anchorElement.isConnected
+        ? pending.anchorElement
+        : sourceRunPath
+      if (anchorElement) {
+        const destinationTop = anchorElement.getBoundingClientRect().top
+        const maxScrollY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
+        const desiredScrollY = Math.max(
+          0,
+          window.scrollY + destinationTop - pending.anchorTop,
+        )
+        window.scrollTo(0, Math.min(desiredScrollY, maxScrollY))
+
+        const restoredTop = anchorElement.getBoundingClientRect().top
+        const frameHeight = frame?.getBoundingClientRect().height ?? null
+        const heightStable = destinationSettled && frameHeight !== null && previousFrameHeight !== null && (
+          Math.abs(frameHeight - previousFrameHeight) <= 1
+        )
+        stableFrames = heightStable ? stableFrames + 1 : 0
+        previousFrameHeight = frameHeight
+        if (
+          timedOut ||
+          (
+            destinationSettled &&
+            Math.abs(restoredTop - pending.anchorTop) <= 1 &&
+            stableFrames >= 2
+          )
+        ) {
+          pendingArtifactSelectionViewportRef.current = null
+          cleanup()
+          return
+        }
+      }
+
+      animationFrame = window.requestAnimationFrame(restoreWhenReady)
+    }
+    restoreWhenReady()
+    return cleanup
+  }, [selectedPackageId])
+
   return (
     <>
       {projectId && sourceRunId && selectedPrimaryPackage && (
@@ -1380,7 +1630,6 @@ export default function SourceRunShowcase({
         <section className="border-b border-surface-200 bg-surface-50 px-4 pb-9 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl">
             <ProtectedArtifactFrame
-              key={selectedPackage.id}
               selectedPackage={selectedPackage}
               providerName={selectedPackage.providerName ?? providerName}
             />
@@ -1415,7 +1664,7 @@ export default function SourceRunShowcase({
               const artifactPackage = displayPackages.find((pkg) => (
                 pkg.id === artifactId || pkg.artifactPath === artifactPath
               ))
-              if (artifactPackage) setSelectedPackageId(artifactPackage.id)
+              if (artifactPackage) selectArtifactPackage(artifactPackage.id)
             }}
           />
         ) : activeForkContext ? (
@@ -1432,11 +1681,11 @@ export default function SourceRunShowcase({
                 const artifactPackage = displayPackages.find((pkg) => (
                   pkg.id === artifactId || pkg.artifactPath === artifactPath
                 ))
-                if (artifactPackage) setSelectedPackageId(artifactPackage.id)
+                if (artifactPackage) selectArtifactPackage(artifactPackage.id)
               }}
               onClose={() => {
                 setActiveForkId(null)
-                setSelectedPackageId(defaultPackage?.id ?? '')
+                selectArtifactPackage(defaultPackage?.id ?? '')
               }}
             />
           </div>
@@ -1502,7 +1751,7 @@ export default function SourceRunShowcase({
                       step={step}
                       artifactPackages={artifactPackages}
                       selectedPackage={selectedStepPackage}
-                      onSelect={artifactPackages.length > 0 ? setSelectedPackageId : undefined}
+                      onSelect={artifactPackages.length > 0 ? selectArtifactPackage : undefined}
                       providerName={providerName}
                     />
                     </PipeNode>

@@ -1,7 +1,7 @@
 import { createServerClient as createSSRClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
-export async function createClient() {
+async function createCookieBackedClient() {
   const cookieStore = await cookies()
 
   return createSSRClient(
@@ -25,4 +25,16 @@ export async function createClient() {
       },
     }
   )
+}
+
+export async function createClient() {
+  return createCookieBackedClient()
+}
+
+// Public reads have checked local fallbacks. Retrying a degraded Data API after
+// the fallback deadline only consumes pool capacity without improving the page.
+// supabase-js does not expose PostgREST retry policy at the client level, so
+// every query issued through this scoped client is guarded with retry(false).
+export async function createPublicReadClient() {
+  return createCookieBackedClient()
 }

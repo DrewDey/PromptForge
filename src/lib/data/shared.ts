@@ -8,18 +8,29 @@ export const SUPABASE_PUBLIC_READS_ENABLED =
 
 export const SUPABASE_READ_TIMEOUT_MS = 3000
 
-export async function readWithFallback<T>(fallback: T, read: () => Promise<T>): Promise<T> {
+export async function readWithFallback<T>(
+  fallback: T,
+  read: (signal: AbortSignal) => Promise<T>,
+): Promise<T> {
   if (!SUPABASE_PUBLIC_READS_ENABLED) return fallback
 
+  const controller = new AbortController()
+  let timeout: ReturnType<typeof setTimeout> | undefined
   try {
     return await Promise.race([
-      read(),
+      read(controller.signal),
       new Promise<T>((resolve) => {
-        setTimeout(() => resolve(fallback), SUPABASE_READ_TIMEOUT_MS)
+        timeout = setTimeout(() => {
+          resolve(fallback)
+          controller.abort()
+        }, SUPABASE_READ_TIMEOUT_MS)
       }),
     ])
   } catch {
     return fallback
+  } finally {
+    if (timeout) clearTimeout(timeout)
+    if (!controller.signal.aborted) controller.abort()
   }
 }
 

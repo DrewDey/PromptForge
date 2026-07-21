@@ -253,19 +253,19 @@ function preparedStepToPromptStep(step: PreparedShowcaseStep, project: PreparedS
 // ---- Categories ----
 
 export async function getCategories(): Promise<Category[]> {
-  return readWithFallback(publicMockCategories, async () => {
-    const { createClient } = await import('./supabase/server')
-    const supabase = await createClient()
-    const { data } = await supabase.from('categories').select('*').order('name')
+  return readWithFallback(publicMockCategories, async (signal) => {
+    const { createPublicReadClient } = await import('./supabase/server')
+    const supabase = await createPublicReadClient()
+    const { data } = await supabase.from('categories').select('*').order('name').retry(false).abortSignal(signal)
     return data ?? []
   })
 }
 
 export async function getCategoryBySlug(slug: string): Promise<Category | null> {
-  return readWithFallback(publicMockCategories.find(c => c.slug === slug) ?? null, async () => {
-    const { createClient } = await import('./supabase/server')
-    const supabase = await createClient()
-    const { data } = await supabase.from('categories').select('*').eq('slug', slug).single()
+  return readWithFallback(publicMockCategories.find(c => c.slug === slug) ?? null, async (signal) => {
+    const { createPublicReadClient } = await import('./supabase/server')
+    const supabase = await createPublicReadClient()
+    const { data } = await supabase.from('categories').select('*').eq('slug', slug).retry(false).abortSignal(signal).single()
     return data
   })
 }
@@ -349,9 +349,9 @@ export async function getPrompts(options?: {
   limit?: number
   sort?: 'newest' | 'popular'
 }): Promise<PromptWithRelations[]> {
-  return readWithFallback(getMockPrompts(options), async () => {
-    const { createClient } = await import('./supabase/server')
-    const supabase = await createClient()
+  return readWithFallback(getMockPrompts(options), async (signal) => {
+    const { createPublicReadClient } = await import('./supabase/server')
+    const supabase = await createPublicReadClient()
     let query = supabase
       .from('prompts')
       .select('*, category:categories(*), author:profiles!prompts_author_id_fkey(*), steps:prompt_steps(*)')
@@ -367,6 +367,8 @@ export async function getPrompts(options?: {
         .from('categories')
         .select('id')
         .eq('slug', options.categorySlug)
+        .retry(false)
+        .abortSignal(signal)
         .single()
       if (cat) query = query.eq('category_id', cat.id)
     }
@@ -384,7 +386,7 @@ export async function getPrompts(options?: {
     } else {
       query = query.order('created_at', { ascending: false })
     }
-    const { data } = await query
+    const { data } = await query.retry(false).abortSignal(signal)
     const filtered = (data ?? []).filter(isPublicLibraryPrompt).map(normalizeProjectPresentation)
     const merged = mergeWithPublicMockPrompts(filtered, options)
     return options?.limit ? merged.slice(0, options.limit) : merged
@@ -411,19 +413,23 @@ export async function getPromptById(id: string): Promise<PromptWithRelations | n
   const resolvedId = id === SNAKE_PROJECT_LEGACY_ID ? SNAKE_PROJECT_ID : id
   const mockPrompt = publicMockPrompts.find(p => p.id === resolvedId)
   const fallback = mockPrompt ? attachRelations(mockPrompt) : null
-  return readWithFallback(fallback, async () => {
-    const { createClient } = await import('./supabase/server')
-    const supabase = await createClient()
+  return readWithFallback(fallback, async (signal) => {
+    const { createPublicReadClient } = await import('./supabase/server')
+    const supabase = await createPublicReadClient()
     const { data } = await supabase
       .from('prompts')
       .select('*, category:categories(*), author:profiles!prompts_author_id_fkey(*), steps:prompt_steps(*)')
       .eq('id', resolvedId)
+      .retry(false)
+      .abortSignal(signal)
       .maybeSingle()
 
     if (!data) return fallback
     if (data.status === 'approved' && isPublicLibraryPrompt(data)) return normalizeProjectPresentation(data)
 
+    signal.throwIfAborted()
     const { data: { user } } = await supabase.auth.getUser()
+    signal.throwIfAborted()
     if (!user) return fallback
     if (data.author_id === user.id) return normalizeProjectPresentation(data)
 
@@ -431,6 +437,8 @@ export async function getPromptById(id: string): Promise<PromptWithRelations | n
       .from('profiles')
       .select('role')
       .eq('id', user.id)
+      .retry(false)
+      .abortSignal(signal)
       .maybeSingle()
 
     if (profile?.role === 'admin') return normalizeProjectPresentation(data)
@@ -454,13 +462,15 @@ export async function getProfileByUsername(username: string): Promise<Profile | 
         },
       }
     : null
-  return readWithFallback(fallback, async () => {
-    const { createClient } = await import('./supabase/server')
-    const supabase = await createClient()
+  return readWithFallback(fallback, async (signal) => {
+    const { createPublicReadClient } = await import('./supabase/server')
+    const supabase = await createPublicReadClient()
     const { data } = await supabase
       .from('profiles')
       .select('*, provenance:profile_provenance(kind)')
       .ilike('username', username.replace(/[\\%_]/g, (character) => `\\${character}`))
+      .retry(false)
+      .abortSignal(signal)
       .single()
     return data ? data as Profile : fallback
   })
@@ -642,9 +652,9 @@ export async function getApprovedProjectForks(
     sourceRunId,
   )
 
-  return readWithFallback(fallbackForks, async () => {
-    const { createClient } = await import('./supabase/server')
-    const supabase = await createClient()
+  return readWithFallback(fallbackForks, async (signal) => {
+    const { createPublicReadClient } = await import('./supabase/server')
+    const supabase = await createPublicReadClient()
     let query = supabase
       .from('prompts')
       .select('id,title,description,model_used,created_at,status,author:profiles!prompts_author_id_fkey(username,display_name),steps:prompt_steps(id,step_number,title,content,result_content),fork_source_project_id,fork_source_project_title,fork_source_model_variant_id,fork_source_run_id,fork_source_step_id,fork_source_step_number,fork_source_artifact_path,fork_source_artifact_sha256,fork_parent_submission_id,prompt_family_id,fork_depth,fork_branch_index')
@@ -654,6 +664,8 @@ export async function getApprovedProjectForks(
     const { data, error } = await query
       .order('fork_branch_index', { ascending: true })
       .order('created_at', { ascending: true })
+      .retry(false)
+      .abortSignal(signal)
 
     if (forkColumnsMissing(error)) return fallbackForks
     if (error) throw error
@@ -708,15 +720,17 @@ export async function getProjectsByAuthor(authorId: string, username?: string): 
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .map(attachRelations)
 
-  return readWithFallback(fallback, async () => {
-    const { createClient } = await import('./supabase/server')
-    const supabase = await createClient()
+  return readWithFallback(fallback, async (signal) => {
+    const { createPublicReadClient } = await import('./supabase/server')
+    const supabase = await createPublicReadClient()
     const { data } = await supabase
       .from('prompts')
       .select('*, category:categories(*), author:profiles!prompts_author_id_fkey(*), steps:prompt_steps(*)')
       .eq('author_id', authorId)
       .eq('status', 'approved')
       .order('created_at', { ascending: false })
+      .retry(false)
+      .abortSignal(signal)
     const dbProjects = (data ?? []).filter(isPublicLibraryPrompt).map(normalizeProjectPresentation)
     const seen = new Set(dbProjects.map(prompt => prompt.id))
     return [...dbProjects, ...fallback.filter(prompt => !seen.has(prompt.id))]
@@ -734,14 +748,16 @@ export async function getAuthorStats(authorId: string, username?: string) {
     memberSince: mockProfiles.find(p => p.id === authorId || p.username === username)?.created_at ?? '',
   }
 
-  return readWithFallback(fallback, async () => {
-    const { createClient } = await import('./supabase/server')
-    const supabase = await createClient()
+  return readWithFallback(fallback, async (signal) => {
+    const { createPublicReadClient } = await import('./supabase/server')
+    const supabase = await createPublicReadClient()
     const { data: prompts } = await supabase
       .from('prompts')
       .select('id, created_at, vote_count, bookmark_count, category_id, categories(name, icon)')
       .eq('author_id', authorId)
       .eq('status', 'approved')
+      .retry(false)
+      .abortSignal(signal)
 
     const dbItems = (prompts ?? []).filter(isPublicLibraryPrompt)
     const seen = new Set(dbItems.map(prompt => prompt.id))
@@ -855,15 +871,17 @@ export async function getUserVotesAndBookmarks(promptIds: string[]): Promise<{ v
   const persistablePromptIds = promptIds.filter(isPersistableProjectId)
   if (persistablePromptIds.length === 0) return { votes: new Set(), bookmarks: new Set() }
 
-  return readWithFallback({ votes: new Set<string>(), bookmarks: new Set<string>() }, async () => {
-    const { createClient } = await import('./supabase/server')
-    const supabase = await createClient()
+  return readWithFallback({ votes: new Set<string>(), bookmarks: new Set<string>() }, async (signal) => {
+    const { createPublicReadClient } = await import('./supabase/server')
+    const supabase = await createPublicReadClient()
+    signal.throwIfAborted()
     const { data: { user } } = await supabase.auth.getUser()
+    signal.throwIfAborted()
     if (!user) return { votes: new Set(), bookmarks: new Set() }
 
     const [votesRes, bookmarksRes] = await Promise.all([
-      supabase.from('votes').select('prompt_id').eq('user_id', user.id).in('prompt_id', persistablePromptIds),
-      supabase.from('bookmarks').select('prompt_id').eq('user_id', user.id).in('prompt_id', persistablePromptIds),
+      supabase.from('votes').select('prompt_id').eq('user_id', user.id).in('prompt_id', persistablePromptIds).retry(false).abortSignal(signal),
+      supabase.from('bookmarks').select('prompt_id').eq('user_id', user.id).in('prompt_id', persistablePromptIds).retry(false).abortSignal(signal),
     ])
 
     return {

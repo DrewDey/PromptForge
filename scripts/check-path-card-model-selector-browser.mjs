@@ -168,6 +168,20 @@ const SNAPSHOT_EXPRESSION = `(() => {
   const primaryLink=card?.querySelector('[data-path-card-primary-link]');
   const activeOrder=selector?.querySelector('[data-model-order-option="active"]');
   const newOrder=selector?.querySelector('[data-model-order-option="new"]');
+  const orderVisualStyle=(element)=>{
+    if (!element) return null;
+    const style=getComputedStyle(element);
+    const layer=getComputedStyle(element,'::before');
+    return {
+      option:element.dataset.modelOrderOption || '',
+      pressed:element.getAttribute('aria-pressed') || '',
+      color:style.color,
+      isolation:style.isolation,
+      layerBackground:layer.backgroundColor,
+      layerHeight:layer.height,
+      layerZIndex:layer.zIndex
+    };
+  };
   const activityNoteId=selector?.getAttribute('aria-describedby');
   const protectedFrame=card?.querySelector('[data-artifact-path]');
   const headerRect=document.querySelector('header')?.getBoundingClientRect();
@@ -214,6 +228,7 @@ const SNAPSHOT_EXPRESSION = `(() => {
     focusedOptionId:document.activeElement?.dataset?.sourceRunId || '',
     controlSizes:[...(selector?.querySelectorAll('[data-model-cycle], [data-model-list-trigger]') || [])].map(rect),
     orderControlSizes:[...(selector?.querySelectorAll('[data-model-order-option]') || [])].map(rect),
+    orderVisualStyles:[...(selector?.querySelectorAll('[data-model-order-option]') || [])].map(orderVisualStyle),
     issueDisclosureSizes:[...(selector?.querySelectorAll('.path-model-card-issue') || [])].map(rect),
     selectorControlHitTests:[...(selector?.querySelectorAll('[data-model-cycle], [data-model-list-trigger], [data-model-order-option]') || [])].map(hitTest),
     issueDisclosureHitTests:[...(selector?.querySelectorAll('.path-model-card-issue') || [])].map(hitTest),
@@ -568,13 +583,11 @@ async function verifyKnownIssueProjectMenu(client, sessionId, options, viewport)
     Boolean,
     `${viewport.name} open known-issue project menu`,
   )
-  if (!viewport.mobile) {
-    await evaluate(
-      client,
-      sessionId,
-      `document.querySelector('[data-model-variant-run="cf73efd5-2fb6-48fe-a9fd-a1a0df336d18"] [data-model-known-issue]')?.focus()`,
-    )
-  }
+  await pointerClick(
+    client,
+    sessionId,
+    '[data-model-variant-run="cf73efd5-2fb6-48fe-a9fd-a1a0df336d18"] [data-model-known-issue]',
+  )
   const state = await waitForValue(
     client,
     sessionId,
@@ -706,6 +719,19 @@ async function verifyViewport(client, sessionId, options, viewport) {
     )
   ) {
     throw new Error(`${viewport.name} has a known-issue disclosure target smaller than 44px: ${JSON.stringify(initial.issueDisclosureSizes)}.`)
+  }
+  if (viewport.mobile) {
+    const selectedOrderStyle = initial.orderVisualStyles.find((entry) => entry?.pressed === 'true')
+    if (
+      !selectedOrderStyle ||
+      selectedOrderStyle.color !== 'rgb(255, 255, 255)' ||
+      selectedOrderStyle.isolation !== 'isolate' ||
+      selectedOrderStyle.layerBackground === 'rgba(0, 0, 0, 0)' ||
+      selectedOrderStyle.layerHeight !== '21px' ||
+      selectedOrderStyle.layerZIndex !== '-1'
+    ) {
+      throw new Error(`${viewport.name} selected order label is not stacked visibly above its compact state layer: ${JSON.stringify(selectedOrderStyle)}.`)
+    }
   }
   if (options.screenshotDir) {
     await screenshot(client, sessionId, path.join(options.screenshotDir, `${viewport.name}-initial.png`))
@@ -853,7 +879,7 @@ async function verifyViewport(client, sessionId, options, viewport) {
     throw new Error(`${viewport.name} open menu omitted the Sonnet issue explanation.`)
   }
   if (
-    viewport.mobile &&
+    viewport.inlineKnownIssue &&
     !menuOpen.visibleKnownIssueTooltips.some((text) => /FAILED state/i.test(text))
   ) {
     throw new Error(`${viewport.name} did not show the known-issue explanation inline.`)
@@ -1063,7 +1089,8 @@ async function main() {
 
     for (const viewport of [
       { name: 'desktop', width: 1440, height: 1000, mobile: false },
-      { name: 'mobile-390', width: 390, height: 844, mobile: true },
+      { name: 'tablet-768', width: 768, height: 1024, mobile: true, inlineKnownIssue: false },
+      { name: 'mobile-390', width: 390, height: 844, mobile: true, inlineKnownIssue: true },
     ]) {
       await verifyCompareModelCatalog(client, sessionId, options, viewport)
       await verifyKnownIssueProjectMenu(client, sessionId, options, viewport)
@@ -1072,7 +1099,8 @@ async function main() {
     const results = []
     for (const viewport of [
       { name: 'desktop', width: 1440, height: 1000, mobile: false },
-      { name: 'mobile-390', width: 390, height: 844, mobile: true },
+      { name: 'tablet-768', width: 768, height: 1024, mobile: true, inlineKnownIssue: false },
+      { name: 'mobile-390', width: 390, height: 844, mobile: true, inlineKnownIssue: true },
     ]) results.push(await verifyViewport(client, sessionId, options, viewport))
 
     if (consoleErrors.length > 0) {

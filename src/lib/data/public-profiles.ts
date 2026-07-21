@@ -97,13 +97,15 @@ function fallbackProjects(authorId: string, username?: string): PromptWithRelati
 
 export async function getPublicProfileByUsername(username: string): Promise<Profile | null> {
   const fallback = fallbackProfile(username)
-  return readWithFallback(fallback, async () => {
-    const { createClient } = await import('../supabase/server')
-    const supabase = await createClient()
+  return readWithFallback(fallback, async (signal) => {
+    const { createPublicReadClient } = await import('../supabase/server')
+    const supabase = await createPublicReadClient()
     const { data } = await supabase
       .from('profiles')
       .select('*, provenance:profile_provenance(kind)')
       .ilike('username', username.replace(/[\\%_]/g, (character) => `\\${character}`))
+      .retry(false)
+      .abortSignal(signal)
       .single()
     return data ? data as Profile : fallback
   })
@@ -114,15 +116,17 @@ export async function getPublicProjectsByAuthor(
   username?: string,
 ): Promise<PromptWithRelations[]> {
   const fallback = fallbackProjects(authorId, username)
-  return readWithFallback(fallback, async () => {
-    const { createClient } = await import('../supabase/server')
-    const supabase = await createClient()
+  return readWithFallback(fallback, async (signal) => {
+    const { createPublicReadClient } = await import('../supabase/server')
+    const supabase = await createPublicReadClient()
     const { data } = await supabase
       .from('prompts')
       .select('*, category:categories(*), author:profiles!prompts_author_id_fkey(*), steps:prompt_steps(*)')
       .eq('author_id', authorId)
       .eq('status', 'approved')
       .order('created_at', { ascending: false })
+      .retry(false)
+      .abortSignal(signal)
     const databaseProjects = (data ?? [])
       .filter(isPublicLibraryProject)
       .map((project) => normalizeProjectPresentation(project as PromptWithRelations))

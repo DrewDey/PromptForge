@@ -1255,7 +1255,7 @@
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 1000px) {
   .pf-paths .path-model-card-issue {
     top: -34px;
     min-height: 44px;
@@ -1288,6 +1288,7 @@
     display: grid;
     min-height: 44px;
     place-items: start center;
+    isolation: isolate;
     border-left: 0;
     background: transparent;
     padding: 7px 6px 0;
@@ -1298,6 +1299,7 @@
     top: 0;
     right: 0;
     left: 0;
+    z-index: -1;
     height: 21px;
     border-left: 1px solid rgba(64,51,31,.2);
     background: rgba(255,255,255,.28);
@@ -1321,6 +1323,9 @@
   .pf-paths .path-model-card-issue > .model-known-issue-tooltip::after {
     display: none;
   }
+}
+
+@media (max-width: 720px) {
 
   .pf-paths .path-container,
   .pf-paths .path-hero-inner {

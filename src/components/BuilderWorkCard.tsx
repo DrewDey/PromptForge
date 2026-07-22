@@ -9,6 +9,7 @@ import {
   MessageSquareText,
 } from 'lucide-react'
 import { ProjectPreview } from '@/components/ProjectPreview'
+import { BuilderByline } from '@/components/BuilderByline'
 import { getProjectHref } from '@/lib/project-links'
 import type { PublicProfileProjectEvidence } from '@/lib/profile-presentation'
 import type { PromptWithRelations } from '@/lib/types'
@@ -37,7 +38,6 @@ export default function BuilderWorkCard({
     project.vote_count > 0 ? { icon: ArrowUp, label: `${project.vote_count} ${plural(project.vote_count, 'upvote')}` } : null,
     project.bookmark_count > 0 ? { icon: Bookmark, label: `${project.bookmark_count} ${plural(project.bookmark_count, 'save')}` } : null,
   ].filter((item): item is { icon: typeof ArrowUp; label: string } => Boolean(item))
-  const modelLabels = evidence.modelLabels.slice(0, 4)
 
   return (
     <article className={[
@@ -92,6 +92,15 @@ export default function BuilderWorkCard({
         <p className={`mt-2 leading-6 text-surface-600 ${featured ? 'max-w-3xl text-sm sm:text-[15px]' : 'line-clamp-3 text-sm'}`}>
           {project.description}
         </p>
+        <BuilderByline
+          name={project.author?.display_name || project.author?.username || 'PathForge builder'}
+          username={project.author?.username}
+          provenanceKind={project.author?.provenance?.kind}
+          href={project.author?.username ? `/user/${project.author.username}` : undefined}
+          showUsername
+          className="mt-3 inline-flex flex-wrap items-center gap-1.5 text-xs text-surface-500 hover:text-brand-orange-ink"
+          provenanceClassName="font-semibold text-surface-600"
+        />
 
         {evidence.forkSource && (
           <div className="mt-4 flex items-start gap-2 border-l-2 border-[#07551f] bg-[#effdf3] px-3 py-2.5 text-xs leading-5 text-surface-700">
@@ -105,9 +114,8 @@ export default function BuilderWorkCard({
                 {evidence.forkSource.sourceProjectTitle || 'the original path'}
               </Link>
               {evidence.forkSource.sourceStepNumber
-                ? ` at response ${String(evidence.forkSource.sourceStepNumber).padStart(2, '0')}`
+                ? ` · response ${evidence.forkSource.sourceStepNumber}`
                 : ''}
-              .
             </span>
           </div>
         )}
@@ -122,12 +130,18 @@ export default function BuilderWorkCard({
         <div className={`mt-auto flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-surface-500 ${featured ? 'pt-6' : 'pt-5'}`}>
           <span className="inline-flex items-center gap-1.5">
             <MessageSquareText className="h-3.5 w-3.5" aria-hidden="true" />
-            {evidence.promptCount} {plural(evidence.promptCount, 'prompt')}
+            {evidence.modelRunCount > 1 ? 'Default run · ' : ''}{evidence.promptCount} {plural(evidence.promptCount, 'prompt')}
           </span>
-          {evidence.verifiedModelRunCount > 0 && (
-            <span className="inline-flex items-center gap-1.5 text-emerald-700">
-              <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
-              {evidence.verifiedModelRunCount} verified {plural(evidence.verifiedModelRunCount, 'run')}
+          <span className="inline-flex items-center gap-1.5">
+            <Cpu className="h-3.5 w-3.5" aria-hidden="true" />
+            {evidence.modelRunCount} model {plural(evidence.modelRunCount, 'run')}
+          </span>
+          <span className={evidence.artifactStatus === 'known-issue' ? 'text-amber-800' : evidence.artifactStatus === 'verified' ? 'text-emerald-700' : ''}>
+            {evidence.artifactStatusLabel}
+          </span>
+          {evidence.knownIssueRunCount > 0 && evidence.artifactStatus !== 'known-issue' && (
+            <span className="text-amber-800">
+              {evidence.knownIssueRunCount} model {plural(evidence.knownIssueRunCount, 'run')} with known artifact {plural(evidence.knownIssueRunCount, 'issue')}
             </span>
           )}
           {engagement.map(({ icon: Icon, label }) => (
@@ -150,24 +164,40 @@ export default function BuilderWorkCard({
           </div>
         )}
 
-        {modelLabels.length > 0 && (
+        {evidence.defaultModelLabel !== 'Unknown model' && (
           <div className={featured && evidence.outcome ? 'mt-6 border-t border-surface-200 pt-5' : ''}>
             <div className="flex items-center gap-2 font-mono text-[9px] font-black uppercase tracking-[0.14em] text-surface-400">
               <Cpu className="h-3.5 w-3.5" aria-hidden="true" />
-              {modelLabels.length > 1 ? 'Models represented' : 'Model used'}
+              {evidence.modelRunCount > 1 ? 'Canonical default model' : 'Model used'}
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
-              {modelLabels.map((modelLabel) => (
-                <span key={modelLabel} className="border border-surface-200 bg-white px-2.5 py-1.5 text-[11px] font-medium text-surface-700">
-                  {modelLabel}
-                </span>
-              ))}
+              <span className="border border-surface-200 bg-white px-2.5 py-1.5 text-[11px] font-medium text-surface-700">
+                {evidence.defaultModelLabel}
+              </span>
             </div>
+            <p className="mt-2 text-[10px] leading-4 text-surface-500">{evidence.defaultModelProofLabel}</p>
+            {evidence.modelRunCount > 1 && (
+              <p className="mt-1 text-[10px] leading-4 text-surface-500">{evidence.modelRunCount} model runs in this project.</p>
+            )}
             {evidence.hasModelHistory && (
-              <p className="mt-2 text-[10px] leading-4 text-surface-500">Includes a verified historical baseline.</p>
+              <p className="mt-2 text-[10px] leading-4 text-surface-500">Includes an artifact-verified historical baseline.</p>
+            )}
+            {evidence.artifactStatusExplanation && (
+              <p className="mt-2 text-[10px] leading-4 text-amber-800">{evidence.artifactStatusExplanation}</p>
+            )}
+            {!evidence.artifactStatusExplanation && evidence.knownIssueExplanations.length > 0 && (
+              <p className="mt-2 text-[10px] leading-4 text-amber-800">{evidence.knownIssueExplanations.join(' ')}</p>
             )}
           </div>
         )}
+
+        <p
+          className="mt-3 text-[10px] leading-4 text-surface-500"
+          data-profile-default-source-evidence
+        >
+          {evidence.defaultSourceAccessLabel}
+          {evidence.defaultRecordLabel ? ` · ${evidence.defaultRecordLabel}` : ''}
+        </p>
 
         <Link
           href={projectHref}

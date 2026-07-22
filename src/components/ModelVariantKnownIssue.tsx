@@ -14,13 +14,13 @@ type ModelVariantKnownIssueProps = {
 }
 
 export function modelVariantKnownIssueTooltipText(explanation: string) {
-  return `Known issue — Historical run preserved for comparison. ${explanation}`
+  return `Artifact has known issue — Historical run preserved for comparison. ${explanation}`
 }
 
 export function ModelVariantKnownIssue({
   id,
   explanation,
-  label = 'Known issue',
+  label = 'Artifact has known issue',
   className = '',
   focusable = false,
   inlineOnMobile = false,

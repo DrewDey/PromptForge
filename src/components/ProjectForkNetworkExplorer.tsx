@@ -6,6 +6,7 @@ import type {
   ProjectForkNetworkItem,
   ProjectForkSourceStep,
 } from '@/lib/project-forks'
+import { resolvePublicSourceEvidence } from '@/lib/public-source-evidence'
 
 export default function ProjectForkNetworkExplorer({
   sourceSteps,
@@ -16,6 +17,12 @@ export default function ProjectForkNetworkExplorer({
 }) {
   const [selectedForkId, setSelectedForkId] = useState<string | null>(null)
   const selectedFork = forks.find((fork) => fork.id === selectedForkId) ?? null
+  const selectedForkEvidence = selectedFork
+    ? resolvePublicSourceEvidence({
+        sourceRunId: selectedFork.childSourceRunId,
+        pathforgeRecordChecked: Boolean(selectedFork.childSourceRunId),
+      })
+    : resolvePublicSourceEvidence(null)
 
   if (forks.length === 0) return null
 
@@ -52,6 +59,7 @@ export default function ProjectForkNetworkExplorer({
           branch={selectedFork}
           branchHref={selectedFork.childRoute}
           sourceRunHref={selectedFork.childSourceUrl}
+          sourceEvidence={selectedForkEvidence}
           onClose={() => setSelectedForkId(null)}
         />
       )}

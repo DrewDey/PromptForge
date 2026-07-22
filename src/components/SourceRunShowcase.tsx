@@ -9,6 +9,7 @@ import MyForgeResumeTracker from '@/components/MyForgeResumeTracker'
 import ProjectForkBuildPath, {
   type ProjectForkBuildPathCrumb,
 } from '@/components/ProjectForkBuildPath'
+import { SourceRunEvidenceFooter } from '@/components/SourceRunEvidenceFooter'
 import {
   artifactDocumentKey,
   currentArtifactLoad,
@@ -19,6 +20,10 @@ import {
   PROTECTED_ARTIFACT_DOWNLOAD_DATA_URL_LIMIT,
 } from '@/lib/protected-artifact-wrapper.mjs'
 import { getPublicModelIdentityLabel } from '@/lib/public-model-labels'
+import {
+  resolvePublicSourceEvidence,
+  type PublicEvidenceTruth,
+} from '@/lib/public-source-evidence'
 import {
   buildProjectResponseForkHref,
   groupProjectForkNetworkBySourceStep,
@@ -1365,7 +1370,7 @@ function ResponsePackageCard({
 
 export default function SourceRunShowcase({
   sourceRunUrl,
-  sourceRunAccessNote,
+  sourceEvidence,
   projectId,
   projectTitle,
   sourceModelVariantId,
@@ -1383,7 +1388,7 @@ export default function SourceRunShowcase({
   allowForks = true,
 }: {
   sourceRunUrl?: string | null
-  sourceRunAccessNote?: string | null
+  sourceEvidence?: PublicEvidenceTruth
   projectId?: string
   projectTitle?: string
   sourceModelVariantId?: string
@@ -1401,6 +1406,7 @@ export default function SourceRunShowcase({
   allowForks?: boolean
 }) {
   const sourceRunHref = externalSourceRunHref(sourceRunUrl)
+  const publicSourceEvidence = sourceEvidence ?? resolvePublicSourceEvidence(null)
   const packages = useMemo<ArtifactPackage[]>(
     () =>
       steps.flatMap((step) => {
@@ -1602,6 +1608,12 @@ export default function SourceRunShowcase({
 
     return null
   })()
+  const activeForkSourceEvidence = activeForkContext
+    ? resolvePublicSourceEvidence({
+        sourceRunId: activeForkContext.fork.childSourceRunId,
+        pathforgeRecordChecked: Boolean(activeForkContext.fork.childSourceRunId),
+      })
+    : resolvePublicSourceEvidence(null)
   const hasForkLane = allowForks && displayForkNetwork.length > 0
   const pathRowClassName = hasForkLane
     ? 'grid min-w-0 gap-0 xl:grid-cols-[minmax(0,1fr)_320px]'
@@ -1756,6 +1768,7 @@ export default function SourceRunShowcase({
             branchHref={forkContext.branch.childRoute}
             newForkHref={forkContext.newForkHref}
             sourceRunHref={forkContext.sourceRunHref ?? forkContext.branch.childSourceUrl}
+            sourceEvidence={publicSourceEvidence}
             selectedArtifactPath={selectedPackage?.artifactPath}
             onDisplayArtifact={(artifactPath, _artifactTitle, artifactId) => {
               const artifactPackage = displayPackages.find((pkg) => (
@@ -1773,6 +1786,7 @@ export default function SourceRunShowcase({
               branchHref={activeForkContext.fork.childRoute}
               newForkHref={activeForkContext.forkHref}
               sourceRunHref={activeForkContext.fork.childSourceUrl}
+              sourceEvidence={activeForkSourceEvidence}
               selectedArtifactPath={selectedPackage?.artifactPath}
               onDisplayArtifact={(artifactPath, _artifactTitle, artifactId) => {
                 const artifactPackage = displayPackages.find((pkg) => (
@@ -1867,31 +1881,10 @@ export default function SourceRunShowcase({
           </div>
         )}
 
-        <div className="mt-8 border border-surface-200 bg-white p-4">
-          {sourceRunHref ? (
-            <div>
-              <a
-                href={sourceRunHref}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center justify-between gap-3 text-sm font-semibold text-brand-blue hover:text-brand-blue-dark"
-              >
-                Source run
-                <ExternalLink className="h-4 w-4" />
-              </a>
-              {sourceRunAccessNote && (
-                <p className="mt-2 text-xs leading-5 text-surface-500" data-source-run-access-note>
-                  {sourceRunAccessNote}
-                </p>
-              )}
-            </div>
-          ) : (
-            <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-surface-700">
-              <span className="font-semibold text-surface-900">Source run</span>
-              <span>Local approval draft; provider link has not been captured yet.</span>
-            </div>
-          )}
-        </div>
+        <SourceRunEvidenceFooter
+          sourceRunHref={sourceRunHref}
+          evidence={publicSourceEvidence}
+        />
       </section>
     </>
   )

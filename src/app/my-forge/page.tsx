@@ -405,7 +405,7 @@ function queueItemForSaved(saved: MyForgeSavedProject): WorkQueueItem {
     eyebrow: hasUpdate ? 'Updated models' : 'Saved path',
     title: saved.project.title,
     body: hasUpdate
-      ? `${saved.unseenModelUpdateCount} new verified ${saved.unseenModelUpdateCount === 1 ? 'run is' : 'runs are'} ready to compare with the version you saved.`
+      ? `${saved.unseenModelUpdateCount} new artifact-verified ${saved.unseenModelUpdateCount === 1 ? 'run is' : 'runs are'} ready to compare with the version you saved.`
       : saved.state?.selectedStepNumber
         ? `Return to response ${String(saved.state.selectedStepNumber).padStart(2, '0')} and the exact artifact version you last opened.`
         : 'Open this saved path and choose the response or artifact you want to continue from.',

@@ -3,7 +3,19 @@ import { projectForkSourceFromSubmissionFields } from './project-forks'
 import { getProjectModelProfileSummary } from './project-model-profile-summaries'
 import { getPreparedProjectModelIdentity } from './prepared-project-model-identities'
 import { getPreparedShowcaseProjectById } from './prepared-showcase-projects'
+import {
+  getProjectModelVariantKnownIssueExplanation,
+  getProjectModelVariantSet,
+} from './project-model-variants'
 import { getPublicModelIdentityLabel } from './public-model-labels'
+import {
+  resolvePublicSourceEvidence,
+  type PublicEvidenceTruth,
+} from './public-source-evidence'
+import {
+  publicArtifactStatusPresentation,
+  type PublicArtifactStatus,
+} from './public-project-truth'
 import type { Profile, PromptWithRelations } from './types'
 
 export { profileAvatarClasses, profileMonogram } from './profile-visuals'
@@ -38,9 +50,19 @@ export type PublicProfileProjectEvidence = {
   projectId: string
   promptCount: number
   modelLabels: string[]
+  defaultModelLabel: string
+  defaultSourceAccessLabel: string
+  defaultRecordLabel: PublicEvidenceTruth['recordLabel']
+  defaultModelProofLabel: string
   verifiedModelRunCount: number
   currentModelRunCount: number
+  modelRunCount: number
+  knownIssueRunCount: number
+  knownIssueExplanations: string[]
   hasModelHistory: boolean
+  artifactStatus: PublicArtifactStatus
+  artifactStatusLabel: 'Artifact verified' | 'Artifact has known issue' | 'Run recorded'
+  artifactStatusExplanation: string | null
   artifactPath: string | null
   hasWorkingArtifact: boolean
   outcome: string | null
@@ -94,26 +116,68 @@ export function getPublicProfileProjectEvidence(
 ): PublicProfileProjectEvidence {
   const verifiedRuns = getProjectModelProfileSummary(project.id)
   const preparedProject = getPreparedShowcaseProjectById(project.id)
+  const variantSet = getProjectModelVariantSet(project.id)
+  const defaultVariant = variantSet?.variants.find((variant) => (
+    variant.sourceRunId === variantSet.defaultSourceRunId
+  ))
   const projectedIdentity = getPreparedProjectModelIdentity(project.id)
-  const defaultModelLabel = projectedIdentity?.publicLabel
+  const fallbackDefaultModelLabel = projectedIdentity?.publicLabel
     ?? profileModelLabel(getPromptModelLabel(project))
+  const defaultModelLabel = defaultVariant
+    ? getPublicModelIdentityLabel({
+        provider: defaultVariant.serviceLabel,
+        model: defaultVariant.modelLabel,
+        modelSettings: defaultVariant.modelSettings,
+      })
+    : fallbackDefaultModelLabel
+  const defaultSourceEvidence = resolvePublicSourceEvidence({
+    sourceRunId: defaultVariant?.sourceRunId ?? preparedProject?.sourceRunId,
+    pathforgeRecordChecked: Boolean(defaultVariant || preparedProject),
+  })
   const modelLabels = distinctModelLabels([
+    ...(variantSet?.variants.map((variant) => getPublicModelIdentityLabel({
+      provider: variant.serviceLabel,
+      model: variant.modelLabel,
+      modelSettings: variant.modelSettings,
+    })) ?? []),
     ...verifiedRuns.map((run) => run.publicModelLabel),
-    ...(defaultModelLabel === 'Unknown model' ? [] : [defaultModelLabel]),
+    ...(fallbackDefaultModelLabel === 'Unknown model' ? [] : [fallbackDefaultModelLabel]),
   ])
   const currentModelRunCount = verifiedRuns.filter((run) => run.isCurrent).length
-  const artifactPath = preparedProject?.artifactPath?.trim() || null
+  const artifactPath = defaultVariant?.finalArtifactPath?.trim()
+    ? `/${defaultVariant.finalArtifactPath.replace(/^public\//, '')}`
+    : preparedProject?.artifactPath?.trim() || null
+  const artifact = publicArtifactStatusPresentation({
+    qualityStatus: defaultVariant?.qualityStatus ?? 'recorded',
+    knownIssueExplanation: defaultVariant
+      ? getProjectModelVariantKnownIssueExplanation(defaultVariant)
+      : null,
+  })
+  const knownIssueExplanations = variantSet?.variants
+    .filter((variant) => variant.qualityStatus === 'known-issue')
+    .map((variant) => getProjectModelVariantKnownIssueExplanation(variant))
+    .filter((explanation): explanation is string => Boolean(explanation))
+    ?? []
 
   return {
     projectId: project.id,
-    promptCount: Math.max(
-      preparedProject?.steps.length ?? project.prompt_step_count ?? project.steps?.length ?? 0,
-      1,
-    ),
+    promptCount: Math.max(defaultVariant?.promptCount ?? preparedProject?.steps.length ?? project.prompt_step_count ?? project.steps?.length ?? 0, 1),
     modelLabels,
+    defaultModelLabel,
+    defaultSourceAccessLabel: defaultSourceEvidence.accessLabel,
+    defaultRecordLabel: defaultSourceEvidence.recordLabel,
+    defaultModelProofLabel: defaultSourceEvidence.modelProofLabel,
     verifiedModelRunCount: verifiedRuns.length,
     currentModelRunCount,
+    modelRunCount: variantSet?.variants.length ?? 1,
+    knownIssueRunCount: variantSet?.variants.filter((variant) => (
+      variant.qualityStatus === 'known-issue'
+    )).length ?? 0,
+    knownIssueExplanations,
     hasModelHistory: verifiedRuns.some((run) => run.runRole === 'historical-baseline'),
+    artifactStatus: artifact.status,
+    artifactStatusLabel: artifact.label,
+    artifactStatusExplanation: artifact.explanation,
     artifactPath,
     hasWorkingArtifact: Boolean(artifactPath),
     outcome: lastProjectOutcome(project),
@@ -129,7 +193,7 @@ export function getPublicProfileProjectEvidence(
 export function getProfileProvenance(profile: Profile): ProfileProvenance | null {
   const provenanceKind = profile.provenance?.kind
 
-  if (provenanceKind === 'pathforge_team' || profile.role === 'admin') {
+  if (provenanceKind === 'pathforge_team') {
     return {
       label: 'PathForge team',
       description: 'An official developer-operated PathForge account.',

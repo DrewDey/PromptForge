@@ -41,7 +41,7 @@ export default function BuilderIdentity({
     insights.originalCount > 0 ? { value: insights.originalCount, label: insights.originalCount === 1 ? 'Path' : 'Paths', icon: Layers3, href: '#vault' } : null,
     insights.forkCount > 0 ? { value: insights.forkCount, label: insights.forkCount === 1 ? 'Fork' : 'Forks', icon: GitFork, href: '#forks' } : null,
     insights.distinctModelCount > 0 ? { value: insights.distinctModelCount, label: insights.distinctModelCount === 1 ? 'Model' : 'Models', icon: Cpu, href: null } : null,
-    insights.verifiedModelRunCount > 0 ? { value: insights.verifiedModelRunCount, label: insights.verifiedModelRunCount === 1 ? 'Verified run' : 'Verified runs', icon: CheckCircle2, href: null } : null,
+    insights.verifiedModelRunCount > 0 ? { value: insights.verifiedModelRunCount, label: insights.verifiedModelRunCount === 1 ? 'Artifact-verified run' : 'Artifact-verified runs', icon: CheckCircle2, href: null } : null,
   ].filter((item): item is { value: number; label: string; icon: typeof Layers3; href: string | null } => Boolean(item))
   const provenanceFallback = provenance?.tone === 'team'
     ? 'Official PathForge work and model comparisons, published with exact prompts, responses, and artifacts attached.'

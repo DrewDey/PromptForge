@@ -168,9 +168,9 @@ export async function BuildPathsDiscovery({
     getPrompts({ sort: 'newest' }),
   ])
   const catalog = buildPathDiscoveryCatalog(prompts, categories)
-  // Compare Models follows the visible distinct-model selector. Disclosed
-  // known-issue history remains a model result instead of disappearing here.
-  const multiModelPathCount = catalog.filter((item) => item.modelVariants.length > 1).length
+  // Multiple models is a distinct artifact-verified model-label filter.
+  // Longitudinal reruns remain selectable without inflating this count.
+  const multiModelPathCount = catalog.filter((item) => item.verifiedModelCount > 1).length
   let isLoggedIn = false
   let votedPromptIds = new Set<string>()
   let bookmarkedPromptIds = new Set<string>()
@@ -197,7 +197,7 @@ export async function BuildPathsDiscovery({
     if (activeDomain && getPromptBroadDomain(item.prompt, categories)?.slug !== activeDomain) return false
     if (activeDifficulty && item.difficulty !== activeDifficulty) return false
     if (activeModel && !item.modelLabels.some((label) => publicModelFilterMatchesLabel(activeModel, label))) return false
-    if (activeCompare && item.modelVariants.length < 2) return false
+    if (activeCompare && item.verifiedModelCount < 2) return false
     if (activeArtifact && !item.hasWorkingArtifact) return false
     if (activeFork && !item.hasFork) return false
     return true

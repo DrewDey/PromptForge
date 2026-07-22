@@ -9,11 +9,23 @@ import {
 } from './project-model-variants'
 import { getPublicModelIdentity, getPublicModelIdentityLabel } from './public-model-labels'
 import {
+  derivePublicProjectTruth,
+  type PublicProjectTruth,
+} from './public-project-truth'
+import {
+  resolvePublicSourceEvidence,
+  type PublicModelProof,
+  type PublicSourceAccess,
+} from './public-source-evidence'
+import {
   calculateDiscoveryActivity,
   countDistinctVerifiedModels,
   compareActiveDiscoveryItems,
   compareForkDiscoveryItems,
   compareMultiModelDiscoveryItems,
+  deriveDiscoveryRunCounts,
+  requireCanonicalDefaultModelRun,
+  retainDistinctRecordedModelRuns,
 } from './discovery-activity.mjs'
 import type { Category, PromptWithRelations } from './types'
 
@@ -37,6 +49,7 @@ export type DiscoveryPreview =
 
 export type BuildPathModelVariant = {
   sourceRunId: string
+  isCanonicalDefault: boolean
   publicModelLabel: string
   providerLabel: string
   capturedAt: string
@@ -47,6 +60,11 @@ export type BuildPathModelVariant = {
   activityProjectCount: number
   qualityStatus: 'verified' | 'known-issue' | 'recorded'
   knownIssueExplanation: string | null
+  sourceAccessState: PublicSourceAccess
+  sourceAccessLabel: string
+  recordLabel: 'PathForge record' | 'PathForge record only' | null
+  modelProof: PublicModelProof
+  modelProofLabel: string
 }
 
 export type BuildPathDiscoveryItem = {
@@ -63,9 +81,13 @@ export type BuildPathDiscoveryItem = {
   modelVariants: BuildPathModelVariant[]
   authorName: string
   authorUsername: string | null
+  authorProvenanceKind: 'member' | 'pathforge_seed' | 'pathforge_team' | null
   promptCount: number
   comparisonCount: number
+  /** Every recorded result exposed by the public family selector. */
   modelRunCount: number
+  /** Artifact-verified runs only; this powers Active and ranking. */
+  verifiedModelRunCount: number
   verifiedModelCount: number
   artifactPath: string | null
   hasWorkingArtifact: boolean
@@ -78,6 +100,29 @@ export type BuildPathDiscoveryItem = {
   isActive: boolean
   recommendationScore: number
   preview: DiscoveryPreview
+}
+
+/**
+ * Derives public truth from the one configured default run. Checked-record
+ * state comes only from resolved evidence already carried by that run; artifact
+ * paths and provider URLs never promote it.
+ */
+export function getCanonicalDefaultDiscoveryTruth(
+  item: BuildPathDiscoveryItem,
+): PublicProjectTruth {
+  const defaultVariant = requireCanonicalDefaultModelRun(item.modelVariants)
+
+  return derivePublicProjectTruth({
+    sourceEvidenceLookup: {
+      sourceRunId: defaultVariant.sourceRunId,
+      pathforgeRecordChecked: defaultVariant.recordLabel !== null,
+    },
+    qualityStatus: defaultVariant.qualityStatus,
+    knownIssueExplanation: defaultVariant.knownIssueExplanation,
+    selectedRunPromptCount: defaultVariant.promptCount,
+    familyRunCount: item.modelVariants.length,
+    isCanonicalDefaultRun: true,
+  })
 }
 
 export const DISCOVERY_INTENTS: Array<{
@@ -196,6 +241,7 @@ function cardModelVariants({
   fallbackSourceRunId,
   fallbackCapturedAt,
   fallbackVerified,
+  fallbackPathForgeRecordChecked,
 }: {
   prompt: PromptWithRelations
   modelLabel: string
@@ -205,6 +251,7 @@ function cardModelVariants({
   fallbackSourceRunId: string
   fallbackCapturedAt: string
   fallbackVerified: boolean
+  fallbackPathForgeRecordChecked: boolean
 }): BuildPathModelVariant[] {
   const variantSet = getProjectModelVariantSet(prompt.id)
   const candidates = (variantSet?.variants ?? [])
@@ -219,9 +266,14 @@ function cardModelVariants({
         publicModelLabel === 'Unknown model' ||
         !Number.isFinite(Date.parse(variant.capturedAt))
       ) return null
+      const sourceEvidence = resolvePublicSourceEvidence({
+        sourceRunId: variant.sourceRunId,
+        pathforgeRecordChecked: true,
+      })
 
       return {
         sourceRunId: variant.sourceRunId,
+        isCanonicalDefault: variant.sourceRunId === variantSet?.defaultSourceRunId,
         publicModelLabel,
         providerLabel: publicModelIdentity.provider || variant.serviceLabel,
         capturedAt: variant.capturedAt,
@@ -236,27 +288,16 @@ function cardModelVariants({
         activityProjectCount: 0,
         qualityStatus: variant.qualityStatus,
         knownIssueExplanation: getProjectModelVariantKnownIssueExplanation(variant),
+        sourceAccessState: sourceEvidence.accessState,
+        sourceAccessLabel: sourceEvidence.accessLabel,
+        recordLabel: sourceEvidence.recordLabel,
+        modelProof: sourceEvidence.modelProof,
+        modelProofLabel: sourceEvidence.modelProofLabel,
       }
     })
     .filter((variant): variant is BuildPathModelVariant => variant !== null)
 
-  const distinctVariants = new Map<string, BuildPathModelVariant>()
-  for (const variant of candidates) {
-    const key = variant.publicModelLabel.toLocaleLowerCase()
-    const existing = distinctVariants.get(key)
-    if (
-      !existing ||
-      (existing.qualityStatus !== 'verified' && variant.qualityStatus === 'verified') ||
-      (
-        existing.qualityStatus === variant.qualityStatus &&
-        Date.parse(variant.capturedAt) > Date.parse(existing.capturedAt)
-      )
-    ) {
-      distinctVariants.set(key, variant)
-    }
-  }
-
-  const variants = [...distinctVariants.values()]
+  const variants = retainDistinctRecordedModelRuns(candidates)
     .sort((left, right) => (
       Date.parse(right.capturedAt) - Date.parse(left.capturedAt) ||
       left.publicModelLabel.localeCompare(right.publicModelLabel) ||
@@ -269,8 +310,13 @@ function cardModelVariants({
     ? fallbackCapturedAt
     : prompt.created_at
   const fallbackIdentity = getPublicModelIdentity({ model: modelLabel })
+  const sourceEvidence = resolvePublicSourceEvidence({
+    sourceRunId: fallbackSourceRunId,
+    pathforgeRecordChecked: fallbackPathForgeRecordChecked,
+  })
   return [{
     sourceRunId: fallbackSourceRunId,
+    isCanonicalDefault: true,
     publicModelLabel: modelLabel,
     providerLabel: fallbackIdentity.provider || 'Other',
     capturedAt,
@@ -281,6 +327,11 @@ function cardModelVariants({
     activityProjectCount: 0,
     qualityStatus: fallbackVerified ? 'verified' : 'recorded',
     knownIssueExplanation: null,
+    sourceAccessState: sourceEvidence.accessState,
+    sourceAccessLabel: sourceEvidence.accessLabel,
+    recordLabel: sourceEvidence.recordLabel,
+    modelProof: sourceEvidence.modelProof,
+    modelProofLabel: sourceEvidence.modelProofLabel,
   }]
 }
 
@@ -369,7 +420,7 @@ export function buildPathDiscoveryCatalog(
 
   const catalog = prompts.map((prompt) => {
     const prepared = getPreparedShowcaseProjectById(prompt.id)
-    const promptCount = prepared?.steps.length ?? prompt.prompt_step_count ?? prompt.steps?.length ?? 0
+    const basePromptCount = prepared?.steps.length ?? prompt.prompt_step_count ?? prompt.steps?.length ?? 0
     const modelLabel = discoveryModelLabel(prompt)
     const variantSummary = getProjectModelProfileSummary(prompt.id)
     const modelLabels = [...new Set([
@@ -377,9 +428,8 @@ export function buildPathDiscoveryCatalog(
       ...variantSummary.map((variant) => variant.publicModelLabel),
     ].filter((label) => label !== 'Unknown model'))]
     const comparisonCount = Math.max(1, modelLabels.length)
-    const modelRunCount = variantSummary.length
     const verifiedModelCount = countDistinctVerifiedModels(
-      variantSummary.map((variant) => variant.modelLabel),
+      variantSummary.map((variant) => variant.publicModelLabel),
     )
     const preview = previewForPrompt(prompt)
     const artifactPath = prepared?.artifactPath ?? null
@@ -388,13 +438,21 @@ export function buildPathDiscoveryCatalog(
       prompt,
       modelLabel,
       artifactPath,
-      promptCount,
+      promptCount: basePromptCount,
       fallbackHref: href,
       fallbackSourceRunId: prepared?.sourceRunId ?? `project-${prompt.id}`,
       fallbackCapturedAt: prepared?.createdAt ?? prompt.created_at,
       fallbackVerified: verifiedModelCount > 0,
+      fallbackPathForgeRecordChecked: Boolean(prepared),
     })
-    const hasWorkingArtifact = Boolean(artifactPath)
+    const { modelRunCount, verifiedModelRunCount } = deriveDiscoveryRunCounts(
+      modelVariants,
+      variantSummary,
+    )
+    const canonicalDefaultVariant = requireCanonicalDefaultModelRun(modelVariants)
+    const promptCount = canonicalDefaultVariant.promptCount
+    const canonicalArtifactPath = canonicalDefaultVariant.artifactPath ?? artifactPath
+    const hasWorkingArtifact = Boolean(canonicalArtifactPath)
     const isFork = Boolean(
       prepared?.forkSource ||
       prompt.fork_source_project_id ||
@@ -412,7 +470,7 @@ export function buildPathDiscoveryCatalog(
       .filter((value): value is string => Boolean(value))
       .sort((left, right) => Date.parse(right) - Date.parse(left))[0] ?? null
     const activity = calculateDiscoveryActivity({
-      modelRunCount,
+      modelRunCount: verifiedModelRunCount,
       forkCount,
       voteCount: prompt.vote_count,
       bookmarkCount: prompt.bookmark_count,
@@ -445,11 +503,13 @@ export function buildPathDiscoveryCatalog(
       modelVariants,
       authorName: prompt.author?.display_name || prompt.author?.username || 'PathForge builder',
       authorUsername: prompt.author?.username ?? null,
+      authorProvenanceKind: prompt.author?.provenance?.kind ?? null,
       promptCount,
       comparisonCount,
       modelRunCount,
+      verifiedModelRunCount,
       verifiedModelCount,
-      artifactPath,
+      artifactPath: canonicalArtifactPath,
       hasWorkingArtifact,
       hasFork,
       isFork,

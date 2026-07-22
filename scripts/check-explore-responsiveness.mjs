@@ -117,6 +117,8 @@ assert.match(navigationSource, /if \(navigation\.preserveScroll\) \{[\s\S]*?rout
 assert.match(navigationSource, /beginNavigation\(\{ href, label: navigationLabel, kind: navigationKind, preserveScroll \}\)/)
 assert.match(navigationSource, /useLayoutEffect\(\(\) => \{[\s\S]*?preservedAnchorRef\.current[\s\S]*?\.path-filter-menu summary[\s\S]*?window\.scrollTo/)
 assert.match(navigationSource, /summary\.getBoundingClientRect\(\)\.top - preservedAnchor\.summaryTop/)
+assert.match(navigationSource, /userInputEvents[\s\S]*?'keydown'[\s\S]*?'pointerdown'[\s\S]*?'touchstart'[\s\S]*?'wheel'/)
+assert.match(navigationSource, /cancelForUserInput[\s\S]*?preservedAnchorRef\.current = null/)
 assert.equal(
   discoverySource.match(/navigationLabel=\{?`?[^\n]+[\s\S]{0,120}?preserveScroll/g)?.length,
   4,
@@ -124,6 +126,9 @@ assert.equal(
 )
 assert.match(anchorGuardSource, /width: 390, height: 844/)
 assert.match(anchorGuardSource, /UNFILTERED_FILTER_SCENARIO[\s\S]*?initialPath: '\/paths'[\s\S]*?filteredPath: '\/paths\?model=gemini-3-1-pro'/)
+assert.match(anchorGuardSource, /UNFILTERED_INTERRUPTED_SCENARIO/)
+assert.match(anchorGuardSource, /type: 'mouseWheel'/)
+assert.match(anchorGuardSource, /user scroll after settle/)
 assert.match(anchorGuardSource, /Input\.dispatchMouseEvent/)
 assert.match(anchorGuardSource, /assertAnchorStable/)
 assert.match(anchorGuardSource, /history\.back\(\)/)

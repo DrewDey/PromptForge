@@ -52,6 +52,28 @@ export function DiscoveryNavigationFeedbackProvider({ children }: { children: Re
   const pendingNavigation = isTransitionPending ? requestedNavigation : null
 
   useLayoutEffect(() => {
+    if (!pendingNavigation?.preserveScroll || !preservedAnchorRef.current) return
+
+    const userInputEvents: Array<keyof WindowEventMap> = [
+      'keydown',
+      'pointerdown',
+      'touchstart',
+      'wheel',
+    ]
+    const cancelForUserInput = () => {
+      preservedAnchorRef.current = null
+    }
+    for (const eventName of userInputEvents) {
+      window.addEventListener(eventName, cancelForUserInput, { passive: true, once: true })
+    }
+    return () => {
+      for (const eventName of userInputEvents) {
+        window.removeEventListener(eventName, cancelForUserInput)
+      }
+    }
+  }, [pendingNavigation])
+
+  useLayoutEffect(() => {
     const preservedAnchor = preservedAnchorRef.current
     if (!preservedAnchor) return
     if (isTransitionPending) {

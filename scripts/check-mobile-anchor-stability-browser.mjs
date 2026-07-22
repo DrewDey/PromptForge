@@ -21,12 +21,20 @@ const SEARCHED_FILTER_SCENARIO = {
   initialPath: '/paths?q=booking&sort=models',
   filteredPath: '/paths?q=booking&model=gemini-3-1-pro&sort=models',
   requiresScrollCompensation: false,
+  interruptDuringPending: false,
 }
 const UNFILTERED_FILTER_SCENARIO = {
   name: 'unfiltered',
   initialPath: '/paths',
   filteredPath: '/paths?model=gemini-3-1-pro',
   requiresScrollCompensation: true,
+  interruptDuringPending: false,
+}
+const UNFILTERED_INTERRUPTED_SCENARIO = {
+  ...UNFILTERED_FILTER_SCENARIO,
+  name: 'unfiltered-interrupted',
+  requiresScrollCompensation: false,
+  interruptDuringPending: true,
 }
 const TARGET_MODEL = 'Gemini 3.1 Pro'
 const VIEWPORTS = [
@@ -212,7 +220,18 @@ async function settleNavigation(client, sessionId, expectedPath, expectedActive,
   )
 }
 
-async function activateFilter(client, sessionId, before, expectedPath, expectedActive, label, slow, allowScrollCompensation) {
+async function activateFilter(
+  client,
+  sessionId,
+  before,
+  expectedPath,
+  expectedActive,
+  label,
+  slow,
+  allowScrollCompensation,
+  interruptDuringPending,
+) {
+  let interruptedPosition = null
   if (slow) {
     await client.send('Network.emulateNetworkConditions', {
       offline: false,
@@ -234,6 +253,22 @@ async function activateFilter(client, sessionId, before, expectedPath, expectedA
       1_500,
     )
     assertAnchorStable(`${label} pending render`, before, acknowledged)
+    if (interruptDuringPending) {
+      await client.send('Input.dispatchMouseEvent', {
+        type: 'mouseWheel',
+        x: acknowledged.viewportWidth - 4,
+        y: Math.round(acknowledged.viewportHeight / 2),
+        deltaX: 0,
+        deltaY: 80,
+      }, sessionId)
+      interruptedPosition = await waitForValue(
+        client,
+        sessionId,
+        SNAPSHOT_EXPRESSION,
+        (value) => value?.pending && value.scrollY >= acknowledged.scrollY + 60,
+        `${label} user-chosen interrupted position`,
+      )
+    }
     await client.send('Network.emulateNetworkConditions', {
       offline: false,
       latency: 0,
@@ -243,7 +278,26 @@ async function activateFilter(client, sessionId, before, expectedPath, expectedA
     }, sessionId)
   }
   const settled = await settleNavigation(client, sessionId, expectedPath, expectedActive, `${label} settled navigation`)
-  assertAnchorStable(`${label} settled render`, before, settled, allowScrollCompensation)
+  if (interruptedPosition) {
+    assertClose(`${label} user scroll after settle`, settled.scrollY, interruptedPosition.scrollY)
+    if (Math.abs((settled.summary?.top ?? 0) - (before.summary?.top ?? 0)) < 40) {
+      throw new Error(`${label} overrode the user's interrupted viewport with the click-time anchor.`)
+    }
+    if (!settled.menuOpen || !settled.targetActive) {
+      throw new Error(`${label} lost the open panel or selected model after interrupted navigation.`)
+    }
+    if (
+      (settled.target?.top ?? -1) < settled.headerBottom ||
+      (settled.target?.bottom ?? Number.POSITIVE_INFINITY) > settled.viewportHeight
+    ) {
+      throw new Error(`${label} left the selected model outside the usable viewport.`)
+    }
+    if (settled.overflow !== 0) {
+      throw new Error(`${label} introduced ${settled.overflow}px of horizontal overflow.`)
+    }
+  } else {
+    assertAnchorStable(`${label} settled render`, before, settled, allowScrollCompensation)
+  }
   return settled
 }
 
@@ -323,6 +377,7 @@ async function verifyViewport(client, options, viewport, scenario) {
       `${viewport.name} ${scenario.name} slow filter selection`,
       true,
       scenario.requiresScrollCompensation,
+      scenario.interruptDuringPending,
     )
     if (selected.historyLength !== opened.historyLength + 1) {
       throw new Error(`${viewport.name} filter selection did not add exactly one history entry.`)
@@ -330,6 +385,24 @@ async function verifyViewport(client, options, viewport, scenario) {
 
     if (options.screenshotDir) {
       await screenshot(client, sessionId, path.join(options.screenshotDir, `${viewport.name}-${scenario.name}-after-filter-navigation.png`))
+    }
+
+    if (scenario.interruptDuringPending) {
+      if (consoleErrors.length > 0) {
+        throw new Error(`${viewport.name} logged browser errors: ${[...new Set(consoleErrors)].join(' | ')}`)
+      }
+      if (httpFailures.length > 0) {
+        throw new Error(`${viewport.name} received failed HTTP responses: ${[...new Set(httpFailures)].join(' | ')}`)
+      }
+      return {
+        viewport: `${viewport.name}-${scenario.name}`,
+        scrollY: selected.scrollY,
+        summaryTop: selected.summary.top,
+        targetTop: selected.target.top,
+        headerBottom: selected.headerBottom,
+        historyLength: selected.historyLength,
+        overflow: selected.overflow,
+      }
     }
 
     await evaluate(client, sessionId, 'history.back()')
@@ -381,6 +454,7 @@ async function verifyViewport(client, options, viewport, scenario) {
       `${viewport.name} ${scenario.name} fast filter clear`,
       false,
       scenario.requiresScrollCompensation,
+      false,
     )
     assertAnchorStable(`${viewport.name} fast settled render`, opened, cleared)
 
@@ -430,6 +504,7 @@ async function main() {
       results.push(await verifyViewport(client, options, viewport, SEARCHED_FILTER_SCENARIO))
       if (viewport.mobile) {
         results.push(await verifyViewport(client, options, viewport, UNFILTERED_FILTER_SCENARIO))
+        results.push(await verifyViewport(client, options, viewport, UNFILTERED_INTERRUPTED_SCENARIO))
       }
     }
     for (const result of results) {

@@ -752,8 +752,8 @@ export default async function PromptDetailPage({
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
             </Link>
           </div>
-          <div className="pf-paths" data-related-shared-path-cards>
-            <div className="path-card-grid path-catalog-grid">
+          <div className="pf-paths path-card-surface" data-related-shared-path-cards>
+            <div className="path-card-grid related-path-card-grid">
               {relatedItems.map((item) => (
                 <BuildPathCard
                   key={item.id}

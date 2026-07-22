@@ -125,11 +125,11 @@ export default function GenericPublicTruthFixturePage() {
         </aside>
       </section>
 
-      <section className="pf-paths max-w-sm" data-fixture-related-project>
+      <section className="pf-paths path-card-surface max-w-sm" data-fixture-related-project>
         <BuildPathCard item={fixtureItem} />
       </section>
 
-      <section className="pf-paths max-w-sm" data-fixture-prepared-multi-run>
+      <section className="pf-paths path-card-surface max-w-sm" data-fixture-prepared-multi-run>
         <BuildPathCard item={preparedMultiRunItem} />
       </section>
     </main>

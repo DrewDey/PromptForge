@@ -37,8 +37,8 @@ export default function BuildPathsLoading() {
         <Pulse className="h-3 w-28 bg-brand-orange/25" />
         <Pulse className="mt-4 h-9 w-full max-w-sm" />
         <Pulse className="mt-3 h-4 w-full max-w-xl" />
-        <div className="mt-7 flex items-center justify-between gap-5 border-y border-surface-200 py-3">
-          <div className="flex gap-3">
+        <div className="mt-7 flex flex-col gap-4 border-y border-surface-200 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-5">
+          <div className="flex flex-wrap gap-3">
             {[36, 74, 54, 112].map((width) => (
               <Pulse key={width} className="h-8 shrink-0" style={{ width }} />
             ))}

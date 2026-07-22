@@ -99,7 +99,7 @@ async function navigate(client, sessionId, url) {
       selected:document.querySelector('[data-path-model-card]')?.dataset.selectedSourceRun,
       trigger:Boolean(document.querySelector('[data-model-list-trigger]'))
     })`,
-    (value) => value?.ready !== 'loading' && value.cards === 1 && value.selected === GEMINI_RUN && value.trigger,
+    (value) => value?.ready !== 'loading' && value.cards === 1 && value.selected === CHATGPT_RUN && value.trigger,
     'hydrated selected model card',
   )
 }
@@ -436,7 +436,7 @@ async function verifyCompareModelCatalog(client, sessionId, options, viewport) {
     state.heading !== '8 paths match.' ||
     state.compareCount !== '8' ||
     state.selectorCounts.some((count) => count < 2) ||
-    state.visibleTotals.some((label) => !/^\d+ models$/.test(label))
+    state.visibleTotals.some((label, index) => label !== `${state.selectorCounts[index]} model runs`)
   ) {
     throw new Error(`${viewport.name} Compare models did not expose eight clearly counted multi-model projects: ${JSON.stringify(state)}.`)
   }
@@ -619,11 +619,11 @@ async function verifyKnownIssueProjectMenu(client, sessionId, options, viewport)
     `${viewport.name} explained known-issue model row`,
   )
   if (
-    !state.summaryText.includes('Known issue') ||
+    !state.summaryText.includes('Artifact has known issue') ||
     !state.explanation.includes(CALMING_EXACT_ISSUE) ||
     !state.tooltipText.includes('Historical run preserved for comparison')
   ) {
-    throw new Error(`${viewport.name} project dropdown omitted its source-backed issue explanation.`)
+    throw new Error(`${viewport.name} project dropdown omitted its source-backed issue explanation: ${JSON.stringify(state)}.`)
   }
   if (state.overflow !== 0 || state.nextDialog) {
     throw new Error(`${viewport.name} known-issue project menu rendered overflow or a Next.js error dialog.`)
@@ -667,15 +667,23 @@ async function verifyViewport(client, sessionId, options, viewport) {
     throw new Error(`${viewport.name} rendered overflow or a Next.js error dialog.`)
   }
   if (
-    initial.selected !== GEMINI_RUN ||
-    initial.artifact !== GEMINI_ARTIFACT ||
-    initial.promptCount !== 3 ||
-    initial.href !== `/booking-flow-handoff-simulator-demo?run=${GEMINI_RUN}`
-  ) throw new Error(`${viewport.name} did not start on the exact newest Gemini receipt.`)
-  if (!initial.triggerText.includes('Gemini 3.1 Pro') || !initial.triggerText.includes('Verified · 3 models total') || !initial.triggerText.includes('Jul 11, 2026')) {
-    throw new Error(`${viewport.name} omitted the selected model, total model count, or capture date.`)
+    initial.selected !== CHATGPT_RUN ||
+    initial.artifact !== CHATGPT_ARTIFACT ||
+    initial.promptCount !== 1 ||
+    initial.href !== '/booking-flow-handoff-simulator-demo'
+  ) throw new Error(`${viewport.name} did not start on the canonical default ChatGPT receipt: ${JSON.stringify(initial)}.`)
+  if (![
+    'Default run',
+    'ChatGPT 5.6 Luna · Extra High',
+    'Public access not confirmed',
+    'PathForge record only',
+    'Artifact verified',
+    'Model proof not confirmed',
+    'Jul 10, 2026',
+  ].every((label) => initial.triggerText.includes(label))) {
+    throw new Error(`${viewport.name} omitted the canonical model or its public evidence: ${JSON.stringify(initial)}.`)
   }
-  if (initial.modelCount !== 3 || initial.modelTotal !== '3 models') {
+  if (initial.modelCount !== 3 || initial.modelTotal !== '3 model runs') {
     throw new Error(`${viewport.name} did not expose the exact model count before opening the selector.`)
   }
   if (!['Order', 'New', 'Active'].every((label) => initial.orderText.includes(label))) {
@@ -844,6 +852,13 @@ async function verifyViewport(client, sessionId, options, viewport) {
   if (activeOrdered.activeOrderPressed !== 'true' || activeOrdered.newOrderPressed !== 'false') {
     throw new Error(`${viewport.name} did not visibly select Active ordering.`)
   }
+  if (
+    activeOrdered.artifact !== GEMINI_ARTIFACT ||
+    activeOrdered.promptCount !== 3 ||
+    activeOrdered.href !== `/booking-flow-handoff-simulator-demo?run=${GEMINI_RUN}`
+  ) {
+    throw new Error(`${viewport.name} Active ordering did not atomically select the expected Gemini receipt: ${JSON.stringify(activeOrdered)}.`)
+  }
   assertRectStable(`${viewport.name} switching to Active order`, beforeActiveOrder, activeOrdered)
 
   await pointerClick(client, sessionId, '[data-model-order-option="new"]')
@@ -953,7 +968,7 @@ async function verifyViewport(client, sessionId, options, viewport) {
     knownIssueSelected.promptCount !== 4 ||
     knownIssueSelected.href !== `/booking-flow-handoff-simulator-demo?run=${SONNET_RUN}` ||
     !knownIssueSelected.triggerText.includes('Sonnet 4.6') ||
-    !knownIssueSelected.triggerText.includes('Known issue') ||
+    !knownIssueSelected.triggerText.includes('Artifact has known issue') ||
     !knownIssueSelected.knownIssueExplanations.some((explanation) => /FAILED state/i.test(explanation))
   ) {
     throw new Error(`${viewport.name} did not keep the known-issue run selectable and truthfully labeled.`)
@@ -990,16 +1005,16 @@ async function verifyViewport(client, sessionId, options, viewport) {
   )
 
   await prepareFixture(client, sessionId, options)
-  await controlPoint(client, sessionId, '[data-model-cycle="next"]')
-  const beforeCycle = await snapshot(client, sessionId)
-  await pointerClick(client, sessionId, '[data-model-cycle="next"]')
-  const cycled = await waitForValue(client, sessionId, SNAPSHOT_EXPRESSION, (value) => value?.selected === CHATGPT_RUN, `${viewport.name} next cycle`)
   await controlPoint(client, sessionId, '[data-model-cycle="previous"]')
-  const beforeCycleBack = await snapshot(client, sessionId)
+  const beforeCycle = await snapshot(client, sessionId)
   await pointerClick(client, sessionId, '[data-model-cycle="previous"]')
-  const cycledBack = await waitForValue(client, sessionId, SNAPSHOT_EXPRESSION, (value) => value?.selected === GEMINI_RUN, `${viewport.name} previous cycle`)
-  assertRectStable(`${viewport.name} next cycle`, beforeCycle, cycled)
-  assertRectStable(`${viewport.name} previous cycle`, beforeCycleBack, cycledBack)
+  const cycled = await waitForValue(client, sessionId, SNAPSHOT_EXPRESSION, (value) => value?.selected === GEMINI_RUN, `${viewport.name} previous cycle`)
+  await controlPoint(client, sessionId, '[data-model-cycle="next"]')
+  const beforeCycleBack = await snapshot(client, sessionId)
+  await pointerClick(client, sessionId, '[data-model-cycle="next"]')
+  const cycledBack = await waitForValue(client, sessionId, SNAPSHOT_EXPRESSION, (value) => value?.selected === CHATGPT_RUN, `${viewport.name} next cycle`)
+  assertRectStable(`${viewport.name} previous cycle`, beforeCycle, cycled)
+  assertRectStable(`${viewport.name} next cycle`, beforeCycleBack, cycledBack)
 
   await prepareFixture(client, sessionId, options)
   await evaluate(client, sessionId, `(() => {

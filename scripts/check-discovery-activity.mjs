@@ -306,6 +306,16 @@ assert.match(interactiveCardSource, /data-model-order-option="new"/)
 assert.match(interactiveCardSource, /data-model-order-option="active"/)
 assert.match(interactiveCardSource, /activityProjectCount/)
 assert.match(interactiveCardSource, /data-model-total/)
+assert.match(
+  interactiveCardSource,
+  /<strong>\{variants\.length\}<\/strong> model \{variants\.length === 1 \? 'run' : 'runs'\}/,
+  'path-card model totals must describe recorded runs rather than overstate distinct model evidence',
+)
+assert.doesNotMatch(
+  interactiveCardSource,
+  /<strong>\{variants\.length\}<\/strong>\s+models/,
+  'path-card run totals must not regress to a models label',
+)
 assert.doesNotMatch(interactiveCardSource, /Only recorded model/)
 assert.match(interactiveCardSource, /data-path-card-primary-link/)
 assert.doesNotMatch(cardSource, /variantsAreVerified/)

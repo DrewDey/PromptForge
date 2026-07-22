@@ -48,6 +48,11 @@ const PROTECTED_VIEWER_ARTIFACTS = {
     title: 'Pocket Rally Time Trial final',
     provider: 'ChatGPT',
   },
+  airlock: {
+    artifactPath: '/artifacts/airlock-zero-gpt-56-sol-max-step-2.html',
+    title: 'Airlock Zero: Reactor Run',
+    provider: 'ChatGPT',
+  },
 }
 
 const CDP_COMMAND_TIMEOUT_MS = 8_000
@@ -1348,12 +1353,22 @@ const PROTECTED_VIEWER_SNAPSHOT_EXPRESSION = `(() => {
   const frameRect=frame?.getBoundingClientRect();
   const iframeRect=iframe?.getBoundingClientRect();
   const controlsRect=document.querySelector('[aria-label="Artifact display size"]')?.getBoundingClientRect();
+  const viewerHeaderRect=frame?.previousElementSibling?.getBoundingClientRect();
+  const protectedHeading=[...document.querySelectorAll('h1')]
+    .find((node)=>node.textContent?.trim()==='Protected artifact viewer');
+  const protectedHeaderRect=protectedHeading?.closest('header')?.getBoundingClientRect();
   const scroller=root?.parentElement;
   return {
     mode:root?.dataset.artifactViewerMode ?? '',
+    navigationTimeOrigin:performance.timeOrigin,
     rootTop:rootRect?.top ?? null,
     rootBottom:rootRect?.bottom ?? null,
+    rootLeft:rootRect?.left ?? null,
+    rootRight:rootRect?.right ?? null,
     rootWidth:rootRect?.width ?? null,
+    protectedHeaderBottom:protectedHeaderRect?.bottom ?? null,
+    viewerHeaderTop:viewerHeaderRect?.top ?? null,
+    viewerHeaderBottom:viewerHeaderRect?.bottom ?? null,
     frameLeft:frameRect?.left ?? null,
     frameRight:frameRect?.right ?? null,
     frameTop:frameRect?.top ?? null,
@@ -1366,6 +1381,7 @@ const PROTECTED_VIEWER_SNAPSHOT_EXPRESSION = `(() => {
     heightMode:frame?.dataset.artifactHeightMode ?? '',
     fitMode:frame?.dataset.artifactFitMode ?? '',
     heightPending:frame?.dataset.artifactHeightPending === 'true',
+    measurementRefreshPending:frame?.dataset.artifactMeasurementRefresh === 'true',
     measuredWidth:Number(frame?.dataset.artifactMeasuredWidth ?? Number.NaN),
     measuredHeight:Number(frame?.dataset.artifactMeasuredHeight ?? Number.NaN),
     virtualWidth:Number(frame?.dataset.artifactVirtualWidth ?? Number.NaN),
@@ -1376,13 +1392,19 @@ const PROTECTED_VIEWER_SNAPSHOT_EXPRESSION = `(() => {
     viewportHeight:window.innerHeight,
     controlsTop:controlsRect?.top ?? null,
     controlsBottom:controlsRect?.bottom ?? null,
+    controlsLeft:controlsRect?.left ?? null,
+    controlsRight:controlsRect?.right ?? null,
     scrollerWidth:scroller?.clientWidth ?? null,
     scrollerScrollWidth:scroller?.scrollWidth ?? null,
     scrollerHeight:scroller?.clientHeight ?? null,
     scrollerScrollHeight:scroller?.scrollHeight ?? null,
     scrollerScrollTop:scroller?.scrollTop ?? null,
+    scrollerScrollLeft:scroller?.scrollLeft ?? null,
     readablePressed:document.querySelector('[data-artifact-viewer-mode-control="readable"]')?.getAttribute('aria-pressed') ?? '',
     fitWholePressed:document.querySelector('[data-artifact-viewer-mode-control="fit-whole"]')?.getAttribute('aria-pressed') ?? '',
+    iframeSameAsTracked:window.__pathforgeResponsiveIframe
+      ? window.__pathforgeResponsiveIframe === iframe
+      : null,
     artifactFitsFrame:Boolean(
       frameRect && iframeRect &&
       iframeRect.width <= frameRect.width + 2 &&
@@ -1511,6 +1533,620 @@ async function verifyProtectedArtifactViewerModes(
   return { readable, fitWhole, readableReturn }
 }
 
+function responsiveFitMatchesCanonical(value, canonical) {
+  return Boolean(
+    value?.mode === 'fit-whole' &&
+    value.fitWholePressed === 'true' &&
+    value.readablePressed === 'false' &&
+    !value.heightPending &&
+    !value.measurementRefreshPending &&
+    value.artifactReady &&
+    Math.abs(value.measuredWidth - canonical.measuredWidth) <= 2 &&
+    Math.abs(value.measuredHeight - canonical.measuredHeight) <= 2 &&
+    Math.abs(value.scale - canonical.scale) <= 0.002 &&
+    Math.abs(value.iframeWidth - canonical.iframeWidth) <= 2 &&
+    Math.abs(value.iframeHeight - canonical.iframeHeight) <= 2
+  )
+}
+
+function responsiveReadableMatchesCanonical(value, canonical) {
+  return Boolean(
+    value?.mode === 'readable' &&
+    value.readablePressed === 'true' &&
+    value.fitWholePressed === 'false' &&
+    !value.heightPending &&
+    !value.measurementRefreshPending &&
+    value.artifactReady &&
+    Math.abs(value.measuredWidth - canonical.measuredWidth) <= 2 &&
+    Math.abs(value.measuredHeight - canonical.measuredHeight) <= 2 &&
+    Math.abs(value.scale - canonical.scale) <= 0.002 &&
+    Math.abs(value.iframeWidth - canonical.iframeWidth) <= 2 &&
+    Math.abs(value.iframeHeight - canonical.iframeHeight) <= 2
+  )
+}
+
+function assertResponsiveViewerGeometry(label, value) {
+  if (
+    !value ||
+    value.rootTop < value.protectedHeaderBottom ||
+    value.viewerHeaderTop < value.protectedHeaderBottom ||
+    value.controlsTop < value.protectedHeaderBottom ||
+    value.controlsBottom > value.viewportHeight + 2 ||
+    value.controlsLeft < -2 ||
+    value.controlsRight > value.viewportWidth + 2 ||
+    value.rootLeft < -2 ||
+    value.rootRight > value.viewportWidth + 2 ||
+    value.frameLeft < -2 ||
+    value.frameRight > value.viewportWidth + 2 ||
+    value.documentWidth > value.viewportWidth + 2 ||
+    value.scrollerScrollWidth > value.scrollerWidth + 2 ||
+    value.scrollerScrollLeft > 2
+  ) {
+    throw new Error(`${label} escaped its responsive protected-viewer geometry: ${JSON.stringify(value)}.`)
+  }
+}
+
+async function readPausedAirlockState(client, artifactRuntime, label) {
+  return evaluateInContext(
+    client,
+    artifactRuntime.sessionId,
+    artifactRuntime.contextId,
+    `(() => ({
+      innerTimeOrigin:performance.timeOrigin,
+      briefingHidden:document.querySelector('#briefingOverlay')?.hidden ?? null,
+      pauseHidden:document.querySelector('#pauseOverlay')?.hidden ?? null,
+      hudActive:document.querySelector('#hud')?.classList.contains('active') ?? false,
+      oxygen:document.querySelector('#oxygenTime')?.textContent?.trim() ?? '',
+    }))()`,
+    label,
+  )
+}
+
+function assertPausedAirlockState(label, state, expectedTimeOrigin) {
+  if (
+    state?.innerTimeOrigin !== expectedTimeOrigin ||
+    state.briefingHidden !== true ||
+    state.pauseHidden !== false ||
+    state.hudActive !== true ||
+    state.oxygen !== '02:20'
+  ) {
+    throw new Error(`${label} lost the paused Airlock runtime state: ${JSON.stringify(state)}.`)
+  }
+}
+
+async function assertResponsiveAirlockIdentityAndState(
+  client,
+  artifactRuntime,
+  label,
+  viewer,
+  expectedOuterTimeOrigin,
+  expectedInnerTimeOrigin,
+) {
+  if (
+    viewer.navigationTimeOrigin !== expectedOuterTimeOrigin ||
+    viewer.iframeSameAsTracked !== true
+  ) {
+    throw new Error(`${label} reloaded or remounted the protected artifact.`)
+  }
+  const state = await readPausedAirlockState(client, artifactRuntime, `${label} state`)
+  assertPausedAirlockState(label, state, expectedInnerTimeOrigin)
+}
+
+async function verifyPomodoroReadableResizeState(
+  client,
+  sessionId,
+  baseUrl,
+  artifact,
+) {
+  const desktop = { label: 'desktop', width: 1440, height: 900, mobile: false }
+  const portrait = { label: '390px', width: 390, height: 844, mobile: true }
+  const landscape = { label: 'landscape', width: 844, height: 390, mobile: true }
+  const freshPortrait = await verifyProtectedArtifactViewerModes(
+    client,
+    sessionId,
+    baseUrl,
+    portrait,
+    artifact,
+  )
+  const freshLandscape = await verifyProtectedArtifactViewerModes(
+    client,
+    sessionId,
+    baseUrl,
+    landscape,
+    artifact,
+  )
+  await client.send('Emulation.setDeviceMetricsOverride', {
+    width: desktop.width,
+    height: desktop.height,
+    deviceScaleFactor: 1,
+    mobile: desktop.mobile,
+  }, sessionId)
+  const viewerUrl = new URL('/artifact-viewer', baseUrl)
+  viewerUrl.searchParams.set('path', artifact.artifactPath)
+  viewerUrl.searchParams.set('title', artifact.title)
+  viewerUrl.searchParams.set('provider', artifact.provider)
+  await replaceRaw(client, sessionId, viewerUrl.href)
+
+  const readable = await waitForValue(
+    client,
+    sessionId,
+    PROTECTED_VIEWER_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.mode === 'readable' &&
+      !value.heightPending &&
+      value.artifactReady &&
+      value.measuredWidth > 0
+    ),
+    `${artifact.title} desktop readable resize start`,
+    20_000,
+  )
+  assertResponsiveViewerGeometry(`${artifact.title} desktop readable resize start`, readable)
+  await evaluateInContext(
+    client,
+    sessionId,
+    undefined,
+    `window.__pathforgeResponsiveIframe=document.querySelector('[data-artifact-package-id] iframe'); true`,
+    `${artifact.title} readable iframe identity sentinel`,
+  )
+  const artifactRuntime = await artifactDocumentContext(
+    client,
+    sessionId,
+    `${artifact.title} readable resize state`,
+    '#workInput',
+  )
+  const sentinel = await evaluateInContext(
+    client,
+    artifactRuntime.sessionId,
+    artifactRuntime.contextId,
+    `(() => {
+      const input=document.querySelector('#workInput');
+      if (!input) return null;
+      input.value='37';
+      input.dispatchEvent(new Event('input',{bubbles:true}));
+      return { innerTimeOrigin:performance.timeOrigin, workMinutes:input.value };
+    })()`,
+    `${artifact.title} changed preset sentinel`,
+  )
+  if (sentinel?.workMinutes !== '37') {
+    throw new Error(`${artifact.title} could not establish its changed preset sentinel.`)
+  }
+
+  const checkpoints = [
+    { label: 'live readable resize to 390px', viewport: portrait, canonical: freshPortrait.readable },
+    { label: 'live readable resize to landscape', viewport: landscape, canonical: freshLandscape.readable },
+    { label: 'live readable portrait return', viewport: portrait, canonical: freshPortrait.readable },
+  ]
+  for (const checkpoint of checkpoints) {
+    await client.send('Emulation.setDeviceMetricsOverride', {
+      width: checkpoint.viewport.width,
+      height: checkpoint.viewport.height,
+      deviceScaleFactor: 1,
+      mobile: checkpoint.viewport.mobile,
+    }, sessionId)
+    const resized = await waitForValue(
+      client,
+      sessionId,
+      PROTECTED_VIEWER_SNAPSHOT_EXPRESSION,
+      (value) => responsiveReadableMatchesCanonical(value, checkpoint.canonical),
+      `${artifact.title} ${checkpoint.label}`,
+      20_000,
+    )
+    assertResponsiveViewerGeometry(`${artifact.title} ${checkpoint.label}`, resized)
+    if (
+      resized.navigationTimeOrigin !== readable.navigationTimeOrigin ||
+      resized.iframeSameAsTracked !== true
+    ) {
+      throw new Error(`${artifact.title} ${checkpoint.label} reloaded or remounted the artifact.`)
+    }
+    const state = await evaluateInContext(
+      client,
+      artifactRuntime.sessionId,
+      artifactRuntime.contextId,
+      `(() => ({
+        innerTimeOrigin:performance.timeOrigin,
+        workMinutes:document.querySelector('#workInput')?.value ?? '',
+      }))()`,
+      `${artifact.title} ${checkpoint.label} state`,
+    )
+    if (
+      state?.innerTimeOrigin !== sentinel.innerTimeOrigin ||
+      state.workMinutes !== sentinel.workMinutes
+    ) {
+      throw new Error(`${artifact.title} ${checkpoint.label} lost its changed preset state.`)
+    }
+  }
+
+  await client.send('Runtime.evaluate', {
+    expression: `document.querySelector('[data-artifact-viewer-mode-control="fit-whole"]')?.click()`,
+  }, sessionId)
+  const fit = await waitForValue(
+    client,
+    sessionId,
+    PROTECTED_VIEWER_SNAPSHOT_EXPRESSION,
+    (value) => responsiveFitMatchesCanonical(value, freshPortrait.fitWhole),
+    `${artifact.title} responsive Fit-whole state checkpoint`,
+    20_000,
+  )
+  assertResponsiveViewerGeometry(`${artifact.title} responsive Fit-whole state checkpoint`, fit)
+  await client.send('Runtime.evaluate', {
+    expression: `document.querySelector('[data-artifact-viewer-mode-control="readable"]')?.click()`,
+  }, sessionId)
+  const readableReturn = await waitForValue(
+    client,
+    sessionId,
+    PROTECTED_VIEWER_SNAPSHOT_EXPRESSION,
+    (value) => responsiveReadableMatchesCanonical(value, freshPortrait.readableReturn),
+    `${artifact.title} responsive readable state return`,
+    20_000,
+  )
+  assertResponsiveViewerGeometry(`${artifact.title} responsive readable state return`, readableReturn)
+  for (const [label, viewer] of [['Fit whole', fit], ['Readable return', readableReturn]]) {
+    if (
+      viewer.navigationTimeOrigin !== readable.navigationTimeOrigin ||
+      viewer.iframeSameAsTracked !== true
+    ) {
+      throw new Error(`${artifact.title} ${label} reloaded or remounted the artifact.`)
+    }
+    const state = await evaluateInContext(
+      client,
+      artifactRuntime.sessionId,
+      artifactRuntime.contextId,
+      `(() => ({
+        innerTimeOrigin:performance.timeOrigin,
+        workMinutes:document.querySelector('#workInput')?.value ?? '',
+      }))()`,
+      `${artifact.title} ${label} state`,
+    )
+    if (
+      state?.innerTimeOrigin !== sentinel.innerTimeOrigin ||
+      state.workMinutes !== sentinel.workMinutes
+    ) {
+      throw new Error(`${artifact.title} ${label} lost its changed preset state.`)
+    }
+  }
+}
+
+async function verifyAirlockReadableResizeState(
+  client,
+  sessionId,
+  baseUrl,
+  freshPortrait,
+  freshLandscape,
+) {
+  const artifact = PROTECTED_VIEWER_ARTIFACTS.airlock
+  const desktop = { width: 1440, height: 900, mobile: false }
+  const portrait = { width: 390, height: 844, mobile: true }
+  const landscape = { width: 844, height: 390, mobile: true }
+  await client.send('Emulation.setDeviceMetricsOverride', {
+    width: desktop.width,
+    height: desktop.height,
+    deviceScaleFactor: 1,
+    mobile: desktop.mobile,
+  }, sessionId)
+  const viewerUrl = new URL('/artifact-viewer', baseUrl)
+  viewerUrl.searchParams.set('path', artifact.artifactPath)
+  viewerUrl.searchParams.set('title', artifact.title)
+  viewerUrl.searchParams.set('provider', artifact.provider)
+  await replaceRaw(client, sessionId, viewerUrl.href)
+
+  const readable = await waitForValue(
+    client,
+    sessionId,
+    PROTECTED_VIEWER_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.mode === 'readable' &&
+      !value.heightPending &&
+      value.artifactReady &&
+      value.measuredWidth > 1_000
+    ),
+    'Airlock desktop readable-resize start',
+    20_000,
+  )
+  assertResponsiveViewerGeometry('Airlock desktop readable-resize start', readable)
+  await evaluateInContext(
+    client,
+    sessionId,
+    undefined,
+    `window.__pathforgeResponsiveIframe=document.querySelector('[data-artifact-package-id] iframe'); true`,
+    'Airlock readable-resize iframe identity sentinel',
+  )
+  const artifactRuntime = await artifactDocumentContext(
+    client,
+    sessionId,
+    'Airlock readable-resize state',
+    '#startButton',
+  )
+  const pausedAirlock = await evaluateInContext(
+    client,
+    artifactRuntime.sessionId,
+    artifactRuntime.contextId,
+    `(async () => {
+      document.querySelector('#startButton')?.click();
+      await new Promise((resolve)=>setTimeout(resolve,120));
+      document.querySelector('#touchPause')?.click();
+      await new Promise((resolve)=>setTimeout(resolve,80));
+      return {
+        innerTimeOrigin:performance.timeOrigin,
+        briefingHidden:document.querySelector('#briefingOverlay')?.hidden ?? null,
+        pauseHidden:document.querySelector('#pauseOverlay')?.hidden ?? null,
+        hudActive:document.querySelector('#hud')?.classList.contains('active') ?? false,
+        oxygen:document.querySelector('#oxygenTime')?.textContent?.trim() ?? '',
+      };
+    })()`,
+    'Airlock readable-resize paused sentinel',
+  )
+  assertPausedAirlockState(
+    'Airlock desktop readable-resize paused sentinel',
+    pausedAirlock,
+    pausedAirlock.innerTimeOrigin,
+  )
+
+  const checkpoints = [
+    { label: 'Airlock live readable resize to 390px', viewport: portrait, canonical: freshPortrait.readable },
+    { label: 'Airlock live readable resize to landscape', viewport: landscape, canonical: freshLandscape.readable },
+    { label: 'Airlock live readable portrait return', viewport: portrait, canonical: freshPortrait.readable },
+  ]
+  for (const checkpoint of checkpoints) {
+    await client.send('Emulation.setDeviceMetricsOverride', {
+      width: checkpoint.viewport.width,
+      height: checkpoint.viewport.height,
+      deviceScaleFactor: 1,
+      mobile: checkpoint.viewport.mobile,
+    }, sessionId)
+    const resized = await waitForValue(
+      client,
+      sessionId,
+      PROTECTED_VIEWER_SNAPSHOT_EXPRESSION,
+      (value) => responsiveReadableMatchesCanonical(value, checkpoint.canonical),
+      checkpoint.label,
+      20_000,
+    )
+    assertResponsiveViewerGeometry(checkpoint.label, resized)
+    await assertResponsiveAirlockIdentityAndState(
+      client,
+      artifactRuntime,
+      checkpoint.label,
+      resized,
+      readable.navigationTimeOrigin,
+      pausedAirlock.innerTimeOrigin,
+    )
+  }
+}
+
+async function verifyProtectedViewerResponsiveStateMachine(client, sessionId, baseUrl) {
+  const airlock = PROTECTED_VIEWER_ARTIFACTS.airlock
+  const portrait = { label: 'fresh 390px Airlock canonical', width: 390, height: 844, mobile: true }
+  const landscape = { label: 'fresh landscape Airlock canonical', width: 844, height: 390, mobile: true }
+  const desktop = { label: 'desktop Airlock responsive chain', width: 1440, height: 900, mobile: false }
+  await verifyPomodoroReadableResizeState(
+    client,
+    sessionId,
+    baseUrl,
+    PROTECTED_VIEWER_ARTIFACTS.pomodoro,
+  )
+  const freshPortrait = await verifyProtectedArtifactViewerModes(
+    client,
+    sessionId,
+    baseUrl,
+    portrait,
+    airlock,
+  )
+  const freshLandscape = await verifyProtectedArtifactViewerModes(
+    client,
+    sessionId,
+    baseUrl,
+    landscape,
+    airlock,
+  )
+  await verifyAirlockReadableResizeState(
+    client,
+    sessionId,
+    baseUrl,
+    freshPortrait,
+    freshLandscape,
+  )
+
+  await client.send('Emulation.setDeviceMetricsOverride', {
+    width: desktop.width,
+    height: desktop.height,
+    deviceScaleFactor: 1,
+    mobile: desktop.mobile,
+  }, sessionId)
+  const viewerUrl = new URL('/artifact-viewer', baseUrl)
+  viewerUrl.searchParams.set('path', airlock.artifactPath)
+  viewerUrl.searchParams.set('title', airlock.title)
+  viewerUrl.searchParams.set('provider', airlock.provider)
+  await replaceRaw(client, sessionId, viewerUrl.href)
+
+  const desktopReadable = await waitForValue(
+    client,
+    sessionId,
+    PROTECTED_VIEWER_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.mode === 'readable' &&
+      !value.heightPending &&
+      !value.measurementRefreshPending &&
+      value.measuredWidth > 1_000 &&
+      value.artifactReady
+    ),
+    'desktop Airlock readable responsive-chain start',
+    20_000,
+  )
+  assertResponsiveViewerGeometry('desktop Airlock readable responsive-chain start', desktopReadable)
+  await evaluateInContext(
+    client,
+    sessionId,
+    undefined,
+    `window.__pathforgeResponsiveIframe=document.querySelector('[data-artifact-package-id] iframe'); true`,
+    'desktop Airlock iframe identity sentinel',
+  )
+  const artifactRuntime = await artifactDocumentContext(
+    client,
+    sessionId,
+    'responsive Airlock state machine',
+    '#startButton',
+  )
+  const pausedAirlock = await evaluateInContext(
+    client,
+    artifactRuntime.sessionId,
+    artifactRuntime.contextId,
+    `(async () => {
+      document.querySelector('#startButton')?.click();
+      await new Promise((resolve)=>setTimeout(resolve,120));
+      document.querySelector('#touchPause')?.click();
+      await new Promise((resolve)=>setTimeout(resolve,80));
+      return {
+        innerTimeOrigin:performance.timeOrigin,
+        briefingHidden:document.querySelector('#briefingOverlay')?.hidden ?? null,
+        pauseHidden:document.querySelector('#pauseOverlay')?.hidden ?? null,
+        hudActive:document.querySelector('#hud')?.classList.contains('active') ?? false,
+        oxygen:document.querySelector('#oxygenTime')?.textContent?.trim() ?? '',
+      };
+    })()`,
+    'start and pause responsive Airlock state sentinel',
+  )
+  assertPausedAirlockState(
+    'desktop Airlock paused responsive-chain start',
+    pausedAirlock,
+    pausedAirlock.innerTimeOrigin,
+  )
+
+  await client.send('Runtime.evaluate', {
+    expression: `document.querySelector('[data-artifact-viewer-mode-control="fit-whole"]')?.click()`,
+  }, sessionId)
+  const desktopFit = await waitForValue(
+    client,
+    sessionId,
+    PROTECTED_VIEWER_SNAPSHOT_EXPRESSION,
+    (value) => value?.mode === 'fit-whole' && !value.heightPending && !value.measurementRefreshPending,
+    'desktop Airlock Fit-whole responsive-chain start',
+    20_000,
+  )
+  assertResponsiveViewerGeometry('desktop Airlock Fit-whole responsive-chain start', desktopFit)
+
+  const checkpoints = [
+    {
+      label: 'live desktop Fit-whole to 390px',
+      viewport: portrait,
+      canonical: freshPortrait.fitWhole,
+    },
+    {
+      label: 'live 390px Fit-whole to landscape',
+      viewport: landscape,
+      canonical: freshLandscape.fitWhole,
+    },
+    {
+      label: 'live landscape Fit-whole to portrait return',
+      viewport: portrait,
+      canonical: freshPortrait.fitWhole,
+    },
+  ]
+
+  for (const checkpoint of checkpoints) {
+    await client.send('Emulation.setDeviceMetricsOverride', {
+      width: checkpoint.viewport.width,
+      height: checkpoint.viewport.height,
+      deviceScaleFactor: 1,
+      mobile: checkpoint.viewport.mobile,
+    }, sessionId)
+    const settled = await waitForValue(
+      client,
+      sessionId,
+      PROTECTED_VIEWER_SNAPSHOT_EXPRESSION,
+      (value) => responsiveFitMatchesCanonical(value, checkpoint.canonical),
+      checkpoint.label,
+      20_000,
+    )
+    assertResponsiveViewerGeometry(checkpoint.label, settled)
+    await assertResponsiveAirlockIdentityAndState(
+      client,
+      artifactRuntime,
+      checkpoint.label,
+      settled,
+      desktopReadable.navigationTimeOrigin,
+      pausedAirlock.innerTimeOrigin,
+    )
+  }
+
+  for (let cycle = 1; cycle <= 2; cycle += 1) {
+    await client.send('Runtime.evaluate', {
+      expression: `document.querySelector('[data-artifact-viewer-mode-control="readable"]')?.click()`,
+    }, sessionId)
+    const readable = await waitForValue(
+      client,
+      sessionId,
+      PROTECTED_VIEWER_SNAPSHOT_EXPRESSION,
+      (value) => (
+        value?.mode === 'readable' &&
+        !value.heightPending &&
+        !value.measurementRefreshPending &&
+        Math.abs(value.measuredWidth - freshPortrait.readable.measuredWidth) <= 2 &&
+        Math.abs(value.measuredHeight - freshPortrait.readable.measuredHeight) <= 2 &&
+        Math.abs(value.iframeWidth - freshPortrait.readable.iframeWidth) <= 2 &&
+        Math.abs(value.iframeHeight - freshPortrait.readable.iframeHeight) <= 2
+      ),
+      `responsive Airlock cycle ${cycle} readable`,
+      20_000,
+    )
+    assertResponsiveViewerGeometry(`responsive Airlock cycle ${cycle} readable`, readable)
+    await assertResponsiveAirlockIdentityAndState(
+      client,
+      artifactRuntime,
+      `responsive Airlock cycle ${cycle} readable`,
+      readable,
+      desktopReadable.navigationTimeOrigin,
+      pausedAirlock.innerTimeOrigin,
+    )
+    await client.send('Runtime.evaluate', {
+      expression: `document.querySelector('[data-artifact-viewer-mode-control="fit-whole"]')?.click()`,
+    }, sessionId)
+    const fit = await waitForValue(
+      client,
+      sessionId,
+      PROTECTED_VIEWER_SNAPSHOT_EXPRESSION,
+      (value) => responsiveFitMatchesCanonical(value, freshPortrait.fitWhole),
+      `responsive Airlock cycle ${cycle} Fit whole`,
+      20_000,
+    )
+    assertResponsiveViewerGeometry(`responsive Airlock cycle ${cycle} Fit whole`, fit)
+    await assertResponsiveAirlockIdentityAndState(
+      client,
+      artifactRuntime,
+      `responsive Airlock cycle ${cycle} Fit whole`,
+      fit,
+      desktopReadable.navigationTimeOrigin,
+      pausedAirlock.innerTimeOrigin,
+    )
+  }
+
+  await client.send('Runtime.evaluate', {
+    expression: `document.querySelector('[data-artifact-viewer-mode-control="readable"]')?.click()`,
+  }, sessionId)
+  const finalReadable = await waitForValue(
+    client,
+    sessionId,
+    PROTECTED_VIEWER_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.mode === 'readable' &&
+      !value.heightPending &&
+      !value.measurementRefreshPending &&
+      Math.abs(value.measuredWidth - freshPortrait.readable.measuredWidth) <= 2 &&
+      Math.abs(value.measuredHeight - freshPortrait.readable.measuredHeight) <= 2
+    ),
+    'responsive Airlock final readable return',
+    20_000,
+  )
+  assertResponsiveViewerGeometry('responsive Airlock final readable return', finalReadable)
+  await assertResponsiveAirlockIdentityAndState(
+    client,
+    artifactRuntime,
+    'responsive Airlock final state',
+    finalReadable,
+    desktopReadable.navigationTimeOrigin,
+    pausedAirlock.innerTimeOrigin,
+  )
+}
+
 const TRIP_PACKING_DOCUMENT_SNAPSHOT_EXPRESSION = `(() => {
   const doc=document.documentElement;
   const body=document.body;
@@ -1518,12 +2154,14 @@ const TRIP_PACKING_DOCUMENT_SNAPSHOT_EXPRESSION = `(() => {
   const documentHeight=Math.max(doc?.scrollHeight ?? 0, body?.scrollHeight ?? 0, window.innerHeight);
   const output=document.getElementById('output');
   return {
+    timeOrigin:performance.timeOrigin,
     documentHeight,
     viewportHeight:window.innerHeight,
     scrollTop:scrolling?.scrollTop ?? window.scrollY,
     maxScroll:Math.max(0, documentHeight - window.innerHeight),
     outputHeight:output?.getBoundingClientRect().height ?? 0,
     itemCount:document.querySelectorAll('#output .item-row').length,
+    checkedCount:document.querySelectorAll('#output .item-row input[type="checkbox"]:checked').length,
     activeFilter:[...document.querySelectorAll('#output .filters button')]
       .find((button)=>button.classList.contains('active'))?.textContent?.trim() ?? '',
   };
@@ -1560,6 +2198,20 @@ async function verifyDynamicReadableArtifact(client, sessionId, baseUrl, viewpor
     baseUrl,
     viewport,
     PROTECTED_VIEWER_ARTIFACTS.tripPacking,
+  )
+  await evaluateInContext(
+    client,
+    sessionId,
+    undefined,
+    `window.__pathforgeResponsiveIframe=document.querySelector('[data-artifact-package-id] iframe'); true`,
+    `${label} iframe identity sentinel`,
+  )
+  const viewerIdentity = await waitForValue(
+    client,
+    sessionId,
+    PROTECTED_VIEWER_SNAPSHOT_EXPRESSION,
+    (value) => value?.iframeSameAsTracked === true,
+    `${label} tracked iframe identity`,
   )
   const artifactContext = await artifactDocumentContext(
     client,
@@ -1607,6 +2259,27 @@ async function verifyDynamicReadableArtifact(client, sessionId, baseUrl, viewpor
       value.documentHeight > 2_400
     ),
     `${label} grown document`,
+    20_000,
+  )
+  const checked = await evaluateInContext(
+    client,
+    artifactContext.sessionId,
+    artifactContext.contextId,
+    `(() => {
+      const checkbox=document.querySelector('#output .item-row input[type="checkbox"]');
+      checkbox?.click();
+      return Boolean(checkbox);
+    })()`,
+    `${label} checked-item sentinel`,
+  )
+  if (!checked) throw new Error(`${label} could not establish its checked-item sentinel.`)
+  grownDocument = await waitForContextValue(
+    client,
+    artifactContext.sessionId,
+    artifactContext.contextId,
+    TRIP_PACKING_DOCUMENT_SNAPSHOT_EXPRESSION,
+    (value) => value?.checkedCount === 1 && value.itemCount >= 18,
+    `${label} checked-item state`,
     20_000,
   )
   const grownViewer = await waitForValue(
@@ -1720,7 +2393,8 @@ async function verifyDynamicReadableArtifact(client, sessionId, baseUrl, viewpor
     TRIP_PACKING_DOCUMENT_SNAPSHOT_EXPRESSION,
     (value) => (
       value?.activeFilter === 'Packed' &&
-      value.itemCount === 0 &&
+      value.itemCount === 1 &&
+      value.checkedCount === 1 &&
       value.documentHeight < grownDocument.documentHeight * 0.65
     ),
     `${label} contracted document`,
@@ -1770,6 +2444,7 @@ async function verifyDynamicReadableArtifact(client, sessionId, baseUrl, viewpor
     (value) => (
       value?.activeFilter === 'All' &&
       value.itemCount >= grownDocument.itemCount &&
+      value.checkedCount === 1 &&
       value.documentHeight > contractedDocument.documentHeight * 1.5
     ),
     `${label} regrown document`,
@@ -1803,7 +2478,7 @@ async function verifyDynamicReadableArtifact(client, sessionId, baseUrl, viewpor
   await client.send('Runtime.evaluate', {
     expression: `document.querySelector('[data-artifact-viewer-mode-control="fit-whole"]')?.click()`,
   }, sessionId)
-  await waitForValue(
+  const fitAfterRegrowth = await waitForValue(
     client,
     sessionId,
     PROTECTED_VIEWER_SNAPSHOT_EXPRESSION,
@@ -1820,10 +2495,31 @@ async function verifyDynamicReadableArtifact(client, sessionId, baseUrl, viewpor
     `${label} fit-whole after regrowth`,
     20_000,
   )
+  if (
+    fitAfterRegrowth.navigationTimeOrigin !== viewerIdentity.navigationTimeOrigin ||
+    fitAfterRegrowth.iframeSameAsTracked !== true
+  ) {
+    throw new Error(`${label} Fit-whole transition reloaded or remounted the generated artifact.`)
+  }
+  await waitForContextValue(
+    client,
+    artifactContext.sessionId,
+    artifactContext.contextId,
+    TRIP_PACKING_DOCUMENT_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.timeOrigin === initialDocument.timeOrigin &&
+      value.activeFilter === 'All' &&
+      value.itemCount === regrownDocument.itemCount &&
+      value.checkedCount === 1 &&
+      Math.abs(value.documentHeight - regrownDocument.documentHeight) <= 4
+    ),
+    `${label} preserved generated state in Fit whole`,
+    20_000,
+  )
   await client.send('Runtime.evaluate', {
     expression: `document.querySelector('[data-artifact-viewer-mode-control="readable"]')?.click()`,
   }, sessionId)
-  await waitForValue(
+  const readableReturn = await waitForValue(
     client,
     sessionId,
     PROTECTED_VIEWER_SNAPSHOT_EXPRESSION,
@@ -1839,6 +2535,27 @@ async function verifyDynamicReadableArtifact(client, sessionId, baseUrl, viewpor
       value.documentWidth <= value.viewportWidth + 2
     ),
     `${label} readable return after regrowth`,
+    20_000,
+  )
+  if (
+    readableReturn.navigationTimeOrigin !== viewerIdentity.navigationTimeOrigin ||
+    readableReturn.iframeSameAsTracked !== true
+  ) {
+    throw new Error(`${label} readable return reloaded or remounted the generated artifact.`)
+  }
+  await waitForContextValue(
+    client,
+    artifactContext.sessionId,
+    artifactContext.contextId,
+    TRIP_PACKING_DOCUMENT_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.timeOrigin === initialDocument.timeOrigin &&
+      value.activeFilter === 'All' &&
+      value.itemCount === regrownDocument.itemCount &&
+      value.checkedCount === 1 &&
+      Math.abs(value.documentHeight - regrownDocument.documentHeight) <= 4
+    ),
+    `${label} preserved generated state after readable return`,
     20_000,
   )
 
@@ -2661,6 +3378,12 @@ async function main() {
             mobile: false,
           }, sessionId),
         ]))
+
+        await runPhase(
+          'protected viewer live responsive state machine',
+          COMPARISON_PHASE_TIMEOUT_MS,
+          () => verifyProtectedViewerResponsiveStateMachine(client, sessionId, baseUrl),
+        )
 
         await runPhase('desktop protected viewer modes', SELECTOR_PHASE_TIMEOUT_MS, async () => {
           const viewport = {

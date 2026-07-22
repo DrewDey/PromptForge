@@ -32,11 +32,29 @@ const CALMING_SLEEP_RUNS = {
   },
 }
 
+const PROTECTED_VIEWER_ARTIFACTS = {
+  tripPacking: {
+    artifactPath: '/artifacts/trip-packing-gemini-pro.html',
+    title: 'Trip Packing Planner final',
+    provider: 'Gemini',
+  },
+  pomodoro: {
+    artifactPath: '/artifacts/pomodoro-focus-timer-gpt55-instant.html',
+    title: 'Pomodoro Focus Timer final',
+    provider: 'ChatGPT',
+  },
+  pocketRally: {
+    artifactPath: '/artifacts/pocket-rally-chatgpt.html',
+    title: 'Pocket Rally Time Trial final',
+    provider: 'ChatGPT',
+  },
+}
+
 const CDP_COMMAND_TIMEOUT_MS = 8_000
 const CHROME_BOOT_TIMEOUT_MS = 15_000
 const SELECTOR_PHASE_TIMEOUT_MS = 55_000
 const COMPARISON_PHASE_TIMEOUT_MS = 75_000
-const OVERALL_ASSERTION_TIMEOUT_MS = 240_000
+const OVERALL_ASSERTION_TIMEOUT_MS = 300_000
 
 function errorMessage(error) {
   return error instanceof Error ? error.message : String(error)
@@ -124,6 +142,153 @@ async function waitForValue(client, sessionId, expression, predicate, label, tim
   throw new Error(`${label} timed out; last value was ${JSON.stringify(lastValue)}.`)
 }
 
+async function waitForContextValue(
+  client,
+  sessionId,
+  contextId,
+  expression,
+  predicate,
+  label,
+  timeoutMs = 12_000,
+) {
+  const deadline = Date.now() + timeoutMs
+  let lastValue
+  while (Date.now() < deadline) {
+    const remainingMs = Math.max(1, deadline - Date.now())
+    const params = {
+      expression,
+      returnByValue: true,
+      awaitPromise: true,
+    }
+    if (contextId !== undefined) params.contextId = contextId
+    const evaluation = await withTimeout(
+      `${label} CDP evaluation`,
+      Math.min(CDP_COMMAND_TIMEOUT_MS, remainingMs),
+      () => client.send('Runtime.evaluate', params, sessionId),
+    )
+    if (evaluation.exceptionDetails) {
+      throw new Error(
+        `${label} raised ${evaluation.exceptionDetails.text ?? 'an evaluation exception'}.`,
+      )
+    }
+    lastValue = evaluation.result.value
+    if (predicate(lastValue)) return lastValue
+    await new Promise((resolve) => setTimeout(resolve, 75))
+  }
+  throw new Error(`${label} timed out; last value was ${JSON.stringify(lastValue)}.`)
+}
+
+async function evaluateInContext(client, sessionId, contextId, expression, label) {
+  const params = {
+    expression,
+    returnByValue: true,
+    awaitPromise: true,
+  }
+  if (contextId !== undefined) params.contextId = contextId
+  const evaluation = await client.send('Runtime.evaluate', params, sessionId)
+  if (evaluation.exceptionDetails) {
+    throw new Error(`${label} raised ${evaluation.exceptionDetails.text ?? 'an evaluation exception'}.`)
+  }
+  return evaluation.result.value
+}
+
+function deepestFrame(frameTree, depth = 0) {
+  let deepest = { frame: frameTree.frame, depth }
+  for (const child of frameTree.childFrames ?? []) {
+    const candidate = deepestFrame(child, depth + 1)
+    if (candidate.depth > deepest.depth) deepest = candidate
+  }
+  return deepest
+}
+
+async function artifactDocumentContext(client, sessionId, label, requiredSelector) {
+  const deadline = Date.now() + 12_000
+  let lastDepth = 0
+  let lastIframeTargetCount = 0
+  while (Date.now() < deadline) {
+    const { frameTree } = await client.send('Page.getFrameTree', {}, sessionId)
+    const candidate = deepestFrame(frameTree)
+    lastDepth = candidate.depth
+    if (candidate.depth >= 2) {
+      const { executionContextId } = await client.send('Page.createIsolatedWorld', {
+        frameId: candidate.frame.id,
+        worldName: `pathforge-artifact-browser-${Date.now()}`,
+      }, sessionId)
+      await waitForContextValue(
+        client,
+        sessionId,
+        executionContextId,
+        `document.readyState === 'complete' && Boolean(document.querySelector(${JSON.stringify(requiredSelector)}))`,
+        Boolean,
+        `${label} inner artifact document`,
+      )
+      return { sessionId, contextId: executionContextId }
+    }
+
+    const { targetInfos } = await client.send('Target.getTargets')
+    const iframeTargets = targetInfos.filter((target) => target.type === 'iframe')
+    lastIframeTargetCount = iframeTargets.length
+    for (const target of iframeTargets) {
+      let attachedSessionId
+      try {
+        const attached = await client.send('Target.attachToTarget', {
+          targetId: target.targetId,
+          flatten: true,
+        })
+        attachedSessionId = attached.sessionId
+        await Promise.all([
+          client.send('Page.enable', {}, attachedSessionId),
+          client.send('Runtime.enable', {}, attachedSessionId),
+        ])
+        const matches = await evaluateInContext(
+          client,
+          attachedSessionId,
+          undefined,
+          `document.readyState === 'complete' && Boolean(document.querySelector(${JSON.stringify(requiredSelector)}))`,
+          `${label} isolated iframe probe`,
+        )
+        if (matches) return { sessionId: attachedSessionId, contextId: undefined }
+
+        const { frameTree: isolatedFrameTree } = await client.send(
+          'Page.getFrameTree',
+          {},
+          attachedSessionId,
+        )
+        const isolatedCandidate = deepestFrame(isolatedFrameTree)
+        if (isolatedCandidate.depth >= 1) {
+          const { executionContextId } = await client.send('Page.createIsolatedWorld', {
+            frameId: isolatedCandidate.frame.id,
+            worldName: `pathforge-inner-artifact-browser-${Date.now()}`,
+          }, attachedSessionId)
+          const nestedMatches = await evaluateInContext(
+            client,
+            attachedSessionId,
+            executionContextId,
+            `document.readyState === 'complete' && Boolean(document.querySelector(${JSON.stringify(requiredSelector)}))`,
+            `${label} nested isolated iframe probe`,
+          )
+          if (nestedMatches) {
+            return { sessionId: attachedSessionId, contextId: executionContextId }
+          }
+        }
+      } catch {
+        // The iframe target may be replaced while the protected document loads.
+      }
+      if (attachedSessionId) {
+        try {
+          await client.send('Target.detachFromTarget', { sessionId: attachedSessionId })
+        } catch {
+          // A navigated or destroyed target is already detached.
+        }
+      }
+    }
+    await new Promise((resolve) => setTimeout(resolve, 75))
+  }
+  throw new Error(
+    `${label} did not expose its protected artifact document; frame depth ${lastDepth}, iframe targets ${lastIframeTargetCount}.`,
+  )
+}
+
 async function navigateRaw(client, sessionId, url) {
   const loaded = client.waitFor('Page.loadEventFired', sessionId)
   await withTimeout(
@@ -132,6 +297,18 @@ async function navigateRaw(client, sessionId, url) {
     () => client.send('Page.navigate', { url }, sessionId),
   )
   await withTimeout(`page load for ${url}`, 15_000, () => loaded)
+}
+
+async function replaceRaw(client, sessionId, url) {
+  const loaded = client.waitFor('Page.loadEventFired', sessionId)
+  await withTimeout(
+    `replacement navigation dispatch for ${url}`,
+    CDP_COMMAND_TIMEOUT_MS,
+    () => client.send('Runtime.evaluate', {
+      expression: `location.replace(${JSON.stringify(url)})`,
+    }, sessionId),
+  )
+  await withTimeout(`replacement page load for ${url}`, 15_000, () => loaded)
 }
 
 async function navigate(client, sessionId, url) {
@@ -1170,10 +1347,17 @@ const PROTECTED_VIEWER_SNAPSHOT_EXPRESSION = `(() => {
   const rootRect=root?.getBoundingClientRect();
   const frameRect=frame?.getBoundingClientRect();
   const iframeRect=iframe?.getBoundingClientRect();
+  const controlsRect=document.querySelector('[aria-label="Artifact display size"]')?.getBoundingClientRect();
   const scroller=root?.parentElement;
   return {
     mode:root?.dataset.artifactViewerMode ?? '',
+    rootTop:rootRect?.top ?? null,
+    rootBottom:rootRect?.bottom ?? null,
     rootWidth:rootRect?.width ?? null,
+    frameLeft:frameRect?.left ?? null,
+    frameRight:frameRect?.right ?? null,
+    frameTop:frameRect?.top ?? null,
+    frameBottom:frameRect?.bottom ?? null,
     frameWidth:frameRect?.width ?? null,
     frameHeight:frameRect?.height ?? null,
     iframeWidth:iframeRect?.width ?? null,
@@ -1189,8 +1373,14 @@ const PROTECTED_VIEWER_SNAPSHOT_EXPRESSION = `(() => {
     scrolling:iframe?.getAttribute('scrolling') ?? '',
     documentWidth:document.documentElement.scrollWidth,
     viewportWidth:window.innerWidth,
+    viewportHeight:window.innerHeight,
+    controlsTop:controlsRect?.top ?? null,
+    controlsBottom:controlsRect?.bottom ?? null,
     scrollerWidth:scroller?.clientWidth ?? null,
     scrollerScrollWidth:scroller?.scrollWidth ?? null,
+    scrollerHeight:scroller?.clientHeight ?? null,
+    scrollerScrollHeight:scroller?.scrollHeight ?? null,
+    scrollerScrollTop:scroller?.scrollTop ?? null,
     readablePressed:document.querySelector('[data-artifact-viewer-mode-control="readable"]')?.getAttribute('aria-pressed') ?? '',
     fitWholePressed:document.querySelector('[data-artifact-viewer-mode-control="fit-whole"]')?.getAttribute('aria-pressed') ?? '',
     artifactFitsFrame:Boolean(
@@ -1201,7 +1391,17 @@ const PROTECTED_VIEWER_SNAPSHOT_EXPRESSION = `(() => {
   };
 })()`
 
-async function verifyProtectedArtifactViewerModes(client, sessionId, baseUrl, viewport) {
+async function verifyProtectedArtifactViewerModes(
+  client,
+  sessionId,
+  baseUrl,
+  viewport,
+  artifact = {
+    artifactPath: CALMING_SLEEP_RUNS.claude.artifactPath,
+    title: 'Calming sleep sound mixer',
+    provider: 'Claude',
+  },
+) {
   await client.send('Emulation.setDeviceMetricsOverride', {
     width: viewport.width,
     height: viewport.height,
@@ -1210,10 +1410,11 @@ async function verifyProtectedArtifactViewerModes(client, sessionId, baseUrl, vi
   }, sessionId)
 
   const viewerUrl = new URL('/artifact-viewer', baseUrl)
-  viewerUrl.searchParams.set('path', CALMING_SLEEP_RUNS.claude.artifactPath)
-  viewerUrl.searchParams.set('title', 'Calming sleep sound mixer')
-  viewerUrl.searchParams.set('provider', 'Claude')
-  await navigateRaw(client, sessionId, viewerUrl.href)
+  viewerUrl.searchParams.set('path', artifact.artifactPath)
+  viewerUrl.searchParams.set('title', artifact.title)
+  viewerUrl.searchParams.set('provider', artifact.provider)
+  await replaceRaw(client, sessionId, viewerUrl.href)
+  const label = `${viewport.label} ${artifact.title}`
 
   const readable = await waitForValue(
     client,
@@ -1221,18 +1422,29 @@ async function verifyProtectedArtifactViewerModes(client, sessionId, baseUrl, vi
     PROTECTED_VIEWER_SNAPSHOT_EXPRESSION,
     (value) => (
       value?.mode === 'readable' &&
-      value.heightMode === 'measured-content' &&
+      value.heightMode === 'fixed-viewport' &&
+      value.fitMode === 'readable-scroll' &&
       !value.heightPending &&
       value.artifactReady &&
       value.readablePressed === 'true' &&
       value.fitWholePressed === 'false' &&
       value.scale >= 0.99 &&
-      value.scrolling === 'no' &&
+      value.scrolling === 'auto' &&
       Number.isFinite(value.measuredWidth) &&
       value.measuredWidth > 0 &&
-      value.frameHeight > viewport.height * 1.2
+      Number.isFinite(value.measuredHeight) &&
+      value.measuredHeight > 0 &&
+      value.rootTop >= 0 &&
+      value.rootBottom <= viewport.height + 2 &&
+      value.frameHeight > 100 &&
+      value.frameHeight <= viewport.height &&
+      value.controlsTop >= 0 &&
+      value.controlsBottom <= viewport.height &&
+      value.scrollerScrollTop <= 2 &&
+      value.documentWidth <= value.viewportWidth + 2 &&
+      value.scrollerScrollWidth <= value.scrollerWidth + 2
     ),
-    `${viewport.label} protected viewer readable mode`,
+    `${label} protected viewer readable mode`,
     20_000,
   )
   await client.send('Runtime.evaluate', {
@@ -1248,17 +1460,22 @@ async function verifyProtectedArtifactViewerModes(client, sessionId, baseUrl, vi
       value.fitWholePressed === 'true' &&
       value.readablePressed === 'false' &&
       value.artifactReady &&
-      value.fitMode === 'scaled' &&
-      value.scale < readable.scale - 0.05 &&
+      (value.fitMode === 'scaled' || value.fitMode === 'native') &&
+      value.scale <= readable.scale + 0.001 &&
       value.scrolling === 'no' &&
       value.artifactFitsFrame &&
-      value.documentWidth <= value.viewportWidth + 2
+      value.documentWidth <= value.viewportWidth + 2 &&
+      value.rootTop >= 0 &&
+      value.rootBottom <= viewport.height + 2 &&
+      value.controlsTop >= 0 &&
+      value.controlsBottom <= viewport.height &&
+      value.scrollerScrollTop <= 2
     ),
-    `${viewport.label} protected viewer fit-whole mode`,
+    `${label} protected viewer fit-whole mode`,
     20_000,
   )
   if (fitWhole.frameHeight > viewport.height) {
-    throw new Error(`${viewport.label} fit-whole artifact frame exceeded the visible window.`)
+    throw new Error(`${label} fit-whole artifact frame exceeded the visible window.`)
   }
 
   await client.send('Runtime.evaluate', {
@@ -1270,22 +1487,365 @@ async function verifyProtectedArtifactViewerModes(client, sessionId, baseUrl, vi
     PROTECTED_VIEWER_SNAPSHOT_EXPRESSION,
     (value) => (
       value?.mode === 'readable' &&
-      value.heightMode === 'measured-content' &&
+      value.heightMode === 'fixed-viewport' &&
+      value.fitMode === 'readable-scroll' &&
       !value.heightPending &&
       value.readablePressed === 'true' &&
       value.scale >= 0.99 &&
-      value.frameHeight > viewport.height * 1.2 &&
+      value.scrolling === 'auto' &&
+      value.frameHeight <= viewport.height &&
+      value.controlsTop >= 0 &&
+      value.controlsBottom <= viewport.height &&
+      value.scrollerScrollTop <= 2 &&
       Math.abs(value.measuredWidth - readable.measuredWidth) <= 2 &&
       Math.abs(value.rootWidth - readable.rootWidth) <= 2 &&
       Math.abs(value.frameWidth - readable.frameWidth) <= 2 &&
       value.scrollerScrollWidth <= readable.scrollerScrollWidth + 2
     ),
-    `${viewport.label} protected viewer readable return`,
+    `${label} protected viewer readable return`,
     20_000,
   )
   if (readableReturn.scrollerScrollWidth > readableReturn.scrollerWidth + 2) {
-    throw new Error(`${viewport.label} readable return introduced horizontal viewer overflow.`)
+    throw new Error(`${label} readable return introduced horizontal viewer overflow.`)
   }
+  return { readable, fitWhole, readableReturn }
+}
+
+const TRIP_PACKING_DOCUMENT_SNAPSHOT_EXPRESSION = `(() => {
+  const doc=document.documentElement;
+  const body=document.body;
+  const scrolling=document.scrollingElement || doc;
+  const documentHeight=Math.max(doc?.scrollHeight ?? 0, body?.scrollHeight ?? 0, window.innerHeight);
+  const output=document.getElementById('output');
+  return {
+    documentHeight,
+    viewportHeight:window.innerHeight,
+    scrollTop:scrolling?.scrollTop ?? window.scrollY,
+    maxScroll:Math.max(0, documentHeight - window.innerHeight),
+    outputHeight:output?.getBoundingClientRect().height ?? 0,
+    itemCount:document.querySelectorAll('#output .item-row').length,
+    activeFilter:[...document.querySelectorAll('#output .filters button')]
+      .find((button)=>button.classList.contains('active'))?.textContent?.trim() ?? '',
+  };
+})()`
+
+async function dispatchArtifactWheel(client, sessionId, viewer, deltaY) {
+  const x = Math.round((viewer.frameLeft + viewer.frameRight) / 2)
+  const y = Math.round((viewer.frameTop + viewer.frameBottom) / 2)
+  await client.send('Input.dispatchMouseEvent', {
+    type: 'mouseMoved',
+    x,
+    y,
+    buttons: 0,
+  }, sessionId)
+  await client.send('Input.dispatchMouseEvent', {
+    type: 'mouseWheel',
+    x,
+    y,
+    deltaX: 0,
+    deltaY,
+  }, sessionId)
+}
+
+async function verifyDynamicReadableArtifact(client, sessionId, baseUrl, viewport) {
+  const label = `${viewport.label} dynamic Trip Packing viewer`
+  const localStorageKey = 'pathforge:artifact-storage:v1:local:/artifacts/trip-packing-gemini-pro.html'
+  const sessionStorageKey = 'pathforge:artifact-storage:v1:session:/artifacts/trip-packing-gemini-pro.html'
+  await client.send('Runtime.evaluate', {
+    expression: `localStorage.removeItem(${JSON.stringify(localStorageKey)}); sessionStorage.removeItem(${JSON.stringify(sessionStorageKey)})`,
+  }, sessionId)
+  const modes = await verifyProtectedArtifactViewerModes(
+    client,
+    sessionId,
+    baseUrl,
+    viewport,
+    PROTECTED_VIEWER_ARTIFACTS.tripPacking,
+  )
+  const artifactContext = await artifactDocumentContext(
+    client,
+    sessionId,
+    label,
+    '#destination',
+  )
+  const initialDocument = await waitForContextValue(
+    client,
+    artifactContext.sessionId,
+    artifactContext.contextId,
+    TRIP_PACKING_DOCUMENT_SNAPSHOT_EXPRESSION,
+    (value) => value?.documentHeight > 0 && value.itemCount === 0,
+    `${label} initial document`,
+  )
+
+  const generated = await evaluateInContext(
+    client,
+    artifactContext.sessionId,
+    artifactContext.contextId,
+    `(() => {
+      const destination=document.getElementById('destination');
+      const days=document.getElementById('days');
+      const generate=[...document.querySelectorAll('button')]
+        .find((button)=>button.textContent?.includes('Generate New Checklist'));
+      if (!destination || !days || !generate) return false;
+      destination.value='city';
+      days.value='3';
+      generate.click();
+      return true;
+    })()`,
+    `${label} checklist generation`,
+  )
+  if (!generated) throw new Error(`${label} could not trigger checklist generation.`)
+
+  let grownDocument = await waitForContextValue(
+    client,
+    artifactContext.sessionId,
+    artifactContext.contextId,
+    TRIP_PACKING_DOCUMENT_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.itemCount >= 18 &&
+      value.outputHeight > 1_000 &&
+      value.documentHeight > initialDocument.documentHeight * 2 &&
+      value.documentHeight > 2_400
+    ),
+    `${label} grown document`,
+    20_000,
+  )
+  const grownViewer = await waitForValue(
+    client,
+    sessionId,
+    PROTECTED_VIEWER_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.mode === 'readable' &&
+      value.fitMode === 'readable-scroll' &&
+      value.scrolling === 'auto' &&
+      !value.heightPending &&
+      value.measuredHeight > 2_400 &&
+      value.frameHeight <= viewport.height &&
+      value.rootTop >= 0 &&
+      value.rootBottom <= viewport.height + 2 &&
+      value.controlsTop >= 0 &&
+      value.controlsBottom <= viewport.height &&
+      value.scrollerScrollTop <= 2 &&
+      value.documentWidth <= value.viewportWidth + 2 &&
+      value.scrollerScrollWidth <= value.scrollerWidth + 2
+    ),
+    `${label} settled grown viewer`,
+    20_000,
+  )
+  grownDocument = await waitForContextValue(
+    client,
+    artifactContext.sessionId,
+    artifactContext.contextId,
+    TRIP_PACKING_DOCUMENT_SNAPSHOT_EXPRESSION,
+    (value) => Math.abs(value?.documentHeight - grownViewer.measuredHeight) <= 4,
+    `${label} settled grown inner height`,
+  )
+
+  await evaluateInContext(
+    client,
+    artifactContext.sessionId,
+    artifactContext.contextId,
+    'window.scrollTo(0, 0)',
+    `${label} reset to natural top`,
+  )
+  await waitForContextValue(
+    client,
+    artifactContext.sessionId,
+    artifactContext.contextId,
+    TRIP_PACKING_DOCUMENT_SNAPSHOT_EXPRESSION,
+    (value) => value?.scrollTop <= 1,
+    `${label} natural top`,
+  )
+  await dispatchArtifactWheel(client, sessionId, grownViewer, 700)
+  await waitForContextValue(
+    client,
+    artifactContext.sessionId,
+    artifactContext.contextId,
+    TRIP_PACKING_DOCUMENT_SNAPSHOT_EXPRESSION,
+    (value) => value?.scrollTop >= 100,
+    `${label} center-pointer downward scroll`,
+  )
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await dispatchArtifactWheel(client, sessionId, grownViewer, 6_000)
+    await new Promise((resolve) => setTimeout(resolve, 100))
+  }
+  await waitForContextValue(
+    client,
+    artifactContext.sessionId,
+    artifactContext.contextId,
+    TRIP_PACKING_DOCUMENT_SNAPSHOT_EXPRESSION,
+    (value) => value?.maxScroll > 0 && value.scrollTop >= value.maxScroll - 2,
+    `${label} natural bottom`,
+  )
+  await waitForValue(
+    client,
+    sessionId,
+    PROTECTED_VIEWER_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.controlsTop >= 0 &&
+      value.controlsBottom <= viewport.height &&
+      value.scrollerScrollTop <= 2
+    ),
+    `${label} controls while artifact is at its natural bottom`,
+  )
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await dispatchArtifactWheel(client, sessionId, grownViewer, -6_000)
+    await new Promise((resolve) => setTimeout(resolve, 100))
+  }
+  await waitForContextValue(
+    client,
+    artifactContext.sessionId,
+    artifactContext.contextId,
+    TRIP_PACKING_DOCUMENT_SNAPSHOT_EXPRESSION,
+    (value) => value?.scrollTop <= 1,
+    `${label} center-pointer return to natural top`,
+  )
+
+  const packedSelected = await evaluateInContext(
+    client,
+    artifactContext.sessionId,
+    artifactContext.contextId,
+    `(() => {
+      const packed=[...document.querySelectorAll('#output .filters button')]
+        .find((button)=>button.textContent?.trim()==='Packed');
+      packed?.click();
+      return Boolean(packed);
+    })()`,
+    `${label} packed contraction`,
+  )
+  if (!packedSelected) throw new Error(`${label} could not select the Packed filter.`)
+  let contractedDocument = await waitForContextValue(
+    client,
+    artifactContext.sessionId,
+    artifactContext.contextId,
+    TRIP_PACKING_DOCUMENT_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.activeFilter === 'Packed' &&
+      value.itemCount === 0 &&
+      value.documentHeight < grownDocument.documentHeight * 0.65
+    ),
+    `${label} contracted document`,
+    20_000,
+  )
+  const contractedViewer = await waitForValue(
+    client,
+    sessionId,
+    PROTECTED_VIEWER_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.mode === 'readable' &&
+      !value.heightPending &&
+      value.measuredHeight < grownViewer.measuredHeight * 0.65 &&
+      Math.abs(value.frameHeight - grownViewer.frameHeight) <= 2 &&
+      value.scrollerScrollTop <= 2
+    ),
+    `${label} settled contraction`,
+    20_000,
+  )
+  contractedDocument = await waitForContextValue(
+    client,
+    artifactContext.sessionId,
+    artifactContext.contextId,
+    TRIP_PACKING_DOCUMENT_SNAPSHOT_EXPRESSION,
+    (value) => Math.abs(value?.documentHeight - contractedViewer.measuredHeight) <= 4,
+    `${label} settled contracted inner height`,
+  )
+
+  const allSelected = await evaluateInContext(
+    client,
+    artifactContext.sessionId,
+    artifactContext.contextId,
+    `(() => {
+      const all=[...document.querySelectorAll('#output .filters button')]
+        .find((button)=>button.textContent?.trim()==='All');
+      all?.click();
+      return Boolean(all);
+    })()`,
+    `${label} checklist regrowth`,
+  )
+  if (!allSelected) throw new Error(`${label} could not restore the All filter.`)
+  let regrownDocument = await waitForContextValue(
+    client,
+    artifactContext.sessionId,
+    artifactContext.contextId,
+    TRIP_PACKING_DOCUMENT_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.activeFilter === 'All' &&
+      value.itemCount >= grownDocument.itemCount &&
+      value.documentHeight > contractedDocument.documentHeight * 1.5
+    ),
+    `${label} regrown document`,
+    20_000,
+  )
+  const regrownViewer = await waitForValue(
+    client,
+    sessionId,
+    PROTECTED_VIEWER_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.mode === 'readable' &&
+      !value.heightPending &&
+      value.measuredHeight > contractedViewer.measuredHeight * 1.5 &&
+      Math.abs(value.frameHeight - grownViewer.frameHeight) <= 2 &&
+      value.controlsTop >= 0 &&
+      value.controlsBottom <= viewport.height &&
+      value.scrollerScrollTop <= 2
+    ),
+    `${label} settled regrowth`,
+    20_000,
+  )
+  regrownDocument = await waitForContextValue(
+    client,
+    artifactContext.sessionId,
+    artifactContext.contextId,
+    TRIP_PACKING_DOCUMENT_SNAPSHOT_EXPRESSION,
+    (value) => Math.abs(value?.documentHeight - regrownViewer.measuredHeight) <= 4,
+    `${label} settled regrown inner height`,
+  )
+
+  await client.send('Runtime.evaluate', {
+    expression: `document.querySelector('[data-artifact-viewer-mode-control="fit-whole"]')?.click()`,
+  }, sessionId)
+  await waitForValue(
+    client,
+    sessionId,
+    PROTECTED_VIEWER_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.mode === 'fit-whole' &&
+      value.fitMode === 'scaled' &&
+      value.scale < 0.8 &&
+      value.scrolling === 'no' &&
+      value.artifactFitsFrame &&
+      Math.abs(value.measuredHeight - regrownViewer.measuredHeight) <= 4 &&
+      value.controlsTop >= 0 &&
+      value.controlsBottom <= viewport.height
+    ),
+    `${label} fit-whole after regrowth`,
+    20_000,
+  )
+  await client.send('Runtime.evaluate', {
+    expression: `document.querySelector('[data-artifact-viewer-mode-control="readable"]')?.click()`,
+  }, sessionId)
+  await waitForValue(
+    client,
+    sessionId,
+    PROTECTED_VIEWER_SNAPSHOT_EXPRESSION,
+    (value) => (
+      value?.mode === 'readable' &&
+      value.fitMode === 'readable-scroll' &&
+      value.scale >= 0.99 &&
+      value.scrolling === 'auto' &&
+      !value.heightPending &&
+      value.controlsTop >= 0 &&
+      value.controlsBottom <= viewport.height &&
+      value.scrollerScrollTop <= 2 &&
+      value.documentWidth <= value.viewportWidth + 2
+    ),
+    `${label} readable return after regrowth`,
+    20_000,
+  )
+
+  process.stdout.write(
+    `[model-variant-browser] ${label} grew ${initialDocument.documentHeight}px -> ${grownDocument.documentHeight}px, contracted to ${contractedDocument.documentHeight}px, and regrew to ${regrownDocument.documentHeight}px.\n`,
+  )
+  return { modes, initialDocument, grownDocument, contractedDocument, regrownDocument }
 }
 
 async function positionArtifact(client, sessionId, desiredTop) {
@@ -2102,6 +2662,54 @@ async function main() {
           }, sessionId),
         ]))
 
+        await runPhase('desktop protected viewer modes', SELECTOR_PHASE_TIMEOUT_MS, async () => {
+          const viewport = {
+            label: 'desktop',
+            width: 1440,
+            height: 900,
+            mobile: false,
+          }
+          await verifyProtectedArtifactViewerModes(client, sessionId, baseUrl, viewport)
+          await verifyDynamicReadableArtifact(client, sessionId, baseUrl, viewport)
+          await verifyProtectedArtifactViewerModes(
+            client,
+            sessionId,
+            baseUrl,
+            viewport,
+            PROTECTED_VIEWER_ARTIFACTS.pomodoro,
+          )
+          await verifyProtectedArtifactViewerModes(
+            client,
+            sessionId,
+            baseUrl,
+            viewport,
+            PROTECTED_VIEWER_ARTIFACTS.pocketRally,
+          )
+        })
+        await runPhase('390px protected viewer modes', SELECTOR_PHASE_TIMEOUT_MS, async () => {
+          const viewport = {
+            label: '390px',
+            width: 390,
+            height: 844,
+            mobile: true,
+          }
+          await verifyProtectedArtifactViewerModes(client, sessionId, baseUrl, viewport)
+          await verifyDynamicReadableArtifact(client, sessionId, baseUrl, viewport)
+          await verifyProtectedArtifactViewerModes(
+            client,
+            sessionId,
+            baseUrl,
+            viewport,
+            PROTECTED_VIEWER_ARTIFACTS.pomodoro,
+          )
+          await verifyProtectedArtifactViewerModes(
+            client,
+            sessionId,
+            baseUrl,
+            viewport,
+            PROTECTED_VIEWER_ARTIFACTS.pocketRally,
+          )
+        })
         await runPhase('desktop dynamic artifact frame', SELECTOR_PHASE_TIMEOUT_MS, () => (
           verifyCalmingArtifactFrameFlow(client, sessionId, baseUrl, {
             label: 'desktop artifact frame',
@@ -2128,22 +2736,6 @@ async function main() {
         ))
         await runPhase('artifact height guard fixtures', SELECTOR_PHASE_TIMEOUT_MS, () => (
           verifyArtifactHeightGuardFixtures(client, sessionId, baseUrl)
-        ))
-        await runPhase('desktop protected viewer modes', SELECTOR_PHASE_TIMEOUT_MS, () => (
-          verifyProtectedArtifactViewerModes(client, sessionId, baseUrl, {
-            label: 'desktop',
-            width: 1440,
-            height: 1000,
-            mobile: false,
-          })
-        ))
-        await runPhase('390px protected viewer modes', SELECTOR_PHASE_TIMEOUT_MS, () => (
-          verifyProtectedArtifactViewerModes(client, sessionId, baseUrl, {
-            label: '390px',
-            width: 390,
-            height: 844,
-            mobile: true,
-          })
         ))
         await runPhase('desktop pending viewport anchoring', SELECTOR_PHASE_TIMEOUT_MS, () => (
           verifyPendingArtifactViewportFixtures(client, sessionId, baseUrl, {

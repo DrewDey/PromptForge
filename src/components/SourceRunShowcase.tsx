@@ -443,10 +443,9 @@ export function ProtectedArtifactFrame({
   const artifactDocumentRemounted =
     settledArtifactDocumentGeneration !== artifactDocumentGeneration
   const viewerUsesReadableSize = viewerFitControls && viewerMode === 'readable'
-  const viewerUsesAvailableHeight = viewerFitControls && viewerMode === 'fit-whole'
-  const usesMeasuredContentHeight = !bare && (
-    frameHeight === undefined || viewerUsesReadableSize
-  )
+  const viewerUsesAvailableHeight = viewerFitControls
+  const usesMeasuredContentHeight = !bare && frameHeight === undefined
+  const tracksArtifactMeasurement = usesMeasuredContentHeight || viewerFitControls
   const fallbackFrameHeight = frameHeight ?? ARTIFACT_FRAME_HEIGHT
   const setIframeElement = useCallback((node: HTMLIFrameElement | null) => {
     iframeRef.current = node
@@ -651,7 +650,7 @@ export function ProtectedArtifactFrame({
         viewportWidth: Math.max(1, Math.ceil(viewportWidth)),
         viewportHeight: Math.max(1, Math.ceil(viewportHeight)),
       }
-      if (usesMeasuredContentHeight) {
+      if (tracksArtifactMeasurement) {
         const documentGeneration = artifactDocumentGenerationRef.current
         window.clearTimeout(measurementSettleTimer)
         setSettledArtifactPackageId(null)
@@ -708,6 +707,7 @@ export function ProtectedArtifactFrame({
   }, [
     selectedPackage.artifactPath,
     selectedPackage.id,
+    tracksArtifactMeasurement,
     usesMeasuredContentHeight,
     viewerFitControls,
   ])
@@ -722,9 +722,7 @@ export function ProtectedArtifactFrame({
   const measuredRenderedHeight = artifactSize
     ? Math.max(1, Math.ceil(artifactSize.height * measuredWidthFitScale))
     : undefined
-  const measuredFrameHeightLimit = viewerUsesReadableSize
-    ? MAX_AUTO_FIT_ARTIFACT_HEIGHT
-    : MAX_MEASURED_ARTIFACT_FRAME_HEIGHT
+  const measuredFrameHeightLimit = MAX_MEASURED_ARTIFACT_FRAME_HEIGHT
   const exceedsMeasuredFrameHeightLimit = Boolean(
     usesMeasuredContentHeight &&
     measuredRenderedHeight &&
@@ -744,7 +742,9 @@ export function ProtectedArtifactFrame({
     (artifactSize?.height ?? 0) <= MAX_AUTO_FIT_ARTIFACT_HEIGHT &&
     (artifactSize?.width ?? 0) <= MAX_AUTO_FIT_ARTIFACT_WIDTH
   const fitScale = canAutoFit && frameSize && artifactSize
-    ? usesMeasuredContentHeight
+    ? viewerUsesReadableSize
+      ? 1
+      : usesMeasuredContentHeight
       ? measuredWidthFitScale
       : Math.min(
           1,
@@ -784,11 +784,13 @@ export function ProtectedArtifactFrame({
       }
   const fitMode = loadError
     ? 'blocked'
-    : canAutoFit
+    : viewerUsesReadableSize && srcDoc
+      ? 'readable-scroll'
+      : canAutoFit
       ? shouldScale ? 'scaled' : 'native'
       : srcDoc ? 'guarded-scroll' : 'loading'
   const artifactMeasurementPending = Boolean(
-    usesMeasuredContentHeight &&
+    tracksArtifactMeasurement &&
     !loadError &&
     (
       !srcDoc ||
@@ -798,9 +800,6 @@ export function ProtectedArtifactFrame({
     ),
   )
   const renderedFrameHeight = measuredFrameHeight
-  const readableViewerWidth = viewerUsesReadableSize && artifactSize && !exceedsRawMeasurementLimit
-    ? `${artifactSize.width}px`
-    : undefined
 
   return (
     <div
@@ -810,7 +809,6 @@ export function ProtectedArtifactFrame({
         : viewerUsesAvailableHeight
           ? 'flex h-full w-full flex-col overflow-hidden border border-surface-800 bg-[#111827] shadow-[0_28px_90px_rgba(0,0,0,0.28)]'
           : 'w-full overflow-hidden border border-surface-800 bg-[#111827] shadow-[0_28px_90px_rgba(0,0,0,0.28)]'}
-      style={{ minWidth: readableViewerWidth }}
       data-artifact-viewer-mode={viewerFitControls ? viewerMode : undefined}
     >
       {!bare && (
@@ -921,7 +919,7 @@ export function ProtectedArtifactFrame({
             sandbox="allow-scripts allow-pointer-lock"
             allow="clipboard-write"
             referrerPolicy="no-referrer"
-            scrolling={canAutoFit ? 'no' : 'auto'}
+            scrolling={viewerUsesReadableSize ? 'auto' : canAutoFit ? 'no' : 'auto'}
             className="absolute left-0 top-0 max-w-none bg-[#111827]"
             style={iframeStyle}
           />

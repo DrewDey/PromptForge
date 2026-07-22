@@ -16,8 +16,18 @@ import {
   isExpectedLocalVercelScriptResponseFailure,
 } from './browser-guard-errors.mjs'
 
-const INITIAL_PATH = '/paths?q=booking&sort=models'
-const FILTERED_PATH = '/paths?q=booking&model=gemini-3-1-pro&sort=models'
+const SEARCHED_FILTER_SCENARIO = {
+  name: 'searched',
+  initialPath: '/paths?q=booking&sort=models',
+  filteredPath: '/paths?q=booking&model=gemini-3-1-pro&sort=models',
+  requiresScrollCompensation: false,
+}
+const UNFILTERED_FILTER_SCENARIO = {
+  name: 'unfiltered',
+  initialPath: '/paths',
+  filteredPath: '/paths?model=gemini-3-1-pro',
+  requiresScrollCompensation: true,
+}
 const TARGET_MODEL = 'Gemini 3.1 Pro'
 const VIEWPORTS = [
   { name: 'mobile-390', width: 390, height: 844, mobile: true, summaryTop: 220 },
@@ -95,7 +105,7 @@ const SNAPSHOT_EXPRESSION = `(() => {
   };
 })()`
 
-async function navigate(client, sessionId, url) {
+async function navigate(client, sessionId, url, expectedPath) {
   const loaded = client.waitFor('Page.loadEventFired', sessionId, 20_000)
   await client.send('Page.navigate', { url }, sessionId)
   await loaded
@@ -103,7 +113,7 @@ async function navigate(client, sessionId, url) {
     client,
     sessionId,
     SNAPSHOT_EXPRESSION,
-    (value) => value?.ready && value.url === INITIAL_PATH && !value.pending,
+    (value) => value?.ready && value.url === expectedPath && !value.pending,
     'hydrated Explore catalog',
   )
 }
@@ -163,8 +173,10 @@ function assertClose(label, actual, expected, tolerance = 1) {
   }
 }
 
-function assertAnchorStable(label, before, after) {
-  assertClose(`${label} page scroll`, after.scrollY, before.scrollY)
+function assertAnchorStable(label, before, after, allowScrollCompensation = false) {
+  if (!allowScrollCompensation) {
+    assertClose(`${label} page scroll`, after.scrollY, before.scrollY)
+  }
   assertClose(`${label} Filters summary`, after.summary?.top, before.summary?.top)
   assertClose(`${label} exact model link`, after.target?.top, before.target?.top)
   if (!after.menuOpen) throw new Error(`${label} closed the Filters disclosure.`)
@@ -200,7 +212,7 @@ async function settleNavigation(client, sessionId, expectedPath, expectedActive,
   )
 }
 
-async function activateFilter(client, sessionId, before, expectedPath, expectedActive, label, slow) {
+async function activateFilter(client, sessionId, before, expectedPath, expectedActive, label, slow, allowScrollCompensation) {
   if (slow) {
     await client.send('Network.emulateNetworkConditions', {
       offline: false,
@@ -231,11 +243,11 @@ async function activateFilter(client, sessionId, before, expectedPath, expectedA
     }, sessionId)
   }
   const settled = await settleNavigation(client, sessionId, expectedPath, expectedActive, `${label} settled navigation`)
-  assertAnchorStable(`${label} settled render`, before, settled)
+  assertAnchorStable(`${label} settled render`, before, settled, allowScrollCompensation)
   return settled
 }
 
-async function verifyViewport(client, options, viewport) {
+async function verifyViewport(client, options, viewport, scenario) {
   const { targetId } = await client.send('Target.createTarget', { url: 'about:blank' })
   const { sessionId } = await client.send('Target.attachToTarget', { targetId, flatten: true })
   const consoleErrors = []
@@ -281,7 +293,7 @@ async function verifyViewport(client, options, viewport) {
       }, sessionId),
     ])
 
-    await navigate(client, sessionId, `${options.baseUrl}${INITIAL_PATH}`)
+    await navigate(client, sessionId, `${options.baseUrl}${scenario.initialPath}`, scenario.initialPath)
     const positioned = await positionSummary(client, sessionId, viewport.summaryTop)
     if (positioned.viewportWidth !== viewport.width || positioned.viewportHeight !== viewport.height) {
       throw new Error(`${viewport.name} measured ${positioned.viewportWidth}x${positioned.viewportHeight} instead of ${viewport.width}x${viewport.height}.`)
@@ -299,33 +311,39 @@ async function verifyViewport(client, options, viewport) {
     assertClose(`${viewport.name} disclosure summary`, opened.summary?.top, positioned.summary?.top)
 
     if (options.screenshotDir) {
-      await screenshot(client, sessionId, path.join(options.screenshotDir, `${viewport.name}-before-filter-navigation.png`))
+      await screenshot(client, sessionId, path.join(options.screenshotDir, `${viewport.name}-${scenario.name}-before-filter-navigation.png`))
     }
 
     const selected = await activateFilter(
       client,
       sessionId,
       opened,
-      FILTERED_PATH,
+      scenario.filteredPath,
       true,
-      `${viewport.name} slow filter selection`,
+      `${viewport.name} ${scenario.name} slow filter selection`,
       true,
+      scenario.requiresScrollCompensation,
     )
     if (selected.historyLength !== opened.historyLength + 1) {
       throw new Error(`${viewport.name} filter selection did not add exactly one history entry.`)
     }
 
     if (options.screenshotDir) {
-      await screenshot(client, sessionId, path.join(options.screenshotDir, `${viewport.name}-after-filter-navigation.png`))
+      await screenshot(client, sessionId, path.join(options.screenshotDir, `${viewport.name}-${scenario.name}-after-filter-navigation.png`))
     }
 
     await evaluate(client, sessionId, 'history.back()')
-    const backed = await settleNavigation(client, sessionId, INITIAL_PATH, false, `${viewport.name} Back navigation`)
-    assertAnchorStable(`${viewport.name} Back restoration`, opened, backed)
+    const backed = await settleNavigation(client, sessionId, scenario.initialPath, false, `${viewport.name} ${scenario.name} Back navigation`)
+    assertAnchorStable(`${viewport.name} ${scenario.name} Back restoration`, opened, backed)
 
     await evaluate(client, sessionId, 'history.forward()')
-    const forwarded = await settleNavigation(client, sessionId, FILTERED_PATH, true, `${viewport.name} Forward navigation`)
-    assertAnchorStable(`${viewport.name} Forward restoration`, opened, forwarded)
+    const forwarded = await settleNavigation(client, sessionId, scenario.filteredPath, true, `${viewport.name} ${scenario.name} Forward navigation`)
+    assertAnchorStable(
+      `${viewport.name} ${scenario.name} Forward restoration`,
+      opened,
+      forwarded,
+      scenario.requiresScrollCompensation,
+    )
 
     for (let cycle = 1; cycle <= 2; cycle += 1) {
       await pointerClick(client, sessionId, '.path-filter-menu summary')
@@ -336,7 +354,7 @@ async function verifyViewport(client, options, viewport) {
         (value) => value && !value.menuOpen,
         `${viewport.name} Filters close cycle ${cycle}`,
       )
-      assertClose(`${viewport.name} close cycle ${cycle} scroll`, closed.scrollY, opened.scrollY)
+      assertClose(`${viewport.name} close cycle ${cycle} scroll`, closed.scrollY, forwarded.scrollY)
       assertClose(`${viewport.name} close cycle ${cycle} summary`, closed.summary?.top, opened.summary?.top)
       await pointerClick(client, sessionId, '.path-filter-menu summary')
       const reopened = await waitForValue(
@@ -346,17 +364,23 @@ async function verifyViewport(client, options, viewport) {
         (value) => value?.menuOpen && value.target?.bottom <= value.viewportHeight,
         `${viewport.name} Filters open cycle ${cycle}`,
       )
-      assertAnchorStable(`${viewport.name} open cycle ${cycle}`, opened, reopened)
+      assertAnchorStable(
+        `${viewport.name} open cycle ${cycle}`,
+        opened,
+        reopened,
+        scenario.requiresScrollCompensation,
+      )
     }
 
     const cleared = await activateFilter(
       client,
       sessionId,
       forwarded,
-      INITIAL_PATH,
+      scenario.initialPath,
       false,
-      `${viewport.name} fast filter clear`,
+      `${viewport.name} ${scenario.name} fast filter clear`,
       false,
+      scenario.requiresScrollCompensation,
     )
     assertAnchorStable(`${viewport.name} fast settled render`, opened, cleared)
 
@@ -368,7 +392,7 @@ async function verifyViewport(client, options, viewport) {
     }
 
     return {
-      viewport: viewport.name,
+      viewport: `${viewport.name}-${scenario.name}`,
       scrollY: opened.scrollY,
       summaryTop: opened.summary.top,
       targetTop: opened.target.top,
@@ -402,7 +426,12 @@ async function main() {
     client = new CdpClient(await waitForWebSocketUrl(chrome))
     await client.ready()
     const results = []
-    for (const viewport of VIEWPORTS) results.push(await verifyViewport(client, options, viewport))
+    for (const viewport of VIEWPORTS) {
+      results.push(await verifyViewport(client, options, viewport, SEARCHED_FILTER_SCENARIO))
+      if (viewport.mobile) {
+        results.push(await verifyViewport(client, options, viewport, UNFILTERED_FILTER_SCENARIO))
+      }
+    }
     for (const result of results) {
       console.log(
         `${result.viewport}: scrollY=${result.scrollY}, summary=${result.summaryTop.toFixed(1)}, ` +

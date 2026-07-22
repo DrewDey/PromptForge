@@ -115,12 +115,15 @@ assert.match(navigationSource, /export function DiscoveryNavigationLink\([\s\S]*
 assert.match(navigationSource, /<Link[\s\S]*?prefetch=\{prefetch\}/)
 assert.match(navigationSource, /if \(navigation\.preserveScroll\) \{[\s\S]*?router\.push\(navigation\.href, \{ scroll: false \}\)[\s\S]*?router\.push\(navigation\.href\)/)
 assert.match(navigationSource, /beginNavigation\(\{ href, label: navigationLabel, kind: navigationKind, preserveScroll \}\)/)
+assert.match(navigationSource, /useLayoutEffect\(\(\) => \{[\s\S]*?preservedAnchorRef\.current[\s\S]*?\.path-filter-menu summary[\s\S]*?window\.scrollTo/)
+assert.match(navigationSource, /summary\.getBoundingClientRect\(\)\.top - preservedAnchor\.summaryTop/)
 assert.equal(
   discoverySource.match(/navigationLabel=\{?`?[^\n]+[\s\S]{0,120}?preserveScroll/g)?.length,
   4,
   'only the four filter-popover option groups should opt into scroll preservation',
 )
 assert.match(anchorGuardSource, /width: 390, height: 844/)
+assert.match(anchorGuardSource, /UNFILTERED_FILTER_SCENARIO[\s\S]*?initialPath: '\/paths'[\s\S]*?filteredPath: '\/paths\?model=gemini-3-1-pro'/)
 assert.match(anchorGuardSource, /Input\.dispatchMouseEvent/)
 assert.match(anchorGuardSource, /assertAnchorStable/)
 assert.match(anchorGuardSource, /history\.back\(\)/)

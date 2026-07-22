@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import {
   createContext,
   useContext,
+  useLayoutEffect,
+  useRef,
   useState,
   useTransition,
   type ComponentProps,
@@ -42,10 +44,56 @@ export function DiscoveryNavigationFeedbackProvider({ children }: { children: Re
   const router = useRouter()
   const [isTransitionPending, startTransition] = useTransition()
   const [requestedNavigation, setRequestedNavigation] = useState<PendingDiscoveryNavigation | null>(null)
+  const preservedAnchorRef = useRef<{
+    href: string
+    summaryTop: number
+    observedPendingTransition: boolean
+  } | null>(null)
   const pendingNavigation = isTransitionPending ? requestedNavigation : null
+
+  useLayoutEffect(() => {
+    const preservedAnchor = preservedAnchorRef.current
+    if (!preservedAnchor) return
+    if (isTransitionPending) {
+      preservedAnchor.observedPendingTransition = true
+      return
+    }
+    if (!preservedAnchor.observedPendingTransition) return
+
+    const destination = new URL(preservedAnchor.href, window.location.href)
+    if (
+      destination.pathname !== window.location.pathname ||
+      destination.search !== window.location.search ||
+      destination.hash !== window.location.hash
+    ) {
+      preservedAnchorRef.current = null
+      return
+    }
+
+    const summary = document.querySelector('.path-filter-menu summary')
+    if (summary instanceof HTMLElement) {
+      const delta = summary.getBoundingClientRect().top - preservedAnchor.summaryTop
+      if (Math.abs(delta) > 0.5) {
+        window.scrollTo(window.scrollX, window.scrollY + delta)
+      }
+    }
+    preservedAnchorRef.current = null
+  }, [children, isTransitionPending])
 
   const beginNavigation = (navigation: PendingDiscoveryNavigation) => {
     if (pendingNavigation) return
+    if (navigation.preserveScroll) {
+      const summary = document.querySelector('.path-filter-menu summary')
+      preservedAnchorRef.current = summary instanceof HTMLElement
+        ? {
+            href: navigation.href,
+            summaryTop: summary.getBoundingClientRect().top,
+            observedPendingTransition: false,
+          }
+        : null
+    } else {
+      preservedAnchorRef.current = null
+    }
     setRequestedNavigation(navigation)
     startTransition(() => {
       if (navigation.preserveScroll) {

@@ -48,10 +48,28 @@ function summaryScope(html, headerHookIndex) {
   return html.slice(summaryHookIndex, summaryEnd)
 }
 
+function evidenceFooterScopes(html) {
+  const footer = openingTagWithHook(html, 'data-source-run-evidence-footer')
+  const note = openingTagWithHook(html, 'data-source-run-access-note')
+  assert.ok(
+    note.hookIndex > footer.hookIndex,
+    'source-run access note must render inside the evidence footer',
+  )
+  const noteEnd = html.indexOf('</p>', note.hookIndex)
+  assert.ok(noteEnd > note.hookIndex, 'source-run access note must have a rendered boundary')
+  return {
+    footerBeforeNote: html.slice(footer.hookIndex, note.hookIndex),
+    note: html.slice(note.hookIndex, noteEnd),
+  }
+}
+
 function renderedText(html) {
   return html
     .replace(/<!--[\s\S]*?-->/g, '')
     .replace(/<[^>]+>/g, ' ')
+    .replace(/&#x27;|&#39;|&apos;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
     .replace(/\s+/g, ' ')
     .trim()
 }
@@ -118,13 +136,13 @@ for (const expected of cases) {
   )
 
   if (expected.providerLinkLabel) {
-    const pageText = renderedText(html)
+    const footer = evidenceFooterScopes(html)
     assert.ok(
-      pageText.includes(expected.providerLinkLabel),
+      footer.footerBeforeNote.includes(expected.providerLinkLabel),
       `${expected.label} must visibly render its truthful provider-link wording`,
     )
     assert.ok(
-      pageText.includes(expected.accessNote),
+      renderedText(footer.note).includes(expected.accessNote),
       `${expected.label} must visibly explain its anonymous provider-access limitation`,
     )
   }

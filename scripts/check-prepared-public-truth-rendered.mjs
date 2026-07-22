@@ -73,8 +73,10 @@ const cases = [
     label: 'Trip',
     route: '/trip-packing-planner-demo',
     sourceRunId: '4777cdee-dd14-4102-9e36-94cc9e9b9be9',
-    accessState: 'public_partial',
-    accessLabel: 'Incomplete public source',
+    accessState: 'provider_private',
+    accessLabel: 'Provider sign-in required',
+    providerLinkLabel: 'Open provider session',
+    accessNote: "The Gemini link does not expose the captured conversation anonymously. Inspecting the provider session requires the owner's signed-in account.",
     modelProof: 'pathforge_recorded_not_public',
     modelProofLabel: 'Exact model recorded by PathForge, not shown publicly',
     promptCount: 5,
@@ -114,6 +116,18 @@ for (const expected of cases) {
     /PathForge record only|Model proof not confirmed|Public access not confirmed/,
     `${expected.label} curated prepared header cannot fall back to unconfirmed truth`,
   )
+
+  if (expected.providerLinkLabel) {
+    const pageText = renderedText(html)
+    assert.ok(
+      pageText.includes(expected.providerLinkLabel),
+      `${expected.label} must visibly render its truthful provider-link wording`,
+    )
+    assert.ok(
+      pageText.includes(expected.accessNote),
+      `${expected.label} must visibly explain its anonymous provider-access limitation`,
+    )
+  }
 
   if (expected.selector) {
     const selected = openingTagWithHook(html, 'data-selected-model-public-truth')

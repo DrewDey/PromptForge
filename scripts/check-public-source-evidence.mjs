@@ -35,12 +35,15 @@ assert.deepEqual(PUBLIC_MODEL_PROOF_LABELS, {
 
 const trip = resolvePublicSourceEvidence(tripPackage)
 assert.equal(trip.curated, true)
-assert.equal(trip.accessState, 'public_partial')
-assert.equal(trip.transcriptCompleteness, 'partial')
-assert.equal(trip.transcriptLabel, 'Incomplete public transcript')
-assert.equal(trip.providerLinkLabel, 'Open partial public source')
+assert.equal(trip.accessState, 'provider_private')
+assert.equal(trip.accessLabel, 'Provider sign-in required')
+assert.equal(trip.transcriptCompleteness, 'provider-sign-in-required')
+assert.equal(trip.transcriptLabel, 'Transcript requires provider sign-in')
+assert.equal(trip.providerLinkLabel, 'Open provider session')
 assert.equal(trip.hasPathForgeRecord, true)
 assert.equal(trip.recordLabel, 'PathForge record')
+assert.match(trip.accessNote, /does not expose the captured conversation anonymously/)
+assert.match(trip.accessNote, /owner's signed-in account/)
 assert.equal(
   trip.modelProofLabel,
   'Exact model recorded by PathForge, not shown publicly',
@@ -147,7 +150,7 @@ const agreeingAliases = resolvePublicSourceEvidence({
 })
 assert.equal(agreeingAliases.curated, true)
 assert.equal(agreeingAliases.sourceRunId, tripPackage.pathforge_pending_id)
-assert.equal(agreeingAliases.accessState, 'public_partial')
+assert.equal(agreeingAliases.accessState, 'provider_private')
 
 for (const malformedSlug of [123, '   ']) {
   const malformedSlugLookup = resolvePublicSourceEvidence({

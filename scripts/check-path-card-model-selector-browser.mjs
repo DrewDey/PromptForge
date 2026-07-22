@@ -588,6 +588,11 @@ async function verifyKnownIssueProjectMenu(client, sessionId, options, viewport)
     sessionId,
     '[data-model-variant-run="cf73efd5-2fb6-48fe-a9fd-a1a0df336d18"] [data-model-known-issue]',
   )
+  await evaluate(
+    client,
+    sessionId,
+    `document.querySelector('[data-model-variant-run="cf73efd5-2fb6-48fe-a9fd-a1a0df336d18"] [data-model-known-issue]')?.focus({preventScroll:true})`,
+  )
   const state = await waitForValue(
     client,
     sessionId,
@@ -604,6 +609,7 @@ async function verifyKnownIssueProjectMenu(client, sessionId, options, viewport)
         explanation:issue?.dataset.knownIssueExplanation || '',
         tooltipText:tooltip?.textContent?.replace(/\\s+/g,' ').trim() || '',
         tooltipVisible:Boolean(style && style.visibility === 'visible' && Number(style.opacity) > 0),
+        focused:document.activeElement === issue,
         skeletons:document.querySelectorAll('.skeleton-shimmer').length,
         artifactReady:Boolean(document.querySelector('[data-artifact-fit-mode] iframe[srcdoc]')),
         overflow:Math.max(0,document.documentElement.scrollWidth-window.innerWidth),
@@ -613,6 +619,7 @@ async function verifyKnownIssueProjectMenu(client, sessionId, options, viewport)
     (value) => (
       value?.rows?.length === 3 &&
       value.tooltipVisible &&
+      value.focused &&
       value.skeletons === 0 &&
       value.artifactReady
     ),

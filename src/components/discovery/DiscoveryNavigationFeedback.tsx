@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import {
   createContext,
   useContext,
+  useLayoutEffect,
+  useRef,
   useState,
   useTransition,
   type ComponentProps,
@@ -19,6 +21,7 @@ type PendingDiscoveryNavigation = {
   href: string
   label: string
   kind: DiscoveryNavigationKind
+  preserveScroll: boolean
 }
 
 type DiscoveryNavigationContextValue = {
@@ -41,12 +44,84 @@ export function DiscoveryNavigationFeedbackProvider({ children }: { children: Re
   const router = useRouter()
   const [isTransitionPending, startTransition] = useTransition()
   const [requestedNavigation, setRequestedNavigation] = useState<PendingDiscoveryNavigation | null>(null)
+  const preservedAnchorRef = useRef<{
+    href: string
+    summaryTop: number
+    observedPendingTransition: boolean
+  } | null>(null)
   const pendingNavigation = isTransitionPending ? requestedNavigation : null
+
+  useLayoutEffect(() => {
+    if (!pendingNavigation?.preserveScroll || !preservedAnchorRef.current) return
+
+    const userInputEvents: Array<keyof WindowEventMap> = [
+      'keydown',
+      'pointerdown',
+      'touchstart',
+      'wheel',
+    ]
+    const cancelForUserInput = () => {
+      preservedAnchorRef.current = null
+    }
+    for (const eventName of userInputEvents) {
+      window.addEventListener(eventName, cancelForUserInput, { passive: true, once: true })
+    }
+    return () => {
+      for (const eventName of userInputEvents) {
+        window.removeEventListener(eventName, cancelForUserInput)
+      }
+    }
+  }, [pendingNavigation])
+
+  useLayoutEffect(() => {
+    const preservedAnchor = preservedAnchorRef.current
+    if (!preservedAnchor) return
+    if (isTransitionPending) {
+      preservedAnchor.observedPendingTransition = true
+      return
+    }
+    if (!preservedAnchor.observedPendingTransition) return
+
+    const destination = new URL(preservedAnchor.href, window.location.href)
+    if (
+      destination.pathname !== window.location.pathname ||
+      destination.search !== window.location.search ||
+      destination.hash !== window.location.hash
+    ) {
+      preservedAnchorRef.current = null
+      return
+    }
+
+    const summary = document.querySelector('.path-filter-menu summary')
+    if (summary instanceof HTMLElement) {
+      const delta = summary.getBoundingClientRect().top - preservedAnchor.summaryTop
+      if (Math.abs(delta) > 0.5) {
+        window.scrollTo(window.scrollX, window.scrollY + delta)
+      }
+    }
+    preservedAnchorRef.current = null
+  }, [children, isTransitionPending])
 
   const beginNavigation = (navigation: PendingDiscoveryNavigation) => {
     if (pendingNavigation) return
+    if (navigation.preserveScroll) {
+      const summary = document.querySelector('.path-filter-menu summary')
+      preservedAnchorRef.current = summary instanceof HTMLElement
+        ? {
+            href: navigation.href,
+            summaryTop: summary.getBoundingClientRect().top,
+            observedPendingTransition: false,
+          }
+        : null
+    } else {
+      preservedAnchorRef.current = null
+    }
     setRequestedNavigation(navigation)
     startTransition(() => {
+      if (navigation.preserveScroll) {
+        router.push(navigation.href, { scroll: false })
+        return
+      }
       router.push(navigation.href)
     })
   }
@@ -67,6 +142,7 @@ type DiscoveryNavigationLinkProps = Omit<ComponentProps<typeof Link>, 'href' | '
   href: string
   navigationKind?: DiscoveryNavigationKind
   navigationLabel: string
+  preserveScroll?: boolean
 }
 
 function isModifiedActivation(event: MouseEvent<HTMLAnchorElement>) {
@@ -78,6 +154,7 @@ export function DiscoveryNavigationLink({
   prefetch = false,
   navigationKind = 'filter',
   navigationLabel,
+  preserveScroll = false,
   className = '',
   children,
   ...props
@@ -105,7 +182,7 @@ export function DiscoveryNavigationLink({
     }
 
     event.preventDefault()
-    beginNavigation({ href, label: navigationLabel, kind: navigationKind })
+    beginNavigation({ href, label: navigationLabel, kind: navigationKind, preserveScroll })
   }
 
   return (

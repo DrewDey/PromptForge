@@ -92,6 +92,7 @@ type MeasuredArtifact = {
   packageId: string
   artifactPath: string
   size: ArtifactSize & {
+    viewportWidth: number
     viewportHeight: number
   }
 }
@@ -331,6 +332,7 @@ function artifactFitProbeSource() {
       type: 'pathforge-artifact-size',
       width,
       height,
+      viewportWidth: window.innerWidth,
       viewportHeight: window.innerHeight,
     }, '*');
     window.dispatchEvent(new Event('pathforge-artifact-size-reported'));
@@ -395,6 +397,7 @@ export function ProtectedArtifactFrame({
   contextLabel,
   bare = false,
   frameId = 'final-result',
+  viewerFitControls = false,
 }: {
   selectedPackage: ArtifactPackage
   providerName: string
@@ -403,6 +406,7 @@ export function ProtectedArtifactFrame({
   contextLabel?: string
   bare?: boolean
   frameId?: string
+  viewerFitControls?: boolean
 }) {
   const frameRef = useRef<HTMLDivElement | null>(null)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
@@ -416,6 +420,7 @@ export function ProtectedArtifactFrame({
   const [settledArtifactPackageId, setSettledArtifactPackageId] = useState<string | null>(null)
   const [artifactDocumentGeneration, setArtifactDocumentGeneration] = useState(0)
   const [settledArtifactDocumentGeneration, setSettledArtifactDocumentGeneration] = useState(-1)
+  const [viewerMode, setViewerMode] = useState<'readable' | 'fit-whole'>('readable')
   const [guardedArtifactPackageIds, setGuardedArtifactPackageIds] = useState<ReadonlySet<string>>(
     () => new Set(),
   )
@@ -437,7 +442,11 @@ export function ProtectedArtifactFrame({
   ) ? measuredArtifact.size : null
   const artifactDocumentRemounted =
     settledArtifactDocumentGeneration !== artifactDocumentGeneration
-  const usesMeasuredContentHeight = !bare && frameHeight === undefined
+  const viewerUsesReadableSize = viewerFitControls && viewerMode === 'readable'
+  const viewerUsesAvailableHeight = viewerFitControls && viewerMode === 'fit-whole'
+  const usesMeasuredContentHeight = !bare && (
+    frameHeight === undefined || viewerUsesReadableSize
+  )
   const fallbackFrameHeight = frameHeight ?? ARTIFACT_FRAME_HEIGHT
   const setIframeElement = useCallback((node: HTMLIFrameElement | null) => {
     iframeRef.current = node
@@ -614,16 +623,32 @@ export function ProtectedArtifactFrame({
       if (data.type !== 'pathforge-artifact-size') return
       const width = Number(data.width)
       const height = Number(data.height)
+      const viewportWidth = Number(data.viewportWidth)
       const viewportHeight = Number(data.viewportHeight)
       if (
         !Number.isFinite(width) ||
         !Number.isFinite(height) ||
+        !Number.isFinite(viewportWidth) ||
         !Number.isFinite(viewportHeight)
+      ) return
+
+      // Fit-whole temporarily gives the iframe a much wider virtual viewport
+      // before scaling it down. That responsive canvas is presentation state,
+      // not the artifact's natural readable width. Never let it overwrite the
+      // readable measurement, and reject a queued report if the iframe has
+      // already changed viewport again during a rapid mode switch.
+      if (
+        viewerFitControls &&
+        (
+          frameRef.current?.dataset.artifactFitMode === 'scaled' ||
+          Math.abs((iframeRef.current?.clientWidth ?? viewportWidth) - viewportWidth) >= 4
+        )
       ) return
 
       const nextSize = {
         width: Math.max(1, Math.ceil(width)),
         height: Math.max(1, Math.ceil(height)),
+        viewportWidth: Math.max(1, Math.ceil(viewportWidth)),
         viewportHeight: Math.max(1, Math.ceil(viewportHeight)),
       }
       if (usesMeasuredContentHeight) {
@@ -666,6 +691,7 @@ export function ProtectedArtifactFrame({
         current.artifactPath === artifactPath &&
         Math.abs(current.size.width - nextSize.width) < 4 &&
         Math.abs(current.size.height - nextSize.height) < 4 &&
+        Math.abs(current.size.viewportWidth - nextSize.viewportWidth) < 4 &&
         Math.abs(current.size.viewportHeight - nextSize.viewportHeight) < 4
       ) return
 
@@ -679,7 +705,12 @@ export function ProtectedArtifactFrame({
       window.removeEventListener('message', handleMessage)
       window.clearTimeout(measurementSettleTimer)
     }
-  }, [selectedPackage.artifactPath, selectedPackage.id, usesMeasuredContentHeight])
+  }, [
+    selectedPackage.artifactPath,
+    selectedPackage.id,
+    usesMeasuredContentHeight,
+    viewerFitControls,
+  ])
 
   const guardedFromMeasuredHeightFeedback = guardedArtifactPackageIds.has(selectedArtifactIdentity)
   const measuredWidthFitScale = frameSize && artifactSize
@@ -691,10 +722,13 @@ export function ProtectedArtifactFrame({
   const measuredRenderedHeight = artifactSize
     ? Math.max(1, Math.ceil(artifactSize.height * measuredWidthFitScale))
     : undefined
+  const measuredFrameHeightLimit = viewerUsesReadableSize
+    ? MAX_AUTO_FIT_ARTIFACT_HEIGHT
+    : MAX_MEASURED_ARTIFACT_FRAME_HEIGHT
   const exceedsMeasuredFrameHeightLimit = Boolean(
     usesMeasuredContentHeight &&
     measuredRenderedHeight &&
-    measuredRenderedHeight > MAX_MEASURED_ARTIFACT_FRAME_HEIGHT
+    measuredRenderedHeight > measuredFrameHeightLimit
   )
   const exceedsRawMeasurementLimit = Boolean(
     artifactSize && (
@@ -764,16 +798,23 @@ export function ProtectedArtifactFrame({
     ),
   )
   const renderedFrameHeight = measuredFrameHeight
+  const readableViewerWidth = viewerUsesReadableSize && artifactSize && !exceedsRawMeasurementLimit
+    ? `${artifactSize.width}px`
+    : undefined
 
   return (
     <div
       id={frameId}
       className={bare
         ? 'h-full overflow-hidden bg-[#111827]'
-        : 'overflow-hidden border border-surface-800 bg-[#111827] shadow-[0_28px_90px_rgba(0,0,0,0.28)]'}
+        : viewerUsesAvailableHeight
+          ? 'flex h-full w-full flex-col overflow-hidden border border-surface-800 bg-[#111827] shadow-[0_28px_90px_rgba(0,0,0,0.28)]'
+          : 'w-full overflow-hidden border border-surface-800 bg-[#111827] shadow-[0_28px_90px_rgba(0,0,0,0.28)]'}
+      style={{ minWidth: readableViewerWidth }}
+      data-artifact-viewer-mode={viewerFitControls ? viewerMode : undefined}
     >
       {!bare && (
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-surface-800 bg-surface-900 px-4 py-3 text-white">
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-surface-800 bg-surface-900 px-4 py-3 text-white">
           <div className="min-w-0">
             <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-brand-orange">
               Current artifact
@@ -785,17 +826,54 @@ export function ProtectedArtifactFrame({
               )}
             </div>
           </div>
-          {showOpenAction && (
-            <Link
-              href={artifactViewerHref(selectedPackage, providerName)}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex shrink-0 items-center gap-1.5 border border-surface-700 px-3 py-1.5 text-xs font-semibold text-surface-300 transition hover:border-brand-orange hover:text-brand-orange"
-            >
-              <ExternalLink className="h-3.5 w-3.5" />
-              Open safely
-            </Link>
-          )}
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {viewerFitControls && (
+              <div
+                className="inline-flex border border-surface-700 bg-surface-950 p-0.5"
+                aria-label="Artifact display size"
+              >
+                <button
+                  type="button"
+                  aria-pressed={viewerMode === 'readable'}
+                  data-artifact-viewer-mode-control="readable"
+                  onClick={() => setViewerMode('readable')}
+                  className={[
+                    'px-3 py-1.5 text-xs font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
+                    viewerMode === 'readable'
+                      ? 'bg-brand-orange text-surface-950'
+                      : 'text-surface-300 hover:text-white',
+                  ].join(' ')}
+                >
+                  Readable
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={viewerMode === 'fit-whole'}
+                  data-artifact-viewer-mode-control="fit-whole"
+                  onClick={() => setViewerMode('fit-whole')}
+                  className={[
+                    'px-3 py-1.5 text-xs font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
+                    viewerMode === 'fit-whole'
+                      ? 'bg-brand-orange text-surface-950'
+                      : 'text-surface-300 hover:text-white',
+                  ].join(' ')}
+                >
+                  Fit whole
+                </button>
+              </div>
+            )}
+            {showOpenAction && (
+              <Link
+                href={artifactViewerHref(selectedPackage, providerName)}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex shrink-0 items-center gap-1.5 border border-surface-700 px-3 py-1.5 text-xs font-semibold text-surface-300 transition hover:border-brand-orange hover:text-brand-orange"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                Open safely
+              </Link>
+            )}
+          </div>
         </div>
       )}
       <div
@@ -812,8 +890,12 @@ export function ProtectedArtifactFrame({
         data-artifact-rendered-height={renderedFrameHeight ?? ''}
         data-artifact-package-id={selectedPackage.id}
         data-artifact-path={selectedPackage.artifactPath}
-        className="relative w-full overflow-hidden bg-[#111827]"
-        style={{ height: renderedFrameHeight ? `${renderedFrameHeight}px` : fallbackFrameHeight }}
+        className={viewerUsesAvailableHeight
+          ? 'relative min-h-0 w-full flex-1 overflow-hidden bg-[#111827]'
+          : 'relative w-full overflow-hidden bg-[#111827]'}
+        style={viewerUsesAvailableHeight
+          ? undefined
+          : { height: renderedFrameHeight ? `${renderedFrameHeight}px` : fallbackFrameHeight }}
       >
         {loadError ? (
           <div
@@ -1441,7 +1523,22 @@ export default function SourceRunShowcase({
   const selectedPrimaryPackage = packages.find((pkg) => pkg.id === selectedPackage?.id)
   const selectArtifactPackage = (packageId: string, clickedElement?: HTMLElement) => {
     if (packageId === selectedPackage?.id) return
-    const anchorElement = clickedElement ?? sourceRunPathRef.current
+    const sourceRunPath = sourceRunPathRef.current
+    const sourceRunPathRect = sourceRunPath?.getBoundingClientRect()
+    const artifactRect = document.getElementById('final-result')?.getBoundingClientRect()
+    const artifactBottomVisible = Boolean(
+      artifactRect && artifactRect.bottom > 0 && artifactRect.bottom <= window.innerHeight,
+    )
+    const artifactPathSeamVisible = Boolean(
+      artifactBottomVisible || (
+        sourceRunPathRect &&
+        sourceRunPathRect.top >= 0 &&
+        sourceRunPathRect.top <= window.innerHeight
+      ),
+    )
+    const anchorElement = artifactPathSeamVisible
+      ? sourceRunPath
+      : clickedElement ?? sourceRunPath
     const anchorTop = anchorElement?.getBoundingClientRect().top
     pendingArtifactSelectionViewportRef.current = !anchorElement || anchorTop === undefined
       ? null

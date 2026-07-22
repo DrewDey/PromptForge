@@ -95,7 +95,7 @@ const routeRuns = [
 type RouteRun = (typeof routeRuns)[number]
 
 function routeRunHref(runId: RouteRun['id']) {
-  return `/qa/artifact-height-guards?case=route&run=${runId}`
+  return `/qa/artifact-height-guards?case=route&run=${runId}&renderDelay=180`
 }
 
 function PendingArtifactSelectionFixture() {
@@ -160,6 +160,7 @@ function PendingRouteFixture({ run }: { run: RouteRun }) {
                 href={routeRunHref(candidate.id)}
                 ariaLabel={`View ${candidate.title}`}
                 className="inline-flex border border-brand-blue/30 bg-white px-3 py-2 text-xs font-black text-brand-blue"
+                prefetch={false}
               >
                 View {candidate.id}
               </ModelVariantViewLink>
@@ -197,7 +198,7 @@ function PendingRouteFixture({ run }: { run: RouteRun }) {
 export default async function ArtifactHeightGuardsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ case?: string; run?: string }>
+  searchParams: Promise<{ case?: string; run?: string; renderDelay?: string }>
 }) {
   if (process.env.VERCEL_ENV === 'production') notFound()
 
@@ -205,6 +206,10 @@ export default async function ArtifactHeightGuardsPage({
   const requestedCase = params.case
   if (requestedCase === 'pending') return <PendingArtifactSelectionFixture />
   if (requestedCase === 'route') {
+    const requestedRenderDelay = Number(params.renderDelay)
+    if (Number.isFinite(requestedRenderDelay) && requestedRenderDelay > 0) {
+      await new Promise((resolve) => setTimeout(resolve, Math.min(requestedRenderDelay, 500)))
+    }
     const run = routeRuns.find((candidate) => candidate.id === params.run) ?? routeRuns[0]
     return <PendingRouteFixture run={run} />
   }

@@ -33,9 +33,27 @@ function captureViewportPosition(): ModelVariantViewportPosition {
   const artifact = document.getElementById('final-result')
   const sourceRunPath = document.getElementById('source-run-path')
   const artifactRect = artifact?.getBoundingClientRect()
-  const anchor = artifactRect && artifactRect.bottom > 0
-    ? artifact
-    : sourceRunPath ?? artifact
+  const sourceRunPathRect = sourceRunPath?.getBoundingClientRect()
+  const artifactVisible = Boolean(
+    artifactRect && artifactRect.bottom > 0 && artifactRect.top < window.innerHeight,
+  )
+  const artifactBottomVisible = Boolean(
+    artifactRect && artifactRect.bottom > 0 && artifactRect.bottom <= window.innerHeight,
+  )
+  const artifactPathSeamVisible = Boolean(
+    artifactBottomVisible || (
+      sourceRunPathRect &&
+      sourceRunPathRect.top >= 0 &&
+      sourceRunPathRect.top <= window.innerHeight
+    ),
+  )
+  const anchor = artifactPathSeamVisible
+    ? sourceRunPath
+    : artifactVisible
+      ? artifact
+      : sourceRunPathRect && sourceRunPathRect.top < 0
+        ? sourceRunPath
+        : null
   return {
     scrollY: window.scrollY,
     anchorId: anchor?.id === 'source-run-path' ? 'source-run-path' : anchor ? 'final-result' : null,
@@ -52,6 +70,10 @@ function restoreComparisonScroll(
   let active = true
   let previousFrameHeight: number | null = null
   let stableFrames = 0
+  let observedFrame: HTMLElement | null = null
+  let frameResizeObserver: ResizeObserver | null = null
+  let frameMutationObserver: MutationObserver | null = null
+  let documentMutationObserver: MutationObserver | null = null
   const userInputEvents: Array<keyof WindowEventMap> = ['keydown', 'pointerdown', 'touchstart', 'wheel']
   const removeUserInputListeners = () => {
     for (const eventName of userInputEvents) {
@@ -62,8 +84,50 @@ function restoreComparisonScroll(
     if (!active) return
     active = false
     window.cancelAnimationFrame(animationFrame)
+    frameResizeObserver?.disconnect()
+    frameMutationObserver?.disconnect()
+    documentMutationObserver?.disconnect()
     removeUserInputListeners()
   }
+  const restoreAnchorPosition = () => {
+    const maxScrollY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
+    const destinationAnchorTop = desiredPosition.anchorId
+      ? document.getElementById(desiredPosition.anchorId)?.getBoundingClientRect().top
+      : undefined
+    const anchoredScrollY = desiredPosition.anchorTop !== null && destinationAnchorTop !== undefined
+      ? window.scrollY + destinationAnchorTop - desiredPosition.anchorTop
+      : desiredPosition.scrollY
+    const desiredScrollY = Math.max(0, anchoredScrollY)
+    const restoredScrollY = Math.min(desiredScrollY, maxScrollY)
+    window.scrollTo(0, restoredScrollY)
+    return { anchoredScrollY, desiredScrollY, maxScrollY, restoredScrollY }
+  }
+  const observeFrameSize = (frame: HTMLElement | null) => {
+    if (!frame || frame === observedFrame) return
+    frameResizeObserver?.disconnect()
+    frameMutationObserver?.disconnect()
+    observedFrame = frame
+    frameResizeObserver = new ResizeObserver(() => {
+      if (active) restoreAnchorPosition()
+    })
+    frameResizeObserver.observe(frame)
+    frameMutationObserver = new MutationObserver(() => {
+      if (active) restoreAnchorPosition()
+    })
+    frameMutationObserver.observe(frame, {
+      attributes: true,
+      attributeFilter: ['style', 'data-artifact-rendered-height'],
+    })
+  }
+  documentMutationObserver = new MutationObserver(() => {
+    if (active) restoreAnchorPosition()
+  })
+  documentMutationObserver.observe(document.body, {
+    attributes: true,
+    attributeFilter: ['style', 'data-artifact-rendered-height'],
+    childList: true,
+    subtree: true,
+  })
   function stopForUserInput() {
     if (pendingComparisonScroll?.destination === destination) {
       pendingComparisonScroll = null
@@ -80,10 +144,13 @@ function restoreComparisonScroll(
 
     const artifact = document.getElementById('final-result')
     const frame = artifact?.querySelector<HTMLElement>('[data-artifact-package-id]')
+    observeFrameSize(frame ?? null)
     const fitMode = frame?.dataset.artifactFitMode
     const heightGuard = frame?.dataset.artifactHeightGuard
     const heightPending = frame?.dataset.artifactHeightPending === 'true'
-    const destinationSettled = Boolean(
+    const destinationLocationMatches = relativeLocation(new URL(window.location.href)) === destination
+    const destinationSettled = destinationLocationMatches &&
+      renderedComparisonLocation === destination && Boolean(
       frame?.querySelector('iframe[srcdoc], [data-artifact-load-error]') &&
       !heightPending &&
       (
@@ -93,18 +160,13 @@ function restoreComparisonScroll(
         heightGuard !== 'none'
       ),
     )
-    const maxScrollY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
     const timedOut = window.performance.now() - startedAt >= SCROLL_RESTORE_TIMEOUT_MS
-    const destinationAnchorTop = desiredPosition.anchorId
-      ? document.getElementById(desiredPosition.anchorId)?.getBoundingClientRect().top
-      : undefined
-    const anchoredScrollY = desiredPosition.anchorTop !== null && destinationAnchorTop !== undefined
-      ? window.scrollY + destinationAnchorTop - desiredPosition.anchorTop
-      : desiredPosition.scrollY
-    const desiredScrollY = Math.max(0, anchoredScrollY)
-
-    const restoredScrollY = Math.min(desiredScrollY, maxScrollY)
-    window.scrollTo(0, restoredScrollY)
+    const {
+      anchoredScrollY,
+      desiredScrollY,
+      maxScrollY,
+      restoredScrollY,
+    } = restoreAnchorPosition()
     const restoredAnchorTop = desiredPosition.anchorId
       ? document.getElementById(desiredPosition.anchorId)?.getBoundingClientRect().top
       : undefined
@@ -259,18 +321,21 @@ function ViewportPreservingRouteLink({
   className,
   children,
   kind,
+  prefetch,
 }: {
   href: string
   ariaLabel: string
   className: string
   children: ReactNode
   kind: 'comparison-preview' | 'model-view'
+  prefetch?: boolean
 }) {
   const router = useRouter()
 
   return (
     <Link
       href={href}
+      prefetch={prefetch}
       scroll={false}
       onClick={(event) => {
         if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
@@ -294,6 +359,7 @@ function ViewportPreservingRouteLink({
           destination: navigationDestination,
           position: desiredPosition,
         }
+        restoreComparisonScroll(navigationDestination, desiredPosition)
         event.currentTarget.blur()
         router.push(navigationDestination, { scroll: false })
       }}
@@ -313,11 +379,13 @@ export function ModelVariantViewLink({
   ariaLabel,
   className,
   children,
+  prefetch,
 }: {
   href: string
   ariaLabel: string
   className: string
   children: ReactNode
+  prefetch?: boolean
 }) {
   return (
     <ViewportPreservingRouteLink
@@ -325,6 +393,7 @@ export function ModelVariantViewLink({
       ariaLabel={ariaLabel}
       className={className}
       kind="model-view"
+      prefetch={prefetch}
     >
       {children}
     </ViewportPreservingRouteLink>

@@ -58,8 +58,8 @@ export default async function ArtifactViewerPage({
   }
 
   return (
-    <div className="fixed inset-0 z-[100] overflow-auto bg-surface-950 text-white">
-      <header className="border-b border-surface-800 bg-surface-900 px-4 py-4 sm:px-6">
+    <div className="fixed inset-0 z-[100] flex flex-col overflow-hidden bg-[#111827] text-white">
+      <header className="z-10 shrink-0 border-b border-surface-800 bg-surface-900 px-4 py-4 sm:px-6">
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-4">
           <div>
             <Link
@@ -83,13 +83,14 @@ export default async function ArtifactViewerPage({
         </div>
       </header>
 
-      <div className="mx-auto max-w-[1600px] p-3 sm:p-5">
+      <div className="mx-auto min-h-0 w-full max-w-[1600px] flex-1 overflow-auto p-3 sm:p-5">
         <ProtectedArtifactFrame
           selectedPackage={selectedPackage}
           providerName={providerName}
           showOpenAction={false}
           frameHeight="calc(100svh - 176px)"
           contextLabel="Isolated full-page preview"
+          viewerFitControls
         />
       </div>
     </div>

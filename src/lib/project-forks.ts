@@ -107,8 +107,11 @@ export type ProjectForkNetworkItem = {
   forkSource: ProjectForkSource
   continuationSteps?: ProjectForkContinuationStep[]
   childRoute?: string | null
+  childSourceRunId?: string | null
   childSourceUrl?: string | null
   childProviderName?: string | null
+  childArtifactQualityStatus?: 'verified' | 'known-issue' | 'recorded' | null
+  childArtifactKnownIssueExplanation?: string | null
 }
 
 export type ProjectForkArtifactVersion = {

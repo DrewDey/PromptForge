@@ -13,11 +13,14 @@ import {
   Scale,
   Sparkles,
 } from 'lucide-react'
+import { BuilderByline } from '@/components/BuilderByline'
 import { ProjectPreview } from '@/components/ProjectPreview'
+import { PublicTruthSummary } from '@/components/PublicTruthSummary'
 import { IdeaArtifactPreview } from '@/components/ideas/IdeaArtifactPreview'
 import { getPrompts } from '@/lib/data'
 import {
   buildPathDiscoveryCatalog,
+  getCanonicalDefaultDiscoveryTruth,
   itemMatchesIntent,
   recommendedOrder,
   selectCuratedItems,
@@ -152,7 +155,7 @@ function promptLabel(item: BuildPathDiscoveryItem) {
 function pathTraits(item: BuildPathDiscoveryItem) {
   return [
     promptLabel(item),
-    item.comparisonCount > 1 ? `${item.comparisonCount} model runs` : item.modelLabel,
+    item.modelRunCount > 1 ? `${item.modelRunCount} model runs` : item.modelLabel,
     item.hasFork ? 'Fork available' : null,
     item.hasWorkingArtifact ? 'Working artifact' : null,
   ].filter((trait): trait is string => Boolean(trait))
@@ -206,6 +209,9 @@ export default async function WhatToBuildPage({
   const featured = selectedIntent || selectedPace !== 'any'
     ? recommendedOrder(candidatePool)[0]
     : defaultFeatured ?? recommendedOrder(catalog)[0]
+  const featuredTruth = featured
+    ? getCanonicalDefaultDiscoveryTruth(featured)
+    : null
   const rail = selectVariedRail(candidatePool, featured?.id)
   const selectedIntention = intentions.find((intention) => intention.value === selectedIntent)
   const selectedPaceOption = buildPaces.find((pace) => pace.value === selectedPace) ?? buildPaces[2]
@@ -343,8 +349,23 @@ export default async function WhatToBuildPage({
                   {pathTraits(featured).map(trait => <li key={trait}>{trait}</li>)}
                 </ul>
 
+                {featuredTruth && (
+                  <div data-ideas-feature-public-truth>
+                    <PublicTruthSummary
+                      truth={featuredTruth}
+                      showArtifactExplanation={false}
+                      className="ideas-feature-public-truth"
+                    />
+                  </div>
+                )}
+
                 <div className="ideas-feature-footer">
-                  <span>Built by <strong>{featured.authorName}</strong></span>
+                  <BuilderByline
+                    prefix="Built by"
+                    name={featured.authorName}
+                    provenanceKind={featured.authorProvenanceKind}
+                    provenanceClassName="ideas-builder-provenance"
+                  />
                   <Link href={featured.href} className="ideas-primary-link">
                     Explore this path
                     <ArrowRight aria-hidden="true" />

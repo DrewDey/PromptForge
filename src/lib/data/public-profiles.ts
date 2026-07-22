@@ -20,7 +20,7 @@ import { readWithFallback } from './shared'
 const PUBLIC_PROFILE_PROJECT_LIST_PAGE_SIZE = 300
 const PUBLIC_PROFILE_PROJECT_LIST_MAX_PAGES = 10
 const PUBLIC_PROFILE_PROJECT_LIST_SELECT =
-  '*, category:categories(*), author:profiles!prompts_author_id_fkey(*)'
+  '*, category:categories(*), author:profiles!prompts_author_id_fkey(*, provenance:profile_provenance(kind))'
 const PUBLIC_LIBRARY_START_AT = '2026-05-28T00:00:00.000Z'
 
 function isPublicLibraryProject(project: { id: string; created_at?: string | null }) {
@@ -91,14 +91,22 @@ function fallbackProjects(authorId: string, username?: string): PromptWithRelati
       return author?.username.toLowerCase() === username.toLowerCase()
     })
     .sort((left, right) => Date.parse(right.created_at) - Date.parse(left.created_at))
-    .map((project) => normalizeProjectPresentation({
-      ...project,
-      category: mockCategories.find((category) => category.id === project.category_id),
-      author: mockProfiles.find((profile) => profile.id === project.author_id),
-      steps: mockSteps
-        .filter((step) => step.prompt_id === project.id)
-        .sort((left, right) => left.step_number - right.step_number),
-    }))
+    .map((project) => {
+      const author = mockProfiles.find((profile) => profile.id === project.author_id)
+      return normalizeProjectPresentation({
+        ...project,
+        category: mockCategories.find((category) => category.id === project.category_id),
+        author: author ? {
+          ...author,
+          provenance: {
+            kind: author.username === 'pathforge_projects' ? 'pathforge_team' : 'pathforge_seed',
+          },
+        } : undefined,
+        steps: mockSteps
+          .filter((step) => step.prompt_id === project.id)
+          .sort((left, right) => left.step_number - right.step_number),
+      })
+    })
 }
 
 export async function getPublicProfileByUsername(username: string): Promise<Profile | null> {

@@ -1,5 +1,5 @@
 export const ACTIVE_PROJECT_EXPLANATION =
-  'Active requires at least two verified model runs, two approved forks, or one of each. The score adds 2 points per verified run (maximum 6), 2 per approved fork (maximum 6), plus 1 each for any vote, any save, and at least 4 combined votes and saves (maximum 3). Verified run and approved fork dates break ties; votes and saves alone never qualify a project.'
+  'Active requires at least two artifact-verified model runs, two approved forks, or one of each. The score adds 2 points per artifact-verified run (maximum 6), 2 per approved fork (maximum 6), plus 1 each for any vote, any save, and at least 4 combined votes and saves (maximum 3). Artifact-verified run and approved fork dates break ties; votes and saves alone never qualify a project.'
 
 function nonNegativeInteger(value) {
   if (!Number.isFinite(value)) return 0
@@ -22,6 +22,74 @@ export function countDistinctVerifiedModels(modelLabels) {
   return new Set(modelLabels
     .map((label) => label.trim().toLowerCase())
     .filter(Boolean)).size
+}
+
+/**
+ * A model-run selector is longitudinal: two captures from the same public
+ * model remain two selectable results when their source-run identities differ.
+ *
+ * @template {{ sourceRunId: string }} T
+ * @param {T[]} modelVariants
+ * @returns {T[]}
+ */
+export function retainDistinctRecordedModelRuns(modelVariants) {
+  const runsBySourceRunId = new Map()
+
+  for (const variant of modelVariants) {
+    const sourceRunId = variant.sourceRunId.trim()
+    if (!sourceRunId) {
+      throw new Error('Recorded model runs require a source-run identity.')
+    }
+    if (runsBySourceRunId.has(sourceRunId)) {
+      throw new Error(`Duplicate recorded source-run identity: ${sourceRunId}`)
+    }
+    runsBySourceRunId.set(sourceRunId, variant)
+  }
+
+  return [...runsBySourceRunId.values()]
+}
+
+/**
+ * The configured family default owns canonical prompt/artifact/link metadata.
+ * Refuse ambiguous or missing defaults instead of silently using sort order.
+ *
+ * @template {{ isCanonicalDefault: boolean }} T
+ * @param {T[]} modelVariants
+ * @returns {T}
+ */
+export function requireCanonicalDefaultModelRun(modelVariants) {
+  const canonicalDefaults = modelVariants.filter((variant) => variant.isCanonicalDefault)
+  if (canonicalDefaults.length !== 1) {
+    throw new Error(
+      `Discovery projects require exactly one canonical default model run; found ${canonicalDefaults.length}.`,
+    )
+  }
+
+  return canonicalDefaults[0]
+}
+
+/**
+ * Keeps the public recorded-family total separate from the artifact-verified
+ * run count that powers Active and ranking. Known-issue history remains a
+ * recorded result, but cannot increase activity.
+ *
+ * @param {unknown[]} modelVariants
+ * @param {unknown[]} verifiedVariantSummary
+ */
+export function deriveDiscoveryRunCounts(modelVariants, verifiedVariantSummary) {
+  const modelRunCount = Array.isArray(modelVariants) ? modelVariants.length : 0
+  const verifiedModelRunCount = Array.isArray(verifiedVariantSummary)
+    ? verifiedVariantSummary.length
+    : 0
+
+  if (modelRunCount < 1) {
+    throw new Error('Discovery projects must expose at least one recorded model run.')
+  }
+  if (verifiedModelRunCount > modelRunCount) {
+    throw new Error('Artifact-verified model runs cannot exceed recorded model runs.')
+  }
+
+  return { modelRunCount, verifiedModelRunCount }
 }
 
 /**
@@ -77,40 +145,40 @@ function stableActivityTieBreak(left, right) {
 }
 
 /**
- * @param {{ isActive: boolean, activityScore: number, modelRunCount: number, forkCount: number, latestActivityAt: string | null, createdAt: string, title: string, id: string }} left
- * @param {{ isActive: boolean, activityScore: number, modelRunCount: number, forkCount: number, latestActivityAt: string | null, createdAt: string, title: string, id: string }} right
+ * @param {{ isActive: boolean, activityScore: number, verifiedModelRunCount: number, forkCount: number, latestActivityAt: string | null, createdAt: string, title: string, id: string }} left
+ * @param {{ isActive: boolean, activityScore: number, verifiedModelRunCount: number, forkCount: number, latestActivityAt: string | null, createdAt: string, title: string, id: string }} right
  */
 export function compareActiveDiscoveryItems(left, right) {
   return (
     Number(right.isActive) - Number(left.isActive) ||
     right.activityScore - left.activityScore ||
-    right.modelRunCount - left.modelRunCount ||
+    right.verifiedModelRunCount - left.verifiedModelRunCount ||
     right.forkCount - left.forkCount ||
     stableActivityTieBreak(left, right)
   )
 }
 
 /**
- * @param {{ activityScore: number, modelRunCount: number, forkCount: number, latestActivityAt: string | null, createdAt: string, title: string, id: string }} left
- * @param {{ activityScore: number, modelRunCount: number, forkCount: number, latestActivityAt: string | null, createdAt: string, title: string, id: string }} right
+ * @param {{ activityScore: number, verifiedModelRunCount: number, forkCount: number, latestActivityAt: string | null, createdAt: string, title: string, id: string }} left
+ * @param {{ activityScore: number, verifiedModelRunCount: number, forkCount: number, latestActivityAt: string | null, createdAt: string, title: string, id: string }} right
  */
 export function compareForkDiscoveryItems(left, right) {
   return (
     right.forkCount - left.forkCount ||
-    right.modelRunCount - left.modelRunCount ||
+    right.verifiedModelRunCount - left.verifiedModelRunCount ||
     right.activityScore - left.activityScore ||
     stableActivityTieBreak(left, right)
   )
 }
 
 /**
- * @param {{ activityScore: number, verifiedModelCount: number, modelRunCount: number, forkCount: number, latestActivityAt: string | null, createdAt: string, title: string, id: string }} left
- * @param {{ activityScore: number, verifiedModelCount: number, modelRunCount: number, forkCount: number, latestActivityAt: string | null, createdAt: string, title: string, id: string }} right
+ * @param {{ activityScore: number, verifiedModelCount: number, verifiedModelRunCount: number, forkCount: number, latestActivityAt: string | null, createdAt: string, title: string, id: string }} left
+ * @param {{ activityScore: number, verifiedModelCount: number, verifiedModelRunCount: number, forkCount: number, latestActivityAt: string | null, createdAt: string, title: string, id: string }} right
  */
 export function compareMultiModelDiscoveryItems(left, right) {
   return (
     right.verifiedModelCount - left.verifiedModelCount ||
-    right.modelRunCount - left.modelRunCount ||
+    right.verifiedModelRunCount - left.verifiedModelRunCount ||
     right.forkCount - left.forkCount ||
     right.activityScore - left.activityScore ||
     stableActivityTieBreak(left, right)

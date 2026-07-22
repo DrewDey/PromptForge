@@ -13,10 +13,13 @@
 
 import Link from 'next/link'
 import { Cpu } from 'lucide-react'
+import { BuilderByline } from '@/components/BuilderByline'
+import { PublicTruthSummary } from '@/components/PublicTruthSummary'
 import { PromptWithRelations } from '@/lib/types'
 import { getPromptModelLabel } from '@/lib/prompt-comparisons'
 import { getPreparedProjectModelIdentity } from '@/lib/prepared-project-model-identities'
 import { getProjectHref } from '@/lib/project-links'
+import { deriveCanonicalPromptPublicTruth } from '@/lib/prompt-public-truth'
 
 const difficultyConfig = {
   beginner: { label: 'Beginner', color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
@@ -53,6 +56,7 @@ export default function PromptCard({ prompt, featured = false }: { prompt: Promp
   const modelDisplay = promptModelIdentity(prompt)
   const difficulty = difficultyConfig[prompt.difficulty]
   const outcome = resolveOutcome(prompt)
+  const publicTruth = deriveCanonicalPromptPublicTruth(prompt)
 
   return (
     <article
@@ -162,46 +166,53 @@ export default function PromptCard({ prompt, featured = false }: { prompt: Promp
           {prompt.description}
         </p>
 
-        {/*
-          Footer — single typographic line. Difficulty · model on the left; author ·
-          votes · bookmarks on the right. Step-flow chips and N-step count removed —
-          the outcome hero carries the "there's a build behind this" signal now.
-        */}
+        {/* Compact footer groups wrap independently so provenance and truth stay
+            visible inside narrow related-project grid cards. */}
       </Link>
 
       <div className={featured ? 'px-6 pb-6' : 'px-5 pb-5'}>
-        <div className="flex items-center justify-between gap-3 border-t border-surface-100 pt-3">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className={`text-[11px] font-medium px-2 py-0.5 border shrink-0 ${difficulty.color}`}>
-              {difficulty.label}
-            </span>
-            {modelDisplay && modelDisplay !== 'Unknown model' && (
-              <span className="text-[11px] text-surface-400 flex items-center gap-1 min-w-0">
-                <Cpu className="w-3 h-3 shrink-0" aria-hidden="true" />
-                <span className="truncate" data-public-model-identity>{modelDisplay}</span>
+        <div className="border-t border-surface-100 pt-3">
+          <div className="grid min-w-0 gap-2" data-related-project-footer>
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <span className={`text-[11px] font-medium px-2 py-0.5 border shrink-0 ${difficulty.color}`}>
+                {difficulty.label}
               </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2 text-[11px] text-surface-500 shrink-0">
-            {prompt.author?.username ? (
-              <Link
-                href={`/user/${prompt.author.username}`}
-                className="hidden max-w-[8rem] truncate text-surface-500 hover:text-brand-orange sm:inline"
-                aria-label={`View ${prompt.author.display_name || prompt.author.username}'s profile`}
+              {modelDisplay && modelDisplay !== 'Unknown model' && (
+                <span className="text-[11px] text-surface-400 flex items-center gap-1 min-w-0">
+                  <Cpu className="w-3 h-3 shrink-0" aria-hidden="true" />
+                  <span className="truncate" data-public-model-identity>{modelDisplay}</span>
+                </span>
+              )}
+            </div>
+            <div
+              className="flex min-w-0 max-w-full flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-surface-500"
+              data-related-project-byline-row
+            >
+              <BuilderByline
+                name={prompt.author?.display_name || prompt.author?.username || 'Anonymous'}
+                username={prompt.author?.username}
+                provenanceKind={prompt.author?.provenance?.kind}
+                href={prompt.author?.username ? `/user/${prompt.author.username}` : undefined}
+                className="inline-flex min-w-0 max-w-full flex-wrap items-center gap-x-1 text-surface-500 hover:text-brand-orange"
+                provenanceClassName="font-medium text-surface-600"
+              />
+              <span aria-hidden="true" className="hidden sm:inline text-surface-300">·</span>
+              <span
+                className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap"
+                data-related-project-engagement
               >
-                by <span className="font-medium text-surface-700">{prompt.author.display_name || prompt.author.username}</span>
-              </Link>
-            ) : (
-              <span className="hidden max-w-[8rem] truncate text-surface-500 sm:inline">by Anonymous</span>
-            )}
-            <span aria-hidden="true" className="hidden sm:inline text-surface-300">·</span>
-            <span className="tabular-nums" aria-label={`${prompt.vote_count} upvotes`}>
-              {prompt.vote_count} upvotes
-            </span>
-            <span aria-hidden="true" className="text-surface-300">·</span>
-            <span className="tabular-nums text-surface-400" aria-label={`${prompt.bookmark_count} bookmarks`}>
-              {prompt.bookmark_count} saves
-            </span>
+                <span className="tabular-nums" aria-label={`${prompt.vote_count} upvotes`}>
+                  {prompt.vote_count} upvotes
+                </span>
+                <span aria-hidden="true" className="text-surface-300">·</span>
+                <span className="tabular-nums text-surface-400" aria-label={`${prompt.bookmark_count} bookmarks`}>
+                  {prompt.bookmark_count} saves
+                </span>
+              </span>
+            </div>
+          </div>
+          <div data-related-project-public-truth>
+            <PublicTruthSummary truth={publicTruth} className="mt-2 text-[9px] leading-4" />
           </div>
         </div>
       </div>

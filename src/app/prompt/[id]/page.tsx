@@ -12,12 +12,16 @@ import { getModelName } from '@/lib/models'
 import { getPublicModelIdentityLabel } from '@/lib/public-model-labels'
 import VoteBookmarkButtons from '@/components/VoteBookmarkButtons'
 import PromptCard from '@/components/PromptCard'
+import { BuilderByline } from '@/components/BuilderByline'
 import CodeBlock from '@/components/CodeBlock'
 import Prose from '@/components/Prose'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
+import { PublicTruthSummary } from '@/components/PublicTruthSummary'
 import { detectContentKind } from '@/lib/content-kind'
 import { isPersistableProjectId } from '@/lib/project-engagement'
 import { getProjectRouteOverride } from '@/lib/project-links'
+import { getProfileProvenance } from '@/lib/profile-presentation'
+import { deriveCanonicalPromptPublicTruth } from '@/lib/prompt-public-truth'
 import {
   PROJECT_FORK_MAX_DEPTH,
   buildProjectForkHref,
@@ -177,6 +181,10 @@ export default async function PromptDetailPage({
   const modelDisplay = rawModel
     ? getPublicModelIdentityLabel({ model: rawModel })
     : ''
+  const publicAuthorProvenance = prompt.author
+    ? getProfileProvenance(prompt.author)
+    : null
+  const publicTruth = deriveCanonicalPromptPublicTruth(prompt)
   const difficulty = difficultyConfig[prompt.difficulty] || difficultyConfig.beginner
   const existingForkSource = projectForkSourceFromSubmissionFields(prompt)
   const forkSourceSteps = toProjectForkSourceSteps(prompt)
@@ -265,7 +273,10 @@ export default async function PromptDetailPage({
 
   return (
     <>
-    <div className="mx-auto max-w-4xl lg:max-w-[1216px] px-4 sm:px-6 lg:px-8 py-10 lg:grid lg:grid-cols-[minmax(0,1fr)_288px] lg:gap-10">
+    <div
+      className="mx-auto max-w-4xl lg:max-w-[1216px] px-4 sm:px-6 lg:px-8 py-10 lg:grid lg:grid-cols-[minmax(0,1fr)_288px] lg:gap-10"
+      data-generic-public-project={prompt.id}
+    >
       <div className="min-w-0 pb-28 lg:pb-0">
       {/* Breadcrumb navigation */}
       <nav aria-label="Breadcrumb" className="mb-8">
@@ -307,15 +318,15 @@ export default async function PromptDetailPage({
             <div className="w-9 h-9 bg-gradient-to-br from-brand-orange to-brand-blue flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
               {(prompt.author?.display_name || 'A')[0].toUpperCase()}
             </div>
-            <p className="text-sm text-surface-500 truncate">
-              <span className="text-surface-400">by </span>
-              {prompt.author?.username ? (
-                <Link href={`/user/${prompt.author.username}`} className="font-semibold text-surface-900 hover:text-brand-orange transition-colors duration-200">
-                  {prompt.author.display_name ?? 'Anonymous'}
-                </Link>
-              ) : (
-                <span className="font-semibold text-surface-900">Anonymous</span>
-              )}
+            <p className="text-sm text-surface-500 truncate" data-generic-public-byline>
+              <BuilderByline
+                name={prompt.author?.display_name || prompt.author?.username || 'Anonymous'}
+                username={prompt.author?.username}
+                provenanceKind={publicAuthorProvenance ? prompt.author?.provenance?.kind : null}
+                href={prompt.author?.username ? `/user/${prompt.author.username}` : undefined}
+                className="font-semibold text-surface-900 hover:text-brand-orange transition-colors duration-200"
+                provenanceClassName="font-medium text-surface-500"
+              />
               <span className="text-surface-300 mx-2" aria-hidden="true">·</span>
               <span className="text-surface-500">
                 {prompt.created_at ? new Date(prompt.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Shared on PathForge'}
@@ -340,6 +351,10 @@ export default async function PromptDetailPage({
               <span>{prompt.bookmark_count} saves</span>
             </div>
           )}
+        </div>
+
+        <div data-generic-public-truth>
+          <PublicTruthSummary truth={publicTruth} className="mb-6" />
         </div>
 
         {/* Metadata — unified pill spec. One orange-tinted Category (primary
@@ -798,6 +813,13 @@ export default async function PromptDetailPage({
                     </span>
                   </li>
                 )}
+                <li className="min-w-0 border-t border-surface-200/80 pt-3" data-generic-rail-truth>
+                  <PublicTruthSummary
+                    truth={publicTruth}
+                    showArtifactExplanation={false}
+                    className="gap-x-2 gap-y-1 text-[10px] leading-4"
+                  />
+                </li>
               </ul>
             </div>
           </div>

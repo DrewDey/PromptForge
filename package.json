@@ -25,7 +25,11 @@
     "check:source-run-intake": "node scripts/check-source-run-intake.mjs",
     "check:model-identities": "node scripts/check-public-model-identity.mjs && node scripts/check-public-model-identities.mjs && node scripts/check-prepared-project-model-identities.mjs",
     "check:source-run-showcases": "node scripts/check-source-run-showcases.mjs && node scripts/check-public-model-identity.mjs && node scripts/check-public-model-identities.mjs && node scripts/check-prepared-project-model-identities.mjs && node scripts/check-protected-artifact-sandbox.mjs",
-    "check:source-run-publication-registry": "node scripts/check-source-run-showcases.mjs && node scripts/check-public-model-identity.mjs && node scripts/check-public-model-identities.mjs && node scripts/check-prepared-project-model-identities.mjs && node scripts/check-live-source-run-publication-registry.mjs",
+    "check:public-source-evidence": "node scripts/check-public-source-evidence.mjs",
+    "check:public-project-truth": "node scripts/check-public-project-truth-presenter.mjs && node scripts/check-compact-source-evidence-surfaces.mjs && node scripts/check-public-project-truth.mjs",
+    "check:generic-public-truth": "node scripts/check-generic-public-truth.mjs",
+    "check:prepared-public-truth-rendered": "node scripts/check-prepared-public-truth-rendered.mjs",
+    "check:source-run-publication-registry": "node scripts/check-source-run-showcases.mjs && node scripts/check-public-model-identity.mjs && node scripts/check-public-model-identities.mjs && node scripts/check-prepared-project-model-identities.mjs && node scripts/check-live-source-run-publication-registry.mjs && npm run check:public-source-evidence && npm run check:public-project-truth",
     "check:my-forge": "node scripts/check-my-forge.mjs && node scripts/check-prepared-showcase-ownership-backfill.mjs",
     "check:security-boundaries": "node scripts/check-supabase-function-security.mjs",
     "check:auth-readiness": "node scripts/check-auth-readiness.mjs",
@@ -37,7 +41,7 @@
     "check:output-tracing": "node scripts/check-output-file-tracing.mjs",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "autoreview": "npm run lint && npm run typecheck && npm run check:discovery-activity && npm run check:source-run-intake && npm run check:source-run-showcases && npm run check:model-variants && npm run check:project-forks && npm run check:my-forge && npm run check:security-boundaries && npm run check:auth-readiness && npm run check:activation-analytics && npm run check:supabase-public-reads",
+    "autoreview": "npm run lint && npm run typecheck && npm run check:discovery-activity && npm run check:source-run-intake && npm run check:source-run-showcases && npm run check:public-source-evidence && npm run check:public-project-truth && npm run check:generic-public-truth && npm run check:model-variants && npm run check:project-forks && npm run check:my-forge && npm run check:security-boundaries && npm run check:auth-readiness && npm run check:activation-analytics && npm run check:supabase-public-reads",
     "autoreview:hourly-manager": "npm run check:hourly-seed-manager"
   },
   "dependencies": {

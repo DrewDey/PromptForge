@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import Link from 'next/link'
+import { BuilderByline } from '@/components/BuilderByline'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
 import ProjectEngagementBar from '@/components/ProjectEngagementBar'
 import PathForgeLabsModelRuns, {
@@ -13,7 +14,9 @@ import SourceRunShowcase, {
   type SourceRunShowcaseStep,
 } from '@/components/SourceRunShowcase'
 import ProjectActivationTracker from '@/components/analytics/ProjectActivationTracker'
+import { PublicTruthSummary } from '@/components/PublicTruthSummary'
 import { getApprovedProjectForks } from '@/lib/data'
+import { getPublicProfileByUsername } from '@/lib/data/public-profiles'
 import {
   getPreparedShowcaseProjectById,
   resolvePreparedShowcaseLineage,
@@ -32,7 +35,12 @@ import type {
   ProjectModelVariant,
   ProjectModelVariantSet,
 } from '@/lib/project-model-variants'
-import { getProjectModelVariantSet } from '@/lib/project-model-variants'
+import {
+  getProjectModelVariantKnownIssueExplanation,
+  getProjectModelVariantSet,
+} from '@/lib/project-model-variants'
+import { derivePublicProjectTruth } from '@/lib/public-project-truth'
+import { getCanonicalPreparedSelectedRunPromptCount } from '@/lib/prompt-public-truth'
 import { getPublicModelIdentityLabel } from '@/lib/public-model-labels'
 import type { SourceRunPackage, SourceRunPackageStep } from '@/lib/source-run-package'
 import { loadSourceRunPackage } from '@/lib/source-run-package'
@@ -267,12 +275,16 @@ function buildPreparedForkContext({
   childSteps,
   forkSource,
   route,
+  childArtifactQualityStatus,
+  childArtifactKnownIssueExplanation,
 }: {
   project: PreparedShowcaseProject
   sourceRun: SourceRunPackage
   childSteps: SourceRunShowcaseStep[]
   forkSource: ProjectForkSource
   route: string
+  childArtifactQualityStatus: 'verified' | 'known-issue' | 'recorded'
+  childArtifactKnownIssueExplanation: string | null
 }): SourceRunShowcaseForkContext {
   const lineage = resolvePreparedShowcaseLineage(project)
   const registeredSource = getPreparedShowcaseProjectById(forkSource.sourceProjectId)
@@ -378,6 +390,8 @@ function buildPreparedForkContext({
     childRoute: route,
     childSourceUrl: sourceRun.source_url ?? project.sourceUrl,
     childProviderName: sourceRun.provider ?? null,
+    childArtifactQualityStatus,
+    childArtifactKnownIssueExplanation,
   }
   const sourceRoute = getProjectRouteOverride(immediateSource.id) ?? immediateSource.href
 
@@ -471,12 +485,47 @@ export default async function PreparedSourceRunPage({
       childSteps: steps,
       forkSource,
       route: pageRoute,
+      childArtifactQualityStatus: activeModelVariant?.qualityStatus ?? 'recorded',
+      childArtifactKnownIssueExplanation: activeModelVariant
+        ? getProjectModelVariantKnownIssueExplanation(activeModelVariant)
+        : null,
     })
     : null
   const projectContext = await getCurrentUserProjectContext(project.id)
+  const publicAuthorProfile = await getPublicProfileByUsername(project.authorUsername)
   const currentSourceRunId = activeModelVariant?.sourceRunId
     ?? sourceRun.source_run_id
     ?? project.sourceRunId
+  const sourceRunSlug = (sourceRun as SourceRunPackage & { slug?: string }).slug
+  const sourceEvidenceLookup = {
+    sourceRunId: currentSourceRunId,
+    ...(sourceRun.source_run_id === undefined
+      ? {}
+      : { source_run_id: sourceRun.source_run_id }),
+    ...(sourceRun.source_run_submission_id === undefined
+      ? {}
+      : { source_run_submission_id: sourceRun.source_run_submission_id }),
+    ...(sourceRun.pathforge_pending_id === undefined
+      ? {}
+      : { pathforge_pending_id: sourceRun.pathforge_pending_id }),
+    ...(sourceRunSlug === undefined ? {} : { slug: sourceRunSlug }),
+    pathforgeRecordChecked: true,
+  }
+  const publicTruth = derivePublicProjectTruth({
+    sourceEvidenceLookup,
+    qualityStatus: activeModelVariant?.qualityStatus ?? 'recorded',
+    knownIssueExplanation: activeModelVariant
+      ? getProjectModelVariantKnownIssueExplanation(activeModelVariant)
+      : null,
+    selectedRunPromptCount: getCanonicalPreparedSelectedRunPromptCount(
+      project,
+      activeModelVariant?.promptCount,
+    ),
+    familyRunCount: modelVariantSet?.variants.length ?? 1,
+    isCanonicalDefaultRun: modelVariantSet
+      ? currentSourceRunId === modelVariantSet.defaultSourceRunId
+      : true,
+  })
   const resumeArtifactPath = projectContext.state?.selectedSourceRunId === currentSourceRunId
     ? projectContext.state.selectedArtifactPath
     : null
@@ -507,14 +556,30 @@ export default async function PreparedSourceRunPage({
               <p className="mt-4 max-w-2xl text-sm leading-6 text-surface-600">
                 {project.description}
               </p>
-              <Link
+              <BuilderByline
+                name={project.authorDisplayName || project.authorUsername}
+                username={project.authorUsername}
+                provenanceKind={publicAuthorProfile?.provenance?.kind}
+                prefix="Built by"
                 href={`/user/${project.authorUsername}`}
-                className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-surface-500 hover:text-brand-orange"
+                showUsername
+                className="mt-3 inline-flex flex-wrap items-center gap-2 text-xs font-semibold text-surface-500 hover:text-brand-orange"
+                provenanceClassName="text-surface-500"
+              />
+              <div
+                data-prepared-header-public-truth
+                data-source-run-id={currentSourceRunId}
+                data-source-access={publicTruth.sourceEvidence.accessState}
+                data-pathforge-record={publicTruth.sourceEvidence.hasPathForgeRecord ? 'true' : 'false'}
+                data-model-proof={publicTruth.sourceEvidence.modelProof}
+                data-selected-run-prompt-count={publicTruth.selectedRunPromptCount}
               >
-                <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-surface-400">Built by</span>
-                {project.authorDisplayName || project.authorUsername}
-                <span className="text-surface-400">@{project.authorUsername}</span>
-              </Link>
+                <PublicTruthSummary
+                  truth={publicTruth}
+                  showArtifactExplanation={!modelVariantSet}
+                  className="mt-3 max-w-4xl"
+                />
+              </div>
             </div>
             {modelVariantSet && activeModelVariant ? (
               <PathForgeLabsModelRuns
@@ -552,7 +617,7 @@ export default async function PreparedSourceRunPage({
       <SourceRunShowcase
         key={activeModelVariant?.sourceRunId ?? project.sourceRunId}
         sourceRunUrl={sourceUrl}
-        sourceRunAccessNote={sourceRun.source_access?.note}
+        sourceEvidence={publicTruth.sourceEvidence}
         projectId={project.id}
         projectTitle={project.title}
         sourceModelVariantId={activeModelVariant?.databaseId}

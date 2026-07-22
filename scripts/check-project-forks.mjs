@@ -245,6 +245,12 @@ assertTypeProperties(forkSource, forkPath, 'ProjectForkSourceSubmissionFields', 
   'prompt_family_id',
 ])
 assertTypeProperties(forkSource, forkPath, 'ProjectForkNetworkItem', [
+  'childSourceRunId',
+  'childSourceUrl',
+  'childArtifactQualityStatus',
+  'childArtifactKnownIssueExplanation',
+])
+assertTypeProperties(forkSource, forkPath, 'ProjectForkNetworkItem', [
   'id',
   'forkSource',
   'continuationSteps',
@@ -352,11 +358,36 @@ assertTypeProperties(renderer, rendererPath, 'ProjectForkBuildPathProps', [
   'branchHref',
   'newForkHref',
   'sourceRunHref',
+  'sourceEvidence',
   'onClose',
   'onDisplayArtifact',
   'selectedArtifactPath',
   'artifactOpenHrefs',
 ])
+assert(importHas(renderer, '@/components/ForkTruthDisclosure', 'ForkTruthDisclosure'), `${rendererPath}: branch truth must use the shared disclosure presenter`)
+assert(importHas(renderer, '@/lib/public-source-evidence', 'resolvePublicSourceEvidence'), `${rendererPath}: missing child evidence must fail closed through the shared resolver`)
+assert(importHas(renderer, '@/lib/public-project-truth', 'publicArtifactStatusPresentation'), `${rendererPath}: branch artifact state must remain orthogonal to provider evidence`)
+assert(rendererSource.includes("qualityStatus: fork.childArtifactQualityStatus ?? 'recorded'"), `${rendererPath}: absent checked child quality must fail closed to Run recorded`)
+const forkTruthDisclosures = jsxOpenings(renderer, 'ForkTruthDisclosure')
+assert(forkTruthDisclosures.length === 1, `${rendererPath}: every selected branch must render exactly one combined truth disclosure`)
+if (forkTruthDisclosures.length === 1) {
+  const attributes = jsxAttributeNames(forkTruthDisclosures[0])
+  assert(attributes.has('artifact'), `${rendererPath}: branch truth disclosure must receive artifact state independently`)
+  assert(attributes.has('sourceEvidence'), `${rendererPath}: branch truth disclosure must receive full source evidence`)
+  const conditionalOnProviderHref = (() => {
+    let current = forkTruthDisclosures[0].parent
+    while (current) {
+      if (
+        ts.isBinaryExpression(current) &&
+        current.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken &&
+        current.left.getText() === 'sourceRunHref'
+      ) return true
+      current = current.parent
+    }
+    return false
+  })()
+  assert(!conditionalOnProviderHref, `${rendererPath}: fail-closed truth must render even when no provider URL exists`)
+}
 for (const hook of [
   'data-project-fork-build-path',
   'data-fork-inherited-path',
@@ -437,6 +468,9 @@ if (showcaseRenderers.length > 0) {
   const attributes = jsxAttributeNames(showcaseRenderers[0])
   for (const property of ['mode', 'sourceSteps', 'branch', 'onDisplayArtifact', 'selectedArtifactPath']) {
     assert(attributes.has(property), `${showcasePath}: shared renderer integration must pass ${property}`)
+  }
+  for (const rendererNode of showcaseRenderers) {
+    assert(jsxAttributeNames(rendererNode).has('sourceEvidence'), `${showcasePath}: every child/parent branch preview must pass complete per-run source evidence`)
   }
 }
 assert(namedDeclarations(showcase, 'ResponseForkFocusStage').length === 0, `${showcasePath}: remove the divergent legacy fork focus renderer`)
@@ -537,6 +571,22 @@ const community = parse(communityPath)
 assert(importHas(community, '@/components/ProjectForkBuildPath', 'ProjectForkBuildPath'), `${communityPath}: generic project fork lineage must use the shared renderer`)
 assert(jsxOpenings(community, 'ProjectForkBuildPath').length >= 1, `${communityPath}: generic fork pages must render the shared lineage workspace`)
 assert(jsxOpenings(community, 'ProjectForkInheritedPathBand').length === 0, `${communityPath}: remove the divergent legacy inherited-path renderer`)
+const communityForkRenderers = jsxOpenings(community, 'ProjectForkBuildPath')
+assert(
+  communityForkRenderers.every((node) => !jsxAttributeNames(node).has('sourceRunHref')),
+  `${communityPath}: URL-less community child pages must exercise the renderer's unconditional fail-closed evidence path`,
+)
+
+const networkExplorerPath = 'src/components/ProjectForkNetworkExplorer.tsx'
+const networkExplorer = parse(networkExplorerPath)
+const networkForkRenderers = jsxOpenings(networkExplorer, 'ProjectForkBuildPath')
+assert(networkForkRenderers.length === 1, `${networkExplorerPath}: selected network branch must use the shared renderer`)
+if (networkForkRenderers.length === 1) {
+  assert(
+    jsxAttributeNames(networkForkRenderers[0]).has('sourceEvidence'),
+    `${networkExplorerPath}: selected branch must pass its complete curated/fail-closed source evidence`,
+  )
+}
 
 for (const routePath of sharedSourceRunRoutes()) {
   const route = parse(routePath)

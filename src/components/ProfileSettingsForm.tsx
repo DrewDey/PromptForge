@@ -131,7 +131,7 @@ export default function ProfileSettingsForm({
     { label: 'Original paths', value: summary.originalCount },
     { label: 'Forks', value: summary.forkCount },
     { label: 'Models used', value: summary.distinctModelCount },
-    { label: 'Verified runs', value: summary.verifiedModelRunCount },
+    { label: 'Artifact-verified runs', value: summary.verifiedModelRunCount },
   ]
 
   return (

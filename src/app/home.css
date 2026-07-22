@@ -209,6 +209,17 @@
   border: 0;
 }
 
+.pf-home-next .home-hero-public-truth {
+  margin-top: 10px;
+  border-top: 1px solid var(--home-line);
+  padding: 10px 0 2px;
+  column-gap: 14px;
+  row-gap: 5px;
+  color: var(--home-muted);
+  font-size: 9px;
+  line-height: 1.55;
+}
+
 .pf-home-next .home-entry-strip {
   display: flex;
   gap: 18px;

@@ -1,7 +1,12 @@
 import Link from 'next/link'
 import { ArrowRight, Search } from 'lucide-react'
+import { BuilderByline } from '@/components/BuilderByline'
 import { ProjectPreview } from '@/components/ProjectPreview'
-import type { BuildPathDiscoveryItem } from '@/lib/path-discovery'
+import { PublicTruthSummary } from '@/components/PublicTruthSummary'
+import {
+  getCanonicalDefaultDiscoveryTruth,
+  type BuildPathDiscoveryItem,
+} from '@/lib/path-discovery'
 
 type HomeHeroProps = {
   pathCount: number
@@ -16,6 +21,10 @@ const startingPoints = [
 ] as const
 
 export function HomeHero({ pathCount, featured }: HomeHeroProps) {
+  const featuredTruth = featured
+    ? getCanonicalDefaultDiscoveryTruth(featured)
+    : null
+
   return (
     <section className="home-hero" aria-labelledby="home-title">
       <div className="home-shell">
@@ -49,8 +58,19 @@ export function HomeHero({ pathCount, featured }: HomeHeroProps) {
           {featured && (
             <Link href={featured.href} className="home-hero-demo" aria-label={`Open featured project: ${featured.title}`}>
               <div className="home-hero-demo-heading">
-                <span>Open a real working result</span>
-                <strong>{featured.categoryLabel} · {featured.promptCount || 1} {featured.promptCount === 1 ? 'prompt' : 'prompts'}</strong>
+                <span>
+                  Open a real working result ·{' '}
+                  <BuilderByline
+                    name={featured.authorName}
+                    provenanceKind={featured.authorProvenanceKind}
+                    provenanceClassName="home-hero-author-provenance"
+                  />
+                </span>
+                <strong>
+                  {featured.categoryLabel} · {featured.modelVariants.length > 1 ? 'Default run · ' : ''}
+                  {featured.promptCount || 1} {featured.promptCount === 1 ? 'prompt' : 'prompts'}
+                  {featured.modelVariants.length > 1 ? ` · ${featured.modelVariants.length} model runs` : ''}
+                </strong>
               </div>
               <ProjectPreview
                 artifactPath={featured.artifactPath}
@@ -58,6 +78,15 @@ export function HomeHero({ pathCount, featured }: HomeHeroProps) {
                 label="Featured working artifact"
                 className="home-hero-project-preview"
               />
+              {featuredTruth && (
+                <div data-home-hero-public-truth>
+                  <PublicTruthSummary
+                    truth={featuredTruth}
+                    showArtifactExplanation={false}
+                    className="home-hero-public-truth"
+                  />
+                </div>
+              )}
             </Link>
           )}
         </div>

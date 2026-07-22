@@ -56,7 +56,7 @@ export const AIRLOCK_ZERO_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   content:
     'PathForge Labs gave the same Airlock Zero mission contract to Sonnet 5 Max, 5.6 Sol Max, and Gemini 3.5 Flash in independent developer-operated runs. The model selector keeps those runs together as one evolving project, while every run preserves its own exact prompts, responses, artifact versions, and exact response-anchored fork point.',
   resultContent:
-    'Choose a model to play and inspect its complete offline Reactor Run, compare the model paths, or follow the genuine branch attached to a verified response in that exact run.',
+    'Choose a model to play and inspect its complete offline Reactor Run, compare the model paths, or follow the genuine branch attached to an exact response in that run.',
   categorySlug: 'personal',
   mockCategoryId: 'cat-10',
   difficulty: 'intermediate',
@@ -152,7 +152,7 @@ export const AIRLOCK_ZERO_CLAUDE_FORK_SHOWCASE_PROJECT: PreparedShowcaseProject 
   href: '/airlock-zero-blackout-shift-fork-demo',
   title: 'Airlock Zero: Blackout Shift',
   description:
-    'A genuine Sonnet 5 Max branch from the verified Reactor Run response 10 adds station-wide darkness, flashlight power management, and detection-driven drone pressure.',
+    'A genuine Sonnet 5 Max branch from Reactor Run response 10 adds station-wide darkness, flashlight power management, and detection-driven drone pressure.',
   content:
     'PathForge Labs branched the verified Sonnet 5 Max Reactor Run at its exact final response. The inherited build remains visible as compact shared history on the left, while Blackout Shift owns the prominent continuation path and inline artifact on the right.',
   resultContent:

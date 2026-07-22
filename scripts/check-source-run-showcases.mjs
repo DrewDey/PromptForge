@@ -908,6 +908,8 @@ function curatedRegistryHasDescriptor(registryContent, project) {
 
 const sharedComponent = 'src/components/SourceRunShowcase.tsx'
 const sharedComponentContent = read(sharedComponent)
+const sourceEvidenceFooter = 'src/components/SourceRunEvidenceFooter.tsx'
+const sourceEvidenceFooterContent = read(sourceEvidenceFooter)
 const protectedWrapper = 'src/lib/protected-artifact-wrapper.mjs'
 const protectedWrapperContent = read(protectedWrapper)
 mustInclude(sharedComponent, sharedComponentContent, 'aria-pressed={selected}', 'shared showcase must render a selected state on response artifact controls')
@@ -979,7 +981,19 @@ mustNotInclude(sharedComponent, sharedComponentContent, 'src={selectedPackage.ar
 mustNotInclude(sharedComponent, sharedComponentContent, 'href={selectedPackage.artifactPath}', 'shared showcase must not open generated HTML with PathForge origin privileges')
 mustNotInclude(sharedComponent, sharedComponentContent, 'href={detailPackage.artifactPath}', 'response artifact links must not open generated HTML with PathForge origin privileges')
 mustNotInclude(sharedComponent, sharedComponentContent, 'usesDirectSource', 'shared showcase must not retain the old direct-source fallback race')
-mustInclude(sharedComponent, sharedComponentContent, 'Source run', 'shared showcase must expose one provider source-run link at the bottom')
+mustInclude(
+  sharedComponent,
+  sharedComponentContent,
+  '<SourceRunEvidenceFooter',
+  'shared showcase must delegate its footer to the shared evidence presenter',
+)
+mustInclude(sharedComponent, sharedComponentContent, 'sourceRunHref={sourceRunHref}', 'shared showcase must condition only the external provider action on its sanitized URL')
+mustInclude(sharedComponent, sharedComponentContent, 'evidence={publicSourceEvidence}', 'shared showcase must pass its complete resolved evidence to the footer')
+mustInclude(sourceEvidenceFooter, sourceEvidenceFooterContent, 'evidence.providerLinkLabel', 'evidence footer must render the provider-link outcome when a URL exists')
+mustInclude(sourceEvidenceFooter, sourceEvidenceFooterContent, 'data-source-access={evidence.accessState}', 'evidence footer must always render source access')
+mustInclude(sourceEvidenceFooter, sourceEvidenceFooterContent, 'evidence.recordLabel &&', 'evidence footer must conditionally render record scope')
+mustInclude(sourceEvidenceFooter, sourceEvidenceFooterContent, 'data-model-proof={evidence.modelProof}', 'evidence footer must always render model proof')
+mustInclude(sourceEvidenceFooter, sourceEvidenceFooterContent, '{sourceRunHref && (', 'evidence footer must condition only the external link on provider URL availability')
 mustNotInclude(sharedComponent, sharedComponentContent, '<ArtifactCodeBlock', 'shared showcase must not dump generated HTML into the public response path')
 mustNotInclude(sharedComponent, sharedComponentContent, '<SourceLink', 'shared showcase must not repeat provider links inside every response package')
 mustNotInclude(sharedComponent, sharedComponentContent, 'pathforgeSourceRunUrl', 'shared showcase must not expose admin source-run record links publicly')

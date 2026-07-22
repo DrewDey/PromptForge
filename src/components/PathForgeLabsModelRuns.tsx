@@ -5,14 +5,20 @@ import ModelComparisonPreviewLink, {
   ModelComparisonViewportManager,
   ModelVariantViewLink,
 } from '@/components/ModelComparisonPreviewLink'
+import { ModelVariantMenuCloseButton } from '@/components/ModelVariantMenuCloseButton'
 import { ModelVariantKnownIssue } from '@/components/ModelVariantKnownIssue'
 import type {
   ProjectModelVariant,
   ProjectModelVariantSet,
 } from '@/lib/project-model-variants'
 import { getProjectModelVariantKnownIssueExplanation } from '@/lib/project-model-variants'
-import { compareModelVariantRecords } from '@/lib/model-variant-ui.mjs'
+import {
+  compareModelVariantRecords,
+  comparisonRunEvidenceLookup,
+} from '@/lib/model-variant-ui.mjs'
 import { getPublicModelIdentityLabel } from '@/lib/public-model-labels'
+import { publicArtifactStatusPresentation } from '@/lib/public-project-truth'
+import { resolvePublicSourceEvidence } from '@/lib/public-source-evidence'
 
 const RUN_TIMESTAMP_FORMATTER = new Intl.DateTimeFormat('en', {
   year: 'numeric',
@@ -44,7 +50,10 @@ function viewRunHref(
 }
 
 function statusLabel(variant: ProjectModelVariant) {
-  return variant.qualityStatus === 'verified' ? 'Verified' : 'Known issue'
+  return publicArtifactStatusPresentation({
+    qualityStatus: variant.qualityStatus,
+    knownIssueExplanation: getProjectModelVariantKnownIssueExplanation(variant),
+  }).label
 }
 
 function conciseModelSettings(variant: ProjectModelVariant) {
@@ -69,7 +78,9 @@ function accessibleRunLabel(variant: ProjectModelVariant) {
   const knownIssueExplanation = getProjectModelVariantKnownIssueExplanation(variant)
   return [
     `${modelIdentityLabel(variant)}, captured ${runTimestamp(variant)}; source run ${variant.sourceRunId}`,
-    knownIssueExplanation ? `Known issue: ${knownIssueExplanation}` : 'Verified',
+    knownIssueExplanation
+      ? `Artifact has known issue: ${knownIssueExplanation}`
+      : 'Artifact verified',
   ].join('. ')
 }
 
@@ -121,6 +132,10 @@ export default function PathForgeLabsModelRuns({
   const orderedVariants = [...variantSet.variants].sort(compareModelVariantRecords)
   const activeKnownIssueExplanation = getProjectModelVariantKnownIssueExplanation(activeVariant)
   const activeKnownIssueId = `active-model-${activeVariant.sourceRunId}-known-issue`
+  const activeSourceEvidence = resolvePublicSourceEvidence({
+    sourceRunId: activeVariant.sourceRunId,
+    pathforgeRecordChecked: true,
+  })
 
   return (
     <aside
@@ -153,13 +168,29 @@ export default function PathForgeLabsModelRuns({
               <span className="text-xs text-surface-500">
                 <time dateTime={activeVariant.capturedAt}>{runTimestamp(activeVariant)}</time>
               </span>
-              {activeKnownIssueExplanation ? (
-                <StatusBadge
-                  variant={activeVariant}
-                  id={activeKnownIssueId}
-                  inlineOnMobile
-                />
-              ) : null}
+              <StatusBadge
+                variant={activeVariant}
+                id={activeKnownIssueId}
+                inlineOnMobile
+              />
+              <span className="basis-full text-xs text-surface-500">
+                {activeVariant.promptCount} {activeVariant.promptCount === 1 ? 'prompt' : 'prompts'} · {variantSet.variants.length} model {variantSet.variants.length === 1 ? 'run' : 'runs'}
+              </span>
+              <span
+                className="basis-full text-[10px] leading-4 text-surface-500"
+                data-selected-model-public-truth
+                data-source-run-id={activeVariant.sourceRunId}
+                data-source-access={activeSourceEvidence.accessState}
+                data-pathforge-record={activeSourceEvidence.hasPathForgeRecord ? 'true' : 'false'}
+                data-model-proof={activeSourceEvidence.modelProof}
+                data-selected-run-prompt-count={activeVariant.promptCount}
+              >
+                {[
+                  activeSourceEvidence.accessLabel,
+                  activeSourceEvidence.recordLabel,
+                  activeSourceEvidence.modelProofLabel,
+                ].filter(Boolean).join(' · ')}
+              </span>
             </div>
           </div>
           <span className="inline-flex shrink-0 items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-brand-blue">
@@ -169,14 +200,15 @@ export default function PathForgeLabsModelRuns({
         </summary>
 
         <div
-          className="absolute right-0 top-[calc(100%+8px)] z-40 w-full border border-surface-300 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.18)] sm:w-[390px]"
+          className="fixed inset-x-4 bottom-4 top-20 z-40 flex w-auto flex-col border border-surface-300 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.18)] sm:absolute sm:inset-x-auto sm:bottom-auto sm:right-0 sm:top-[calc(100%+8px)] sm:block sm:w-[390px]"
           data-model-variant-menu
         >
-          <div className="border-b border-surface-200 px-4 py-3">
-            <div className="text-sm font-black text-surface-900">Choose a model result</div>
+          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-surface-200 px-4 py-3">
+            <div className="text-sm font-black text-surface-900">Choose a model run</div>
+            <ModelVariantMenuCloseButton />
           </div>
 
-          <div className="max-h-80 divide-y divide-surface-200 overflow-y-auto sm:max-h-none sm:overflow-visible">
+          <div className="min-h-0 flex-1 divide-y divide-surface-200 overflow-y-auto sm:max-h-none sm:overflow-visible">
             {orderedVariants.map((variant) => {
               const isActive = variant.sourceRunId === activeVariant.sourceRunId
               const isDefault = variant.sourceRunId === variantSet.defaultSourceRunId
@@ -189,6 +221,10 @@ export default function PathForgeLabsModelRuns({
                     : 'Previous'
               const knownIssueExplanation = getProjectModelVariantKnownIssueExplanation(variant)
               const knownIssueId = `model-menu-${variant.sourceRunId}-known-issue`
+              const variantSourceEvidence = resolvePublicSourceEvidence({
+                sourceRunId: variant.sourceRunId,
+                pathforgeRecordChecked: true,
+              })
               return (
                 <div
                   key={variant.sourceRunId}
@@ -209,6 +245,10 @@ export default function PathForgeLabsModelRuns({
                       </div>
                       <div className={`mt-1 flex flex-wrap items-center gap-2 text-xs text-surface-500${knownIssueExplanation ? ' model-known-issue-owner' : ''}`}>
                         <time dateTime={variant.capturedAt}>{runTimestamp(variant)}</time>
+                        <span>{variant.promptCount} {variant.promptCount === 1 ? 'prompt' : 'prompts'}</span>
+                        <span>{variantSourceEvidence.accessLabel}</span>
+                        {variantSourceEvidence.recordLabel && <span>{variantSourceEvidence.recordLabel}</span>}
+                        <span>{variantSourceEvidence.modelProofLabel}</span>
                         <StatusBadge
                           variant={variant}
                           id={knownIssueId}
@@ -251,7 +291,7 @@ export default function PathForgeLabsModelRuns({
             })}
           </div>
 
-          <p className="border-t border-surface-200 bg-surface-50 px-4 py-3 text-[11px] leading-5 text-surface-500">
+          <p className="shrink-0 border-t border-surface-200 bg-surface-50 px-4 py-3 text-[11px] leading-5 text-surface-500">
             Developer-operated reruns · same brief · not community forks.
             {activeVariant.runRole !== 'historical-baseline' && historicalVariant && (
               <>
@@ -287,6 +327,7 @@ function ComparisonCard({
 }) {
   const knownIssueExplanation = getProjectModelVariantKnownIssueExplanation(variant)
   const knownIssueId = `comparison-${label}-${variant.sourceRunId}-known-issue`
+  const sourceEvidence = resolvePublicSourceEvidence(comparisonRunEvidenceLookup(variant))
   return (
     <article
       className="border border-brand-blue/25 bg-white p-4"
@@ -310,12 +351,28 @@ function ComparisonCard({
             {conciseModelSettings(variant)}
           </p>
         </div>
-        <StatusBadge
-          variant={variant}
-          id={knownIssueId}
-          focusable={Boolean(knownIssueExplanation)}
-          inlineOnMobile
-        />
+        <div data-comparison-artifact-state={variant.qualityStatus}>
+          <StatusBadge
+            variant={variant}
+            id={knownIssueId}
+            focusable={Boolean(knownIssueExplanation)}
+            inlineOnMobile
+          />
+        </div>
+      </div>
+      <div
+        className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-brand-blue/10 pt-3 text-[10px] leading-4 text-surface-500"
+        data-model-variant-comparison-evidence={sourceEvidence.sourceRunId ?? ''}
+      >
+        <span data-comparison-source-access={sourceEvidence.accessState}>
+          {sourceEvidence.accessLabel}
+        </span>
+        {sourceEvidence.recordLabel && (
+          <span data-comparison-record-label>{sourceEvidence.recordLabel}</span>
+        )}
+        <span data-comparison-model-proof={sourceEvidence.modelProof}>
+          {sourceEvidence.modelProofLabel}
+        </span>
       </div>
       {isPreviewed ? (
         <ModelComparisonCurrentPreviewLink

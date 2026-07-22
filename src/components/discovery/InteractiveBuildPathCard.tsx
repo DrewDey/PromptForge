@@ -11,12 +11,15 @@ import {
   ListFilter,
 } from 'lucide-react'
 import VoteBookmarkButtons from '@/components/VoteBookmarkButtons'
+import { BuilderByline } from '@/components/BuilderByline'
 import { ModelVariantKnownIssue } from '@/components/ModelVariantKnownIssue'
 import { ProjectPreview } from '@/components/ProjectPreview'
 import type {
   BuildPathModelVariant,
   DiscoveryPreview,
 } from '@/lib/path-discovery'
+import { requireCanonicalDefaultModelRun } from '@/lib/discovery-activity.mjs'
+import { publicArtifactStatusPresentation } from '@/lib/public-project-truth'
 import { ArtifactPreview } from './ArtifactPreview'
 
 export type BuildPathCardClientItem = {
@@ -25,7 +28,9 @@ export type BuildPathCardClientItem = {
   description: string
   categoryLabel: string
   authorName: string
+  authorProvenanceKind: 'member' | 'pathforge_seed' | 'pathforge_team' | null
   modelRunCount: number
+  verifiedModelRunCount: number
   hasWorkingArtifact: boolean
   hasFork: boolean
   isFork: boolean
@@ -83,6 +88,13 @@ function orderModelVariants(
       left.sourceRunId.localeCompare(right.sourceRunId)
     )
   })
+}
+
+function artifactStatusLabel(variant: BuildPathModelVariant) {
+  return publicArtifactStatusPresentation({
+    qualityStatus: variant.qualityStatus,
+    knownIssueExplanation: variant.knownIssueExplanation,
+  }).label
 }
 
 function LazyProjectPreview({
@@ -158,12 +170,11 @@ function ModelSelector({
   const returnFocusAfterSelectionRef = useRef(false)
   const menuId = `${cardId}-model-index`
   const activityNoteId = `${cardId}-activity-note`
-  const hiddenCount = Math.max(0, variants.length - 1)
   const canCycle = variants.length > 1
   const selectedPosition = variants.findIndex((variant) => (
     variant.sourceRunId === selectedVariant.sourceRunId
   )) + 1
-  const verifiedCount = variants.filter((variant) => variant.qualityStatus === 'verified').length
+  const artifactVerifiedCount = variants.filter((variant) => variant.qualityStatus === 'verified').length
   const knownIssueVariants = variants.filter((variant) => (
     variant.qualityStatus === 'known-issue' && variant.knownIssueExplanation
   ))
@@ -221,13 +232,13 @@ function ModelSelector({
     >
       <div className="path-model-selector-rail">
         <span className="path-model-total" data-model-total>
-          <strong>{variants.length}</strong> {variants.length === 1 ? 'model' : 'models'}
+          <strong>{variants.length}</strong> model {variants.length === 1 ? 'run' : 'runs'}
         </span>
         {knownIssueCount > 0 && projectKnownIssueExplanation ? (
           <ModelVariantKnownIssue
             id={projectKnownIssueId}
             explanation={projectKnownIssueExplanation}
-            label={`${knownIssueCount} ${knownIssueCount === 1 ? 'issue' : 'issues'}`}
+            label={`${knownIssueCount} model ${knownIssueCount === 1 ? 'run' : 'runs'} with known artifact ${knownIssueCount === 1 ? 'issue' : 'issues'}`}
             className="path-model-card-issue"
             focusable
           />
@@ -253,12 +264,20 @@ function ModelSelector({
           data-model-list-trigger
         >
           <span className="path-model-identity">
-            <small>Showing {selectedPosition} of {variants.length}</small>
+            <small>
+              {selectedVariant.isCanonicalDefault ? 'Default run' : `Showing ${selectedPosition} of ${variants.length}`}
+            </small>
             <strong title={selectedVariant.publicModelLabel}>{selectedVariant.publicModelLabel}</strong>
-            <em>
-              {selectedVariant.qualityStatus === 'known-issue' ? 'Known issue' : selectedVariant.qualityStatus === 'verified' ? 'Verified' : 'Recorded'}
+            <em
+              title={`${selectedVariant.sourceAccessLabel}. ${selectedVariant.recordLabel ? `${selectedVariant.recordLabel}. ` : ''}${artifactStatusLabel(selectedVariant)}. ${selectedVariant.modelProofLabel}.`}
+              data-selected-run-source-evidence
+            >
+              {selectedVariant.sourceAccessLabel}
+              {selectedVariant.recordLabel ? ` · ${selectedVariant.recordLabel}` : ''}
               {' · '}
-              {hiddenCount > 0 ? `${variants.length} models total` : '1 model total'}
+              {artifactStatusLabel(selectedVariant)}
+              {' · '}
+              {selectedVariant.modelProofLabel}
             </em>
           </span>
           <span className="path-model-date">
@@ -313,13 +332,13 @@ function ModelSelector({
           id={menuId}
           className="path-model-menu"
           role="region"
-          aria-label={`${variants.length} recorded model results, ${verifiedCount} verified, ${
+          aria-label={`${variants.length} recorded model results, ${artifactVerifiedCount} artifacts verified, ${
             orderMode === 'active' ? 'most used first' : 'newest first'
           }`}
           data-model-list
         >
           <div className="path-model-menu-heading">
-            <span>{variants.length} model {variants.length === 1 ? 'result' : 'results'} · {verifiedCount} verified</span>
+            <span>{variants.length} model {variants.length === 1 ? 'run' : 'runs'} · {artifactVerifiedCount} artifacts verified</span>
             <span>{orderMode === 'active' ? 'Most used first' : 'Newest first'}</span>
           </div>
           {variants.map((variant) => {
@@ -342,7 +361,7 @@ function ModelSelector({
                   <strong>{variant.publicModelLabel}</strong>
                   {!variant.knownIssueExplanation ? (
                     <small className="path-model-verified-label">
-                      {variant.qualityStatus === 'verified' ? 'Verified' : 'Recorded'}
+                      {artifactStatusLabel(variant)}
                     </small>
                   ) : null}
                 </span>
@@ -350,6 +369,8 @@ function ModelSelector({
                   <small>Captured</small>
                   <time dateTime={variant.capturedAt}>{variant.capturedAtLabel}</time>
                   <small>{variant.providerLabel}: {variant.activityProjectCount} published {variant.activityProjectCount === 1 ? 'project' : 'projects'}</small>
+                  <small>{variant.sourceAccessLabel}{variant.recordLabel ? ` · ${variant.recordLabel}` : ''}</small>
+                  <small>{variant.modelProofLabel}</small>
                 </span>
                 {variant.knownIssueExplanation ? (
                   <ModelVariantKnownIssue
@@ -402,7 +423,7 @@ function cardLinkLabel(item: BuildPathCardClientItem, selectedVariant: BuildPath
   return [
     `Explore ${item.title}.`,
     `Showing ${selectedVariant.publicModelLabel}, captured ${selectedVariant.capturedAtLabel}.`,
-    `${modelCount} ${modelCount === 1 ? 'model' : 'models'} in this project.`,
+    `${modelCount} model ${modelCount === 1 ? 'run' : 'runs'} in this project.`,
     selectedVariant.knownIssueExplanation
       ? `Known issue: ${selectedVariant.knownIssueExplanation}`
       : null,
@@ -422,12 +443,13 @@ export function InteractiveBuildPathCard({
     .slice(0, 2)
     .toUpperCase()
   const variants = item.modelVariants
-  const [selectedSourceRunId, setSelectedSourceRunId] = useState(variants[0].sourceRunId)
+  const canonicalDefaultVariant = requireCanonicalDefaultModelRun(variants)
+  const [selectedSourceRunId, setSelectedSourceRunId] = useState(canonicalDefaultVariant.sourceRunId)
   const [menuOpen, setMenuOpen] = useState(false)
   const [orderMode, setOrderMode] = useState<ModelOrder>('new')
   const orderedVariants = orderModelVariants(variants, orderMode)
   const selectedVariant = variants.find((variant) => variant.sourceRunId === selectedSourceRunId)
-    ?? variants[0]
+    ?? canonicalDefaultVariant
 
   const cycleVariant = (direction: -1 | 1) => {
     const currentIndex = orderedVariants.findIndex((variant) => variant.sourceRunId === selectedVariant.sourceRunId)
@@ -491,7 +513,7 @@ export function InteractiveBuildPathCard({
                 {item.isActive && (
                   <span
                     className="path-card-active"
-                    title={`${item.modelRunCount} verified model runs and ${item.forkCount} approved forks`}
+                    title={`${item.modelRunCount} recorded model runs · ${item.verifiedModelRunCount} artifact-verified model runs · ${item.forkCount} approved forks`}
                   >
                     <i /> Active
                   </span>
@@ -504,7 +526,11 @@ export function InteractiveBuildPathCard({
           <p>{item.description}</p>
           <div className="path-card-author">
             <span className="path-card-avatar">{initials}</span>
-            <span>by <strong>{item.authorName}</strong></span>
+            <BuilderByline
+              name={item.authorName}
+              provenanceKind={item.authorProvenanceKind}
+              provenanceClassName="path-card-author-provenance"
+            />
           </div>
           <div className="path-card-foot">
             <span className="path-card-anatomy" data-selected-prompt-count={selectedVariant.promptCount}>

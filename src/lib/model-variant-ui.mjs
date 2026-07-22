@@ -20,6 +20,21 @@ export function compareModelVariantRecords(left, right) {
 }
 
 /**
+ * Comparison cards resolve public evidence from the exact package-backed run
+ * they render. Keeping this lookup independent from selection state prevents
+ * either card from inheriting the active header's evidence.
+ *
+ * @param {{ sourceRunId: string }} variant
+ * @returns {{ sourceRunId: string, pathforgeRecordChecked: true }}
+ */
+export function comparisonRunEvidenceLookup(variant) {
+  return {
+    sourceRunId: variant.sourceRunId,
+    pathforgeRecordChecked: true,
+  }
+}
+
+/**
  * @template {{ packageId: string, artifactPath: string }} T
  * @param {string} selectedPackageId
  * @param {string} selectedArtifactPath

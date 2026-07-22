@@ -19,6 +19,12 @@ import type {
   ProjectForkSourceStep,
 } from '@/lib/project-forks'
 import { resolveProjectForkPoint } from '@/lib/project-forks'
+import { ForkTruthDisclosure } from '@/components/ForkTruthDisclosure'
+import { publicArtifactStatusPresentation } from '@/lib/public-project-truth'
+import {
+  resolvePublicSourceEvidence,
+  type PublicEvidenceTruth,
+} from '@/lib/public-source-evidence'
 
 export type ProjectForkBuildPathMode = 'parent' | 'child'
 
@@ -45,6 +51,7 @@ export type ProjectForkBuildPathProps = {
   branchHref?: string | null
   newForkHref?: string | null
   sourceRunHref?: string | null
+  sourceEvidence?: PublicEvidenceTruth
   selectedArtifactPath?: string | null
   artifactOpenHrefs?: Record<string, string | undefined>
   onClose?: () => void
@@ -558,6 +565,7 @@ export function ProjectForkBuildPath({
   branchHref,
   newForkHref,
   sourceRunHref,
+  sourceEvidence,
   selectedArtifactPath,
   artifactOpenHrefs,
   onClose,
@@ -565,6 +573,11 @@ export function ProjectForkBuildPath({
   className = '',
 }: ProjectForkBuildPathProps) {
   const fork = forkSource ? { ...branch, forkSource } : branch
+  const publicSourceEvidence = sourceEvidence ?? resolvePublicSourceEvidence(null)
+  const publicArtifactStatus = publicArtifactStatusPresentation({
+    qualityStatus: fork.childArtifactQualityStatus ?? 'recorded',
+    knownIssueExplanation: fork.childArtifactKnownIssueExplanation,
+  })
   const forkPoint = resolveProjectForkPoint(sourceSteps, fork.forkSource)
   const forkPointIndex = forkPoint
     ? sourceSteps.findIndex((step) => step.id === forkPoint.id)
@@ -737,14 +750,17 @@ export function ProjectForkBuildPath({
                 {fork.modelUsed}
               </span>
             )}
-            <span className="border border-brand-orange/30 bg-primary-50 px-2.5 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-brand-orange-ink">
-              Depth {fork.forkSource.depth} · Branch {fork.forkSource.branchIndex}
+            <span className="border border-brand-orange/30 bg-primary-50 px-2.5 py-1.5 text-[10px] font-bold text-brand-orange-ink">
+              Forked from{' '}
+              {sourceProjectHref ? (
+                <Link href={sourceProjectHref} className="underline decoration-brand-orange/30 underline-offset-2">
+                  {fork.forkSource.sourceProjectTitle || 'source project'}
+                </Link>
+              ) : (
+                fork.forkSource.sourceProjectTitle || 'source project'
+              )}
+              {forkNumber !== undefined ? ` · response ${forkNumber}` : ''}
             </span>
-            {forkNumber !== undefined && (
-              <span className="border border-surface-200 bg-white px-2.5 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-surface-600">
-                From response {stepLabel(forkNumber)}
-              </span>
-            )}
           </div>
         </div>
 
@@ -772,7 +788,7 @@ export function ProjectForkBuildPath({
               className="inline-flex min-h-10 items-center justify-center gap-2 border border-surface-300 bg-white px-3 py-2 text-xs font-black uppercase tracking-[0.1em] text-surface-700 transition hover:border-brand-orange hover:text-brand-orange-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
             >
               <FileCode2 className="h-3.5 w-3.5" aria-hidden="true" />
-              Source run
+              {publicSourceEvidence.providerLinkLabel}
             </ActionLink>
           )}
           {newForkHref && (
@@ -795,6 +811,12 @@ export function ProjectForkBuildPath({
               Close
             </button>
           )}
+        </div>
+        <div className="lg:col-span-2">
+          <ForkTruthDisclosure
+            artifact={publicArtifactStatus}
+            sourceEvidence={publicSourceEvidence}
+          />
         </div>
       </header>
 

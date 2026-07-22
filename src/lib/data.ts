@@ -78,10 +78,17 @@ import {
   BLOCK_BIKE_COURIER_PROJECT_ID,
 } from './featured-projects'
 import { CURATED_SOURCE_RUN_SHOWCASE_PROJECTS } from './curated-source-run-showcases'
-import { getPreparedShowcaseProjectById } from './prepared-showcase-projects'
+import {
+  getPreparedShowcaseProjectById,
+  PREPARED_SHOWCASE_PROJECTS,
+} from './prepared-showcase-projects'
 import type { PreparedShowcaseProject, PreparedShowcaseStep } from './prepared-showcase-projects'
 import { getProjectRouteOverride } from './project-links'
 import { getPublicModelIdentityLabel } from './public-model-labels'
+import {
+  getProjectModelVariantKnownIssueExplanation,
+  getProjectModelVariantSet,
+} from './project-model-variants'
 import { loadSourceRunPackage } from './source-run-package'
 import {
   PROJECT_FORK_MAX_WIDTH,
@@ -206,7 +213,7 @@ const PUBLIC_LIBRARY_START_AT = '2026-05-28T00:00:00.000Z'
 const PUBLIC_PROMPT_LIST_PAGE_SIZE = 300
 const PUBLIC_PROMPT_LIST_MAX_PAGES = 10
 const PUBLIC_PROMPT_LIST_SELECT =
-  '*, category:categories(*), author:profiles!prompts_author_id_fkey(*)'
+  '*, category:categories(*), author:profiles!prompts_author_id_fkey(*, provenance:profile_provenance(kind))'
 const publicMockPrompts = mockPrompts.filter((prompt) => APPROVED_PROJECT_IDS.has(prompt.id))
 const publicMockSteps = mockSteps.filter((step) => APPROVED_PROJECT_IDS.has(step.prompt_id))
 const publicMockCategories = mockCategories.map((category) => ({
@@ -292,10 +299,16 @@ export async function getCategoryBySlug(slug: string): Promise<Category | null> 
 // ---- Prompts ----
 
 function attachRelations(prompt: typeof mockPrompts[0]): PromptWithRelations {
+  const author = mockProfiles.find(p => p.id === prompt.author_id)
   return {
     ...prompt,
     category: publicMockCategories.find(c => c.id === prompt.category_id),
-    author: mockProfiles.find(p => p.id === prompt.author_id),
+    author: author ? {
+      ...author,
+      provenance: {
+        kind: author.username === 'pathforge_projects' ? 'pathforge_team' : 'pathforge_seed',
+      },
+    } : undefined,
     steps: publicMockSteps.filter(s => s.prompt_id === prompt.id).sort((a, b) => a.step_number - b.step_number),
   }
 }
@@ -465,7 +478,7 @@ export async function getAllPromptsForAdmin(): Promise<PromptWithRelations[]> {
   const { supabase } = await requireAdminAccess()
   const { data, error } = await supabase
     .from('prompts')
-    .select('*, category:categories(*), author:profiles!prompts_author_id_fkey(*), steps:prompt_steps(*)')
+    .select('*, category:categories(*), author:profiles!prompts_author_id_fkey(*, provenance:profile_provenance(kind)), steps:prompt_steps(*)')
     .order('created_at', { ascending: false })
 
   if (error) throw error
@@ -484,7 +497,7 @@ export async function getPromptById(id: string): Promise<PromptWithRelations | n
     const supabase = await createPublicReadClient()
     const { data } = await supabase
       .from('prompts')
-      .select('*, category:categories(*), author:profiles!prompts_author_id_fkey(*), steps:prompt_steps(*)')
+      .select('*, category:categories(*), author:profiles!prompts_author_id_fkey(*, provenance:profile_provenance(kind)), steps:prompt_steps(*)')
       .eq('id', resolvedId)
       .retry(false)
       .abortSignal(signal)
@@ -623,11 +636,13 @@ function hydratePreparedForkItem(item: ProjectForkNetworkItem): ProjectForkNetwo
   if (!project) return item
 
   let childProviderName: string | null = null
+  let childSourceRunId: string | null = null
   let childSourceUrl = project.sourceUrl
   let modelUsed = item.modelUsed
   if (project.sourceRunPackageFile) {
     const sourceRun = loadSourceRunPackage(project.sourceRunPackageFile)
     childProviderName = sourceRun.provider ?? null
+    childSourceRunId = sourceRun.source_run_id ?? project.sourceRunId
     childSourceUrl = sourceRun.source_url ?? childSourceUrl
     modelUsed = getPublicModelIdentityLabel({
       provider: sourceRun.provider,
@@ -635,13 +650,22 @@ function hydratePreparedForkItem(item: ProjectForkNetworkItem): ProjectForkNetwo
       modelSettings: sourceRun.model_settings,
     }) || item.modelUsed
   }
+  const childVariantSet = getProjectModelVariantSet(project.id)
+  const checkedChildVariant = childVariantSet?.variants.find((variant) => (
+    variant.sourceRunId === childSourceRunId
+  )) ?? null
 
   return {
     ...item,
     childRoute: getProjectRouteOverride(project.id) ?? project.href,
+    childSourceRunId,
     childSourceUrl,
     childProviderName,
     modelUsed,
+    childArtifactQualityStatus: checkedChildVariant?.qualityStatus ?? 'recorded',
+    childArtifactKnownIssueExplanation: checkedChildVariant
+      ? getProjectModelVariantKnownIssueExplanation(checkedChildVariant)
+      : null,
     continuationSteps: preparedForkContinuationSteps(project, item.forkSource),
   }
 }
@@ -676,7 +700,20 @@ function getPublicMockProjectForks(
   projectId: string,
   sourceRunId?: string | null,
 ): ProjectForkNetworkItem[] {
-  const forks = publicMockPrompts
+  const preparedForks = PREPARED_SHOWCASE_PROJECTS
+    .filter((project) => project.forkSource?.sourceProjectId === projectId)
+    .map((project) => hydratePreparedForkItem({
+      id: project.id,
+      title: project.title,
+      description: project.description,
+      authorUsername: project.authorUsername,
+      authorDisplayName: project.authorDisplayName,
+      modelUsed: project.modelUsed,
+      createdAt: project.createdAt,
+      forkSource: project.forkSource!,
+    }))
+  const preparedForkIds = new Set(preparedForks.map((fork) => fork.id))
+  const promptForks = publicMockPrompts
     .filter((prompt) => prompt.status === 'approved')
     .filter((prompt) => (
       prompt.fork_source_project_id === projectId ||
@@ -701,6 +738,10 @@ function getPublicMockProjectForks(
 
       return forks
     }, [])
+  const forks = [
+    ...preparedForks,
+    ...promptForks.filter((fork) => !preparedForkIds.has(fork.id)),
+  ]
 
   return limitProjectForksPerResponseSocket(
     filterProjectForkNetworkBySourceRun(forks, sourceRunId)

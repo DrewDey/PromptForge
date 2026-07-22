@@ -383,6 +383,7 @@ export async function BuildPathsDiscovery({
                         key={difficulty}
                         href={buildUrl({ difficulty: activeDifficulty === difficulty ? undefined : difficulty, page: undefined })}
                         navigationLabel={`${difficulty} difficulty`}
+                        preserveScroll
                         className={activeDifficulty === difficulty ? 'is-active' : ''}
                       >
                         {difficulty}
@@ -396,6 +397,7 @@ export async function BuildPathsDiscovery({
                         key={model.value}
                         href={buildUrl({ model: activeModelFacet?.value === model.value ? undefined : model.value, page: undefined })}
                         navigationLabel={`${model.label} model`}
+                        preserveScroll
                         className={activeModelFacet?.value === model.value ? 'is-active' : ''}
                       >
                         <span>{model.label}</span><small>{model.count}</small>
@@ -407,6 +409,7 @@ export async function BuildPathsDiscovery({
                     <DiscoveryNavigationLink
                       href={buildUrl({ artifact: activeArtifact ? undefined : 'working', page: undefined })}
                       navigationLabel="Working artifact"
+                      preserveScroll
                       className={activeArtifact ? 'is-active' : ''}
                     >
                       Working artifact
@@ -414,6 +417,7 @@ export async function BuildPathsDiscovery({
                     <DiscoveryNavigationLink
                       href={buildUrl({ fork: activeFork ? undefined : 'available', page: undefined })}
                       navigationLabel="Fork available"
+                      preserveScroll
                       className={activeFork ? 'is-active' : ''}
                     >
                       Fork available

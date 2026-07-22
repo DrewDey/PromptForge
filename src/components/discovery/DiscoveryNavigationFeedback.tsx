@@ -19,6 +19,7 @@ type PendingDiscoveryNavigation = {
   href: string
   label: string
   kind: DiscoveryNavigationKind
+  preserveScroll: boolean
 }
 
 type DiscoveryNavigationContextValue = {
@@ -47,6 +48,10 @@ export function DiscoveryNavigationFeedbackProvider({ children }: { children: Re
     if (pendingNavigation) return
     setRequestedNavigation(navigation)
     startTransition(() => {
+      if (navigation.preserveScroll) {
+        router.push(navigation.href, { scroll: false })
+        return
+      }
       router.push(navigation.href)
     })
   }
@@ -67,6 +72,7 @@ type DiscoveryNavigationLinkProps = Omit<ComponentProps<typeof Link>, 'href' | '
   href: string
   navigationKind?: DiscoveryNavigationKind
   navigationLabel: string
+  preserveScroll?: boolean
 }
 
 function isModifiedActivation(event: MouseEvent<HTMLAnchorElement>) {
@@ -78,6 +84,7 @@ export function DiscoveryNavigationLink({
   prefetch = false,
   navigationKind = 'filter',
   navigationLabel,
+  preserveScroll = false,
   className = '',
   children,
   ...props
@@ -105,7 +112,7 @@ export function DiscoveryNavigationLink({
     }
 
     event.preventDefault()
-    beginNavigation({ href, label: navigationLabel, kind: navigationKind })
+    beginNavigation({ href, label: navigationLabel, kind: navigationKind, preserveScroll })
   }
 
   return (

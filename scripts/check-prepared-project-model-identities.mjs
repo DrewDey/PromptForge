@@ -23,7 +23,6 @@ const MINIMUM_PROJECT_COUNT = 170
 const RUNTIME_PROJECTION_CONSUMERS = [
   'src/lib/path-discovery.ts',
   'src/lib/profile-presentation.ts',
-  'src/components/PromptCard.tsx',
   'src/app/my-forge/page.tsx',
   'src/components/ProjectCommunityPanel.tsx',
 ]

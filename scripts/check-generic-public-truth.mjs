@@ -9,7 +9,7 @@ import { derivePublicProjectPresentationCore } from '../src/lib/public-project-t
 import { resolvePublicSourceEvidenceCore as resolvePublicSourceEvidence } from '../src/lib/public-source-evidence-core.mjs'
 
 const GENERIC_ROUTE = 'src/app/prompt/[id]/page.tsx'
-const RELATED_CARD = 'src/components/PromptCard.tsx'
+const RELATED_CARD = 'src/components/discovery/InteractiveBuildPathCard.tsx'
 const IDEAS_ROUTE = 'src/app/what-to-build/page.tsx'
 const FIXTURE_ROUTE = 'src/app/qa/generic-public-truth-fixture/page.tsx'
 const PROMPT_TRUTH_PRESENTER = 'src/lib/prompt-public-truth.ts'
@@ -233,37 +233,13 @@ assert.ok(
   'generic sticky rail truth must be co-located immediately after the repeated model identity',
 )
 
-scopedMatch(relatedCard, /provenanceKind=\{prompt\.author\?\.provenance\?\.kind\}/, 'related card byline must use trusted joined profile provenance')
+scopedMatch(genericRoute, /buildPathDiscoveryCatalog\(/, 'related cards must use the canonical discovery projection')
+scopedMatch(genericRoute, /data-related-shared-path-cards/, 'related cards must expose a stable shared-card browser hook')
+scopedMatch(genericRoute, /<BuildPathCard[\s\S]*?item=\{item\}/, 'related projects must reuse the canonical Explore card')
+scopedMatch(relatedCard, /provenanceKind=\{item\.authorProvenanceKind\}/, 'shared related cards must use trusted projected provenance')
+scopedMatch(relatedCard, /data-path-model-card/, 'shared related cards must expose the canonical model-card hook')
+scopedMatch(relatedCard, /data-selected-run-source-evidence/, 'shared related cards must expose selected-run public truth')
 assert.doesNotMatch(relatedCard, /<BuilderByline[\s\S]{0,500}?className=["'][^"']*hidden[^"']*["']/, 'related card byline and operated-builder disclosure must remain visible at 390px')
-scopedMatch(relatedCard, /deriveCanonicalPromptPublicTruth\(prompt\)/, 'related cards must use the shared canonical prompt truth presenter')
-scopedMatch(relatedCard, /data-related-project-footer/, 'related card footer must expose a stable responsive QA hook')
-scopedMatch(relatedCard, /className="grid min-w-0 gap-2"/, 'related card footer groups must stack instead of colliding in narrow grids')
-const relatedBylineHook = relatedCard.indexOf('data-related-project-byline-row')
-const relatedBylineTagStart = relatedCard.lastIndexOf('<div', relatedBylineHook)
-const relatedBylineTagEnd = relatedCard.indexOf('>', relatedBylineHook)
-assert.ok(relatedBylineTagStart >= 0 && relatedBylineTagEnd > relatedBylineHook, 'related card byline row hook must be an inspectable element')
-const relatedBylineTag = relatedCard.slice(relatedBylineTagStart, relatedBylineTagEnd)
-for (const responsiveClass of ['min-w-0', 'max-w-full', 'flex-wrap']) {
-  assert.ok(relatedBylineTag.includes(responsiveClass), `related card byline row must preserve ${responsiveClass}`)
-}
-assert.doesNotMatch(relatedBylineTag, /\bshrink-0\b/, 'related card provenance and engagement row must be allowed to wrap')
-const relatedEngagementHook = relatedCard.indexOf('data-related-project-engagement')
-const relatedEngagementTagStart = relatedCard.lastIndexOf('<span', relatedEngagementHook)
-const relatedEngagementTagEnd = relatedCard.indexOf('>', relatedEngagementHook)
-assert.ok(relatedEngagementTagStart >= 0 && relatedEngagementTagEnd > relatedEngagementHook, 'related card engagement hook must be an inspectable element')
-const relatedEngagementTag = relatedCard.slice(relatedEngagementTagStart, relatedEngagementTagEnd)
-for (const responsiveClass of ['inline-flex', 'shrink-0', 'whitespace-nowrap']) {
-  assert.ok(relatedEngagementTag.includes(responsiveClass), `related card engagement values and separator must preserve ${responsiveClass}`)
-}
-const relatedEngagementClose = relatedCard.indexOf('\n              </span>\n            </div>', relatedEngagementTagEnd)
-assert.ok(relatedEngagementClose > relatedEngagementTagEnd, 'related card engagement unit must have a distinct group boundary')
-const relatedEngagementBody = relatedCard.slice(relatedEngagementTagEnd + 1, relatedEngagementClose)
-scopedMatch(relatedEngagementBody, /upvotes/, 'related card engagement unit must include upvotes')
-scopedMatch(relatedEngagementBody, /aria-hidden="true"[\s\S]*?>·<\/span>/, 'related card engagement unit must keep its separator with both values')
-scopedMatch(relatedEngagementBody, /saves/, 'related card engagement unit must include saves')
-for (const token of ['data-related-project-public-truth', '<PublicTruthSummary', 'data-public-model-identity']) {
-  assert.ok(relatedCard.includes(token), `${RELATED_CARD} must preserve ${token}`)
-}
 
 for (const [pattern, message] of [
   [/getPreparedShowcaseProjectById\(prompt\.id\)/, 'presenter must resolve prepared project evidence'],
@@ -288,7 +264,7 @@ for (const token of [
   'data-fixture-related-project',
   'data-fixture-prepared-multi-run',
   '<PublicTruthSummary',
-  '<PromptCard',
+  '<BuildPathCard',
 ]) {
   assert.ok(fixtureRoute.includes(token), `${FIXTURE_ROUTE} must preserve ${token}`)
 }
@@ -307,11 +283,9 @@ if (baseUrl) {
     'data-model-proof="not_confirmed"',
     'data-fixture-generic-rail',
     'data-generic-rail-truth',
-    'data-related-project-public-truth',
     'data-fixture-prepared-multi-run',
-    'data-artifact-truth="verified"',
-    'data-source-access="public_partial"',
-    'data-model-proof="model_family_shown_publicly"',
+    'data-path-model-card',
+    'data-selected-run-source-evidence',
     'Run recorded',
     'Artifact verified',
     'Default run',
@@ -327,9 +301,9 @@ if (baseUrl) {
   ]) {
     assert.ok(fixtureHtml.includes(renderedToken), `${FIXTURE_URL} must render ${renderedToken}`)
   }
-  const genericCardHtml = fixtureHtml.match(/<section data-fixture-related-project="true">([\s\S]*?)<\/section>/)?.[1] ?? ''
-  const preparedCardHtml = fixtureHtml.match(/<section data-fixture-prepared-multi-run="true">([\s\S]*?)<\/section>/)?.[1] ?? ''
-  const genericRailHtml = fixtureHtml.match(/<section data-fixture-generic-rail="true">([\s\S]*?)<\/section>/)?.[1] ?? ''
+  const genericCardHtml = fixtureHtml.match(/<section[^>]*data-fixture-related-project="true"[^>]*>([\s\S]*?)<\/section>/)?.[1] ?? ''
+  const preparedCardHtml = fixtureHtml.match(/<section[^>]*data-fixture-prepared-multi-run="true"[^>]*>([\s\S]*?)<\/section>/)?.[1] ?? ''
+  const genericRailHtml = fixtureHtml.match(/<section[^>]*data-fixture-generic-rail="true"[^>]*>([\s\S]*?)<\/section>/)?.[1] ?? ''
   assert.ok(genericCardHtml, `${FIXTURE_URL} must render the generic related-card fixture section`)
   assert.ok(preparedCardHtml, `${FIXTURE_URL} must render the prepared multi-run fixture section`)
   assert.ok(genericRailHtml, `${FIXTURE_URL} must render the generic sticky-rail fixture section`)
@@ -342,12 +316,14 @@ if (baseUrl) {
     genericRailHtml.indexOf('data-public-model-identity') < genericRailHtml.indexOf('data-generic-rail-truth'),
     'generic sticky-rail fixture truth must follow its repeated model identity',
   )
-  assert.equal(genericCardHtml.includes('data-pathforge-record='), false, 'generic related card must not render a PathForge record claim')
-  assert.ok(genericCardHtml.includes('data-source-access="unconfirmed"'), 'generic related card must fail closed')
-  assert.ok(genericCardHtml.includes('data-model-proof="not_confirmed"'), 'generic related card model proof must fail closed')
-  assert.ok(preparedCardHtml.includes('data-pathforge-record="true"'), 'prepared related card must render its checked PathForge record')
-  assert.ok(preparedCardHtml.includes('data-source-access="public_partial"'), 'prepared related card must render default-run source access')
-  assert.ok(preparedCardHtml.includes('data-model-proof="model_family_shown_publicly"'), 'prepared related card must render default-run model proof')
+  assert.ok(genericCardHtml.includes('data-path-model-card'), 'generic related card must render the canonical card')
+  assert.ok(genericCardHtml.includes('Public access not confirmed'), 'generic related card must fail closed')
+  assert.ok(genericCardHtml.includes('Model proof not confirmed'), 'generic related card model proof must fail closed')
+  assert.equal(genericCardHtml.includes('PathForge record'), false, 'generic related card must not render a PathForge record claim')
+  assert.ok(preparedCardHtml.includes('data-path-model-card'), 'prepared related card must render the canonical card')
+  assert.ok(preparedCardHtml.includes('Partial public source'), 'prepared related card must render default-run source access')
+  assert.ok(preparedCardHtml.includes('PathForge record'), 'prepared related card must render its checked PathForge record')
+  assert.ok(preparedCardHtml.includes('Model family shown publicly'), 'prepared related card must render default-run model proof')
 
   const ideasResponse = await fetch(new URL('/what-to-build', baseUrl))
   assert.equal(ideasResponse.ok, true, '/what-to-build must return a successful HTTP response')

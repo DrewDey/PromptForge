@@ -219,6 +219,10 @@ const cardSource = readFileSync('src/components/discovery/BuildPathCard.tsx', 'u
 const interactiveCardSource = readFileSync('src/components/discovery/InteractiveBuildPathCard.tsx', 'utf8')
 const knownIssueSource = readFileSync('src/components/ModelVariantKnownIssue.tsx', 'utf8')
 const whatToBuildSource = readFileSync('src/app/what-to-build/page.tsx', 'utf8')
+const homeMosaicSource = readFileSync('src/components/home/HomeBuildMosaic.tsx', 'utf8')
+const genericProjectSource = readFileSync('src/app/prompt/[id]/page.tsx', 'utf8')
+const pathsLoadingSource = readFileSync('src/app/paths/loading.tsx', 'utf8')
+const pathsCssSource = readFileSync('src/app/browse.css', 'utf8')
 const catalogSource = readFileSync('src/lib/path-discovery.ts', 'utf8')
 const variantSource = readFileSync('src/lib/project-model-variants.ts', 'utf8')
 const dataSource = readFileSync('src/lib/data.ts', 'utf8')
@@ -259,6 +263,53 @@ assert.doesNotMatch(
   whatToBuildSource,
   /item\.comparisonCount[^\n]*model runs/,
   'distinct-model comparison counts must never be labeled as model runs',
+)
+assert.match(
+  whatToBuildSource,
+  /<BuildPathCard[\s\S]*?item=\{item\}/,
+  'what-to-build recommendations must reuse the canonical Explore card',
+)
+assert.match(whatToBuildSource, /data-ideas-shared-path-cards/)
+assert.match(
+  homeMosaicSource,
+  /<BuildPathCard[\s\S]*?item=\{item\}/,
+  'homepage recommendations must reuse the canonical Explore card',
+)
+assert.match(homeMosaicSource, /data-home-shared-path-cards/)
+assert.match(
+  genericProjectSource,
+  /data-related-shared-path-cards[\s\S]*?<BuildPathCard[\s\S]*?item=\{item\}/,
+  'generic related projects must reuse the canonical Explore card',
+)
+assert.match(
+  genericProjectSource,
+  /className="pf-paths path-card-surface"[\s\S]*?className="path-card-grid related-path-card-grid"/,
+  'embedded related-project cards must not inherit the full-page Explore geometry',
+)
+assert.match(
+  pathsCssSource,
+  /\.pf-paths\.path-card-surface\s*\{[\s\S]*?min-height:\s*0;[\s\S]*?background:\s*transparent;/,
+  'embedded canonical cards must reset the full-page minimum height and background',
+)
+assert.match(
+  pathsCssSource,
+  /\.pf-paths \.related-path-card-grid\s*\{[^}]*repeat\(auto-fit, minmax\(min\(100%, 340px\), 1fr\)\)/,
+  'related-project cards must size from their content container instead of the viewport',
+)
+assert.match(
+  pathsLoadingSource,
+  /min-h-screen bg-white text-surface-900[\s\S]*?aria-busy="true" aria-label="Loading build paths"/,
+  'Explore loading must preserve the destination-matched light shell',
+)
+assert.match(
+  pathsLoadingSource,
+  /flex flex-col gap-4[^"]*sm:flex-row[\s\S]*?flex flex-wrap gap-3/,
+  'Explore loading controls must stack and wrap at narrow viewports',
+)
+assert.doesNotMatch(
+  pathsLoadingSource,
+  /\.\.\/browse\/loading|bg-surface-900|border-surface-800|bg-surface-800/,
+  'Explore loading must not regress to the obsolete dark Browse shell',
 )
 
 for (const sortValue of ['active', 'forks', 'models', 'newest']) {

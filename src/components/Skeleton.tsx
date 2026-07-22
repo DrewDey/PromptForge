@@ -37,7 +37,7 @@ export function SkeletonText({
   )
 }
 
-/** Skeleton matching PromptCard structure — outcome hero on top, then title, description, footer */
+/** Generic project-card skeleton used while project collections are loading. */
 export function SkeletonCard() {
   return (
     <div className="bg-white border border-surface-200 overflow-hidden">

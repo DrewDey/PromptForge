@@ -10,6 +10,12 @@
   background: #fff;
   color: var(--path-ink);
 }
+
+.pf-paths.path-card-surface {
+  min-height: 0;
+  background: transparent;
+  color: inherit;
+}
 .pf-paths *,
 .pf-paths *::before,
 .pf-paths *::after {
@@ -247,6 +253,7 @@
 }
 .pf-paths .path-start-supporting { display: grid; grid-template-columns: 1fr; gap: 12px; }
 .pf-paths .path-card-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px 20px; }
+.pf-paths .related-path-card-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
 
 .pf-paths .path-card {
   position: relative;

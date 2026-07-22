@@ -356,8 +356,7 @@
   padding: 12px 0;
 }
 
-.pf-ideas .ideas-feature-meta,
-.pf-ideas .ideas-rail-meta {
+.pf-ideas .ideas-feature-meta {
   display: flex;
   flex-wrap: wrap;
   gap: 7px 12px;
@@ -641,110 +640,10 @@
   margin-top: 26px;
 }
 
-.pf-ideas .ideas-rail-item {
-  min-width: 0;
-  border: 0;
-  border-top: 1px solid var(--ideas-line);
+.pf-ideas .ideas-path-rail.pf-paths {
+  min-height: 0;
   background: transparent;
-  transition: border-color 150ms ease, transform 150ms ease;
-}
-
-.pf-ideas .ideas-rail-item:hover {
-  border-color: var(--ideas-ink);
-  transform: translateY(-2px);
-}
-
-.pf-ideas .ideas-rail-item > a {
-  display: flex;
-  height: 100%;
-  flex-direction: column;
-}
-
-.pf-ideas .ideas-rail-preview {
-  position: relative;
-  min-height: 185px;
-  overflow: hidden;
-  border-bottom: 0;
-  background: #ededed;
-  padding: 14px;
-}
-
-.pf-ideas .ideas-rail-preview > span {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 2;
-  background: #fff;
-  padding: 4px 6px;
-  color: var(--ideas-muted);
-  font-family: var(--font-mono);
-  font-size: 8px;
-  font-weight: 800;
-}
-
-.pf-ideas .ideas-rail-copy {
-  display: flex;
-  flex: 1;
-  min-width: 0;
-  flex-direction: column;
-  padding: 18px 2px 0;
-}
-
-.pf-ideas .ideas-rail-copy h3 {
-  margin: 8px 0 0;
-  font-size: 19px;
-  font-weight: 850;
-  letter-spacing: -.025em;
-  line-height: 1.15;
-}
-
-.pf-ideas .ideas-rail-copy > p {
-  display: -webkit-box;
-  margin: 8px 0 0;
-  overflow: hidden;
-  color: var(--ideas-muted);
-  font-size: 12px;
-  line-height: 1.55;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-}
-
-.pf-ideas .ideas-rail-traits {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 13px;
-}
-
-.pf-ideas .ideas-rail-traits span {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  color: #6e6e77;
-  font-size: 9px;
-  font-weight: 750;
-}
-
-.pf-ideas .ideas-rail-traits svg {
-  width: 11px;
-  height: 11px;
-  color: var(--ideas-orange);
-}
-
-.pf-ideas .ideas-rail-action {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: auto;
-  padding-top: 18px;
-  color: var(--ideas-ink);
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.pf-ideas .ideas-rail-action svg {
-  width: 13px;
-  height: 13px;
+  color: inherit;
 }
 
 .pf-ideas .ideas-rail-footer {

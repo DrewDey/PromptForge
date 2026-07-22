@@ -12,6 +12,7 @@ import {
   selectCuratedItems,
 } from '@/lib/path-discovery'
 import { canonicalMetadata } from '@/lib/site-url'
+import './browse.css'
 import './home.css'
 
 export const metadata: Metadata = {

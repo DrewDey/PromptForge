@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
+import { BuildPathCard } from '@/components/discovery/BuildPathCard'
 import type { BuildPathDiscoveryItem } from '@/lib/path-discovery'
-import { HomeBuildCard } from './HomeBuildCard'
 
 type HomeBuildMosaicProps = {
   items: BuildPathDiscoveryItem[]
@@ -22,13 +22,13 @@ export function HomeBuildMosaic({ items }: HomeBuildMosaicProps) {
           <Link href="/paths">Browse all paths <ArrowRight aria-hidden="true" /></Link>
         </header>
 
-        <div className="home-build-grid" aria-label="Recently added working projects">
-          {items.map((item, index) => (
-            <HomeBuildCard
-              key={item.id}
-              item={item}
-              positionLabel={index === 0 ? 'Recommended next' : 'Recently added'}
-            />
+        <div
+          className="home-build-grid pf-paths"
+          aria-label="Recently added working projects"
+          data-home-shared-path-cards
+        >
+          {items.map((item) => (
+            <BuildPathCard key={item.id} item={item} />
           ))}
         </div>
       </div>

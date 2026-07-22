@@ -1525,10 +1525,16 @@ export default function SourceRunShowcase({
     if (packageId === selectedPackage?.id) return
     const sourceRunPath = sourceRunPathRef.current
     const sourceRunPathRect = sourceRunPath?.getBoundingClientRect()
+    const artifactRect = document.getElementById('final-result')?.getBoundingClientRect()
+    const artifactBottomVisible = Boolean(
+      artifactRect && artifactRect.bottom > 0 && artifactRect.bottom <= window.innerHeight,
+    )
     const artifactPathSeamVisible = Boolean(
-      sourceRunPathRect &&
-      sourceRunPathRect.top >= 0 &&
-      sourceRunPathRect.top <= window.innerHeight,
+      artifactBottomVisible || (
+        sourceRunPathRect &&
+        sourceRunPathRect.top >= 0 &&
+        sourceRunPathRect.top <= window.innerHeight
+      ),
     )
     const anchorElement = artifactPathSeamVisible
       ? sourceRunPath

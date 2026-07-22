@@ -819,6 +819,7 @@ async function sampleQaRouteTransition(
         if (!link || !artifact) return {error:'missing-route-control', samples:[]};
         const initial={
           packageId:document.querySelector('[data-artifact-package-id]')?.dataset.artifactPackageId ?? '',
+          artifactPath:document.querySelector('[data-artifact-package-id]')?.dataset.artifactPath ?? '',
           artifactTop:artifact.getBoundingClientRect().top,
           artifactBottom:artifact.getBoundingClientRect().bottom,
           sourceRunPathTop:document.getElementById('source-run-path')?.getBoundingClientRect().top ?? null,
@@ -828,6 +829,7 @@ async function sampleQaRouteTransition(
         const samples=[];
         const startedAt=performance.now();
         let settledFrames=0;
+        let outgoingFrameAfterTwoFrames=false;
         link.click();
         while (performance.now()-startedAt < 7_000) {
           await new Promise((resolve)=>requestAnimationFrame(()=>setTimeout(resolve, 0)));
@@ -837,6 +839,10 @@ async function sampleQaRouteTransition(
           const fitMode=frame?.dataset.artifactFitMode ?? '';
           const heightGuard=frame?.dataset.artifactHeightGuard ?? '';
           const heightPending=frame?.dataset.artifactHeightPending === 'true';
+          const elapsed=performance.now()-startedAt;
+          if (elapsed >= 64 && frame?.dataset.artifactPath === initial.artifactPath) {
+            outgoingFrameAfterTwoFrames=true;
+          }
           const settled=Boolean(
             new URLSearchParams(location.search).get('run') === runId &&
             frame?.dataset.artifactPath === artifactPath &&
@@ -846,7 +852,7 @@ async function sampleQaRouteTransition(
             )))
           );
           samples.push({
-            elapsed:performance.now()-startedAt,
+            elapsed,
             artifactTop:currentArtifact?.getBoundingClientRect().top ?? null,
             artifactBottom:currentArtifact?.getBoundingClientRect().bottom ?? null,
             sourceRunPathTop:sourceRunPath?.getBoundingClientRect().top ?? null,
@@ -865,6 +871,7 @@ async function sampleQaRouteTransition(
               initial,
               samples,
               settled:true,
+              outgoingFrameAfterTwoFrames,
               elapsed:performance.now()-startedAt,
               final:samples.at(-1),
             };
@@ -874,6 +881,7 @@ async function sampleQaRouteTransition(
           initial,
           samples,
           settled:false,
+          outgoingFrameAfterTwoFrames,
           elapsed:performance.now()-startedAt,
           final:samples.at(-1),
         };
@@ -886,7 +894,7 @@ async function sampleQaRouteTransition(
 }
 
 async function positionQaArtifactPathSeam(client, sessionId, viewport, label) {
-  const desiredTop = Math.round(viewport.height * 0.62)
+  const desiredTop = viewport.height + 24
   return waitForValue(
     client,
     sessionId,
@@ -902,6 +910,7 @@ async function positionQaArtifactPathSeam(client, sessionId, viewport, label) {
     })()`,
     (value) => (
       Math.abs((value?.sourceRunPathTop ?? Number.POSITIVE_INFINITY) - desiredTop) <= 2 &&
+      value.sourceRunPathTop > viewport.height &&
       value?.artifactBottom > 0 &&
       value.artifactBottom < viewport.height
     ),
@@ -1056,16 +1065,19 @@ async function verifyPendingArtifactViewportFixtures(client, sessionId, baseUrl,
     client,
     sessionId,
     viewport,
-    `${viewport.label} visible artifact-path seam`,
+    `${viewport.label} bottom-visible artifact-path seam`,
   )
   const delayedSeamRoute = await sampleQaRouteTransition(client, sessionId, {
     runId: 'delayed',
     artifactPath: '/qa/artifact-height-guards/delayed',
     expectedFitMode: 'native',
-    label: `${viewport.label} visible-seam contraction route`,
+    label: `${viewport.label} bottom-visible seam contraction route`,
   })
+  if (!delayedSeamRoute.outgoingFrameAfterTwoFrames) {
+    throw new Error(`${viewport.label} delayed route did not keep the outgoing artifact mounted beyond two frames.`)
+  }
   assertContinuousViewportSamples(
-    `${viewport.label} visible-seam contraction route`,
+    `${viewport.label} bottom-visible seam contraction route`,
     delayedSeamRoute,
     {
       sourceRunPathTop: visibleSeam.sourceRunPathTop,
@@ -1073,7 +1085,7 @@ async function verifyPendingArtifactViewportFixtures(client, sessionId, baseUrl,
     },
   )
   assertDelayedPostPaintMeasurement(
-    `${viewport.label} visible-seam contraction route`,
+    `${viewport.label} bottom-visible seam contraction route`,
     delayedSeamRoute,
     '/qa/artifact-height-guards/delayed',
   )
@@ -1081,10 +1093,10 @@ async function verifyPendingArtifactViewportFixtures(client, sessionId, baseUrl,
     runId: 'tall',
     artifactPath: '/qa/artifact-height-guards/tall',
     expectedFitMode: 'native',
-    label: `${viewport.label} visible-seam expansion route`,
+    label: `${viewport.label} bottom-visible seam expansion route`,
   })
   assertContinuousViewportSamples(
-    `${viewport.label} visible-seam expansion route`,
+    `${viewport.label} bottom-visible seam expansion route`,
     tallSeamReturn,
     {
       sourceRunPathTop: visibleSeam.sourceRunPathTop,

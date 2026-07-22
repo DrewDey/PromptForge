@@ -339,6 +339,7 @@ function validateUiWiring() {
   mustInclude('src/components/ModelComparisonPreviewLink.tsx', 'data-model-variant-view-hydrated', 'model-view links must expose client hydration before browser-driven navigation')
   mustInclude('src/components/ModelComparisonPreviewLink.tsx', "kind: 'comparison-preview' | 'model-view'", 'comparison and model-view navigation must share one bounded viewport-restoration path')
   mustInclude('src/components/ModelComparisonPreviewLink.tsx', 'const artifactPathSeamVisible = Boolean(', 'model-view navigation must recognize when the artifact and Build Path seam is in the viewport')
+  mustInclude('src/components/ModelComparisonPreviewLink.tsx', 'const artifactBottomVisible = Boolean(', 'model-view navigation must preserve the Build Path seam when the artifact bottom is visible just above it')
   mustInclude('src/components/ModelComparisonPreviewLink.tsx', '? sourceRunPath\n    : artifactVisible', 'model-view navigation must prefer the visible artifact-bottom seam over its top edge')
   mustInclude('src/components/ModelComparisonPreviewLink.tsx', 'sourceRunPathRect && sourceRunPathRect.top < 0', 'model-view navigation must use the Build Path anchor only after the user has scrolled into it')
   mustInclude('src/components/ModelComparisonPreviewLink.tsx', "anchorId: anchor?.id === 'source-run-path' ? 'source-run-path' : anchor ? 'final-result' : null", 'model-view navigation must expose its chosen artifact or Build Path viewport anchor')
@@ -351,6 +352,10 @@ function validateUiWiring() {
   mustInclude('src/components/ModelComparisonPreviewLink.tsx', "fitMode === 'blocked'", 'model-view navigation must settle promptly when protected artifact loading fails')
   mustInclude('src/components/ModelComparisonPreviewLink.tsx', 'const heightStable = destinationSettled', 'model-view navigation must keep restoring until the destination frame height is stable')
   mustInclude('src/components/ModelComparisonPreviewLink.tsx', 'stableFrames >= 2', 'model-view navigation must verify multiple stable frames before releasing the viewport anchor')
+  mustInclude('src/components/ModelComparisonPreviewLink.tsx', 'renderedComparisonLocation === destination', 'model-view navigation must not accept the outgoing iframe after the destination URL changes')
+  mustInclude('src/components/ModelComparisonPreviewLink.tsx', 'prefetch={prefetch}', 'QA model routes must be able to disable prefetch when exercising delayed destination commits')
+  mustInclude('src/app/qa/artifact-height-guards/page.tsx', 'prefetch={false}', 'the delayed route fixture must not let link prefetch consume its render delay before activation')
+  mustInclude('scripts/check-model-variant-page-browser.mjs', 'outgoingFrameAfterTwoFrames', 'browser verification must prove the outgoing artifact survives beyond two frames before destination commit')
   mustInclude('src/components/PathForgeLabsModelRuns.tsx', 'Same exact brief, two model runs', 'comparison UI must explain invariant prompt parity')
 
   mustInclude('src/components/PreparedSourceRunPage.tsx', 'const usesModelVariants = Boolean(modelVariantSet && activeModelVariant)', 'prepared model pages must distinguish exact model-run branch scope')

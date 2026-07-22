@@ -940,6 +940,7 @@ mustInclude(sharedComponent, sharedComponentContent, 'guardedArtifactPackageIds.
 mustInclude(sharedComponent, sharedComponentContent, 'next.add(artifactIdentity)', 'feedback-loop protection must retain earlier path-identity latches when another artifact trips the guard')
 mustNotInclude(sharedComponent, sharedComponentContent, 'key={selectedPackage.id}', 'artifact selection must not remount the frame and discard per-package height guards')
 mustInclude(sharedComponent, sharedComponentContent, 'pendingArtifactSelectionViewportRef', 'response artifact selection must keep an explicit viewport anchor while the frame above resizes')
+mustInclude(sharedComponent, sharedComponentContent, 'const artifactBottomVisible = Boolean(', 'response artifact selection must preserve the Build Path seam when the artifact bottom is still visible')
 mustInclude(sharedComponent, sharedComponentContent, 'onSelect?.(detailPackage.id, event.currentTarget)', 'response artifact selection must capture the exact control the user clicked as its viewport anchor')
 mustInclude(sharedComponent, sharedComponentContent, 'window.scrollY + destinationTop - pending.anchorTop', 'response artifact selection must compensate for the frame height delta above the clicked Build Path control')
 mustInclude(sharedComponent, sharedComponentContent, 'data-artifact-height-pending={artifactMeasurementPending', 'browser verification must distinguish the pending measurement interval from a settled artifact')

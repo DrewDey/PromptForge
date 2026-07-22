@@ -37,10 +37,15 @@ function captureViewportPosition(): ModelVariantViewportPosition {
   const artifactVisible = Boolean(
     artifactRect && artifactRect.bottom > 0 && artifactRect.top < window.innerHeight,
   )
+  const artifactBottomVisible = Boolean(
+    artifactRect && artifactRect.bottom > 0 && artifactRect.bottom <= window.innerHeight,
+  )
   const artifactPathSeamVisible = Boolean(
-    sourceRunPathRect &&
-    sourceRunPathRect.top >= 0 &&
-    sourceRunPathRect.top <= window.innerHeight,
+    artifactBottomVisible || (
+      sourceRunPathRect &&
+      sourceRunPathRect.top >= 0 &&
+      sourceRunPathRect.top <= window.innerHeight
+    ),
   )
   const anchor = artifactPathSeamVisible
     ? sourceRunPath
@@ -144,7 +149,8 @@ function restoreComparisonScroll(
     const heightGuard = frame?.dataset.artifactHeightGuard
     const heightPending = frame?.dataset.artifactHeightPending === 'true'
     const destinationLocationMatches = relativeLocation(new URL(window.location.href)) === destination
-    const destinationSettled = destinationLocationMatches && Boolean(
+    const destinationSettled = destinationLocationMatches &&
+      renderedComparisonLocation === destination && Boolean(
       frame?.querySelector('iframe[srcdoc], [data-artifact-load-error]') &&
       !heightPending &&
       (
@@ -315,18 +321,21 @@ function ViewportPreservingRouteLink({
   className,
   children,
   kind,
+  prefetch,
 }: {
   href: string
   ariaLabel: string
   className: string
   children: ReactNode
   kind: 'comparison-preview' | 'model-view'
+  prefetch?: boolean
 }) {
   const router = useRouter()
 
   return (
     <Link
       href={href}
+      prefetch={prefetch}
       scroll={false}
       onClick={(event) => {
         if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
@@ -370,11 +379,13 @@ export function ModelVariantViewLink({
   ariaLabel,
   className,
   children,
+  prefetch,
 }: {
   href: string
   ariaLabel: string
   className: string
   children: ReactNode
+  prefetch?: boolean
 }) {
   return (
     <ViewportPreservingRouteLink
@@ -382,6 +393,7 @@ export function ModelVariantViewLink({
       ariaLabel={ariaLabel}
       className={className}
       kind="model-view"
+      prefetch={prefetch}
     >
       {children}
     </ViewportPreservingRouteLink>

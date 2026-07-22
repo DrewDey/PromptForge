@@ -219,6 +219,7 @@ const cardSource = readFileSync('src/components/discovery/BuildPathCard.tsx', 'u
 const interactiveCardSource = readFileSync('src/components/discovery/InteractiveBuildPathCard.tsx', 'utf8')
 const knownIssueSource = readFileSync('src/components/ModelVariantKnownIssue.tsx', 'utf8')
 const whatToBuildSource = readFileSync('src/app/what-to-build/page.tsx', 'utf8')
+const pathsLoadingSource = readFileSync('src/app/paths/loading.tsx', 'utf8')
 const catalogSource = readFileSync('src/lib/path-discovery.ts', 'utf8')
 const variantSource = readFileSync('src/lib/project-model-variants.ts', 'utf8')
 const dataSource = readFileSync('src/lib/data.ts', 'utf8')
@@ -259,6 +260,17 @@ assert.doesNotMatch(
   whatToBuildSource,
   /item\.comparisonCount[^\n]*model runs/,
   'distinct-model comparison counts must never be labeled as model runs',
+)
+assert.match(
+  whatToBuildSource,
+  /<BuildPathCard[\s\S]*?item=\{item\}/,
+  'what-to-build recommendations must reuse the canonical Explore card',
+)
+assert.match(whatToBuildSource, /data-ideas-shared-path-cards/)
+assert.doesNotMatch(
+  pathsLoadingSource,
+  /\.\.\/browse\/loading|bg-surface-900|border-surface-800|bg-surface-800/,
+  'Explore loading must not regress to the obsolete dark Browse shell',
 )
 
 for (const sortValue of ['active', 'forks', 'models', 'newest']) {

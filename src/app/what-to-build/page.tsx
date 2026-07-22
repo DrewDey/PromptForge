@@ -5,8 +5,6 @@ import {
   ArrowUpRight,
   Compass,
   Gamepad2,
-  GitFork,
-  Layers3,
   Lightbulb,
   ListChecks,
   Palette,
@@ -16,8 +14,9 @@ import {
 import { BuilderByline } from '@/components/BuilderByline'
 import { ProjectPreview } from '@/components/ProjectPreview'
 import { PublicTruthSummary } from '@/components/PublicTruthSummary'
+import { BuildPathCard } from '@/components/discovery/BuildPathCard'
 import { IdeaArtifactPreview } from '@/components/ideas/IdeaArtifactPreview'
-import { getPrompts } from '@/lib/data'
+import { getPrompts, getUserVotesAndBookmarks } from '@/lib/data'
 import {
   buildPathDiscoveryCatalog,
   getCanonicalDefaultDiscoveryTruth,
@@ -28,7 +27,9 @@ import {
   type BuildPathDiscoveryItem,
   type DiscoveryIntent,
 } from '@/lib/path-discovery'
+import { isPersistableProjectId } from '@/lib/project-engagement'
 import { canonicalMetadata } from '@/lib/site-url'
+import '../browse.css'
 import './what-to-build.css'
 
 export const metadata: Metadata = {
@@ -216,6 +217,28 @@ export default async function WhatToBuildPage({
   const selectedIntention = intentions.find((intention) => intention.value === selectedIntent)
   const selectedPaceOption = buildPaces.find((pace) => pace.value === selectedPace) ?? buildPaces[2]
   const hasFallback = exactMatches.length === 0 && (selectedIntent !== null || selectedPace !== 'any')
+  const railLoginNextPath = selectedIntent
+    ? ideaHref(selectedIntent, selectedPace)
+    : paceHref(selectedPace, null)
+  let isLoggedIn = false
+  let votedPromptIds = new Set<string>()
+  let bookmarkedPromptIds = new Set<string>()
+
+  try {
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && rail.length > 0) {
+      const { createClient } = await import('@/lib/supabase/server')
+      const supabase = await createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      isLoggedIn = Boolean(user)
+      if (user) {
+        const userState = await getUserVotesAndBookmarks(rail.map((item) => item.id))
+        votedPromptIds = userState.votes
+        bookmarkedPromptIds = userState.bookmarks
+      }
+    }
+  } catch {
+    // The shared cards still render when viewer-specific engagement state is unavailable.
+  }
 
   return (
     <div className="pf-ideas">
@@ -411,29 +434,18 @@ export default async function WhatToBuildPage({
               </p>
             </div>
 
-            <div className="ideas-path-rail" role="list">
-              {rail.map((item, index) => (
-                <article key={item.id} className="ideas-rail-item" role="listitem">
-                  <Link href={item.href} aria-label={`Explore ${item.title}`}>
-                    <div className="ideas-rail-preview">
-                      <IdeaArtifactPreview title={item.title} variant={item.preview} compact />
-                      <span>0{index + 1}</span>
-                    </div>
-                    <div className="ideas-rail-copy">
-                      <div className="ideas-rail-meta">
-                        <span>{item.categoryLabel}</span>
-                        <span>{item.difficulty}</span>
-                      </div>
-                      <h3>{item.title}</h3>
-                      <p>{item.description}</p>
-                      <div className="ideas-rail-traits">
-                        <span><Layers3 aria-hidden="true" /> {promptLabel(item)}</span>
-                        {item.hasFork && <span><GitFork aria-hidden="true" /> Forkable</span>}
-                      </div>
-                      <span className="ideas-rail-action">See how it was made <ArrowUpRight aria-hidden="true" /></span>
-                    </div>
-                  </Link>
-                </article>
+            <div className="ideas-path-rail pf-paths" data-ideas-shared-path-cards>
+              {rail.map((item) => (
+                <BuildPathCard
+                  key={item.id}
+                  item={item}
+                  engagement={isPersistableProjectId(item.id) ? {
+                    isLoggedIn,
+                    initialVoted: votedPromptIds.has(item.id),
+                    initialBookmarked: bookmarkedPromptIds.has(item.id),
+                    loginNextPath: railLoginNextPath,
+                  } : undefined}
+                />
               ))}
             </div>
 

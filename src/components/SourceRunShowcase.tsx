@@ -418,6 +418,9 @@ export function ProtectedArtifactFrame({
   const artifactDocumentGenerationRef = useRef(0)
   const lastDownloadAtRef = useRef(-Infinity)
   const measuredArtifactRef = useRef<MeasuredArtifact | null>(null)
+  const frameSizeRef = useRef<ArtifactSize | null>(null)
+  const viewerModeRef = useRef<'readable' | 'fit-whole'>('readable')
+  const viewerMeasurementRefreshPendingRef = useRef(false)
   const expansionFeedbackCountRef = useRef(new Map<string, number>())
   const [frameSize, setFrameSize] = useState<ArtifactSize | null>(null)
   const [loadedArtifact, setLoadedArtifact] = useState<LoadedArtifactSource | null>(null)
@@ -426,6 +429,7 @@ export function ProtectedArtifactFrame({
   const [artifactDocumentGeneration, setArtifactDocumentGeneration] = useState(0)
   const [settledArtifactDocumentGeneration, setSettledArtifactDocumentGeneration] = useState(-1)
   const [viewerMode, setViewerMode] = useState<'readable' | 'fit-whole'>('readable')
+  const [viewerMeasurementRefreshPending, setViewerMeasurementRefreshPending] = useState(false)
   const [guardedArtifactPackageIds, setGuardedArtifactPackageIds] = useState<ReadonlySet<string>>(
     () => new Set(),
   )
@@ -447,7 +451,9 @@ export function ProtectedArtifactFrame({
   ) ? measuredArtifact.size : null
   const artifactDocumentRemounted =
     settledArtifactDocumentGeneration !== artifactDocumentGeneration
-  const viewerUsesReadableSize = viewerFitControls && viewerMode === 'readable'
+  const viewerUsesReadableSize = viewerFitControls && (
+    viewerMode === 'readable' || viewerMeasurementRefreshPending
+  )
   const viewerUsesAvailableHeight = viewerFitControls
   const usesMeasuredContentHeight = !bare && frameHeight === undefined
   const tracksArtifactMeasurement = usesMeasuredContentHeight || viewerFitControls
@@ -469,18 +475,26 @@ export function ProtectedArtifactFrame({
         width: Math.max(1, Math.round(rect.width)),
         height: Math.max(1, Math.round(rect.height)),
       }
+      const current = frameSizeRef.current
+      if (
+        current &&
+        Math.abs(current.width - nextSize.width) < 2 &&
+        Math.abs(current.height - nextSize.height) < 2
+      ) return
 
-      setFrameSize((current) => {
-        if (
-          current &&
-          Math.abs(current.width - nextSize.width) < 2 &&
-          Math.abs(current.height - nextSize.height) < 2
-        ) {
-          return current
-        }
-
-        return nextSize
-      })
+      frameSizeRef.current = nextSize
+      if (
+        current &&
+        viewerFitControls &&
+        viewerModeRef.current === 'fit-whole'
+      ) {
+        // Fit-whole owns a wider virtual viewport. Re-measure this same iframe
+        // against the resized physical frame before scaling it again.
+        viewerMeasurementRefreshPendingRef.current = true
+        setViewerMeasurementRefreshPending(true)
+        setSettledArtifactPackageId(null)
+      }
+      setFrameSize(nextSize)
     }
 
     updateFrameSize()
@@ -488,7 +502,7 @@ export function ProtectedArtifactFrame({
     observer.observe(frame)
 
     return () => observer.disconnect()
-  }, [])
+  }, [viewerFitControls])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -662,6 +676,10 @@ export function ProtectedArtifactFrame({
         measurementSettleTimer = window.setTimeout(() => {
           setSettledArtifactPackageId(packageId)
           setSettledArtifactDocumentGeneration(documentGeneration)
+          if (viewerMeasurementRefreshPendingRef.current) {
+            viewerMeasurementRefreshPendingRef.current = false
+            setViewerMeasurementRefreshPending(false)
+          }
         }, ARTIFACT_MEASUREMENT_SETTLE_MS)
       }
       const current = measuredArtifactRef.current
@@ -800,6 +818,7 @@ export function ProtectedArtifactFrame({
     (
       !srcDoc ||
       !artifactSize ||
+      viewerMeasurementRefreshPending ||
       artifactDocumentRemounted ||
       settledArtifactPackageId !== selectedPackage.id
     ),
@@ -839,7 +858,12 @@ export function ProtectedArtifactFrame({
                   type="button"
                   aria-pressed={viewerMode === 'readable'}
                   data-artifact-viewer-mode-control="readable"
-                  onClick={() => setViewerMode('readable')}
+                  onClick={() => {
+                    viewerMeasurementRefreshPendingRef.current = false
+                    viewerModeRef.current = 'readable'
+                    setViewerMeasurementRefreshPending(false)
+                    setViewerMode('readable')
+                  }}
                   className={[
                     'px-3 py-1.5 text-xs font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
                     viewerMode === 'readable'
@@ -853,7 +877,10 @@ export function ProtectedArtifactFrame({
                   type="button"
                   aria-pressed={viewerMode === 'fit-whole'}
                   data-artifact-viewer-mode-control="fit-whole"
-                  onClick={() => setViewerMode('fit-whole')}
+                  onClick={() => {
+                    viewerModeRef.current = 'fit-whole'
+                    setViewerMode('fit-whole')
+                  }}
                   className={[
                     'px-3 py-1.5 text-xs font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
                     viewerMode === 'fit-whole'
@@ -890,6 +917,7 @@ export function ProtectedArtifactFrame({
         data-artifact-height-mode={usesMeasuredContentHeight ? 'measured-content' : 'fixed-viewport'}
         data-artifact-height-guard={heightGuardMode}
         data-artifact-height-pending={artifactMeasurementPending ? 'true' : 'false'}
+        data-artifact-measurement-refresh={viewerMeasurementRefreshPending ? 'true' : 'false'}
         data-artifact-rendered-height={renderedFrameHeight ?? ''}
         data-artifact-package-id={selectedPackage.id}
         data-artifact-path={selectedPackage.artifactPath}

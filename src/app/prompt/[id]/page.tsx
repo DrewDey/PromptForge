@@ -11,7 +11,7 @@ import {
 import { getModelName } from '@/lib/models'
 import { getPublicModelIdentityLabel } from '@/lib/public-model-labels'
 import VoteBookmarkButtons from '@/components/VoteBookmarkButtons'
-import PromptCard from '@/components/PromptCard'
+import { BuildPathCard } from '@/components/discovery/BuildPathCard'
 import { BuilderByline } from '@/components/BuilderByline'
 import CodeBlock from '@/components/CodeBlock'
 import Prose from '@/components/Prose'
@@ -22,6 +22,7 @@ import { isPersistableProjectId } from '@/lib/project-engagement'
 import { getProjectRouteOverride } from '@/lib/project-links'
 import { getProfileProvenance } from '@/lib/profile-presentation'
 import { deriveCanonicalPromptPublicTruth } from '@/lib/prompt-public-truth'
+import { buildPathDiscoveryCatalog } from '@/lib/path-discovery'
 import {
   PROJECT_FORK_MAX_DEPTH,
   buildProjectForkHref,
@@ -30,6 +31,7 @@ import {
   projectForkSourceFromSubmissionFields,
   toProjectForkSourceSteps,
 } from '@/lib/project-forks'
+import '../../browse.css'
 
 /**
  * Pick the right renderer AND the right eyebrow label for a step's payload.
@@ -251,10 +253,18 @@ export default async function PromptDetailPage({
     const allInCategory = await getPrompts({ categorySlug: prompt.category.slug, sort: 'popular', limit: 4 })
     relatedProjects = allInCategory.filter(p => p.id !== prompt.id).slice(0, 3)
   }
+  const relatedItems = buildPathDiscoveryCatalog(
+    relatedProjects,
+    relatedProjects.flatMap((relatedProject) => (
+      relatedProject.category ? [relatedProject.category] : []
+    )),
+  )
 
   let hasVoted = false
   let hasBookmarked = false
   let isLoggedIn = false
+  let votedPromptIds = new Set<string>()
+  let bookmarkedPromptIds = new Set<string>()
   try {
     if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
       const { createClient } = await import('@/lib/supabase/server')
@@ -262,9 +272,14 @@ export default async function PromptDetailPage({
       const { data: { user } } = await supabase.auth.getUser()
       isLoggedIn = !!user
       if (user) {
-        const { votes, bookmarks } = await getUserVotesAndBookmarks([prompt.id])
-        hasVoted = votes.has(prompt.id)
-        hasBookmarked = bookmarks.has(prompt.id)
+        const userState = await getUserVotesAndBookmarks([
+          prompt.id,
+          ...relatedItems.map((item) => item.id),
+        ])
+        votedPromptIds = userState.votes
+        bookmarkedPromptIds = userState.bookmarks
+        hasVoted = votedPromptIds.has(prompt.id)
+        hasBookmarked = bookmarkedPromptIds.has(prompt.id)
       }
     }
   } catch {
@@ -723,7 +738,7 @@ export default async function PromptDetailPage({
       )}
 
       {/* ─── More in this category ─── */}
-      {relatedProjects.length > 0 && prompt.category && (
+      {relatedItems.length > 0 && prompt.category && (
         <section className="mt-16 pt-10 border-t border-surface-200">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-black text-surface-900">
@@ -737,10 +752,21 @@ export default async function PromptDetailPage({
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {relatedProjects.map(p => (
-              <PromptCard key={p.id} prompt={p} />
-            ))}
+          <div className="pf-paths" data-related-shared-path-cards>
+            <div className="path-card-grid path-catalog-grid">
+              {relatedItems.map((item) => (
+                <BuildPathCard
+                  key={item.id}
+                  item={item}
+                  engagement={isPersistableProjectId(item.id) ? {
+                    isLoggedIn,
+                    initialVoted: votedPromptIds.has(item.id),
+                    initialBookmarked: bookmarkedPromptIds.has(item.id),
+                    loginNextPath: `/prompt/${prompt.id}`,
+                  } : undefined}
+                />
+              ))}
+            </div>
           </div>
         </section>
       )}

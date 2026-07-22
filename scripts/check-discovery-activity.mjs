@@ -219,6 +219,8 @@ const cardSource = readFileSync('src/components/discovery/BuildPathCard.tsx', 'u
 const interactiveCardSource = readFileSync('src/components/discovery/InteractiveBuildPathCard.tsx', 'utf8')
 const knownIssueSource = readFileSync('src/components/ModelVariantKnownIssue.tsx', 'utf8')
 const whatToBuildSource = readFileSync('src/app/what-to-build/page.tsx', 'utf8')
+const homeMosaicSource = readFileSync('src/components/home/HomeBuildMosaic.tsx', 'utf8')
+const genericProjectSource = readFileSync('src/app/prompt/[id]/page.tsx', 'utf8')
 const pathsLoadingSource = readFileSync('src/app/paths/loading.tsx', 'utf8')
 const catalogSource = readFileSync('src/lib/path-discovery.ts', 'utf8')
 const variantSource = readFileSync('src/lib/project-model-variants.ts', 'utf8')
@@ -267,6 +269,17 @@ assert.match(
   'what-to-build recommendations must reuse the canonical Explore card',
 )
 assert.match(whatToBuildSource, /data-ideas-shared-path-cards/)
+assert.match(
+  homeMosaicSource,
+  /<BuildPathCard[\s\S]*?item=\{item\}/,
+  'homepage recommendations must reuse the canonical Explore card',
+)
+assert.match(homeMosaicSource, /data-home-shared-path-cards/)
+assert.match(
+  genericProjectSource,
+  /data-related-shared-path-cards[\s\S]*?<BuildPathCard[\s\S]*?item=\{item\}/,
+  'generic related projects must reuse the canonical Explore card',
+)
 assert.doesNotMatch(
   pathsLoadingSource,
   /\.\.\/browse\/loading|bg-surface-900|border-surface-800|bg-surface-800/,

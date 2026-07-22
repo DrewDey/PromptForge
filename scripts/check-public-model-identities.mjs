@@ -393,25 +393,25 @@ function assertSurfaceContracts() {
     'My Forge saved and unfinished rows must use the canonical formatter',
   )
 
-  const promptCard = 'src/components/PromptCard.tsx'
+  const relatedProjectRoute = 'src/app/prompt/[id]/page.tsx'
   mustInclude(
-    promptCard,
-    'getPreparedProjectModelIdentity',
-    'related-project cards must resolve the checked prepared-project identity projection',
+    relatedProjectRoute,
+    'buildPathDiscoveryCatalog',
+    'related-project cards must resolve through the canonical discovery projection',
   )
   mustInclude(
-    promptCard,
-    '.publicLabel',
-    'related-project cards must display the canonical projected public label',
+    relatedProjectRoute,
+    '<BuildPathCard',
+    'related-project cards must reuse the canonical card that displays projected public labels',
   )
   mustNotInclude(
-    promptCard,
+    relatedProjectRoute,
     'loadSourceRunPackage',
     'related-project cards must not open full source-run packages during catalog rendering',
   )
   mustInclude(
-    promptCard,
-    'data-public-model-identity',
+    relatedProjectRoute,
+    'data-related-shared-path-cards',
     'related-project cards need a stable browser assertion target',
   )
 

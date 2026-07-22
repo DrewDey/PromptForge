@@ -1,9 +1,11 @@
 import { BuilderByline } from '@/components/BuilderByline'
-import PromptCard from '@/components/PromptCard'
+import { BuildPathCard } from '@/components/discovery/BuildPathCard'
 import { PublicTruthSummary } from '@/components/PublicTruthSummary'
 import { AIRLOCK_ZERO_PROJECT_ID } from '@/lib/featured-projects'
+import { buildPathDiscoveryCatalog } from '@/lib/path-discovery'
 import { deriveCanonicalPromptPublicTruth } from '@/lib/prompt-public-truth'
 import type { PromptWithRelations } from '@/lib/types'
+import '../../browse.css'
 
 const fixturePrompt: PromptWithRelations = {
   id: 'qa-generic-public-truth-fixture-project',
@@ -75,6 +77,10 @@ const preparedMultiRunPrompt: PromptWithRelations = {
 }
 
 const genericTruth = deriveCanonicalPromptPublicTruth(fixturePrompt)
+const [fixtureItem, preparedMultiRunItem] = buildPathDiscoveryCatalog(
+  [fixturePrompt, preparedMultiRunPrompt],
+  fixturePrompt.category ? [fixturePrompt.category] : [],
+)
 
 export default function GenericPublicTruthFixturePage() {
   return (
@@ -119,12 +125,12 @@ export default function GenericPublicTruthFixturePage() {
         </aside>
       </section>
 
-      <section data-fixture-related-project>
-        <PromptCard prompt={fixturePrompt} />
+      <section className="pf-paths max-w-sm" data-fixture-related-project>
+        <BuildPathCard item={fixtureItem} />
       </section>
 
-      <section data-fixture-prepared-multi-run>
-        <PromptCard prompt={preparedMultiRunPrompt} />
+      <section className="pf-paths max-w-sm" data-fixture-prepared-multi-run>
+        <BuildPathCard item={preparedMultiRunItem} />
       </section>
     </main>
   )

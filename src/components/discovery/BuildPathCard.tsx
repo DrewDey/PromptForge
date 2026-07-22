@@ -8,12 +8,14 @@ type BuildPathCardProps = {
   item: BuildPathDiscoveryItem
   featured?: boolean
   compact?: boolean
-  engagement?: {
-    isLoggedIn: boolean
-    initialVoted: boolean
-    initialBookmarked: boolean
-    loginNextPath: string
-  }
+  engagement?: BuildPathCardEngagement
+}
+
+export type BuildPathCardEngagement = {
+  isLoggedIn: boolean
+  initialVoted: boolean
+  initialBookmarked: boolean
+  loginNextPath: string
 }
 
 function clientItem(item: BuildPathDiscoveryItem): BuildPathCardClientItem {

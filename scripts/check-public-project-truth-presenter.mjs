@@ -72,7 +72,7 @@ assert.deepEqual(
 
 const requiredSurfaceTokens = new Map([
   ['src/components/home/HomeHero.tsx', ['authorProvenanceKind', 'BuilderByline']],
-  ['src/components/home/HomeBuildCard.tsx', ['isCanonicalDefault', 'modelProofLabel']],
+  ['src/components/home/HomeBuildMosaic.tsx', ['BuildPathCard', 'data-home-shared-path-cards']],
   ['src/components/discovery/InteractiveBuildPathCard.tsx', ['selectedVariant.promptCount', 'selectedVariant.modelProofLabel']],
   ['src/components/PreparedSourceRunPage.tsx', [
     'derivePublicProjectTruth',

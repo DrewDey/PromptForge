@@ -303,174 +303,14 @@
   margin-top: 28px;
 }
 
-.pf-home-next .home-build-card {
-  min-width: 0;
+.pf-home-next .home-build-grid.pf-paths {
+  min-height: 0;
   background: transparent;
-}
-
-.pf-home-next .home-build-card > a {
-  display: grid;
-  grid-template-columns: 150px minmax(0, 1fr);
-  min-height: 210px;
-  height: 100%;
-  border: 0;
-  border-top: 1px solid var(--home-line);
-  transition: border-color 150ms ease, transform 150ms ease;
-}
-
-.pf-home-next .home-build-card > a:hover,
-.pf-home-next .home-build-card > a:focus-visible {
-  border-color: var(--home-ink);
-  outline: 2px solid var(--color-brand-orange);
-  outline-offset: 2px;
-  transform: translateY(-2px);
-}
-
-.pf-home-next .home-build-visual {
-  position: relative;
-  min-width: 0;
-  padding: 15px;
-  overflow: hidden;
-  background: #e6eee6;
-  color: #17231a;
-}
-
-.pf-home-next .home-build-visual[data-preview='game'] {
-  background: #e1e9f5;
-  color: #142b52;
-}
-
-.pf-home-next .home-build-visual[data-preview='calculator'],
-.pf-home-next .home-build-visual[data-preview='matrix'] {
-  background: #f0e7d9;
-  color: #4d321e;
-}
-
-.pf-home-next .home-build-visual[data-preview='mixer'] {
-  background: #e7e4ef;
-  color: #292142;
-}
-
-.pf-home-next .home-build-visual[data-preview='studio'] {
-  background: #f1e3df;
-  color: #4a2420;
-}
-
-.pf-home-next .home-build-visual[data-preview='checklist'] {
-  background: #e2eee9;
-  color: #183c30;
-}
-
-.pf-home-next .home-build-visual-topline {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
   color: inherit;
-  font-family: var(--font-mono);
-  font-size: 8px;
-  font-weight: 750;
-  letter-spacing: .1em;
-  line-height: 1.35;
-  text-transform: uppercase;
 }
 
-.pf-home-next .home-artifact-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.pf-home-next .home-artifact-status i {
-  width: 6px;
-  height: 6px;
-  background: #18875d;
-}
-
-.pf-home-next .home-build-visual > p {
-  display: -webkit-box;
-  margin: 32px 0 0;
-  overflow: hidden;
-  font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 600;
-  letter-spacing: -.02em;
-  line-height: 1.2;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 4;
-}
-
-.pf-home-next .home-build-copy {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  padding: 17px 2px 0 18px;
-}
-
-.pf-home-next .home-build-category {
-  color: var(--home-accent);
-  font-family: var(--font-mono);
-  font-size: 8px;
-  font-weight: 750;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-}
-
-.pf-home-next .home-build-copy h3 {
-  margin: 7px 0 6px;
-  font-size: 18px;
-  font-weight: 850;
-  letter-spacing: -.025em;
-  line-height: 1.15;
-}
-
-.pf-home-next .home-build-copy > p {
-  display: -webkit-box;
-  margin: 0;
-  overflow: hidden;
-  color: var(--home-muted);
-  font-size: 12px;
-  line-height: 1.5;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-
-.pf-home-next .home-build-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px 10px;
-  margin-top: 12px;
-  color: #71717a;
-  font-family: var(--font-mono);
-  font-size: 8px;
-  text-transform: uppercase;
-}
-
-.pf-home-next .home-build-meta span,
-.pf-home-next .home-build-foot span {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.pf-home-next .home-build-meta svg,
-.pf-home-next .home-build-foot svg {
-  width: 10px;
-  height: 10px;
-}
-
-.pf-home-next .home-build-foot {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: auto;
-  padding-top: 13px;
-  border-top: 1px solid var(--home-line);
-  font-size: 10px;
-  font-weight: 750;
-}
-
-.pf-home-next .home-build-foot span:last-child {
-  color: var(--home-accent);
+.pf-home-next .home-build-grid .path-card {
+  height: 100%;
 }
 
 /* How it works */
@@ -823,10 +663,6 @@
     grid-template-columns: 1fr;
   }
 
-  .pf-home-next .home-build-card > a {
-    grid-template-columns: 120px minmax(0, 1fr);
-  }
-
   .pf-home-next .home-process li + li {
     border-left: 0;
   }
@@ -846,23 +682,6 @@
 }
 
 @media (max-width: 430px) {
-  .pf-home-next .home-build-card > a {
-    grid-template-columns: 1fr;
-  }
-
-  .pf-home-next .home-build-copy {
-    padding: 17px 2px 22px;
-  }
-
-  .pf-home-next .home-build-visual {
-    min-height: 145px;
-  }
-
-  .pf-home-next .home-build-visual > p {
-    max-width: 260px;
-    margin-top: 28px;
-  }
-
   .pf-home-next .home-hero-links {
     gap: 10px;
   }

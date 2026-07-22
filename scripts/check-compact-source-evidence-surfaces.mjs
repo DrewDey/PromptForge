@@ -12,7 +12,7 @@ function mustInclude(source, needle, message) {
 }
 
 const [
-  homeCard,
+  homeMosaic,
   profilePresentation,
   builderCard,
   exploreCard,
@@ -22,7 +22,7 @@ const [
   homeCss,
   ideasCss,
 ] = await Promise.all([
-  read('src/components/home/HomeBuildCard.tsx'),
+  read('src/components/home/HomeBuildMosaic.tsx'),
   read('src/lib/profile-presentation.ts'),
   read('src/components/BuilderWorkCard.tsx'),
   read('src/components/discovery/InteractiveBuildPathCard.tsx'),
@@ -34,19 +34,14 @@ const [
 ])
 
 mustInclude(
-  homeCard,
-  'data-home-default-source-evidence',
-  'HomeBuildCard must expose a stable default-run source-evidence selector.',
+  homeMosaic,
+  'data-home-shared-path-cards',
+  'The homepage project grid must expose a stable shared-card selector.',
 )
 mustInclude(
-  homeCard,
-  'defaultVariant.sourceAccessLabel',
-  'HomeBuildCard must show default-run source access.',
-)
-mustInclude(
-  homeCard,
-  "defaultVariant.recordLabel ? ` · ${defaultVariant.recordLabel}` : ''",
-  'HomeBuildCard must show PathForge record scope only when it exists.',
+  homeMosaic,
+  '<BuildPathCard',
+  'The homepage must reuse the Explore card that exposes selected-run source access.',
 )
 
 for (const field of [

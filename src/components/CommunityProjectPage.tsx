@@ -38,8 +38,8 @@ export default function CommunityProjectPage({
     isDefaultArtifact: true,
     callout: {
       tone: 'success',
-      title: 'Reviewed community artifact',
-      body: 'PathForge re-verifies these reviewed bytes before allowing the artifact to run inside the protected sandbox.',
+      title: 'Reviewed community preview',
+      body: 'PathForge re-verifies these reviewed bytes and shows them as a script-disabled static preview during the community pilot.',
     },
   }
   const forkHref = capsule.reuse_permission === 'allow_pathforge_remix'
@@ -90,7 +90,7 @@ export default function CommunityProjectPage({
           <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
             <div>
               <div className="font-mono text-[10px] font-black uppercase tracking-[0.16em] text-brand-blue">Finished result</div>
-              <h2 id="artifact-title" className="mt-1 text-2xl font-black text-surface-900">Try the submitted project</h2>
+              <h2 id="artifact-title" className="mt-1 text-2xl font-black text-surface-900">Preview the submitted project</h2>
             </div>
             <div className="font-mono text-[10px] text-surface-500">SHA-256 {capsule.artifact_sha256.slice(0, 16)}… · {(capsule.artifact_size_bytes / 1024).toFixed(1)} KB</div>
           </div>
@@ -99,8 +99,12 @@ export default function CommunityProjectPage({
             providerName={capsule.provider}
             showOpenAction
             allowArtifactDownloads={false}
+            allowArtifactScripts={false}
             contextLabel="Community project artifact"
           />
+          <p className="mt-3 text-sm leading-6 text-surface-600" data-community-static-preview>
+            Community pilot previews are visual-only: uploaded scripts, controls, and downloads are disabled for visitors. The public build evidence below remains available to explain how the project was made.
+          </p>
         </section>
 
         <section className="mt-12 grid gap-6 lg:grid-cols-3" aria-labelledby="truth-title">

@@ -242,9 +242,17 @@ export function artifactDownloadBridgeSource() {
 })();`
 }
 
-export function buildProtectedArtifactWrapperDocument(artifactDocument) {
-  const serializedArtifact = scriptSafeJson(hardenArtifactDocument(artifactDocument))
+export function buildProtectedArtifactWrapperDocument(artifactDocument, options = {}) {
+  const allowArtifactScripts = options.allowArtifactScripts !== false
+  const preparedArtifactDocument = allowArtifactScripts
+    ? hardenArtifactDocument(artifactDocument)
+    : artifactDocument
+  const serializedArtifact = scriptSafeJson(preparedArtifactDocument)
   const serializedCsp = scriptSafeJson(WRAPPER_CSP)
+  const artifactSandbox = allowArtifactScripts ? 'allow-scripts allow-pointer-lock' : ''
+  const executionMode = allowArtifactScripts ? 'interactive-trusted' : 'static-untrusted'
+  const staticFrameAttributes = allowArtifactScripts ? '' : '\n    tabindex="-1"\n    inert'
+  const staticFrameStyle = allowArtifactScripts ? '' : '\n    iframe { pointer-events: none; }'
 
   return `<!doctype html>
 <html>
@@ -255,14 +263,15 @@ export function buildProtectedArtifactWrapperDocument(artifactDocument) {
   <style>
     html, body, iframe { width: 100%; height: 100%; margin: 0; border: 0; }
     html, body { overflow: hidden; background: #fff; color-scheme: light; }
-    iframe { display: block; background: #fff; }
+    iframe { display: block; background: #fff; }${staticFrameStyle}
   </style>
 </head>
 <body>
   <iframe
     id="pathforge-artifact-document"
     title="Generated artifact document"
-    sandbox="allow-scripts allow-pointer-lock"
+    sandbox="${artifactSandbox}"
+    data-pathforge-execution-mode="${executionMode}"${staticFrameAttributes}
     allow="clipboard-write"
     referrerpolicy="no-referrer"
   ></iframe>

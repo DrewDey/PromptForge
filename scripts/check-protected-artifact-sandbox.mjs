@@ -144,6 +144,9 @@ async function main() {
         `location.href=${JSON.stringify(`data:text/html,${encodeURIComponent(escapeDocument)}`)};`,
       ))
     },
+    'community-static-script-disabled': () => buildProtectedArtifactWrapperDocument(artifactDocument(
+      `${webrtcProbe}; location.href=${JSON.stringify(`${baseUrl}/leak-static-script?secret=abc`)};`,
+    ), { allowArtifactScripts: false }),
     safe: () => buildProtectedArtifactWrapperDocument(artifactDocument(
       `${bridge}; document.getElementById('safe').addEventListener('click',()=>{ const url=URL.createObjectURL(new Blob(['safe export'],{type:'text/plain'})); const link=document.createElement('a'); link.download='safe.txt'; link.href=url; document.body.append(link); link.click(); URL.revokeObjectURL(url); link.remove(); });`,
       '<button id="safe" style="position:fixed;left:20px;top:20px;width:140px;height:48px">Safe export</button>',
@@ -226,6 +229,7 @@ async function main() {
       'webrtc-srcdoc-shadow-sethtmlunsafe',
       'webrtc-blob',
       'webrtc-data',
+      'community-static-script-disabled',
     ]) {
       await navigateCase(client, sessionId, `${baseUrl}/${name}`)
     }

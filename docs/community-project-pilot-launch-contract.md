@@ -101,10 +101,13 @@ The pilot accepts only `.html` or `.htm` files that:
 - contain none of the high-confidence secret patterns covered by the scanner;
 - contain none of the pilot's high-confidence personal-data patterns.
 
-Static acceptance is not a claim that arbitrary HTML is safe. Published HTML
-continues to run inside PathForge's opaque-origin iframe, restrictive CSP,
-no-network policy, and bounded storage bridge. The community-project viewer
-does not install or honor the parent download bridge.
+Static acceptance is not a claim that arbitrary HTML or JavaScript is safe.
+Published community HTML is rendered only inside an opaque-origin inner iframe
+without `allow-scripts`, with a restrictive static CSP and no pointer or keyboard
+interaction. It is a visual preview, not a live executable project. The public
+page preserves the contributor's scoped build evidence, while a separately
+trusted, repository-reviewed promotion path is required before any artifact can
+become interactive.
 
 ## Public truth contract
 
@@ -162,6 +165,8 @@ This pilot does not accept or perform:
 - a promise that revocable external links will remain available;
 - broad public signup promotion.
 - submissions made on behalf of another builder, organization, or client.
+- executing contributor-supplied JavaScript, controls, downloads, or networked
+  behavior in the community-publication viewer.
 
 ## Threat model
 
@@ -169,7 +174,7 @@ This pilot does not accept or perform:
 |---|---|---|
 | Cross-tenant read or delete | Owner/admin RLS and generated owner paths | Deny and log |
 | HTML network exfiltration | Static dependency scan plus no-network CSP | Reject at intake; deny at runtime |
-| Script escape | Opaque-origin nested sandbox without `allow-same-origin` | Artifact cannot reach the application origin |
+| Untrusted script execution | Script-disabled opaque-origin inner sandbox, static CSP, and inert visual preview | Contributor code never runs for a community visitor |
 | Secret or PII publication | Deterministic scan, contributor attestation, human review | Reject or request repair |
 | Provider-link phishing/SSRF | Known public-share host rules; no server fetch | Keep private or reject |
 | MIME/polyglot confusion | UTF-8 HTML-only parser contract; store/serve as text | Reject; never execute direct object |

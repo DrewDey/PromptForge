@@ -21,7 +21,7 @@ const VIEWPORTS = [
   { name: 'mobile-390', width: 390, height: 844, mobile: true },
 ]
 const COMMUNITY_ARTIFACT_FIXTURE_ID = '10000000-0000-4000-8000-000000000001'
-const COMMUNITY_ARTIFACT_FIXTURE_HTML = '<!doctype html><html><body><main><h1>Community artifact viewer fixture</h1></main></body></html>'
+const COMMUNITY_ARTIFACT_FIXTURE_HTML = '<!doctype html><html><head><style>html,body{margin:0;background:#fff;color:#111;font:700 24px system-ui}main{padding:24px}</style></head><body><main><h1>Community artifact viewer fixture</h1></main><script>document.body.replaceChildren()</script></body></html>'
 
 function parseArgs(argv) {
   const options = { baseUrl: 'http://127.0.0.1:3012', screenshotDir: '' }
@@ -313,12 +313,16 @@ async function main() {
               mode: frame?.dataset.artifactFitMode || '',
               error: frame?.querySelector('[data-artifact-load-error]')?.getAttribute('data-artifact-load-error') || '',
               fixtureLoaded: Boolean(iframe?.srcdoc?.includes('Community artifact viewer fixture')),
+              staticExecution: Boolean(
+                iframe?.srcdoc?.includes('data-pathforge-execution-mode="static-untrusted"') &&
+                iframe?.srcdoc?.includes('sandbox=""'),
+              ),
             };
           })()`)
           if (artifactState?.settled) break
           await new Promise((resolve) => setTimeout(resolve, 75))
         }
-        if (!artifactState?.settled || artifactState.error || !artifactState.fixtureLoaded) {
+        if (!artifactState?.settled || artifactState.error || !artifactState.fixtureLoaded || !artifactState.staticExecution) {
           throw new Error(`${viewport.name} community artifact did not load inside the protected viewer: ${JSON.stringify(artifactState)}.`)
         }
         const artifactContrast = await artifactRenderedContrast(client, sessionId)
@@ -334,6 +338,8 @@ async function main() {
             heading: document.querySelector('h1')?.textContent?.trim() || '',
             hasDownload: [...document.querySelectorAll('a')].some((link) => link.textContent?.includes('Download HTML')),
             isNotFound: document.body.innerText?.includes('This page could not be found') || false,
+            staticPreviewCopy: document.body.innerText?.includes('script-disabled, visual-only previews') || false,
+            executionMode: document.querySelector('[data-artifact-fit-mode]')?.closest('[data-artifact-execution-mode]')?.getAttribute('data-artifact-execution-mode') || '',
             viewportWidth,
             scrollWidth,
             overflowingElements: [...document.querySelectorAll('*')]
@@ -348,6 +354,9 @@ async function main() {
         assertPageFits(viewer, viewport)
         if (viewer.heading !== 'Protected artifact viewer' || viewer.isNotFound) throw new Error(`${viewport.name} community artifact viewer routed to a not-found state.`)
         if (viewer.hasDownload) throw new Error(`${viewport.name} community artifact viewer exposed a download action despite view-only permission.`)
+        if (!viewer.staticPreviewCopy || viewer.executionMode !== 'static-untrusted') {
+          throw new Error(`${viewport.name} community artifact viewer did not expose its script-disabled preview boundary: ${JSON.stringify(viewer)}.`)
+        }
         if (options.screenshotDir) await capture(client, sessionId, path.join(options.screenshotDir, `community-artifact-viewer-${viewport.name}.png`))
 
         console.log(`${viewport.name}: anonymous build, fresh-account signup handoff, and community safe viewer passed at ${signup.viewportWidth}px with ${artifactContrast.ratio.toFixed(2)}:1 default-canvas contrast.`)

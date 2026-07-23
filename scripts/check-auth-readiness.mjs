@@ -17,11 +17,14 @@ function forbidText(path, source, forbidden, message) {
 }
 
 const packageJson = JSON.parse(read('package.json'))
-if (packageJson.dependencies?.next !== '16.2.10') {
-  throw new Error('package.json: Next.js must stay on the reviewed patched 16.2.10 release')
+if (packageJson.dependencies?.next !== '16.2.11') {
+  throw new Error('package.json: Next.js must stay on the reviewed patched 16.2.11 release')
 }
-if (packageJson.devDependencies?.['eslint-config-next'] !== '16.2.10') {
+if (packageJson.devDependencies?.['eslint-config-next'] !== '16.2.11') {
   throw new Error('package.json: eslint-config-next must match the Next.js release')
+}
+if (packageJson.overrides?.sharp !== '0.35.3') {
+  throw new Error('package.json: Next.js image processing must stay on the reviewed patched sharp 0.35.3 release')
 }
 if (packageJson.overrides?.ws !== '8.21.0') {
   throw new Error('package.json: ws must stay on the reviewed patched 8.21.0 release')

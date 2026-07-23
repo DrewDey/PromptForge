@@ -25,9 +25,11 @@ export default function AdminPromptRow({
     ? cleanGeneratedProjectTitle(prompt.title)
     : prompt.title
   const isSourceRunTagged = prompt.tags?.some(tag => tag.trim().toLowerCase() === 'source-run') ?? false
+  const isCommunityProject = prompt.tags?.some(tag => tag.trim().toLowerCase() === 'community-project') ?? false
   const hasMissingSourceRunLink = isSourceRunTagged && !sourceRunHref
   const requiresSourceRunReview = Boolean(sourceRunHref) || isSourceRunTagged
-  const detailHref = sourceRunHref ?? `/prompt/${prompt.id}`
+  const requiresSpecialReview = requiresSourceRunReview || isCommunityProject
+  const detailHref = isCommunityProject ? '/admin/community-projects' : sourceRunHref ?? `/prompt/${prompt.id}`
   const author = prompt.author?.display_name ?? 'Anonymous'
 
   return (
@@ -47,6 +49,11 @@ export default function AdminPromptRow({
             {requiresSourceRunReview && (
               <span className={`border px-2 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.12em] ${hasMissingSourceRunLink ? 'border-red-200 bg-red-50 text-red-800' : 'border-brand-blue/25 bg-blue-50 text-brand-blue-dark'}`}>
                 {hasMissingSourceRunLink ? 'Source-run link missing' : 'Source run attached'}
+              </span>
+            )}
+            {isCommunityProject && (
+              <span className="border border-green-200 bg-green-50 px-2 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-green-800">
+                Community workflow only
               </span>
             )}
           </div>
@@ -99,14 +106,14 @@ export default function AdminPromptRow({
               href={detailHref}
               className="inline-flex min-h-10 items-center justify-center gap-1.5 border border-surface-300 bg-white px-3 py-2 text-xs font-bold text-surface-700 transition-colors hover:border-brand-orange-ink hover:text-brand-orange-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange-ink"
             >
-              {sourceRunHref ? 'Review source run' : 'View'}
+              {isCommunityProject ? 'Open community queue' : sourceRunHref ? 'Review source run' : 'View'}
               <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
             </Link>
           )}
 
           {prompt.status === 'pending' ? (
             <>
-              {!requiresSourceRunReview && (
+              {!requiresSpecialReview && (
                 <button
                   type="button"
                   onClick={() => approvePrompt(prompt.id)}
@@ -116,16 +123,18 @@ export default function AdminPromptRow({
                   Approve
                 </button>
               )}
-              <button
-                type="button"
-                onClick={() => rejectPrompt(prompt.id)}
-                className="inline-flex min-h-10 items-center justify-center gap-1.5 border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-800 transition-colors hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
-              >
-                <XCircle className="h-3.5 w-3.5" aria-hidden="true" />
-                Reject
-              </button>
+              {!isCommunityProject && (
+                <button
+                  type="button"
+                  onClick={() => rejectPrompt(prompt.id)}
+                  className="inline-flex min-h-10 items-center justify-center gap-1.5 border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-800 transition-colors hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+                >
+                  <XCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                  Reject
+                </button>
+              )}
             </>
-          ) : prompt.status === 'approved' ? (
+          ) : prompt.status === 'approved' && !requiresSpecialReview ? (
             <button
               type="button"
               onClick={() => rejectPrompt(prompt.id)}
@@ -134,7 +143,7 @@ export default function AdminPromptRow({
               <XCircle className="h-3.5 w-3.5" aria-hidden="true" />
               Unpublish
             </button>
-          ) : prompt.status === 'rejected' && !requiresSourceRunReview ? (
+          ) : prompt.status === 'rejected' && !requiresSpecialReview ? (
             <button
               type="button"
               onClick={() => approvePrompt(prompt.id)}

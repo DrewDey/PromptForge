@@ -9,6 +9,14 @@ const sourceRunRuntimeFiles = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  experimental: {
+    // The invitation-only project pilot accepts one HTML artifact up to 2 MB
+    // plus a bounded evidence manifest. The server action rejects anything
+    // outside that contract before private storage.
+    serverActions: {
+      bodySizeLimit: '3mb',
+    },
+  },
   // The local review links shared during design work use both hostnames. Keep
   // Next's development client available on 127.0.0.1 as well as localhost so
   // client-mounted artifact previews do not remain stuck in their loading UI.
@@ -18,14 +26,24 @@ const nextConfig: NextConfig = {
   // model/fork readers, and the signed-in workspace may verify source-run
   // packages after deployment. Keep that evidence scoped to those functions
   // instead of tracing it into every route in the application.
-  outputFileTracingIncludes: Object.fromEntries(
-    sourceRunRuntimeRoutes.map((route) => [route, sourceRunRuntimeFiles]),
-  ),
+  outputFileTracingIncludes: Object.fromEntries([
+    ...sourceRunRuntimeRoutes.map((route) => [route, sourceRunRuntimeFiles] as const),
+    ['/api/prepared-artifacts/*', ['./public/artifacts/**/*']] as const,
+  ]),
   async rewrites() {
-    return recoveredSourceRunData.projects.map((project) => ({
-      source: project.href,
-      destination: `/recovered-source-runs/${project.href.slice(1)}`,
-    }));
+    return {
+      beforeFiles: [
+        {
+          source: '/artifacts/:path*',
+          destination: '/api/prepared-artifacts/:path*',
+        },
+      ],
+      afterFiles: recoveredSourceRunData.projects.map((project) => ({
+        source: project.href,
+        destination: `/recovered-source-runs/${project.href.slice(1)}`,
+      })),
+      fallback: [],
+    };
   },
   async headers() {
     return [

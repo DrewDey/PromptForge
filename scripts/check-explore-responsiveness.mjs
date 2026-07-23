@@ -5,6 +5,8 @@ import { readFileSync } from 'node:fs'
 import {
   isExpectedLocalActivationFailure,
   isExpectedLocalActivationResponseFailure,
+  isExpectedLocalFaviconFailure,
+  isExpectedLocalFaviconResponseFailure,
   isExpectedLocalVercelScriptFailure,
   isExpectedLocalVercelScriptResponseFailure,
 } from './browser-guard-errors.mjs'
@@ -17,6 +19,8 @@ const anchorGuardSource = readFileSync('scripts/check-mobile-anchor-stability-br
 const localFailureGuardSources = [
   readFileSync('scripts/check-discovery-navigation-browser.mjs', 'utf8'),
   readFileSync('scripts/check-project-fork-page-browser.mjs', 'utf8'),
+  readFileSync('scripts/check-path-card-model-selector-browser.mjs', 'utf8'),
+  anchorGuardSource,
   browserGuardSource,
 ]
 
@@ -47,6 +51,24 @@ assert.equal(isExpectedLocalActivationFailure('http://127.0.0.1:3012', {
   ...localActivationFailure,
   text: 'Failed to load resource: the server responded with a status of 500',
 }), false, 'other local statuses must remain fatal')
+
+const localFaviconFailure = {
+  url: 'http://127.0.0.1:3012/favicon.ico',
+  text: 'Failed to load resource: the server responded with a status of 404',
+}
+assert.equal(isExpectedLocalFaviconFailure('http://127.0.0.1:3012', localFaviconFailure), true)
+assert.equal(isExpectedLocalFaviconResponseFailure('http://127.0.0.1:3012', {
+  url: localFaviconFailure.url,
+  status: 404,
+}), true)
+assert.equal(isExpectedLocalFaviconFailure('https://pathforge.example', {
+  ...localFaviconFailure,
+  url: 'https://pathforge.example/favicon.ico',
+}), false, 'a hosted favicon failure must remain fatal')
+assert.equal(isExpectedLocalFaviconFailure('http://127.0.0.1:3012', {
+  ...localFaviconFailure,
+  url: 'http://127.0.0.1:3012/missing.png',
+}), false, 'other local assets must remain fatal')
 
 const localActivationResponse = {
   url: 'http://127.0.0.1:3012/api/activation-events',
@@ -101,6 +123,8 @@ for (const [label, baseUrl, entry] of [
 }
 for (const guardSource of localFailureGuardSources) {
   assert.match(guardSource, /isExpectedLocalActivationFailure\((?:baseUrl|options\.baseUrl), entry\)/)
+  assert.match(guardSource, /isExpectedLocalFaviconFailure\((?:baseUrl|options\.baseUrl), entry\)/)
+  assert.match(guardSource, /isExpectedLocalVercelScriptFailure\((?:baseUrl|options\.baseUrl), entry\)/)
   assert.doesNotMatch(
     guardSource,
     /entry\.url\?\.includes\('\/api\/activation-events'\)/,
@@ -108,6 +132,8 @@ for (const guardSource of localFailureGuardSources) {
   )
 }
 assert.match(browserGuardSource, /isExpectedLocalActivationResponseFailure\(baseUrl, response\)/)
+assert.match(browserGuardSource, /isExpectedLocalFaviconResponseFailure\(baseUrl, response\)/)
+assert.match(browserGuardSource, /isExpectedLocalVercelScriptResponseFailure\(baseUrl, response\)/)
 assert.doesNotMatch(browserGuardSource, /baseUrl\.startsWith\(/)
 assert.doesNotMatch(browserGuardSource, /\.includes\('\/(?:_vercel|api\/activation-events)/)
 

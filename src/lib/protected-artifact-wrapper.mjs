@@ -97,8 +97,8 @@ export function buildProtectedArtifactWrapperDocument(artifactDocument) {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     html, body, iframe { width: 100%; height: 100%; margin: 0; border: 0; }
-    html, body { overflow: hidden; background: #111827; }
-    iframe { display: block; background: #111827; }
+    html, body { overflow: hidden; background: #fff; color-scheme: light; }
+    iframe { display: block; background: #fff; }
   </style>
 </head>
 <body>

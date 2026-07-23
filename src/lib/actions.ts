@@ -6,7 +6,6 @@ import {
   approveSuggestionById,
   createBuildRequest,
   createBuildRequestResponse,
-  createProject,
   createSourceRunSubmission,
   createSuggestion,
   createSuggestionResponse,
@@ -94,39 +93,6 @@ export async function bookmarkProject(promptId: string) {
     return result
   } catch {
     return { bookmarked: false, newCount: 0, error: 'Could not save bookmark.' }
-  }
-}
-
-export async function submitProject(data: {
-  title: string
-  description: string
-  content: string
-  result_content: string
-  category_slug: string
-  difficulty: string
-  model_used: string
-  model_recommendation: string
-  tools_used: string[]
-  tags: string[]
-  steps: { title: string; content: string; result_content: string; description: string }[]
-  fork_source?: ProjectForkSource | null
-}) {
-  try {
-    const result = await createProject({
-      ...data,
-      result_content: data.result_content || null,
-      model_used: data.model_used || null,
-      model_recommendation: data.model_recommendation || null,
-      steps: data.steps.map(s => ({
-        ...s,
-        result_content: s.result_content || null,
-        description: s.description || null,
-      })),
-    })
-    revalidatePath('/admin')
-    return { success: true, id: result.id }
-  } catch (err) {
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to submit project' }
   }
 }
 

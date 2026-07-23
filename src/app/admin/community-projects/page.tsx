@@ -1,0 +1,83 @@
+import Link from 'next/link'
+import { ArrowLeft, ArrowRight, Clock3, FileCheck2 } from 'lucide-react'
+import { communityProjectStatusLabel } from '@/lib/community-project-contract'
+import {
+  getCommunityProjectPilotMembersForAdmin,
+  getCommunityProjectOperationsForAdmin,
+  getCommunityProjectPilotControlsForAdmin,
+  getCommunityProjectReportsForAdmin,
+  getCommunityProjectSubmissionsForAdmin,
+} from '@/lib/data/community-projects'
+import PilotMembershipForm from './PilotMembershipForm'
+import PublicationControlForm from './PublicationControlForm'
+
+export const dynamic = 'force-dynamic'
+
+function reconciliationIsStale(lastSuccess: string | null | undefined) {
+  const timestamp = lastSuccess ? Date.parse(lastSuccess) : Number.NaN
+  return !Number.isFinite(timestamp) || Date.now() - timestamp > 26 * 60 * 60 * 1000
+}
+
+export default async function AdminCommunityProjectsPage() {
+  const [submissions, reports, members, operations, controls] = await Promise.all([
+    getCommunityProjectSubmissionsForAdmin(),
+    getCommunityProjectReportsForAdmin(),
+    getCommunityProjectPilotMembersForAdmin(),
+    getCommunityProjectOperationsForAdmin(),
+    getCommunityProjectPilotControlsForAdmin(),
+  ])
+  const reconciliation = operations.find((operation) => operation.operation === 'reconciliation')
+  const reportReadiness = operations.find((operation) => operation.operation === 'report_intake')
+  const openReports = reports.filter((report) => ['open', 'reviewing'].includes(report.status))
+  const activeInternalMembers = members.filter((member) => member.is_current && member.member_kind === 'internal_acceptance')
+  const activeInvitedMembers = members.filter((member) => member.is_current && member.member_kind === 'invited_builder')
+  const reconciliationStale = reconciliationIsStale(reconciliation?.last_success_at)
+  const operationsNeedAttention = reconciliation?.last_status === 'failed' || reconciliationStale
+  return (
+    <div className="mx-auto max-w-6xl">
+      <Link href="/admin" className="inline-flex items-center gap-2 text-sm font-bold text-surface-500 hover:text-brand-orange-ink"><ArrowLeft className="h-4 w-4" aria-hidden="true" /> Admin workspace</Link>
+      <header className="mt-5 grid gap-5 border-b border-surface-200 pb-7 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+        <div><div className="font-mono text-[10px] font-black uppercase tracking-[0.16em] text-brand-orange-ink">Invitation-only pilot</div><h1 className="mt-2 text-4xl font-black tracking-[-0.035em] text-surface-900">Community project review</h1><p className="mt-2 text-sm leading-6 text-surface-600">Review the exact artifact, evidence scope, consent, source visibility, and scanner record before one atomic publish action.</p></div>
+        <div className="flex gap-3"><span className="border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900">{submissions.filter((item) => item.status === 'queued').length} queued</span><span className="border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-900">{openReports.length} open reports</span></div>
+      </header>
+      <section className={`mt-7 border p-4 ${operationsNeedAttention ? 'border-red-300 bg-red-50 text-red-950' : 'border-green-200 bg-green-50 text-green-950'}`} role={operationsNeedAttention ? 'alert' : 'status'}>
+        <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-black">Reconciliation health</h2><p className="mt-1 text-xs leading-5">{reconciliation?.last_success_at ? `Last successful run ${new Date(reconciliation.last_success_at).toLocaleString()}.` : 'No successful reconciliation run has been recorded yet.'} {reconciliation?.last_error ? `Latest error: ${reconciliation.last_error}` : ''}</p></div><span className="font-mono text-[10px] font-black uppercase tracking-[0.14em]">{operationsNeedAttention ? 'Operator action required' : 'Current'}</span></div>
+      </section>
+      <section className={`mt-4 border p-4 ${controls?.allow_publication ? 'border-green-200 bg-green-50 text-green-950' : 'border-amber-300 bg-amber-50 text-amber-950'}`} aria-labelledby="publication-control-title">
+        <h2 id="publication-control-title" className="font-black">Publication readiness</h2>
+        <p className="mt-1 text-xs leading-5">Publication is <strong>{controls?.allow_publication ? 'enabled' : 'paused'}</strong>. Enabling requires a reconciliation success within 26 hours plus a fresh server-side report-intake HMAC proof. Report proof: {reportReadiness?.last_success_at ? new Date(reportReadiness.last_success_at).toLocaleString() : 'not yet recorded'}.</p>
+        <PublicationControlForm enabled={controls?.allow_publication === true} />
+      </section>
+      <section className="mt-7" aria-labelledby="pilot-access-title">
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+          <div><h2 id="pilot-access-title" className="text-lg font-black text-surface-900">Pilot access</h2><p className="mt-1 text-xs text-surface-500">One expiring owner-operated acceptance account can test the real non-admin flow while the external invited cohort remains <strong>{controls?.allow_invited_submissions ? 'enabled' : 'locked'}</strong>.</p></div>
+          <span className="text-xs font-bold text-surface-500">{activeInternalMembers.length}/1 acceptance · {activeInvitedMembers.length}/30 invited · {30 - activeInvitedMembers.length} invitations remaining · {submissions.length}/50 submissions used</span>
+        </div>
+        <PilotMembershipForm externalInvitationsEnabled={controls?.allow_invited_submissions === true} />
+        {members.length > 0 && <div className="mt-3 flex flex-wrap gap-2">{members.map((member) => <span key={member.user_id} className={`border px-2.5 py-1.5 text-xs ${member.is_current ? 'border-green-200 bg-green-50 text-green-900' : 'border-surface-200 bg-surface-50 text-surface-500'}`}>@{member.user?.username || member.user_id} · {member.member_kind === 'internal_acceptance' ? 'acceptance' : 'invited'} · {member.is_current ? member.expires_at ? `active until ${new Date(member.expires_at).toLocaleString()}` : 'active' : member.active ? 'expired' : 'revoked'}</span>)}</div>}
+      </section>
+      {openReports.length > 0 && (
+        <section className="mt-7" aria-labelledby="open-report-title">
+          <div className="mb-3"><h2 id="open-report-title" className="text-lg font-black text-red-950">Open safety reports</h2><p className="mt-1 text-xs text-surface-500">Every report links to its project record, contact details, evidence, and moderation controls.</p></div>
+          <div className="grid gap-2">
+            {openReports.map((report) => (
+              <Link key={report.id} href={`/admin/community-projects/${report.submission_id}#reports`} className="grid gap-2 border border-red-200 bg-red-50 p-3 text-sm hover:border-red-500 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                <span><strong className="text-red-950">{report.reason} · {report.status}</strong><span className="mt-1 block line-clamp-2 text-xs leading-5 text-red-900">{report.details}</span></span>
+                <span className="inline-flex items-center gap-2 text-xs font-black text-red-900">Review report <ArrowRight className="h-4 w-4" aria-hidden="true" /></span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+      <div className="mt-7 grid gap-3">
+        {submissions.length === 0 ? <div className="border border-surface-200 bg-white p-8 text-center text-sm text-surface-500">No pilot submissions yet.</div> : submissions.map((submission) => (
+          <Link key={submission.id} href={`/admin/community-projects/${submission.id}`} className="grid gap-4 border border-surface-200 bg-white p-4 hover:border-brand-orange sm:grid-cols-[42px_minmax(0,1fr)_auto] sm:items-center">
+            <span className="flex h-10 w-10 items-center justify-center bg-surface-900 text-white">{submission.status === 'published' ? <FileCheck2 className="h-4 w-4" aria-hidden="true" /> : <Clock3 className="h-4 w-4" aria-hidden="true" />}</span>
+            <span className="min-w-0"><strong className="block truncate text-sm text-surface-900">{submission.title}</strong><span className="mt-1 block text-xs text-surface-500">{submission.author?.display_name || submission.author?.username || 'Contributor'} · {submission.evidence_scope.replaceAll('_', ' ')} · version {submission.submission_version}</span></span>
+            <span className="flex items-center gap-3 text-xs font-bold text-surface-600"><span>{communityProjectStatusLabel(submission.status)}</span><ArrowRight className="h-4 w-4" aria-hidden="true" /></span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}

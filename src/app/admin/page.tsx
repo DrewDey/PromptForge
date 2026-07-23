@@ -108,6 +108,12 @@ export default async function AdminDashboard({
         </div>
       </section>
 
+      <div className="mt-5 flex justify-end">
+        <Link href="/admin/community-projects" className="inline-flex min-h-11 items-center gap-2 border border-brand-orange/40 bg-brand-orange/10 px-4 py-2 text-sm font-black text-brand-orange-ink hover:bg-brand-orange/15">
+          <FileCheck2 className="h-4 w-4" aria-hidden="true" /> Community project pilot
+        </Link>
+      </div>
+
       <nav aria-label="Admin sections" className="mt-6 min-w-0 border border-surface-200 bg-white p-1.5">
         <div className="grid min-w-0 grid-cols-2 gap-1 sm:flex sm:flex-wrap">
           <AdminTabLink href="/admin" label="Overview" active={tab === 'overview'} />

@@ -88,8 +88,8 @@ export function validateActivationEventPayload(value: unknown): ActivationEventP
   if (payload.eventName === 'builder_action_started' && !['fork', 'share'].includes(payload.action ?? '')) {
     throw new Error('Builder actions require a fork or share action.')
   }
-  if (payload.eventName === 'source_run_submitted' && !['fork', 'share'].includes(payload.action ?? '')) {
-    throw new Error('Source-run submissions require a fork or share action.')
+  if (['source_run_submitted', 'community_project_submitted'].includes(payload.eventName) && !['fork', 'share'].includes(payload.action ?? '')) {
+    throw new Error('Project submissions require a fork or share action.')
   }
 
   return payload

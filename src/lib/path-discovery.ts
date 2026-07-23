@@ -242,6 +242,7 @@ function cardModelVariants({
   fallbackCapturedAt,
   fallbackVerified,
   fallbackPathForgeRecordChecked,
+  fallbackProvider,
 }: {
   prompt: PromptWithRelations
   modelLabel: string
@@ -252,6 +253,7 @@ function cardModelVariants({
   fallbackCapturedAt: string
   fallbackVerified: boolean
   fallbackPathForgeRecordChecked: boolean
+  fallbackProvider?: string
 }): BuildPathModelVariant[] {
   const variantSet = getProjectModelVariantSet(prompt.id)
   const candidates = (variantSet?.variants ?? [])
@@ -309,7 +311,7 @@ function cardModelVariants({
   const capturedAt = Number.isFinite(Date.parse(fallbackCapturedAt))
     ? fallbackCapturedAt
     : prompt.created_at
-  const fallbackIdentity = getPublicModelIdentity({ model: modelLabel })
+  const fallbackIdentity = getPublicModelIdentity({ provider: fallbackProvider, model: modelLabel })
   const sourceEvidence = resolvePublicSourceEvidence({
     sourceRunId: fallbackSourceRunId,
     pathforgeRecordChecked: fallbackPathForgeRecordChecked,
@@ -318,7 +320,7 @@ function cardModelVariants({
     sourceRunId: fallbackSourceRunId,
     isCanonicalDefault: true,
     publicModelLabel: modelLabel,
-    providerLabel: fallbackIdentity.provider || 'Other',
+    providerLabel: fallbackProvider || fallbackIdentity.provider || 'Other',
     capturedAt,
     capturedAtLabel: CAPTURED_DATE_FORMATTER.format(new Date(capturedAt)),
     artifactPath,
@@ -336,6 +338,13 @@ function cardModelVariants({
 }
 
 function discoveryModelLabel(prompt: PromptWithRelations) {
+  if (prompt.community_project) {
+    return getPublicModelIdentityLabel({
+      provider: prompt.community_project.provider,
+      model: prompt.community_project.model,
+      modelSettings: prompt.community_project.model_settings,
+    })
+  }
   const preparedIdentity = getPreparedProjectModelIdentity(prompt.id)
   if (preparedIdentity) return preparedIdentity.publicLabel
 
@@ -420,6 +429,7 @@ export function buildPathDiscoveryCatalog(
 
   const catalog = prompts.map((prompt) => {
     const prepared = getPreparedShowcaseProjectById(prompt.id)
+    const communityProject = prompt.community_project ?? null
     const basePromptCount = prepared?.steps.length ?? prompt.prompt_step_count ?? prompt.steps?.length ?? 0
     const modelLabel = discoveryModelLabel(prompt)
     const variantSummary = getProjectModelProfileSummary(prompt.id)
@@ -432,7 +442,8 @@ export function buildPathDiscoveryCatalog(
       variantSummary.map((variant) => variant.publicModelLabel),
     )
     const preview = previewForPrompt(prompt)
-    const artifactPath = prepared?.artifactPath ?? null
+    const artifactPath = prepared?.artifactPath
+      ?? (communityProject ? `/api/community-artifacts/${communityProject.prompt_id}` : null)
     const href = getProjectHref(prompt)
     const modelVariants = cardModelVariants({
       prompt,
@@ -442,8 +453,9 @@ export function buildPathDiscoveryCatalog(
       fallbackHref: href,
       fallbackSourceRunId: prepared?.sourceRunId ?? `project-${prompt.id}`,
       fallbackCapturedAt: prepared?.createdAt ?? prompt.created_at,
-      fallbackVerified: verifiedModelCount > 0,
-      fallbackPathForgeRecordChecked: Boolean(prepared),
+      fallbackVerified: Boolean(communityProject) || verifiedModelCount > 0,
+      fallbackPathForgeRecordChecked: Boolean(prepared || communityProject),
+      fallbackProvider: communityProject?.provider,
     })
     const { modelRunCount, verifiedModelRunCount } = deriveDiscoveryRunCounts(
       modelVariants,

@@ -8,6 +8,7 @@ import {
 } from '../mock-data'
 import { getPreparedShowcaseProjectById } from '../prepared-showcase-projects'
 import type { PreparedShowcaseStep } from '../prepared-showcase-projects'
+import type { PublicCommunityProject } from '../community-project-contract'
 import { getProjectRouteOverride } from '../project-links'
 import type {
   Profile,
@@ -156,17 +157,29 @@ export async function getPublicProjectsByAuthor(
       const publicPage = rawPage.filter(isPublicLibraryProject)
 
       if (publicPage.length > 0) {
-        const { data: stepCountRows } = await supabase
-          .rpc('read_public_prompt_step_counts', {
-            checked_prompt_ids: publicPage.map((project) => project.id),
-          })
-          .retry(false)
-          .abortSignal(signal)
-          .throwOnError()
+        const promptIds = publicPage.map((project) => project.id)
+        const [{ data: stepCountRows }, { data: communityRows }] = await Promise.all([
+          supabase
+            .rpc('read_public_prompt_step_counts', { checked_prompt_ids: promptIds })
+            .retry(false)
+            .abortSignal(signal)
+            .throwOnError(),
+          supabase
+            .rpc('get_public_community_projects', { target_prompts: promptIds })
+            .retry(false)
+            .abortSignal(signal)
+            .throwOnError(),
+        ])
+        const communityByPrompt = new Map(
+          ((communityRows ?? []) as PublicCommunityProject[]).map((capsule) => [capsule.prompt_id, capsule]),
+        )
         databaseProjects.push(...attachExactPublicPromptStepCounts(
           publicPage as PromptWithRelations[],
           stepCountRows,
-        ).map(normalizeProjectPresentation))
+        ).map((project) => normalizeProjectPresentation({
+          ...project,
+          community_project: communityByPrompt.get(project.id) ?? null,
+        })))
       }
 
       if (rawPage.length < PUBLIC_PROFILE_PROJECT_LIST_PAGE_SIZE) break

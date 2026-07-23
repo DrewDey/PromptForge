@@ -207,6 +207,15 @@ body {
   opacity: 1;
 }
 
+/* Once the run menu is open, its row owns the issue explanation. Hiding the
+   duplicate summary tooltip prevents two identical mobile disclosures from
+   stacking over the selected row. */
+[data-model-variant-selector] details[open] > summary .model-known-issue-tooltip {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
 @media (max-width: 720px), (hover: none) and (pointer: coarse) {
   .model-known-issue-inline-mobile {
     display: grid;

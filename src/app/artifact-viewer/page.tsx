@@ -16,9 +16,15 @@ function singleValue(value?: string | string[]) {
 }
 
 function safeArtifactPath(value?: string) {
+  const isPreparedArtifact = Boolean(
+    value && /^\/artifacts\/[A-Za-z0-9][A-Za-z0-9._/-]*\.html$/.test(value),
+  )
+  const isCommunityArtifact = Boolean(
+    value && /^\/api\/community-artifacts\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value),
+  )
   if (
     !value ||
-    !/^\/artifacts\/[A-Za-z0-9][A-Za-z0-9._/-]*\.html$/.test(value) ||
+    (!isPreparedArtifact && !isCommunityArtifact) ||
     value.includes('\\') ||
     value.split('/').some((segment) => segment === '.' || segment === '..')
   ) {
@@ -40,6 +46,7 @@ export default async function ArtifactViewerPage({
   const params = await searchParams
   const artifactPath = safeArtifactPath(singleValue(params.path))
   if (!artifactPath) notFound()
+  const isCommunityArtifact = artifactPath.startsWith('/api/community-artifacts/')
 
   const artifactTitle = safeLabel(singleValue(params.title), 'PathForge artifact', 140)
   const providerName = safeLabel(singleValue(params.provider), 'AI', 80)
@@ -73,13 +80,15 @@ export default async function ArtifactViewerPage({
               Runs in an opaque-origin sandbox with direct API and external asset access blocked.
             </p>
           </div>
-          <a
-            href={artifactPath}
-            download
-            className="border border-surface-600 px-3 py-2 text-xs font-bold text-surface-200 transition hover:border-brand-orange hover:text-brand-orange"
-          >
-            Download HTML
-          </a>
+          {!isCommunityArtifact && (
+            <a
+              href={artifactPath}
+              download
+              className="border border-surface-600 px-3 py-2 text-xs font-bold text-surface-200 transition hover:border-brand-orange hover:text-brand-orange"
+            >
+              Download HTML
+            </a>
+          )}
         </div>
       </header>
 
@@ -88,6 +97,7 @@ export default async function ArtifactViewerPage({
           selectedPackage={selectedPackage}
           providerName={providerName}
           showOpenAction={false}
+          allowArtifactDownloads={!isCommunityArtifact}
           frameHeight="calc(100svh - 176px)"
           contextLabel="Isolated full-page preview"
           viewerFitControls

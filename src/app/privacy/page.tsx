@@ -1,0 +1,14 @@
+import PolicyPage from '@/components/PolicyPage'
+
+export default function PrivacyPage() {
+  return (
+    <PolicyPage eyebrow="Pilot privacy notice · effective July 22, 2026" title="How project-submission data is handled" intro="PathForge separates private review material from the smaller public project record and removes public access before physical cleanup begins.">
+      <section><h2>Data collected</h2><ul><li>Account identity and profile attribution.</li><li>Project metadata, build checkpoints, model claims, and consent timestamps.</li><li>The uploaded HTML artifact, its size and cryptographic hash, and automated scanner results.</li><li>An optional provider share link and your visibility choice.</li><li>Review decisions, lifecycle events, and structured project reports.</li><li>For public reports, a one-way keyed hash of the request address used only to rate-limit abuse; PathForge does not store the raw address in the report record.</li></ul></section>
+      <section><h2>Private review data</h2><p>Before approval, the bundle is available only to its owner and authorized PathForge administrators. Original filenames, scanner details, private source links, review notes, and reporter contact information are not placed on the public project page.</p></section>
+      <section><h2>Public data after approval</h2><p>The public page contains the project title and summary, artifact, scoped checkpoints, contributor attribution, builder-reported provider/model information, reuse choice, and—only when you opted in and an administrator checked anonymous access—the provider share link.</p></section>
+      <section><h2>Storage and security</h2><p>Artifacts enter a private storage bucket, are stored as non-executable text, and are rendered only through a no-network opaque-origin sandbox. Access rules require one published database record. These controls reduce risk but cannot guarantee that all submitted content is harmless or error-free.</p></section>
+      <section><h2>Withdrawal and retention</h2><p>Withdrawal disables the page and artifact immediately. PathForge targets deletion of artifact bytes, original filename, hash, scanner output, and private source link in the next successful daily cleanup, normally within 24 hours. Resolved or dismissed report contact and details are deleted 90 days after resolution. Deidentified withdrawal/removal and lifecycle records are deleted after 400 days once artifact cleanup is confirmed. Open investigations or a required legal hold can pause those deadlines. Queued, repair-needed, and declined submissions remain until you withdraw them or an administrator removes them, after which the same windows apply.</p></section>
+      <section><h2>Your choices</h2><p>You can keep a source link review-only, choose view-only reuse, withdraw an unpublished bundle, unpublish a live project, or file a privacy report from the project page.</p></section>
+    </PolicyPage>
+  )
+}

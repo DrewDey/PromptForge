@@ -12,7 +12,7 @@ The primary KPI is **evidence-qualified builder activation**. It counts external
 2. `build_path_reached`
 3. `builder_action_started` with `fork` or `share`
 
-The rate is activated sessions divided by external project sessions. `source_run_submitted` is the completion signal after activation. A member counts as returned only when `my_forge_returned` occurs in a later first-party session than their builder action.
+The rate is activated sessions divided by external project sessions. Either a historical `source_run_submitted` event or a production `community_project_submitted` bundle event is a completion after activation. A member counts as returned only when `my_forge_returned` occurs in a later first-party session than their builder action.
 
 Direct project traffic is eligible. A visitor does not have to enter through the homepage or Explore first.
 
@@ -42,6 +42,7 @@ Do not optimize a stage from a tiny sample. The dashboard withholds a bottleneck
 | `builder_action_started` | A response fork is opened or a share form receives its first focus | `fork` or `share` |
 | `account_created` | Supabase confirms a new email identity or new OAuth onboarding begins | signup surface |
 | `source_run_submitted` | Source-run intake succeeds | `fork` or `share` |
+| `community_project_submitted` | Reviewed project bundle enters the private queue | `fork` or `share` |
 | `my_forge_returned` | An authenticated My Forge dashboard renders | My Forge surface |
 
 Client delivery is deduplicated per browser tab/session. The database event UUID provides a second idempotency boundary.

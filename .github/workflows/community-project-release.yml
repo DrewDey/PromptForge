@@ -1,0 +1,38 @@
+name: Community project release boundary
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/community-project-release.yml'
+      - 'src/app/admin/community-projects/**'
+      - 'src/app/admin/AdminPromptRow.tsx'
+      - 'src/app/api/community-artifacts/**'
+      - 'src/app/api/cron/community-project-reconcile/**'
+      - 'src/app/build/**'
+      - 'src/app/artifact-viewer/**'
+      - 'src/app/my-forge/community-projects/**'
+      - 'src/app/report/project/**'
+      - 'src/components/Community*'
+      - 'src/lib/community-project*'
+      - 'src/lib/data/community-projects.ts'
+      - 'src/lib/data.ts'
+      - 'src/lib/path-discovery.ts'
+      - 'src/lib/profile-presentation.ts'
+      - 'supabase/migrations/20260722234519_community_project_pilot.sql'
+      - 'scripts/check-community-project*'
+      - 'test-fixtures/community-project/**'
+
+jobs:
+  database-and-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check:community-project-pilot
+      - run: npm run check:community-project-db
+      - run: npm run typecheck

@@ -42,7 +42,7 @@ const preparedPagePath = 'src/components/PreparedSourceRunPage.tsx'
 const preparedPage = read(preparedPagePath)
 const sourceRunPath = 'src/lib/data/source-runs.ts'
 const sourceRun = read(sourceRunPath)
-const buildPath = 'src/app/prompt/new/page.tsx'
+const buildPath = 'src/app/build/LegacySourceRunRepairClient.tsx'
 const build = read(buildPath)
 const profileDataPath = 'src/lib/data.ts'
 const profileData = read(profileDataPath)
@@ -58,6 +58,8 @@ const repairLifecycleMigrationPath = 'supabase/migrations/20260712025410_source_
 const repairLifecycleMigration = read(repairLifecycleMigrationPath)
 const repairLineageMigrationPath = 'supabase/migrations/20260712030720_source_run_repair_lineage_hardening.sql'
 const repairLineageMigration = read(repairLineageMigrationPath)
+const communityPilotMigrationPath = 'supabase/migrations/20260722234519_community_project_pilot.sql'
+const communityPilotMigration = read(communityPilotMigrationPath)
 const reservedHandlesMigrationPath = 'supabase/migrations/20260712032100_reserve_legacy_builder_handles.sql'
 const reservedHandlesMigration = read(reservedHandlesMigrationPath)
 const unfinishedForksMigrationPath = 'supabase/migrations/20260712033440_my_forge_unfinished_forks.sql'
@@ -157,8 +159,11 @@ for (const authLayoutPath of ['src/app/auth/login/layout.tsx', 'src/app/auth/sig
   requireText(authLayoutPath, authLayout, "redirect('/my-forge')", 'signed-in auth routes should return to My Forge')
 }
 
-requireText(sourceRunPath, sourceRun, 'resubmission_of_id: resubmissionOfId', 'source-run inserts must persist repair lineage')
-requireText(sourceRunPath, sourceRun, 'effectiveForkSource = projectForkSourceFromSubmissionFields(prior)', 'repair inserts must derive fork identity from the prior server record')
+requireText(sourceRunPath, sourceRun, 'if (!resubmissionOfId)', 'legacy source-run action must require a repair parent')
+requireText(sourceRunPath, sourceRun, "rpc('create_legacy_source_run_repair'", 'legacy source-run repairs must use the checked database RPC')
+forbidText(sourceRunPath, sourceRun, '.insert(', 'legacy source-run code must not directly insert repair or new intake rows')
+requireText(communityPilotMigrationPath, communityPilotMigration, 'REVOKE INSERT ON TABLE public.source_run_submissions FROM authenticated', 'authenticated direct URL-only inserts must be retired')
+requireText(communityPilotMigrationPath, communityPilotMigration, 'prior.fork_source_project_id', 'the repair RPC must derive lineage from the locked prior record')
 requireText(adminSourceRunPath, adminSourceRun, 'requestSourceRunRepair', 'admin review must be able to request an actionable repair')
 requireText(adminSourceRunPath, adminSourceRun, 'user_status_note', 'repair requests need a builder-facing note')
 requireText(repairLifecycleMigrationPath, repairLifecycleMigration, "status = 'declined'", 'historical dismissals must not appear as processing failures')
@@ -167,6 +172,7 @@ requireText(repairLineageMigrationPath, repairLineageMigration, 'idx_source_run_
 requireText(repairLineageMigrationPath, repairLineageMigration, 'must preserve the exact fork lineage', 'repair submissions must not retarget fork identity')
 requireText(repairLineageMigrationPath, repairLineageMigration, "prior_submission.status NOT IN ('needs_repair', 'failed')", 'repair parents must be eligible for repair')
 requireText(buildPath, build, 'loadMyForgeRepairContext', 'Build must support owner-safe repair handoff')
+forbidText(buildPath, build, 'fork_source:', 'legacy repair must not send browser-derived lineage; the checked RPC restores the prior tuple')
 requireText(buildPath, build, "router.push(`/my-forge?submitted=", 'successful submission must return to durable account history')
 requireText(profileDataPath, profileData, 'provenance:profile_provenance(kind)', 'public profiles must read protected provenance')
 requireText(profileDataPath, profileData, "replace(/[\\\\%_]/g", 'profile routes must escape LIKE wildcard characters in handles')

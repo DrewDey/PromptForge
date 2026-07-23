@@ -21,7 +21,8 @@ const tracker = read('src/lib/activation/track.ts')
 const session = read('src/lib/activation/session.ts')
 const layout = read('src/app/layout.tsx')
 const projectPage = read('src/components/PreparedSourceRunPage.tsx')
-const buildPage = read('src/app/prompt/new/page.tsx')
+const buildPage = read('src/app/build/ProjectSubmissionClient.tsx')
+const communityMigration = read('supabase/migrations/20260722234519_community_project_pilot.sql')
 const dashboard = read('src/app/admin/analytics/page.tsx')
 const packageJson = JSON.parse(read('package.json'))
 
@@ -97,7 +98,11 @@ requireText(layout, '<ActivationPageTracker />', 'global journey instrumentation
 requireText(layout, '<Analytics />', 'Vercel Web Analytics')
 requireText(layout, '<SpeedInsights />', 'Vercel Speed Insights')
 requireText(projectPage, '<ProjectActivationTracker', 'project evidence instrumentation')
-requireText(buildPage, "eventName: 'source_run_submitted'", 'submission completion instrumentation')
+requireText(contract, "'community_project_submitted'", 'community submission event contract')
+requireText(communityMigration, "'community_project_submitted'", 'community submission database allowlist')
+requireText(communityMigration, "event.event_name IN ('source_run_submitted', 'community_project_submitted')", 'combined completion funnel')
+requireText(communityMigration, "'key', 'submission_completed'", 'truthful combined completion label')
+requireText(buildPage, "eventName: 'community_project_submitted'", 'community submission completion instrumentation')
 requireText(dashboard, 'Evidence-qualified activation', 'admin activation dashboard')
 
 if (packageJson.dependencies?.['@vercel/analytics'] !== '^2.0.1') {

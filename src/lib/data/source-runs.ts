@@ -1,12 +1,10 @@
 import type {
-  SourceRunSubmission,
   SourceRunSubmissionStatus,
   SourceRunSubmissionWithRelations,
 } from '../types'
 import type { PreparedShowcaseProject } from '../prepared-showcase-projects'
 import {
   projectForkSourceFromSubmissionFields,
-  projectForkSourceToSubmissionFields,
   type ProjectForkSource,
 } from '../project-forks'
 import {
@@ -20,6 +18,8 @@ import {
 import { composeSourceRunReviewNotes, detectSourceRunProvider } from '../source-run-review'
 import { sourceRunForkColumnsMissing } from './fork-column-compat'
 import { requireAdminAccess, SUPABASE_CONFIGURED } from './shared'
+import { createAdminClient } from '../supabase/admin'
+import { randomUUID } from 'node:crypto'
 
 function throwReadableSourceRunError(error: { code?: string; message?: string } | null) {
   if (!error) return
@@ -32,19 +32,6 @@ function throwReadableSourceRunError(error: { code?: string; message?: string } 
   }
 
   throw error
-}
-
-function titleColumnMissing(error: { code?: string; message?: string } | null) {
-  const message = error?.message?.toLowerCase() ?? ''
-  return Boolean(
-    error &&
-    (
-      error.code === '42703' ||
-      error.code === 'PGRST204'
-    ) &&
-    message.includes('title') &&
-    message.includes('source_run_submissions')
-  )
 }
 
 export async function createSourceRunSubmission(input: {
@@ -78,8 +65,8 @@ export async function createSourceRunSubmission(input: {
     throw new Error('Paste a source run link.')
   }
 
-  if (sourceUrl && !/^https?:\/\/\S+$/i.test(sourceUrl)) {
-    throw new Error('Paste a full source run URL starting with http:// or https://.')
+  if (!/^https:\/\/\S+$/i.test(sourceUrl)) {
+    throw new Error('Paste a secure source run URL starting with https://.')
   }
 
   if (!provider) {
@@ -91,50 +78,16 @@ export async function createSourceRunSubmission(input: {
   }
 
   const resubmissionOfId = input.resubmission_of_id?.trim() || null
-  let effectiveForkSource = input.fork_source ?? null
+  if (!resubmissionOfId) {
+    throw new Error(
+      'New URL-only submissions are retired. Use the invitation-only project upload; this form only repairs an existing source run.',
+    )
+  }
 
-  if (resubmissionOfId) {
-    const { data: priorSubmission, error: priorError } = await supabase
-      .from('source_run_submissions')
-      .select([
-        'id',
-        'status',
-        'fork_source_project_id',
-        'fork_source_project_title',
-        'fork_source_model_variant_id',
-        'fork_source_run_id',
-        'fork_source_step_id',
-        'fork_source_step_number',
-        'fork_source_artifact_path',
-        'fork_source_artifact_sha256',
-        'fork_parent_submission_id',
-        'prompt_family_id',
-        'fork_depth',
-        'fork_branch_index',
-      ].join(','))
-      .eq('id', resubmissionOfId)
-      .eq('author_id', user.id)
-      .maybeSingle()
-    throwReadableSourceRunError(priorError)
-    if (!priorSubmission) throw new Error('That repair source run is unavailable.')
-    const prior = priorSubmission as unknown as SourceRunSubmission
-    if (!['needs_repair', 'failed'].includes(prior.status)) {
-      throw new Error('That source run is not eligible for a repair submission.')
-    }
-
-    const { data: existingRepairs, error: repairsError } = await supabase
-      .from('source_run_submissions')
-      .select('id,status')
-      .eq('author_id', user.id)
-      .eq('resubmission_of_id', resubmissionOfId)
-    throwReadableSourceRunError(repairsError)
-    if ((existingRepairs ?? []).some((repair) => !['failed', 'declined'].includes(repair.status))) {
-      throw new Error('A repair submission is already active for this source run.')
-    }
-
-    // The prior server-owned record is authoritative. A crafted action call or
-    // stale fork URL cannot rewrite the fork tuple during repair.
-    effectiveForkSource = projectForkSourceFromSubmissionFields(prior)
+  // Do not accept lineage from this request. The database locks the owned prior
+  // record and copies its complete fork tuple into the append-only repair.
+  if (input.fork_source) {
+    throw new Error('Repair lineage is restored from the prior source run, not from the browser.')
   }
 
   const notes = composeSourceRunReviewNotes({
@@ -144,63 +97,16 @@ export async function createSourceRunSubmission(input: {
     modelSettings,
     notes: input.notes,
   })
-  const forkFields = projectForkSourceToSubmissionFields(effectiveForkSource)
-
-  const payload = {
-    title,
-    source_url: sourceUrl || null,
-    file_name: null,
-    notes,
-    ...forkFields,
-    resubmission_of_id: resubmissionOfId,
-    author_id: user.id,
-    status: 'queued',
-  }
-
-  const { data, error } = await supabase
-    .from('source_run_submissions')
-    .insert(payload)
-    .select('id')
-    .single()
-
-  if (sourceRunForkColumnsMissing(error) && (effectiveForkSource || resubmissionOfId)) {
-    throw new Error(
-      'This linked intake is unavailable because the database is missing durable lineage columns. No unlinked submission was created.',
-    )
-  }
-
-  if (titleColumnMissing(error) || sourceRunForkColumnsMissing(error)) {
-    const fallbackNotes = titleColumnMissing(error)
-      ? [`Title: ${title}`, notes].filter(Boolean).join('\n\n') || null
-      : notes
-    const fallbackPayload = titleColumnMissing(error)
-      ? {
-        source_url: sourceUrl || null,
-        file_name: null,
-        notes: fallbackNotes,
-        author_id: user.id,
-        status: 'queued',
-      }
-      : {
-        title,
-        source_url: sourceUrl || null,
-        file_name: null,
-        notes: fallbackNotes,
-        author_id: user.id,
-        status: 'queued',
-      }
-    const { data: fallbackData, error: fallbackError } = await supabase
-      .from('source_run_submissions')
-      .insert(fallbackPayload)
-      .select('id')
-      .single()
-
-    throwReadableSourceRunError(fallbackError)
-    return { id: fallbackData?.id as string }
-  }
-
+  const { data, error } = await createAdminClient().rpc('create_legacy_source_run_repair', {
+    target_submission: resubmissionOfId,
+    actor: user.id,
+    repair_title: title,
+    repair_source_url: sourceUrl,
+    repair_notes: notes || null,
+    correlation: randomUUID(),
+  })
   throwReadableSourceRunError(error)
-  return { id: data?.id as string }
+  return { id: String(data) }
 }
 
 export async function getSourceRunSubmissionForAdmin(id: string): Promise<SourceRunSubmissionWithRelations | null> {

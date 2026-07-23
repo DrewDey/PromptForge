@@ -116,12 +116,21 @@ export function getPublicProfileProjectEvidence(
 ): PublicProfileProjectEvidence {
   const verifiedRuns = getProjectModelProfileSummary(project.id)
   const preparedProject = getPreparedShowcaseProjectById(project.id)
+  const communityProject = project.community_project ?? null
   const variantSet = getProjectModelVariantSet(project.id)
   const defaultVariant = variantSet?.variants.find((variant) => (
     variant.sourceRunId === variantSet.defaultSourceRunId
   ))
   const projectedIdentity = getPreparedProjectModelIdentity(project.id)
+  const communityModelLabel = communityProject
+    ? getPublicModelIdentityLabel({
+        provider: communityProject.provider,
+        model: communityProject.model,
+        modelSettings: communityProject.model_settings,
+      })
+    : null
   const fallbackDefaultModelLabel = projectedIdentity?.publicLabel
+    ?? communityModelLabel
     ?? profileModelLabel(getPromptModelLabel(project))
   const defaultModelLabel = defaultVariant
     ? getPublicModelIdentityLabel({
@@ -131,8 +140,10 @@ export function getPublicProfileProjectEvidence(
       })
     : fallbackDefaultModelLabel
   const defaultSourceEvidence = resolvePublicSourceEvidence({
-    sourceRunId: defaultVariant?.sourceRunId ?? preparedProject?.sourceRunId,
-    pathforgeRecordChecked: Boolean(defaultVariant || preparedProject),
+    sourceRunId: defaultVariant?.sourceRunId
+      ?? preparedProject?.sourceRunId
+      ?? (communityProject ? `community-project:${communityProject.submission_id}:v${communityProject.submission_version}` : undefined),
+    pathforgeRecordChecked: Boolean(defaultVariant || preparedProject || communityProject),
   })
   const modelLabels = distinctModelLabels([
     ...(variantSet?.variants.map((variant) => getPublicModelIdentityLabel({
@@ -141,14 +152,16 @@ export function getPublicProfileProjectEvidence(
       modelSettings: variant.modelSettings,
     })) ?? []),
     ...verifiedRuns.map((run) => run.publicModelLabel),
+    ...(communityModelLabel ? [communityModelLabel] : []),
     ...(fallbackDefaultModelLabel === 'Unknown model' ? [] : [fallbackDefaultModelLabel]),
   ])
   const currentModelRunCount = verifiedRuns.filter((run) => run.isCurrent).length
   const artifactPath = defaultVariant?.finalArtifactPath?.trim()
     ? `/${defaultVariant.finalArtifactPath.replace(/^public\//, '')}`
-    : preparedProject?.artifactPath?.trim() || null
+    : preparedProject?.artifactPath?.trim()
+      || (communityProject ? `/api/community-artifacts/${communityProject.prompt_id}` : null)
   const artifact = publicArtifactStatusPresentation({
-    qualityStatus: defaultVariant?.qualityStatus ?? 'recorded',
+    qualityStatus: defaultVariant?.qualityStatus ?? (communityProject ? 'verified' : 'recorded'),
     knownIssueExplanation: defaultVariant
       ? getProjectModelVariantKnownIssueExplanation(defaultVariant)
       : null,

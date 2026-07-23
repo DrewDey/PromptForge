@@ -912,6 +912,7 @@ const sourceEvidenceFooter = 'src/components/SourceRunEvidenceFooter.tsx'
 const sourceEvidenceFooterContent = read(sourceEvidenceFooter)
 const protectedWrapper = 'src/lib/protected-artifact-wrapper.mjs'
 const protectedWrapperContent = read(protectedWrapper)
+mustInclude(protectedWrapper, protectedWrapperContent, 'background: #fff; color-scheme: light', 'transparent artifacts must retain a readable browser-default canvas inside the protected wrapper')
 mustInclude(sharedComponent, sharedComponentContent, 'aria-pressed={selected}', 'shared showcase must render a selected state on response artifact controls')
 mustInclude(sharedComponent, sharedComponentContent, 'onClick={(event) => onSelect?.(detailPackage.id, event.currentTarget)}', 'shared showcase must let each response mount its artifact above while preserving the clicked control')
 mustInclude(sharedComponent, sharedComponentContent, 'setSelectedPackageId', 'shared showcase must keep artifact package selection state')

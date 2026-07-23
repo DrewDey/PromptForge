@@ -2,6 +2,8 @@ import 'server-only'
 
 import { SUPABASE_CONFIGURED } from './data/shared'
 
+const PREPARED_RELEASE_GATE_TIMEOUT_MS = 2_000
+
 function enforcePreparedReleaseGates() {
   // Vercel production is always fail-closed. Preview and local builds stay
   // inspectable without a production-capable bypass variable that could be
@@ -13,17 +15,46 @@ async function persistedApprovedProjectExists(projectId: string) {
   if (!SUPABASE_CONFIGURED) return false
 
   try {
-    const { createClient } = await import('./supabase/server')
-    const supabase = await createClient()
+    const { createPublicReadClient } = await import('./supabase/server')
+    const supabase = await createPublicReadClient()
     const { data, error } = await supabase
       .from('prompts')
       .select('id')
       .eq('id', projectId)
       .eq('status', 'approved')
+      .abortSignal(AbortSignal.timeout(PREPARED_RELEASE_GATE_TIMEOUT_MS))
       .maybeSingle()
 
     return !error && Boolean(data)
   } catch {
+    return false
+  }
+}
+
+export async function preparedArtifactHasPublicProject(projectIds: readonly string[]) {
+  if (!enforcePreparedReleaseGates()) return projectIds.length > 0
+  if (!SUPABASE_CONFIGURED || projectIds.length < 1) return false
+
+  const startedAt = performance.now()
+  try {
+    const { createPublicReadClient } = await import('./supabase/server')
+    const supabase = await createPublicReadClient()
+    const { data, error } = await supabase
+      .from('prompts')
+      .select('id')
+      .in('id', [...new Set(projectIds)])
+      .eq('status', 'approved')
+      .limit(1)
+      .abortSignal(AbortSignal.timeout(PREPARED_RELEASE_GATE_TIMEOUT_MS))
+
+    if (error) throw error
+    return Boolean(data?.length)
+  } catch (error) {
+    console.error('Prepared artifact release gate failed closed.', {
+      durationMs: Math.round(performance.now() - startedAt),
+      projectCount: projectIds.length,
+      errorKind: error instanceof Error ? error.name : 'unknown',
+    })
     return false
   }
 }
@@ -43,14 +74,15 @@ export async function preparedModelCohortIsPublic(
   }
 
   try {
-    const { createClient } = await import('./supabase/server')
-    const supabase = await createClient()
+    const { createPublicReadClient } = await import('./supabase/server')
+    const supabase = await createPublicReadClient()
     const { data, error } = await supabase
       .from('project_model_variants')
       .select('source_run_id, is_default')
       .eq('project_id', projectId)
       .eq('status', 'published')
       .eq('is_current', true)
+      .abortSignal(AbortSignal.timeout(PREPARED_RELEASE_GATE_TIMEOUT_MS))
 
     if (error || !data) return false
 

@@ -5,7 +5,11 @@ import { once } from 'node:events'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { isExpectedLocalActivationFailure } from './browser-guard-errors.mjs'
+import {
+  isExpectedLocalActivationFailure,
+  isExpectedLocalFaviconFailure,
+  isExpectedLocalVercelScriptFailure,
+} from './browser-guard-errors.mjs'
 import {
   CdpClient,
   chromeExecutable,
@@ -36,13 +40,6 @@ function parseArgs(argv) {
   }
   if (options.screenshotDir) mkdirSync(options.screenshotDir, { recursive: true })
   return options
-}
-
-function localFaviconFailure(baseUrl, entry) {
-  if (!/\b404\b/.test(entry?.text ?? '') || !entry?.url) return false
-  const base = new URL(baseUrl)
-  const request = new URL(entry.url, base)
-  return request.origin === base.origin && request.pathname === '/favicon.ico'
 }
 
 async function withTimeout(promise, label, timeoutMs = 15_000) {
@@ -603,12 +600,17 @@ async function verifyKnownIssueProjectMenu(client, sessionId, options, viewport)
       const issue=selector?.querySelector('[data-model-variant-run="cf73efd5-2fb6-48fe-a9fd-a1a0df336d18"] [data-model-known-issue]');
       const tooltip=issue?.querySelector('[role="tooltip"]');
       const style=tooltip ? getComputedStyle(tooltip) : null;
+      const visibleTooltips=[...selector.querySelectorAll('[role="tooltip"]')].filter((entry)=>{
+        const entryStyle=getComputedStyle(entry);
+        return entryStyle.visibility === 'visible' && Number(entryStyle.opacity) > 0;
+      });
       return {
         summaryText:summary?.textContent?.replace(/\\s+/g,' ').trim() || '',
         rows:rows.map((row)=>row.dataset.modelVariantRun),
         explanation:issue?.dataset.knownIssueExplanation || '',
         tooltipText:tooltip?.textContent?.replace(/\\s+/g,' ').trim() || '',
         tooltipVisible:Boolean(style && style.visibility === 'visible' && Number(style.opacity) > 0),
+        visibleTooltipCount:visibleTooltips.length,
         focused:document.activeElement === issue,
         skeletons:document.querySelectorAll('.skeleton-shimmer').length,
         artifactReady:Boolean(document.querySelector('[data-artifact-fit-mode] iframe[srcdoc]')),
@@ -619,6 +621,7 @@ async function verifyKnownIssueProjectMenu(client, sessionId, options, viewport)
     (value) => (
       value?.rows?.length === 3 &&
       value.tooltipVisible &&
+      value.visibleTooltipCount === 1 &&
       value.focused &&
       value.skeletons === 0 &&
       value.artifactReady
@@ -1097,9 +1100,11 @@ async function main() {
         consoleErrors.push(message.params.exceptionDetails?.text ?? 'Uncaught runtime exception')
       }
       if (message.method === 'Log.entryAdded' && message.params.entry?.level === 'error') {
-        if (isExpectedLocalActivationFailure(options.baseUrl, message.params.entry)) return
-        if (localFaviconFailure(options.baseUrl, message.params.entry)) return
-        consoleErrors.push(message.params.entry.text)
+        const entry = message.params.entry
+        if (isExpectedLocalActivationFailure(options.baseUrl, entry)) return
+        if (isExpectedLocalVercelScriptFailure(options.baseUrl, entry)) return
+        if (isExpectedLocalFaviconFailure(options.baseUrl, entry)) return
+        consoleErrors.push(entry.text)
       }
     })
 

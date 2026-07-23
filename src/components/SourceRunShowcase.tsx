@@ -369,6 +369,7 @@ function artifactFitProbeSource() {
 function injectArtifactFitProbe(
   html: string,
   storageSnapshots: ArtifactStorageSnapshots,
+  allowArtifactDownloads: boolean,
 ) {
   const parsed = new DOMParser().parseFromString(html, 'text/html')
   const csp = parsed.createElement('meta')
@@ -377,13 +378,15 @@ function injectArtifactFitProbe(
 
   const storageBootstrap = parsed.createElement('script')
   storageBootstrap.textContent = artifactStorageBootstrapSource(storageSnapshots)
-  const downloadBridge = parsed.createElement('script')
-  downloadBridge.textContent = artifactDownloadBridgeSource()
 
   // Insert trusted policy bytes into the actual parsed head. Text that merely
   // looks like <head> or </body> inside artifact comments and strings cannot
   // redirect these controls into attacker-owned content.
-  parsed.head.prepend(downloadBridge)
+  if (allowArtifactDownloads) {
+    const downloadBridge = parsed.createElement('script')
+    downloadBridge.textContent = artifactDownloadBridgeSource()
+    parsed.head.prepend(downloadBridge)
+  }
   parsed.head.prepend(storageBootstrap)
   parsed.head.prepend(csp)
 
@@ -403,6 +406,7 @@ export function ProtectedArtifactFrame({
   bare = false,
   frameId = 'final-result',
   viewerFitControls = false,
+  allowArtifactDownloads = true,
 }: {
   selectedPackage: ArtifactPackage
   providerName: string
@@ -412,6 +416,7 @@ export function ProtectedArtifactFrame({
   bare?: boolean
   frameId?: string
   viewerFitControls?: boolean
+  allowArtifactDownloads?: boolean
 }) {
   const frameRef = useRef<HTMLDivElement | null>(null)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
@@ -565,7 +570,11 @@ export function ProtectedArtifactFrame({
         }
 
         if (!controller.signal.aborted) {
-          const protectedArtifactDocument = injectArtifactFitProbe(html, storageSnapshots)
+          const protectedArtifactDocument = injectArtifactFitProbe(
+            html,
+            storageSnapshots,
+            allowArtifactDownloads,
+          )
           setLoadedArtifact({
             packageId,
             artifactPath,
@@ -589,7 +598,7 @@ export function ProtectedArtifactFrame({
     return () => {
       controller.abort()
     }
-  }, [selectedPackage.artifactPath, selectedPackage.id])
+  }, [allowArtifactDownloads, selectedPackage.artifactPath, selectedPackage.id])
 
   useEffect(() => {
     const packageId = selectedPackage.id
@@ -613,6 +622,7 @@ export function ProtectedArtifactFrame({
       }
 
       if (data.type === 'pathforge-artifact-download') {
+        if (!allowArtifactDownloads) return
         const now = performance.now()
         if (
           now - lastDownloadAtRef.current < 750 ||
@@ -730,6 +740,7 @@ export function ProtectedArtifactFrame({
   }, [
     selectedPackage.artifactPath,
     selectedPackage.id,
+    allowArtifactDownloads,
     tracksArtifactMeasurement,
     usesMeasuredContentHeight,
     viewerFitControls,

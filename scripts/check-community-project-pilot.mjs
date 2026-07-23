@@ -1,0 +1,217 @@
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
+import {
+  decodeCommunityArtifactBytes,
+  scanCommunityArtifactText,
+  scanCommunityEvidenceText,
+} from '../src/lib/community-project-scanner-core.mjs'
+
+const root = process.cwd()
+const fixtureRoot = path.join(root, 'test-fixtures', 'community-project')
+
+function fixture(name) {
+  return new Uint8Array(readFileSync(path.join(fixtureRoot, name)))
+}
+
+function findings(name) {
+  const html = decodeCommunityArtifactBytes(name, fixture(name), 2_000_000)
+  return scanCommunityArtifactText(html)
+}
+
+assert.deepEqual(findings('valid.html'), [], 'The safe interactive fixture must pass.')
+for (const [name, expected] of [
+  ['reject-form.html', 'active form submission'],
+  ['reject-frame.html', 'embedded frame or plugin'],
+  ['reject-network.html', 'network request API'],
+  ['reject-navigation.html', 'popup or external navigation API'],
+  ['reject-infinite-loop.html', 'obvious non-terminating loop'],
+  ['reject-download.html', 'automatic file generation'],
+  ['reject-remote-dependency.html', 'external script dependency'],
+  ['reject-remote-media.html', 'external media dependency'],
+  ['reject-remote-css.html', 'external CSS dependency'],
+  ['reject-secret.html', 'OpenAI-style API key'],
+  ['reject-pii.html', 'personal email address'],
+  ['reject-redirect.html', 'automatic redirect'],
+]) {
+  assert.ok(findings(name).includes(expected), `${name} must report ${expected}.`)
+}
+
+assert.throws(
+  () => decodeCommunityArtifactBytes('artifact.txt', fixture('valid.html'), 2_000_000),
+  /\.html or \.htm/,
+)
+assert.throws(
+  () => decodeCommunityArtifactBytes('artifact.html', new Uint8Array(), 2_000_000),
+  /between 1 byte and 2 MB/,
+)
+assert.throws(
+  () => decodeCommunityArtifactBytes('artifact.html', new Uint8Array(2_000_001), 2_000_000),
+  /between 1 byte and 2 MB/,
+)
+assert.throws(
+  () => decodeCommunityArtifactBytes('artifact.html', new Uint8Array([0xc3, 0x28]), 2_000_000),
+  /UTF-8/,
+)
+assert.throws(
+  () => decodeCommunityArtifactBytes('artifact.html', new TextEncoder().encode('<p>fragment</p>'), 2_000_000),
+  /complete HTML document/,
+)
+assert.deepEqual(scanCommunityEvidenceText('safe@example.com and 555-010-1234'), [])
+assert.ok(scanCommunityEvidenceText('private.person@private-mail.test').includes('personal email address'))
+
+const migration = readFileSync(
+  path.join(root, 'supabase', 'migrations', '20260722234519_community_project_pilot.sql'),
+  'utf8',
+)
+const actions = readFileSync(path.join(root, 'src', 'lib', 'community-project-actions.ts'), 'utf8')
+const alerts = readFileSync(path.join(root, 'src', 'lib', 'community-project-alerts.ts'), 'utf8')
+const preparedPage = readFileSync(path.join(root, 'src', 'components', 'PreparedSourceRunPage.tsx'), 'utf8')
+const privateReview = readFileSync(path.join(root, 'src', 'components', 'CommunityArtifactSourceReview.tsx'), 'utf8')
+const nextConfig = readFileSync(path.join(root, 'next.config.ts'), 'utf8')
+const cronRoute = readFileSync(
+  path.join(root, 'src', 'app', 'api', 'cron', 'community-project-reconcile', 'route.ts'),
+  'utf8',
+)
+const publicArtifactRoute = readFileSync(
+  path.join(root, 'src', 'app', 'api', 'community-artifacts', '[promptId]', 'route.ts'),
+  'utf8',
+)
+const privateArtifactRoute = readFileSync(
+  path.join(root, 'src', 'app', 'api', 'community-artifacts', 'submissions', '[id]', 'route.ts'),
+  'utf8',
+)
+const publicData = readFileSync(path.join(root, 'src', 'lib', 'data.ts'), 'utf8')
+const publicProfiles = readFileSync(path.join(root, 'src', 'lib', 'data', 'public-profiles.ts'), 'utf8')
+const discovery = readFileSync(path.join(root, 'src', 'lib', 'path-discovery.ts'), 'utf8')
+const profilePresentation = readFileSync(path.join(root, 'src', 'lib', 'profile-presentation.ts'), 'utf8')
+const authBrowserGuard = readFileSync(path.join(root, 'scripts', 'check-community-project-auth-browser.mjs'), 'utf8')
+const liveAcceptanceGuard = readFileSync(path.join(root, 'scripts', 'check-community-project-live-acceptance.mjs'), 'utf8')
+const artifactViewer = readFileSync(path.join(root, 'src', 'app', 'artifact-viewer', 'page.tsx'), 'utf8')
+const adminReviewPage = readFileSync(path.join(root, 'src', 'app', 'admin', 'community-projects', '[id]', 'page.tsx'), 'utf8')
+const adminPromptRow = readFileSync(path.join(root, 'src', 'app', 'admin', 'AdminPromptRow.tsx'), 'utf8')
+const legacyActions = readFileSync(path.join(root, 'src', 'lib', 'actions.ts'), 'utf8')
+
+for (const required of [
+  "'community-project-quarantine'",
+  'public.get_public_community_projects(target_prompts UUID[])',
+  "member_kind IN ('internal_acceptance', 'invited_builder')",
+  'allow_internal_acceptance_submissions BOOLEAN NOT NULL DEFAULT TRUE',
+  'allow_publication BOOLEAN NOT NULL DEFAULT FALSE',
+  'private.record_community_project_report_readiness',
+  'private.set_community_project_publication_control',
+  'private.guard_community_prompt_review_mutation',
+  'REVOKE INSERT ON TABLE public.prompts FROM authenticated',
+  'REVOKE INSERT ON TABLE public.prompt_steps FROM authenticated',
+  "submission.status = 'published'",
+  "project.status = 'approved'",
+  'private.publish_community_project_submission',
+  'private.withdraw_community_project_submission',
+  'private.set_community_project_report_status',
+  'private.community_project_publication_drift',
+  'private.community_project_storage_orphans',
+  'private.pathforge_resolve_community_fork',
+  'private.create_legacy_source_run_repair',
+  'private.begin_community_project_reconciliation',
+  'private.record_community_project_artifact_integrity',
+  'private.purge_community_project_retention',
+  "INTERVAL '90 days'",
+  "INTERVAL '400 days'",
+  'reporter_fingerprint',
+  'TO service_role',
+]) {
+  assert.ok(migration.includes(required), `Migration is missing ${required}.`)
+}
+assert.doesNotMatch(migration, /CREATE POLICY "Published community artifacts are readable"/)
+assert.doesNotMatch(migration, /CREATE OR REPLACE FUNCTION public\.community_project_artifact_is_public/)
+assert.match(migration, /GRANT EXECUTE ON FUNCTION public\.get_public_community_project_artifact_path\(UUID\)\s+TO service_role/)
+assert.ok(
+  actions.indexOf('scanCommunityProjectArtifact(artifact)') < actions.indexOf('.upload(uploadedPath'),
+  'The server must scan bytes before private storage upload.',
+)
+assert.match(actions, /artifact_original_name: safeOriginalFilename/)
+assert.match(actions, /verifyQuarantinedArtifact/)
+assert.match(actions, /REPORT_RATE_LIMIT_SECRET/)
+assert.match(actions, /sendCommunityProjectOperatorAlert/)
+assert.match(actions, /communityProjectOperatorAlertsConfigured/)
+assert.match(actions, /membership\?\.member_kind === 'invited_builder'/)
+assert.match(actions, /escapeLikePattern\(username\)/)
+assert.match(actions, /record_community_project_report_readiness/)
+assert.match(alerts, /COMMUNITY_PROJECT_ALERT_WEBHOOK_URL/)
+assert.doesNotMatch(alerts, /reporter_email|report_details|artifact/i)
+assert.match(privateReview, /inert source text/)
+assert.doesNotMatch(privateReview, /iframe|srcDoc|dangerouslySetInnerHTML/)
+assert.match(preparedPage, /preparedProjectIsPublic\(project\.id\).*notFound/s)
+assert.match(nextConfig, /source: '\/artifacts\/:path\*'[\s\S]*destination: '\/api\/prepared-artifacts\/:path\*'/)
+assert.match(cronRoute, /CRON_SECRET/)
+assert.match(cronRoute, /community_project_publication_drift/)
+assert.match(cronRoute, /begin_community_project_reconciliation/)
+assert.match(cronRoute, /record_community_project_artifact_integrity/)
+assert.match(cronRoute, /purge_community_project_retention/)
+for (const route of [publicArtifactRoute, privateArtifactRoute]) {
+  assert.match(route, /SUPABASE_CONFIGURED/)
+  assert.match(route, /catch \{/)
+  assert.match(route, /return unavailable\(\)/)
+}
+assert.match(publicArtifactRoute, /createAdminClient/)
+assert.doesNotMatch(publicArtifactRoute, /createPublicReadClient/)
+for (const listReader of [publicData, publicProfiles]) {
+  assert.match(listReader, /rpc\('get_public_community_projects'/)
+  assert.match(listReader, /community_project: communityByPrompt\.get\(project\.id\) \?\? null/)
+}
+assert.match(discovery, /communityProject \? `\/api\/community-artifacts\/\$\{communityProject\.prompt_id\}` : null/)
+assert.match(discovery, /fallbackVerified: Boolean\(communityProject\)/)
+assert.match(discovery, /provider: prompt\.community_project\.provider/)
+assert.match(discovery, /fallbackProvider: communityProject\?\.provider/)
+assert.match(profilePresentation, /communityProject \? `\/api\/community-artifacts\/\$\{communityProject\.prompt_id\}` : null/)
+assert.match(profilePresentation, /provider: communityProject\.provider/)
+assert.match(artifactViewer, /\/api\\\/community-artifacts\\\//)
+assert.match(artifactViewer, /allowArtifactDownloads=\{!isCommunityArtifact\}/)
+assert.match(adminReviewPage, /CopySourceReviewUrl/)
+assert.doesNotMatch(adminReviewPage, /Open source anonymously/)
+assert.match(adminPromptRow, /Community workflow only/)
+assert.match(adminPromptRow, /const requiresSpecialReview = requiresSourceRunReview \|\| isCommunityProject/)
+assert.match(adminPromptRow, /!isCommunityProject && \(/)
+assert.doesNotMatch(publicData, /export async function createProject/)
+assert.doesNotMatch(legacyActions, /export async function submitProject/)
+assert.match(publicData, /Generic moderation is blocked for community projects/)
+
+const packageScripts = JSON.parse(readFileSync(path.join(root, 'package.json'), 'utf8')).scripts
+assert.equal(
+  packageScripts['check:community-project-db'],
+  'node scripts/check-community-project-db.mjs',
+  'The executable disposable database gate must remain wired.',
+)
+assert.equal(
+  packageScripts['check:community-project-auth-browser'],
+  'node scripts/check-community-project-auth-browser.mjs',
+  'The fresh-account rendered browser gate must remain wired.',
+)
+assert.equal(
+  packageScripts['check:community-project-live-acceptance'],
+  'node scripts/check-community-project-live-acceptance.mjs',
+  'The deployed fresh-account upload lifecycle gate must remain wired.',
+)
+assert.match(authBrowserGuard, /auth\/signup\?next=%2Fbuild/)
+assert.match(authBrowserGuard, /anonymous \/build exposed an upload control/)
+assert.match(authBrowserGuard, /overflowed horizontally/)
+assert.match(authBrowserGuard, /community artifact viewer routed to a not-found state/)
+assert.match(authBrowserGuard, /community artifact viewer exposed a download action/)
+assert.match(authBrowserGuard, /contrastRatio/)
+assert.match(authBrowserGuard, /community artifact default-canvas contrast/)
+assert.match(liveAcceptanceGuard, /auth\/login\?next=%2Fbuild/)
+assert.match(liveAcceptanceGuard, /requested_member_kind: 'internal_acceptance'/)
+assert.match(liveAcceptanceGuard, /not currently in the pilot/)
+assert.match(liveAcceptanceGuard, /Submit private review bundle/)
+assert.match(liveAcceptanceGuard, /Withdraw and purge artifact|textContent\.includes\('Withdraw'\)/)
+assert.match(liveAcceptanceGuard, /allow_invited_submissions/)
+assert.match(liveAcceptanceGuard, /deleteUser\(userId\)/)
+assert.match(liveAcceptanceGuard, /acceptance-slot postcondition/)
+assert.match(liveAcceptanceGuard, /Disposable cleanup verification failed/)
+assert.ok(
+  liveAcceptanceGuard.indexOf('Disposable cleanup verification failed')
+    < liveAcceptanceGuard.indexOf('Live fresh-account acceptance passed and cleanup verified'),
+  'The deployed acceptance gate must verify cleanup before reporting success.',
+)
+
+console.log('Community project pilot guard passed: 1 safe fixture, 12 hostile fixtures, envelope limits, publication controls, and reconciliation wiring.')

@@ -269,12 +269,16 @@ const importer = parse(importerPath)
 assert(functionDeclaration(importer, 'forkSubmissionFields'), `${importerPath}: importer must map structured fork fields`)
 assert(callsNamed(importer, 'forkSubmissionFields').length >= 1, `${importerPath}: importer must apply structured fork fields to an intake`)
 
-const buildPagePath = 'src/app/prompt/new/page.tsx'
+const buildPagePath = 'src/app/build/ProjectSubmissionClient.tsx'
 const buildPage = parse(buildPagePath)
 assert(importHas(buildPage, '@/lib/project-forks', 'parseProjectForkSearchParams'), `${buildPagePath}: build intake must parse fork identity from its URL`)
-assert(importHas(buildPage, '@/lib/project-forks', 'serializeProjectForkSourceForNotes'), `${buildPagePath}: build intake must preserve readable review evidence`)
 assert(callsNamed(buildPage, 'parseProjectForkSearchParams').length >= 1, `${buildPagePath}: build intake must resolve structured fork identity`)
-assert(objectPropertiesNamed(buildPage, 'fork_source').length >= 1, `${buildPagePath}: source-run intake must submit structured fork_source`)
+assert(read(buildPagePath).includes("formData.set('fork_json'"), `${buildPagePath}: build intake must submit structured fork identity`)
+
+const communityActionPath = 'src/lib/community-project-actions.ts'
+const communityActions = parse(communityActionPath)
+assert(functionDeclaration(communityActions, 'parseFork'), `${communityActionPath}: server action must parse and validate structured fork identity`)
+assert(objectPropertiesNamed(communityActions, 'source_project_id').length >= 1, `${communityActionPath}: community intake must preserve the canonical source project field`)
 
 const dataPath = 'src/lib/data.ts'
 const dataSource = parse(dataPath)

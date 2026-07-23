@@ -17,6 +17,10 @@ import {
   artifactEvidenceMatches,
   attachSourceRunIdentityToArtifactEvidence,
 } from './project-model-variant-release-evidence.mjs'
+import {
+  createSupabaseServerClient,
+  resolveSupabaseServerKey,
+} from '../src/lib/supabase/server-client.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const EXPECTED_SUPABASE_PROJECT_REF = 'iccjwlwkaqnxifuxljla'
@@ -670,13 +674,9 @@ async function main() {
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const secretKey = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY
+  const secretKey = resolveSupabaseServerKey(process.env)
   if (!supabaseUrl) throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL.')
-  if (!secretKey) throw new Error('Missing SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY.')
-  const { createClient } = await import('@supabase/supabase-js')
-  const supabase = createClient(supabaseUrl, secretKey, {
-    auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
-  })
+  const supabase = createSupabaseServerClient(supabaseUrl, secretKey)
 
   const results = await applyCohort(supabase, releases)
   console.log(JSON.stringify(

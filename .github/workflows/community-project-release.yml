@@ -17,6 +17,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run check:supabase-server-key-transport
       - run: npm run check:community-project-pilot
       - run: npm run check:community-project-alert-recovery
       - run: npm run check:community-project-db

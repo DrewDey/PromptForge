@@ -22,6 +22,23 @@ service-only RPCs; the browser never receives database service credentials.
 Turn publication and external invitations back off immediately when response
 capacity or required controls are unavailable.
 
+## Server credential boundary
+
+Use `SUPABASE_SECRET_KEY` with a current opaque `sb_secret_…` value for the
+application, operator scripts, and deployed acceptance harness. The shared
+server client sends it as `apikey` and removes only the client library's exact
+`Authorization: Bearer <same opaque key>` duplicate. It preserves a different
+user/session bearer token. `SUPABASE_SERVICE_ROLE_KEY` accepts only the legacy
+JWT-based service-role value and is a temporary migration fallback.
+
+Run `npm run check:supabase-server-key-transport` before merge. The executable
+guard covers Data API queries and RPCs, Auth admin, Storage, and Functions,
+proves the opaque key is absent from `Authorization`, proves a real session
+bearer is preserved, and proves the legacy service-role JWT transport remains
+unchanged. Before disabling the legacy key or opening external invitations,
+run the deployed acceptance harness with the production `sb_secret_…`
+credential so the real Auth/RPC/Storage lifecycle is verified.
+
 ## Publication readiness
 
 `allow_publication` defaults to `false`. Before enabling it:
@@ -198,7 +215,8 @@ invitations while unhealthy.
 
 ## Release and rollback
 
-Before merge: run `npm run check:community-project-pilot`,
+Before merge: run `npm run check:supabase-server-key-transport`,
+`npm run check:community-project-pilot`,
 `npm run check:community-project-alert-recovery`,
 `npm run check:community-project-db`, `npm run typecheck`, `npm run lint`, the
 full build, `npm run check:community-project-auth-browser -- --base-url <url>`,
@@ -222,7 +240,7 @@ moderation counts, and keyset pagination across both the active queue and all
 retained report statuses.
 
 After the migration and application are live, run the disposable deployed gate
-with production server credentials and
+with the production `SUPABASE_SECRET_KEY` and
 `COMMUNITY_PROJECT_ACCEPTANCE_EMAIL` loaded locally (never print or commit
 them). The mailbox must be operator-controlled and accept unique plus-address
 aliases:

@@ -3,6 +3,10 @@
 import { randomBytes } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import {
+  createSupabaseServerClient,
+  resolveSupabaseServerKey,
+} from '../src/lib/supabase/server-client.mjs'
 
 function loadEnvFile(filePath) {
   if (!existsSync(filePath)) return
@@ -92,23 +96,12 @@ async function main() {
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const serverKey = process.env.SUPABASE_SECRET_KEY?.trim() || process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
+  const serverKey = resolveSupabaseServerKey(process.env)
 
   if (!supabaseUrl) {
     throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL.')
   }
-  if (!serverKey) {
-    throw new Error('Missing SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY. Add one locally; never expose it as NEXT_PUBLIC_.')
-  }
-
-  const { createClient } = await import('@supabase/supabase-js')
-  const supabase = createClient(supabaseUrl, serverKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-      detectSessionInUrl: false,
-    },
-  })
+  const supabase = createSupabaseServerClient(supabaseUrl, serverKey)
 
   const password = makePassword()
   const { data: created, error: createError } = await supabase.auth.admin.createUser({

@@ -3,6 +3,10 @@
 import { createHash, randomBytes } from 'node:crypto'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { relative, resolve, sep } from 'node:path'
+import {
+  createSupabaseServerClient,
+  resolveSupabaseServerKey,
+} from '../src/lib/supabase/server-client.mjs'
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const POSTGRES_UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -574,14 +578,7 @@ function escapeLikePattern(value) {
 }
 
 async function createServiceRoleClient(supabaseUrl, serviceRoleKey) {
-  const { createClient } = await import('@supabase/supabase-js')
-  return createClient(supabaseUrl, serviceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-      detectSessionInUrl: false,
-    },
-  })
+  return createSupabaseServerClient(supabaseUrl, serviceRoleKey)
 }
 
 async function createSyntheticSessionClient(supabaseUrl, anonKey, args) {
@@ -817,12 +814,18 @@ async function main() {
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  const serverKey = process.env.SUPABASE_SECRET_KEY?.trim() || process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
+  const hasConfiguredServerKey = Boolean(
+    process.env.SUPABASE_SECRET_KEY?.trim()
+      || process.env.SUPABASE_SERVICE_ROLE_KEY?.trim(),
+  )
+  const serverKey = args.authMode === 'auto' && hasConfiguredServerKey
+    ? resolveSupabaseServerKey(process.env)
+    : null
 
   if (!supabaseUrl) throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL.')
   if (!anonKey) throw new Error('Missing NEXT_PUBLIC_SUPABASE_ANON_KEY.')
 
-  const useServiceRole = serverKey && !['public-signup', 'password'].includes(args.authMode)
+  const useServiceRole = Boolean(serverKey)
   const supabase = useServiceRole
     ? await createServiceRoleClient(supabaseUrl, serverKey)
     : null

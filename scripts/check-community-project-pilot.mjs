@@ -118,6 +118,14 @@ const legacySourceRunRepair = readFileSync(
   'utf8',
 )
 const adminClient = readFileSync(path.join(root, 'src', 'lib', 'supabase', 'admin.ts'), 'utf8')
+const serverClient = readFileSync(
+  path.join(root, 'src', 'lib', 'supabase', 'server-client.mjs'),
+  'utf8',
+)
+const serverKeyTransportGuard = readFileSync(
+  path.join(root, 'scripts', 'check-supabase-server-key-transport.mjs'),
+  'utf8',
+)
 const alerts = readFileSync(path.join(root, 'src', 'lib', 'community-project-alerts.ts'), 'utf8')
 const preparedPage = readFileSync(path.join(root, 'src', 'components', 'PreparedSourceRunPage.tsx'), 'utf8')
 const privateReview = readFileSync(path.join(root, 'src', 'components', 'CommunityArtifactSourceReview.tsx'), 'utf8')
@@ -337,10 +345,22 @@ assert.match(actions, /artifact_original_name: safeOriginalFilename/)
 assert.match(actions, /verifyQuarantinedArtifact/)
 assert.match(actions, /REPORT_RATE_LIMIT_SECRET/)
 assert.match(actions, /SUPABASE_SECRET_KEY/)
-assert.match(adminClient, /process\.env\.SUPABASE_SECRET_KEY\?\.trim\(\)\s*\|\|\s*process\.env\.SUPABASE_SERVICE_ROLE_KEY\?\.trim\(\)/)
+assert.match(adminClient, /resolveSupabaseServerKey\(process\.env\)/)
+assert.match(adminClient, /createSupabaseServerClient/)
 assert.match(adminClient, /server-only Supabase credentials/)
-assert.match(adminClient, /detectSessionInUrl: false/)
-assert.match(envExample, /^SUPABASE_SECRET_KEY=your_supabase_secret_key$/m)
+assert.doesNotMatch(adminClient, /createClient\(/)
+assert.match(serverClient, /SUPABASE_SECRET_KEY must contain a current sb_secret_ key/)
+assert.match(serverClient, /SUPABASE_SERVICE_ROLE_KEY must contain a legacy JWT with the service_role claim/)
+assert.match(serverClient, /payload\?\.role === 'service_role'/)
+assert.match(serverClient, /authorization === `Bearer \$\{secretKey\}`/)
+assert.match(serverClient, /headers\.delete\('authorization'\)/)
+assert.match(serverClient, /detectSessionInUrl: false/)
+assert.match(serverKeyTransportGuard, /\/rest\/v1\/rpc\/transport_probe_rpc/)
+assert.match(serverKeyTransportGuard, /\/auth\/v1\/admin\/users/)
+assert.match(serverKeyTransportGuard, /\/storage\/v1\/object\/list\/transport-probe/)
+assert.match(serverKeyTransportGuard, /\/functions\/v1\/transport-probe/)
+assert.match(serverKeyTransportGuard, /must preserve a real user\/session bearer token/)
+assert.match(envExample, /^SUPABASE_SECRET_KEY=sb_secret_your_supabase_secret_key$/m)
 assert.match(envExample, /^SUPABASE_SERVICE_ROLE_KEY=$/m)
 assert.match(envExample, /^COMMUNITY_PROJECT_ALERT_WEBHOOK_URL=https:\/\//m)
 assert.match(envExample, /^COMMUNITY_PROJECT_ALERT_ESCALATION_WEBHOOK_URL=https:\/\//m)
@@ -503,6 +523,13 @@ assert.equal(
   'node scripts/check-community-project-live-acceptance.mjs',
   'The deployed fresh-account upload lifecycle gate must remain wired.',
 )
+assert.equal(
+  packageScripts['check:supabase-server-key-transport'],
+  'node scripts/check-supabase-server-key-transport.mjs',
+  'The emitted server-key header regression must remain wired.',
+)
+assert.match(packageScripts.prebuild, /check:supabase-server-key-transport/)
+assert.match(packageScripts.autoreview, /check:supabase-server-key-transport/)
 assert.match(authBrowserGuard, /auth\/signup\?next=%2Fbuild/)
 assert.match(authBrowserGuard, /anonymous \/build exposed an upload control/)
 assert.match(authBrowserGuard, /overflowed horizontally/)
@@ -541,7 +568,11 @@ assert.doesNotMatch(liveAcceptanceGuard, /admin\.auth\.admin\.createUser/)
 assert.match(liveAcceptanceGuard, /width: 390,[\s\S]*height: 844,[\s\S]*mobile: true/)
 assert.match(liveAcceptanceGuard, /live-private-submission-receipt-desktop/)
 assert.match(liveAcceptanceGuard, /requested_member_kind: 'internal_acceptance'/)
-assert.match(liveAcceptanceGuard, /SUPABASE_SECRET_KEY[\s\S]*SUPABASE_SERVICE_ROLE_KEY/)
+assert.match(liveAcceptanceGuard, /resolveSupabaseServerKey\(process\.env\)/)
+assert.match(liveAcceptanceGuard, /isSupabaseSecretKey\(serverKey\)/)
+assert.match(liveAcceptanceGuard, /deployed acceptance gate requires SUPABASE_SECRET_KEY/)
+assert.match(liveAcceptanceGuard, /createSupabaseServerClient\(supabaseUrl, serverKey\)/)
+assert.doesNotMatch(liveAcceptanceGuard, /createClient\(/)
 assert.match(liveAcceptanceGuard, /not currently in the pilot/)
 assert.match(liveAcceptanceGuard, /Submit private review bundle/)
 assert.match(liveAcceptanceGuard, /completed guided upload step/)
@@ -557,6 +588,7 @@ assert.ok(
 )
 assert.match(liveAcceptanceGuard, /acceptance-slot postcondition/)
 assert.match(liveAcceptanceGuard, /Disposable cleanup verification failed/)
+assert.match(communityReleaseWorkflow, /npm run check:supabase-server-key-transport/)
 assert.match(communityReleaseWorkflow, /npm run check:community-project-auth-browser -- --base-url http:\/\/127\.0\.0\.1:3111/)
 assertUnfilteredPullRequestWorkflow(communityReleaseWorkflow)
 for (const filteredWorkflow of [

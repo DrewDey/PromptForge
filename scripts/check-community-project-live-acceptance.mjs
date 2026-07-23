@@ -5,8 +5,12 @@ import { randomBytes } from 'node:crypto'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { createClient } from '@supabase/supabase-js'
 import { CdpClient, chromeExecutable, waitForWebSocketUrl } from './measure-html-artifacts.mjs'
+import {
+  createSupabaseServerClient,
+  isSupabaseSecretKey,
+  resolveSupabaseServerKey,
+} from '../src/lib/supabase/server-client.mjs'
 
 const ACCEPTANCE_ARTIFACT = path.resolve('test-fixtures/community-project/valid.html')
 
@@ -32,11 +36,11 @@ function requiredEnvironment(name) {
 }
 
 function requiredServerKey() {
-  return process.env.SUPABASE_SECRET_KEY?.trim()
-    || process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
-    || (() => {
-      throw new Error('SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY is required for the disposable live acceptance check.')
-    })()
+  const serverKey = resolveSupabaseServerKey(process.env)
+  if (!isSupabaseSecretKey(serverKey)) {
+    throw new Error('The deployed acceptance gate requires SUPABASE_SECRET_KEY with a current sb_secret_ key.')
+  }
+  return serverKey
 }
 
 function disposableAcceptanceEmail(baseEmail, suffix) {
@@ -138,9 +142,7 @@ async function main() {
   const supabaseUrl = requiredEnvironment('NEXT_PUBLIC_SUPABASE_URL')
   const serverKey = requiredServerKey()
   const acceptanceMailbox = requiredEnvironment('COMMUNITY_PROJECT_ACCEPTANCE_EMAIL')
-  const admin = createClient(supabaseUrl, serverKey, {
-    auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
-  })
+  const admin = createSupabaseServerClient(supabaseUrl, serverKey)
   const executable = chromeExecutable()
   if (!executable) throw new Error('Chrome was not found for the live acceptance check.')
 

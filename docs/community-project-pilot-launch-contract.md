@@ -55,6 +55,11 @@ the evidence-scope label states how complete that explanation is.
   separate external-invitation control.
 - Eligibility is enforced by the database and again by the server action; UI
   hiding is not an authorization boundary.
+- Server administration prefers a current opaque `sb_secret_…` credential.
+  PathForge keeps that value only in Supabase's `apikey` header; it removes
+  the client library's unauthenticated duplicate bearer header because the
+  opaque key is not a JWT. A genuine user-session bearer token is preserved.
+  The legacy JWT-based service-role key remains a temporary migration fallback.
 - Anonymous visitors and signed-in nonmembers can read the pilot explanation
   but cannot submit.
 - Human review is mandatory. No executable artifact is auto-published.
@@ -239,6 +244,11 @@ hard stops. They are not averaged against engagement.
   upload before admission, and upload
   only after an administrator creates the single expiring internal-acceptance
   membership; `allow_invited_submissions` remains false throughout.
+- The emitted-header regression covers Data API queries/RPCs, Auth admin,
+  Storage, and Functions with both key formats. Before external invitations,
+  the deployed acceptance run must use the production `sb_secret_…` key and
+  prove the real Auth/RPC/Storage lifecycle before the legacy service-role key
+  is disabled.
 - Before the external invitation lane is enabled, Supabase Auth leaked-password
   protection is enabled and a fresh security-advisor run no longer reports
   `auth_leaked_password_protection`; the database also requires a fresh
@@ -269,8 +279,9 @@ hard stops. They are not averaged against engagement.
 ## Launch evidence
 
 Before merge, the PR must contain the scoped diff, migrations, rollback notes,
-scanner fixtures, static guards, role-matrix evidence, build/type/lint results,
-and rendered browser evidence. After deployment, PathForge must repeat the
+scanner fixtures, static guards, role-matrix evidence, emitted server-key
+header evidence, build/type/lint results, and rendered browser evidence. After
+deployment, PathForge must repeat the
 anonymous flow and the complete fresh-account, admission, signed-in upload
 flow against production, publish a disposable test bundle, verify the public
 page and artifact, withdraw it, verify immediate denial, and remove the test

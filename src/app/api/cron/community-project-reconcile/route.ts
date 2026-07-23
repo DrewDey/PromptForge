@@ -22,6 +22,7 @@ type PublishedArtifact = {
 type RetentionMetrics = {
   reportsPurged?: number
   promptTombstonesDeidentified?: number
+  promptStepsPurged?: number
   submissionTombstonesPurged?: number
 }
 
@@ -200,6 +201,7 @@ export async function GET(request: Request) {
       oldestOpenReportAt: reportCountResult.data?.[0]?.created_at ?? null,
       reportsPurged: retention.reportsPurged ?? 0,
       promptTombstonesDeidentified: retention.promptTombstonesDeidentified ?? 0,
+      promptStepsPurged: retention.promptStepsPurged ?? 0,
       submissionTombstonesPurged: retention.submissionTombstonesPurged ?? 0,
     }
     const succeeded = (

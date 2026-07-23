@@ -804,6 +804,7 @@ BEGIN
   retention := public.purge_community_project_retention();
   IF (retention->>'reportsPurged')::INT <> 1
     OR (retention->>'promptTombstonesDeidentified')::INT <> 2
+    OR (retention->>'promptStepsPurged')::INT <> 2
     OR (retention->>'submissionTombstonesPurged')::INT <> 2 THEN
     RAISE EXCEPTION 'Retention purge did not enforce the documented 90-day and 400-day windows: %', retention;
   END IF;
@@ -821,6 +822,36 @@ BEGIN
       AND author_id IS NOT NULL
   ) THEN
     RAISE EXCEPTION 'Expired rejected prompt tombstones retained contributor attribution.';
+  END IF;
+  IF EXISTS (
+    SELECT 1
+    FROM public.prompt_steps
+    WHERE prompt_id IN (
+      (SELECT prompt FROM test_state),
+      (SELECT fork_prompt FROM test_state)
+    )
+  ) THEN
+    RAISE EXCEPTION 'Expired community prompt or response evidence survived retention purge.';
+  END IF;
+  IF EXISTS (
+    SELECT 1
+    FROM public.prompts
+    WHERE id IN (
+      (SELECT prompt FROM test_state),
+      (SELECT fork_prompt FROM test_state)
+    )
+      AND (
+        title <> 'Unavailable project'
+        OR description <> 'This project is no longer available.'
+        OR content <> 'No public project content remains.'
+        OR result_content IS NOT NULL
+        OR model_used IS NOT NULL
+        OR model_recommendation IS NOT NULL
+        OR tools_used <> '{}'::TEXT[]
+        OR tags <> '{}'::TEXT[]
+      )
+  ) THEN
+    RAISE EXCEPTION 'Expired prompt tombstones retained project, model, prompt, response, PII, or secret-bearing fields.';
   END IF;
   IF NOT EXISTS (
     SELECT 1

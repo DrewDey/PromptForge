@@ -3356,6 +3356,7 @@ AS $$
 DECLARE
   reports_purged INTEGER := 0;
   prompts_deidentified INTEGER := 0;
+  prompt_steps_purged INTEGER := 0;
   submissions_purged INTEGER := 0;
 BEGIN
   IF COALESCE((SELECT auth.jwt() ->> 'role'), '') <> 'service_role' THEN
@@ -3412,6 +3413,37 @@ BEGIN
     AND project.status = 'rejected';
   GET DIAGNOSTICS prompts_deidentified = ROW_COUNT;
 
+  -- Prompt steps contain the contributor's copied prompts and responses. They
+  -- are not tombstones and must not outlive the documented 400-day evidence
+  -- window. Delete them only after artifact cleanup and investigation holds
+  -- have cleared; text lineage identifiers can remain on dependent records.
+  WITH expired AS (
+    SELECT
+      submission.id,
+      COALESCE(submission.prompt_id, submission.former_prompt_id) AS prompt_id
+    FROM public.community_project_submissions AS submission
+    WHERE submission.status IN ('withdrawn', 'removed')
+      AND submission.artifact_path IS NULL
+      AND submission.artifact_integrity_status = 'purged'
+      AND CASE
+        WHEN submission.status = 'withdrawn' THEN submission.withdrawn_at
+        ELSE submission.removed_at
+      END <= NOW() - INTERVAL '400 days'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM public.community_project_reports AS report
+        WHERE report.submission_id = submission.id
+          AND report.status IN ('open', 'reviewing')
+      )
+    ORDER BY COALESCE(submission.withdrawn_at, submission.removed_at), submission.id
+    LIMIT 100
+    FOR UPDATE SKIP LOCKED
+  )
+  DELETE FROM public.prompt_steps AS step
+  USING expired
+  WHERE step.prompt_id = expired.prompt_id;
+  GET DIAGNOSTICS prompt_steps_purged = ROW_COUNT;
+
   WITH expired AS (
     SELECT submission.id
     FROM public.community_project_submissions AS submission
@@ -3440,6 +3472,7 @@ BEGIN
   RETURN jsonb_build_object(
     'reportsPurged', reports_purged,
     'promptTombstonesDeidentified', prompts_deidentified,
+    'promptStepsPurged', prompt_steps_purged,
     'submissionTombstonesPurged', submissions_purged
   );
 END;

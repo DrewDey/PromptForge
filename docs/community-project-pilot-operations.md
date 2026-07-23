@@ -127,7 +127,8 @@ older than 26 hours. Do not expand invitations while unhealthy.
   resolution. Open/reviewing reports remain on investigation hold.
 - Withdrawn/removed submission and lifecycle tombstones are deleted after 400
   days once artifact cleanup is confirmed and no report is open. Any rejected
-  prompt record required by foreign keys is deidentified.
+  prompt record required by foreign keys is deidentified, and every copied
+  prompt/response step is deleted in the same retention transaction.
 - Queued, repair-needed, or declined submissions remain until the owner
   withdraws them or an administrator removes them, after which the same purge
   windows apply.

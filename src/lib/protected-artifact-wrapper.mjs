@@ -8,6 +8,7 @@ const WRAPPER_CSP = [
   "frame-src 'none'",
   "child-src 'none'",
   "connect-src 'none'",
+  "webrtc 'block'",
   "img-src 'none'",
   "media-src 'none'",
   "font-src 'none'",
@@ -23,6 +24,43 @@ function scriptSafeJson(value) {
     .replace(/&/g, '\\u0026')
     .replace(/\u2028/g, '\\u2028')
     .replace(/\u2029/g, '\\u2029')
+}
+
+function artifactNetworkLockdownSource() {
+  return `
+(() => {
+  const blockedRtc = function PathForgeBlockedWebRTC() {
+    throw new DOMException('Network access is disabled in this artifact.', 'SecurityError');
+  };
+  for (const name of [
+    'RTCPeerConnection',
+    'webkitRTCPeerConnection',
+    'mozRTCPeerConnection',
+    'RTCIceTransport',
+    'RTCIceGatherer',
+  ]) {
+    try {
+      Object.defineProperty(globalThis, name, {
+        configurable: false,
+        enumerable: false,
+        writable: false,
+        value: blockedRtc,
+      });
+    } catch {
+      try { globalThis[name] = blockedRtc; } catch {}
+    }
+  }
+})();`
+}
+
+function hardenArtifactDocument(artifactDocument) {
+  // Remove the contributor doctype and prepend our own so the lockdown script
+  // is the first executable byte even if a malformed upload placed content
+  // before its doctype. The opaque sandbox and CSP remain the primary boundary;
+  // this frozen constructor guard covers browsers that do not yet implement
+  // CSP's `webrtc 'block'` directive.
+  const withoutContributorDoctype = artifactDocument.replace(/<!doctype\s+html[^>]*>/i, '')
+  return `<!doctype html><script>${artifactNetworkLockdownSource()}</script>${withoutContributorDoctype}`
 }
 
 export function artifactDownloadBridgeSource() {
@@ -86,7 +124,7 @@ export function artifactDownloadBridgeSource() {
 }
 
 export function buildProtectedArtifactWrapperDocument(artifactDocument) {
-  const serializedArtifact = scriptSafeJson(artifactDocument)
+  const serializedArtifact = scriptSafeJson(hardenArtifactDocument(artifactDocument))
   const serializedCsp = scriptSafeJson(WRAPPER_CSP)
 
   return `<!doctype html>

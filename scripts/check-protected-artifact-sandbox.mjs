@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { spawn } from 'node:child_process'
+import { createSocket } from 'node:dgram'
 import { createServer } from 'node:http'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -31,8 +32,22 @@ async function main() {
   if (!executable) throw new Error('Chrome was not found for the protected-artifact sandbox guard.')
 
   const leakRequests = []
+  const webrtcPackets = []
   let baseUrl = ''
   const bridge = artifactDownloadBridgeSource()
+  const stunServer = createSocket('udp4')
+  stunServer.on('message', (packet) => webrtcPackets.push(packet.byteLength))
+  await new Promise((resolve, reject) => {
+    stunServer.once('error', reject)
+    stunServer.bind(0, '127.0.0.1', () => {
+      stunServer.off('error', reject)
+      resolve()
+    })
+  })
+  const stunAddress = stunServer.address()
+  if (typeof stunAddress === 'string') throw new Error('WebRTC guard UDP server did not bind.')
+  const stunUrl = `stun:127.0.0.1:${stunAddress.port}`
+  const webrtcProbe = `(async()=>{const peer=new RTCPeerConnection({iceServers:[{urls:${JSON.stringify(stunUrl)}}]});peer.createDataChannel('pathforge-egress-probe');await peer.setLocalDescription(await peer.createOffer());})().catch(()=>{});`
   const wrapperFactories = {
     http: () => buildProtectedArtifactWrapperDocument(artifactDocument(
       `window.parent.postMessage({type:'pathforge-artifact-size',width:100,height:100},'*'); location.href=${JSON.stringify(`${baseUrl}/leak-http?secret=abc`)};`,
@@ -51,6 +66,10 @@ async function main() {
     },
     download: () => buildProtectedArtifactWrapperDocument(artifactDocument(
       `${bridge}; const external=document.createElement('a'); external.download='stolen.txt'; external.href=${JSON.stringify(`${baseUrl}/leak-download?secret=abc`)}; document.body.append(external); external.click();`,
+    )),
+    webrtc: () => buildProtectedArtifactWrapperDocument(artifactDocument(webrtcProbe)),
+    'webrtc-obfuscated': () => buildProtectedArtifactWrapperDocument(artifactDocument(
+      `(async()=>{const Peer=globalThis['RTC'+'PeerConnection'];const peer=new Peer({iceServers:[{urls:${JSON.stringify(stunUrl)}}]});peer.createDataChannel('pathforge-obfuscated-egress-probe');await peer.setLocalDescription(await peer.createOffer());})().catch(()=>{});`,
     )),
     safe: () => buildProtectedArtifactWrapperDocument(artifactDocument(
       `${bridge}; document.getElementById('safe').addEventListener('click',()=>{ const url=URL.createObjectURL(new Blob(['safe export'],{type:'text/plain'})); const link=document.createElement('a'); link.download='safe.txt'; link.href=url; document.body.append(link); link.click(); URL.revokeObjectURL(url); link.remove(); });`,
@@ -103,11 +122,15 @@ async function main() {
       client.send('Runtime.enable', {}, sessionId),
     ])
 
-    for (const name of ['http', 'blob', 'data', 'download']) {
+    for (const name of ['http', 'blob', 'data', 'download', 'webrtc', 'webrtc-obfuscated']) {
       await navigateCase(client, sessionId, `${baseUrl}/${name}`)
     }
     if (leakRequests.length > 0) {
       throw new Error(`Protected artifact escaped through: ${leakRequests.join(', ')}`)
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1_000))
+    if (webrtcPackets.length > 0) {
+      throw new Error(`Protected artifact emitted ${webrtcPackets.length} WebRTC/STUN packet(s).`)
     }
 
     await navigateCase(client, sessionId, `${baseUrl}/safe`)
@@ -146,6 +169,7 @@ async function main() {
     client?.close()
     child.kill('SIGTERM')
     await new Promise((resolve) => server.close(resolve))
+    await new Promise((resolve) => stunServer.close(resolve))
     rmSync(profile, { recursive: true, force: true, maxRetries: 8, retryDelay: 125 })
   }
 

@@ -8,6 +8,7 @@ export const communityArtifactActiveResourcePatterns = [
   ['external stylesheet dependency', /<link\b[^>]*\bhref\s*=/i],
   ['external CSS dependency', /@import\b/i],
   ['network request API', /\b(?:fetch|XMLHttpRequest|WebSocket|EventSource|importScripts)\s*\(/i],
+  ['WebRTC network API', /\b(?:RTCPeerConnection|webkitRTCPeerConnection|mozRTCPeerConnection|RTCIceTransport|RTCIceGatherer)\b/i],
   ['beacon API', /\bnavigator\s*\.\s*sendBeacon\s*\(/i],
   ['dynamic image request', /\bnew\s+Image\s*\(/i],
   ['external hyperlink', /\bhref\s*=\s*["']?\s*(?:https?:)?\/\//i],

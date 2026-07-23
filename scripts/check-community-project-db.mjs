@@ -25,15 +25,34 @@ function run(args, options = {}) {
 }
 
 async function waitForPostgres() {
-  for (let attempt = 0; attempt < 40; attempt += 1) {
+  for (let attempt = 0; attempt < 60; attempt += 1) {
+    // The official image briefly starts an initialization server, stops it,
+    // and then launches the final server. pg_isready alone can catch that
+    // temporary window on a slower CI runner, so require the init-complete
+    // marker before accepting a real SQL round trip.
+    const logs = run(['logs', container], { allowFailure: true })
+    const initComplete = `${logs.stdout}\n${logs.stderr}`
+      .includes('PostgreSQL init process complete; ready for start up.')
     const result = run(
-      ['exec', container, 'pg_isready', '-U', 'postgres', '-d', 'postgres'],
+      [
+        'exec',
+        container,
+        'psql',
+        '--no-psqlrc',
+        '--tuples-only',
+        '--username',
+        'postgres',
+        '--dbname',
+        'postgres',
+        '--command',
+        'select 1',
+      ],
       { allowFailure: true },
     )
-    if (result.status === 0) return
+    if (initComplete && result.status === 0 && result.stdout.trim() === '1') return
     await new Promise((resolve) => setTimeout(resolve, 500))
   }
-  throw new Error('Disposable PostgreSQL did not become ready within 20 seconds.')
+  throw new Error('Disposable PostgreSQL did not complete initialization within 30 seconds.')
 }
 
 function applySql(relativePath) {

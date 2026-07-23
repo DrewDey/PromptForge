@@ -84,6 +84,7 @@ const artifactFindingGuidance: Record<string, string> = {
   'external CSS dependency': 'embed the CSS asset as a data URL or remove the url/import rule',
   'external hyperlink': 'remove outbound links or show the address as plain text',
   'network request API': 'remove fetch, XMLHttpRequest, WebSocket, EventSource, or importScripts calls',
+  'WebRTC network API': 'remove peer-to-peer and ICE networking calls',
   'beacon API': 'remove navigator.sendBeacon',
   'dynamic image request': 'remove new Image network loading',
   'popup or external navigation API': 'remove popup and scripted navigation code',

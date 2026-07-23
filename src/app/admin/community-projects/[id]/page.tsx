@@ -34,10 +34,10 @@ export default async function AdminCommunityProjectDetail({ params }: { params: 
               <p className="mt-2 border border-amber-200 bg-amber-50 p-3 text-xs font-bold leading-5 text-amber-950">
                 Showing the latest {reports.length} of {reportList.totalCount} reports here.{' '}
                 <Link
-                  href={`/admin/community-projects?report_query=${submission.id}#open-safety-reports`}
+                  href={`/admin/community-projects?report_status=all&report_query=${submission.id}#open-safety-reports`}
                   className="underline"
                 >
-                  Open the complete unresolved queue for this project.
+                  Open the complete retained report history for this project.
                 </Link>
               </p>
             )}

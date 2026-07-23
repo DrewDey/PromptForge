@@ -673,7 +673,10 @@ async function main() {
               ?.textContent?.trim() || '',
             reportReasons,
             reportQueueTotal: Number(reportQueue?.getAttribute('data-total-count') || 0),
+            reportQueueRetained: Number(reportQueue?.getAttribute('data-retained-count') || 0),
             reportQueueFiltered: Number(reportQueue?.getAttribute('data-filtered-count') || 0),
+            reportQueueStatus: reportQueue?.getAttribute('data-report-status') || '',
+            reportQueueHeading: reportQueue?.querySelector('h2')?.textContent?.trim() || '',
             reportQueueDirectLinks: reportQueue
               ?.querySelectorAll('a[href^="/admin/community-project-reports/"]').length || 0,
             reportQueueNextLink: [...(reportQueue?.querySelectorAll('a') || [])]
@@ -681,11 +684,14 @@ async function main() {
               ?.getAttribute('href') || '',
             reportQueueFilters: Boolean(
               reportQueue?.querySelector('input[name="report_query"]')
+              && reportQueue?.querySelector('select[name="report_status"]')?.value === 'all'
               && reportQueue?.querySelector('select[name="report_reason"]')
               && reportQueue?.querySelector('select[name="report_alert"]'),
             ),
+            reportQueueResolvedHistory: reportQueueText.includes('misleading · resolved · alert delivered'),
             reportQueueIndicators: (
-              reportQueueText.includes('42 critical')
+              reportQueueText.includes('325 retained')
+              && reportQueueText.includes('42 critical')
               && reportQueueText.includes('17 alerts pending')
               && reportQueueText.includes('Oldest critical')
             ),
@@ -711,10 +717,15 @@ async function main() {
           || !['privacy', 'copyright', 'malware', 'exploitation', 'credentials', 'imminent_harm', 'abuse', 'misleading', 'other']
             .every((reason) => releaseControls.reportReasons.includes(reason))
           || releaseControls.reportQueueTotal !== 125
-          || releaseControls.reportQueueFiltered !== 125
+          || releaseControls.reportQueueRetained !== 325
+          || releaseControls.reportQueueFiltered !== 325
+          || releaseControls.reportQueueStatus !== 'all'
+          || releaseControls.reportQueueHeading !== 'Retained report history'
           || releaseControls.reportQueueDirectLinks !== 2
           || !releaseControls.reportQueueNextLink.includes('report_cursor=fixture-next-cursor')
+          || !releaseControls.reportQueueNextLink.includes('report_status=all')
           || !releaseControls.reportQueueFilters
+          || !releaseControls.reportQueueResolvedHistory
           || !releaseControls.reportQueueIndicators
         ) {
           throw new Error(`${viewport.name} community release controls were incomplete: ${JSON.stringify(releaseControls)}.`)

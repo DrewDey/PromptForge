@@ -1416,6 +1416,45 @@ SELECT public.set_community_project_report_status(
 ) FROM test_state;
 
 DO $test$
+BEGIN
+  IF has_function_privilege(
+      'anon',
+      'public.get_community_project_report_queue(integer,integer,timestamp with time zone,uuid,text,text,text,text)',
+      'EXECUTE'
+    )
+    OR has_function_privilege(
+      'authenticated',
+      'public.get_community_project_report_queue(integer,integer,timestamp with time zone,uuid,text,text,text,text)',
+      'EXECUTE'
+    )
+    OR has_function_privilege(
+      'anon',
+      'public.get_community_project_report_queue_counts(text,text,text,text)',
+      'EXECUTE'
+    )
+    OR has_function_privilege(
+      'authenticated',
+      'public.get_community_project_report_queue_counts(text,text,text,text)',
+      'EXECUTE'
+    ) THEN
+    RAISE EXCEPTION 'Moderation report history RPCs are executable outside service_role.';
+  END IF;
+  IF NOT has_function_privilege(
+      'service_role',
+      'public.get_community_project_report_queue(integer,integer,timestamp with time zone,uuid,text,text,text,text)',
+      'EXECUTE'
+    )
+    OR NOT has_function_privilege(
+      'service_role',
+      'public.get_community_project_report_queue_counts(text,text,text,text)',
+      'EXECUTE'
+    ) THEN
+    RAISE EXCEPTION 'Moderation report history RPCs are not executable by service_role.';
+  END IF;
+END;
+$test$;
+
+DO $test$
 DECLARE
   counts JSONB;
   page_row public.community_project_reports%ROWTYPE;
@@ -1453,8 +1492,9 @@ BEGIN
     NOW() - INTERVAL '3 hours' + sequence * INTERVAL '1 second'
   FROM generate_series(1, 101) AS sequence;
 
-  counts := public.get_community_project_report_queue_counts(NULL, NULL, NULL);
+  counts := public.get_community_project_report_queue_counts('active', NULL, NULL, NULL);
   IF (counts->>'totalCount')::INT <> 101
+    OR (counts->>'retainedCount')::INT <> 102
     OR (counts->>'filteredCount')::INT <> 101
     OR (counts->>'criticalCount')::INT <> 60
     OR (counts->>'undeliveredCount')::INT <> 101 THEN
@@ -1470,6 +1510,7 @@ BEGIN
         cursor_priority,
         cursor_created_at,
         cursor_id,
+        'active',
         NULL,
         NULL,
         NULL
@@ -1517,13 +1558,132 @@ BEGIN
   SELECT id INTO sample_report
   FROM public.community_project_reports
   WHERE reporter_email = 'queue-1@example.com';
+
+  UPDATE public.community_project_reports
+  SET status = 'resolved',
+      resolution_notes = 'Resolved to prove retained-history traversal in the disposable transaction test.',
+      resolved_by = (SELECT administrator FROM test_state),
+      resolved_at = NOW(),
+      updated_at = NOW()
+  WHERE id IN (
+    SELECT report.id
+    FROM public.community_project_reports AS report
+    WHERE report.reporter_email LIKE 'queue-%@example.com'
+    ORDER BY report.created_at, report.id
+    LIMIT 40
+  );
+
+  counts := public.get_community_project_report_queue_counts('active', NULL, NULL, NULL);
+  IF (counts->>'totalCount')::INT <> 61
+    OR (counts->>'retainedCount')::INT <> 102
+    OR (counts->>'filteredCount')::INT <> 61
+    OR (counts->>'criticalCount')::INT <> 20
+    OR (counts->>'undeliveredCount')::INT <> 61 THEN
+    RAISE EXCEPTION 'Operational counts did not exclude 40 resolved reports: %', counts;
+  END IF;
+
+  counts := public.get_community_project_report_queue_counts('all', NULL, NULL, NULL);
+  IF (counts->>'totalCount')::INT <> 61
+    OR (counts->>'retainedCount')::INT <> 102
+    OR (counts->>'filteredCount')::INT <> 102
+    OR (counts->>'criticalCount')::INT <> 20
+    OR (counts->>'undeliveredCount')::INT <> 61 THEN
+    RAISE EXCEPTION 'Retained-history counts did not preserve all 102 transaction reports: %', counts;
+  END IF;
+
   counts := public.get_community_project_report_queue_counts(
+    'all',
     NULL,
     NULL,
     sample_report::TEXT
   );
   IF (counts->>'filteredCount')::INT <> 1 THEN
-    RAISE EXCEPTION 'Exact report-ID search did not address one report: %', counts;
+    RAISE EXCEPTION 'All-status report-ID search did not address one resolved report: %', counts;
+  END IF;
+  counts := public.get_community_project_report_queue_counts(
+    'active',
+    NULL,
+    NULL,
+    sample_report::TEXT
+  );
+  IF (counts->>'filteredCount')::INT <> 0 THEN
+    RAISE EXCEPTION 'Active report-ID search unexpectedly returned a resolved report: %', counts;
+  END IF;
+  IF (
+    SELECT COUNT(*)
+    FROM public.get_community_project_report_queue(
+      25,
+      NULL,
+      NULL,
+      NULL,
+      'all',
+      NULL,
+      NULL,
+      sample_report::TEXT
+    )
+  ) <> 1 OR (
+    SELECT COUNT(*)
+    FROM public.get_community_project_report_queue(
+      25,
+      NULL,
+      NULL,
+      NULL,
+      'active',
+      NULL,
+      NULL,
+      sample_report::TEXT
+    )
+  ) <> 0 THEN
+    RAISE EXCEPTION 'Retained-history row search did not distinguish all from active status.';
+  END IF;
+
+  cursor_priority := NULL;
+  cursor_created_at := NULL;
+  cursor_id := NULL;
+  traversed := 0;
+  seen_warning := FALSE;
+  LOOP
+    page_count := 0;
+    FOR page_row IN
+      SELECT *
+      FROM public.get_community_project_report_queue(
+        25,
+        cursor_priority,
+        cursor_created_at,
+        cursor_id,
+        'all',
+        NULL,
+        NULL,
+        NULL
+      )
+    LOOP
+      page_count := page_count + 1;
+      traversed := traversed + 1;
+      current_priority := CASE
+        WHEN page_row.reason IN (
+          'privacy',
+          'malware',
+          'exploitation',
+          'credentials',
+          'imminent_harm'
+        ) THEN 1
+        ELSE 0
+      END;
+      IF seen_warning AND current_priority = 1 THEN
+        RAISE EXCEPTION 'A critical retained report appeared after a warning.';
+      END IF;
+      IF current_priority = 0 THEN
+        seen_warning := TRUE;
+      END IF;
+      cursor_priority := current_priority;
+      cursor_created_at := page_row.created_at;
+      cursor_id := page_row.id;
+    END LOOP;
+    EXIT WHEN page_count < 25;
+  END LOOP;
+
+  IF traversed <> 102 THEN
+    RAISE EXCEPTION 'Retained-history keyset traversal reached % of 102 reports.', traversed;
   END IF;
 
   DELETE FROM public.community_project_reports

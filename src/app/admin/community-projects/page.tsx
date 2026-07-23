@@ -37,6 +37,7 @@ export default async function AdminCommunityProjectsPage({
   const params = await searchParams
   const reportFilters = {
     cursor: searchValue(params.report_cursor),
+    status: searchValue(params.report_status),
     reason: searchValue(params.report_reason),
     alert: searchValue(params.report_alert),
     query: searchValue(params.report_query),

@@ -34,22 +34,23 @@ const QA_REPORT_QUEUE: CommunityProjectReportQueue = {
       reporter_id: null,
       reporter_email: 'moderation-fixture@example.invalid',
       reason: 'misleading',
-      details: 'Rendered standard-priority report fixture used to prove critical-first ordering.',
-      status: 'reviewing',
+      details: 'Rendered resolved-report fixture proving retained history remains searchable beyond the active queue.',
+      status: 'resolved',
       alert_status: 'delivered',
       alert_attempt_count: 1,
       alert_last_attempt_at: '2026-07-23T18:05:00.000Z',
       alert_delivered_at: '2026-07-23T18:05:00.000Z',
       alert_failure_code: null,
-      resolution_notes: null,
-      resolved_by: null,
-      resolved_at: null,
+      resolution_notes: 'Resolved in the local browser fixture without real user data.',
+      resolved_by: '40000000-0000-4000-8000-000000000001',
+      resolved_at: '2026-07-23T18:10:00.000Z',
       created_at: '2026-07-23T18:00:00.000Z',
-      updated_at: '2026-07-23T18:05:00.000Z',
+      updated_at: '2026-07-23T18:10:00.000Z',
     },
   ],
   totalCount: 125,
-  filteredCount: 125,
+  retainedCount: 325,
+  filteredCount: 325,
   undeliveredCount: 17,
   criticalCount: 42,
   oldestOpenAt: '2026-07-23T16:45:00.000Z',
@@ -95,7 +96,7 @@ export default function CommunityReleaseControlsFixture() {
         />
       </section>
 
-      <AdminCommunityProjectReportQueue queue={QA_REPORT_QUEUE} filters={{}} />
+      <AdminCommunityProjectReportQueue queue={QA_REPORT_QUEUE} filters={{ status: 'all' }} />
 
       <section className="mt-8 border border-surface-200 bg-white p-5">
         <h2 className="text-lg font-black text-surface-900">Public safety report</h2>

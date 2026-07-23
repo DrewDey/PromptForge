@@ -37,6 +37,24 @@ CREATE INDEX IF NOT EXISTS community_project_reports_moderation_queue_idx
   )
   WHERE status IN ('open', 'reviewing');
 
+CREATE INDEX IF NOT EXISTS community_project_reports_history_queue_idx
+  ON public.community_project_reports (
+    (
+      CASE
+        WHEN reason IN (
+          'privacy',
+          'malware',
+          'exploitation',
+          'credentials',
+          'imminent_harm'
+        ) THEN 1
+        ELSE 0
+      END
+    ) DESC,
+    created_at,
+    id
+  );
+
 CREATE INDEX IF NOT EXISTS community_project_pilot_members_invited_by_idx
   ON public.community_project_pilot_members(invited_by)
   WHERE invited_by IS NOT NULL;
@@ -235,6 +253,7 @@ CREATE OR REPLACE FUNCTION private.get_community_project_report_queue(
   cursor_priority INT DEFAULT NULL,
   cursor_created_at TIMESTAMPTZ DEFAULT NULL,
   cursor_id UUID DEFAULT NULL,
+  status_filter TEXT DEFAULT 'active',
   reason_filter TEXT DEFAULT NULL,
   alert_filter TEXT DEFAULT NULL,
   query_text TEXT DEFAULT NULL
@@ -260,6 +279,16 @@ BEGIN
   END IF;
   IF cursor_priority IS NOT NULL AND cursor_priority NOT IN (0, 1) THEN
     RAISE EXCEPTION 'The moderation cursor is invalid.';
+  END IF;
+  IF status_filter IS NULL OR status_filter NOT IN (
+    'active',
+    'all',
+    'open',
+    'reviewing',
+    'resolved',
+    'dismissed'
+  ) THEN
+    RAISE EXCEPTION 'The report-status filter is invalid.';
   END IF;
   IF reason_filter IS NOT NULL AND reason_filter NOT IN (
     'privacy',
@@ -299,7 +328,11 @@ BEGIN
       ELSE 0
     END AS priority
   ) AS rank
-  WHERE report.status IN ('open', 'reviewing')
+  WHERE (
+      status_filter = 'all'
+      OR (status_filter = 'active' AND report.status IN ('open', 'reviewing'))
+      OR report.status = status_filter
+    )
     AND (reason_filter IS NULL OR report.reason = reason_filter)
     AND (alert_filter IS NULL OR report.alert_status = alert_filter)
     AND (
@@ -333,6 +366,7 @@ CREATE OR REPLACE FUNCTION public.get_community_project_report_queue(
   cursor_priority INT DEFAULT NULL,
   cursor_created_at TIMESTAMPTZ DEFAULT NULL,
   cursor_id UUID DEFAULT NULL,
+  status_filter TEXT DEFAULT 'active',
   reason_filter TEXT DEFAULT NULL,
   alert_filter TEXT DEFAULT NULL,
   query_text TEXT DEFAULT NULL
@@ -348,6 +382,7 @@ AS $$
     cursor_priority,
     cursor_created_at,
     cursor_id,
+    status_filter,
     reason_filter,
     alert_filter,
     query_text
@@ -355,6 +390,7 @@ AS $$
 $$;
 
 CREATE OR REPLACE FUNCTION private.get_community_project_report_queue_counts(
+  status_filter TEXT DEFAULT 'active',
   reason_filter TEXT DEFAULT NULL,
   alert_filter TEXT DEFAULT NULL,
   query_text TEXT DEFAULT NULL
@@ -371,6 +407,16 @@ DECLARE
 BEGIN
   IF COALESCE((SELECT auth.jwt() ->> 'role'), '') <> 'service_role' THEN
     RAISE EXCEPTION 'Service access required.';
+  END IF;
+  IF status_filter IS NULL OR status_filter NOT IN (
+    'active',
+    'all',
+    'open',
+    'reviewing',
+    'resolved',
+    'dismissed'
+  ) THEN
+    RAISE EXCEPTION 'The report-status filter is invalid.';
   END IF;
   IF reason_filter IS NOT NULL AND reason_filter NOT IN (
     'privacy',
@@ -397,12 +443,18 @@ BEGIN
 
   SELECT jsonb_build_object(
     'totalCount',
+      COUNT(*) FILTER (WHERE report.status IN ('open', 'reviewing')),
+    'retainedCount',
       COUNT(*),
     'undeliveredCount',
-      COUNT(*) FILTER (WHERE report.alert_status <> 'delivered'),
+      COUNT(*) FILTER (
+        WHERE report.status IN ('open', 'reviewing')
+          AND report.alert_status <> 'delivered'
+      ),
     'criticalCount',
       COUNT(*) FILTER (
-        WHERE report.reason IN (
+        WHERE report.status IN ('open', 'reviewing')
+          AND report.reason IN (
           'privacy',
           'malware',
           'exploitation',
@@ -411,10 +463,13 @@ BEGIN
         )
       ),
     'oldestOpenAt',
-      MIN(report.created_at),
+      MIN(report.created_at) FILTER (
+        WHERE report.status IN ('open', 'reviewing')
+      ),
     'oldestCriticalAt',
       MIN(report.created_at) FILTER (
-        WHERE report.reason IN (
+        WHERE report.status IN ('open', 'reviewing')
+          AND report.reason IN (
           'privacy',
           'malware',
           'exploitation',
@@ -423,10 +478,18 @@ BEGIN
         )
       ),
     'oldestUndeliveredAt',
-      MIN(report.created_at) FILTER (WHERE report.alert_status <> 'delivered'),
+      MIN(report.created_at) FILTER (
+        WHERE report.status IN ('open', 'reviewing')
+          AND report.alert_status <> 'delivered'
+      ),
     'filteredCount',
       COUNT(*) FILTER (
-        WHERE (reason_filter IS NULL OR report.reason = reason_filter)
+        WHERE (
+            status_filter = 'all'
+            OR (status_filter = 'active' AND report.status IN ('open', 'reviewing'))
+            OR report.status = status_filter
+          )
+          AND (reason_filter IS NULL OR report.reason = reason_filter)
           AND (alert_filter IS NULL OR report.alert_status = alert_filter)
           AND (
             normalized_query IS NULL
@@ -439,14 +502,14 @@ BEGIN
       )
   )
   INTO result
-  FROM public.community_project_reports AS report
-  WHERE report.status IN ('open', 'reviewing');
+  FROM public.community_project_reports AS report;
 
   RETURN result;
 END;
 $$;
 
 CREATE OR REPLACE FUNCTION public.get_community_project_report_queue_counts(
+  status_filter TEXT DEFAULT 'active',
   reason_filter TEXT DEFAULT NULL,
   alert_filter TEXT DEFAULT NULL,
   query_text TEXT DEFAULT NULL
@@ -457,6 +520,7 @@ SECURITY DEFINER
 SET search_path = ''
 AS $$
   SELECT private.get_community_project_report_queue_counts(
+    status_filter,
     reason_filter,
     alert_filter,
     query_text
@@ -810,13 +874,13 @@ REVOKE ALL ON FUNCTION private.get_community_project_report_alert_batch(INT)
   FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.get_community_project_report_alert_batch(INT)
   FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION private.get_community_project_report_queue(INT, INT, TIMESTAMPTZ, UUID, TEXT, TEXT, TEXT)
+REVOKE ALL ON FUNCTION private.get_community_project_report_queue(INT, INT, TIMESTAMPTZ, UUID, TEXT, TEXT, TEXT, TEXT)
   FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.get_community_project_report_queue(INT, INT, TIMESTAMPTZ, UUID, TEXT, TEXT, TEXT)
+REVOKE ALL ON FUNCTION public.get_community_project_report_queue(INT, INT, TIMESTAMPTZ, UUID, TEXT, TEXT, TEXT, TEXT)
   FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION private.get_community_project_report_queue_counts(TEXT, TEXT, TEXT)
+REVOKE ALL ON FUNCTION private.get_community_project_report_queue_counts(TEXT, TEXT, TEXT, TEXT)
   FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.get_community_project_report_queue_counts(TEXT, TEXT, TEXT)
+REVOKE ALL ON FUNCTION public.get_community_project_report_queue_counts(TEXT, TEXT, TEXT, TEXT)
   FROM PUBLIC, anon, authenticated;
 
 GRANT EXECUTE ON FUNCTION private.begin_community_project_report_alert_delivery(UUID, INT)
@@ -831,11 +895,11 @@ GRANT EXECUTE ON FUNCTION private.get_community_project_report_alert_batch(INT)
   TO service_role;
 GRANT EXECUTE ON FUNCTION public.get_community_project_report_alert_batch(INT)
   TO service_role;
-GRANT EXECUTE ON FUNCTION private.get_community_project_report_queue(INT, INT, TIMESTAMPTZ, UUID, TEXT, TEXT, TEXT)
+GRANT EXECUTE ON FUNCTION private.get_community_project_report_queue(INT, INT, TIMESTAMPTZ, UUID, TEXT, TEXT, TEXT, TEXT)
   TO service_role;
-GRANT EXECUTE ON FUNCTION public.get_community_project_report_queue(INT, INT, TIMESTAMPTZ, UUID, TEXT, TEXT, TEXT)
+GRANT EXECUTE ON FUNCTION public.get_community_project_report_queue(INT, INT, TIMESTAMPTZ, UUID, TEXT, TEXT, TEXT, TEXT)
   TO service_role;
-GRANT EXECUTE ON FUNCTION private.get_community_project_report_queue_counts(TEXT, TEXT, TEXT)
+GRANT EXECUTE ON FUNCTION private.get_community_project_report_queue_counts(TEXT, TEXT, TEXT, TEXT)
   TO service_role;
-GRANT EXECUTE ON FUNCTION public.get_community_project_report_queue_counts(TEXT, TEXT, TEXT)
+GRANT EXECUTE ON FUNCTION public.get_community_project_report_queue_counts(TEXT, TEXT, TEXT, TEXT)
   TO service_role;

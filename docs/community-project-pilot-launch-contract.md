@@ -251,9 +251,11 @@ hard stops. They are not averaged against engagement.
   no open report has an undelivered notification. The database publication
   boundary rechecks those records.
 - The exact moderation queue is keyset-paginated, critical-first and
-  oldest-first, reports exact global counts, and provides a stable searchable
-  administrator URL for every report. A fixture with more than 100 unresolved
-  reports must remain fully traversable.
+  oldest-first, reports exact global open and retained counts, and provides a
+  stable searchable administrator URL for every retained report. Active
+  operational counts exclude resolved/dismissed history; an all-status fixture
+  with more than 100 reports, including resolved records, must remain fully
+  traversable.
 - Public Terms, Privacy, Community Guidelines, copyright/reporting guidance,
   and reviewer runbooks match the implemented data flow.
 - The first 20-30 invited builders remain capped at 50 submissions.

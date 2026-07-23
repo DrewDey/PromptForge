@@ -17,6 +17,7 @@ const queueComponent = read('src/app/admin/community-projects/AdminCommunityProj
 const projectDetail = read('src/app/admin/community-projects/[id]/page.tsx')
 const qaReleaseControls = read('src/app/qa/community-release-controls/page.tsx')
 const reportPage = read('src/app/admin/community-project-reports/[id]/page.tsx')
+const transactionFixture = read('test-fixtures/community-project/migration-transaction-test.sql')
 const recoveryWorkflow = read('.github/workflows/community-project-alert-recovery.yml')
 const vercelConfig = JSON.parse(read('vercel.json'))
 const runbook = read('docs/community-project-pilot-operations.md')
@@ -49,6 +50,9 @@ for (const required of [
   "NOW() - INTERVAL '1 hour'",
   "operation.last_metrics->>'independentAlertChannels' = '2'",
   'community_project_reports_moderation_queue_idx',
+  'community_project_reports_history_queue_idx',
+  "status_filter TEXT DEFAULT 'active'",
+  "'retainedCount'",
 ]) {
   assert.ok(migration.includes(required), `Operational-gap migration is missing ${required}.`)
 }
@@ -65,17 +69,28 @@ assert.match(queueData, /getCommunityProjectReportQueueForAdmin/)
 assert.match(queueData, /COMMUNITY_PROJECT_REPORT_QUEUE_PAGE_SIZE = 25/)
 assert.match(queueData, /get_community_project_report_queue_counts/)
 assert.match(queueData, /encodeCommunityProjectReportCursor/)
+assert.match(queueData, /status_filter: status/)
+assert.match(queueData, /retainedCount: queueCount\(counts\.retainedCount\)/)
 assert.match(adminQueue, /reportQueue\.totalCount/)
 assert.match(adminQueue, /reportQueue\.undeliveredCount/)
 assert.match(adminQueue, /AdminCommunityProjectReportQueue/)
 assert.match(queueComponent, /Oldest critical/)
 assert.match(queueComponent, /Next 25 reports/)
+assert.match(queueComponent, /All retained/)
+assert.match(queueComponent, /data-retained-count/)
 assert.match(queueComponent, /\/admin\/community-project-reports\/\$\{report\.id\}/)
 assert.match(projectDetail, /reportList\.totalCount/)
-assert.match(projectDetail, /Open the complete unresolved queue for this project/)
+assert.match(projectDetail, /report_status=all&report_query=/)
+assert.match(projectDetail, /Open the complete retained report history for this project/)
 assert.match(qaReleaseControls, /AdminCommunityProjectReportQueue/)
 assert.match(qaReleaseControls, /totalCount: 125/)
+assert.match(qaReleaseControls, /retainedCount: 325/)
+assert.match(qaReleaseControls, /filters=\{\{ status: 'all' \}\}/)
 assert.match(reportPage, /getCommunityProjectReportForAdmin/)
+assert.match(transactionFixture, /get_community_project_report_queue_counts\('all'/)
+assert.match(transactionFixture, /'retainedCount'\)::INT <> 102/)
+assert.match(transactionFixture, /Retained-history keyset traversal reached/)
+assert.match(transactionFixture, /has_function_privilege/)
 
 assert.match(recoveryWorkflow, /cron: '7,22,37,52 \* \* \* \*'/)
 assert.match(recoveryWorkflow, /PATHFORGE_PRODUCTION_URL/)
@@ -94,6 +109,7 @@ assert.match(runbook, /fifteen minutes|15 minutes/i)
 assert.match(runbook, /250/)
 assert.match(runbook, /dual-channel|two distinct/i)
 assert.match(runbook, /GitHub Actions/)
+assert.match(runbook, /all-retained/)
 
 const MAX_DAILY_REPORT_INGRESS = 250
 const RETRY_BATCH_SIZE = 50

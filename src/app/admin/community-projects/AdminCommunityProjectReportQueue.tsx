@@ -12,10 +12,17 @@ export default function AdminCommunityProjectReportQueue({
   queue: CommunityProjectReportQueue
   filters: CommunityProjectReportQueueFilters
 }) {
-  const reportFilterActive = Boolean(filters.reason || filters.alert || filters.query || filters.cursor)
-  if (queue.totalCount === 0 && !reportFilterActive) return null
+  const reportStatus = ['all', 'open', 'reviewing', 'resolved', 'dismissed'].includes(filters.status || '')
+    ? filters.status as string
+    : 'active'
+  const retainedHistoryMode = reportStatus !== 'active'
+  const reportFilterActive = Boolean(
+    retainedHistoryMode || filters.reason || filters.alert || filters.query || filters.cursor,
+  )
+  if (queue.retainedCount === 0 && !reportFilterActive) return null
 
   const nextReportParams = new URLSearchParams()
+  if (retainedHistoryMode) nextReportParams.set('report_status', reportStatus)
   if (filters.reason) nextReportParams.set('report_reason', filters.reason)
   if (filters.alert) nextReportParams.set('report_alert', filters.alert)
   if (filters.query) nextReportParams.set('report_query', filters.query)
@@ -29,27 +36,47 @@ export default function AdminCommunityProjectReportQueue({
       id="open-safety-reports"
       data-community-report-queue
       data-total-count={queue.totalCount}
+      data-retained-count={queue.retainedCount}
       data-filtered-count={queue.filteredCount}
+      data-report-status={reportStatus}
       className="mt-7 scroll-mt-24"
       aria-labelledby="open-report-title"
     >
       <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 id="open-report-title" className="text-lg font-black text-red-950">Open safety reports</h2>
-          <p className="mt-1 text-xs text-surface-500">Critical reasons are first, then the oldest reports. Every row has its own review URL.</p>
+          <h2 id="open-report-title" className="text-lg font-black text-red-950">
+            {retainedHistoryMode ? 'Retained report history' : 'Open safety reports'}
+          </h2>
+          <p className="mt-1 text-xs text-surface-500">
+            {retainedHistoryMode
+              ? 'Search every retained status. Critical reasons remain first, then the oldest reports, with a stable review URL for every row.'
+              : 'Critical reasons are first, then the oldest reports. Every row has its own review URL.'}
+          </p>
         </div>
         <div className="text-right text-xs font-bold text-surface-600">
-          <div>{queue.totalCount} open · {queue.criticalCount} critical · {queue.undeliveredCount} alerts pending</div>
+          <div>Active queue: {queue.totalCount} open · {queue.criticalCount} critical · {queue.undeliveredCount} alerts pending</div>
           <div className="mt-1 font-normal text-surface-500">
+            {queue.retainedCount} retained total.{' '}
             {queue.oldestCriticalAt ? `Oldest critical ${new Date(queue.oldestCriticalAt).toLocaleString()}. ` : ''}
             {queue.oldestUndeliveredAt ? `Oldest undelivered ${new Date(queue.oldestUndeliveredAt).toLocaleString()}.` : ''}
           </div>
         </div>
       </div>
-      <form action="/admin/community-projects" method="get" className="mb-3 grid gap-2 border border-surface-200 bg-surface-50 p-3 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto] sm:items-end">
+      <form action="/admin/community-projects" method="get" className="mb-3 grid gap-2 border border-surface-200 bg-surface-50 p-3 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto_auto] sm:items-end">
         <label className="grid gap-1 text-xs font-bold text-surface-700">
           Search report, project, prompt, email, or details
           <input name="report_query" defaultValue={filters.query || ''} maxLength={120} className="min-h-11 border border-surface-300 bg-white px-3 text-sm font-normal text-surface-900" />
+        </label>
+        <label className="grid gap-1 text-xs font-bold text-surface-700">
+          Status
+          <select name="report_status" defaultValue={reportStatus} className="min-h-11 border border-surface-300 bg-white px-3 text-sm font-normal text-surface-900">
+            <option value="active">Active (open/reviewing)</option>
+            <option value="all">All retained</option>
+            <option value="open">Open</option>
+            <option value="reviewing">Reviewing</option>
+            <option value="resolved">Resolved</option>
+            <option value="dismissed">Dismissed</option>
+          </select>
         </label>
         <label className="grid gap-1 text-xs font-bold text-surface-700">
           Reason
@@ -75,14 +102,16 @@ export default function AdminCommunityProjectReportQueue({
             <option value="delivered">Delivered</option>
           </select>
         </label>
-        <button className="min-h-11 bg-surface-900 px-4 py-2 text-sm font-black text-white">Filter queue</button>
+        <button className="min-h-11 bg-surface-900 px-4 py-2 text-sm font-black text-white">Filter reports</button>
       </form>
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs text-surface-500">
         <span>Showing {queue.reports.length} of {queue.filteredCount} matching reports.</span>
-        {reportFilterActive && <Link href="/admin/community-projects#open-safety-reports" className="font-bold text-surface-700 underline">Reset queue</Link>}
+        {reportFilterActive && <Link href="/admin/community-projects#open-safety-reports" className="font-bold text-surface-700 underline">Reset reports</Link>}
       </div>
       {queue.reports.length === 0 ? (
-        <div className="border border-surface-200 bg-white p-6 text-sm text-surface-500">No open reports match these filters.</div>
+        <div className="border border-surface-200 bg-white p-6 text-sm text-surface-500">
+          {retainedHistoryMode ? 'No retained reports match these filters.' : 'No open reports match these filters.'}
+        </div>
       ) : (
         <div className="grid gap-2">
           {queue.reports.map((report) => (

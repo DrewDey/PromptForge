@@ -84,6 +84,7 @@ export type CommunityProjectPilotControls = {
 export type CommunityProjectReportQueue = {
   reports: CommunityProjectReport[]
   totalCount: number
+  retainedCount: number
   filteredCount: number
   undeliveredCount: number
   criticalCount: number
@@ -95,6 +96,7 @@ export type CommunityProjectReportQueue = {
 
 export type CommunityProjectReportQueueFilters = {
   cursor?: string | null
+  status?: string | null
   reason?: string | null
   alert?: string | null
   query?: string | null
@@ -121,6 +123,14 @@ const COMMUNITY_PROJECT_REPORT_REASONS = new Set([
   'other',
 ])
 const COMMUNITY_PROJECT_REPORT_ALERT_STATES = new Set(['pending', 'delivered', 'failed'])
+const COMMUNITY_PROJECT_REPORT_QUEUE_STATUSES = new Set([
+  'active',
+  'all',
+  'open',
+  'reviewing',
+  'resolved',
+  'dismissed',
+])
 
 type CommunityProjectReportCursor = {
   priority: 0 | 1
@@ -287,6 +297,9 @@ export async function getCommunityProjectReportQueueForAdmin(
 ): Promise<CommunityProjectReportQueue> {
   await requireAdminAccess()
   const cursor = decodeCommunityProjectReportCursor(filters.cursor)
+  const status = typeof filters.status === 'string' && COMMUNITY_PROJECT_REPORT_QUEUE_STATUSES.has(filters.status)
+    ? filters.status
+    : 'active'
   const reason = typeof filters.reason === 'string' && COMMUNITY_PROJECT_REPORT_REASONS.has(filters.reason)
     ? filters.reason
     : null
@@ -298,6 +311,7 @@ export async function getCommunityProjectReportQueueForAdmin(
     : null
   const admin = createAdminClient()
   const rpcFilters = {
+    status_filter: status,
     reason_filter: reason,
     alert_filter: alert,
     query_text: queryText,
@@ -321,6 +335,7 @@ export async function getCommunityProjectReportQueueForAdmin(
   return {
     reports,
     totalCount: queueCount(counts.totalCount),
+    retainedCount: queueCount(counts.retainedCount),
     filteredCount: queueCount(counts.filteredCount),
     undeliveredCount: queueCount(counts.undeliveredCount),
     criticalCount: queueCount(counts.criticalCount),

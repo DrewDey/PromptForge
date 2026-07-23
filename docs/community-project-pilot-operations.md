@@ -118,10 +118,12 @@ backup owns the incident. If neither is available, disable invited submissions
 and publication until coverage resumes.
 
 The moderation page uses a critical-first, oldest-first keyset queue with exact
-open, critical, and undelivered counts. It shows 25 reports at a time, supports
-reason, alert-state, ID/email/detail search, and gives every report a stable
-administrator URL. An operator must never infer backlog size from the visible
-page alone.
+open, retained, critical, and undelivered counts. It shows 25 reports at a time
+and supports active, all-retained, and individual-status views plus reason,
+alert-state, ID/email/detail search. Every retained report has a stable
+administrator URL, including resolved or dismissed reports beyond a project's
+100-row detail preview. An operator must never infer backlog or retained-history
+size from the visible page alone.
 
 ## Daily reconciliation
 
@@ -216,7 +218,8 @@ queue-only source-run inserts; it does not restore browser publication. The
 fifth migration makes report-alert failures durable and prevents a browser
 confirmation from opening external invitations. The sixth adds leased,
 dual-channel alert recovery, an hourly-fresh database heartbeat, exact
-moderation counts, and keyset queue pagination.
+moderation counts, and keyset pagination across both the active queue and all
+retained report statuses.
 
 After the migration and application are live, run the disposable deployed gate
 with production server credentials and

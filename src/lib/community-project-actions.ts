@@ -15,6 +15,7 @@ import {
 } from './community-project-contract'
 import {
   communityProjectOperatorAlertsConfigured,
+  communityProjectReportSeverity,
   sendCommunityProjectOperatorAlert,
 } from './community-project-alerts'
 import {
@@ -47,8 +48,44 @@ function publicationRuntimeConfigured() {
     process.env.REPORT_RATE_LIMIT_SECRET &&
     process.env.REPORT_RATE_LIMIT_SECRET.length >= 32 &&
     process.env.CRON_SECRET &&
-    process.env.CRON_SECRET.length >= 32
+    process.env.CRON_SECRET.length >= 32 &&
+    communityProjectOperatorAlertsConfigured()
   )
+}
+
+async function verifyAndRecordCommunityProjectReportReadiness(
+  admin: ReturnType<typeof createAdminClient>,
+  actorId: string,
+  scope: 'publication' | 'external invitations',
+) {
+  if (!publicationRuntimeConfigured()) {
+    throw new Error(
+      'Configure strong REPORT_RATE_LIMIT_SECRET and CRON_SECRET values plus an HTTPS operator-alert webhook before changing this control.',
+    )
+  }
+  const reportSecret = process.env.REPORT_RATE_LIMIT_SECRET as string
+  const cronSecret = process.env.CRON_SECRET as string
+  const correlation = randomUUID()
+  const delivered = await sendCommunityProjectOperatorAlert({
+    code: 'operator_readiness_probe',
+    severity: 'warning',
+    summary: `Operator notification readiness probe before ${scope}.`,
+  })
+  if (!delivered) {
+    throw new Error('The operator-alert readiness probe was not delivered. The control remains closed.')
+  }
+  const proofHash = createHmac('sha256', reportSecret)
+    .update(`community-project-report-readiness:${scope}:${actorId}:${correlation}`)
+    .digest('hex')
+  const alertProofHash = createHmac('sha256', cronSecret)
+    .update(`community-project-alert-readiness:${scope}:${actorId}:${correlation}`)
+    .digest('hex')
+  const { error } = await admin.rpc('record_community_project_report_readiness', {
+    proof_hash: proofHash,
+    alert_proof_hash: alertProofHash,
+    correlation,
+  })
+  if (error) throw error
 }
 
 function safeError(error: unknown, fallback: string) {
@@ -640,7 +677,8 @@ export async function reportCommunityProject(formData: FormData): Promise<Commun
     const requestFingerprint = createHmac('sha256', rateLimitSecret)
       .update(clientAddress)
       .digest('hex')
-    const { data, error } = await createAdminClient().rpc('create_community_project_report', {
+    const admin = createAdminClient()
+    const { data, error } = await admin.rpc('create_community_project_report', {
       target_prompt: promptId,
       reporter: user?.id ?? null,
       reporter_email_value: email,
@@ -650,13 +688,34 @@ export async function reportCommunityProject(formData: FormData): Promise<Commun
       correlation: randomUUID(),
     })
     if (error) throw error
-    await sendCommunityProjectOperatorAlert({
+    const reportId = String(data)
+    const alertCorrelation = randomUUID()
+    const alertDelivered = await sendCommunityProjectOperatorAlert({
       code: 'report_filed',
-      severity: reason === 'malware' || reason === 'privacy' ? 'critical' : 'warning',
-      reportId: String(data),
+      severity: communityProjectReportSeverity(reason),
+      reportId,
       promptId,
     })
-    return { success: true, id: String(data) }
+    const { error: deliveryRecordError } = await admin.rpc(
+      'record_community_project_report_alert_delivery',
+      {
+        target_report: reportId,
+        delivered: alertDelivered,
+        failure_code: alertDelivered ? null : 'webhook_delivery_failed',
+        correlation: alertCorrelation,
+      },
+    )
+    if (deliveryRecordError) {
+      console.error('Community project report alert receipt persistence failed.', { reportId })
+    }
+    const notificationQueued = !alertDelivered || Boolean(deliveryRecordError)
+    return {
+      success: true,
+      id: reportId,
+      warning: notificationQueued
+        ? 'The report is safely stored. Operator notification is queued for automatic retry, and publication and external invitations remain blocked until delivery succeeds.'
+        : undefined,
+    }
   } catch (error) {
     return { success: false, error: safeError(error, 'PathForge could not file this report.') }
   }
@@ -728,11 +787,30 @@ export async function setCommunityProjectPilotMember(formData: FormData): Promis
 export async function setCommunityProjectInvitationControl(formData: FormData): Promise<CommunityProjectActionResult> {
   try {
     const enabled = formString(formData, 'enabled') === 'yes'
-    if (enabled && formString(formData, 'launch_readiness_confirmed') !== 'yes') {
-      throw new Error('Confirm the private expansion record and external-invitation security gates first.')
-    }
+    const readinessReference = formString(formData, 'launch_readiness_reference')
+    if (
+      enabled
+      && (
+        formString(formData, 'launch_readiness_confirmed') !== 'yes'
+        || readinessReference.length < 8
+        || readinessReference.length > 200
+      )
+    ) throw new Error('Confirm the gates and enter a non-secret private expansion-record reference first.')
     const { user } = await requireAdminAccess()
-    const { error } = await createAdminClient().rpc('set_community_project_invitation_control', {
+    const admin = createAdminClient()
+    if (enabled) {
+      await verifyAndRecordCommunityProjectReportReadiness(admin, user.id, 'external invitations')
+      const { error: readinessError } = await admin.rpc(
+        'record_community_project_invitation_readiness',
+        {
+          administrator: user.id,
+          readiness_reference: readinessReference,
+          correlation: randomUUID(),
+        },
+      )
+      if (readinessError) throw readinessError
+    }
+    const { error } = await admin.rpc('set_community_project_invitation_control', {
       administrator: user.id,
       enabled,
     })
@@ -750,22 +828,7 @@ export async function setCommunityProjectPublicationControl(formData: FormData):
     const { user } = await requireAdminAccess()
     const admin = createAdminClient()
     if (enabled) {
-      if (!publicationRuntimeConfigured()) {
-        throw new Error('Configure strong REPORT_RATE_LIMIT_SECRET and CRON_SECRET values before enabling publication.')
-      }
-      const reportSecret = process.env.REPORT_RATE_LIMIT_SECRET as string
-      const proofHash = createHmac('sha256', reportSecret)
-        .update(`community-project-report-readiness:${user.id}`)
-        .digest('hex')
-      const { error: reportReadinessError } = await admin.rpc(
-        'record_community_project_report_readiness',
-        {
-          administrator: user.id,
-          proof_hash: proofHash,
-          correlation: randomUUID(),
-        },
-      )
-      if (reportReadinessError) throw reportReadinessError
+      await verifyAndRecordCommunityProjectReportReadiness(admin, user.id, 'publication')
     }
     const { error } = await admin.rpc('set_community_project_publication_control', {
       administrator: user.id,

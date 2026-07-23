@@ -54,14 +54,16 @@ BEGIN
   IF private.pathforge_actor_can_submit_community_project(stranger) THEN
     RAISE EXCEPTION 'An invited builder bypassed the locked external invitation control.';
   END IF;
-  PERFORM public.set_community_project_invitation_control(administrator, TRUE);
-  IF NOT private.pathforge_actor_can_submit_community_project(stranger) THEN
-    RAISE EXCEPTION 'The shipped invitation control did not enable an admitted invited builder.';
-  END IF;
-  PERFORM public.set_community_project_invitation_control(administrator, FALSE);
-  IF private.pathforge_actor_can_submit_community_project(stranger) THEN
-    RAISE EXCEPTION 'The shipped invitation control did not re-lock the external cohort.';
-  END IF;
+  BEGIN
+    PERFORM public.set_community_project_invitation_control(administrator, TRUE);
+    RAISE EXCEPTION 'External invitations enabled without authoritative readiness.';
+  EXCEPTION
+    WHEN OTHERS THEN
+      IF SQLERRM = 'External invitations enabled without authoritative readiness.'
+        OR SQLERRM <> 'External invitations require a fresh database-verified expansion record and healthy operational gates.' THEN
+        RAISE;
+      END IF;
+  END;
 
   INSERT INTO public.source_run_submissions (
     id, title, source_url, notes, fork_source_project_id,
@@ -389,6 +391,14 @@ BEGIN
   BEGIN
     PERFORM public.create_community_project_submission(NULL, '{}'::JSONB, gen_random_uuid());
     RAISE EXCEPTION 'Authenticated role invoked the service-only submission function.';
+  EXCEPTION
+    WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    PERFORM public.record_community_project_report_alert_delivery(
+      gen_random_uuid(), TRUE, NULL, gen_random_uuid()
+    );
+    RAISE EXCEPTION 'Authenticated role invoked the service-only alert receipt function.';
   EXCEPTION
     WHEN insufficient_privilege THEN NULL;
   END;
@@ -799,14 +809,14 @@ BEGIN
   EXCEPTION
     WHEN OTHERS THEN
       IF SQLERRM = 'Publication enabled without a report-intake proof.'
-        OR SQLERRM <> 'Publication requires fresh successful reconciliation and report-intake readiness proofs.' THEN
+        OR SQLERRM <> 'Publication requires fresh reconciliation, verified operator-alert delivery, and no pending report alerts.' THEN
         RAISE;
       END IF;
   END;
 
   PERFORM public.record_community_project_report_readiness(
-    (SELECT administrator FROM test_state),
     repeat('e', 64),
+    repeat('d', 64),
     gen_random_uuid()
   );
   PERFORM public.set_community_project_publication_control(
@@ -818,6 +828,49 @@ BEGIN
     WHERE singleton AND allow_publication
   ) THEN
     RAISE EXCEPTION 'Publication did not enable after both readiness proofs.';
+  END IF;
+
+  BEGIN
+    PERFORM public.set_community_project_invitation_control(
+      (SELECT administrator FROM test_state), TRUE
+    );
+    RAISE EXCEPTION 'External invitations enabled without a persisted expansion record.';
+  EXCEPTION
+    WHEN OTHERS THEN
+      IF SQLERRM = 'External invitations enabled without a persisted expansion record.'
+        OR SQLERRM <> 'External invitations require a fresh database-verified expansion record and healthy operational gates.' THEN
+        RAISE;
+      END IF;
+  END;
+  PERFORM public.record_community_project_invitation_readiness(
+    (SELECT administrator FROM test_state),
+    'private-launch-record-2026-07-23',
+    gen_random_uuid()
+  );
+  PERFORM public.set_community_project_invitation_control(
+    (SELECT administrator FROM test_state), TRUE
+  );
+  IF NOT private.pathforge_actor_can_submit_community_project(
+    (SELECT stranger FROM test_state)
+  ) THEN
+    RAISE EXCEPTION 'A database-ready invitation control did not admit the named invited builder.';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.community_project_operations
+    WHERE operation = 'invitation_expansion'
+      AND last_status = 'succeeded'
+      AND last_metrics->>'private_record_reference' = 'private-launch-record-2026-07-23'
+  ) THEN
+    RAISE EXCEPTION 'The authoritative invitation expansion snapshot was not persisted.';
+  END IF;
+  PERFORM public.set_community_project_invitation_control(
+    (SELECT administrator FROM test_state), FALSE
+  );
+  IF private.pathforge_actor_can_submit_community_project(
+    (SELECT stranger FROM test_state)
+  ) THEN
+    RAISE EXCEPTION 'The invitation control did not re-lock the external cohort.';
   END IF;
 END;
 $test$;
@@ -1233,11 +1286,79 @@ SET report = public.create_community_project_report(
   prompt,
   NULL,
   'reporter@example.com',
-  'privacy',
-  'This is a disposable report used to prove the moderation lifecycle.',
+  'imminent_harm',
+  'This is a disposable urgent report used to prove the moderation and alert lifecycle.',
   repeat('b', 64),
   gen_random_uuid()
 );
+SELECT public.record_community_project_report_alert_delivery(
+  report,
+  FALSE,
+  'webhook_delivery_failed',
+  gen_random_uuid()
+) FROM test_state;
+DO $test$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.community_project_reports
+    WHERE id = (SELECT report FROM test_state)
+      AND reason = 'imminent_harm'
+      AND alert_status = 'failed'
+      AND alert_attempt_count = 1
+      AND alert_failure_code = 'webhook_delivery_failed'
+  ) OR NOT EXISTS (
+    SELECT 1
+    FROM public.community_project_operations
+    WHERE operation = 'report_intake'
+      AND last_status = 'failed'
+  ) THEN
+    RAISE EXCEPTION 'A failed urgent-report notification did not persist unhealthy retry state.';
+  END IF;
+  BEGIN
+    PERFORM public.set_community_project_publication_control(
+      (SELECT administrator FROM test_state), TRUE
+    );
+    RAISE EXCEPTION 'Publication remained enableable after a report-alert failure.';
+  EXCEPTION
+    WHEN OTHERS THEN
+      IF SQLERRM = 'Publication remained enableable after a report-alert failure.'
+        OR SQLERRM <> 'Publication requires fresh reconciliation, verified operator-alert delivery, and no pending report alerts.' THEN
+        RAISE;
+      END IF;
+  END;
+END;
+$test$;
+SELECT public.record_community_project_report_alert_delivery(
+  report,
+  TRUE,
+  NULL,
+  gen_random_uuid()
+) FROM test_state;
+SELECT public.record_community_project_report_readiness(
+  repeat('c', 64),
+  repeat('d', 64),
+  gen_random_uuid()
+);
+SELECT public.set_community_project_publication_control(
+  administrator,
+  TRUE
+) FROM test_state;
+DO $test$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.community_project_reports
+    WHERE id = (SELECT report FROM test_state)
+      AND alert_status = 'delivered'
+      AND alert_attempt_count = 2
+      AND alert_delivered_at IS NOT NULL
+      AND alert_failure_code IS NULL
+  ) THEN
+    RAISE EXCEPTION 'A successful report-alert retry did not persist its delivery receipt.';
+  END IF;
+END;
+$test$;
 SELECT public.set_community_project_report_status(
   report,
   administrator,

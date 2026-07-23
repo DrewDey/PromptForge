@@ -642,6 +642,66 @@ async function main() {
         }
         if (options.screenshotDir) await capture(client, sessionId, path.join(options.screenshotDir, `legacy-fork-signin-${viewport.name}.png`))
 
+        await navigate(client, sessionId, `${options.baseUrl}/qa/community-release-controls`)
+        await waitForHeading(
+          client,
+          sessionId,
+          'Community release controls fixture',
+          `${viewport.name} community release controls fixture`,
+        )
+        const releaseControls = await evaluate(client, sessionId, `(() => {
+          const root = document.documentElement;
+          const body = document.body;
+          const viewportWidth = root.clientWidth;
+          const scrollWidth = Math.max(root.scrollWidth, body?.scrollWidth ?? 0);
+          const reference = document.querySelector('input[name="launch_readiness_reference"]');
+          const confirmation = document.querySelector('input[name="launch_readiness_confirmed"]');
+          const reportReasons = [...document.querySelectorAll('select[name="reason"] option')]
+            .map((option) => option.value);
+          return {
+            heading: document.querySelector('h1')?.textContent?.trim() || '',
+            referenceMinLength: Number(reference?.getAttribute('minlength') || 0),
+            referenceMaxLength: Number(reference?.getAttribute('maxlength') || 0),
+            confirmationRequired: Boolean(confirmation?.required && confirmation?.value === 'yes'),
+            invitationButton: [...document.querySelectorAll('button')]
+              .find((button) => button.textContent?.includes('Verify gates and enable invited-builder submissions'))
+              ?.textContent?.trim() || '',
+            publicationButton: [...document.querySelectorAll('button')]
+              .find((button) => button.textContent?.includes('Verify readiness and enable publication'))
+              ?.textContent?.trim() || '',
+            reportReasons,
+            viewportWidth,
+            scrollWidth,
+            overflowingElements: [...document.querySelectorAll('*')]
+              .map((element) => {
+                const rect = element.getBoundingClientRect();
+                return { tag: element.tagName.toLowerCase(), className: typeof element.className === 'string' ? element.className.slice(0, 90) : '', left: Math.round(rect.left), right: Math.round(rect.right) };
+              })
+              .filter((entry) => entry.right > viewportWidth + 1 || entry.left < -1)
+              .slice(0, 8),
+          };
+        })()`)
+        assertPageFits(releaseControls, viewport)
+        if (
+          releaseControls.heading !== 'Community release controls fixture'
+          || releaseControls.referenceMinLength !== 8
+          || releaseControls.referenceMaxLength !== 200
+          || !releaseControls.confirmationRequired
+          || !releaseControls.invitationButton
+          || !releaseControls.publicationButton
+          || !['privacy', 'copyright', 'malware', 'exploitation', 'credentials', 'imminent_harm', 'abuse', 'misleading', 'other']
+            .every((reason) => releaseControls.reportReasons.includes(reason))
+        ) {
+          throw new Error(`${viewport.name} community release controls were incomplete: ${JSON.stringify(releaseControls)}.`)
+        }
+        if (options.screenshotDir) {
+          await capture(
+            client,
+            sessionId,
+            path.join(options.screenshotDir, `community-release-controls-${viewport.name}.png`),
+          )
+        }
+
         await navigate(client, sessionId, `${options.baseUrl}/qa/community-project-submission`)
         await waitForHeading(client, sessionId, 'Submit a project', `${viewport.name} admitted project-submission fixture`)
         const submission = await evaluate(client, sessionId, `(() => {

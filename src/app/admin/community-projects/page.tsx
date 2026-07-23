@@ -19,6 +19,11 @@ function operationIsStale(lastSuccess: string | null | undefined) {
   return !Number.isFinite(timestamp) || Date.now() - timestamp > 26 * 60 * 60 * 1000
 }
 
+function operationMetric(operation: { last_metrics: Record<string, unknown> } | undefined, key: string) {
+  const value = operation?.last_metrics?.[key]
+  return typeof value === 'string' ? value : ''
+}
+
 export default async function AdminCommunityProjectsPage() {
   const [submissions, reports, members, operations, controls] = await Promise.all([
     getCommunityProjectSubmissionsForAdmin(),
@@ -29,7 +34,9 @@ export default async function AdminCommunityProjectsPage() {
   ])
   const reconciliation = operations.find((operation) => operation.operation === 'reconciliation')
   const reportReadiness = operations.find((operation) => operation.operation === 'report_intake')
+  const invitationReadiness = operations.find((operation) => operation.operation === 'invitation_expansion')
   const openReports = reports.filter((report) => ['open', 'reviewing'].includes(report.status))
+  const undeliveredOpenReports = openReports.filter((report) => report.alert_status !== 'delivered')
   const activeInternalMembers = members.filter((member) => member.is_current && member.member_kind === 'internal_acceptance')
   const activeInvitedMembers = members.filter((member) => member.is_current && member.member_kind === 'invited_builder')
   const activeSubmissions = submissions.filter((submission) => (
@@ -38,9 +45,25 @@ export default async function AdminCommunityProjectsPage() {
   const reconciliationStale = operationIsStale(reconciliation?.last_success_at)
   const reportReadinessStale = operationIsStale(reportReadiness?.last_success_at)
   const reconciliationNeedsAttention = reconciliation?.last_status !== 'succeeded' || reconciliationStale
-  const reportReadinessNeedsAttention = reportReadiness?.last_status !== 'succeeded' || reportReadinessStale
-  const operationsNeedAttention = reconciliationNeedsAttention || reportReadinessNeedsAttention
+  const reportAlertDeliveryVerified = operationMetric(reportReadiness, 'operator_alert_delivery') === 'verified'
+  const reportReadinessNeedsAttention = (
+    reportReadiness?.last_status !== 'succeeded'
+    || reportReadinessStale
+    || !reportAlertDeliveryVerified
+  )
+  const operationsNeedAttention = (
+    reconciliationNeedsAttention
+    || reportReadinessNeedsAttention
+    || undeliveredOpenReports.length > 0
+  )
+  const canAttemptControlEnable = !reconciliationNeedsAttention && undeliveredOpenReports.length === 0
   const publicationOperationallyReady = controls?.allow_publication === true && !operationsNeedAttention
+  const invitationOperationallyReady = controls?.allow_invited_submissions === true && !operationsNeedAttention
+  const invitationBlockReason = reconciliationNeedsAttention
+    ? 'Run a successful reconciliation before attempting to open the external invitation lane.'
+    : undeliveredOpenReports.length > 0
+      ? 'Resolve operator-alert delivery for every open report before attempting to open the external invitation lane.'
+      : ''
   return (
     <div className="mx-auto max-w-6xl">
       <Link href="/admin" className="inline-flex items-center gap-2 text-sm font-bold text-surface-500 hover:text-brand-orange-ink"><ArrowLeft className="h-4 w-4" aria-hidden="true" /> Admin workspace</Link>
@@ -49,24 +72,26 @@ export default async function AdminCommunityProjectsPage() {
         <div className="flex gap-3"><span className="border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900">{submissions.filter((item) => item.status === 'queued').length} queued</span><span className="border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-900">{openReports.length} open reports</span></div>
       </header>
       <section className={`mt-7 border p-4 ${operationsNeedAttention ? 'border-red-300 bg-red-50 text-red-950' : 'border-green-200 bg-green-50 text-green-950'}`} role={operationsNeedAttention ? 'alert' : 'status'}>
-        <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-black">Operational readiness health</h2><p className="mt-1 text-xs leading-5">{reconciliation?.last_success_at ? `Last successful reconciliation ${new Date(reconciliation.last_success_at).toLocaleString()}.` : 'No successful reconciliation run has been recorded yet.'} {reportReadiness?.last_success_at ? `Last successful report-intake proof ${new Date(reportReadiness.last_success_at).toLocaleString()}.` : 'No successful report-intake proof has been recorded yet.'} {reconciliation?.last_error ? `Latest reconciliation error: ${reconciliation.last_error}` : ''} {reportReadiness?.last_error ? `Latest report-intake error: ${reportReadiness.last_error}` : ''}</p></div><span className="font-mono text-[10px] font-black uppercase tracking-[0.14em]">{operationsNeedAttention ? 'Operator action required' : 'Current'}</span></div>
+        <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-black">Operational readiness health</h2><p className="mt-1 text-xs leading-5">{reconciliation?.last_success_at ? `Last successful reconciliation ${new Date(reconciliation.last_success_at).toLocaleString()}.` : 'No successful reconciliation run has been recorded yet.'} {reportReadiness?.last_success_at ? `Last successful report-intake and alert-delivery proof ${new Date(reportReadiness.last_success_at).toLocaleString()}.` : 'No successful report-intake and alert-delivery proof has been recorded yet.'} {undeliveredOpenReports.length > 0 ? `${undeliveredOpenReports.length} open report alert${undeliveredOpenReports.length === 1 ? ' is' : 's are'} pending delivery.` : ''} {reconciliation?.last_error ? `Latest reconciliation error: ${reconciliation.last_error}` : ''} {reportReadiness?.last_error ? `Latest report-intake error: ${reportReadiness.last_error}` : ''}</p></div><span className="font-mono text-[10px] font-black uppercase tracking-[0.14em]">{operationsNeedAttention ? 'Operator action required' : 'Current'}</span></div>
       </section>
       <section className={`mt-4 border p-4 ${publicationOperationallyReady ? 'border-green-200 bg-green-50 text-green-950' : controls?.allow_publication ? 'border-red-300 bg-red-50 text-red-950' : 'border-amber-300 bg-amber-50 text-amber-950'}`} aria-labelledby="publication-control-title">
         <h2 id="publication-control-title" className="font-black">Publication readiness</h2>
         <p className="mt-1 text-xs leading-5">
-          Publication is <strong>{controls?.allow_publication ? publicationOperationallyReady ? 'enabled and operationally ready' : 'enabled but blocked by stale or failed readiness' : 'paused'}</strong>. Enabling requires a reconciliation success within 26 hours plus a fresh server-side report-intake HMAC proof. Report proof: {reportReadiness?.last_success_at ? new Date(reportReadiness.last_success_at).toLocaleString() : 'not yet recorded'}.
+          Publication is <strong>{controls?.allow_publication ? publicationOperationallyReady ? 'enabled and operationally ready' : 'enabled but blocked by stale or failed readiness' : 'paused'}</strong>. Enabling requires a reconciliation success within 26 hours, a delivered operator-alert probe, and no undelivered open-report alerts. Readiness proof: {reportReadiness?.last_success_at ? new Date(reportReadiness.last_success_at).toLocaleString() : 'not yet recorded'}.
         </p>
         {operationsNeedAttention && (
           <p className="mt-2 text-xs font-bold leading-5">
             Required: {[
               reconciliationNeedsAttention ? 'run successful reconciliation' : '',
-              reportReadinessNeedsAttention ? 'refresh report-intake proof' : '',
+              reportReadinessNeedsAttention ? 'refresh report-intake and alert-delivery proof' : '',
+              undeliveredOpenReports.length > 0 ? 'deliver pending report alerts' : '',
             ].filter(Boolean).join(' and ')}.
           </p>
         )}
         <PublicationControlForm
           enabled={controls?.allow_publication === true}
           operationallyReady={publicationOperationallyReady}
+          canAttemptEnable={canAttemptControlEnable}
         />
       </section>
       <section className="mt-7" aria-labelledby="pilot-access-title">
@@ -74,10 +99,14 @@ export default async function AdminCommunityProjectsPage() {
           <div><h2 id="pilot-access-title" className="text-lg font-black text-surface-900">Pilot access</h2><p className="mt-1 text-xs text-surface-500">One expiring owner-operated acceptance account can test the real non-admin flow while the external invited cohort remains <strong>{controls?.allow_invited_submissions ? 'enabled' : 'locked'}</strong>.</p></div>
           <span className="text-xs font-bold text-surface-500">{activeInternalMembers.length}/1 acceptance · {activeInvitedMembers.length}/30 invited · {30 - activeInvitedMembers.length} invitations remaining · {activeSubmissions.length}/50 active submissions</span>
         </div>
-        <div className={`mb-3 border p-4 ${controls?.allow_invited_submissions ? 'border-green-200 bg-green-50 text-green-950' : 'border-amber-200 bg-amber-50 text-amber-950'}`}>
-          <strong className="block text-sm">External invitation lane: {controls?.allow_invited_submissions ? 'enabled' : 'locked'}</strong>
-          <p className="mt-1 text-xs leading-5">Named membership and submission permission are separate controls. Enabling this lane admits only active invited-builder accounts; it does not enable publication.</p>
-          <InvitationControlForm enabled={controls?.allow_invited_submissions === true} />
+        <div className={`mb-3 border p-4 ${invitationOperationallyReady ? 'border-green-200 bg-green-50 text-green-950' : controls?.allow_invited_submissions ? 'border-red-300 bg-red-50 text-red-950' : 'border-amber-200 bg-amber-50 text-amber-950'}`}>
+          <strong className="block text-sm">External invitation lane: {controls?.allow_invited_submissions ? invitationOperationallyReady ? 'enabled and operationally ready' : 'enabled but automatically blocked by readiness' : 'locked'}</strong>
+          <p className="mt-1 text-xs leading-5">Named membership and submission permission are separate controls. Enabling requires a fresh database gate snapshot and a non-secret reference to the complete private expansion record; it does not enable publication. Last expansion reference: {operationMetric(invitationReadiness, 'private_record_reference') || 'none recorded'}.</p>
+          <InvitationControlForm
+            enabled={controls?.allow_invited_submissions === true}
+            canAttemptEnable={canAttemptControlEnable}
+            blockReason={invitationBlockReason}
+          />
         </div>
         <PilotMembershipForm externalInvitationsEnabled={controls?.allow_invited_submissions === true} />
         {members.length > 0 && <div className="mt-3 flex flex-wrap gap-2">{members.map((member) => <span key={member.user_id} className={`border px-2.5 py-1.5 text-xs ${member.is_current ? 'border-green-200 bg-green-50 text-green-900' : 'border-surface-200 bg-surface-50 text-surface-500'}`}>@{member.user?.username || member.user_id} · {member.member_kind === 'internal_acceptance' ? 'acceptance' : 'invited'} · {member.is_current ? member.expires_at ? `active until ${new Date(member.expires_at).toLocaleString()}` : 'active' : member.active ? 'expired' : 'revoked'}</span>)}</div>}
@@ -88,7 +117,7 @@ export default async function AdminCommunityProjectsPage() {
           <div className="grid gap-2">
             {openReports.map((report) => (
               <Link key={report.id} href={`/admin/community-projects/${report.submission_id}#reports`} className="grid gap-2 border border-red-200 bg-red-50 p-3 text-sm hover:border-red-500 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-                <span><strong className="text-red-950">{report.reason} · {report.status}</strong><span className="mt-1 block line-clamp-2 text-xs leading-5 text-red-900">{report.details}</span></span>
+                <span><strong className="text-red-950">{report.reason} · {report.status} · alert {report.alert_status}</strong><span className="mt-1 block line-clamp-2 text-xs leading-5 text-red-900">{report.details}</span></span>
                 <span className="inline-flex items-center gap-2 text-xs font-black text-red-900">Review report <ArrowRight className="h-4 w-4" aria-hidden="true" /></span>
               </Link>
             ))}

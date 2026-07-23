@@ -21,9 +21,23 @@ export type CommunityProjectReport = {
   prompt_id: string | null
   reporter_id: string | null
   reporter_email: string
-  reason: 'privacy' | 'copyright' | 'malware' | 'abuse' | 'misleading' | 'other'
+  reason:
+    | 'privacy'
+    | 'copyright'
+    | 'malware'
+    | 'exploitation'
+    | 'credentials'
+    | 'imminent_harm'
+    | 'abuse'
+    | 'misleading'
+    | 'other'
   details: string
   status: 'open' | 'reviewing' | 'resolved' | 'dismissed'
+  alert_status: 'pending' | 'delivered' | 'failed'
+  alert_attempt_count: number
+  alert_last_attempt_at: string | null
+  alert_delivered_at: string | null
+  alert_failure_code: string | null
   resolution_notes: string | null
   resolved_by: string | null
   resolved_at: string | null
@@ -46,7 +60,7 @@ export type CommunityProjectPilotMember = {
 }
 
 export type CommunityProjectOperations = {
-  operation: 'reconciliation' | 'report_intake'
+  operation: 'reconciliation' | 'report_intake' | 'invitation_expansion'
   lease_id: string | null
   lease_expires_at: string | null
   last_started_at: string | null
@@ -167,7 +181,7 @@ export async function getCommunityProjectOperationsForAdmin(): Promise<Community
   const { data, error } = await createAdminClient()
     .from('community_project_operations')
     .select('*')
-    .in('operation', ['reconciliation', 'report_intake'])
+    .in('operation', ['reconciliation', 'report_intake', 'invitation_expansion'])
     .order('operation')
   if (error) throw error
   return (data ?? []) as CommunityProjectOperations[]

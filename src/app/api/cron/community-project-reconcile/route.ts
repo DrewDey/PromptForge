@@ -1,10 +1,13 @@
-import { createHash, timingSafeEqual } from 'node:crypto'
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
 import { NextResponse } from 'next/server'
 import {
   COMMUNITY_PROJECT_BUCKET,
   COMMUNITY_PROJECT_MAX_ARTIFACT_BYTES,
 } from '@/lib/community-project-contract'
-import { sendCommunityProjectOperatorAlert } from '@/lib/community-project-alerts'
+import {
+  communityProjectReportSeverity,
+  sendCommunityProjectOperatorAlert,
+} from '@/lib/community-project-alerts'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export const dynamic = 'force-dynamic'
@@ -19,6 +22,11 @@ type PublishedArtifact = {
   artifact_sha256: string
   artifact_size_bytes: number
 }
+type ReportAlertRetry = {
+  id: string
+  prompt_id: string | null
+  reason: string
+}
 type RetentionMetrics = {
   reportsPurged?: number
   promptTombstonesDeidentified?: number
@@ -28,6 +36,8 @@ type RetentionMetrics = {
 
 const INTEGRITY_BATCH_LIMIT = 20
 const STORAGE_CONCURRENCY = 4
+const REPORT_ALERT_RETRY_BATCH_LIMIT = 6
+const REPORT_ALERT_CONCURRENCY = 3
 
 function authorized(request: Request) {
   const expected = process.env.CRON_SECRET
@@ -75,10 +85,13 @@ export async function GET(request: Request) {
 
   const cleanupErrors: string[] = []
   const integrityErrors: string[] = []
+  const reportAlertErrors: string[] = []
   let finalized = 0
   let orphansRemoved = 0
   let integrityVerified = 0
   let integrityRemoved = 0
+  let reportAlertsRetried = 0
+  let reportAlertsDelivered = 0
 
   try {
     const [cleanupResult, orphanResult, artifactResult] = await Promise.all([
@@ -178,7 +191,48 @@ export async function GET(request: Request) {
     if (retentionError) throw new Error('retention_purge_failed')
     const retention = (retentionData ?? {}) as RetentionMetrics
 
-    const [{ data: drift, error: driftError }, reportCountResult] = await Promise.all([
+    const { data: reportAlertRetries, error: reportAlertRetryError } = await admin
+      .from('community_project_reports')
+      .select('id,prompt_id,reason')
+      .in('status', ['open', 'reviewing'])
+      .in('alert_status', ['pending', 'failed'])
+      .order('alert_last_attempt_at', { ascending: true, nullsFirst: true })
+      .order('created_at', { ascending: true })
+      .limit(REPORT_ALERT_RETRY_BATCH_LIMIT)
+    if (reportAlertRetryError) throw new Error('report_alert_retry_read_failed')
+
+    await inChunks(
+      (reportAlertRetries ?? []) as ReportAlertRetry[],
+      REPORT_ALERT_CONCURRENCY,
+      async (report) => {
+        reportAlertsRetried += 1
+        const correlation = crypto.randomUUID()
+        const delivered = await sendCommunityProjectOperatorAlert({
+          code: 'report_filed',
+          severity: communityProjectReportSeverity(report.reason),
+          reportId: report.id,
+          promptId: report.prompt_id ?? undefined,
+        })
+        const { error: recordError } = await admin.rpc(
+          'record_community_project_report_alert_delivery',
+          {
+            target_report: report.id,
+            delivered,
+            failure_code: delivered ? null : 'webhook_delivery_failed',
+            correlation,
+          },
+        )
+        if (recordError) reportAlertErrors.push(`record:${report.id}`)
+        else if (delivered) reportAlertsDelivered += 1
+        else reportAlertErrors.push(`delivery:${report.id}`)
+      },
+    )
+
+    const [
+      { data: drift, error: driftError },
+      reportCountResult,
+      undeliveredReportAlertResult,
+    ] = await Promise.all([
       admin.rpc('community_project_publication_drift'),
       admin
         .from('community_project_reports')
@@ -186,8 +240,73 @@ export async function GET(request: Request) {
         .in('status', ['open', 'reviewing'])
         .order('created_at', { ascending: true })
         .limit(1),
+      admin
+        .from('community_project_reports')
+        .select('created_at', { count: 'exact', head: false })
+        .in('status', ['open', 'reviewing'])
+        .in('alert_status', ['pending', 'failed'])
+        .order('created_at', { ascending: true })
+        .limit(1),
     ])
-    if (driftError || reportCountResult.error) throw new Error('health_read_failed')
+    if (driftError || reportCountResult.error || undeliveredReportAlertResult.error) {
+      throw new Error('health_read_failed')
+    }
+
+    const baseHealthy = (
+      (drift?.length ?? 0) === 0
+      && cleanupErrors.length === 0
+      && integrityErrors.length === 0
+      && integrityRemoved === 0
+      && reportAlertErrors.length === 0
+      && (undeliveredReportAlertResult.count ?? 0) === 0
+    )
+    let operatorAlertReadiness: 'verified' | 'failed' | 'not_checked' = 'not_checked'
+    let readinessError: string | null = null
+    if (baseHealthy) {
+      const reportSecret = process.env.REPORT_RATE_LIMIT_SECRET
+      const cronSecret = process.env.CRON_SECRET
+      if (
+        !reportSecret
+        || reportSecret.length < 32
+        || !cronSecret
+        || cronSecret.length < 32
+      ) {
+        operatorAlertReadiness = 'failed'
+        readinessError = 'readiness_secrets_unavailable'
+      } else {
+        const correlation = crypto.randomUUID()
+        const delivered = await sendCommunityProjectOperatorAlert({
+          code: 'operator_readiness_probe',
+          severity: 'warning',
+          summary: 'Daily community-project operator notification readiness probe.',
+        })
+        if (!delivered) {
+          operatorAlertReadiness = 'failed'
+          readinessError = 'operator_alert_readiness_failed'
+        } else {
+          const proofHash = createHmac('sha256', reportSecret)
+            .update(`community-project-report-readiness:reconciliation:${runId}:${correlation}`)
+            .digest('hex')
+          const alertProofHash = createHmac('sha256', cronSecret)
+            .update(`community-project-alert-readiness:reconciliation:${runId}:${correlation}`)
+            .digest('hex')
+          const { error: readinessRecordError } = await admin.rpc(
+            'record_community_project_report_readiness',
+            {
+              proof_hash: proofHash,
+              alert_proof_hash: alertProofHash,
+              correlation,
+            },
+          )
+          if (readinessRecordError) {
+            operatorAlertReadiness = 'failed'
+            readinessError = 'operator_alert_readiness_receipt_failed'
+          } else {
+            operatorAlertReadiness = 'verified'
+          }
+        }
+      }
+    }
 
     const metrics = {
       driftCount: drift?.length ?? 0,
@@ -199,20 +318,21 @@ export async function GET(request: Request) {
       orphansRemoved,
       openReportCount: reportCountResult.count ?? 0,
       oldestOpenReportAt: reportCountResult.data?.[0]?.created_at ?? null,
+      reportAlertsRetried,
+      reportAlertsDelivered,
+      reportAlertErrorCount: reportAlertErrors.length,
+      undeliveredReportAlertCount: undeliveredReportAlertResult.count ?? 0,
+      oldestUndeliveredReportAlertAt: undeliveredReportAlertResult.data?.[0]?.created_at ?? null,
+      operatorAlertReadiness,
       reportsPurged: retention.reportsPurged ?? 0,
       promptTombstonesDeidentified: retention.promptTombstonesDeidentified ?? 0,
       promptStepsPurged: retention.promptStepsPurged ?? 0,
       submissionTombstonesPurged: retention.submissionTombstonesPurged ?? 0,
     }
-    const succeeded = (
-      metrics.driftCount === 0 &&
-      cleanupErrors.length === 0 &&
-      integrityErrors.length === 0 &&
-      integrityRemoved === 0
-    )
+    const succeeded = baseHealthy && operatorAlertReadiness === 'verified'
     const errorSummary = succeeded
       ? null
-      : `drift=${metrics.driftCount};cleanup=${cleanupErrors.length};integrity=${integrityErrors.length};removed=${integrityRemoved}`
+      : `drift=${metrics.driftCount};cleanup=${cleanupErrors.length};integrity=${integrityErrors.length};removed=${integrityRemoved};report_alerts=${reportAlertErrors.length};undelivered=${metrics.undeliveredReportAlertCount};readiness=${readinessError ?? operatorAlertReadiness}`
     const { error: finishError } = await admin.rpc('finish_community_project_reconciliation', {
       run_id: runId,
       succeeded,
@@ -223,17 +343,20 @@ export async function GET(request: Request) {
 
     if (!succeeded) {
       console.error('Community project reconciliation requires operator attention.', metrics)
-      await sendCommunityProjectOperatorAlert({
-        code: 'reconciliation_attention',
-        severity: 'critical',
-        summary: errorSummary ?? 'Reconciliation returned a failed health result.',
-      })
+      if (operatorAlertReadiness !== 'failed' && reportAlertErrors.length === 0) {
+        await sendCommunityProjectOperatorAlert({
+          code: 'reconciliation_attention',
+          severity: 'critical',
+          summary: errorSummary ?? 'Reconciliation returned a failed health result.',
+        })
+      }
     }
     return NextResponse.json({
       ok: succeeded,
       drift,
       cleanupErrors,
       integrityErrors,
+      reportAlertErrors,
       ...metrics,
       checkedAt: new Date().toISOString(),
     }, {
@@ -246,7 +369,15 @@ export async function GET(request: Request) {
       run_id: runId,
       succeeded: false,
       error_summary: errorKind,
-      metrics: { cleanupErrors, integrityErrors, finalized, orphansRemoved },
+      metrics: {
+        cleanupErrors,
+        integrityErrors,
+        reportAlertErrors,
+        reportAlertsRetried,
+        reportAlertsDelivered,
+        finalized,
+        orphansRemoved,
+      },
     })
     console.error('Community project reconciliation failed.', { errorKind })
     await sendCommunityProjectOperatorAlert({

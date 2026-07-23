@@ -7,9 +7,11 @@ import { setCommunityProjectPublicationControl } from '@/lib/community-project-a
 export default function PublicationControlForm({
   enabled,
   operationallyReady,
+  canAttemptEnable,
 }: {
   enabled: boolean
   operationallyReady: boolean
+  canAttemptEnable: boolean
 }) {
   const router = useRouter()
   const [pending, setPending] = useState(false)
@@ -47,7 +49,7 @@ export default function PublicationControlForm({
       <div className="flex flex-wrap gap-2">
         {(!enabled || !operationallyReady) && (
           <button
-            disabled={pending}
+            disabled={pending || !canAttemptEnable}
             className="min-h-11 bg-surface-900 px-4 py-2 text-sm font-black text-white disabled:opacity-50"
           >
             {pending

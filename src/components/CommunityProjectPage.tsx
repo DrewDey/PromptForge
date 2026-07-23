@@ -113,7 +113,7 @@ export default function CommunityProjectPage({
           <div className="border border-surface-200 bg-white p-5">
             <CheckCircle2 className="h-5 w-5 text-green-700" aria-hidden="true" />
             <h3 className="mt-3 font-black text-surface-900">Artifact hash verified</h3>
-            <p className="mt-2 text-sm leading-6 text-surface-600">PathForge hashed the private reviewed bytes and checks the same hash before every public response.</p>
+            <p className="mt-2 text-sm leading-6 text-surface-600">PathForge serves only the reviewed, hash-verified bytes while the live database manifest still authorizes public access.</p>
           </div>
           <div className="border border-surface-200 bg-white p-5">
             <FileCode2 className="h-5 w-5 text-brand-orange-ink" aria-hidden="true" />

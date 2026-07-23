@@ -98,6 +98,10 @@ const releaseReviewMigration = readFileSync(
   path.join(root, 'supabase', 'migrations', '20260723173000_harden_community_project_release_review.sql'),
   'utf8',
 )
+const alertReadinessMigration = readFileSync(
+  path.join(root, 'supabase', 'migrations', '20260723191235_enforce_community_invitation_and_report_alert_readiness.sql'),
+  'utf8',
+)
 const actions = readFileSync(path.join(root, 'src', 'lib', 'community-project-actions.ts'), 'utf8')
 const sourceRunData = readFileSync(path.join(root, 'src', 'lib', 'data', 'source-runs.ts'), 'utf8')
 const sourceRunReview = readFileSync(path.join(root, 'src', 'lib', 'source-run-review.ts'), 'utf8')
@@ -136,6 +140,10 @@ const projectSubmissionFixture = readFileSync(
   path.join(root, 'src', 'app', 'qa', 'community-project-submission', 'page.tsx'),
   'utf8',
 )
+const releaseControlsFixture = readFileSync(
+  path.join(root, 'src', 'app', 'qa', 'community-release-controls', 'page.tsx'),
+  'utf8',
+)
 const artifactViewer = readFileSync(path.join(root, 'src', 'app', 'artifact-viewer', 'page.tsx'), 'utf8')
 const communityProjectPage = readFileSync(path.join(root, 'src', 'components', 'CommunityProjectPage.tsx'), 'utf8')
 const sourceRunShowcase = readFileSync(path.join(root, 'src', 'components', 'SourceRunShowcase.tsx'), 'utf8')
@@ -149,6 +157,10 @@ const adminReviewPage = readFileSync(path.join(root, 'src', 'app', 'admin', 'com
 const adminCommunityPage = readFileSync(path.join(root, 'src', 'app', 'admin', 'community-projects', 'page.tsx'), 'utf8')
 const invitationControl = readFileSync(
   path.join(root, 'src', 'app', 'admin', 'community-projects', 'InvitationControlForm.tsx'),
+  'utf8',
+)
+const reportForm = readFileSync(
+  path.join(root, 'src', 'app', 'report', 'project', '[id]', 'ReportProjectForm.tsx'),
   'utf8',
 )
 const launchContract = readFileSync(
@@ -260,6 +272,28 @@ assert.match(
   releaseReviewMigration,
   /CREATE POLICY "Users submit untouched queued source runs"[\s\S]*resubmission_of_id IS NULL[\s\S]*EXISTS \([\s\S]*prior\.author_id = \(SELECT auth\.uid\(\)\)[\s\S]*ROW\([\s\S]*IS NOT DISTINCT FROM ROW\(/,
 )
+for (const required of [
+  "ADD COLUMN alert_status TEXT NOT NULL DEFAULT 'pending'",
+  'private.record_community_project_report_alert_delivery',
+  'private.record_community_project_invitation_readiness',
+  "'invitation_expansion'",
+  "last_metrics->>'operator_alert_delivery' = 'verified'",
+  'External invitations require a fresh database-verified expansion record and healthy operational gates.',
+  "report.alert_status <> 'delivered'",
+  "'exploitation'",
+  "'credentials'",
+  "'imminent_harm'",
+]) {
+  assert.ok(alertReadinessMigration.includes(required), `Alert-readiness migration is missing ${required}.`)
+}
+assert.match(
+  alertReadinessMigration,
+  /REVOKE ALL ON FUNCTION public\.record_community_project_report_alert_delivery\(UUID, BOOLEAN, TEXT, UUID\)[\s\S]*GRANT EXECUTE ON FUNCTION public\.record_community_project_report_alert_delivery\(UUID, BOOLEAN, TEXT, UUID\)\s+TO service_role;/,
+)
+assert.match(
+  alertReadinessMigration,
+  /CREATE OR REPLACE FUNCTION private\.pathforge_actor_can_submit_community_project[\s\S]*member\.member_kind = 'invited_builder'[\s\S]*operation\.operation = 'reconciliation'[\s\S]*operation\.operation = 'report_intake'[\s\S]*operator_alert_delivery' = 'verified'/,
+)
 const hardenedPurge = releaseReviewMigration.slice(
   releaseReviewMigration.indexOf('CREATE OR REPLACE FUNCTION private.confirm_community_project_artifact_purged'),
 )
@@ -324,6 +358,8 @@ for (const sourceRunForm of [legacySourceRunIntake, legacySourceRunRepair]) {
 }
 assert.match(alerts, /COMMUNITY_PROJECT_ALERT_WEBHOOK_URL/)
 assert.doesNotMatch(alerts, /reporter_email|report_details|artifact/i)
+assert.match(alerts, /ALERT_MAX_ATTEMPTS = 2/)
+assert.match(alerts, /'exploitation'[\s\S]*'credentials'[\s\S]*'imminent_harm'/)
 assert.match(privateReview, /inert source text/)
 assert.doesNotMatch(privateReview, /iframe|srcDoc|dangerouslySetInnerHTML/)
 assert.match(preparedPage, /preparedProjectIsPublic\(project\.id\).*notFound/s)
@@ -333,6 +369,10 @@ assert.match(cronRoute, /community_project_publication_drift/)
 assert.match(cronRoute, /begin_community_project_reconciliation/)
 assert.match(cronRoute, /record_community_project_artifact_integrity/)
 assert.match(cronRoute, /purge_community_project_retention/)
+assert.match(cronRoute, /record_community_project_report_alert_delivery/)
+assert.match(cronRoute, /undeliveredReportAlertCount/)
+assert.match(cronRoute, /operator_readiness_probe/)
+assert.match(cronRoute, /record_community_project_report_readiness/)
 for (const route of [publicArtifactRoute, privateArtifactRoute]) {
   assert.match(route, /SUPABASE_CONFIGURED/)
   assert.match(route, /catch \{/)
@@ -397,11 +437,23 @@ assert.match(adminPromptRow, /Community workflow only/)
 assert.match(adminPromptRow, /const requiresSpecialReview = requiresSourceRunReview \|\| isCommunityProject/)
 assert.match(adminPromptRow, /!isCommunityProject && \(/)
 assert.match(adminCommunityPage, /InvitationControlForm/)
-assert.match(invitationControl, /Enable invited-builder submissions/)
+assert.match(invitationControl, /Verify gates and enable invited-builder submissions/)
 assert.match(invitationControl, /Lock external submissions/)
 assert.match(invitationControl, /Supabase leaked-password protection is enabled/)
+assert.match(invitationControl, /every current security-advisor warning has a reviewed disposition/)
 assert.match(invitationControl, /launch_readiness_confirmed/)
-assert.match(actions, /Confirm the private expansion record and external-invitation security gates first/)
+assert.match(invitationControl, /launch_readiness_reference/)
+assert.doesNotMatch(invitationControl, /window\.confirm/)
+assert.match(actions, /record_community_project_invitation_readiness/)
+assert.match(actions, /operator-alert readiness probe was not delivered/)
+assert.match(actions, /record_community_project_report_alert_delivery/)
+assert.match(actions, /Operator notification is queued for automatic retry[\s\S]*publication and external invitations remain blocked until delivery succeeds/)
+assert.match(alerts, /redirect: 'error'/)
+assert.match(reportForm, /receipt could not be confirmed[\s\S]*first request may still have been stored/)
+assert.match(reportForm, /value="exploitation"/)
+assert.match(reportForm, /value="credentials"/)
+assert.match(reportForm, /value="imminent_harm"/)
+assert.doesNotMatch(alertReadinessMigration, /Contact PathForge directly/)
 assert.match(launchContract, /does not invent or backfill[\s\S]*new\s+explicit\s+permission/)
 assert.match(launchContract, /auth_leaked_password_protection/)
 assert.match(operationsRunbook, /auth_leaked_password_protection/)
@@ -434,6 +486,9 @@ assert.match(authBrowserGuard, /community artifact viewer exposed a download act
 assert.match(authBrowserGuard, /contrastRatio/)
 assert.match(authBrowserGuard, /community artifact default-canvas contrast/)
 assert.match(authBrowserGuard, /project-upload-admitted-/)
+assert.match(authBrowserGuard, /community-release-controls-/)
+assert.match(authBrowserGuard, /launch_readiness_reference/)
+assert.match(authBrowserGuard, /value === 'yes'/)
 assert.match(authBrowserGuard, /user-wheel static artifact scroll/)
 assert.match(authBrowserGuard, /reader-enabled/)
 assert.match(authBrowserGuard, /visual-only/)
@@ -447,6 +502,10 @@ assert.match(authBrowserGuard, /process\.kill\(-child\.pid, signal\)/)
 assert.match(authBrowserGuard, /await client\.send\('Browser\.close'\)/)
 assert.match(projectSubmissionFixture, /ProjectSubmissionClient/)
 assert.match(projectSubmissionFixture, /VERCEL_ENV === 'production'[\s\S]*notFound\(\)/)
+assert.match(releaseControlsFixture, /InvitationControlForm/)
+assert.match(releaseControlsFixture, /PublicationControlForm/)
+assert.match(releaseControlsFixture, /ReportProjectForm/)
+assert.match(releaseControlsFixture, /VERCEL_ENV === 'production'[\s\S]*notFound\(\)/)
 assert.match(liveAcceptanceGuard, /auth\/signup\?next=%2Fbuild/)
 assert.match(liveAcceptanceGuard, /COMMUNITY_PROJECT_ACCEPTANCE_EMAIL/)
 assert.match(liveAcceptanceGuard, /document\.querySelector\('input\[name="username"\]'\)/)

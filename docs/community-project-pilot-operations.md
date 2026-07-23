@@ -27,16 +27,19 @@ capacity or required controls are unavailable.
 `allow_publication` defaults to `false`. Before enabling it:
 
 1. `CRON_SECRET` and `REPORT_RATE_LIMIT_SECRET` must each be dedicated
-   server-only values at least 32 characters long.
+   server-only values at least 32 characters long, and
+   `COMMUNITY_PROJECT_ALERT_WEBHOOK_URL` must be a working HTTPS endpoint.
 2. Call `/api/cron/community-project-reconcile` with the production Bearer
    secret and confirm an HTTP 200 healthy result. The database records the
    successful reconciliation.
 3. In `/admin/community-projects`, choose **Verify readiness and enable
-   publication**. The server records a report-rate-limit HMAC proof without
-   storing the secret, then asks the database to enable publication.
+   publication**. The server sends a real non-PII operator-alert probe and,
+   only after delivery, records report-rate-limit and alert-delivery HMAC
+   receipts without storing either secret.
 4. The database enables publication only when both readiness records are
-   successful and less than 26 hours old. Every publish transaction repeats
-   that check, so a stale control row does not authorize publication.
+   successful and less than 26 hours old, alert delivery is verified, and no
+   open report has a pending notification. Every publish transaction repeats
+   those checks, so a stale control row does not authorize publication.
 5. After the first disposable project is public, file and resolve a real test
    report, run reconciliation again, and record the production evidence.
 
@@ -59,15 +62,25 @@ Before enabling invited submissions, the private launch record must contain:
 Blank ownership, one-person coverage, an untested alert endpoint, or an
 unresolved policy/counsel question is a hard stop. Disabled leaked-password
 protection is also a hard stop for external invitations. No names are invented
-in source control; until the private record is complete, the database
-invitation control stays off.
+in source control. The administrator enters only a non-secret ID or date for
+the private record; PathForge persists that reference with the fresh
+reconciliation and alert-readiness snapshot. The database refuses enablement
+without that snapshot and rechecks the same operational gates on every invited
+builder eligibility decision.
 
 ## Alerts and service levels
 
-`COMMUNITY_PROJECT_ALERT_WEBHOOK_URL` receives non-PII JSON for a new report or
-a failed reconciliation. Vercel error logs are the secondary audit trail, not
-the primary notification mechanism. The webhook payload never includes report
-contact/details, submitted evidence, artifact bytes, or secrets.
+`COMMUNITY_PROJECT_ALERT_WEBHOOK_URL` receives non-PII JSON for a new report, a
+readiness probe, or a failed reconciliation. A public report is stored first
+with `pending` notification state. PathForge attempts delivery twice in the
+request, records `delivered` or `failed`, and daily reconciliation retries a
+bounded pending/failed batch. Any undelivered open-report notification makes
+both readiness and reconciliation unhealthy. Vercel error logs are the
+secondary audit trail, not the primary notification mechanism. The webhook
+payload never includes report contact/details, submitted evidence, artifact
+bytes, or secrets. The persisted `alert_attempt_count` measures delivery
+cycles; each cycle makes no more than two bounded HTTP attempts and rejects
+redirects.
 
 - Privacy, malware, exploitation, credential, or imminent-harm report: an
   administrator acknowledges and disables public access within 4 hours.
@@ -88,11 +101,14 @@ batches. It:
 1. removes withdrawn/removed artifacts and stale storage orphans;
 2. re-downloads up to 20 least-recently-checked published artifacts, verifies
    their size and SHA-256, and automatically removes mismatches;
-3. fails on database/publication/storage drift;
-4. purges resolved/dismissed reports after 90 days and deidentified removed
+3. retries pending or failed report alerts and fails while any open-report
+   notification remains undelivered;
+4. fails on database/publication/storage drift;
+5. purges resolved/dismissed reports after 90 days and deidentified removed
    submission tombstones after 400 days;
-5. records status, metrics, and last success in
-   `community_project_operations` and alerts on any unhealthy result.
+6. sends a non-PII readiness probe, records report/alert readiness only after
+   delivery, and records status, metrics, and last success in
+   `community_project_operations`.
 
 The admin queue is unhealthy when the latest run failed or the last success is
 older than 26 hours. Do not expand invitations while unhealthy.
@@ -110,8 +126,9 @@ older than 26 hours. Do not expand invitations while unhealthy.
    For an opted-in provider source URL, use the copy-only control and paste it
    into a clean private/incognito browser with no provider account signed in;
    the ordinary signed-in review tab is not evidence of anonymous access.
-4. Classify the incident: privacy/secret, malware, rights/copyright, abuse,
-   misleading provenance, integrity drift, or service failure.
+4. Classify the incident: privacy, exposed credentials, malware, exploitation,
+   imminent harm, rights/copyright, abuse, misleading provenance, integrity
+   drift, or service failure.
 5. Repair or remove the bundle; record a factual resolution note without
    unnecessary personal information.
 6. Run the reconciliation endpoint, confirm zero drift and a fresh successful
@@ -148,12 +165,20 @@ older than 26 hours. Do not expand invitations while unhealthy.
 Before merge: run `npm run check:community-project-pilot`,
 `npm run check:community-project-db`, `npm run typecheck`, `npm run lint`, the
 full build, `npm run check:community-project-auth-browser -- --base-url <url>`,
-and signed-in/anonymous browser tests. Apply the additive database migrations
-in filename order before deploying code that calls their RPCs. In particular,
-the pilot migration is followed by immediate-purge confirmation hardening and
-the exact-column source-run compatibility/source-URL privacy migration. The
-last migration deliberately restores only owned, untouched, queue-only
-source-run inserts; it does not restore browser publication.
+and signed-in/anonymous browser tests. Confirm production migration history and
+apply any pending members of this five-migration chain in filename order before
+deploying code that calls their RPCs:
+
+1. `20260723054558_community_project_pilot.sql`
+2. `20260723140556_harden_immediate_artifact_purge_confirmation.sql`
+3. `20260723152046_restore_legacy_source_run_compatibility_and_source_privacy.sql`
+4. `20260723173000_harden_community_project_release_review.sql`
+5. `20260723191235_enforce_community_invitation_and_report_alert_readiness.sql`
+
+The compatibility migration deliberately restores only owned, untouched,
+queue-only source-run inserts; it does not restore browser publication. The
+final readiness migration makes report-alert failures durable and prevents a
+browser confirmation from opening external invitations.
 
 After the migration and application are live, run the disposable deployed gate
 with production server credentials and

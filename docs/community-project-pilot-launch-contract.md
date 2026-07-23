@@ -136,7 +136,10 @@ showcase.
 
 Public pages may claim only:
 
-- **Artifact hash verified**: PathForge hashed the stored bytes.
+- **Artifact hash verified**: PathForge hashed the reviewed private bytes and
+  serves that verified byte identity only while the live manifest still
+  authorizes public access. A response served from the bounded in-memory byte
+  cache is not described as a new hash computation.
 - **Builder reported**: provider, model, settings, and contributor relationship
   came from the submitter.
 - **Full run**, **selected excerpts**, or **reconstructed notes**: exactly the
@@ -235,10 +238,13 @@ hard stops. They are not averaged against engagement.
   membership; `allow_invited_submissions` remains false throughout.
 - Before the external invitation lane is enabled, Supabase Auth leaked-password
   protection is enabled and a fresh security-advisor run no longer reports
-  `auth_leaked_password_protection`.
+  `auth_leaked_password_protection`; the database also requires a fresh
+  reconciliation, verified operator-alert delivery, no undelivered open-report
+  alerts, and a persisted non-secret reference to the private expansion record.
 - Publication defaults off and cannot be enabled until authenticated
-  reconciliation and report-intake readiness each have a successful record
-  less than 26 hours old. The publish RPC rechecks those records.
+  reconciliation and report/alert readiness each have a successful record less
+  than 26 hours old and no open report has an undelivered notification. The
+  database publication boundary rechecks those records.
 - Public Terms, Privacy, Community Guidelines, copyright/reporting guidance,
   and reviewer runbooks match the implemented data flow.
 - The first 20-30 invited builders remain capped at 50 submissions.
@@ -251,7 +257,7 @@ hard stops. They are not averaged against engagement.
 
 ## Launch evidence
 
-Before merge, the PR must contain the scoped diff, migration, rollback notes,
+Before merge, the PR must contain the scoped diff, migrations, rollback notes,
 scanner fixtures, static guards, role-matrix evidence, build/type/lint results,
 and rendered browser evidence. After deployment, PathForge must repeat the
 anonymous flow and the complete fresh-account, admission, signed-in upload

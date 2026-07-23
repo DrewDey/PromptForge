@@ -102,6 +102,10 @@ const whatToBuild = readFileSync(path.join(root, 'src', 'app', 'what-to-build', 
 const adminReviewPage = readFileSync(path.join(root, 'src', 'app', 'admin', 'community-projects', '[id]', 'page.tsx'), 'utf8')
 const adminPromptRow = readFileSync(path.join(root, 'src', 'app', 'admin', 'AdminPromptRow.tsx'), 'utf8')
 const legacyActions = readFileSync(path.join(root, 'src', 'lib', 'actions.ts'), 'utf8')
+const communityReleaseWorkflow = readFileSync(
+  path.join(root, '.github', 'workflows', 'community-project-release.yml'),
+  'utf8',
+)
 
 for (const required of [
   "'community-project-quarantine'",
@@ -243,6 +247,7 @@ assert.match(liveAcceptanceGuard, /allow_invited_submissions/)
 assert.match(liveAcceptanceGuard, /deleteUser\(userId\)/)
 assert.match(liveAcceptanceGuard, /acceptance-slot postcondition/)
 assert.match(liveAcceptanceGuard, /Disposable cleanup verification failed/)
+assert.match(communityReleaseWorkflow, /npm run check:community-project-auth-browser -- --base-url http:\/\/127\.0\.0\.1:3111/)
 assert.ok(
   liveAcceptanceGuard.indexOf('Disposable cleanup verification failed')
     < liveAcceptanceGuard.indexOf('Live fresh-account acceptance passed and cleanup verified'),

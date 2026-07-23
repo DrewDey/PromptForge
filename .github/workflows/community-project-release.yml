@@ -39,3 +39,20 @@ jobs:
       - run: npm run check:community-project-db
       - run: npm run check:artifact-sandbox
       - run: npm run typecheck
+      - run: npm run build
+      - name: Verify the rendered community-project boundary
+        run: |
+          npm start -- --hostname 127.0.0.1 --port 3111 > /tmp/pathforge-community-project.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..60}; do
+            if curl --fail --silent --show-error http://127.0.0.1:3111/build > /dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          if ! curl --fail --silent --show-error http://127.0.0.1:3111/build > /dev/null; then
+            tail -n 200 /tmp/pathforge-community-project.log
+            exit 1
+          fi
+          npm run check:community-project-auth-browser -- --base-url http://127.0.0.1:3111

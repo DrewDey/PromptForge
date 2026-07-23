@@ -60,7 +60,7 @@ async function verifyAndRecordCommunityProjectReportReadiness(
 ) {
   if (!publicationRuntimeConfigured()) {
     throw new Error(
-      'Configure strong REPORT_RATE_LIMIT_SECRET and CRON_SECRET values plus an HTTPS operator-alert webhook before changing this control.',
+      'Configure strong REPORT_RATE_LIMIT_SECRET and CRON_SECRET values plus distinct HTTPS primary and escalation alert webhooks before changing this control.',
     )
   }
   const reportSecret = process.env.REPORT_RATE_LIMIT_SECRET as string

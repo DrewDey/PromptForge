@@ -4,6 +4,7 @@ type CommunityProjectAlert = {
     | 'operator_readiness_probe'
     | 'reconciliation_attention'
     | 'reconciliation_failed'
+    | 'report_alert_retry_failed'
   severity: 'warning' | 'critical'
   submissionId?: string
   promptId?: string
@@ -21,35 +22,38 @@ const CRITICAL_REPORT_REASONS = new Set([
   'imminent_harm',
 ])
 
-function operatorAlertEndpoint() {
-  const rawUrl = process.env.COMMUNITY_PROJECT_ALERT_WEBHOOK_URL?.trim()
-  if (!rawUrl) return null
+type OperatorAlertChannel = 'primary' | 'escalation'
+
+function parseOperatorAlertEndpoint(rawUrl: string | undefined) {
+  const normalizedUrl = rawUrl?.trim()
+  if (!normalizedUrl) return null
   try {
-    const endpoint = new URL(rawUrl)
+    const endpoint = new URL(normalizedUrl)
     return endpoint.protocol === 'https:' ? endpoint : null
   } catch {
     return null
   }
 }
 
-export function communityProjectOperatorAlertsConfigured() {
-  return operatorAlertEndpoint() !== null
+function operatorAlertEndpoints() {
+  const primary = parseOperatorAlertEndpoint(
+    process.env.COMMUNITY_PROJECT_ALERT_WEBHOOK_URL,
+  )
+  const escalation = parseOperatorAlertEndpoint(
+    process.env.COMMUNITY_PROJECT_ALERT_ESCALATION_WEBHOOK_URL,
+  )
+  if (!primary || !escalation || primary.href === escalation.href) return null
+  return [
+    { channel: 'primary' as const, endpoint: primary },
+    { channel: 'escalation' as const, endpoint: escalation },
+  ]
 }
 
-export function communityProjectReportSeverity(reason: string): CommunityProjectAlert['severity'] {
-  return CRITICAL_REPORT_REASONS.has(reason) ? 'critical' : 'warning'
-}
-
-export async function sendCommunityProjectOperatorAlert(alert: CommunityProjectAlert) {
-  const endpoint = operatorAlertEndpoint()
-  if (!endpoint) {
-    console.error('Community project operator alert is not configured.', {
-      code: alert.code,
-      severity: alert.severity,
-    })
-    return false
-  }
-
+async function deliverOperatorAlert(
+  channel: OperatorAlertChannel,
+  endpoint: URL,
+  alert: CommunityProjectAlert,
+) {
   for (let attempt = 1; attempt <= ALERT_MAX_ATTEMPTS; attempt += 1) {
     try {
       const response = await fetch(endpoint, {
@@ -57,6 +61,7 @@ export async function sendCommunityProjectOperatorAlert(alert: CommunityProjectA
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           service: 'pathforge-community-projects',
+          channel,
           occurredAt: new Date().toISOString(),
           ...alert,
         }),
@@ -70,6 +75,7 @@ export async function sendCommunityProjectOperatorAlert(alert: CommunityProjectA
         || response.status >= 500
       if (!retryable || attempt === ALERT_MAX_ATTEMPTS) {
         console.error('Community project operator alert delivery failed.', {
+          channel,
           code: alert.code,
           status: response.status,
           attempts: attempt,
@@ -79,6 +85,7 @@ export async function sendCommunityProjectOperatorAlert(alert: CommunityProjectA
     } catch {
       if (attempt === ALERT_MAX_ATTEMPTS) {
         console.error('Community project operator alert delivery failed.', {
+          channel,
           code: alert.code,
           attempts: attempt,
         })
@@ -88,4 +95,30 @@ export async function sendCommunityProjectOperatorAlert(alert: CommunityProjectA
     await new Promise((resolve) => setTimeout(resolve, 200 * attempt))
   }
   return false
+}
+
+export function communityProjectOperatorAlertsConfigured() {
+  return operatorAlertEndpoints() !== null
+}
+
+export function communityProjectReportSeverity(reason: string): CommunityProjectAlert['severity'] {
+  return CRITICAL_REPORT_REASONS.has(reason) ? 'critical' : 'warning'
+}
+
+export async function sendCommunityProjectOperatorAlert(alert: CommunityProjectAlert) {
+  const endpoints = operatorAlertEndpoints()
+  if (!endpoints) {
+    console.error('Independent community project operator alerts are not configured.', {
+      code: alert.code,
+      severity: alert.severity,
+    })
+    return false
+  }
+
+  const results = await Promise.all(
+    endpoints.map(({ channel, endpoint }) => (
+      deliverOperatorAlert(channel, endpoint, alert)
+    )),
+  )
+  return results.every(Boolean)
 }

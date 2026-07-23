@@ -176,8 +176,10 @@ bundle contents.
   history. During the pilot, operators first withdraw/remove every owned
   submission and complete artifact purge, then honor the same retention and
   investigation-hold rules before deleting the referenced profile.
-- Readers can file a structured project report. Administrators can suspend a
-  project immediately while reviewing the report.
+- Readers can file a structured project report. The report is stored before
+  notification, delivered through two distinct non-PII alert destinations,
+  and recovered by a critical-first 15-minute schedule. Administrators can
+  suspend a project immediately while reviewing the report.
 
 ## Explicit non-goals
 
@@ -213,6 +215,7 @@ This pilot does not accept or perform:
 | Reviewer mistake | Quarantined code is inspected as inert source with an explicit checklist | No publish action until all gates are recorded |
 | Submission spam | Invitation gate and per-account quota | Deny before object retention |
 | Report flooding | Server-keyed request fingerprint plus email, project, and global database caps | Bound intake and fail closed without the server secret |
+| Alert outage/backlog | Dual destinations, critical-first 50-item batches every 15 minutes, exact queue counts, failed-job escalation | Close publication/invitations; preserve and retry every report |
 
 ## Hard gates before invitation expansion
 
@@ -239,12 +242,18 @@ hard stops. They are not averaged against engagement.
 - Before the external invitation lane is enabled, Supabase Auth leaked-password
   protection is enabled and a fresh security-advisor run no longer reports
   `auth_leaked_password_protection`; the database also requires a fresh
-  reconciliation, verified operator-alert delivery, no undelivered open-report
+  reconciliation, verified dual-channel operator-alert delivery, a successful
+  alert-recovery heartbeat less than one hour old, no undelivered open-report
   alerts, and a persisted non-secret reference to the private expansion record.
 - Publication defaults off and cannot be enabled until authenticated
   reconciliation and report/alert readiness each have a successful record less
-  than 26 hours old and no open report has an undelivered notification. The
-  database publication boundary rechecks those records.
+  than 26 hours old, dual-channel alert recovery succeeded within one hour, and
+  no open report has an undelivered notification. The database publication
+  boundary rechecks those records.
+- The exact moderation queue is keyset-paginated, critical-first and
+  oldest-first, reports exact global counts, and provides a stable searchable
+  administrator URL for every report. A fixture with more than 100 unresolved
+  reports must remain fully traversable.
 - Public Terms, Privacy, Community Guidelines, copyright/reporting guidance,
   and reviewer runbooks match the implemented data flow.
 - The first 20-30 invited builders remain capped at 50 submissions.

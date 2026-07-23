@@ -1,7 +1,62 @@
 import { notFound } from 'next/navigation'
+import AdminCommunityProjectReportQueue from '@/app/admin/community-projects/AdminCommunityProjectReportQueue'
 import InvitationControlForm from '@/app/admin/community-projects/InvitationControlForm'
 import PublicationControlForm from '@/app/admin/community-projects/PublicationControlForm'
 import ReportProjectForm from '@/app/report/project/[id]/ReportProjectForm'
+import type { CommunityProjectReportQueue } from '@/lib/data/community-projects'
+
+const QA_REPORT_QUEUE: CommunityProjectReportQueue = {
+  reports: [
+    {
+      id: '20000000-0000-4000-8000-000000000001',
+      submission_id: '30000000-0000-4000-8000-000000000001',
+      prompt_id: '10000000-0000-4000-8000-000000000001',
+      reporter_id: null,
+      reporter_email: 'safety-fixture@example.invalid',
+      reason: 'imminent_harm',
+      details: 'Rendered critical-report fixture for browser verification. It contains no real user data.',
+      status: 'open',
+      alert_status: 'failed',
+      alert_attempt_count: 2,
+      alert_last_attempt_at: '2026-07-23T17:30:00.000Z',
+      alert_delivered_at: null,
+      alert_failure_code: 'qa_primary_endpoint_unavailable',
+      resolution_notes: null,
+      resolved_by: null,
+      resolved_at: null,
+      created_at: '2026-07-23T17:00:00.000Z',
+      updated_at: '2026-07-23T17:30:00.000Z',
+    },
+    {
+      id: '20000000-0000-4000-8000-000000000002',
+      submission_id: '30000000-0000-4000-8000-000000000002',
+      prompt_id: '10000000-0000-4000-8000-000000000002',
+      reporter_id: null,
+      reporter_email: 'moderation-fixture@example.invalid',
+      reason: 'misleading',
+      details: 'Rendered standard-priority report fixture used to prove critical-first ordering.',
+      status: 'reviewing',
+      alert_status: 'delivered',
+      alert_attempt_count: 1,
+      alert_last_attempt_at: '2026-07-23T18:05:00.000Z',
+      alert_delivered_at: '2026-07-23T18:05:00.000Z',
+      alert_failure_code: null,
+      resolution_notes: null,
+      resolved_by: null,
+      resolved_at: null,
+      created_at: '2026-07-23T18:00:00.000Z',
+      updated_at: '2026-07-23T18:05:00.000Z',
+    },
+  ],
+  totalCount: 125,
+  filteredCount: 125,
+  undeliveredCount: 17,
+  criticalCount: 42,
+  oldestOpenAt: '2026-07-23T16:45:00.000Z',
+  oldestCriticalAt: '2026-07-23T17:00:00.000Z',
+  oldestUndeliveredAt: '2026-07-23T17:00:00.000Z',
+  nextCursor: 'fixture-next-cursor',
+}
 
 export default function CommunityReleaseControlsFixture() {
   if (process.env.VERCEL_ENV === 'production') notFound()
@@ -39,6 +94,8 @@ export default function CommunityReleaseControlsFixture() {
           canAttemptEnable
         />
       </section>
+
+      <AdminCommunityProjectReportQueue queue={QA_REPORT_QUEUE} filters={{}} />
 
       <section className="mt-8 border border-surface-200 bg-white p-5">
         <h2 className="text-lg font-black text-surface-900">Public safety report</h2>

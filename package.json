@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "prebuild": "npm run check:auth-readiness && npm run check:activation-analytics && npm run check:supabase-public-reads && npm run check:community-project-pilot && npm run check:model-variants && node scripts/check-project-model-variant-live-registry.mjs && npm run check:source-run-publication-registry",
+    "prebuild": "npm run check:auth-readiness && npm run check:activation-analytics && npm run check:supabase-public-reads && npm run check:community-project-pilot && npm run check:community-project-alert-recovery && npm run check:model-variants && node scripts/check-project-model-variant-live-registry.mjs && npm run check:source-run-publication-registry",
     "build": "next build",
     "postbuild": "node scripts/check-output-file-tracing.mjs",
     "start": "next start",
@@ -24,6 +24,7 @@
     "check:airlock-zero": "node scripts/check-airlock-zero-artifacts.mjs public/artifacts/airlock-zero-gpt-56-sol-max-step-2.html public/artifacts/airlock-zero-swarm-shift-gpt-56-sol-max.html public/artifacts/airlock-zero-gemini-35-flash-step-9.html public/artifacts/airlock-zero-hull-breach-gemini-35-flash-verified-final.html public/artifacts/airlock-zero-claude-sonnet-5-max-step-10.html public/artifacts/airlock-zero-blackout-shift-claude-sonnet-5-max.html",
     "check:source-run-intake": "node scripts/check-source-run-intake.mjs",
     "check:community-project-pilot": "node scripts/check-community-project-pilot.mjs",
+    "check:community-project-alert-recovery": "node scripts/check-community-project-alert-recovery.mjs",
     "check:community-project-db": "node scripts/check-community-project-db.mjs",
     "check:community-project-auth-browser": "node scripts/check-community-project-auth-browser.mjs",
     "check:community-project-live-acceptance": "node scripts/check-community-project-live-acceptance.mjs",
@@ -46,7 +47,7 @@
     "check:output-tracing": "node scripts/check-output-file-tracing.mjs",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "autoreview": "npm run lint && npm run typecheck && npm run check:discovery-activity && npm run check:source-run-intake && npm run check:community-project-pilot && npm run check:source-run-showcases && npm run check:public-source-evidence && npm run check:public-project-truth && npm run check:generic-public-truth && npm run check:model-variants && npm run check:project-forks && npm run check:my-forge && npm run check:security-boundaries && npm run check:auth-readiness && npm run check:activation-analytics && npm run check:supabase-public-reads",
+    "autoreview": "npm run lint && npm run typecheck && npm run check:discovery-activity && npm run check:source-run-intake && npm run check:community-project-pilot && npm run check:community-project-alert-recovery && npm run check:source-run-showcases && npm run check:public-source-evidence && npm run check:public-project-truth && npm run check:generic-public-truth && npm run check:model-variants && npm run check:project-forks && npm run check:my-forge && npm run check:security-boundaries && npm run check:auth-readiness && npm run check:activation-analytics && npm run check:supabase-public-reads",
     "autoreview:hourly-manager": "npm run check:hourly-seed-manager"
   },
   "dependencies": {

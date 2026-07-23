@@ -28,19 +28,28 @@ capacity or required controls are unavailable.
 
 1. `CRON_SECRET` and `REPORT_RATE_LIMIT_SECRET` must each be dedicated
    server-only values at least 32 characters long, and
-   `COMMUNITY_PROJECT_ALERT_WEBHOOK_URL` must be a working HTTPS endpoint.
+   `COMMUNITY_PROJECT_ALERT_WEBHOOK_URL` plus
+   `COMMUNITY_PROJECT_ALERT_ESCALATION_WEBHOOK_URL` must be working, distinct
+   HTTPS destinations owned by the primary and backup response paths.
 2. Call `/api/cron/community-project-reconcile` with the production Bearer
    secret and confirm an HTTP 200 healthy result. The database records the
    successful reconciliation.
-3. In `/admin/community-projects`, choose **Verify readiness and enable
+3. Call `/api/cron/community-project-alerts` with the same Bearer secret and
+   confirm an HTTP 200 result plus a `report_alerts` database heartbeat showing
+   two independent alert channels. Configure the repository
+   `PATHFORGE_PRODUCTION_URL` variable and `PATHFORGE_CRON_SECRET` secret, run
+   **Community project alert recovery** manually, and verify the scheduled
+   workflow is enabled.
+4. In `/admin/community-projects`, choose **Verify readiness and enable
    publication**. The server sends a real non-PII operator-alert probe and,
-   only after delivery, records report-rate-limit and alert-delivery HMAC
-   receipts without storing either secret.
-4. The database enables publication only when both readiness records are
-   successful and less than 26 hours old, alert delivery is verified, and no
-   open report has a pending notification. Every publish transaction repeats
-   those checks, so a stale control row does not authorize publication.
-5. After the first disposable project is public, file and resolve a real test
+   only after delivery to both destinations, records report-rate-limit and
+   alert-delivery HMAC receipts without storing either secret.
+5. The database enables publication only when reconciliation and report
+   readiness are less than 26 hours old, alert recovery succeeded within one
+   hour with two distinct channels, and no open report has a pending
+   notification. Every publish transaction repeats those checks, so a stale
+   control row does not authorize publication.
+6. After the first disposable project is public, file and resolve a real test
    report, run reconciliation again, and record the production evidence.
 
 ## Expansion record and ownership
@@ -70,17 +79,33 @@ builder eligibility decision.
 
 ## Alerts and service levels
 
-`COMMUNITY_PROJECT_ALERT_WEBHOOK_URL` receives non-PII JSON for a new report, a
-readiness probe, or a failed reconciliation. A public report is stored first
-with `pending` notification state. PathForge attempts delivery twice in the
-request, records `delivered` or `failed`, and daily reconciliation retries a
-bounded pending/failed batch. Any undelivered open-report notification makes
-both readiness and reconciliation unhealthy. Vercel error logs are the
-secondary audit trail, not the primary notification mechanism. The webhook
-payload never includes report contact/details, submitted evidence, artifact
-bytes, or secrets. The persisted `alert_attempt_count` measures delivery
-cycles; each cycle makes no more than two bounded HTTP attempts and rejects
-redirects.
+`COMMUNITY_PROJECT_ALERT_WEBHOOK_URL` and
+`COMMUNITY_PROJECT_ALERT_ESCALATION_WEBHOOK_URL` receive the same non-PII JSON
+through two distinct destinations for a new report, readiness probe, or failed
+reconciliation. A delivery cycle is successful only when both channels accept
+the alert. A public report is stored first with `pending` notification state.
+PathForge attempts each destination twice in the request and records
+`delivered` or `failed`.
+
+GitHub Actions invokes `/api/cron/community-project-alerts` every 15 minutes,
+at minutes 7, 22, 37, and 52 of every hour. The endpoint holds a database lease, processes up to
+50 reports in ten-way bounded concurrency, prioritizes critical reasons, and
+orders equally urgent reports by least-recent attempt and age. A permitted
+250-report daily backlog therefore receives a delivery cycle within five
+scheduled batches—75 minutes after both destinations recover. Vercel invokes
+the same endpoint once daily as a scheduler-independent fallback compatible
+with Hobby cron limits. Any remaining backlog returns HTTP 503, making the
+scheduled GitHub job fail visibly; successful empty/backlog-cleared runs store
+a `report_alerts` heartbeat. A missing or hour-old heartbeat closes new
+publication and invited-builder intake at the database boundary.
+
+Any undelivered open-report notification makes alert recovery, readiness, and
+reconciliation unhealthy. The GitHub workflow failure plus Vercel function
+logs are independent audit trails, not substitutes for the two paging
+destinations. The webhook payload never includes report contact/details,
+submitted evidence, artifact bytes, or secrets. The persisted
+`alert_attempt_count` measures delivery cycles; each channel within a cycle
+makes no more than two bounded HTTP attempts and rejects redirects.
 
 - Privacy, malware, exploitation, credential, or imminent-harm report: an
   administrator acknowledges and disables public access within 4 hours.
@@ -92,6 +117,12 @@ If the primary does not acknowledge inside half the applicable window, the
 backup owns the incident. If neither is available, disable invited submissions
 and publication until coverage resumes.
 
+The moderation page uses a critical-first, oldest-first keyset queue with exact
+open, critical, and undelivered counts. It shows 25 reports at a time, supports
+reason, alert-state, ID/email/detail search, and gives every report a stable
+administrator URL. An operator must never infer backlog size from the visible
+page alone.
+
 ## Daily reconciliation
 
 Vercel calls `/api/cron/community-project-reconcile` daily at `07:17 UTC` with
@@ -101,17 +132,20 @@ batches. It:
 1. removes withdrawn/removed artifacts and stale storage orphans;
 2. re-downloads up to 20 least-recently-checked published artifacts, verifies
    their size and SHA-256, and automatically removes mismatches;
-3. retries pending or failed report alerts and fails while any open-report
-   notification remains undelivered;
+3. checks the dedicated report-alert recovery backlog and fails while any
+   open-report notification remains undelivered;
 4. fails on database/publication/storage drift;
 5. purges resolved/dismissed reports after 90 days and deidentified removed
    submission tombstones after 400 days;
-6. sends a non-PII readiness probe, records report/alert readiness only after
-   delivery, and records status, metrics, and last success in
+6. sends a non-PII readiness probe to both alert destinations, records
+   report/alert readiness only after dual delivery, and records status,
+   metrics, and last success in
    `community_project_operations`.
 
-The admin queue is unhealthy when the latest run failed or the last success is
-older than 26 hours. Do not expand invitations while unhealthy.
+The admin queue is unhealthy when reconciliation/report readiness is stale,
+the dedicated alert heartbeat is more than one hour old, either alert channel
+is unavailable, or any report alert is undelivered. Do not publish or expand
+invitations while unhealthy.
 
 ## Incident procedure
 
@@ -163,10 +197,11 @@ older than 26 hours. Do not expand invitations while unhealthy.
 ## Release and rollback
 
 Before merge: run `npm run check:community-project-pilot`,
+`npm run check:community-project-alert-recovery`,
 `npm run check:community-project-db`, `npm run typecheck`, `npm run lint`, the
 full build, `npm run check:community-project-auth-browser -- --base-url <url>`,
 and signed-in/anonymous browser tests. Confirm production migration history and
-apply any pending members of this five-migration chain in filename order before
+apply any pending members of this six-migration chain in filename order before
 deploying code that calls their RPCs:
 
 1. `20260723054558_community_project_pilot.sql`
@@ -174,11 +209,14 @@ deploying code that calls their RPCs:
 3. `20260723152046_restore_legacy_source_run_compatibility_and_source_privacy.sql`
 4. `20260723173000_harden_community_project_release_review.sql`
 5. `20260723191235_enforce_community_invitation_and_report_alert_readiness.sql`
+6. `20260723204000_close_community_report_operational_gaps.sql`
 
 The compatibility migration deliberately restores only owned, untouched,
 queue-only source-run inserts; it does not restore browser publication. The
-final readiness migration makes report-alert failures durable and prevents a
-browser confirmation from opening external invitations.
+fifth migration makes report-alert failures durable and prevents a browser
+confirmation from opening external invitations. The sixth adds leased,
+dual-channel alert recovery, an hourly-fresh database heartbeat, exact
+moderation counts, and keyset queue pagination.
 
 After the migration and application are live, run the disposable deployed gate
 with production server credentials and

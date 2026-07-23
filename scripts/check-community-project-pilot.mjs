@@ -102,6 +102,10 @@ const alertReadinessMigration = readFileSync(
   path.join(root, 'supabase', 'migrations', '20260723191235_enforce_community_invitation_and_report_alert_readiness.sql'),
   'utf8',
 )
+const operationalGapsMigration = readFileSync(
+  path.join(root, 'supabase', 'migrations', '20260723204000_close_community_report_operational_gaps.sql'),
+  'utf8',
+)
 const actions = readFileSync(path.join(root, 'src', 'lib', 'community-project-actions.ts'), 'utf8')
 const sourceRunData = readFileSync(path.join(root, 'src', 'lib', 'data', 'source-runs.ts'), 'utf8')
 const sourceRunReview = readFileSync(path.join(root, 'src', 'lib', 'source-run-review.ts'), 'utf8')
@@ -120,6 +124,10 @@ const privateReview = readFileSync(path.join(root, 'src', 'components', 'Communi
 const nextConfig = readFileSync(path.join(root, 'next.config.ts'), 'utf8')
 const cronRoute = readFileSync(
   path.join(root, 'src', 'app', 'api', 'cron', 'community-project-reconcile', 'route.ts'),
+  'utf8',
+)
+const alertRecoveryRoute = readFileSync(
+  path.join(root, 'src', 'app', 'api', 'cron', 'community-project-alerts', 'route.ts'),
   'utf8',
 )
 const publicArtifactRoute = readFileSync(
@@ -334,6 +342,8 @@ assert.match(adminClient, /server-only Supabase credentials/)
 assert.match(adminClient, /detectSessionInUrl: false/)
 assert.match(envExample, /^SUPABASE_SECRET_KEY=your_supabase_secret_key$/m)
 assert.match(envExample, /^SUPABASE_SERVICE_ROLE_KEY=$/m)
+assert.match(envExample, /^COMMUNITY_PROJECT_ALERT_WEBHOOK_URL=https:\/\//m)
+assert.match(envExample, /^COMMUNITY_PROJECT_ALERT_ESCALATION_WEBHOOK_URL=https:\/\//m)
 assert.match(actions, /sendCommunityProjectOperatorAlert/)
 assert.match(actions, /communityProjectOperatorAlertsConfigured/)
 assert.match(actions, /membership\?\.member_kind === 'invited_builder'/)
@@ -357,6 +367,8 @@ for (const sourceRunForm of [legacySourceRunIntake, legacySourceRunRepair]) {
   assert.doesNotMatch(sourceRunForm, /providerOptions|<select/)
 }
 assert.match(alerts, /COMMUNITY_PROJECT_ALERT_WEBHOOK_URL/)
+assert.match(alerts, /COMMUNITY_PROJECT_ALERT_ESCALATION_WEBHOOK_URL/)
+assert.match(alerts, /primary\.href === escalation\.href/)
 assert.doesNotMatch(alerts, /reporter_email|report_details|artifact/i)
 assert.match(alerts, /ALERT_MAX_ATTEMPTS = 2/)
 assert.match(alerts, /'exploitation'[\s\S]*'credentials'[\s\S]*'imminent_harm'/)
@@ -369,10 +381,18 @@ assert.match(cronRoute, /community_project_publication_drift/)
 assert.match(cronRoute, /begin_community_project_reconciliation/)
 assert.match(cronRoute, /record_community_project_artifact_integrity/)
 assert.match(cronRoute, /purge_community_project_retention/)
-assert.match(cronRoute, /record_community_project_report_alert_delivery/)
 assert.match(cronRoute, /undeliveredReportAlertCount/)
 assert.match(cronRoute, /operator_readiness_probe/)
 assert.match(cronRoute, /record_community_project_report_readiness/)
+assert.doesNotMatch(cronRoute, /record_community_project_report_alert_delivery/)
+assert.match(alertRecoveryRoute, /begin_community_project_report_alert_delivery/)
+assert.match(alertRecoveryRoute, /get_community_project_report_alert_batch/)
+assert.match(alertRecoveryRoute, /record_community_project_report_alert_delivery/)
+assert.match(alertRecoveryRoute, /REPORT_ALERT_RETRY_BATCH_LIMIT = 50/)
+assert.match(alertRecoveryRoute, /criticalRemaining/)
+assert.match(operationalGapsMigration, /private\.get_community_project_report_queue/)
+assert.match(operationalGapsMigration, /private\.get_community_project_report_queue_counts/)
+assert.match(operationalGapsMigration, /operation\.operation = 'report_alerts'[\s\S]*INTERVAL '1 hour'/)
 for (const route of [publicArtifactRoute, privateArtifactRoute]) {
   assert.match(route, /SUPABASE_CONFIGURED/)
   assert.match(route, /catch \{/)
@@ -440,7 +460,7 @@ assert.match(adminCommunityPage, /InvitationControlForm/)
 assert.match(invitationControl, /Verify gates and enable invited-builder submissions/)
 assert.match(invitationControl, /Lock external submissions/)
 assert.match(invitationControl, /Supabase leaked-password protection is enabled/)
-assert.match(invitationControl, /every current security-advisor warning has a reviewed disposition/)
+assert.match(invitationControl, /every current\s+security-advisor warning has a reviewed disposition/)
 assert.match(invitationControl, /launch_readiness_confirmed/)
 assert.match(invitationControl, /launch_readiness_reference/)
 assert.doesNotMatch(invitationControl, /window\.confirm/)
@@ -467,6 +487,11 @@ assert.equal(
   packageScripts['check:community-project-db'],
   'node scripts/check-community-project-db.mjs',
   'The executable disposable database gate must remain wired.',
+)
+assert.equal(
+  packageScripts['check:community-project-alert-recovery'],
+  'node scripts/check-community-project-alert-recovery.mjs',
+  'The bounded alert-recovery gate must remain wired.',
 )
 assert.equal(
   packageScripts['check:community-project-auth-browser'],

@@ -83,9 +83,10 @@ export default function InvitationControlForm({
               className="mt-1 h-4 w-4"
             />
             <span>
-              I confirmed the private record has named primary and backup coverage, the tested alert destination,
-              policy dispositions, production evidence, and capacity; Supabase leaked-password protection is enabled
-              and every current security-advisor warning has a reviewed disposition.
+              I confirmed the private record has named primary and backup coverage, tested distinct primary and
+              escalation alert destinations, a healthy scheduled recovery heartbeat, policy dispositions,
+              production evidence, and capacity; Supabase leaked-password protection is enabled and every current
+              security-advisor warning has a reviewed disposition.
             </span>
           </label>
           <button

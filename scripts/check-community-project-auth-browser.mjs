@@ -658,6 +658,8 @@ async function main() {
           const confirmation = document.querySelector('input[name="launch_readiness_confirmed"]');
           const reportReasons = [...document.querySelectorAll('select[name="reason"] option')]
             .map((option) => option.value);
+          const reportQueue = document.querySelector('[data-community-report-queue]');
+          const reportQueueText = reportQueue?.textContent || '';
           return {
             heading: document.querySelector('h1')?.textContent?.trim() || '',
             referenceMinLength: Number(reference?.getAttribute('minlength') || 0),
@@ -670,6 +672,23 @@ async function main() {
               .find((button) => button.textContent?.includes('Verify readiness and enable publication'))
               ?.textContent?.trim() || '',
             reportReasons,
+            reportQueueTotal: Number(reportQueue?.getAttribute('data-total-count') || 0),
+            reportQueueFiltered: Number(reportQueue?.getAttribute('data-filtered-count') || 0),
+            reportQueueDirectLinks: reportQueue
+              ?.querySelectorAll('a[href^="/admin/community-project-reports/"]').length || 0,
+            reportQueueNextLink: [...(reportQueue?.querySelectorAll('a') || [])]
+              .find((link) => link.textContent?.includes('Next 25 reports'))
+              ?.getAttribute('href') || '',
+            reportQueueFilters: Boolean(
+              reportQueue?.querySelector('input[name="report_query"]')
+              && reportQueue?.querySelector('select[name="report_reason"]')
+              && reportQueue?.querySelector('select[name="report_alert"]'),
+            ),
+            reportQueueIndicators: (
+              reportQueueText.includes('42 critical')
+              && reportQueueText.includes('17 alerts pending')
+              && reportQueueText.includes('Oldest critical')
+            ),
             viewportWidth,
             scrollWidth,
             overflowingElements: [...document.querySelectorAll('*')]
@@ -691,6 +710,12 @@ async function main() {
           || !releaseControls.publicationButton
           || !['privacy', 'copyright', 'malware', 'exploitation', 'credentials', 'imminent_harm', 'abuse', 'misleading', 'other']
             .every((reason) => releaseControls.reportReasons.includes(reason))
+          || releaseControls.reportQueueTotal !== 125
+          || releaseControls.reportQueueFiltered !== 125
+          || releaseControls.reportQueueDirectLinks !== 2
+          || !releaseControls.reportQueueNextLink.includes('report_cursor=fixture-next-cursor')
+          || !releaseControls.reportQueueFilters
+          || !releaseControls.reportQueueIndicators
         ) {
           throw new Error(`${viewport.name} community release controls were incomplete: ${JSON.stringify(releaseControls)}.`)
         }

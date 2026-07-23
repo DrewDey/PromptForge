@@ -60,7 +60,7 @@ export type CommunityProjectPilotMember = {
 }
 
 export type CommunityProjectOperations = {
-  operation: 'reconciliation' | 'report_intake' | 'invitation_expansion'
+  operation: 'reconciliation' | 'report_intake' | 'invitation_expansion' | 'report_alerts'
   lease_id: string | null
   lease_expires_at: string | null
   last_started_at: string | null
@@ -79,6 +79,97 @@ export type CommunityProjectPilotControls = {
   allow_publication: boolean
   updated_by: string | null
   updated_at: string
+}
+
+export type CommunityProjectReportQueue = {
+  reports: CommunityProjectReport[]
+  totalCount: number
+  filteredCount: number
+  undeliveredCount: number
+  criticalCount: number
+  oldestOpenAt: string | null
+  oldestCriticalAt: string | null
+  oldestUndeliveredAt: string | null
+  nextCursor: string | null
+}
+
+export type CommunityProjectReportQueueFilters = {
+  cursor?: string | null
+  reason?: string | null
+  alert?: string | null
+  query?: string | null
+}
+
+export type CommunityProjectReportList = {
+  reports: CommunityProjectReport[]
+  totalCount: number
+}
+
+const COMMUNITY_PROJECT_REPORT_QUEUE_PAGE_SIZE = 25
+const COMMUNITY_PROJECT_CRITICAL_REPORT_REASONS = new Set([
+  'privacy',
+  'malware',
+  'exploitation',
+  'credentials',
+  'imminent_harm',
+])
+const COMMUNITY_PROJECT_REPORT_REASONS = new Set([
+  ...COMMUNITY_PROJECT_CRITICAL_REPORT_REASONS,
+  'copyright',
+  'abuse',
+  'misleading',
+  'other',
+])
+const COMMUNITY_PROJECT_REPORT_ALERT_STATES = new Set(['pending', 'delivered', 'failed'])
+
+type CommunityProjectReportCursor = {
+  priority: 0 | 1
+  createdAt: string
+  id: string
+}
+
+function communityProjectReportPriority(reason: string): 0 | 1 {
+  return COMMUNITY_PROJECT_CRITICAL_REPORT_REASONS.has(reason) ? 1 : 0
+}
+
+function encodeCommunityProjectReportCursor(report: CommunityProjectReport) {
+  return Buffer.from(JSON.stringify({
+    priority: communityProjectReportPriority(report.reason),
+    createdAt: report.created_at,
+    id: report.id,
+  })).toString('base64url')
+}
+
+function decodeCommunityProjectReportCursor(value: string | null | undefined): CommunityProjectReportCursor | null {
+  if (!value || value.length > 500) return null
+  try {
+    const parsed = JSON.parse(Buffer.from(value, 'base64url').toString('utf8')) as Partial<CommunityProjectReportCursor>
+    if (
+      ![0, 1].includes(Number(parsed.priority))
+      || typeof parsed.createdAt !== 'string'
+      || !Number.isFinite(Date.parse(parsed.createdAt))
+      || typeof parsed.id !== 'string'
+      || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(parsed.id)
+    ) {
+      return null
+    }
+    return {
+      priority: Number(parsed.priority) as 0 | 1,
+      createdAt: parsed.createdAt,
+      id: parsed.id,
+    }
+  } catch {
+    return null
+  }
+}
+
+function queueCount(value: unknown) {
+  const number = typeof value === 'number' ? value : Number(value)
+  return Number.isSafeInteger(number) && number >= 0 ? number : 0
+}
+
+function queueTimestamp(value: unknown) {
+  return typeof value === 'string' && Number.isFinite(Date.parse(value)) ? value : null
 }
 
 export async function getCommunityProjectPilotEligibility() {
@@ -161,19 +252,85 @@ export async function getCommunityProjectSubmissionForAdmin(
 }
 
 export async function getCommunityProjectReportsForAdmin(
-  submissionId?: string,
-): Promise<CommunityProjectReport[]> {
+  submissionId: string,
+): Promise<CommunityProjectReportList> {
   await requireAdminAccess()
-  let query = createAdminClient()
+  const query = createAdminClient()
     .from('community_project_reports')
-    .select('*')
+    .select('*', { count: 'exact' })
+    .eq('submission_id', submissionId)
     .order('created_at', { ascending: false })
     .limit(100)
-  if (submissionId) query = query.eq('submission_id', submissionId)
-  else query = query.in('status', ['open', 'reviewing'])
-  const { data, error } = await query
+  const { data, count, error } = await query
   if (error) throw error
-  return (data ?? []) as CommunityProjectReport[]
+  return {
+    reports: (data ?? []) as CommunityProjectReport[],
+    totalCount: count ?? 0,
+  }
+}
+
+export async function getCommunityProjectReportForAdmin(
+  id: string,
+): Promise<CommunityProjectReport | null> {
+  await requireAdminAccess()
+  const { data, error } = await createAdminClient()
+    .from('community_project_reports')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle()
+  if (error) throw error
+  return data as CommunityProjectReport | null
+}
+
+export async function getCommunityProjectReportQueueForAdmin(
+  filters: CommunityProjectReportQueueFilters = {},
+): Promise<CommunityProjectReportQueue> {
+  await requireAdminAccess()
+  const cursor = decodeCommunityProjectReportCursor(filters.cursor)
+  const reason = typeof filters.reason === 'string' && COMMUNITY_PROJECT_REPORT_REASONS.has(filters.reason)
+    ? filters.reason
+    : null
+  const alert = typeof filters.alert === 'string' && COMMUNITY_PROJECT_REPORT_ALERT_STATES.has(filters.alert)
+    ? filters.alert
+    : null
+  const queryText = typeof filters.query === 'string'
+    ? filters.query.trim().slice(0, 120) || null
+    : null
+  const admin = createAdminClient()
+  const rpcFilters = {
+    reason_filter: reason,
+    alert_filter: alert,
+    query_text: queryText,
+  }
+  const [pageResult, countsResult] = await Promise.all([
+    admin.rpc('get_community_project_report_queue', {
+      page_size: COMMUNITY_PROJECT_REPORT_QUEUE_PAGE_SIZE + 1,
+      cursor_priority: cursor?.priority ?? null,
+      cursor_created_at: cursor?.createdAt ?? null,
+      cursor_id: cursor?.id ?? null,
+      ...rpcFilters,
+    }),
+    admin.rpc('get_community_project_report_queue_counts', rpcFilters),
+  ])
+  if (pageResult.error) throw pageResult.error
+  if (countsResult.error) throw countsResult.error
+
+  const page = (pageResult.data ?? []) as CommunityProjectReport[]
+  const reports = page.slice(0, COMMUNITY_PROJECT_REPORT_QUEUE_PAGE_SIZE)
+  const counts = (countsResult.data ?? {}) as Record<string, unknown>
+  return {
+    reports,
+    totalCount: queueCount(counts.totalCount),
+    filteredCount: queueCount(counts.filteredCount),
+    undeliveredCount: queueCount(counts.undeliveredCount),
+    criticalCount: queueCount(counts.criticalCount),
+    oldestOpenAt: queueTimestamp(counts.oldestOpenAt),
+    oldestCriticalAt: queueTimestamp(counts.oldestCriticalAt),
+    oldestUndeliveredAt: queueTimestamp(counts.oldestUndeliveredAt),
+    nextCursor: page.length > COMMUNITY_PROJECT_REPORT_QUEUE_PAGE_SIZE
+      ? encodeCommunityProjectReportCursor(reports[reports.length - 1])
+      : null,
+  }
 }
 
 export async function getCommunityProjectOperationsForAdmin(): Promise<CommunityProjectOperations[]> {
@@ -181,7 +338,7 @@ export async function getCommunityProjectOperationsForAdmin(): Promise<Community
   const { data, error } = await createAdminClient()
     .from('community_project_operations')
     .select('*')
-    .in('operation', ['reconciliation', 'report_intake', 'invitation_expansion'])
+    .in('operation', ['reconciliation', 'report_intake', 'invitation_expansion', 'report_alerts'])
     .order('operation')
   if (error) throw error
   return (data ?? []) as CommunityProjectOperations[]

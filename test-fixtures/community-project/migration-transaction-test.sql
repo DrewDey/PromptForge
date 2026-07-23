@@ -60,7 +60,7 @@ BEGIN
   EXCEPTION
     WHEN OTHERS THEN
       IF SQLERRM = 'External invitations enabled without authoritative readiness.'
-        OR SQLERRM <> 'External invitations require a fresh database-verified expansion record and healthy operational gates.' THEN
+        OR SQLERRM <> 'External invitations require a fresh database-verified expansion record and healthy dual-channel operational gates.' THEN
         RAISE;
       END IF;
   END;
@@ -775,6 +775,8 @@ $test$;
 DO $test$
 DECLARE
   run_id UUID := gen_random_uuid();
+  alert_run_id UUID := gen_random_uuid();
+  overlapping_alert_run_id UUID := gen_random_uuid();
 BEGIN
   BEGIN
     PERFORM public.publish_community_project_submission(
@@ -809,7 +811,7 @@ BEGIN
   EXCEPTION
     WHEN OTHERS THEN
       IF SQLERRM = 'Publication enabled without a report-intake proof.'
-        OR SQLERRM <> 'Publication requires fresh reconciliation, verified operator-alert delivery, and no pending report alerts.' THEN
+        OR SQLERRM <> 'Publication requires fresh reconciliation, dual-channel alert recovery, verified operator-alert delivery, and no pending report alerts.' THEN
         RAISE;
       END IF;
   END;
@@ -818,6 +820,30 @@ BEGIN
     repeat('e', 64),
     repeat('d', 64),
     gen_random_uuid()
+  );
+  BEGIN
+    PERFORM public.set_community_project_publication_control(
+      (SELECT administrator FROM test_state), TRUE
+    );
+    RAISE EXCEPTION 'Publication enabled without a fresh alert-recovery heartbeat.';
+  EXCEPTION
+    WHEN OTHERS THEN
+      IF SQLERRM = 'Publication enabled without a fresh alert-recovery heartbeat.'
+        OR SQLERRM <> 'Publication requires fresh reconciliation, dual-channel alert recovery, verified operator-alert delivery, and no pending report alerts.' THEN
+        RAISE;
+      END IF;
+  END;
+  IF NOT public.begin_community_project_report_alert_delivery(alert_run_id, 55) THEN
+    RAISE EXCEPTION 'Report-alert recovery lease was not acquired.';
+  END IF;
+  IF public.begin_community_project_report_alert_delivery(overlapping_alert_run_id, 55) THEN
+    RAISE EXCEPTION 'Overlapping report-alert recovery acquired an active lease.';
+  END IF;
+  PERFORM public.finish_community_project_report_alert_delivery(
+    alert_run_id,
+    TRUE,
+    NULL,
+    '{"remaining":0,"criticalRemaining":0,"independentAlertChannels":2}'::JSONB
   );
   PERFORM public.set_community_project_publication_control(
     (SELECT administrator FROM test_state), TRUE
@@ -838,7 +864,7 @@ BEGIN
   EXCEPTION
     WHEN OTHERS THEN
       IF SQLERRM = 'External invitations enabled without a persisted expansion record.'
-        OR SQLERRM <> 'External invitations require a fresh database-verified expansion record and healthy operational gates.' THEN
+        OR SQLERRM <> 'External invitations require a fresh database-verified expansion record and healthy dual-channel operational gates.' THEN
         RAISE;
       END IF;
   END;
@@ -863,6 +889,28 @@ BEGIN
       AND last_metrics->>'private_record_reference' = 'private-launch-record-2026-07-23'
   ) THEN
     RAISE EXCEPTION 'The authoritative invitation expansion snapshot was not persisted.';
+  END IF;
+  UPDATE public.community_project_operations
+  SET last_success_at = NOW() - INTERVAL '2 hours'
+  WHERE operation = 'report_alerts';
+  IF private.pathforge_actor_can_submit_community_project(
+    (SELECT stranger FROM test_state)
+  ) THEN
+    RAISE EXCEPTION 'An invited builder remained eligible after the alert-recovery heartbeat became stale.';
+  END IF;
+  IF NOT public.begin_community_project_report_alert_delivery(alert_run_id, 55) THEN
+    RAISE EXCEPTION 'A stale report-alert recovery lease could not be renewed.';
+  END IF;
+  PERFORM public.finish_community_project_report_alert_delivery(
+    alert_run_id,
+    TRUE,
+    NULL,
+    '{"remaining":0,"criticalRemaining":0,"independentAlertChannels":2}'::JSONB
+  );
+  IF NOT private.pathforge_actor_can_submit_community_project(
+    (SELECT stranger FROM test_state)
+  ) THEN
+    RAISE EXCEPTION 'A fresh report-alert recovery heartbeat did not restore invited eligibility.';
   END IF;
   PERFORM public.set_community_project_invitation_control(
     (SELECT administrator FROM test_state), FALSE
@@ -1323,7 +1371,7 @@ BEGIN
   EXCEPTION
     WHEN OTHERS THEN
       IF SQLERRM = 'Publication remained enableable after a report-alert failure.'
-        OR SQLERRM <> 'Publication requires fresh reconciliation, verified operator-alert delivery, and no pending report alerts.' THEN
+        OR SQLERRM <> 'Publication requires fresh reconciliation, dual-channel alert recovery, verified operator-alert delivery, and no pending report alerts.' THEN
         RAISE;
       END IF;
   END;
@@ -1366,6 +1414,122 @@ SELECT public.set_community_project_report_status(
   'Reviewed and resolved in the disposable transaction test.',
   gen_random_uuid()
 ) FROM test_state;
+
+DO $test$
+DECLARE
+  counts JSONB;
+  page_row public.community_project_reports%ROWTYPE;
+  cursor_priority INT := NULL;
+  cursor_created_at TIMESTAMPTZ := NULL;
+  cursor_id UUID := NULL;
+  page_count INT;
+  traversed INT := 0;
+  seen_warning BOOLEAN := FALSE;
+  current_priority INT;
+  sample_report UUID;
+BEGIN
+  INSERT INTO public.community_project_reports (
+    id,
+    submission_id,
+    prompt_id,
+    reporter_id,
+    reporter_fingerprint,
+    reporter_email,
+    reason,
+    details,
+    created_at,
+    updated_at
+  )
+  SELECT
+    gen_random_uuid(),
+    (SELECT submission FROM test_state),
+    (SELECT prompt FROM test_state),
+    NULL,
+    LPAD(to_hex(sequence), 64, '0'),
+    format('queue-%s@example.com', sequence),
+    CASE WHEN sequence <= 60 THEN 'privacy' ELSE 'other' END,
+    format('Disposable moderation queue report number %s proves complete keyset traversal.', sequence),
+    NOW() - INTERVAL '3 hours' + sequence * INTERVAL '1 second',
+    NOW() - INTERVAL '3 hours' + sequence * INTERVAL '1 second'
+  FROM generate_series(1, 101) AS sequence;
+
+  counts := public.get_community_project_report_queue_counts(NULL, NULL, NULL);
+  IF (counts->>'totalCount')::INT <> 101
+    OR (counts->>'filteredCount')::INT <> 101
+    OR (counts->>'criticalCount')::INT <> 60
+    OR (counts->>'undeliveredCount')::INT <> 101 THEN
+    RAISE EXCEPTION 'Exact moderation counts did not include all 101 open reports: %', counts;
+  END IF;
+
+  LOOP
+    page_count := 0;
+    FOR page_row IN
+      SELECT *
+      FROM public.get_community_project_report_queue(
+        25,
+        cursor_priority,
+        cursor_created_at,
+        cursor_id,
+        NULL,
+        NULL,
+        NULL
+      )
+    LOOP
+      page_count := page_count + 1;
+      traversed := traversed + 1;
+      current_priority := CASE
+        WHEN page_row.reason IN (
+          'privacy',
+          'malware',
+          'exploitation',
+          'credentials',
+          'imminent_harm'
+        ) THEN 1
+        ELSE 0
+      END;
+      IF seen_warning AND current_priority = 1 THEN
+        RAISE EXCEPTION 'A critical report appeared after a warning in the moderation queue.';
+      END IF;
+      IF current_priority = 0 THEN
+        seen_warning := TRUE;
+      END IF;
+      cursor_priority := current_priority;
+      cursor_created_at := page_row.created_at;
+      cursor_id := page_row.id;
+    END LOOP;
+    EXIT WHEN page_count < 25;
+  END LOOP;
+
+  IF traversed <> 101 THEN
+    RAISE EXCEPTION 'Keyset moderation traversal reached % of 101 reports.', traversed;
+  END IF;
+  IF (
+    SELECT COUNT(*)
+    FROM public.get_community_project_report_alert_batch(50)
+  ) <> 50 OR EXISTS (
+    SELECT 1
+    FROM public.get_community_project_report_alert_batch(50) AS report
+    WHERE report.reason <> 'privacy'
+  ) THEN
+    RAISE EXCEPTION 'The alert-recovery batch did not select 50 critical reports first.';
+  END IF;
+
+  SELECT id INTO sample_report
+  FROM public.community_project_reports
+  WHERE reporter_email = 'queue-1@example.com';
+  counts := public.get_community_project_report_queue_counts(
+    NULL,
+    NULL,
+    sample_report::TEXT
+  );
+  IF (counts->>'filteredCount')::INT <> 1 THEN
+    RAISE EXCEPTION 'Exact report-ID search did not address one report: %', counts;
+  END IF;
+
+  DELETE FROM public.community_project_reports
+  WHERE reporter_email LIKE 'queue-%@example.com';
+END;
+$test$;
 
 INSERT INTO public.project_model_variants (id, project_id, source_run_id)
 SELECT gen_random_uuid(), prompt, 'dependent-variant'

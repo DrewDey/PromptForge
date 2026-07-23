@@ -18,6 +18,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check:community-project-pilot
+      - run: npm run check:community-project-alert-recovery
       - run: npm run check:community-project-db
       - run: npm run check:artifact-sandbox
       - run: npm run typecheck

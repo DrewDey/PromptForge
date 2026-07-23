@@ -27,28 +27,41 @@ async function navigateCase(client, sessionId, url) {
   await new Promise((resolve) => setTimeout(resolve, 750))
 }
 
+async function bindUdpProbe(packets) {
+  const server = createSocket('udp4')
+  server.on('message', (packet) => packets.push(packet.byteLength))
+  await new Promise((resolve, reject) => {
+    server.once('error', reject)
+    server.bind(0, '127.0.0.1', () => {
+      server.off('error', reject)
+      resolve()
+    })
+  })
+  return server
+}
+
 async function main() {
   const executable = chromeExecutable()
   if (!executable) throw new Error('Chrome was not found for the protected-artifact sandbox guard.')
 
   const leakRequests = []
   const webrtcPackets = []
+  const positiveWebrtcPackets = []
   let baseUrl = ''
   const bridge = artifactDownloadBridgeSource()
-  const stunServer = createSocket('udp4')
-  stunServer.on('message', (packet) => webrtcPackets.push(packet.byteLength))
-  await new Promise((resolve, reject) => {
-    stunServer.once('error', reject)
-    stunServer.bind(0, '127.0.0.1', () => {
-      stunServer.off('error', reject)
-      resolve()
-    })
-  })
+  const stunServer = await bindUdpProbe(webrtcPackets)
+  const positiveStunServer = await bindUdpProbe(positiveWebrtcPackets)
   const stunAddress = stunServer.address()
-  if (typeof stunAddress === 'string') throw new Error('WebRTC guard UDP server did not bind.')
+  const positiveStunAddress = positiveStunServer.address()
+  if (typeof stunAddress === 'string' || typeof positiveStunAddress === 'string') {
+    throw new Error('WebRTC guard UDP servers did not bind.')
+  }
   const stunUrl = `stun:127.0.0.1:${stunAddress.port}`
+  const positiveStunUrl = `stun:127.0.0.1:${positiveStunAddress.port}`
   const webrtcProbe = `(async()=>{const peer=new RTCPeerConnection({iceServers:[{urls:${JSON.stringify(stunUrl)}}]});peer.createDataChannel('pathforge-egress-probe');await peer.setLocalDescription(await peer.createOffer());})().catch(()=>{});`
+  const positiveWebrtcProbe = `(async()=>{const peer=new RTCPeerConnection({iceServers:[{urls:${JSON.stringify(positiveStunUrl)}}]});peer.createDataChannel('pathforge-positive-control');await peer.setLocalDescription(await peer.createOffer());})().catch(()=>{});`
   const wrapperFactories = {
+    'webrtc-positive-control': () => artifactDocument(positiveWebrtcProbe),
     http: () => buildProtectedArtifactWrapperDocument(artifactDocument(
       `window.parent.postMessage({type:'pathforge-artifact-size',width:100,height:100},'*'); location.href=${JSON.stringify(`${baseUrl}/leak-http?secret=abc`)};`,
     )),
@@ -122,6 +135,12 @@ async function main() {
       client.send('Runtime.enable', {}, sessionId),
     ])
 
+    await navigateCase(client, sessionId, `${baseUrl}/webrtc-positive-control`)
+    await new Promise((resolve) => setTimeout(resolve, 1_000))
+    if (positiveWebrtcPackets.length === 0) {
+      throw new Error('WebRTC positive control emitted no STUN packet; the denial assertion would be inconclusive.')
+    }
+
     for (const name of ['http', 'blob', 'data', 'download', 'webrtc', 'webrtc-obfuscated']) {
       await navigateCase(client, sessionId, `${baseUrl}/${name}`)
     }
@@ -170,6 +189,7 @@ async function main() {
     child.kill('SIGTERM')
     await new Promise((resolve) => server.close(resolve))
     await new Promise((resolve) => stunServer.close(resolve))
+    await new Promise((resolve) => positiveStunServer.close(resolve))
     rmSync(profile, { recursive: true, force: true, maxRetries: 8, retryDelay: 125 })
   }
 

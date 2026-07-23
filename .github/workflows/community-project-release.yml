@@ -14,12 +14,14 @@ on:
       - 'src/app/report/project/**'
       - 'src/components/Community*'
       - 'src/lib/community-project*'
+      - 'src/lib/protected-artifact-wrapper.mjs'
       - 'src/lib/data/community-projects.ts'
       - 'src/lib/data.ts'
       - 'src/lib/path-discovery.ts'
       - 'src/lib/profile-presentation.ts'
       - 'supabase/migrations/20260722234519_community_project_pilot.sql'
       - 'scripts/check-community-project*'
+      - 'scripts/check-protected-artifact-sandbox.mjs'
       - 'test-fixtures/community-project/**'
 
 jobs:
@@ -35,4 +37,5 @@ jobs:
       - run: npm ci
       - run: npm run check:community-project-pilot
       - run: npm run check:community-project-db
+      - run: npm run check:artifact-sandbox
       - run: npm run typecheck

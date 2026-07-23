@@ -324,6 +324,7 @@ async function main() {
           return {
             heading: document.querySelector('h1')?.textContent?.trim() || '',
             signInHref: [...document.querySelectorAll('a')].find((link) => link.textContent?.includes('Invited already'))?.getAttribute('href') || '',
+            signUpHref: [...document.querySelectorAll('a')].find((link) => link.textContent?.includes('New here?'))?.getAttribute('href') || '',
             hasUpload: Boolean(document.querySelector('input[type="file"]')),
             viewportWidth,
             scrollWidth,
@@ -339,10 +340,18 @@ async function main() {
         assertPageFits(build, viewport)
         if (!build.heading.includes('Submit the finished project')) throw new Error(`${viewport.name} anonymous /build explanation did not render.`)
         if (build.signInHref !== '/auth/login?next=%2Fbuild') throw new Error(`${viewport.name} /build sign-in handoff lost its exact return path.`)
+        if (build.signUpHref !== '/auth/signup?next=%2Fbuild') throw new Error(`${viewport.name} /build signup handoff lost its exact return path.`)
         if (build.hasUpload) throw new Error(`${viewport.name} anonymous /build exposed an upload control.`)
         if (options.screenshotDir) await capture(client, sessionId, path.join(options.screenshotDir, `build-anonymous-${viewport.name}.png`))
 
-        await navigate(client, sessionId, `${options.baseUrl}/auth/signup?next=%2Fbuild`)
+        const openedSignup = await evaluate(client, sessionId, `(() => {
+          const link = [...document.querySelectorAll('a')].find((item) => item.textContent?.includes('New here?'))
+          if (!link) return false
+          link.click()
+          return true
+        })()`)
+        if (!openedSignup) throw new Error(`${viewport.name} anonymous /build had no usable signup link.`)
+        await new Promise((resolve) => setTimeout(resolve, 250))
         await waitForHeading(client, sessionId, 'Start your forge.', `${viewport.name} signup page`)
         const signup = await evaluate(client, sessionId, `(() => {
           const root = document.documentElement;

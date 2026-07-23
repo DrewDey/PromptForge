@@ -29,9 +29,14 @@ function PilotExplanation({ signedIn }: { signedIn: boolean }) {
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               {!signedIn ? (
-                <Link href="/auth/login?next=%2Fbuild" className="bg-brand-orange px-5 py-3 text-sm font-black text-surface-900 hover:bg-brand-orange-light">
-                  Invited already? Sign in
-                </Link>
+                <>
+                  <Link href="/auth/login?next=%2Fbuild" className="bg-brand-orange px-5 py-3 text-sm font-black text-surface-900 hover:bg-brand-orange-light">
+                    Invited already? Sign in
+                  </Link>
+                  <Link href="/auth/signup?next=%2Fbuild" className="border border-surface-300 bg-white px-5 py-3 text-sm font-bold text-surface-900 hover:border-brand-orange">
+                    New here? Create a profile
+                  </Link>
+                </>
               ) : (
                 <Link href="/my-forge/community-projects" className="border border-surface-300 bg-white px-5 py-3 text-sm font-bold text-surface-900 hover:border-brand-orange">
                   View my pilot projects
@@ -44,6 +49,11 @@ function PilotExplanation({ signedIn }: { signedIn: boolean }) {
             {signedIn && (
               <p className="mt-5 max-w-2xl border-l-2 border-brand-orange pl-4 text-sm leading-6 text-surface-600">
                 This account is not currently in the pilot. PathForge is keeping access narrow until its security, review-time, removal, and reader-value gates have been proven.
+              </p>
+            )}
+            {!signedIn && (
+              <p className="mt-5 max-w-2xl border-l-2 border-surface-300 pl-4 text-sm leading-6 text-surface-600">
+                Creating a profile prepares you for an invitation; it does not unlock project uploads on its own.
               </p>
             )}
           </div>

@@ -107,6 +107,19 @@ const communityReleaseWorkflow = readFileSync(
   'utf8',
 )
 
+function assertUnfilteredPullRequestWorkflow(workflow) {
+  assert.doesNotMatch(
+    workflow,
+    /(?:^|\n)\s*(?:['"]?paths(?:-ignore)?['"]?)\s*:|(?:^|\n)\s*pull_request\s*:\s*\{[^}\n]*(?:['"]?paths(?:-ignore)?['"]?)\s*:/m,
+    'The required community release workflow must not contain pull-request path filters.',
+  )
+  assert.match(
+    workflow,
+    /^  pull_request:\s*$/m,
+    'The community release workflow must declare a standalone pull_request event.',
+  )
+}
+
 for (const required of [
   "'community-project-quarantine'",
   'public.get_public_community_projects(target_prompts UUID[])',
@@ -252,12 +265,30 @@ assert.match(liveAcceptanceGuard, /deleteUser\(userId\)/)
 assert.match(liveAcceptanceGuard, /acceptance-slot postcondition/)
 assert.match(liveAcceptanceGuard, /Disposable cleanup verification failed/)
 assert.match(communityReleaseWorkflow, /npm run check:community-project-auth-browser -- --base-url http:\/\/127\.0\.0\.1:3111/)
-assert.match(communityReleaseWorkflow, /pull_request:\s*$/m)
-assert.doesNotMatch(
-  communityReleaseWorkflow,
-  /pull_request:\s*\n\s+paths:/,
-  'The required community release workflow must run for every pull request, not a path-filtered subset.',
-)
+assertUnfilteredPullRequestWorkflow(communityReleaseWorkflow)
+for (const filteredWorkflow of [
+  communityReleaseWorkflow.replace(
+    /^  pull_request:\s*$/m,
+    "  pull_request:\n    paths:\n      - 'src/**'",
+  ),
+  communityReleaseWorkflow.replace(
+    /^  pull_request:\s*$/m,
+    "  pull_request:\n    paths-ignore:\n      - 'docs/**'",
+  ),
+  communityReleaseWorkflow.replace(
+    /^  pull_request:\s*$/m,
+    "  pull_request: { paths: ['src/**'] }",
+  ),
+  communityReleaseWorkflow.replace(
+    /^  pull_request:\s*$/m,
+    "  pull_request: { paths-ignore: ['docs/**'] }",
+  ),
+]) {
+  assert.throws(
+    () => assertUnfilteredPullRequestWorkflow(filteredWorkflow),
+    /must not contain pull-request path filters/,
+  )
+}
 assert.ok(
   liveAcceptanceGuard.indexOf('Disposable cleanup verification failed')
     < liveAcceptanceGuard.indexOf('Live fresh-account acceptance passed and cleanup verified'),

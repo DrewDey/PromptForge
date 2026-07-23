@@ -23,6 +23,7 @@ assert.deepEqual(findings('valid.html'), [], 'The safe interactive fixture must 
 for (const [name, expected] of [
   ['reject-form.html', 'active form submission'],
   ['reject-frame.html', 'embedded frame or plugin'],
+  ['reject-dynamic-frame.html', 'embedded frame or plugin'],
   ['reject-network.html', 'network request API'],
   ['reject-webrtc.html', 'WebRTC network API'],
   ['reject-navigation.html', 'popup or external navigation API'],
@@ -215,4 +216,4 @@ assert.ok(
   'The deployed acceptance gate must verify cleanup before reporting success.',
 )
 
-console.log('Community project pilot guard passed: 1 safe fixture, 13 hostile fixtures, envelope limits, publication controls, and reconciliation wiring.')
+console.log('Community project pilot guard passed: 1 safe fixture, 14 hostile fixtures, envelope limits, publication controls, and reconciliation wiring.')

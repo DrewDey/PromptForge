@@ -1,6 +1,6 @@
 /** @type {Array<[string, RegExp]>} */
 export const communityArtifactActiveResourcePatterns = [
-  ['embedded frame or plugin', /<(?:iframe|frame|frameset|object|embed|applet)\b/i],
+  ['embedded frame or plugin', /<(?:iframe|frame|frameset|object|embed|applet|portal|fencedframe)\b|\bcreateElement(?:NS)?\s*\(\s*["'](?:iframe|frame|frameset|object|embed|applet|portal|fencedframe)["']/i],
   ['base URL rewriting', /<base\b/i],
   ['active form submission', /<form\b|formaction\s*=/i],
   ['automatic redirect', /<meta\b[^>]*http-equiv\s*=\s*["']?refresh/i],

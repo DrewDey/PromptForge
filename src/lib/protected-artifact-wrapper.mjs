@@ -29,8 +29,14 @@ function scriptSafeJson(value) {
 function artifactNetworkLockdownSource() {
   return `
 (() => {
+  const blockedContextTags = /^(?:iframe|frame|frameset|object|embed|applet|portal|fencedframe)$/i;
+  const blockedContextMarkup = /<(?:iframe|frame|frameset|object|embed|applet|portal|fencedframe)\\b/i;
+  const securityError = () => new DOMException(
+    'Nested browsing contexts and network access are disabled in this artifact.',
+    'SecurityError',
+  );
   const blockedRtc = function PathForgeBlockedWebRTC() {
-    throw new DOMException('Network access is disabled in this artifact.', 'SecurityError');
+    throw securityError();
   };
   for (const name of [
     'RTCPeerConnection',
@@ -50,6 +56,111 @@ function artifactNetworkLockdownSource() {
       try { globalThis[name] = blockedRtc; } catch {}
     }
   }
+
+  const lockMethod = (prototype, name, build) => {
+    if (!prototype) return;
+    const descriptor = Object.getOwnPropertyDescriptor(prototype, name);
+    if (!descriptor || typeof descriptor.value !== 'function') return;
+    try {
+      Object.defineProperty(prototype, name, {
+        ...descriptor,
+        configurable: false,
+        writable: false,
+        value: build(descriptor.value),
+      });
+    } catch {}
+  };
+  const containsBlockedContext = (value) => {
+    if (!(value instanceof Node)) return false;
+    if (value.nodeType === Node.ELEMENT_NODE && blockedContextTags.test(value.localName || '')) return true;
+    return typeof value.querySelector === 'function'
+      && Boolean(value.querySelector('iframe,frame,frameset,object,embed,applet,portal,fencedframe'));
+  };
+  const assertSafeNodes = (values) => {
+    if (values.some(containsBlockedContext)) throw securityError();
+  };
+  const assertSafeMarkup = (value) => {
+    if (blockedContextMarkup.test(String(value))) throw securityError();
+  };
+
+  lockMethod(Document.prototype, 'createElement', (original) => function(name, options) {
+    if (blockedContextTags.test(String(name))) throw securityError();
+    return Reflect.apply(original, this, options === undefined ? [name] : [name, options]);
+  });
+  lockMethod(Document.prototype, 'createElementNS', (original) => function(namespace, name, options) {
+    if (blockedContextTags.test(String(name).split(':').pop() || '')) throw securityError();
+    return Reflect.apply(
+      original,
+      this,
+      options === undefined ? [namespace, name] : [namespace, name, options],
+    );
+  });
+  for (const [prototype, name] of [
+    [Node.prototype, 'appendChild'],
+    [Node.prototype, 'insertBefore'],
+    [Node.prototype, 'replaceChild'],
+    [Element.prototype, 'insertAdjacentElement'],
+  ]) {
+    lockMethod(prototype, name, (original) => function(...values) {
+      assertSafeNodes(values);
+      return Reflect.apply(original, this, values);
+    });
+  }
+  for (const prototype of [
+    Element.prototype,
+    Document.prototype,
+    globalThis.DocumentFragment?.prototype,
+  ]) {
+    for (const name of ['append', 'prepend', 'replaceChildren']) {
+      lockMethod(prototype, name, (original) => function(...values) {
+        assertSafeNodes(values);
+        return Reflect.apply(original, this, values);
+      });
+    }
+  }
+  for (const name of ['before', 'after', 'replaceWith']) {
+    lockMethod(Element.prototype, name, (original) => function(...values) {
+      assertSafeNodes(values);
+      return Reflect.apply(original, this, values);
+    });
+  }
+  lockMethod(Element.prototype, 'insertAdjacentHTML', (original) => function(position, value) {
+    assertSafeMarkup(value);
+    return Reflect.apply(original, this, [position, value]);
+  });
+  lockMethod(Document.prototype, 'write', (original) => function(...values) {
+    values.forEach(assertSafeMarkup);
+    return Reflect.apply(original, this, values);
+  });
+  lockMethod(Document.prototype, 'writeln', (original) => function(...values) {
+    values.forEach(assertSafeMarkup);
+    return Reflect.apply(original, this, values);
+  });
+  lockMethod(Range.prototype, 'createContextualFragment', (original) => function(value) {
+    assertSafeMarkup(value);
+    return Reflect.apply(original, this, [value]);
+  });
+
+  const lockMarkupSetter = (prototype, name) => {
+    if (!prototype) return;
+    const descriptor = Object.getOwnPropertyDescriptor(prototype, name);
+    if (!descriptor || typeof descriptor.set !== 'function') return;
+    try {
+      Object.defineProperty(prototype, name, {
+        ...descriptor,
+        configurable: false,
+        set(value) {
+          assertSafeMarkup(value);
+          return Reflect.apply(descriptor.set, this, [value]);
+        },
+      });
+    } catch {}
+  };
+  for (const prototype of [Element.prototype, globalThis.ShadowRoot?.prototype]) {
+    lockMarkupSetter(prototype, 'innerHTML');
+  }
+  lockMarkupSetter(Element.prototype, 'outerHTML');
+  lockMarkupSetter(globalThis.HTMLIFrameElement?.prototype, 'srcdoc');
 })();`
 }
 

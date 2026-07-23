@@ -20,6 +20,10 @@ function artifactDocument(script, body = '') {
   return `<!doctype html><html><head><meta charset="utf-8"></head><body>${body}<script>${script}</script></body></html>`
 }
 
+function inlineScriptString(value) {
+  return JSON.stringify(value).replace(/<\//g, '<\\/')
+}
+
 async function navigateCase(client, sessionId, url) {
   const loaded = client.waitFor('Page.loadEventFired', sessionId)
   await client.send('Page.navigate', { url }, sessionId)
@@ -61,7 +65,9 @@ async function main() {
   const webrtcProbe = `(async()=>{const peer=new RTCPeerConnection({iceServers:[{urls:${JSON.stringify(stunUrl)}}]});peer.createDataChannel('pathforge-egress-probe');await peer.setLocalDescription(await peer.createOffer());})().catch(()=>{});`
   const positiveWebrtcProbe = `(async()=>{const peer=new RTCPeerConnection({iceServers:[{urls:${JSON.stringify(positiveStunUrl)}}]});peer.createDataChannel('pathforge-positive-control');await peer.setLocalDescription(await peer.createOffer());})().catch(()=>{});`
   const wrapperFactories = {
-    'webrtc-positive-control': () => artifactDocument(positiveWebrtcProbe),
+    'webrtc-positive-control': () => artifactDocument(
+      `const frame=document.createElement('iframe');frame.srcdoc=${inlineScriptString(artifactDocument(positiveWebrtcProbe))};document.body.append(frame);`,
+    ),
     http: () => buildProtectedArtifactWrapperDocument(artifactDocument(
       `window.parent.postMessage({type:'pathforge-artifact-size',width:100,height:100},'*'); location.href=${JSON.stringify(`${baseUrl}/leak-http?secret=abc`)};`,
     )),
@@ -84,6 +90,30 @@ async function main() {
     'webrtc-obfuscated': () => buildProtectedArtifactWrapperDocument(artifactDocument(
       `(async()=>{const Peer=globalThis['RTC'+'PeerConnection'];const peer=new Peer({iceServers:[{urls:${JSON.stringify(stunUrl)}}]});peer.createDataChannel('pathforge-obfuscated-egress-probe');await peer.setLocalDescription(await peer.createOffer());})().catch(()=>{});`,
     )),
+    'webrtc-srcdoc': () => buildProtectedArtifactWrapperDocument(artifactDocument(
+      `const frame=document.createElement('iframe');frame.srcdoc=${inlineScriptString(artifactDocument(webrtcProbe))};document.body.append(frame);`,
+    )),
+    'webrtc-srcdoc-obfuscated': () => buildProtectedArtifactWrapperDocument(artifactDocument(
+      `const frame=document.createElement('i'+'frame');frame.srcdoc=${inlineScriptString(artifactDocument(webrtcProbe))};document.body.append(frame);`,
+    )),
+    'webrtc-srcdoc-domparser': () => buildProtectedArtifactWrapperDocument(artifactDocument(
+      `const parsed=new DOMParser().parseFromString('<iframe></iframe>','text/html');const frame=parsed.querySelector('iframe');frame.setAttribute('srcdoc',${inlineScriptString(artifactDocument(webrtcProbe))});document.body.append(frame);`,
+    )),
+    'webrtc-srcdoc-innerhtml': () => buildProtectedArtifactWrapperDocument(artifactDocument(
+      `const holder=document.createElement('div');holder.innerHTML=${inlineScriptString(`<iframe srcdoc="${artifactDocument(webrtcProbe).replaceAll('"', '&quot;')}"></iframe>`)};document.body.append(holder);`,
+    )),
+    'webrtc-blob': () => {
+      const escapeDocument = `<script>${webrtcProbe}<\/script>`
+      return buildProtectedArtifactWrapperDocument(artifactDocument(
+        `const escapeUrl=URL.createObjectURL(new Blob([${JSON.stringify(escapeDocument)}],{type:'text/html'}));location.href=escapeUrl;`,
+      ))
+    },
+    'webrtc-data': () => {
+      const escapeDocument = `<script>${webrtcProbe}<\/script>`
+      return buildProtectedArtifactWrapperDocument(artifactDocument(
+        `location.href=${JSON.stringify(`data:text/html,${encodeURIComponent(escapeDocument)}`)};`,
+      ))
+    },
     safe: () => buildProtectedArtifactWrapperDocument(artifactDocument(
       `${bridge}; document.getElementById('safe').addEventListener('click',()=>{ const url=URL.createObjectURL(new Blob(['safe export'],{type:'text/plain'})); const link=document.createElement('a'); link.download='safe.txt'; link.href=url; document.body.append(link); link.click(); URL.revokeObjectURL(url); link.remove(); });`,
       '<button id="safe" style="position:fixed;left:20px;top:20px;width:140px;height:48px">Safe export</button>',
@@ -141,7 +171,20 @@ async function main() {
       throw new Error('WebRTC positive control emitted no STUN packet; the denial assertion would be inconclusive.')
     }
 
-    for (const name of ['http', 'blob', 'data', 'download', 'webrtc', 'webrtc-obfuscated']) {
+    for (const name of [
+      'http',
+      'blob',
+      'data',
+      'download',
+      'webrtc',
+      'webrtc-obfuscated',
+      'webrtc-srcdoc',
+      'webrtc-srcdoc-obfuscated',
+      'webrtc-srcdoc-domparser',
+      'webrtc-srcdoc-innerhtml',
+      'webrtc-blob',
+      'webrtc-data',
+    ]) {
       await navigateCase(client, sessionId, `${baseUrl}/${name}`)
     }
     if (leakRequests.length > 0) {
@@ -193,7 +236,7 @@ async function main() {
     rmSync(profile, { recursive: true, force: true, maxRetries: 8, retryDelay: 125 })
   }
 
-  console.log('Protected artifact sandbox navigation and download guard passed.')
+  console.log('Protected artifact sandbox navigation, nested-realm, WebRTC, and download guard passed with a positive UDP control.')
 }
 
 main().catch((error) => {

@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Stylesheet-hidden shell</title>
+    <style>.finished-project { visibility: hidden; }</style>
+  </head>
+  <body>
+    <main class="finished-project">This apparent finished project is completely hidden.</main>
+    <script>document.querySelector('main').style.visibility = 'visible'</script>
+  </body>
+</html>

@@ -182,6 +182,44 @@ function hardenArtifactDocument(artifactDocument) {
   return `<!doctype html><script>${artifactNetworkLockdownSource()}</script>${withoutContributorDoctype}`
 }
 
+function staticAnchorAttributeValue(attribute) {
+  const match = attribute.match(/=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/)
+  return (match?.[1] ?? match?.[2] ?? match?.[3] ?? '').trim()
+}
+
+function decodeStaticHtmlNumericReferences(value) {
+  return value.replace(/&#(?:x([0-9a-f]+)|([0-9]+));?/gi, (reference, hex, decimal) => {
+    const codePoint = Number.parseInt(hex ?? decimal, hex ? 16 : 10)
+    if (!Number.isInteger(codePoint) || codePoint < 0 || codePoint > 0x10FFFF) return reference
+    try {
+      return String.fromCodePoint(codePoint)
+    } catch {
+      return reference
+    }
+  })
+}
+
+function staticMetaRefreshTag(tag) {
+  const attribute = tag.match(/\s+http-equiv\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/i)?.[0]
+  if (!attribute) return false
+  return decodeStaticHtmlNumericReferences(staticAnchorAttributeValue(attribute))
+    .trim()
+    .toLowerCase() === 'refresh'
+}
+
+export function makeArtifactDocumentStatic(artifactDocument) {
+  return artifactDocument
+    .replace(/<meta\b[^>]*>/gi, (tag) => (staticMetaRefreshTag(tag) ? '' : tag))
+    .replace(/<\/?(?:animate|animatemotion|animatetransform|set)\b[^>]*>/gi, '')
+    .replace(/<(?:a|area)\b[^>]*>/gi, (link) => (
+      link
+        .replace(/\s+(?:target|ping|download)\s*(?:=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?/gi, '')
+        .replace(/\s+(?:href|xlink:href)\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, (attribute) => (
+          staticAnchorAttributeValue(attribute).startsWith('#') ? attribute : ''
+        ))
+    ))
+}
+
 export function artifactDownloadBridgeSource() {
   return `
 (() => {
@@ -247,7 +285,7 @@ export function buildProtectedArtifactWrapperDocument(artifactDocument, options 
   const allowArtifactInteraction = allowArtifactScripts || options.allowArtifactInteraction === true
   const preparedArtifactDocument = allowArtifactScripts
     ? hardenArtifactDocument(artifactDocument)
-    : artifactDocument
+    : makeArtifactDocumentStatic(artifactDocument)
   const serializedArtifact = scriptSafeJson(preparedArtifactDocument)
   const serializedCsp = scriptSafeJson(WRAPPER_CSP)
   const artifactSandbox = allowArtifactScripts ? 'allow-scripts allow-pointer-lock' : ''

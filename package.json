@@ -67,15 +67,13 @@
     "autoprefixer": "^10.4.27",
     "eslint": "^9.39.4",
     "eslint-config-next": "16.2.11",
-    "postcss": "^8.5.9",
+    "postcss": "8.5.22",
     "tailwindcss": "^4.2.2",
     "typescript": "^6.0.2"
   },
   "overrides": {
     "sharp": "0.35.3",
     "ws": "8.21.0",
-    "next": {
-      "postcss": "8.5.10"
-    }
+    "postcss": "8.5.22"
   }
 }

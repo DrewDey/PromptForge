@@ -9,6 +9,7 @@ import {
   getCommunityProjectSubmissionsForAdmin,
 } from '@/lib/data/community-projects'
 import PilotMembershipForm from './PilotMembershipForm'
+import InvitationControlForm from './InvitationControlForm'
 import PublicationControlForm from './PublicationControlForm'
 
 export const dynamic = 'force-dynamic'
@@ -31,6 +32,9 @@ export default async function AdminCommunityProjectsPage() {
   const openReports = reports.filter((report) => ['open', 'reviewing'].includes(report.status))
   const activeInternalMembers = members.filter((member) => member.is_current && member.member_kind === 'internal_acceptance')
   const activeInvitedMembers = members.filter((member) => member.is_current && member.member_kind === 'invited_builder')
+  const activeSubmissions = submissions.filter((submission) => (
+    ['queued', 'needs_repair', 'published'].includes(submission.status)
+  ))
   const reconciliationStale = operationIsStale(reconciliation?.last_success_at)
   const reportReadinessStale = operationIsStale(reportReadiness?.last_success_at)
   const reconciliationNeedsAttention = reconciliation?.last_status !== 'succeeded' || reconciliationStale
@@ -68,7 +72,12 @@ export default async function AdminCommunityProjectsPage() {
       <section className="mt-7" aria-labelledby="pilot-access-title">
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
           <div><h2 id="pilot-access-title" className="text-lg font-black text-surface-900">Pilot access</h2><p className="mt-1 text-xs text-surface-500">One expiring owner-operated acceptance account can test the real non-admin flow while the external invited cohort remains <strong>{controls?.allow_invited_submissions ? 'enabled' : 'locked'}</strong>.</p></div>
-          <span className="text-xs font-bold text-surface-500">{activeInternalMembers.length}/1 acceptance · {activeInvitedMembers.length}/30 invited · {30 - activeInvitedMembers.length} invitations remaining · {submissions.length}/50 submissions used</span>
+          <span className="text-xs font-bold text-surface-500">{activeInternalMembers.length}/1 acceptance · {activeInvitedMembers.length}/30 invited · {30 - activeInvitedMembers.length} invitations remaining · {activeSubmissions.length}/50 active submissions</span>
+        </div>
+        <div className={`mb-3 border p-4 ${controls?.allow_invited_submissions ? 'border-green-200 bg-green-50 text-green-950' : 'border-amber-200 bg-amber-50 text-amber-950'}`}>
+          <strong className="block text-sm">External invitation lane: {controls?.allow_invited_submissions ? 'enabled' : 'locked'}</strong>
+          <p className="mt-1 text-xs leading-5">Named membership and submission permission are separate controls. Enabling this lane admits only active invited-builder accounts; it does not enable publication.</p>
+          <InvitationControlForm enabled={controls?.allow_invited_submissions === true} />
         </div>
         <PilotMembershipForm externalInvitationsEnabled={controls?.allow_invited_submissions === true} />
         {members.length > 0 && <div className="mt-3 flex flex-wrap gap-2">{members.map((member) => <span key={member.user_id} className={`border px-2.5 py-1.5 text-xs ${member.is_current ? 'border-green-200 bg-green-50 text-green-900' : 'border-surface-200 bg-surface-50 text-surface-500'}`}>@{member.user?.username || member.user_id} · {member.member_kind === 'internal_acceptance' ? 'acceptance' : 'invited'} · {member.is_current ? member.expires_at ? `active until ${new Date(member.expires_at).toLocaleString()}` : 'active' : member.active ? 'expired' : 'revoked'}</span>)}</div>}

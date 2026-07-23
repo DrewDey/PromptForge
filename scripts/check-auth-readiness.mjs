@@ -29,8 +29,11 @@ if (packageJson.overrides?.sharp !== '0.35.3') {
 if (packageJson.overrides?.ws !== '8.21.0') {
   throw new Error('package.json: ws must stay on the reviewed patched 8.21.0 release')
 }
-if (packageJson.overrides?.next?.postcss !== '8.5.10') {
-  throw new Error('package.json: Next.js bundled PostCSS must stay on the reviewed patched release')
+if (
+  packageJson.devDependencies?.postcss !== '8.5.22'
+  || packageJson.overrides?.postcss !== '8.5.22'
+) {
+  throw new Error('package.json: every PostCSS consumer must stay on the reviewed patched 8.5.22 release')
 }
 
 const browserClientPath = 'src/lib/supabase/client.ts'

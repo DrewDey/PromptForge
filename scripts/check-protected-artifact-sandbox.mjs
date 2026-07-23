@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { createSocket } from 'node:dgram'
 import { createServer } from 'node:http'
@@ -9,6 +10,7 @@ import path from 'node:path'
 import {
   artifactDownloadBridgeSource,
   buildProtectedArtifactWrapperDocument,
+  makeArtifactDocumentStatic,
 } from '../src/lib/protected-artifact-wrapper.mjs'
 import {
   CdpClient,
@@ -44,7 +46,48 @@ async function bindUdpProbe(packets) {
   return server
 }
 
+function waitForChildExit(child, timeoutMs) {
+  if (child.exitCode !== null || child.signalCode !== null) return Promise.resolve(true)
+  return new Promise((resolve) => {
+    let settled = false
+    const finish = (exited) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      child.off('exit', onExit)
+      resolve(exited)
+    }
+    const onExit = () => finish(true)
+    const timer = setTimeout(() => finish(false), timeoutMs)
+    timer.unref()
+    child.once('exit', onExit)
+  })
+}
+
+async function closeChrome(child) {
+  if (child.exitCode === null && child.signalCode === null) {
+    child.kill('SIGTERM')
+    if (!(await waitForChildExit(child, 2_000))) {
+      child.kill('SIGKILL')
+      await waitForChildExit(child, 2_000)
+    }
+  }
+  child.stderr?.destroy()
+}
+
 async function main() {
+  const staticLinks = makeArtifactDocumentStatic(
+    '<meta http-equiv="&#x72;efresh" content="0;url=/escape">'
+      + '<svg><set href="#target" attributeName="href" to="/escape"></set></svg>'
+      + '<a href="/privacy" target="_blank" ping="/track" download>Leave</a>'
+      + '<area href="/account" ping="/area-track">'
+      + '<a xlink:href="/legacy-svg-link">Legacy</a>'
+      + '<a href="#details" ping="/fragment-track">Jump</a>',
+  )
+  assert.doesNotMatch(staticLinks, /\/privacy|\/account|\/legacy-svg-link|target=|ping=|download/)
+  assert.doesNotMatch(staticLinks, /http-equiv|<set\b|<\/set>/i)
+  assert.match(staticLinks, /href="#details"/)
+
   const executable = chromeExecutable()
   if (!executable) throw new Error('Chrome was not found for the protected-artifact sandbox guard.')
 
@@ -280,7 +323,7 @@ async function main() {
     await client.send('Target.closeTarget', { targetId })
   } finally {
     client?.close()
-    child.kill('SIGTERM')
+    await closeChrome(child)
     await new Promise((resolve) => server.close(resolve))
     await new Promise((resolve) => stunServer.close(resolve))
     await new Promise((resolve) => positiveStunServer.close(resolve))

@@ -47,6 +47,9 @@ Before enabling invited submissions, the private launch record must contain:
 - primary incident commander name, account, phone, and coverage window;
 - a different backup administrator with the same information;
 - the tested operator-alert destination and timestamp of the test alert;
+- confirmation that Supabase Auth leaked-password protection is enabled and a
+  fresh security-advisor run no longer reports
+  `auth_leaked_password_protection`;
 - written disposition for provider sharing terms, contributor license,
   copyright/takedown process, minors, and applicable privacy obligations;
 - the date the role-matrix, database, desktop, 390px, and withdrawal production
@@ -54,9 +57,10 @@ Before enabling invited submissions, the private launch record must contain:
 - the current queue size and the hours available for review that week.
 
 Blank ownership, one-person coverage, an untested alert endpoint, or an
-unresolved policy/counsel question is a hard stop. No names are invented in
-source control; until the private record is complete, the database invitation
-control stays off.
+unresolved policy/counsel question is a hard stop. Disabled leaked-password
+protection is also a hard stop for external invitations. No names are invented
+in source control; until the private record is complete, the database
+invitation control stays off.
 
 ## Alerts and service levels
 
@@ -132,6 +136,12 @@ older than 26 hours. Do not expand invitations while unhealthy.
 - Queued, repair-needed, or declined submissions remain until the owner
   withdraws them or an administrator removes them, after which the same purge
   windows apply.
+- Direct profile or Auth-user deletion is deliberately blocked while a
+  community submission still references that contributor. An account-deletion
+  request must first route every submission through withdrawal/removal,
+  physical artifact purge, and the documented retention or investigation-hold
+  process; operators must never use a cascading profile deletion to bypass
+  those controls.
 
 ## Release and rollback
 

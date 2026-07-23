@@ -56,6 +56,7 @@ export function detectSourceRunProvider(sourceUrl?: string | null) {
   if (host === 'chatgpt.com' || host.endsWith('.chatgpt.com')) return 'ChatGPT'
   if (host === 'chat.openai.com' || host.endsWith('.chat.openai.com')) return 'ChatGPT'
   if (host === 'claude.ai' || host.endsWith('.claude.ai')) return 'Claude'
+  if (host === 'g.co') return 'Gemini'
   if (host === 'gemini.google.com' || host.endsWith('.gemini.google.com')) return 'Gemini'
   if (host === 'openrouter.ai' || host.endsWith('.openrouter.ai')) return 'OpenRouter'
 

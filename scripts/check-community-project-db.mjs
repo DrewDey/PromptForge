@@ -88,6 +88,7 @@ try {
   applySql('supabase/migrations/20260723054558_community_project_pilot.sql')
   applySql('supabase/migrations/20260723140556_harden_immediate_artifact_purge_confirmation.sql')
   applySql('supabase/migrations/20260723152046_restore_legacy_source_run_compatibility_and_source_privacy.sql')
+  applySql('supabase/migrations/20260723173000_harden_community_project_release_review.sql')
   applySql('test-fixtures/community-project/migration-transaction-test.sql')
   console.log('Community project database check passed in disposable PostgreSQL.')
 } finally {

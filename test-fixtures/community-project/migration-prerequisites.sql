@@ -192,6 +192,25 @@ CREATE POLICY "Owners edit pending prompts and admins review"
   );
 
 ALTER TABLE public.prompt_steps ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Prompt steps are viewable with their prompt"
+  ON public.prompt_steps FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM public.prompts
+      WHERE prompts.id = prompt_steps.prompt_id
+        AND (
+          prompts.status = 'approved'
+          OR prompts.author_id = auth.uid()
+          OR EXISTS (
+            SELECT 1
+            FROM public.profiles
+            WHERE profiles.id = auth.uid()
+              AND profiles.role = 'admin'
+          )
+        )
+    )
+  );
 GRANT INSERT (prompt_id, step_number, title, content, result_content, description)
   ON public.prompt_steps TO authenticated;
 CREATE POLICY "Owners can add steps to pending prompts"

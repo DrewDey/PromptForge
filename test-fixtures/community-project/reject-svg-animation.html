@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Declarative SVG navigation</title>
+  </head>
+  <body>
+    <main>
+      <h1>Apparently static vector project</h1>
+      <p>This result contains enough visible content to pass the static reader gate.</p>
+      <svg viewBox="0 0 200 40" aria-label="Animated project link">
+        <a id="project-link" href="#details">
+          <text x="0" y="24">Open details</text>
+        </a>
+        <set href="#project-link" attributeName="href" to="/leave-preview" begin="0s"></set>
+      </svg>
+      <p id="details">Local project details.</p>
+    </main>
+  </body>
+</html>

@@ -10,8 +10,6 @@ import { markProjectForkStarted } from '@/lib/my-forge-actions'
 import type { ProjectForkSource } from '@/lib/project-forks'
 import { detectSourceRunProvider } from '@/lib/source-run-review'
 
-const providerOptions = ['ChatGPT', 'Claude', 'Gemini', 'OpenRouter', 'Other']
-
 export default function LegacySourceRunIntakeClient({
   forkSource,
 }: {
@@ -22,16 +20,12 @@ export default function LegacySourceRunIntakeClient({
     forkSource ? `${forkSource.sourceProjectTitle || 'Project'} fork` : '',
   )
   const [sourceUrl, setSourceUrl] = useState('')
-  const [provider, setProvider] = useState('')
-  const [providerTouched, setProviderTouched] = useState(false)
-  const [customProvider, setCustomProvider] = useState('')
   const [model, setModel] = useState('')
   const [modelSettings, setModelSettings] = useState('')
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const detectedProvider = detectSourceRunProvider(sourceUrl)
-  const selectedProvider = providerTouched ? provider : detectedProvider
 
   useEffect(() => {
     if (!forkSource?.sourceProjectId) return
@@ -48,10 +42,7 @@ export default function LegacySourceRunIntakeClient({
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const resolvedProvider = selectedProvider === 'Other'
-      ? customProvider.trim()
-      : selectedProvider.trim()
-    if (!resolvedProvider || !model.trim() || !title.trim() || !sourceUrl.trim()) {
+    if (!detectedProvider || !model.trim() || !title.trim() || !sourceUrl.trim()) {
       setError('Complete the title, public source link, AI service, and visible model.')
       return
     }
@@ -62,13 +53,14 @@ export default function LegacySourceRunIntakeClient({
       const result = await submitSourceRun({
         title: title.trim(),
         source_url: sourceUrl.trim(),
-        provider: resolvedProvider,
+        provider: detectedProvider,
         model_used: model.trim(),
         model_settings: modelSettings.trim(),
         notes: notes.trim(),
         fork_source: forkSource,
         privacy_attested: true,
         queue_only_attested: true,
+        source_publication_attested: true,
       })
       if (!result.success || !result.id) {
         setError(result.error ?? 'PathForge could not create the private review record.')
@@ -146,24 +138,17 @@ export default function LegacySourceRunIntakeClient({
             <span className="font-sans text-xs font-normal normal-case tracking-normal text-surface-500">Do not paste a private account-only conversation URL.</span>
           </label>
           <div className="grid gap-4 sm:grid-cols-2">
-            <label className="grid gap-2 text-xs font-bold uppercase tracking-wider text-surface-600">
+            <div className="grid gap-2 text-xs font-bold uppercase tracking-wider text-surface-600">
               AI service
-              <select value={selectedProvider} onChange={(event) => { setProvider(event.target.value); setProviderTouched(Boolean(event.target.value)) }} required className="min-h-11 border border-surface-300 bg-white px-3 text-sm font-normal normal-case tracking-normal text-surface-900">
-                <option value="">Detect from link</option>
-                {providerOptions.map((value) => <option key={value} value={value}>{value}</option>)}
-              </select>
-            </label>
+              <output data-detected-source-provider aria-live="polite" className="flex min-h-11 items-center border border-surface-300 bg-surface-50 px-3 text-sm font-normal normal-case tracking-normal text-surface-900">
+                {detectedProvider || 'Detected from the public link'}
+              </output>
+            </div>
             <label className="grid gap-2 text-xs font-bold uppercase tracking-wider text-surface-600">
               Exact visible model
               <input value={model} onChange={(event) => setModel(event.target.value)} required maxLength={160} className="min-h-11 border border-surface-300 px-3 text-sm font-normal normal-case tracking-normal text-surface-900" placeholder="Exact label, or Not sure" />
             </label>
           </div>
-          {selectedProvider === 'Other' && (
-            <label className="grid gap-2 text-xs font-bold uppercase tracking-wider text-surface-600">
-              Service name
-              <input value={customProvider} onChange={(event) => setCustomProvider(event.target.value)} required maxLength={80} className="min-h-11 border border-surface-300 px-3 text-sm font-normal normal-case tracking-normal text-surface-900" />
-            </label>
-          )}
           <label className="grid gap-2 text-xs font-bold uppercase tracking-wider text-surface-600">
             Model settings <span className="normal-case tracking-normal text-surface-400">optional</span>
             <textarea value={modelSettings} onChange={(event) => setModelSettings(event.target.value)} maxLength={1000} rows={2} className="border border-surface-300 p-3 text-sm font-normal normal-case tracking-normal text-surface-900" placeholder="Reasoning level, tools, or other visible settings" />
@@ -174,6 +159,7 @@ export default function LegacySourceRunIntakeClient({
           </label>
           <div className="grid gap-3 border border-surface-200 bg-surface-50 p-4 text-sm leading-6 text-surface-700">
             <label className="flex items-start gap-3"><input type="checkbox" required className="mt-1" /><span>I may share this provider link with PathForge review, and I checked the notes for secrets and personal information.</span></label>
+            <label className="flex items-start gap-3"><input type="checkbox" required className="mt-1" /><span>I authorize PathForge to show this exact public share link on an approved public showcase. PathForge will not log into my provider account.</span></label>
             <label className="flex items-start gap-3"><input type="checkbox" required className="mt-1" /><span>I understand this creates a private review record and does not publish the conversation or project automatically.</span></label>
           </div>
           {error && <div role="alert" className="border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</div>}

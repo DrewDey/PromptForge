@@ -62,6 +62,8 @@ const communityPilotMigrationPath = 'supabase/migrations/20260723054558_communit
 const communityPilotMigration = read(communityPilotMigrationPath)
 const sourceRunCompatibilityMigrationPath = 'supabase/migrations/20260723152046_restore_legacy_source_run_compatibility_and_source_privacy.sql'
 const sourceRunCompatibilityMigration = read(sourceRunCompatibilityMigrationPath)
+const sourceRunReleaseReviewMigrationPath = 'supabase/migrations/20260723173000_harden_community_project_release_review.sql'
+const sourceRunReleaseReviewMigration = read(sourceRunReleaseReviewMigrationPath)
 const reservedHandlesMigrationPath = 'supabase/migrations/20260712032100_reserve_legacy_builder_handles.sql'
 const reservedHandlesMigration = read(reservedHandlesMigrationPath)
 const unfinishedForksMigrationPath = 'supabase/migrations/20260712033440_my_forge_unfinished_forks.sql'
@@ -167,10 +169,17 @@ requireText(sourceRunPath, sourceRun, ".from('source_run_submissions')", 'queue-
 requireText(sourceRunPath, sourceRun, '.insert({', 'queue-only compatibility intake must create its private review row')
 requireText(sourceRunPath, sourceRun, 'privacy_attested', 'queue-only compatibility intake must require a privacy attestation')
 requireText(sourceRunPath, sourceRun, 'queue_only_attested', 'queue-only compatibility intake must require explicit no-publication acknowledgement')
+requireText(sourceRunPath, sourceRun, 'source_publication_attested', 'legacy intake must require explicit public-link publication permission')
+requireText(sourceRunPath, sourceRun, 'provider !== detectedProvider', 'legacy intake must not accept a provider label that disagrees with the public link')
+requireText(sourceRunPath, sourceRun, "source_visibility: 'public'", 'legacy intake must store the contributor-approved public source scope')
+requireText(sourceRunPath, sourceRun, 'source_publication_consent_at: sourcePublicationConsentAt', 'legacy intake must timestamp public-link consent')
 requireText(communityPilotMigrationPath, communityPilotMigration, 'REVOKE INSERT ON TABLE public.source_run_submissions FROM authenticated', 'pilot migration must first close the prior broad source-run grant')
 requireText(sourceRunCompatibilityMigrationPath, sourceRunCompatibilityMigration, 'GRANT INSERT (', 'follow-up migration must restore only an exact source-run intake column grant')
 requireText(sourceRunCompatibilityMigrationPath, sourceRunCompatibilityMigration, 'CREATE POLICY "Users submit untouched queued source runs"', 'follow-up migration must restore strict queue-only owner RLS')
 requireText(sourceRunCompatibilityMigrationPath, sourceRunCompatibilityMigration, "status = 'queued'", 'source-run compatibility RLS must prohibit browser publication state')
+requireText(sourceRunReleaseReviewMigrationPath, sourceRunReleaseReviewMigration, "source_visibility TEXT NOT NULL DEFAULT 'review_only'", 'legacy rows must fail closed without new public-link consent')
+requireText(sourceRunReleaseReviewMigrationPath, sourceRunReleaseReviewMigration, 'require_legacy_source_run_publication_consent', 'prepared publication must enforce public-link consent in the database')
+requireText(sourceRunReleaseReviewMigrationPath, sourceRunReleaseReviewMigration, 'sibling.resubmission_of_id = source_run_submissions.resubmission_of_id', 'application rollback repairs must preserve one active exact-lineage repair')
 requireText(communityPilotMigrationPath, communityPilotMigration, 'prior.fork_source_project_id', 'the repair RPC must derive lineage from the locked prior record')
 requireText(adminSourceRunPath, adminSourceRun, 'requestSourceRunRepair', 'admin review must be able to request an actionable repair')
 requireText(adminSourceRunPath, adminSourceRun, 'user_status_note', 'repair requests need a builder-facing note')

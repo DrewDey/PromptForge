@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, FileCode2, GitBranch, Plus, ShieldCheck, Trash2 } from 'lucide-react'
@@ -24,6 +24,15 @@ const blankStep = (number: number): CommunityProjectBuildStep => ({
   response: '',
 })
 
+const submissionStepLabels = [
+  'Result',
+  'Build evidence',
+  'Source link',
+  'Credit and reuse',
+  'Public preview',
+  'Consent',
+] as const
+
 function FieldLabel({ children, required = false }: { children: React.ReactNode; required?: boolean }) {
   return (
     <span className="font-mono text-[10px] font-bold uppercase tracking-[0.15em] text-surface-600">
@@ -43,6 +52,8 @@ export default function ProjectSubmissionClient({
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const formRef = useRef<HTMLFormElement>(null)
+  const pendingStepFocusRef = useRef(false)
   const urlFork = useMemo(() => parseProjectForkSearchParams(searchParams), [searchParams])
   const repairedProviderIsListed = repairSubmission
     ? communityProjectProviders.some((item) => item === repairSubmission.provider)
@@ -65,9 +76,25 @@ export default function ProjectSubmissionClient({
   const [reusePermission, setReusePermission] = useState<CommunityProjectReusePermission | ''>(repairSubmission?.reuse_permission ?? '')
   const [steps, setSteps] = useState<CommunityProjectBuildStep[]>(repairSubmission?.build_steps ?? [blankStep(1)])
   const [artifact, setArtifact] = useState<File | null>(null)
+  const [activeStep, setActiveStep] = useState(1)
+  const [furthestStep, setFurthestStep] = useState(1)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const artifactTooLarge = Boolean(artifact && artifact.size > COMMUNITY_PROJECT_MAX_ARTIFACT_BYTES)
+
+  useLayoutEffect(() => {
+    if (!pendingStepFocusRef.current) return
+    pendingStepFocusRef.current = false
+    const progress = formRef.current?.querySelector<HTMLElement>(
+      '[data-community-submission-progress]',
+    )
+    progress?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    formRef.current
+      ?.querySelector<HTMLElement>(
+        `[data-community-submission-step="${activeStep}"] [data-community-submission-step-heading]`,
+      )
+      ?.focus({ preventScroll: true })
+  }, [activeStep])
 
   const effectiveFork = repairSubmission?.fork_source_project_id
     ? {
@@ -91,15 +118,70 @@ export default function ProjectSubmissionClient({
     )))
   }
 
+  function showStep(step: number) {
+    const progress = formRef.current?.querySelector<HTMLElement>(
+      '[data-community-submission-progress]',
+    )
+    progress?.focus({ preventScroll: true })
+    pendingStepFocusRef.current = true
+    setActiveStep(step)
+  }
+
+  function validateActiveStep() {
+    if (activeStep === 1 && artifactTooLarge) {
+      setError('Choose an HTML artifact that is 2 MB or smaller.')
+      return false
+    }
+    const section = formRef.current?.querySelector<HTMLElement>(
+      `[data-community-submission-step="${activeStep}"]`,
+    )
+    const controls = section
+      ? [...section.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
+          'input, select, textarea',
+        )]
+      : []
+    const firstInvalid = controls.find((control) => !control.checkValidity())
+    if (firstInvalid) {
+      firstInvalid.reportValidity()
+      return false
+    }
+    setError('')
+    return true
+  }
+
+  function continueToNextStep() {
+    if (!validateActiveStep()) return
+    const nextStep = Math.min(activeStep + 1, submissionStepLabels.length)
+    setFurthestStep((current) => Math.max(current, nextStep))
+    showStep(nextStep)
+  }
+
+  function navigateToVisitedStep(step: number) {
+    if (step > furthestStep || step === activeStep) return
+    if (step > activeStep && !validateActiveStep()) return
+    showStep(step)
+  }
+
+  function handleInvalid(event: React.InvalidEvent<HTMLFormElement>) {
+    if (!(event.target instanceof Element)) return
+    const section = event.target.closest<HTMLElement>('[data-community-submission-step]')
+    const step = Number(section?.dataset.communitySubmissionStep)
+    if (!Number.isInteger(step) || step < 1 || step > submissionStepLabels.length) return
+    setFurthestStep((current) => Math.max(current, step))
+    showStep(step)
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError('')
     if (!artifact) {
       setError('Choose the self-contained HTML artifact.')
+      showStep(1)
       return
     }
     if (artifactTooLarge) {
       setError('Choose an HTML artifact that is 2 MB or smaller.')
+      showStep(1)
       return
     }
     const formData = new FormData(event.currentTarget)
@@ -178,7 +260,14 @@ export default function ProjectSubmissionClient({
       </section>
 
       <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
-        <form onSubmit={handleSubmit} className="min-w-0 space-y-7" encType="multipart/form-data">
+        <form
+          ref={formRef}
+          onSubmit={handleSubmit}
+          onInvalidCapture={handleInvalid}
+          className="min-w-0 space-y-7"
+          encType="multipart/form-data"
+          data-active-community-submission-step={activeStep}
+        >
           {effectiveFork && (
             <section className="border border-green-300 bg-green-50 p-4" data-community-fork-source>
               <div className="flex items-center gap-2 font-mono text-[10px] font-black uppercase tracking-[0.15em] text-green-800">
@@ -189,8 +278,55 @@ export default function ProjectSubmissionClient({
             </section>
           )}
 
-          <fieldset className="min-w-0 border border-surface-200 bg-white p-5 sm:p-6">
-            <legend className="px-2 text-lg font-black text-surface-900">1. Show the result</legend>
+          <section
+            tabIndex={-1}
+            data-community-submission-progress
+            className="scroll-mt-4 border border-surface-200 bg-white p-4 outline-none sm:p-5"
+            aria-label="Project submission progress"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="font-mono text-[10px] font-black uppercase tracking-[0.15em] text-brand-orange-ink">
+                Step {activeStep} of {submissionStepLabels.length}
+              </div>
+              <div className="text-xs text-surface-500">Nothing publishes automatically.</div>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+              {submissionStepLabels.map((label, index) => {
+                const step = index + 1
+                const current = step === activeStep
+                const visited = step <= furthestStep
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    disabled={!visited}
+                    aria-current={current ? 'step' : undefined}
+                    onClick={() => navigateToVisitedStep(step)}
+                    className={`min-h-11 border px-2 py-2 text-left text-xs font-bold ${
+                      current
+                        ? 'border-brand-orange bg-brand-orange/[0.08] text-surface-900'
+                        : visited
+                          ? 'border-surface-300 bg-white text-surface-700 hover:border-brand-orange'
+                          : 'border-surface-200 bg-surface-50 text-surface-400'
+                    }`}
+                  >
+                    <span className="mr-1 font-mono text-[10px]">{step}.</span>{label}
+                  </button>
+                )
+              })}
+            </div>
+          </section>
+
+          <fieldset
+            hidden={activeStep !== 1}
+            data-community-submission-step="1"
+            className="min-w-0 border border-surface-200 bg-white p-5 sm:p-6"
+          >
+            <legend className="px-2 text-lg font-black text-surface-900">
+              <span tabIndex={-1} data-community-submission-step-heading className="outline-none">
+                1. Show the result
+              </span>
+            </legend>
             <div className="mt-2 grid gap-5">
               <label className="grid gap-2">
                 <FieldLabel required>Project title</FieldLabel>
@@ -229,8 +365,16 @@ export default function ProjectSubmissionClient({
             </div>
           </fieldset>
 
-          <fieldset className="min-w-0 border border-surface-200 bg-white p-5 sm:p-6">
-            <legend className="px-2 text-lg font-black text-surface-900">2. Explain how it was built</legend>
+          <fieldset
+            hidden={activeStep !== 2}
+            data-community-submission-step="2"
+            className="min-w-0 border border-surface-200 bg-white p-5 sm:p-6"
+          >
+            <legend className="px-2 text-lg font-black text-surface-900">
+              <span tabIndex={-1} data-community-submission-step-heading className="outline-none">
+                2. Explain how it was built
+              </span>
+            </legend>
             <div className="mt-2 grid gap-5">
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="grid gap-2">
@@ -278,8 +422,16 @@ export default function ProjectSubmissionClient({
             </div>
           </fieldset>
 
-          <fieldset className="min-w-0 border border-surface-200 bg-white p-5 sm:p-6">
-            <legend className="px-2 text-lg font-black text-surface-900">3. Add optional source evidence</legend>
+          <fieldset
+            hidden={activeStep !== 3}
+            data-community-submission-step="3"
+            className="min-w-0 border border-surface-200 bg-white p-5 sm:p-6"
+          >
+            <legend className="px-2 text-lg font-black text-surface-900">
+              <span tabIndex={-1} data-community-submission-step-heading className="outline-none">
+                3. Add optional source evidence
+              </span>
+            </legend>
             <div className="mt-2 grid gap-5">
               <label className="grid gap-2"><FieldLabel>Public provider share link</FieldLabel><input name="source_url" type="url" value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} className="min-h-11 border border-surface-300 px-3 text-sm" placeholder="https://chatgpt.com/share/..." /><span className="text-xs leading-5 text-surface-500">Optional. Use a public ChatGPT, Claude, or Gemini share URL with no query string or fragment—not a private /c/ or account link. PathForge never logs into your provider account.</span></label>
               {sourceUrl && (
@@ -292,8 +444,16 @@ export default function ProjectSubmissionClient({
             </div>
           </fieldset>
 
-          <fieldset className="min-w-0 border border-surface-200 bg-white p-5 sm:p-6">
-            <legend className="px-2 text-lg font-black text-surface-900">4. Choose credit and reuse</legend>
+          <fieldset
+            hidden={activeStep !== 4}
+            data-community-submission-step="4"
+            className="min-w-0 border border-surface-200 bg-white p-5 sm:p-6"
+          >
+            <legend className="px-2 text-lg font-black text-surface-900">
+              <span tabIndex={-1} data-community-submission-step-heading className="outline-none">
+                4. Choose credit and reuse
+              </span>
+            </legend>
             <div className="mt-2 grid min-w-0 gap-5">
               <input type="hidden" name="submitter_role" value="builder" />
               <label className="flex min-w-0 items-start gap-3 border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">
@@ -311,8 +471,16 @@ export default function ProjectSubmissionClient({
             </div>
           </fieldset>
 
-          <fieldset className="min-w-0 border-2 border-brand-orange bg-white p-5 sm:p-6">
-            <legend className="px-2 text-lg font-black text-surface-900">5. Review everything that may become public</legend>
+          <fieldset
+            hidden={activeStep !== 5}
+            data-community-submission-step="5"
+            className="min-w-0 border-2 border-brand-orange bg-white p-5 sm:p-6"
+          >
+            <legend className="px-2 text-lg font-black text-surface-900">
+              <span tabIndex={-1} data-community-submission-step-heading className="outline-none">
+                5. Review everything that may become public
+              </span>
+            </legend>
             <div className="mt-2">
               <div className="font-mono text-[10px] font-black uppercase tracking-[0.15em] text-brand-orange-ink">Pre-publication consent preview</div>
               <h2 className="mt-2 text-2xl font-black text-surface-900">{title || 'Your project title'}</h2>
@@ -347,8 +515,16 @@ export default function ProjectSubmissionClient({
             </div>
           </fieldset>
 
-          <fieldset className="min-w-0 border border-surface-200 bg-white p-5 sm:p-6">
-            <legend className="px-2 text-lg font-black text-surface-900">6. Consent and submit for private review</legend>
+          <fieldset
+            hidden={activeStep !== 6}
+            data-community-submission-step="6"
+            className="min-w-0 border border-surface-200 bg-white p-5 sm:p-6"
+          >
+            <legend className="px-2 text-lg font-black text-surface-900">
+              <span tabIndex={-1} data-community-submission-step-heading className="outline-none">
+                6. Consent and submit for private review
+              </span>
+            </legend>
             <div className="mt-2 grid gap-5">
               <div className="grid gap-3 border border-surface-200 bg-surface-50 p-4 text-sm leading-6">
                 <label className="flex items-start gap-3"><input type="checkbox" name="profile_attribution_attested" value="yes" required className="mt-1" /><span>I confirm that my public PathForge profile, shown above as <strong>{publicContributorName}</strong>, may be credited as the builder and submitter.</span></label>
@@ -361,9 +537,33 @@ export default function ProjectSubmissionClient({
           </fieldset>
 
           {error && <div role="alert" className="border border-red-300 bg-red-50 p-4 text-sm leading-6 text-red-800">{error}</div>}
-          <button type="submit" disabled={submitting || artifactTooLarge} className="inline-flex min-h-12 w-full items-center justify-center gap-2 bg-brand-orange px-5 py-3 text-sm font-black text-surface-900 hover:bg-brand-orange-light disabled:cursor-not-allowed disabled:bg-surface-200">
-            <FileCode2 className="h-4 w-4" aria-hidden="true" /> {submitting ? 'Scanning and submitting…' : repairSubmission ? 'Submit replacement bundle' : 'Submit private review bundle'}
-          </button>
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <button
+              type="button"
+              hidden={activeStep === 1}
+              onClick={() => showStep(Math.max(1, activeStep - 1))}
+              className="min-h-12 border border-surface-300 bg-white px-5 py-3 text-sm font-black text-surface-800 hover:border-brand-orange"
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              hidden={activeStep === submissionStepLabels.length}
+              data-community-submission-continue
+              onClick={continueToNextStep}
+              className="min-h-12 bg-surface-900 px-5 py-3 text-sm font-black text-white hover:bg-surface-700 sm:min-w-64"
+            >
+              Continue to {submissionStepLabels[Math.min(activeStep, submissionStepLabels.length - 1)].toLowerCase()}
+            </button>
+            <button
+              type="submit"
+              hidden={activeStep !== submissionStepLabels.length}
+              disabled={submitting || artifactTooLarge}
+              className="inline-flex min-h-12 items-center justify-center gap-2 bg-brand-orange px-5 py-3 text-sm font-black text-surface-900 hover:bg-brand-orange-light disabled:cursor-not-allowed disabled:bg-surface-200 sm:min-w-72"
+            >
+              <FileCode2 className="h-4 w-4" aria-hidden="true" /> {submitting ? 'Scanning and submitting…' : repairSubmission ? 'Submit replacement bundle' : 'Submit private review bundle'}
+            </button>
+          </div>
         </form>
       </div>
     </main>

@@ -98,6 +98,7 @@ export default async function BuildPage({
 }) {
   const params = await searchParams
   const legacyRepairId = typeof params.repair === 'string' ? params.repair : null
+  const repairId = typeof params.repairCommunity === 'string' ? params.repairCommunity : null
   const eligibility = await getCommunityProjectPilotEligibility()
   if (legacyRepairId) {
     if (!eligibility.signedIn) {
@@ -112,18 +113,17 @@ export default async function BuildPage({
     }
     return <LegacySourceRunRepairClient repairId={legacyRepairId} />
   }
-  if (!eligibility.signedIn || !eligibility.eligible) {
+  const repairSubmission = eligibility.signedIn && repairId
+    ? await getCommunityProjectSubmissionForOwner(repairId)
+    : null
+  const repairIsAvailable = repairSubmission?.status === 'needs_repair'
+  if (!eligibility.signedIn || (!eligibility.eligible && !repairIsAvailable)) {
     return <PilotExplanation signedIn={eligibility.signedIn} username={eligibility.username} />
   }
 
-  const repairId = typeof params.repairCommunity === 'string' ? params.repairCommunity : null
-  const repairSubmission = repairId
-    ? await getCommunityProjectSubmissionForOwner(repairId)
-    : null
-
   return (
     <ProjectSubmissionClient
-      repairSubmission={repairSubmission?.status === 'needs_repair' ? repairSubmission : null}
+      repairSubmission={repairIsAvailable ? repairSubmission : null}
       requestedRepairId={repairId}
       publicContributorName={eligibility.displayName || eligibility.username || 'Your PathForge profile'}
     />

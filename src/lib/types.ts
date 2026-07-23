@@ -102,6 +102,8 @@ export type SourceRunSubmission = {
   id: string
   title?: string | null
   source_url: string | null
+  source_visibility?: 'review_only' | 'public'
+  source_publication_consent_at?: string | null
   file_name: string | null
   notes: string | null
   fork_source_project_id?: string | null

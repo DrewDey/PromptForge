@@ -10,6 +10,7 @@ CREATE TEMP TABLE test_state (
   prompt UUID,
   report UUID,
   legacy_source UUID,
+  rollback_repair UUID,
   legacy_repair UUID,
   fork_submission UUID,
   fork_prompt UUID,
@@ -53,6 +54,14 @@ BEGIN
   IF private.pathforge_actor_can_submit_community_project(stranger) THEN
     RAISE EXCEPTION 'An invited builder bypassed the locked external invitation control.';
   END IF;
+  PERFORM public.set_community_project_invitation_control(administrator, TRUE);
+  IF NOT private.pathforge_actor_can_submit_community_project(stranger) THEN
+    RAISE EXCEPTION 'The shipped invitation control did not enable an admitted invited builder.';
+  END IF;
+  PERFORM public.set_community_project_invitation_control(administrator, FALSE);
+  IF private.pathforge_actor_can_submit_community_project(stranger) THEN
+    RAISE EXCEPTION 'The shipped invitation control did not re-lock the external cohort.';
+  END IF;
 
   INSERT INTO public.source_run_submissions (
     id, title, source_url, notes, fork_source_project_id,
@@ -73,6 +82,15 @@ BEGIN
     builder,
     'needs_repair'
   );
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.source_run_submissions
+    WHERE id = legacy_source
+      AND source_visibility = 'review_only'
+      AND source_publication_consent_at IS NULL
+  ) THEN
+    RAISE EXCEPTION 'Historical source-run rows did not default to review-only publication authority.';
+  END IF;
 
   PERFORM public.set_community_project_pilot_member(
     builder, administrator, TRUE, 'internal_acceptance', 'Disposable transaction test'
@@ -138,7 +156,7 @@ BEGIN
     'artifact_size_bytes', 512,
     'artifact_scan', jsonb_build_object(
       'passed', TRUE,
-      'scanner_version', 'html-static-v2',
+      'scanner_version', 'html-static-v3',
       'scanned_at', NOW(),
       'sha256', repeat('a', 64),
       'byte_length', 512,
@@ -182,6 +200,20 @@ BEGIN
   submission := public.create_community_project_submission(
     builder, payload, gen_random_uuid()
   );
+  BEGIN
+    DELETE FROM public.profiles WHERE id = builder;
+    RAISE EXCEPTION 'Profile deletion cascaded ahead of the community retention contract.';
+  EXCEPTION
+    WHEN foreign_key_violation THEN NULL;
+  END;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.community_project_submissions
+    WHERE id = submission AND author_id = builder
+  ) OR NOT EXISTS (
+    SELECT 1 FROM public.profiles WHERE id = builder
+  ) THEN
+    RAISE EXCEPTION 'The community submission or contributor profile disappeared after blocked deletion.';
+  END IF;
   INSERT INTO test_state (
     builder, stranger, administrator, submission, legacy_source, artifact_path
   ) VALUES (
@@ -235,6 +267,110 @@ BEGIN
 END;
 $test$;
 
+DO $test$
+DECLARE
+  seed public.community_project_submissions%ROWTYPE;
+  terminal_fixture public.community_project_submissions%ROWTYPE;
+  builder UUID := (SELECT test_state.builder FROM test_state);
+  probe_artifact TEXT := builder::TEXT || '/20000000-0000-4000-8000-000000000099.html.txt';
+  probe_payload JSONB;
+  probe_submission UUID;
+BEGIN
+  SELECT submission.* INTO seed
+  FROM public.community_project_submissions AS submission
+  WHERE submission.id = (SELECT test_state.submission FROM test_state);
+
+  FOR fixture_index IN 1..50 LOOP
+    terminal_fixture := jsonb_populate_record(
+      NULL::public.community_project_submissions,
+      to_jsonb(seed) || jsonb_build_object(
+        'id', gen_random_uuid(),
+        'title', 'Terminal cap fixture ' || LPAD(fixture_index::TEXT, 2, '0'),
+        'status', 'withdrawn',
+        'prompt_id', NULL,
+        'artifact_path', NULL,
+        'artifact_original_name', NULL,
+        'artifact_sha256', NULL,
+        'artifact_size_bytes', NULL,
+        'artifact_scan', NULL,
+        'artifact_integrity_status', 'purged',
+        'artifact_integrity_checked_at', NOW(),
+        'withdrawn_at', NOW(),
+        'updated_at', NOW()
+      )
+    );
+    INSERT INTO public.community_project_submissions
+    SELECT terminal_fixture.*;
+  END LOOP;
+
+  IF (
+    SELECT COUNT(*)
+    FROM public.community_project_submissions
+    WHERE title LIKE 'Terminal cap fixture %'
+      AND status = 'withdrawn'
+  ) <> 50 THEN
+    RAISE EXCEPTION 'The terminal submission cap fixture is incomplete.';
+  END IF;
+
+  INSERT INTO storage.objects (bucket_id, name, metadata)
+  VALUES ('community-project-quarantine', probe_artifact, '{"mimetype":"text/plain"}');
+  probe_payload := jsonb_build_object(
+    'title', 'Active-cap probe project',
+    'summary', 'A disposable project proving terminal audit rows do not consume live pilot capacity.',
+    'category_slug', 'personal',
+    'difficulty', 'beginner',
+    'provider', 'Gemini',
+    'model', 'Builder reported probe model',
+    'model_settings', '',
+    'evidence_scope', 'selected_excerpts',
+    'source_url', '',
+    'source_visibility', 'review_only',
+    'build_steps', jsonb_build_array(jsonb_build_object(
+      'title', 'Capacity checkpoint',
+      'prompt', 'Prove that terminal records do not consume the active pilot cap.',
+      'response', 'Created a disposable capacity probe.'
+    )),
+    'artifact_path', probe_artifact,
+    'artifact_original_name', 'capacity-probe.html',
+    'artifact_sha256', repeat('f', 64),
+    'artifact_size_bytes', 256,
+    'artifact_scan', jsonb_build_object(
+      'passed', TRUE,
+      'scanner_version', 'html-static-v3',
+      'scanned_at', NOW(),
+      'sha256', repeat('f', 64),
+      'byte_length', 256,
+      'findings', '[]'::JSONB
+    ),
+    'submitter_role', 'builder',
+    'reuse_permission', 'view_only',
+    'terms_version', '2026-07-22-pilot-v1',
+    'privacy_version', '2026-07-22-pilot-v1',
+    'builder_attested_at', NOW(),
+    'profile_attribution_attested_at', NOW(),
+    'rights_attested_at', NOW(),
+    'privacy_attested_at', NOW(),
+    'publication_consent_at', NOW(),
+    'fork', NULL
+  );
+  probe_submission := public.create_community_project_submission(
+    builder, probe_payload, gen_random_uuid()
+  );
+  IF probe_submission IS NULL THEN
+    RAISE EXCEPTION 'Terminal audit rows still consumed the 50-active-submission cap.';
+  END IF;
+
+  DELETE FROM public.community_project_events
+  WHERE submission_id = probe_submission;
+  DELETE FROM public.community_project_submissions
+  WHERE id = probe_submission
+    OR title LIKE 'Terminal cap fixture %';
+  DELETE FROM storage.objects
+  WHERE bucket_id = 'community-project-quarantine'
+    AND name = probe_artifact;
+END;
+$test$;
+
 SET ROLE authenticated;
 SET request.jwt.claims = '{"role":"authenticated","sub":"10000000-0000-4000-8000-000000000001"}';
 DO $test$
@@ -257,12 +393,15 @@ BEGIN
     WHEN insufficient_privilege THEN NULL;
   END;
   INSERT INTO public.source_run_submissions (
-    title, source_url, notes, fork_source_project_id,
+    title, source_url, source_visibility, source_publication_consent_at,
+    notes, fork_source_project_id,
     fork_source_project_title, fork_source_step_id, fork_source_step_number,
     prompt_family_id, fork_depth, fork_branch_index, author_id, status
   ) VALUES (
     'Compatible queued source run',
     'https://chatgpt.com/share/compatible-queue',
+    'public',
+    NOW(),
     'Queue-only compatibility fixture',
     '40000000-0000-4000-8000-000000000010',
     'Prepared source project',
@@ -280,6 +419,8 @@ BEGIN
     WHERE id = compatible_source_run
       AND author_id = '10000000-0000-4000-8000-000000000001'
       AND status = 'queued'
+      AND source_visibility = 'public'
+      AND source_publication_consent_at IS NOT NULL
       AND extracted_prompt_id IS NULL
       AND admin_notes IS NULL
       AND canonical_source_url IS NULL
@@ -288,6 +429,128 @@ BEGIN
       AND intake_evidence IS NULL
   ) THEN
     RAISE EXCEPTION 'Authenticated queue-only source-run compatibility insert was not preserved.';
+  END IF;
+  BEGIN
+    INSERT INTO public.source_run_submissions (
+      title, source_url, source_visibility, source_publication_consent_at,
+      author_id, status
+    ) VALUES (
+      'Private conversation URL',
+      'https://chatgpt.com/c/private-account-conversation',
+      'public',
+      NOW(),
+      '10000000-0000-4000-8000-000000000001',
+      'queued'
+    );
+    RAISE EXCEPTION 'Authenticated intake accepted a private provider conversation URL.';
+  EXCEPTION
+    WHEN OTHERS THEN
+      IF SQLERRM = 'Authenticated intake accepted a private provider conversation URL.'
+        OR SQLERRM <> 'Use a public ChatGPT, Claude, or Gemini share link without a query string or fragment. Private conversation URLs are not accepted.' THEN
+        RAISE;
+      END IF;
+  END;
+  BEGIN
+    INSERT INTO public.source_run_submissions (
+      title, source_url, source_visibility, author_id, status
+    ) VALUES (
+      'Missing publication consent',
+      'https://chatgpt.com/share/missing-publication-consent',
+      'public',
+      '10000000-0000-4000-8000-000000000001',
+      'queued'
+    );
+    RAISE EXCEPTION 'Authenticated intake accepted a public link without consent.';
+  EXCEPTION
+    WHEN OTHERS THEN
+      IF SQLERRM = 'Authenticated intake accepted a public link without consent.'
+        OR SQLERRM <> 'Public source links require explicit contributor consent.' THEN
+        RAISE;
+      END IF;
+  END;
+  INSERT INTO public.source_run_submissions (
+    title,
+    source_url,
+    source_visibility,
+    source_publication_consent_at,
+    notes,
+    fork_source_project_id,
+    fork_source_project_title,
+    fork_source_model_variant_id,
+    fork_source_run_id,
+    fork_source_step_id,
+    fork_source_step_number,
+    fork_source_artifact_path,
+    fork_source_artifact_sha256,
+    fork_parent_submission_id,
+    prompt_family_id,
+    fork_depth,
+    fork_branch_index,
+    resubmission_of_id,
+    author_id,
+    status
+  )
+  SELECT
+    'Safe browser rollback repair',
+    'https://chatgpt.com/share/safe-browser-rollback-repair',
+    'public',
+    NOW(),
+    'Exact predecessor lineage copied by the rollback client.',
+    prior.fork_source_project_id,
+    prior.fork_source_project_title,
+    prior.fork_source_model_variant_id,
+    prior.fork_source_run_id,
+    prior.fork_source_step_id,
+    prior.fork_source_step_number,
+    prior.fork_source_artifact_path,
+    prior.fork_source_artifact_sha256,
+    prior.fork_parent_submission_id,
+    prior.prompt_family_id,
+    prior.fork_depth,
+    prior.fork_branch_index,
+    prior.id,
+    prior.author_id,
+    'queued'
+  FROM public.source_run_submissions AS prior
+  WHERE prior.id = (SELECT legacy_source FROM test_state)
+  RETURNING id INTO compatible_source_run;
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.source_run_submissions AS repair
+    JOIN public.source_run_submissions AS prior
+      ON prior.id = repair.resubmission_of_id
+    WHERE repair.id = compatible_source_run
+      AND repair.source_visibility = 'public'
+      AND repair.source_publication_consent_at IS NOT NULL
+      AND ROW(
+        repair.fork_source_project_id,
+        repair.fork_source_project_title,
+        repair.fork_source_model_variant_id,
+        repair.fork_source_run_id,
+        repair.fork_source_step_id,
+        repair.fork_source_step_number,
+        repair.fork_source_artifact_path,
+        repair.fork_source_artifact_sha256,
+        repair.fork_parent_submission_id,
+        repair.prompt_family_id,
+        repair.fork_depth,
+        repair.fork_branch_index
+      ) IS NOT DISTINCT FROM ROW(
+        prior.fork_source_project_id,
+        prior.fork_source_project_title,
+        prior.fork_source_model_variant_id,
+        prior.fork_source_run_id,
+        prior.fork_source_step_id,
+        prior.fork_source_step_number,
+        prior.fork_source_artifact_path,
+        prior.fork_source_artifact_sha256,
+        prior.fork_parent_submission_id,
+        prior.prompt_family_id,
+        prior.fork_depth,
+        prior.fork_branch_index
+      )
+  ) THEN
+    RAISE EXCEPTION 'Safe rollback repair did not preserve exact owned predecessor lineage.';
   END IF;
   BEGIN
     INSERT INTO public.source_run_submissions (
@@ -367,12 +630,45 @@ RESET ROLE;
 
 SET request.jwt.claims = '{"role":"service_role"}';
 UPDATE test_state
+SET rollback_repair = (
+  SELECT id
+  FROM public.source_run_submissions
+  WHERE title = 'Safe browser rollback repair'
+    AND resubmission_of_id = test_state.legacy_source
+);
+
+DO $test$
+BEGIN
+  BEGIN
+    UPDATE public.source_run_submissions
+    SET status = 'draft_created',
+        extracted_prompt_id = gen_random_uuid()
+    WHERE id = (SELECT legacy_source FROM test_state);
+    RAISE EXCEPTION 'Prepared publication bypassed missing public-link consent.';
+  EXCEPTION
+    WHEN OTHERS THEN
+      IF SQLERRM = 'Prepared publication bypassed missing public-link consent.'
+        OR SQLERRM <> 'Prepared publication requires explicit consent for the public source link.' THEN
+        RAISE;
+      END IF;
+  END;
+END;
+$test$;
+
+UPDATE public.source_run_submissions
+SET status = 'declined',
+    updated_at = NOW()
+WHERE id = (SELECT rollback_repair FROM test_state);
+
+UPDATE test_state
 SET legacy_repair = public.create_legacy_source_run_repair(
   legacy_source,
   builder,
   'Historical repair replacement',
   'https://chatgpt.com/share/historical-repair-v2',
   'Provider: ChatGPT\nModel used: Not sure',
+  'public',
+  NOW(),
   gen_random_uuid()
 );
 
@@ -386,6 +682,8 @@ BEGIN
     WHERE repair.id = (SELECT legacy_repair FROM test_state)
       AND repair.author_id = (SELECT builder FROM test_state)
       AND repair.status = 'queued'
+      AND repair.source_visibility = 'public'
+      AND repair.source_publication_consent_at IS NOT NULL
       AND ROW(
         repair.fork_source_project_id,
         repair.fork_source_project_title,
@@ -405,6 +703,61 @@ BEGIN
       )
   ) THEN
     RAISE EXCEPTION 'Legacy repair RPC did not preserve the locked prior lineage.';
+  END IF;
+END;
+$test$;
+
+UPDATE public.source_run_submissions
+SET status = 'draft_created',
+    updated_at = NOW()
+WHERE id = (SELECT legacy_repair FROM test_state);
+
+DO $test$
+BEGIN
+  BEGIN
+    UPDATE public.source_run_submissions
+    SET source_visibility = 'review_only',
+        source_publication_consent_at = NULL,
+        updated_at = NOW()
+    WHERE id = (SELECT legacy_repair FROM test_state);
+    RAISE EXCEPTION 'A prepared source run shed its public-link consent after preparation.';
+  EXCEPTION
+    WHEN OTHERS THEN
+      IF SQLERRM = 'A prepared source run shed its public-link consent after preparation.'
+        OR SQLERRM <> 'Prepared publication requires explicit consent for the public source link.' THEN
+        RAISE;
+      END IF;
+  END;
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.source_run_submissions
+    WHERE id = (SELECT legacy_repair FROM test_state)
+      AND status = 'draft_created'
+      AND source_visibility = 'public'
+      AND source_publication_consent_at IS NOT NULL
+  ) THEN
+    RAISE EXCEPTION 'The prepared source-run consent invariant did not roll back atomically.';
+  END IF;
+  BEGIN
+    UPDATE public.source_run_submissions
+    SET source_url = 'https://chatgpt.com/share/replaced-with-stale-consent',
+        updated_at = NOW()
+    WHERE id = (SELECT legacy_repair FROM test_state);
+    RAISE EXCEPTION 'A replacement public link reused stale contributor consent.';
+  EXCEPTION
+    WHEN OTHERS THEN
+      IF SQLERRM = 'A replacement public link reused stale contributor consent.'
+        OR SQLERRM <> 'Changing a public source link requires renewed explicit contributor consent.' THEN
+        RAISE;
+      END IF;
+  END;
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.source_run_submissions
+    WHERE id = (SELECT legacy_repair FROM test_state)
+      AND source_url = 'https://chatgpt.com/share/historical-repair-v2'
+  ) THEN
+    RAISE EXCEPTION 'The stale public-link consent attempt did not roll back atomically.';
   END IF;
 END;
 $test$;
@@ -491,6 +844,54 @@ BEGIN
 END;
 $test$;
 
+UPDATE public.community_project_submissions
+SET artifact_scan = jsonb_set(
+      artifact_scan,
+      '{scanner_version}',
+      '"html-static-v2"'::JSONB
+    ),
+    updated_at = NOW()
+WHERE id = (SELECT submission FROM test_state);
+
+DO $test$
+BEGIN
+  BEGIN
+    PERFORM public.publish_community_project_submission(
+      (SELECT submission FROM test_state),
+      (SELECT administrator FROM test_state),
+      FALSE,
+      '{"artifact_reviewed":true,"evidence_reviewed":true,"privacy_rights_reviewed":true,"public_truth_reviewed":true,"moderation_reviewed":true}'::JSONB,
+      'This complete review must still reject an obsolete scanner record.',
+      gen_random_uuid()
+    );
+    RAISE EXCEPTION 'Publication accepted an obsolete artifact scanner version.';
+  EXCEPTION
+    WHEN OTHERS THEN
+      IF SQLERRM = 'Publication accepted an obsolete artifact scanner version.'
+        OR SQLERRM <> 'Publication requires a verified html-static-v3 artifact scan.' THEN
+        RAISE;
+      END IF;
+  END;
+  IF EXISTS (
+    SELECT 1
+    FROM public.community_project_submissions
+    WHERE id = (SELECT submission FROM test_state)
+      AND (status <> 'queued' OR prompt_id IS NOT NULL)
+  ) THEN
+    RAISE EXCEPTION 'Rejected obsolete-scan publication did not roll back atomically.';
+  END IF;
+END;
+$test$;
+
+UPDATE public.community_project_submissions
+SET artifact_scan = jsonb_set(
+      artifact_scan,
+      '{scanner_version}',
+      '"html-static-v3"'::JSONB
+    ),
+    updated_at = NOW()
+WHERE id = (SELECT submission FROM test_state);
+
 UPDATE test_state
 SET prompt = public.publish_community_project_submission(
   submission,
@@ -511,12 +912,61 @@ BEGIN
   END IF;
   IF NOT EXISTS (
     SELECT 1
+    FROM public.prompts
+    WHERE id = (SELECT prompt FROM test_state)
+      AND result_content = 'Script-disabled HTML preview included.'
+  ) THEN
+    RAISE EXCEPTION 'Published community record still claimed an interactive artifact.';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.get_public_community_project_artifact_manifest(
+      (SELECT prompt FROM test_state)
+    )
+    WHERE artifact_path = (SELECT artifact_path FROM test_state)
+      AND artifact_sha256 = repeat('a', 64)
+      AND artifact_size_bytes = 512
+  ) THEN
+    RAISE EXCEPTION 'The service-only artifact manifest did not return exact verified identity.';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1
     FROM public.community_project_submissions
     WHERE review_checklist_version = '2026-07-22-pilot-review-v1'
       AND review_checklist->'artifact_reviewed' = 'true'::JSONB
       AND LENGTH(review_notes) >= 20
   ) THEN
     RAISE EXCEPTION 'Publication did not persist the human review proof.';
+  END IF;
+END;
+$test$;
+
+DO $test$
+BEGIN
+  BEGIN
+    PERFORM public.withdraw_community_project_submission(
+      (SELECT submission FROM test_state),
+      (SELECT administrator FROM test_state),
+      'removed',
+      'too short',
+      gen_random_uuid()
+    );
+    RAISE EXCEPTION 'Administrator removal accepted a vague database reason.';
+  EXCEPTION
+    WHEN OTHERS THEN
+      IF SQLERRM = 'Administrator removal accepted a vague database reason.'
+        OR SQLERRM <> 'A moderation removal reason between 10 and 2000 characters is required.' THEN
+        RAISE;
+      END IF;
+  END;
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.community_project_submissions
+    WHERE id = (SELECT submission FROM test_state)
+      AND status = 'published'
+      AND prompt_id = (SELECT prompt FROM test_state)
+  ) THEN
+    RAISE EXCEPTION 'Rejected moderation reason did not roll back public state atomically.';
   END IF;
 END;
 $test$;
@@ -606,7 +1056,7 @@ BEGIN
     'artifact_size_bytes', 384,
     'artifact_scan', jsonb_build_object(
       'passed', TRUE,
-      'scanner_version', 'html-static-v2',
+      'scanner_version', 'html-static-v3',
       'scanned_at', NOW(),
       'sha256', repeat('c', 64),
       'byte_length', 384,
@@ -724,14 +1174,52 @@ BEGIN
   ) <> 1 THEN
     RAISE EXCEPTION 'Bounded discovery capsule did not return only the still-public project.';
   END IF;
+  IF (
+    SELECT COUNT(*)
+    FROM public.prompt_steps
+    WHERE prompt_id = (SELECT prompt FROM test_state)
+  ) <> 1 THEN
+    RAISE EXCEPTION 'Anonymous reader cannot see the approved community evidence checkpoint.';
+  END IF;
   IF (SELECT COUNT(*) FROM storage.objects) <> 0 THEN
     RAISE EXCEPTION 'Anonymous Storage access bypassed the server hash-verification route.';
   END IF;
+  BEGIN
+    PERFORM public.get_public_community_project_artifact_manifest(
+      (SELECT prompt FROM test_state)
+    );
+    RAISE EXCEPTION 'Anonymous role resolved the service-only verified artifact manifest.';
+  EXCEPTION
+    WHEN insufficient_privilege THEN NULL;
+  END;
   BEGIN
     PERFORM public.get_public_community_project_artifact_path(
       (SELECT prompt FROM test_state)
     );
     RAISE EXCEPTION 'Anonymous role resolved a private artifact object path.';
+  EXCEPTION
+    WHEN insufficient_privilege THEN NULL;
+  END;
+END;
+$test$;
+RESET ROLE;
+
+SET ROLE authenticated;
+SET request.jwt.claims = '{"role":"authenticated","sub":"10000000-0000-4000-8000-000000000002"}';
+DO $test$
+BEGIN
+  IF (
+    SELECT COUNT(*)
+    FROM public.prompt_steps
+    WHERE prompt_id = (SELECT prompt FROM test_state)
+  ) <> 1 THEN
+    RAISE EXCEPTION 'Authenticated reader cannot see the approved community evidence checkpoint.';
+  END IF;
+  BEGIN
+    PERFORM public.get_public_community_project_artifact_manifest(
+      (SELECT prompt FROM test_state)
+    );
+    RAISE EXCEPTION 'Authenticated role resolved the service-only verified artifact manifest.';
   EXCEPTION
     WHEN insufficient_privilege THEN NULL;
   END;
@@ -806,6 +1294,13 @@ BEGIN
   ) <> 0 THEN
     RAISE EXCEPTION 'Discovery capsules remained available after every project was revoked.';
   END IF;
+  IF (
+    SELECT COUNT(*)
+    FROM public.prompt_steps
+    WHERE prompt_id = (SELECT prompt FROM test_state)
+  ) <> 0 THEN
+    RAISE EXCEPTION 'Anonymous evidence access remained after project withdrawal.';
+  END IF;
   IF (SELECT COUNT(*) FROM storage.objects) <> 0 THEN
     RAISE EXCEPTION 'Anonymous artifact access remained available after withdrawal.';
   END IF;
@@ -813,7 +1308,35 @@ END;
 $test$;
 RESET ROLE;
 
+SET ROLE authenticated;
+SET request.jwt.claims = '{"role":"authenticated","sub":"10000000-0000-4000-8000-000000000002"}';
+DO $test$
+BEGIN
+  IF (
+    SELECT COUNT(*)
+    FROM public.prompt_steps
+    WHERE prompt_id = (SELECT prompt FROM test_state)
+  ) <> 0 THEN
+    RAISE EXCEPTION 'Authenticated evidence access remained after project withdrawal.';
+  END IF;
+END;
+$test$;
+RESET ROLE;
+
 SET request.jwt.claims = '{"role":"service_role"}';
+DO $test$
+BEGIN
+  IF (
+    SELECT COUNT(*)
+    FROM public.get_public_community_project_artifact_manifest(
+      (SELECT prompt FROM test_state)
+    )
+  ) <> 0 THEN
+    RAISE EXCEPTION 'Verified artifact manifest remained available after withdrawal.';
+  END IF;
+END;
+$test$;
+
 DO $test$
 DECLARE
   failed_closed BOOLEAN := FALSE;
@@ -839,9 +1362,33 @@ WHERE name IN (
   (SELECT artifact_path FROM test_state),
   (SELECT fork_artifact_path FROM test_state)
 );
-SELECT public.finalize_community_project_artifact_cleanup(
-  submission, gen_random_uuid()
+SELECT public.confirm_community_project_artifact_purged(
+  submission, builder, gen_random_uuid()
 ) FROM test_state;
+SELECT public.confirm_community_project_artifact_purged(
+  submission, builder, gen_random_uuid()
+) FROM test_state;
+DO $test$
+BEGIN
+  IF (
+    SELECT COUNT(*)
+    FROM public.community_project_events
+    WHERE submission_id = (SELECT submission FROM test_state)
+      AND event_type = 'artifact_purged'
+  ) <> 1 THEN
+    RAISE EXCEPTION 'Repeated purge confirmation appended duplicate audit events.';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.community_project_submissions
+    WHERE id = (SELECT submission FROM test_state)
+      AND artifact_integrity_status = 'purged'
+      AND artifact_path IS NULL
+  ) THEN
+    RAISE EXCEPTION 'Purge confirmation did not clear private artifact authority.';
+  END IF;
+END;
+$test$;
 SELECT public.finalize_community_project_artifact_cleanup(
   fork_submission, gen_random_uuid()
 ) FROM test_state;

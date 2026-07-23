@@ -107,6 +107,7 @@ export async function submitSourceRun(data: {
   resubmission_of_id?: string | null
   privacy_attested?: boolean
   queue_only_attested?: boolean
+  source_publication_attested?: boolean
 }): Promise<SourceRunSubmitResult> {
   try {
     const result = await createSourceRunSubmission(data)

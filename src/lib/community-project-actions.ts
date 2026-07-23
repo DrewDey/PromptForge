@@ -79,11 +79,14 @@ const artifactFindingGuidance: Record<string, string> = {
   'base URL rewriting': 'remove the base element',
   'active form submission': 'replace forms with local button interactions',
   'automatic redirect': 'remove the meta refresh redirect',
+  'active SVG animation': 'replace SVG animation elements with a static final state',
   'external script dependency': 'paste required JavaScript into the HTML file instead of using script src',
   'external stylesheet dependency': 'paste required CSS into a style element instead of using link href',
   'external media dependency': 'embed media as a data URL or remove it',
   'external CSS dependency': 'embed the CSS asset as a data URL or remove the url/import rule',
   'external hyperlink': 'remove outbound links or show the address as plain text',
+  'navigation-capable hyperlink': 'keep only fragment links that jump within the same document',
+  'navigation ping': 'remove link ping attributes',
   'network request API': 'remove fetch, XMLHttpRequest, WebSocket, EventSource, or importScripts calls',
   'WebRTC network API': 'remove peer-to-peer and ICE networking calls',
   'dynamic HTML API': 'replace setHTML or setHTMLUnsafe with explicit local DOM construction',
@@ -185,26 +188,42 @@ function parseFork(formData: FormData) {
   }
 }
 
-async function requireEligibleUser() {
+async function requireEligibleUser(repairId: string | null = null) {
   const supabase = await createClient()
   const { data: { user }, error: userError } = await supabase.auth.getUser()
   if (userError || !user) throw new Error('Sign in to submit a project.')
   const { data: eligible, error: eligibilityError } = await supabase.rpc('community_project_pilot_eligible')
-  if (eligibilityError || eligible !== true) {
-    throw new Error('This invitation-only pilot is not enabled for your account.')
-  }
   const admin = createAdminClient()
-  const [{ data: profile, error: profileError }, { data: membership, error: membershipError }] = await Promise.all([
+  const [
+    { data: profile, error: profileError },
+    { data: membership, error: membershipError },
+    repairResult,
+  ] = await Promise.all([
     admin.from('profiles').select('role').eq('id', user.id).maybeSingle(),
     admin
       .from('community_project_pilot_members')
       .select('member_kind,active,expires_at')
       .eq('user_id', user.id)
       .maybeSingle(),
+    repairId
+      ? admin
+          .from('community_project_submissions')
+          .select('id')
+          .eq('id', repairId)
+          .eq('author_id', user.id)
+          .eq('status', 'needs_repair')
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
   ])
   if (profileError || !profile) throw new Error('PathForge could not verify your pilot access.')
   if (membershipError) throw new Error('PathForge could not verify your pilot admission.')
+  if (repairResult.error) throw new Error('PathForge could not verify the requested repair.')
+  const ownedRepairAllowed = Boolean(repairId && repairResult.data)
+  if ((eligibilityError || eligible !== true) && !ownedRepairAllowed) {
+    throw new Error('This invitation-only pilot is not enabled for your account.')
+  }
   if (
+    eligible === true &&
     profile.role !== 'admin' &&
     membership?.member_kind === 'invited_builder' &&
     !communityProjectOperatorAlertsConfigured()
@@ -289,7 +308,8 @@ function validateSubmissionFields(formData: FormData) {
 export async function submitCommunityProject(formData: FormData): Promise<CommunityProjectActionResult> {
   let uploadedPath: string | null = null
   try {
-    const user = await requireEligibleUser()
+    const repairId = formString(formData, 'repair_id') || null
+    const user = await requireEligibleUser(repairId)
     const fields = validateSubmissionFields(formData)
     const artifact = formData.get('artifact')
     if (!(artifact instanceof File)) throw new Error('Choose the self-contained HTML artifact.')
@@ -299,7 +319,6 @@ export async function submitCommunityProject(formData: FormData): Promise<Commun
     }
 
     const admin = createAdminClient()
-    const repairId = formString(formData, 'repair_id')
     if (!repairId) {
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
       const [
@@ -308,7 +327,8 @@ export async function submitCommunityProject(formData: FormData): Promise<Commun
       ] = await Promise.all([
         admin
           .from('community_project_submissions')
-          .select('id', { count: 'exact', head: true }),
+          .select('id', { count: 'exact', head: true })
+          .in('status', ['queued', 'needs_repair', 'published']),
         admin
           .from('community_project_submissions')
           .select('id', { count: 'exact', head: true })
@@ -320,7 +340,7 @@ export async function submitCommunityProject(formData: FormData): Promise<Commun
         throw new Error('PathForge could not verify the pilot submission limits.')
       }
       if ((totalSubmissionCount ?? 0) >= 50) {
-        throw new Error('The invitation-only pilot has reached its 50-submission cap.')
+        throw new Error('The invitation-only pilot has reached its 50-active-submission cap.')
       }
       if ((recentOwnerCount ?? 0) >= 5) {
         throw new Error('Community project pilot limit reached. Try again later.')
@@ -585,6 +605,9 @@ export async function removeCommunityProjectAsAdmin(formData: FormData): Promise
   try {
     const id = formString(formData, 'id')
     const reason = formString(formData, 'reason')
+    if (reason.length < 10 || reason.length > 2000) {
+      throw new Error('Record a moderation reason between 10 and 2,000 characters.')
+    }
     const { user } = await requireAdminAccess()
     const warning = await removeCommunityProject(id, user.id, 'removed', reason)
     revalidatePath('/paths')
@@ -699,6 +722,25 @@ export async function setCommunityProjectPilotMember(formData: FormData): Promis
     return { success: true, id: profile.id }
   } catch (error) {
     return { success: false, error: safeError(error, 'PathForge could not update pilot access.') }
+  }
+}
+
+export async function setCommunityProjectInvitationControl(formData: FormData): Promise<CommunityProjectActionResult> {
+  try {
+    const enabled = formString(formData, 'enabled') === 'yes'
+    if (enabled && formString(formData, 'launch_readiness_confirmed') !== 'yes') {
+      throw new Error('Confirm the private expansion record and external-invitation security gates first.')
+    }
+    const { user } = await requireAdminAccess()
+    const { error } = await createAdminClient().rpc('set_community_project_invitation_control', {
+      administrator: user.id,
+      enabled,
+    })
+    if (error) throw error
+    revalidatePath('/admin/community-projects')
+    return { success: true, id: enabled ? 'invitations-enabled' : 'invitations-disabled' }
+  } catch (error) {
+    return { success: false, error: safeError(error, 'PathForge could not update invited-builder submissions.') }
   }
 }
 

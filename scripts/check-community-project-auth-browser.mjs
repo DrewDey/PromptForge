@@ -22,6 +22,7 @@ const VIEWPORTS = [
 ]
 const COMMUNITY_ARTIFACT_FIXTURE_ID = '10000000-0000-4000-8000-000000000001'
 const COMMUNITY_ARTIFACT_FIXTURE_HTML = '<!doctype html><html><head><style>html,body{margin:0;background:#fff;color:#111;font:700 24px system-ui}main{min-height:1800px;padding:24px;background:linear-gradient(#fff,#eef6ff)}#community-preview-middle{margin-top:650px;padding:24px;background:#dbeafe;color:#111827}#community-preview-bottom{margin-top:650px;padding:24px;background:#111827;color:#fff}</style></head><body><main><h1>Community artifact viewer fixture</h1><p>This readable result exists before scripts run.</p><p id="community-preview-middle">Static preview midpoint</p><p id="community-preview-bottom">Static preview bottom marker</p></main><script>document.body.replaceChildren()</script></body></html>'
+const COMMUNITY_UPLOAD_FIXTURE = path.join(process.cwd(), 'test-fixtures', 'community-project', 'valid.html')
 const LEGACY_FORK_PATH = `/prompt/new?${new URLSearchParams({
   fork: 'qa-source-project',
   forkTitle: 'QA source project',
@@ -271,6 +272,15 @@ async function closeChrome(child) {
 }
 
 async function capture(client, sessionId, outputPath) {
+  await client.send('Runtime.evaluate', {
+    expression: `(async () => {
+      if (document.fonts?.ready) await document.fonts.ready;
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      return true;
+    })()`,
+    returnByValue: true,
+    awaitPromise: true,
+  }, sessionId)
   const { contentSize } = await client.send('Page.getLayoutMetrics', {}, sessionId)
   const { data } = await client.send('Page.captureScreenshot', {
     format: 'png',
@@ -292,6 +302,52 @@ async function captureViewport(client, sessionId, outputPath) {
     captureBeyondViewport: false,
   }, sessionId)
   writeFileSync(outputPath, Buffer.from(data, 'base64'))
+}
+
+async function clickRenderedElement(client, sessionId, selector, label) {
+  const { root } = await client.send('DOM.getDocument', {
+    depth: -1,
+    pierce: true,
+  }, sessionId)
+  const { nodeId } = await client.send('DOM.querySelector', {
+    nodeId: root.nodeId,
+    selector,
+  }, sessionId)
+  if (!nodeId) throw new Error(`${label} could not resolve ${selector}.`)
+  await evaluate(client, sessionId, `(async () => {
+      const element = document.querySelector(${JSON.stringify(selector)});
+      if (!element || element.hidden || element.disabled) {
+        throw new Error('Rendered click target is unavailable.');
+      }
+      element.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' });
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      return true;
+    })()`)
+  const { model } = await client.send('DOM.getBoxModel', { nodeId }, sessionId)
+  const quad = model.border
+  const x = (quad[0] + quad[2] + quad[4] + quad[6]) / 4
+  const y = (quad[1] + quad[3] + quad[5] + quad[7]) / 4
+  await client.send('Input.dispatchMouseEvent', {
+    type: 'mouseMoved',
+    x,
+    y,
+  }, sessionId)
+  await client.send('Input.dispatchMouseEvent', {
+    type: 'mousePressed',
+    x,
+    y,
+    button: 'left',
+    buttons: 1,
+    clickCount: 1,
+  }, sessionId)
+  await client.send('Input.dispatchMouseEvent', {
+    type: 'mouseReleased',
+    x,
+    y,
+    button: 'left',
+    buttons: 0,
+    clickCount: 1,
+  }, sessionId)
 }
 
 function assertPageFits(snapshot, viewport) {
@@ -594,15 +650,23 @@ async function main() {
           const viewportWidth = root.clientWidth;
           const scrollWidth = Math.max(root.scrollWidth, body?.scrollWidth ?? 0);
           const requiredChecks = [...document.querySelectorAll('input[type="checkbox"][required]')];
+          const form = document.querySelector('form[enctype="multipart/form-data"]');
+          const submitButton = form?.querySelector('button[type="submit"]');
+          const continueButton = form?.querySelector('button[data-community-submission-continue]');
           return {
             mounted: Boolean(document.querySelector('[data-community-project-submission-fixture]')),
             heading: document.querySelector('h1')?.textContent?.trim() || '',
-            hasForm: Boolean(document.querySelector('form[enctype="multipart/form-data"]')),
+            hasForm: Boolean(form),
             artifactInput: document.querySelector('input[type="file"]')?.id || '',
             requiredChecks: requiredChecks.length,
             hasFirstSection: document.body.innerText?.includes('1. Show the result') || false,
-            hasConsentSection: document.body.innerText?.includes('6. Consent and submit for private review') || false,
-            submitLabel: [...document.querySelectorAll('button[type="submit"]')].map((button) => button.textContent?.trim() || '').join(' '),
+            hasConsentSection: document.body.textContent?.includes('6. Consent and submit for private review') || false,
+            activeStep: form?.getAttribute('data-active-community-submission-step') || '',
+            visibleSections: form?.querySelectorAll('[data-community-submission-step]:not([hidden])').length || 0,
+            continueLabel: continueButton?.textContent?.trim() || '',
+            submitLabel: submitButton?.textContent?.trim() || '',
+            submitHidden: Boolean(submitButton?.hidden),
+            scrollHeight: Math.max(root.scrollHeight, body?.scrollHeight ?? 0),
             viewportWidth,
             scrollWidth,
             overflowingElements: [...document.querySelectorAll('*')]
@@ -615,6 +679,7 @@ async function main() {
           };
         })()`)
         assertPageFits(submission, viewport)
+        const maximumInitialFormHeight = viewport.mobile ? 3200 : 2200
         if (
           !submission.mounted ||
           submission.heading !== 'Submit a project' ||
@@ -623,11 +688,174 @@ async function main() {
           submission.requiredChecks < 4 ||
           !submission.hasFirstSection ||
           !submission.hasConsentSection ||
-          !submission.submitLabel.includes('Submit private review bundle')
+          submission.activeStep !== '1' ||
+          submission.visibleSections !== 1 ||
+          !submission.continueLabel.includes('Continue to build evidence') ||
+          !submission.submitLabel.includes('Submit private review bundle') ||
+          !submission.submitHidden ||
+          submission.scrollHeight > maximumInitialFormHeight
         ) {
           throw new Error(`${viewport.name} admitted project-submission form was incomplete: ${JSON.stringify(submission)}.`)
         }
         if (options.screenshotDir) await capture(client, sessionId, path.join(options.screenshotDir, `project-upload-admitted-${viewport.name}.png`))
+
+        const { root: uploadRoot } = await client.send('DOM.getDocument', {
+          depth: -1,
+          pierce: true,
+        }, sessionId)
+        const { nodeId: uploadNodeId } = await client.send('DOM.querySelector', {
+          nodeId: uploadRoot.nodeId,
+          selector: '#community-project-artifact',
+        }, sessionId)
+        if (!uploadNodeId) {
+          throw new Error(`${viewport.name} guided upload fixture could not resolve the artifact input.`)
+        }
+        await client.send('DOM.setFileInputFiles', {
+          nodeId: uploadNodeId,
+          files: [COMMUNITY_UPLOAD_FIXTURE],
+        }, sessionId)
+        await evaluate(client, sessionId, `(() => {
+          const setControl = (selector, value) => {
+            const element = document.querySelector(selector);
+            if (!element) throw new Error('Missing guided upload control ' + selector);
+            const prototype = element instanceof HTMLSelectElement
+              ? HTMLSelectElement.prototype
+              : element instanceof HTMLTextAreaElement
+                ? HTMLTextAreaElement.prototype
+                : HTMLInputElement.prototype;
+            Object.getOwnPropertyDescriptor(prototype, 'value').set.call(element, value);
+            element.dispatchEvent(new Event('input', { bubbles: true }));
+            element.dispatchEvent(new Event('change', { bubbles: true }));
+          };
+          setControl('input[name="title"]', 'Guided upload browser fixture');
+          setControl('textarea[name="summary"]', 'A safe local project proving that every guided upload step remains complete and usable.');
+          setControl('select[name="category_slug"]', 'personal');
+          setControl('select[name="difficulty"]', 'beginner');
+          setControl('select[name="provider"]', 'ChatGPT');
+          setControl('input[name="model"]', 'Browser fixture model');
+          setControl('select[name="evidence_scope"]', 'selected_excerpts');
+          setControl('select[name="reuse_permission"]', 'view_only');
+          const checkpoint = [...document.querySelectorAll('fieldset')]
+            .find((item) => item.querySelector('legend')?.textContent?.trim() === 'Checkpoint 1');
+          const checkpointInput = checkpoint?.querySelector('input');
+          const checkpointTextareas = checkpoint?.querySelectorAll('textarea') ?? [];
+          if (!checkpointInput || checkpointTextareas.length !== 2) {
+            throw new Error('Guided upload checkpoint controls are incomplete.');
+          }
+          const inputSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+          inputSetter.call(checkpointInput, 'Browser checkpoint');
+          checkpointInput.dispatchEvent(new Event('input', { bubbles: true }));
+          checkpointInput.dispatchEvent(new Event('change', { bubbles: true }));
+          const textareaSetter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set;
+          textareaSetter.call(checkpointTextareas[0], 'Create a safe self-contained browser fixture.');
+          checkpointTextareas[0].dispatchEvent(new Event('input', { bubbles: true }));
+          textareaSetter.call(checkpointTextareas[1], 'Created the fixture without network access.');
+          checkpointTextareas[1].dispatchEvent(new Event('input', { bubbles: true }));
+          for (const checkbox of document.querySelectorAll('input[type="checkbox"][required]')) {
+            checkbox.checked = true;
+            checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+          document.querySelector('#community-project-artifact')
+            ?.dispatchEvent(new Event('change', { bubbles: true }));
+          return true;
+        })()`)
+        for (let guidedStep = 1; guidedStep < 6; guidedStep += 1) {
+          await waitForContextValue(
+            client,
+            sessionId,
+            undefined,
+            `(() => {
+              const form = document.querySelector('form[enctype="multipart/form-data"]');
+              const section = form?.querySelector('[data-community-submission-step="${guidedStep}"]');
+              return {
+                activeStep: form?.getAttribute('data-active-community-submission-step') || '',
+                invalidCount: section?.querySelectorAll(':invalid').length ?? -1,
+              };
+            })()`,
+            (value) => value?.activeStep === String(guidedStep) && value?.invalidCount === 0,
+            `${viewport.name} guided upload step ${guidedStep}`,
+          )
+          await clickRenderedElement(
+            client,
+            sessionId,
+            'button[data-community-submission-continue]',
+            `${viewport.name} guided upload continue control`,
+          )
+          await waitForContextValue(
+            client,
+            sessionId,
+            undefined,
+            `document.querySelector('form[enctype="multipart/form-data"]')
+              ?.getAttribute('data-active-community-submission-step') || ''`,
+            (value) => value === String(guidedStep + 1),
+            `${viewport.name} guided upload transition ${guidedStep + 1}`,
+          )
+        }
+        await waitForContextValue(
+          client,
+          sessionId,
+          undefined,
+          `(() => ({
+            isStepHeading: document.activeElement
+              ?.hasAttribute('data-community-submission-step-heading') || false,
+            text: document.activeElement?.textContent?.trim().slice(0, 120) || '',
+          }))()`,
+          (value) => value?.isStepHeading && value?.text.startsWith('6.'),
+          `${viewport.name} guided upload final-step focus`,
+        )
+        const guidedConsent = await evaluate(client, sessionId, `(() => {
+          const root = document.documentElement;
+          const body = document.body;
+          const form = document.querySelector('form[enctype="multipart/form-data"]');
+          const submitButton = form?.querySelector('button[type="submit"]');
+          return {
+            activeStep: form?.getAttribute('data-active-community-submission-step') || '',
+            valid: form?.checkValidity() || false,
+            visibleSections: form?.querySelectorAll('[data-community-submission-step]:not([hidden])').length || 0,
+            consentVisible: document.body.innerText.includes('6. Consent and submit for private review'),
+            submitVisible: Boolean(submitButton && !submitButton.hidden && !submitButton.disabled),
+            focusedStepHeading: document.activeElement
+              ?.hasAttribute('data-community-submission-step-heading') || false,
+            focusedStepHeadingText: document.activeElement?.textContent?.trim().slice(0, 120) || '',
+            viewportWidth: root.clientWidth,
+            scrollWidth: Math.max(root.scrollWidth, body?.scrollWidth ?? 0),
+          };
+        })()`)
+        assertPageFits(guidedConsent, viewport)
+        if (
+          guidedConsent.activeStep !== '6'
+          || !guidedConsent.valid
+          || guidedConsent.visibleSections !== 1
+          || !guidedConsent.consentVisible
+          || !guidedConsent.submitVisible
+          || !guidedConsent.focusedStepHeading
+          || !guidedConsent.focusedStepHeadingText.startsWith('6.')
+        ) {
+          throw new Error(`${viewport.name} guided upload did not reach a valid explicit-consent step: ${JSON.stringify(guidedConsent)}.`)
+        }
+        if (options.screenshotDir) {
+          await new Promise((resolve) => setTimeout(resolve, 200))
+          await evaluate(client, sessionId, `(() => {
+            window.scrollTo(0, 0);
+            return true;
+          })()`)
+          await waitForContextValue(
+            client,
+            sessionId,
+            undefined,
+            `(() => {
+              const skipLink = document.querySelector('.site-skip-link');
+              const rect = skipLink?.getBoundingClientRect();
+              return {
+                scrollY,
+                skipLinkBottom: rect?.bottom ?? -100,
+              };
+            })()`,
+            (value) => value?.scrollY === 0 && value?.skipLinkBottom <= -6,
+            `${viewport.name} guided upload settled visual state`,
+          )
+          await capture(client, sessionId, path.join(options.screenshotDir, `project-upload-consent-${viewport.name}.png`))
+        }
 
         const viewerQuery = new URLSearchParams({
           path: `/api/community-artifacts/${COMMUNITY_ARTIFACT_FIXTURE_ID}`,

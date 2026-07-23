@@ -185,6 +185,8 @@ mustInclude(legacyIntakeClient, 'does not publish the conversation or create a p
 mustInclude(legacyIntakeClient, 'submitSourceRun', 'compatibility intake must use the checked source-run server action')
 mustInclude(legacyIntakeClient, 'privacy_attested: true', 'compatibility intake must capture privacy attestation')
 mustInclude(legacyIntakeClient, 'queue_only_attested: true', 'compatibility intake must capture queue-only acknowledgement')
+mustInclude(legacyIntakeClient, 'source_publication_attested: true', 'compatibility intake must capture explicit public-link permission')
+mustInclude(legacyIntakeClient, 'data-detected-source-provider', 'compatibility intake must derive the provider from the public link')
 
 const buildPage = 'src/app/build/ProjectSubmissionClient.tsx'
 mustInclude(buildPage, 'Self-contained HTML artifact', 'project submission must lead with a concrete inspectable result')
@@ -201,6 +203,10 @@ mustInclude(buildPage, 'rights_attested', 'project submission must collect right
 mustInclude(buildPage, 'privacy_attested', 'project submission must collect privacy attestation')
 mustInclude(buildPage, 'publication_consent', 'project submission must collect explicit publication consent')
 mustInclude(buildPage, 'Pre-publication consent preview', 'project submission must preview its public disclosure boundary before consent')
+mustInclude(buildPage, 'data-community-submission-progress', 'project submission must expose a compact guided progress control')
+mustInclude(buildPage, 'data-active-community-submission-step={activeStep}', 'project submission must expose the current guided step for browser verification')
+mustInclude(buildPage, 'validateActiveStep', 'project submission must validate each visible step before advancing')
+mustInclude(buildPage, 'hidden={activeStep !== 6}', 'project consent must remain mounted but progressively disclosed at the final step')
 mustNotInclude(buildPage, 'submitSourceRun', 'the canonical upload flow must not reuse the obsolete URL-only browser mutation')
 
 const repoRunbooks = [
@@ -216,12 +222,14 @@ for (const path of repoRunbooks) {
 }
 
 mustInclude('src/lib/data/source-runs.ts', 'Add the exact model shown for this source run, or type Not sure.', 'server action must enforce model metadata for user source-run uploads')
-mustInclude('src/lib/data/source-runs.ts', 'Pick the AI service for this source run.', 'server action must enforce provider metadata for user source-run uploads')
+mustInclude('src/lib/data/source-runs.ts', 'The AI service must match the submitted public share link.', 'server action must enforce exact provider metadata for user source-run uploads')
+mustInclude('src/lib/data/source-runs.ts', 'provider !== detectedProvider', 'server action must reject provider labels that disagree with the public link')
 mustInclude('src/lib/data/source-runs.ts', "rpc('create_legacy_source_run_repair'", 'legacy repairs must use the service-only database boundary')
 mustInclude('src/lib/data/source-runs.ts', ".from('source_run_submissions')", 'compatibility intake must write only to the private source-run queue')
 mustInclude('src/lib/data/source-runs.ts', '.insert({', 'compatibility intake must create a strict queued owner row')
 mustInclude('src/lib/data/source-runs.ts', 'privacy_attested', 'compatibility intake must enforce privacy attestation server-side')
 mustInclude('src/lib/data/source-runs.ts', 'queue_only_attested', 'compatibility intake must enforce no-publication acknowledgement server-side')
+mustInclude('src/lib/data/source-runs.ts', 'source_publication_attested', 'compatibility intake must enforce public-link publication permission server-side')
 mustInclude('src/lib/data/source-runs.ts', 'sourceRunForkColumnsMissing', 'server action must keep source-run intake working before fork SQL is applied')
 mustInclude('src/lib/data/source-runs.ts', 'assertExactForkTuple', 'prepared publish must compare intake, prepared, and package fork tuples')
 mustInclude('src/lib/data/source-runs.ts', "'publish_prepared_showcase_source_run'", 'prepared publish must prefer the atomic database RPC')

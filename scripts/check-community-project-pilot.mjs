@@ -20,6 +20,11 @@ function findings(name) {
 }
 
 assert.deepEqual(findings('valid.html'), [], 'The safe interactive fixture must pass.')
+assert.deepEqual(
+  findings('valid-with-hidden-content.html'),
+  [],
+  'A useful static preview may include helper content that is hidden.',
+)
 for (const [name, expected] of [
   ['reject-form.html', 'active form submission'],
   ['reject-frame.html', 'embedded frame or plugin'],
@@ -36,7 +41,20 @@ for (const [name, expected] of [
   ['reject-secret.html', 'OpenAI-style API key'],
   ['reject-pii.html', 'personal email address'],
   ['reject-redirect.html', 'automatic redirect'],
+  ['reject-encoded-redirect.html', 'automatic redirect'],
+  ['reject-svg-animation.html', 'active SVG animation'],
   ['reject-script-only.html', 'no useful script-disabled preview'],
+  ['reject-hidden-attribute.html', 'no useful script-disabled preview'],
+  ['reject-hidden-inline-style.html', 'no useful script-disabled preview'],
+  ['reject-hidden-stylesheet.html', 'no useful script-disabled preview'],
+  ['reject-aria-hidden.html', 'no useful script-disabled preview'],
+  ['reject-relative-link.html', 'navigation-capable hyperlink'],
+  ['reject-area-link.html', 'navigation-capable hyperlink'],
+  ['reject-srcset.html', 'external media dependency'],
+  ['reject-svg-resource.html', 'external media dependency'],
+  ['reject-input-image.html', 'external media dependency'],
+  ['reject-background-resource.html', 'external media dependency'],
+  ['reject-navigation-ping.html', 'navigation ping'],
 ]) {
   assert.ok(findings(name).includes(expected), `${name} must report ${expected}.`)
 }
@@ -76,7 +94,21 @@ const compatibilityMigration = readFileSync(
   path.join(root, 'supabase', 'migrations', '20260723152046_restore_legacy_source_run_compatibility_and_source_privacy.sql'),
   'utf8',
 )
+const releaseReviewMigration = readFileSync(
+  path.join(root, 'supabase', 'migrations', '20260723173000_harden_community_project_release_review.sql'),
+  'utf8',
+)
 const actions = readFileSync(path.join(root, 'src', 'lib', 'community-project-actions.ts'), 'utf8')
+const sourceRunData = readFileSync(path.join(root, 'src', 'lib', 'data', 'source-runs.ts'), 'utf8')
+const sourceRunReview = readFileSync(path.join(root, 'src', 'lib', 'source-run-review.ts'), 'utf8')
+const legacySourceRunIntake = readFileSync(
+  path.join(root, 'src', 'app', 'prompt', 'new', 'LegacySourceRunIntakeClient.tsx'),
+  'utf8',
+)
+const legacySourceRunRepair = readFileSync(
+  path.join(root, 'src', 'app', 'build', 'LegacySourceRunRepairClient.tsx'),
+  'utf8',
+)
 const adminClient = readFileSync(path.join(root, 'src', 'lib', 'supabase', 'admin.ts'), 'utf8')
 const alerts = readFileSync(path.join(root, 'src', 'lib', 'community-project-alerts.ts'), 'utf8')
 const preparedPage = readFileSync(path.join(root, 'src', 'components', 'PreparedSourceRunPage.tsx'), 'utf8')
@@ -114,6 +146,19 @@ const builderWorkCard = readFileSync(path.join(root, 'src', 'components', 'Build
 const homeHero = readFileSync(path.join(root, 'src', 'components', 'home', 'HomeHero.tsx'), 'utf8')
 const whatToBuild = readFileSync(path.join(root, 'src', 'app', 'what-to-build', 'page.tsx'), 'utf8')
 const adminReviewPage = readFileSync(path.join(root, 'src', 'app', 'admin', 'community-projects', '[id]', 'page.tsx'), 'utf8')
+const adminCommunityPage = readFileSync(path.join(root, 'src', 'app', 'admin', 'community-projects', 'page.tsx'), 'utf8')
+const invitationControl = readFileSync(
+  path.join(root, 'src', 'app', 'admin', 'community-projects', 'InvitationControlForm.tsx'),
+  'utf8',
+)
+const launchContract = readFileSync(
+  path.join(root, 'docs', 'community-project-pilot-launch-contract.md'),
+  'utf8',
+)
+const operationsRunbook = readFileSync(
+  path.join(root, 'docs', 'community-project-pilot-operations.md'),
+  'utf8',
+)
 const adminPromptRow = readFileSync(path.join(root, 'src', 'app', 'admin', 'AdminPromptRow.tsx'), 'utf8')
 const legacyActions = readFileSync(path.join(root, 'src', 'lib', 'actions.ts'), 'utf8')
 const communityReleaseWorkflow = readFileSync(
@@ -181,6 +226,54 @@ assert.match(
   /pathforge_validate_community_source_url[\s\S]*without a query string or fragment/,
 )
 assert.match(compatibilityMigration, /source_url ~ '\[\?#\]'/)
+for (const required of [
+  'DROP POLICY IF EXISTS "Prompt steps are viewable with their prompt"',
+  'CREATE POLICY "Approved prompt steps are public"',
+  'CREATE POLICY "Pending prompt steps are visible to owners and admins"',
+  'ON DELETE RESTRICT',
+  "source_visibility TEXT NOT NULL DEFAULT 'review_only'",
+  'source_publication_consent_at TIMESTAMPTZ',
+  'Changing a public source link requires renewed explicit contributor consent.',
+  'private.require_legacy_source_run_publication_consent',
+  'Prepared publication requires explicit consent for the public source link.',
+  'sibling.resubmission_of_id = source_run_submissions.resubmission_of_id',
+  "status IN ('queued', 'needs_repair', 'published')",
+  'public.get_public_community_project_artifact_manifest',
+  'private.set_community_project_invitation_control',
+  'private.require_current_community_artifact_scan_for_publication',
+  'Publication requires a verified html-static-v3 artifact scan.',
+  'Script-disabled HTML preview included.',
+  'private.require_community_project_removal_reason',
+  'A moderation removal reason between 10 and 2000 characters is required.',
+]) {
+  assert.ok(releaseReviewMigration.includes(required), `Release-review migration is missing ${required}.`)
+}
+assert.match(
+  releaseReviewMigration,
+  /CREATE TRIGGER require_legacy_source_run_publication_consent_on_update[\s\S]*BEFORE UPDATE OF[\s\S]*source_url,[\s\S]*source_visibility,[\s\S]*source_publication_consent_at/,
+)
+assert.match(
+  releaseReviewMigration,
+  /REVOKE ALL ON FUNCTION public\.get_public_community_project_artifact_manifest\(UUID\)\s+FROM PUBLIC, anon, authenticated;[\s\S]*GRANT EXECUTE ON FUNCTION public\.get_public_community_project_artifact_manifest\(UUID\)\s+TO service_role;/,
+)
+assert.match(
+  releaseReviewMigration,
+  /CREATE POLICY "Users submit untouched queued source runs"[\s\S]*resubmission_of_id IS NULL[\s\S]*EXISTS \([\s\S]*prior\.author_id = \(SELECT auth\.uid\(\)\)[\s\S]*ROW\([\s\S]*IS NOT DISTINCT FROM ROW\(/,
+)
+const hardenedPurge = releaseReviewMigration.slice(
+  releaseReviewMigration.indexOf('CREATE OR REPLACE FUNCTION private.confirm_community_project_artifact_purged'),
+)
+assert.ok(
+  hardenedPurge.indexOf('SELECT candidate.* INTO submission')
+    < hardenedPurge.indexOf('FROM storage.objects AS object'),
+  'Purge confirmation must lock and authorize the submission before checking Storage.',
+)
+assert.match(hardenedPurge, /FOR UPDATE;/)
+assert.ok(
+  hardenedPurge.indexOf("submission.artifact_integrity_status = 'purged'")
+    < hardenedPurge.indexOf('FROM storage.objects AS object'),
+  'Repeated purge confirmation must become a no-op while holding the row lock.',
+)
 assert.ok(
   purgeConfirmationMigration.indexOf('FROM storage.objects')
     < purgeConfirmationMigration.indexOf('UPDATE public.community_project_submissions'),
@@ -195,6 +288,8 @@ assert.ok(
     < actions.indexOf('.upload(uploadedPath'),
   'The server must preflight pilot capacity before placing bytes in private Storage.',
 )
+assert.match(actions, /\.in\('status', \['queued', 'needs_repair', 'published'\]\)/)
+assert.match(actions, /50-active-submission cap/)
 assert.match(actions, /sourceUrl,[\s\S]*\.\.\.buildSteps/)
 assert.match(actions, /artifact_original_name: safeOriginalFilename/)
 assert.match(actions, /verifyQuarantinedArtifact/)
@@ -210,6 +305,23 @@ assert.match(actions, /communityProjectOperatorAlertsConfigured/)
 assert.match(actions, /membership\?\.member_kind === 'invited_builder'/)
 assert.match(actions, /escapeLikePattern\(username\)/)
 assert.match(actions, /record_community_project_report_readiness/)
+assert.match(actions, /set_community_project_invitation_control/)
+assert.match(actions, /reason\.length < 10 \|\| reason\.length > 2000/)
+assert.match(sourceRunData, /const detectedProvider = detectSourceRunProvider\(sourceUrl\)/)
+assert.match(sourceRunData, /provider !== detectedProvider/)
+assert.match(sourceRunData, /source_visibility: 'public'/)
+assert.match(sourceRunData, /source_publication_consent_at: sourcePublicationConsentAt/)
+assert.match(sourceRunReview, /host === 'g\.co'\) return 'Gemini'/)
+for (const sourceRunForm of [legacySourceRunIntake, legacySourceRunRepair]) {
+  assert.match(sourceRunForm, /data-detected-source-provider/)
+  assert.match(sourceRunForm, /provider: detectedProvider/)
+  assert.equal(
+    (sourceRunForm.match(/type="checkbox"/g) ?? []).length,
+    3,
+    'Every legacy source-run form must render all three explicit consent statements.',
+  )
+  assert.doesNotMatch(sourceRunForm, /providerOptions|<select/)
+}
 assert.match(alerts, /COMMUNITY_PROJECT_ALERT_WEBHOOK_URL/)
 assert.doesNotMatch(alerts, /reporter_email|report_details|artifact/i)
 assert.match(privateReview, /inert source text/)
@@ -228,6 +340,20 @@ for (const route of [publicArtifactRoute, privateArtifactRoute]) {
 }
 assert.match(publicArtifactRoute, /createAdminClient/)
 assert.doesNotMatch(publicArtifactRoute, /createPublicReadClient/)
+assert.match(publicArtifactRoute, /get_public_community_project_artifact_manifest/)
+assert.doesNotMatch(publicArtifactRoute, /get_public_community_project_artifact_path/)
+assert.match(publicArtifactRoute, /MAX_CACHE_BYTES = 8_000_000/)
+assert.match(publicArtifactRoute, /MAX_CACHE_ENTRIES = 8/)
+assert.ok(
+  publicArtifactRoute.indexOf("'get_public_community_project_artifact_manifest'")
+    < publicArtifactRoute.indexOf("request.headers.get('if-none-match')"),
+  'Every artifact response, including 304, must recheck the revocable manifest first.',
+)
+assert.ok(
+  publicArtifactRoute.indexOf("'get_public_community_project_artifact_manifest'")
+    < publicArtifactRoute.indexOf('cachedArtifact(cacheKey)'),
+  'Cached artifact bytes must remain behind the current public manifest.',
+)
 for (const listReader of [publicData, publicProfiles]) {
   assert.match(listReader, /rpc\('get_public_community_projects'/)
   assert.match(listReader, /community_project: communityByPrompt\.get\(project\.id\) \?\? null/)
@@ -270,6 +396,16 @@ assert.doesNotMatch(adminReviewPage, /Open source anonymously/)
 assert.match(adminPromptRow, /Community workflow only/)
 assert.match(adminPromptRow, /const requiresSpecialReview = requiresSourceRunReview \|\| isCommunityProject/)
 assert.match(adminPromptRow, /!isCommunityProject && \(/)
+assert.match(adminCommunityPage, /InvitationControlForm/)
+assert.match(invitationControl, /Enable invited-builder submissions/)
+assert.match(invitationControl, /Lock external submissions/)
+assert.match(invitationControl, /Supabase leaked-password protection is enabled/)
+assert.match(invitationControl, /launch_readiness_confirmed/)
+assert.match(actions, /Confirm the private expansion record and external-invitation security gates first/)
+assert.match(launchContract, /does not invent or backfill[\s\S]*new\s+explicit\s+permission/)
+assert.match(launchContract, /auth_leaked_password_protection/)
+assert.match(operationsRunbook, /auth_leaked_password_protection/)
+assert.match(operationsRunbook, /Disabled leaked-password\s+protection is also a hard stop/)
 assert.doesNotMatch(publicData, /export async function createProject/)
 assert.doesNotMatch(legacyActions, /export async function submitProject/)
 assert.match(publicData, /Generic moderation is blocked for community projects/)
@@ -324,9 +460,17 @@ assert.match(liveAcceptanceGuard, /requested_member_kind: 'internal_acceptance'/
 assert.match(liveAcceptanceGuard, /SUPABASE_SECRET_KEY[\s\S]*SUPABASE_SERVICE_ROLE_KEY/)
 assert.match(liveAcceptanceGuard, /not currently in the pilot/)
 assert.match(liveAcceptanceGuard, /Submit private review bundle/)
+assert.match(liveAcceptanceGuard, /completed guided upload step/)
+assert.match(liveAcceptanceGuard, /data-active-community-submission-step/)
 assert.match(liveAcceptanceGuard, /Withdraw and purge artifact|textContent\.includes\('Withdraw'\)/)
 assert.match(liveAcceptanceGuard, /allow_invited_submissions/)
 assert.match(liveAcceptanceGuard, /deleteUser\(userId\)/)
+assert.match(liveAcceptanceGuard, /disposable submission cleanup/)
+assert.ok(
+  liveAcceptanceGuard.indexOf("disposable submission cleanup")
+    < liveAcceptanceGuard.indexOf("Auth user deletion"),
+  'Disposable acceptance rows must be removed before the protected profile is deleted.',
+)
 assert.match(liveAcceptanceGuard, /acceptance-slot postcondition/)
 assert.match(liveAcceptanceGuard, /Disposable cleanup verification failed/)
 assert.match(communityReleaseWorkflow, /npm run check:community-project-auth-browser -- --base-url http:\/\/127\.0\.0\.1:3111/)
@@ -360,4 +504,4 @@ assert.ok(
   'The deployed acceptance gate must verify cleanup before reporting success.',
 )
 
-console.log('Community project pilot guard passed: 1 safe fixture, 16 hostile fixtures, envelope limits, publication controls, compatibility, and reconciliation wiring.')
+console.log('Community project pilot guard passed: 2 safe fixtures, 29 hostile fixtures, envelope limits, publication controls, compatibility, and reconciliation wiring.')

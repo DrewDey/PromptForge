@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Tracked fragment link</title>
+  </head>
+  <body>
+    <main>
+      <h1>Apparently local fragment navigation</h1>
+      <p>This result contains enough visible content to pass the static reader gate.</p>
+      <a href="#details" ping="/track-click">Jump to details</a>
+      <p id="details">The link would emit a request despite staying in the document.</p>
+    </main>
+  </body>
+</html>

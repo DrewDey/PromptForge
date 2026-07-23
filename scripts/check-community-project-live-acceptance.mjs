@@ -336,6 +336,29 @@ async function main() {
       document.querySelector('#community-project-artifact').dispatchEvent(new Event('change', { bubbles: true }));
       return { checkboxCount: document.querySelectorAll('input[type="checkbox"][required]').length };
     })()`)
+    for (let guidedStep = 1; guidedStep < 6; guidedStep += 1) {
+      await waitFor(client, sessionId, `(() => {
+        const form = document.querySelector('form[enctype="multipart/form-data"]');
+        const section = form?.querySelector('[data-community-submission-step="${guidedStep}"]');
+        return {
+          passed: form?.getAttribute('data-active-community-submission-step') === '${guidedStep}' &&
+            Boolean(section) &&
+            section.querySelectorAll(':invalid').length === 0,
+          activeStep: form?.getAttribute('data-active-community-submission-step') || '',
+          invalidControls: [...(section?.querySelectorAll(':invalid') ?? [])].map((item) => item.name || item.id || item.tagName),
+        };
+      })()`, `completed guided upload step ${guidedStep}`)
+      await evaluate(client, sessionId, `(() => {
+        const button = document.querySelector('button[data-community-submission-continue]');
+        if (!button || button.hidden) throw new Error('Guided upload continue control is unavailable.');
+        button.click();
+        return true;
+      })()`)
+      await waitFor(client, sessionId, `(() => ({
+        passed: document.querySelector('form[enctype="multipart/form-data"]')
+          ?.getAttribute('data-active-community-submission-step') === '${guidedStep + 1}',
+      }))()`, `guided upload step ${guidedStep + 1}`)
+    }
     await waitFor(client, sessionId, `(() => {
       const form = document.querySelector('form');
       const button = [...document.querySelectorAll('button')].find((item) => item.textContent.includes('Submit private review bundle'));
@@ -443,6 +466,26 @@ async function main() {
         if (paths.length) {
           const { error: removeError } = await admin.storage.from('community-project-quarantine').remove(paths)
           if (removeError) throw removeError
+        }
+      })
+      await recordCleanup(cleanupErrors, 'disposable submission cleanup', async () => {
+        const { data: disposableSubmissions, error: lookupError } = await admin
+          .from('community_project_submissions')
+          .select('id,status,prompt_id')
+          .eq('author_id', userId)
+        if (lookupError) throw lookupError
+        const unsafeRows = (disposableSubmissions ?? []).filter(
+          (item) => item.prompt_id !== null || item.status === 'published',
+        )
+        if (unsafeRows.length) {
+          throw new Error('refusing to delete a disposable fixture that unexpectedly reached publication')
+        }
+        if ((disposableSubmissions ?? []).length) {
+          const { error: deleteError } = await admin
+            .from('community_project_submissions')
+            .delete()
+            .eq('author_id', userId)
+          if (deleteError) throw deleteError
         }
       })
       await recordCleanup(cleanupErrors, 'Auth user deletion', async () => {

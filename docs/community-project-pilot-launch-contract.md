@@ -104,6 +104,12 @@ The pilot accepts only `.html` or `.htm` files that:
 - retain a useful script-disabled result instead of relying on JavaScript to
   create the entire visible page.
 
+Private bundles created by a stale rollback build may stay queued, but the
+database publication boundary accepts only the exact reviewed
+`html-static-v3` scanner record with no findings and verified artifact
+integrity. An older scan requires a replacement bundle through the current
+intake before publication.
+
 Static acceptance is not a claim that arbitrary HTML or JavaScript is safe.
 Published community HTML is rendered only inside an opaque-origin inner iframe
 without `allow-scripts` and with a restrictive static CSP. Explore and profile
@@ -118,6 +124,13 @@ The existing global fork/source-run flow remains a separate compatibility
 lane. It may create only an owned, untouched `queued` review record and never a
 public project. Community-project forks alone enter the invitation-only full
 bundle flow.
+
+Existing prepared source-run catalog entries are controlled seed, legacy, or
+administrator records, not evidence that a community contributor granted the
+new public-link consent. The additive migration does not invent or backfill
+that consent. Any later preparation or repair must obtain and timestamp new
+explicit permission before copying a provider share link into a public
+showcase.
 
 ## Public truth contract
 
@@ -156,6 +169,10 @@ bundle contents.
   is deleted after 90 days, and removed submission tombstones after 400 days
   unless an open investigation or required legal hold applies. The UI explains that copies lawfully made
   while reuse was allowed may survive outside PathForge.
+- Account deletion cannot silently cascade away retained submissions or audit
+  history. During the pilot, operators first withdraw/remove every owned
+  submission and complete artifact purge, then honor the same retention and
+  investigation-hold rules before deleting the referenced profile.
 - Readers can file a structured project report. Administrators can suspend a
   project immediately while reviewing the report.
 
@@ -216,6 +233,9 @@ hard stops. They are not averaged against engagement.
   upload before admission, and upload
   only after an administrator creates the single expiring internal-acceptance
   membership; `allow_invited_submissions` remains false throughout.
+- Before the external invitation lane is enabled, Supabase Auth leaked-password
+  protection is enabled and a fresh security-advisor run no longer reports
+  `auth_leaked_password_protection`.
 - Publication defaults off and cannot be enabled until authenticated
   reconciliation and report-intake readiness each have a successful record
   less than 26 hours old. The publish RPC rechecks those records.

@@ -76,6 +76,31 @@ function isExpectedFixtureInterceptionCancellation(error) {
   return /Invalid InterceptionId|Invalid requestId|Target closed|Session closed/i.test(message)
 }
 
+async function waitForProcessExit(child, timeoutMs) {
+  if (child.exitCode !== null) return true
+  return new Promise((resolve) => {
+    const onExit = () => {
+      clearTimeout(timeout)
+      resolve(true)
+    }
+    const timeout = setTimeout(() => {
+      child.off('exit', onExit)
+      resolve(child.exitCode !== null)
+    }, timeoutMs)
+    child.once('exit', onExit)
+    if (child.exitCode !== null) onExit()
+  })
+}
+
+async function closeChrome(child) {
+  if (child.exitCode === null) child.kill('SIGTERM')
+  if (await waitForProcessExit(child, 5_000)) return
+  if (child.exitCode === null) child.kill('SIGKILL')
+  if (!await waitForProcessExit(child, 5_000)) {
+    throw new Error('Chrome did not exit before temporary-profile cleanup.')
+  }
+}
+
 async function capture(client, sessionId, outputPath) {
   const { contentSize } = await client.send('Page.getLayoutMetrics', {}, sessionId)
   const { data } = await client.send('Page.captureScreenshot', {
@@ -454,8 +479,8 @@ async function main() {
     }
   } finally {
     client?.close()
-    chrome.kill('SIGTERM')
-    rmSync(profile, { recursive: true, force: true, maxRetries: 8, retryDelay: 125 })
+    await closeChrome(chrome)
+    rmSync(profile, { recursive: true, force: true, maxRetries: 40, retryDelay: 125 })
   }
 }
 

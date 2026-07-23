@@ -66,6 +66,16 @@ async function waitForHeading(client, sessionId, expected, label, timeoutMs = 15
   throw new Error(`${label} timed out; last browser state was ${JSON.stringify(lastValue)}.`)
 }
 
+function isExpectedFixtureInterceptionCancellation(error) {
+  const message = error instanceof Error ? error.message : String(error)
+  // Fetch pauses requests asynchronously. A navigation can legitimately cancel
+  // a request after its pause event has arrived but before the fulfil command
+  // reaches Chrome. The rendered assertion below proves the fixture that did
+  // settle; a stale cancellation must not make that completed browser proof
+  // report a false failure.
+  return /Invalid InterceptionId|Invalid requestId|Target closed|Session closed/i.test(message)
+}
+
 async function capture(client, sessionId, outputPath) {
   const { contentSize } = await client.send('Page.getLayoutMetrics', {}, sessionId)
   const { data } = await client.send('Page.captureScreenshot', {
@@ -202,6 +212,8 @@ async function main() {
     const { targetId } = await client.send('Target.createTarget', { url: 'about:blank' })
     const { sessionId } = await client.send('Target.attachToTarget', { targetId, flatten: true })
     const consoleErrors = []
+    const pendingFixtureFulfills = new Set()
+    let fixtureInterceptionActive = true
     const listener = (message) => {
       if (message.sessionId !== sessionId) return
       if (message.method === 'Runtime.exceptionThrown') {
@@ -219,7 +231,7 @@ async function main() {
         message.method === 'Fetch.requestPaused' &&
         message.params.request?.url.endsWith(`/api/community-artifacts/${COMMUNITY_ARTIFACT_FIXTURE_ID}`)
       ) {
-        void client.send('Fetch.fulfillRequest', {
+        const fulfillment = client.send('Fetch.fulfillRequest', {
           requestId: message.params.requestId,
           responseCode: 200,
           responseHeaders: [
@@ -227,7 +239,14 @@ async function main() {
             { name: 'Cache-Control', value: 'private, no-store' },
           ],
           body: Buffer.from(COMMUNITY_ARTIFACT_FIXTURE_HTML).toString('base64'),
-        }, sessionId).catch((error) => consoleErrors.push(`Artifact fixture interception failed: ${error.message}`))
+        }, sessionId).catch((error) => {
+          if (fixtureInterceptionActive && !isExpectedFixtureInterceptionCancellation(error)) {
+            consoleErrors.push(`Artifact fixture interception failed: ${error.message}`)
+          }
+        }).finally(() => {
+          pendingFixtureFulfills.delete(fulfillment)
+        })
+        pendingFixtureFulfills.add(fulfillment)
       }
     }
     client.listeners.add(listener)
@@ -423,11 +442,13 @@ async function main() {
         console.log(`${viewport.name}: anonymous build, fresh-account signup handoff, protected viewer, and Explore/profile static community cards passed at ${signup.viewportWidth}px with ${artifactContrast.ratio.toFixed(2)}:1 default-canvas contrast.`)
       }
 
+      await Promise.all([...pendingFixtureFulfills])
       if (consoleErrors.length > 0) {
         throw new Error(`Community-project auth pages logged errors: ${[...new Set(consoleErrors)].join(' | ')}`)
       }
       console.log('Community-project fresh-account browser guard passed.')
     } finally {
+      fixtureInterceptionActive = false
       client.listeners.delete(listener)
       await client.send('Target.closeTarget', { targetId })
     }

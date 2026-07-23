@@ -249,28 +249,14 @@ assert.match(liveAcceptanceGuard, /deleteUser\(userId\)/)
 assert.match(liveAcceptanceGuard, /acceptance-slot postcondition/)
 assert.match(liveAcceptanceGuard, /Disposable cleanup verification failed/)
 assert.match(communityReleaseWorkflow, /npm run check:community-project-auth-browser -- --base-url http:\/\/127\.0\.0\.1:3111/)
-for (const pathPattern of [
-  'src/app/prompt/**',
-  'src/app/user/**',
-  'src/app/what-to-build/**',
-  'src/app/qa/community-static-preview/**',
-  'src/components/BuilderWorkCard.tsx',
-  'src/components/ProjectPreview.tsx',
-  'src/components/SourceRunShowcase.tsx',
-  'src/components/discovery/BuildPathCard.tsx',
-  'src/components/discovery/InteractiveBuildPathCard.tsx',
-  'src/components/home/HomeHero.tsx',
-  'src/lib/data/public-profiles.ts',
-  'src/lib/data/source-runs.ts',
-  'src/lib/path-discovery.ts',
-  'src/lib/profile-presentation.ts',
-  'src/lib/project-model-variants.ts',
-]) {
-  assert.ok(
-    communityReleaseWorkflow.includes(`- '${pathPattern}'`),
-    `Community release workflow must run when ${pathPattern} changes.`,
-  )
-}
+assert.ok(
+  communityReleaseWorkflow.includes("- 'src/**'"),
+  'Community release workflow must run for every application-source change, including new public preview surfaces.',
+)
+assert.ok(
+  communityReleaseWorkflow.includes("- 'supabase/migrations/**'"),
+  'Community release workflow must run for every database migration.',
+)
 assert.ok(
   liveAcceptanceGuard.indexOf('Disposable cleanup verification failed')
     < liveAcceptanceGuard.indexOf('Live fresh-account acceptance passed and cleanup verified'),

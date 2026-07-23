@@ -64,7 +64,7 @@ assert.deepEqual(scanCommunityEvidenceText('safe@example.com and 555-010-1234'),
 assert.ok(scanCommunityEvidenceText('private.person@private-mail.test').includes('personal email address'))
 
 const migration = readFileSync(
-  path.join(root, 'supabase', 'migrations', '20260722234519_community_project_pilot.sql'),
+  path.join(root, 'supabase', 'migrations', '20260723054558_community_project_pilot.sql'),
   'utf8',
 )
 const actions = readFileSync(path.join(root, 'src', 'lib', 'community-project-actions.ts'), 'utf8')

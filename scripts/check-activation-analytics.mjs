@@ -22,7 +22,7 @@ const session = read('src/lib/activation/session.ts')
 const layout = read('src/app/layout.tsx')
 const projectPage = read('src/components/PreparedSourceRunPage.tsx')
 const buildPage = read('src/app/build/ProjectSubmissionClient.tsx')
-const communityMigration = read('supabase/migrations/20260722234519_community_project_pilot.sql')
+const communityMigration = read('supabase/migrations/20260723054558_community_project_pilot.sql')
 const dashboard = read('src/app/admin/analytics/page.tsx')
 const packageJson = JSON.parse(read('package.json'))
 

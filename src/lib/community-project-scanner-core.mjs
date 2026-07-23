@@ -9,6 +9,7 @@ export const communityArtifactActiveResourcePatterns = [
   ['external CSS dependency', /@import\b/i],
   ['network request API', /\b(?:fetch|XMLHttpRequest|WebSocket|EventSource|importScripts)\s*\(/i],
   ['WebRTC network API', /\b(?:RTCPeerConnection|webkitRTCPeerConnection|mozRTCPeerConnection|RTCIceTransport|RTCIceGatherer)\b/i],
+  ['dynamic HTML API', /\bsetHTML(?:Unsafe)?\s*\(/i],
   ['beacon API', /\bnavigator\s*\.\s*sendBeacon\s*\(/i],
   ['dynamic image request', /\bnew\s+Image\s*\(/i],
   ['external hyperlink', /\bhref\s*=\s*["']?\s*(?:https?:)?\/\//i],

@@ -51,22 +51,46 @@ async function main() {
   const leakRequests = []
   const webrtcPackets = []
   const positiveWebrtcPackets = []
+  const positiveSetHtmlPackets = []
+  const positiveShadowHtmlPackets = []
   let baseUrl = ''
   const bridge = artifactDownloadBridgeSource()
   const stunServer = await bindUdpProbe(webrtcPackets)
   const positiveStunServer = await bindUdpProbe(positiveWebrtcPackets)
+  const positiveSetHtmlStunServer = await bindUdpProbe(positiveSetHtmlPackets)
+  const positiveShadowHtmlStunServer = await bindUdpProbe(positiveShadowHtmlPackets)
   const stunAddress = stunServer.address()
   const positiveStunAddress = positiveStunServer.address()
-  if (typeof stunAddress === 'string' || typeof positiveStunAddress === 'string') {
+  const positiveSetHtmlStunAddress = positiveSetHtmlStunServer.address()
+  const positiveShadowHtmlStunAddress = positiveShadowHtmlStunServer.address()
+  if (
+    typeof stunAddress === 'string' ||
+    typeof positiveStunAddress === 'string' ||
+    typeof positiveSetHtmlStunAddress === 'string' ||
+    typeof positiveShadowHtmlStunAddress === 'string'
+  ) {
     throw new Error('WebRTC guard UDP servers did not bind.')
   }
   const stunUrl = `stun:127.0.0.1:${stunAddress.port}`
   const positiveStunUrl = `stun:127.0.0.1:${positiveStunAddress.port}`
+  const positiveSetHtmlStunUrl = `stun:127.0.0.1:${positiveSetHtmlStunAddress.port}`
+  const positiveShadowHtmlStunUrl = `stun:127.0.0.1:${positiveShadowHtmlStunAddress.port}`
   const webrtcProbe = `(async()=>{const peer=new RTCPeerConnection({iceServers:[{urls:${JSON.stringify(stunUrl)}}]});peer.createDataChannel('pathforge-egress-probe');await peer.setLocalDescription(await peer.createOffer());})().catch(()=>{});`
   const positiveWebrtcProbe = `(async()=>{const peer=new RTCPeerConnection({iceServers:[{urls:${JSON.stringify(positiveStunUrl)}}]});peer.createDataChannel('pathforge-positive-control');await peer.setLocalDescription(await peer.createOffer());})().catch(()=>{});`
+  const positiveSetHtmlProbe = `(async()=>{const peer=new RTCPeerConnection({iceServers:[{urls:${JSON.stringify(positiveSetHtmlStunUrl)}}]});peer.createDataChannel('pathforge-sethtmlunsafe-positive-control');await peer.setLocalDescription(await peer.createOffer());})().catch(()=>{});`
+  const positiveShadowHtmlProbe = `(async()=>{const peer=new RTCPeerConnection({iceServers:[{urls:${JSON.stringify(positiveShadowHtmlStunUrl)}}]});peer.createDataChannel('pathforge-shadow-sethtmlunsafe-positive-control');await peer.setLocalDescription(await peer.createOffer());})().catch(()=>{});`
+  const setHtmlUnsafeMarkup = `<iframe srcdoc="${artifactDocument(webrtcProbe).replaceAll('"', '&quot;')}"></iframe>`
+  const positiveSetHtmlUnsafeMarkup = `<iframe srcdoc="${artifactDocument(positiveSetHtmlProbe).replaceAll('"', '&quot;')}"></iframe>`
+  const positiveShadowHtmlUnsafeMarkup = `<iframe srcdoc="${artifactDocument(positiveShadowHtmlProbe).replaceAll('"', '&quot;')}"></iframe>`
   const wrapperFactories = {
     'webrtc-positive-control': () => artifactDocument(
       `const frame=document.createElement('iframe');frame.srcdoc=${inlineScriptString(artifactDocument(positiveWebrtcProbe))};document.body.append(frame);`,
+    ),
+    'webrtc-sethtmlunsafe-positive-control': () => artifactDocument(
+      `document.body.setHTMLUnsafe(${inlineScriptString(positiveSetHtmlUnsafeMarkup)});`,
+    ),
+    'webrtc-shadow-sethtmlunsafe-positive-control': () => artifactDocument(
+      `const host=document.createElement('div');document.body.append(host);host.attachShadow({mode:'open'}).setHTMLUnsafe(${inlineScriptString(positiveShadowHtmlUnsafeMarkup)});`,
     ),
     http: () => buildProtectedArtifactWrapperDocument(artifactDocument(
       `window.parent.postMessage({type:'pathforge-artifact-size',width:100,height:100},'*'); location.href=${JSON.stringify(`${baseUrl}/leak-http?secret=abc`)};`,
@@ -101,6 +125,12 @@ async function main() {
     )),
     'webrtc-srcdoc-innerhtml': () => buildProtectedArtifactWrapperDocument(artifactDocument(
       `const holder=document.createElement('div');holder.innerHTML=${inlineScriptString(`<iframe srcdoc="${artifactDocument(webrtcProbe).replaceAll('"', '&quot;')}"></iframe>`)};document.body.append(holder);`,
+    )),
+    'webrtc-srcdoc-sethtmlunsafe': () => buildProtectedArtifactWrapperDocument(artifactDocument(
+      `document.body['setHTML'+'Unsafe'](${inlineScriptString(setHtmlUnsafeMarkup)});`,
+    )),
+    'webrtc-srcdoc-shadow-sethtmlunsafe': () => buildProtectedArtifactWrapperDocument(artifactDocument(
+      `const host=document.createElement('div');document.body.append(host);host.attachShadow({mode:'open'})['setHTML'+'Unsafe'](${inlineScriptString(setHtmlUnsafeMarkup)});`,
     )),
     'webrtc-blob': () => {
       const escapeDocument = `<script>${webrtcProbe}<\/script>`
@@ -170,6 +200,16 @@ async function main() {
     if (positiveWebrtcPackets.length === 0) {
       throw new Error('WebRTC positive control emitted no STUN packet; the denial assertion would be inconclusive.')
     }
+    await navigateCase(client, sessionId, `${baseUrl}/webrtc-sethtmlunsafe-positive-control`)
+    await new Promise((resolve) => setTimeout(resolve, 1_000))
+    if (positiveSetHtmlPackets.length === 0) {
+      throw new Error('Element.setHTMLUnsafe positive control emitted no STUN packet; its denial assertion would be inconclusive.')
+    }
+    await navigateCase(client, sessionId, `${baseUrl}/webrtc-shadow-sethtmlunsafe-positive-control`)
+    await new Promise((resolve) => setTimeout(resolve, 1_000))
+    if (positiveShadowHtmlPackets.length === 0) {
+      throw new Error('ShadowRoot.setHTMLUnsafe positive control emitted no STUN packet; its denial assertion would be inconclusive.')
+    }
 
     for (const name of [
       'http',
@@ -182,6 +222,8 @@ async function main() {
       'webrtc-srcdoc-obfuscated',
       'webrtc-srcdoc-domparser',
       'webrtc-srcdoc-innerhtml',
+      'webrtc-srcdoc-sethtmlunsafe',
+      'webrtc-srcdoc-shadow-sethtmlunsafe',
       'webrtc-blob',
       'webrtc-data',
     ]) {
@@ -233,6 +275,8 @@ async function main() {
     await new Promise((resolve) => server.close(resolve))
     await new Promise((resolve) => stunServer.close(resolve))
     await new Promise((resolve) => positiveStunServer.close(resolve))
+    await new Promise((resolve) => positiveSetHtmlStunServer.close(resolve))
+    await new Promise((resolve) => positiveShadowHtmlStunServer.close(resolve))
     rmSync(profile, { recursive: true, force: true, maxRetries: 8, retryDelay: 125 })
   }
 

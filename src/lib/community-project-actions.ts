@@ -85,6 +85,7 @@ const artifactFindingGuidance: Record<string, string> = {
   'external hyperlink': 'remove outbound links or show the address as plain text',
   'network request API': 'remove fetch, XMLHttpRequest, WebSocket, EventSource, or importScripts calls',
   'WebRTC network API': 'remove peer-to-peer and ICE networking calls',
+  'dynamic HTML API': 'replace setHTML or setHTMLUnsafe with explicit local DOM construction',
   'beacon API': 'remove navigator.sendBeacon',
   'dynamic image request': 'remove new Image network loading',
   'popup or external navigation API': 'remove popup and scripted navigation code',

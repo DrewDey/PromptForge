@@ -140,6 +140,14 @@ function artifactNetworkLockdownSource() {
     assertSafeMarkup(value);
     return Reflect.apply(original, this, [value]);
   });
+  for (const prototype of [Element.prototype, globalThis.ShadowRoot?.prototype]) {
+    for (const name of ['setHTML', 'setHTMLUnsafe']) {
+      lockMethod(prototype, name, (original) => function(value, ...options) {
+        assertSafeMarkup(value);
+        return Reflect.apply(original, this, [value, ...options]);
+      });
+    }
+  }
 
   const lockMarkupSetter = (prototype, name) => {
     if (!prototype) return;

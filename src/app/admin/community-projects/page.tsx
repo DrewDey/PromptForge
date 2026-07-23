@@ -13,7 +13,7 @@ import PublicationControlForm from './PublicationControlForm'
 
 export const dynamic = 'force-dynamic'
 
-function reconciliationIsStale(lastSuccess: string | null | undefined) {
+function operationIsStale(lastSuccess: string | null | undefined) {
   const timestamp = lastSuccess ? Date.parse(lastSuccess) : Number.NaN
   return !Number.isFinite(timestamp) || Date.now() - timestamp > 26 * 60 * 60 * 1000
 }
@@ -31,8 +31,12 @@ export default async function AdminCommunityProjectsPage() {
   const openReports = reports.filter((report) => ['open', 'reviewing'].includes(report.status))
   const activeInternalMembers = members.filter((member) => member.is_current && member.member_kind === 'internal_acceptance')
   const activeInvitedMembers = members.filter((member) => member.is_current && member.member_kind === 'invited_builder')
-  const reconciliationStale = reconciliationIsStale(reconciliation?.last_success_at)
-  const operationsNeedAttention = reconciliation?.last_status === 'failed' || reconciliationStale
+  const reconciliationStale = operationIsStale(reconciliation?.last_success_at)
+  const reportReadinessStale = operationIsStale(reportReadiness?.last_success_at)
+  const reconciliationNeedsAttention = reconciliation?.last_status !== 'succeeded' || reconciliationStale
+  const reportReadinessNeedsAttention = reportReadiness?.last_status !== 'succeeded' || reportReadinessStale
+  const operationsNeedAttention = reconciliationNeedsAttention || reportReadinessNeedsAttention
+  const publicationOperationallyReady = controls?.allow_publication === true && !operationsNeedAttention
   return (
     <div className="mx-auto max-w-6xl">
       <Link href="/admin" className="inline-flex items-center gap-2 text-sm font-bold text-surface-500 hover:text-brand-orange-ink"><ArrowLeft className="h-4 w-4" aria-hidden="true" /> Admin workspace</Link>
@@ -41,12 +45,25 @@ export default async function AdminCommunityProjectsPage() {
         <div className="flex gap-3"><span className="border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900">{submissions.filter((item) => item.status === 'queued').length} queued</span><span className="border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-900">{openReports.length} open reports</span></div>
       </header>
       <section className={`mt-7 border p-4 ${operationsNeedAttention ? 'border-red-300 bg-red-50 text-red-950' : 'border-green-200 bg-green-50 text-green-950'}`} role={operationsNeedAttention ? 'alert' : 'status'}>
-        <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-black">Reconciliation health</h2><p className="mt-1 text-xs leading-5">{reconciliation?.last_success_at ? `Last successful run ${new Date(reconciliation.last_success_at).toLocaleString()}.` : 'No successful reconciliation run has been recorded yet.'} {reconciliation?.last_error ? `Latest error: ${reconciliation.last_error}` : ''}</p></div><span className="font-mono text-[10px] font-black uppercase tracking-[0.14em]">{operationsNeedAttention ? 'Operator action required' : 'Current'}</span></div>
+        <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-black">Operational readiness health</h2><p className="mt-1 text-xs leading-5">{reconciliation?.last_success_at ? `Last successful reconciliation ${new Date(reconciliation.last_success_at).toLocaleString()}.` : 'No successful reconciliation run has been recorded yet.'} {reportReadiness?.last_success_at ? `Last successful report-intake proof ${new Date(reportReadiness.last_success_at).toLocaleString()}.` : 'No successful report-intake proof has been recorded yet.'} {reconciliation?.last_error ? `Latest reconciliation error: ${reconciliation.last_error}` : ''} {reportReadiness?.last_error ? `Latest report-intake error: ${reportReadiness.last_error}` : ''}</p></div><span className="font-mono text-[10px] font-black uppercase tracking-[0.14em]">{operationsNeedAttention ? 'Operator action required' : 'Current'}</span></div>
       </section>
-      <section className={`mt-4 border p-4 ${controls?.allow_publication ? 'border-green-200 bg-green-50 text-green-950' : 'border-amber-300 bg-amber-50 text-amber-950'}`} aria-labelledby="publication-control-title">
+      <section className={`mt-4 border p-4 ${publicationOperationallyReady ? 'border-green-200 bg-green-50 text-green-950' : controls?.allow_publication ? 'border-red-300 bg-red-50 text-red-950' : 'border-amber-300 bg-amber-50 text-amber-950'}`} aria-labelledby="publication-control-title">
         <h2 id="publication-control-title" className="font-black">Publication readiness</h2>
-        <p className="mt-1 text-xs leading-5">Publication is <strong>{controls?.allow_publication ? 'enabled' : 'paused'}</strong>. Enabling requires a reconciliation success within 26 hours plus a fresh server-side report-intake HMAC proof. Report proof: {reportReadiness?.last_success_at ? new Date(reportReadiness.last_success_at).toLocaleString() : 'not yet recorded'}.</p>
-        <PublicationControlForm enabled={controls?.allow_publication === true} />
+        <p className="mt-1 text-xs leading-5">
+          Publication is <strong>{controls?.allow_publication ? publicationOperationallyReady ? 'enabled and operationally ready' : 'enabled but blocked by stale or failed readiness' : 'paused'}</strong>. Enabling requires a reconciliation success within 26 hours plus a fresh server-side report-intake HMAC proof. Report proof: {reportReadiness?.last_success_at ? new Date(reportReadiness.last_success_at).toLocaleString() : 'not yet recorded'}.
+        </p>
+        {operationsNeedAttention && (
+          <p className="mt-2 text-xs font-bold leading-5">
+            Required: {[
+              reconciliationNeedsAttention ? 'run successful reconciliation' : '',
+              reportReadinessNeedsAttention ? 'refresh report-intake proof' : '',
+            ].filter(Boolean).join(' and ')}.
+          </p>
+        )}
+        <PublicationControlForm
+          enabled={controls?.allow_publication === true}
+          operationallyReady={publicationOperationallyReady}
+        />
       </section>
       <section className="mt-7" aria-labelledby="pilot-access-title">
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">

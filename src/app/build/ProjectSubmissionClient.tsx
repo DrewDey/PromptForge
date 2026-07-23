@@ -178,7 +178,7 @@ export default function ProjectSubmissionClient({
       </section>
 
       <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
-        <form onSubmit={handleSubmit} className="space-y-7" encType="multipart/form-data">
+        <form onSubmit={handleSubmit} className="min-w-0 space-y-7" encType="multipart/form-data">
           {effectiveFork && (
             <section className="border border-green-300 bg-green-50 p-4" data-community-fork-source>
               <div className="flex items-center gap-2 font-mono text-[10px] font-black uppercase tracking-[0.15em] text-green-800">
@@ -189,7 +189,7 @@ export default function ProjectSubmissionClient({
             </section>
           )}
 
-          <fieldset className="border border-surface-200 bg-white p-5 sm:p-6">
+          <fieldset className="min-w-0 border border-surface-200 bg-white p-5 sm:p-6">
             <legend className="px-2 text-lg font-black text-surface-900">1. Show the result</legend>
             <div className="mt-2 grid gap-5">
               <label className="grid gap-2">
@@ -218,7 +218,7 @@ export default function ProjectSubmissionClient({
               </div>
               <label className="grid gap-2 border border-brand-orange/30 bg-brand-orange/[0.035] p-4">
                 <FieldLabel required>Self-contained HTML artifact</FieldLabel>
-                <input id="community-project-artifact" name="artifact" type="file" accept=".html,.htm,text/html" required aria-describedby="community-project-artifact-help community-project-artifact-status" aria-invalid={artifactTooLarge || undefined} onChange={(event) => setArtifact(event.target.files?.[0] ?? null)} className="min-h-11 text-sm file:mr-3 file:border-0 file:bg-surface-900 file:px-3 file:py-2 file:font-bold file:text-white" />
+                <input id="community-project-artifact" name="artifact" type="file" accept=".html,.htm,text/html" required aria-describedby="community-project-artifact-help community-project-artifact-status" aria-invalid={artifactTooLarge || undefined} onChange={(event) => setArtifact(event.target.files?.[0] ?? null)} className="min-h-11 min-w-0 w-full text-sm file:mr-3 file:border-0 file:bg-surface-900 file:px-3 file:py-2 file:font-bold file:text-white" />
                 <span id="community-project-artifact-help" className="text-xs leading-5 text-surface-600">One UTF-8 .html or .htm file, up to 2 MB. Outbound links, remote dependencies, network calls, secrets, and personal information are rejected. Inline data images are allowed.</span>
                 {artifact && (
                   <span id="community-project-artifact-status" role={artifactTooLarge ? 'alert' : 'status'} className={`text-xs font-semibold ${artifactTooLarge ? 'text-red-700' : 'text-green-800'}`}>
@@ -229,7 +229,7 @@ export default function ProjectSubmissionClient({
             </div>
           </fieldset>
 
-          <fieldset className="border border-surface-200 bg-white p-5 sm:p-6">
+          <fieldset className="min-w-0 border border-surface-200 bg-white p-5 sm:p-6">
             <legend className="px-2 text-lg font-black text-surface-900">2. Explain how it was built</legend>
             <div className="mt-2 grid gap-5">
               <div className="grid gap-4 sm:grid-cols-2">
@@ -260,7 +260,7 @@ export default function ProjectSubmissionClient({
 
               <div className="space-y-4">
                 {steps.map((step, index) => (
-                  <fieldset key={index} className="border border-surface-200 bg-surface-50 p-4">
+                  <fieldset key={index} className="min-w-0 border border-surface-200 bg-surface-50 p-4">
                     <legend className="px-2 text-sm font-black text-surface-900">Checkpoint {index + 1}</legend>
                     <div className="mb-3 flex items-center justify-between gap-3">
                       <span className="text-xs text-surface-500">Public checkpoint {index + 1} of {steps.length}</span>
@@ -278,10 +278,10 @@ export default function ProjectSubmissionClient({
             </div>
           </fieldset>
 
-          <fieldset className="border border-surface-200 bg-white p-5 sm:p-6">
+          <fieldset className="min-w-0 border border-surface-200 bg-white p-5 sm:p-6">
             <legend className="px-2 text-lg font-black text-surface-900">3. Add optional source evidence</legend>
             <div className="mt-2 grid gap-5">
-              <label className="grid gap-2"><FieldLabel>Public provider share link</FieldLabel><input name="source_url" type="url" value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} className="min-h-11 border border-surface-300 px-3 text-sm" placeholder="https://chatgpt.com/share/..." /><span className="text-xs leading-5 text-surface-500">Optional. Use a public ChatGPT, Claude, or Gemini share URL—not a private /c/ or account link. PathForge never logs into your provider account.</span></label>
+              <label className="grid gap-2"><FieldLabel>Public provider share link</FieldLabel><input name="source_url" type="url" value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} className="min-h-11 border border-surface-300 px-3 text-sm" placeholder="https://chatgpt.com/share/..." /><span className="text-xs leading-5 text-surface-500">Optional. Use a public ChatGPT, Claude, or Gemini share URL with no query string or fragment—not a private /c/ or account link. PathForge never logs into your provider account.</span></label>
               {sourceUrl && (
                 <div className="grid gap-2">
                   <FieldLabel required>Who may see the source link?</FieldLabel>
@@ -292,17 +292,17 @@ export default function ProjectSubmissionClient({
             </div>
           </fieldset>
 
-          <fieldset className="border border-surface-200 bg-white p-5 sm:p-6">
+          <fieldset className="min-w-0 border border-surface-200 bg-white p-5 sm:p-6">
             <legend className="px-2 text-lg font-black text-surface-900">4. Choose credit and reuse</legend>
-            <div className="mt-2 grid gap-5">
+            <div className="mt-2 grid min-w-0 gap-5">
               <input type="hidden" name="submitter_role" value="builder" />
-              <label className="flex items-start gap-3 border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">
+              <label className="flex min-w-0 items-start gap-3 border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">
                 <input type="checkbox" name="builder_attested" value="yes" required className="mt-1" />
-                <span><strong className="block">I personally built this project.</strong>The pilot does not accept projects submitted on someone else&apos;s behalf.</span>
+                <span className="min-w-0"><strong className="block">I personally built this project.</strong>The pilot does not accept projects submitted on someone else&apos;s behalf.</span>
               </label>
-              <label className="grid gap-2">
+              <label className="grid min-w-0 gap-2">
                 <FieldLabel required>Reuse permission</FieldLabel>
-                <select name="reuse_permission" value={reusePermission} onChange={(event) => setReusePermission(event.target.value as typeof reusePermission)} required className="min-h-11 border border-surface-300 bg-white px-3 text-sm">
+                <select name="reuse_permission" value={reusePermission} onChange={(event) => setReusePermission(event.target.value as typeof reusePermission)} required className="min-h-11 min-w-0 w-full max-w-full border border-surface-300 bg-white px-3 text-sm">
                   <option value="" disabled>Choose what visitors may do</option>
                   <option value="view_only">View only — no reuse license</option>
                   <option value="allow_pathforge_remix">Allow PathForge remixes with attribution</option>
@@ -311,7 +311,7 @@ export default function ProjectSubmissionClient({
             </div>
           </fieldset>
 
-          <fieldset className="border-2 border-brand-orange bg-white p-5 sm:p-6">
+          <fieldset className="min-w-0 border-2 border-brand-orange bg-white p-5 sm:p-6">
             <legend className="px-2 text-lg font-black text-surface-900">5. Review everything that may become public</legend>
             <div className="mt-2">
               <div className="font-mono text-[10px] font-black uppercase tracking-[0.15em] text-brand-orange-ink">Pre-publication consent preview</div>
@@ -347,7 +347,7 @@ export default function ProjectSubmissionClient({
             </div>
           </fieldset>
 
-          <fieldset className="border border-surface-200 bg-white p-5 sm:p-6">
+          <fieldset className="min-w-0 border border-surface-200 bg-white p-5 sm:p-6">
             <legend className="px-2 text-lg font-black text-surface-900">6. Consent and submit for private review</legend>
             <div className="mt-2 grid gap-5">
               <div className="grid gap-3 border border-surface-200 bg-surface-50 p-4 text-sm leading-6">

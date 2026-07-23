@@ -138,7 +138,7 @@ BEGIN
     'artifact_size_bytes', 512,
     'artifact_scan', jsonb_build_object(
       'passed', TRUE,
-      'scanner_version', 'html-static-v1',
+      'scanner_version', 'html-static-v2',
       'scanned_at', NOW(),
       'sha256', repeat('a', 64),
       'byte_length', 512,
@@ -155,6 +155,29 @@ BEGIN
     'publication_consent_at', NOW(),
     'fork', NULL
   );
+
+  BEGIN
+    PERFORM public.create_community_project_submission(
+      builder,
+      jsonb_set(
+        jsonb_set(
+          payload,
+          '{source_url}',
+          to_jsonb('https://chatgpt.com/share/private-query?token=secret'::TEXT)
+        ),
+        '{source_visibility}',
+        to_jsonb('public'::TEXT)
+      ),
+      gen_random_uuid()
+    );
+    RAISE EXCEPTION 'A community source URL retained query-string material.';
+  EXCEPTION
+    WHEN OTHERS THEN
+      IF SQLERRM = 'A community source URL retained query-string material.'
+        OR SQLERRM <> 'Use a public ChatGPT, Claude, or Gemini share link without a query string or fragment. Private conversation URLs are not accepted.' THEN
+        RAISE;
+      END IF;
+  END;
 
   submission := public.create_community_project_submission(
     builder, payload, gen_random_uuid()
@@ -215,6 +238,8 @@ $test$;
 SET ROLE authenticated;
 SET request.jwt.claims = '{"role":"authenticated","sub":"10000000-0000-4000-8000-000000000001"}';
 DO $test$
+DECLARE
+  compatible_source_run UUID;
 BEGIN
   IF (SELECT COUNT(id) FROM public.community_project_submissions) <> 1 THEN
     RAISE EXCEPTION 'The owner cannot read exactly their own submission.';
@@ -231,18 +256,71 @@ BEGIN
   EXCEPTION
     WHEN insufficient_privilege THEN NULL;
   END;
+  INSERT INTO public.source_run_submissions (
+    title, source_url, notes, fork_source_project_id,
+    fork_source_project_title, fork_source_step_id, fork_source_step_number,
+    prompt_family_id, fork_depth, fork_branch_index, author_id, status
+  ) VALUES (
+    'Compatible queued source run',
+    'https://chatgpt.com/share/compatible-queue',
+    'Queue-only compatibility fixture',
+    '40000000-0000-4000-8000-000000000010',
+    'Prepared source project',
+    'prepared-source-project:run:step:2',
+    2,
+    'prepared-source-family',
+    1,
+    0,
+    '10000000-0000-4000-8000-000000000001',
+    'queued'
+  ) RETURNING id INTO compatible_source_run;
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.source_run_submissions
+    WHERE id = compatible_source_run
+      AND author_id = '10000000-0000-4000-8000-000000000001'
+      AND status = 'queued'
+      AND extracted_prompt_id IS NULL
+      AND admin_notes IS NULL
+      AND canonical_source_url IS NULL
+      AND source_package_file IS NULL
+      AND source_package_sha256 IS NULL
+      AND intake_evidence IS NULL
+  ) THEN
+    RAISE EXCEPTION 'Authenticated queue-only source-run compatibility insert was not preserved.';
+  END IF;
   BEGIN
     INSERT INTO public.source_run_submissions (
       title, source_url, author_id, status
     ) VALUES (
-      'Forbidden new URL intake',
-      'https://chatgpt.com/share/forbidden',
+      'Forged source-run owner',
+      'https://chatgpt.com/share/forged-owner',
+      '10000000-0000-4000-8000-000000000002',
+      'queued'
+    );
+    RAISE EXCEPTION 'Authenticated source-run intake forged another owner.';
+  EXCEPTION
+    WHEN OTHERS THEN
+      IF SQLERRM = 'Authenticated source-run intake forged another owner.' THEN
+        RAISE;
+      END IF;
+  END;
+  BEGIN
+    INSERT INTO public.source_run_submissions (
+      title, source_url, resubmission_of_id, author_id, status
+    ) VALUES (
+      'Forged browser repair',
+      'https://chatgpt.com/share/forged-browser-repair',
+      (SELECT legacy_source FROM test_state),
       '10000000-0000-4000-8000-000000000001',
       'queued'
     );
-    RAISE EXCEPTION 'Authenticated role inserted a new URL-only source run.';
+    RAISE EXCEPTION 'Authenticated source-run intake bypassed the service-only repair boundary.';
   EXCEPTION
-    WHEN insufficient_privilege THEN NULL;
+    WHEN OTHERS THEN
+      IF SQLERRM = 'Authenticated source-run intake bypassed the service-only repair boundary.' THEN
+        RAISE;
+      END IF;
   END;
   BEGIN
     INSERT INTO public.prompts (title) VALUES ('Forbidden direct project');
@@ -528,7 +606,7 @@ BEGIN
     'artifact_size_bytes', 384,
     'artifact_scan', jsonb_build_object(
       'passed', TRUE,
-      'scanner_version', 'html-static-v1',
+      'scanner_version', 'html-static-v2',
       'scanned_at', NOW(),
       'sha256', repeat('c', 64),
       'byte_length', 384,

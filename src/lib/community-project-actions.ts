@@ -92,6 +92,7 @@ const artifactFindingGuidance: Record<string, string> = {
   'popup or external navigation API': 'remove popup and scripted navigation code',
   'obvious non-terminating loop': 'replace unbounded while(true) or for(;;) loops with bounded work',
   'automatic file generation': 'remove automatic download or file-generation behavior',
+  'no useful script-disabled preview': 'include the finished result as readable HTML before any script runs',
 }
 
 function artifactRejectionMessage(findings: string[]) {
@@ -243,7 +244,7 @@ function validateSubmissionFields(formData: FormData) {
   if (modelSettings.length > 1000) throw new Error('Model settings must be 1,000 characters or fewer.')
   if (!['full_run', 'selected_excerpts', 'reconstructed_notes'].includes(evidenceScope)) throw new Error('Choose how complete the build evidence is.')
   if (sourceUrl && !isSupportedCommunitySourceUrl(sourceUrl)) {
-    throw new Error('Use a public ChatGPT, Claude, or Gemini share link. Private conversation URLs are not accepted.')
+    throw new Error('Use a public ChatGPT, Claude, or Gemini share link without a query string or fragment. Private conversation URLs are not accepted.')
   }
   if (!['review_only', 'public'].includes(sourceVisibility)) throw new Error('Choose whether the source link may become public.')
   if (submitterRole !== 'builder') throw new Error('The invitation-only pilot accepts projects from their actual builder only.')
@@ -261,6 +262,7 @@ function validateSubmissionFields(formData: FormData) {
     provider,
     model,
     modelSettings,
+    sourceUrl,
     ...buildSteps.flatMap((step) => [step.title, step.prompt, step.response]),
   ].join('\n'))
   if (evidenceFindings.length > 0) {
@@ -297,6 +299,34 @@ export async function submitCommunityProject(formData: FormData): Promise<Commun
     }
 
     const admin = createAdminClient()
+    const repairId = formString(formData, 'repair_id')
+    if (!repairId) {
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+      const [
+        { count: totalSubmissionCount, error: totalCountError },
+        { count: recentOwnerCount, error: recentCountError },
+      ] = await Promise.all([
+        admin
+          .from('community_project_submissions')
+          .select('id', { count: 'exact', head: true }),
+        admin
+          .from('community_project_submissions')
+          .select('id', { count: 'exact', head: true })
+          .eq('author_id', user.id)
+          .gt('created_at', oneHourAgo)
+          .not('status', 'in', '(withdrawn,removed)'),
+      ])
+      if (totalCountError || recentCountError) {
+        throw new Error('PathForge could not verify the pilot submission limits.')
+      }
+      if ((totalSubmissionCount ?? 0) >= 50) {
+        throw new Error('The invitation-only pilot has reached its 50-submission cap.')
+      }
+      if ((recentOwnerCount ?? 0) >= 5) {
+        throw new Error('Community project pilot limit reached. Try again later.')
+      }
+    }
+
     const objectId = randomUUID()
     uploadedPath = `${user.id}/${objectId}.html.txt`
     const { error: uploadError } = await admin.storage
@@ -337,7 +367,6 @@ export async function submitCommunityProject(formData: FormData): Promise<Commun
       publication_consent_at: now,
       fork: parseFork(formData),
     }
-    const repairId = formString(formData, 'repair_id')
     const correlation = randomUUID()
     const rpc = repairId
       ? await admin.rpc('replace_community_project_submission', {

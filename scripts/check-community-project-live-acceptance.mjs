@@ -39,6 +39,16 @@ function requiredServerKey() {
     })()
 }
 
+function disposableAcceptanceEmail(baseEmail, suffix) {
+  const at = baseEmail.lastIndexOf('@')
+  if (at <= 0 || at === baseEmail.length - 1) {
+    throw new Error('COMMUNITY_PROJECT_ACCEPTANCE_EMAIL must be a valid operator-controlled email address.')
+  }
+  const local = baseEmail.slice(0, at).replace(/\+.*/, '')
+  const domain = baseEmail.slice(at + 1)
+  return `${local}+pathforge-${suffix}@${domain}`
+}
+
 async function evaluate(client, sessionId, expression) {
   const { result, exceptionDetails } = await client.send('Runtime.evaluate', {
     expression,
@@ -74,12 +84,12 @@ async function capture(client, sessionId, outputPath) {
   writeFileSync(outputPath, Buffer.from(data, 'base64'))
 }
 
-async function waitForProfile(admin, userId) {
+async function waitForProfile(admin, username) {
   for (let attempt = 0; attempt < 60; attempt += 1) {
     const { data, error } = await admin
       .from('profiles')
       .select('id,username')
-      .eq('id', userId)
+      .eq('username', username)
       .maybeSingle()
     if (error) throw error
     if (data) return data
@@ -104,6 +114,17 @@ async function waitForSubmission(admin, userId) {
   throw new Error('The signed-in upload did not create a private submission receipt.')
 }
 
+async function findAuthUserByEmail(admin, email) {
+  for (let page = 1; page <= 10; page += 1) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 })
+    if (error) throw error
+    const match = data.users.find((user) => user.email?.toLowerCase() === email.toLowerCase())
+    if (match) return match
+    if (data.users.length < 1000) return null
+  }
+  throw new Error('The disposable Auth identity could not be resolved within the bounded cleanup scan.')
+}
+
 async function recordCleanup(cleanupErrors, label, task) {
   try {
     await task()
@@ -116,6 +137,7 @@ async function main() {
   const options = parseArgs(process.argv.slice(2))
   const supabaseUrl = requiredEnvironment('NEXT_PUBLIC_SUPABASE_URL')
   const serverKey = requiredServerKey()
+  const acceptanceMailbox = requiredEnvironment('COMMUNITY_PROJECT_ACCEPTANCE_EMAIL')
   const admin = createClient(supabaseUrl, serverKey, {
     auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
   })
@@ -124,7 +146,7 @@ async function main() {
 
   const suffix = `${Date.now().toString(36)}${randomBytes(3).toString('hex')}`.slice(-14)
   const username = `accept_${suffix}`
-  const email = `pathforge.acceptance+${suffix}@example.com`
+  const email = disposableAcceptanceEmail(acceptanceMailbox, suffix)
   const password = `${randomBytes(24).toString('base64url')}Aa1!`
   const profile = mkdtempSync(path.join(tmpdir(), 'pathforge-community-live-acceptance-'))
   let userId = ''
@@ -144,6 +166,16 @@ async function main() {
     if (controls.allow_invited_submissions || !controls.allow_internal_acceptance_submissions) {
       throw new Error('The live acceptance check requires external invitations locked and internal acceptance enabled.')
     }
+    const { count: activeAcceptanceCount, error: activeAcceptanceError } = await admin
+      .from('community_project_pilot_members')
+      .select('user_id', { count: 'exact', head: true })
+      .eq('active', true)
+      .eq('member_kind', 'internal_acceptance')
+      .gt('expires_at', new Date().toISOString())
+    if (activeAcceptanceError) throw activeAcceptanceError
+    if ((activeAcceptanceCount ?? 0) !== 0) {
+      throw new Error('The disposable acceptance slot is already occupied; no account was created.')
+    }
 
     const { data: administrators, error: administratorError } = await admin
       .from('profiles')
@@ -154,16 +186,6 @@ async function main() {
     if (administratorError) throw administratorError
     administratorId = administrators?.[0]?.id ?? ''
     if (!administratorId) throw new Error('No PathForge administrator is available for disposable admission.')
-
-    const { data: created, error: createError } = await admin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: { username, display_name: username },
-    })
-    if (createError || !created.user) throw createError ?? new Error('Fresh account creation returned no user.')
-    userId = created.user.id
-    await waitForProfile(admin, userId)
 
     chrome = spawn(executable, [
       '--headless=new',
@@ -182,15 +204,15 @@ async function main() {
       client.send('Runtime.enable', {}, sessionId),
       client.send('DOM.enable', {}, sessionId),
       client.send('Emulation.setDeviceMetricsOverride', {
-        width: 1440,
-        height: 1000,
+        width: 390,
+        height: 844,
         deviceScaleFactor: 1,
-        mobile: false,
+        mobile: true,
       }, sessionId),
     ])
 
-    await navigate(client, sessionId, `${options.baseUrl}/auth/login?next=%2Fbuild`)
-    await waitFor(client, sessionId, `({ passed: Boolean(document.querySelector('input[name="email"]')) })`, 'login form')
+    await navigate(client, sessionId, `${options.baseUrl}/auth/signup?next=%2Fbuild`)
+    await waitFor(client, sessionId, `({ passed: Boolean(document.querySelector('input[name="username"]')) })`, 'public signup form')
     await evaluate(client, sessionId, `(() => {
       const setValue = (selector, value) => {
         const element = document.querySelector(selector);
@@ -199,16 +221,59 @@ async function main() {
         element.dispatchEvent(new Event('input', { bubbles: true }));
         element.dispatchEvent(new Event('change', { bubbles: true }));
       };
+      setValue('input[name="username"]', ${JSON.stringify(username)});
       setValue('input[name="email"]', ${JSON.stringify(email)});
       setValue('input[name="password"]', ${JSON.stringify(password)});
       document.querySelector('form').requestSubmit();
       return true;
     })()`)
     await waitFor(client, sessionId, `(() => ({
+      passed: document.querySelector('h1')?.textContent?.includes('Check your') &&
+        document.body.textContent.includes('One last step'),
+      path: location.pathname,
+      error: document.querySelector('[role="alert"]')?.textContent || '',
+    }))()`, 'public signup email-confirmation handoff')
+    if (options.screenshotDir) await capture(client, sessionId, path.join(options.screenshotDir, 'live-public-signup-confirmation.png'))
+
+    const createdProfile = await waitForProfile(admin, username)
+    userId = createdProfile.id
+    if (createdProfile.username !== username) {
+      throw new Error('The public signup did not persist the exact PathForge handle.')
+    }
+    const { data: unconfirmedUser, error: unconfirmedUserError } = await admin.auth.admin.getUserById(userId)
+    if (unconfirmedUserError || !unconfirmedUser.user) {
+      throw unconfirmedUserError ?? new Error('The public signup account could not be read back.')
+    }
+    if (unconfirmedUser.user.email_confirmed_at) {
+      throw new Error('The public signup bypassed the configured email-confirmation boundary.')
+    }
+
+    const callbackUrl = new URL('/auth/callback', options.baseUrl)
+    callbackUrl.searchParams.set('flow', 'signup')
+    callbackUrl.searchParams.set('next', '/build')
+    const { data: verificationLink, error: verificationLinkError } = await admin.auth.admin.generateLink({
+      type: 'magiclink',
+      email,
+      options: { redirectTo: callbackUrl.toString() },
+    })
+    if (verificationLinkError || !verificationLink.properties?.hashed_token) {
+      throw verificationLinkError ?? new Error('The operator verification token was not generated.')
+    }
+    if (verificationLink.user?.id !== userId) {
+      throw new Error('The operator verification token did not bind to the public-signup identity.')
+    }
+    callbackUrl.searchParams.set('token_hash', verificationLink.properties.hashed_token)
+    callbackUrl.searchParams.set('type', 'magiclink')
+    await navigate(client, sessionId, callbackUrl.toString())
+    await waitFor(client, sessionId, `(() => ({
       passed: location.pathname === '/build' && document.body.textContent.includes('not currently in the pilot'),
       path: location.pathname,
       hasUpload: Boolean(document.querySelector('input[type="file"]')),
-    }))()`, 'signed-in pre-admission denial')
+    }))()`, 'verified callback and signed-in pre-admission denial')
+    const { data: confirmedUser, error: confirmedUserError } = await admin.auth.admin.getUserById(userId)
+    if (confirmedUserError || !confirmedUser.user?.email_confirmed_at) {
+      throw confirmedUserError ?? new Error('The email verification callback did not confirm the public-signup identity.')
+    }
     const denied = await evaluate(client, sessionId, `({ hasUpload: Boolean(document.querySelector('input[type="file"]')) })`)
     if (denied.hasUpload) throw new Error('The fresh account received an upload control before admission.')
     if (options.screenshotDir) await capture(client, sessionId, path.join(options.screenshotDir, 'live-pre-admission-denial.png'))
@@ -294,7 +359,29 @@ async function main() {
     if (submission.status !== 'queued' || !submission.artifact_path) {
       throw new Error('The fresh-account upload did not remain queued in private quarantine.')
     }
-    if (options.screenshotDir) await capture(client, sessionId, path.join(options.screenshotDir, 'live-private-submission-receipt.png'))
+    if (options.screenshotDir) await capture(client, sessionId, path.join(options.screenshotDir, 'live-private-submission-receipt-mobile-390.png'))
+
+    const receiptPath = await evaluate(client, sessionId, 'location.pathname + location.search')
+    await client.send('Emulation.setDeviceMetricsOverride', {
+      width: 1440,
+      height: 1000,
+      deviceScaleFactor: 1,
+      mobile: false,
+    }, sessionId)
+    await navigate(client, sessionId, `${options.baseUrl}${receiptPath}`)
+    await waitFor(client, sessionId, `(() => {
+      const root = document.documentElement;
+      const body = document.body;
+      return {
+        passed: document.querySelector('h1')?.textContent === ${JSON.stringify(projectTitle)} &&
+          document.body.textContent.includes('Private bundle received.') &&
+          Math.max(root.scrollWidth, body?.scrollWidth || 0) <= root.clientWidth + 1,
+        heading: document.querySelector('h1')?.textContent || '',
+        viewport: root.clientWidth,
+        scrollWidth: Math.max(root.scrollWidth, body?.scrollWidth || 0),
+      };
+    })()`, 'desktop private submission receipt')
+    if (options.screenshotDir) await capture(client, sessionId, path.join(options.screenshotDir, 'live-private-submission-receipt-desktop.png'))
 
     await evaluate(client, sessionId, `(() => {
       window.confirm = () => true;
@@ -323,6 +410,12 @@ async function main() {
     const cleanupErrors = []
     client?.close()
     chrome?.kill('SIGTERM')
+    if (!userId) {
+      await recordCleanup(cleanupErrors, 'Auth identity recovery for cleanup', async () => {
+        const recoveredUser = await findAuthUserByEmail(admin, email)
+        userId = recoveredUser?.id ?? ''
+      })
+    }
     if (userId && administratorId) {
       await recordCleanup(cleanupErrors, 'membership revocation', async () => {
         const { error } = await admin.rpc('set_community_project_pilot_member', {
@@ -417,7 +510,7 @@ async function main() {
     }
   }
   if (runError) throw runError
-  console.log('Live fresh-account acceptance passed and cleanup verified: denied before admission, admitted with external invitations locked, uploaded privately, received owner status, withdrew, removed exact disposable resources, and left the acceptance slot empty.')
+  console.log('Live fresh-account acceptance passed and cleanup verified: submitted the public signup form, completed a real token-hash callback, denied upload before admission, admitted with external invitations locked, uploaded privately at 390px, verified the desktop owner receipt, withdrew, removed exact disposable resources, and left the acceptance slot empty.')
 }
 
 main().catch((error) => {

@@ -40,6 +40,7 @@ new Script(outputText, { filename: 'project-forks.transpiled.cjs' }).runInNewCon
 const {
   PROJECT_FORK_MAX_DEPTH,
   PROJECT_FORK_MAX_WIDTH,
+  buildCommunityProjectForkHref,
   buildProjectForkHref,
   buildProjectResponseForkHref,
   createProjectForkDraftContract,
@@ -204,12 +205,22 @@ const href = buildProjectForkHref({
   branchIndex: 3,
   promptFamilyId: 'source-project:source-step-2',
 })
-assert(href.startsWith('/build?'), 'fork href should target the build flow')
+assert(href.startsWith('/prompt/new?'), 'global fork href should preserve the queue-only source-run intake')
 assert(href.includes('fork=source-project'), 'fork href should include source project id')
 assert(href.includes('forkStep=source-step-2'), 'fork href should include exact response step id')
 assert(href.includes('forkStepNumber=2'), 'fork href should include response step number')
 assert(href.includes('parentFork=parent-project'), 'fork href should include immediate parent project id')
 assert(href.includes('promptFamily=source-project%3Asource-step-2'), 'fork href should include prompt family identity')
+
+const communityHref = buildCommunityProjectForkHref({
+  sourceProjectId: 'community-source-project',
+  sourceProjectTitle: 'Community Source Project',
+  sourceStepId: 'community-source-step-2',
+  sourceStepNumber: 2,
+})
+assert(communityHref.startsWith('/build?'), 'community project forks should target the invitation-only project bundle flow')
+assert(communityHref.includes('fork=community-source-project'), 'community fork href should preserve its source project id')
+assert(communityHref.includes('forkStep=community-source-step-2'), 'community fork href should preserve its exact source response')
 
 const responseHref = buildProjectResponseForkHref({
   sourceProjectId: 'source-project',
@@ -222,6 +233,7 @@ assert(responseHref?.includes('forkStep=source-step-1'), 'response fork href sho
 assert(responseHref?.includes('forkStepNumber=1'), 'response fork href should include exact response step number')
 assert(responseHref?.includes('promptFamily=source-project%3Asource-step-1'), 'response fork href should derive a response prompt family id')
 assert(!responseHref?.includes('parentFork='), 'root response fork href should not claim an immediate parent fork')
+assert(responseHref?.startsWith('/prompt/new?'), 'global response forks should preserve the queue-only source-run intake')
 
 const nestedResponseHref = buildProjectResponseForkHref({
   sourceProjectId: 'current-fork-project',

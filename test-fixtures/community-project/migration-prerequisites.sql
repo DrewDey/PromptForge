@@ -12,6 +12,7 @@ $$;
 
 CREATE SCHEMA auth;
 CREATE SCHEMA storage;
+CREATE SCHEMA private;
 
 CREATE FUNCTION auth.jwt()
 RETURNS JSONB
@@ -30,6 +31,8 @@ AS $$
 $$;
 
 GRANT USAGE ON SCHEMA public, auth, storage TO anon, authenticated, service_role;
+REVOKE ALL ON SCHEMA private FROM PUBLIC, anon;
+GRANT USAGE ON SCHEMA private TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION auth.jwt(), auth.uid() TO anon, authenticated, service_role;
 
 CREATE TABLE public.product_events (
@@ -244,6 +247,28 @@ CREATE POLICY "Users submit untouched queued source runs"
 CREATE POLICY "Users can view own source runs"
   ON public.source_run_submissions FOR SELECT TO authenticated
   USING (author_id = auth.uid());
+
+CREATE FUNCTION private.source_run_owned_by_current_user(target_id UUID)
+RETURNS BOOLEAN
+LANGUAGE SQL
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT
+    (SELECT auth.uid()) IS NOT NULL
+    AND EXISTS (
+      SELECT 1
+      FROM public.source_run_submissions
+      WHERE source_run_submissions.id = target_id
+        AND source_run_submissions.author_id = (SELECT auth.uid())
+    );
+$$;
+
+REVOKE ALL ON FUNCTION private.source_run_owned_by_current_user(UUID)
+  FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION private.source_run_owned_by_current_user(UUID)
+  TO authenticated, service_role;
 
 CREATE TABLE storage.buckets (
   id TEXT PRIMARY KEY,

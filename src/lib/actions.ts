@@ -105,6 +105,8 @@ export async function submitSourceRun(data: {
   notes?: string
   fork_source?: ProjectForkSource | null
   resubmission_of_id?: string | null
+  privacy_attested?: boolean
+  queue_only_attested?: boolean
 }): Promise<SourceRunSubmitResult> {
   try {
     const result = await createSourceRunSubmission(data)

@@ -12,7 +12,13 @@ export const metadata: Metadata = {
   ...canonicalMetadata('/build'),
 }
 
-function PilotExplanation({ signedIn }: { signedIn: boolean }) {
+function PilotExplanation({
+  signedIn,
+  username,
+}: {
+  signedIn: boolean
+  username?: string | null
+}) {
   return (
     <main className="bg-surface-50">
       <section className="border-b border-surface-200 bg-white">
@@ -48,12 +54,12 @@ function PilotExplanation({ signedIn }: { signedIn: boolean }) {
             </div>
             {signedIn && (
               <p className="mt-5 max-w-2xl border-l-2 border-brand-orange pl-4 text-sm leading-6 text-surface-600">
-                This account is not currently in the pilot. PathForge is keeping access narrow until its security, review-time, removal, and reader-value gates have been proven.
+                This account is not currently in the pilot. If someone invited you, send them your exact PathForge handle{username ? <>: <strong>@{username}</strong></> : ''}; pilot access is assigned manually and does not require sharing your email or provider account.
               </p>
             )}
             {!signedIn && (
               <p className="mt-5 max-w-2xl border-l-2 border-surface-300 pl-4 text-sm leading-6 text-surface-600">
-                Creating a profile prepares you for an invitation; it does not unlock project uploads on its own.
+                Creating a profile prepares you for an invitation; it does not unlock project uploads on its own. After signup, send the person who invited you the exact public handle you chose so they can assign access.
               </p>
             )}
           </div>
@@ -107,7 +113,7 @@ export default async function BuildPage({
     return <LegacySourceRunRepairClient repairId={legacyRepairId} />
   }
   if (!eligibility.signedIn || !eligibility.eligible) {
-    return <PilotExplanation signedIn={eligibility.signedIn} />
+    return <PilotExplanation signedIn={eligibility.signedIn} username={eligibility.username} />
   }
 
   const repairId = typeof params.repairCommunity === 'string' ? params.repairCommunity : null

@@ -78,7 +78,7 @@ export default async function ArtifactViewerPage({
             <h1 className="mt-1 text-lg font-black">Protected artifact viewer</h1>
             <p className="mt-1 text-xs leading-5 text-surface-400">
               {isCommunityArtifact
-                ? 'Community uploads are displayed as script-disabled, visual-only previews.'
+                ? 'Community uploads are displayed as script-disabled static previews. Taller results remain scrollable.'
                 : 'Runs in an opaque-origin sandbox with direct API and external asset access blocked.'}
             </p>
           </div>
@@ -101,8 +101,9 @@ export default async function ArtifactViewerPage({
           showOpenAction={false}
           allowArtifactDownloads={!isCommunityArtifact}
           allowArtifactScripts={!isCommunityArtifact}
+          allowArtifactInteraction
           frameHeight="calc(100svh - 176px)"
-          contextLabel={isCommunityArtifact ? 'Visual-only community preview' : 'Isolated full-page preview'}
+          contextLabel={isCommunityArtifact ? 'Script-disabled community preview' : 'Isolated full-page preview'}
           viewerFitControls
         />
       </div>

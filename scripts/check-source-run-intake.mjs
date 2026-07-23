@@ -174,9 +174,17 @@ optionalMustNotInclude(legacySeeder, "from('source_run_submissions')", 'legacy s
 optionalMustNotInclude(legacySeeder, 'createClient(', 'legacy seed-submission script must not create its own Supabase client')
 
 const legacyBuildPage = 'src/app/prompt/new/page.tsx'
-mustInclude(legacyBuildPage, 'searchParams', 'the retired route must preserve historical repair and fork query state')
-mustInclude(legacyBuildPage, '`/build?${query}`', 'the retired URL-only intake route must lead to the canonical project flow without stripping query state')
-mustNotInclude(legacyBuildPage, 'submitSourceRun', 'the retired route must not retain a second browser mutation path')
+mustInclude(legacyBuildPage, 'searchParams', 'the compatibility route must preserve historical fork query state')
+mustInclude(legacyBuildPage, 'parseProjectForkSearchParams(query)', 'the compatibility route must restore the exact fork tuple')
+mustInclude(legacyBuildPage, 'LegacySourceRunIntakeClient', 'the compatibility route must render the queue-only source-run intake')
+mustInclude(legacyBuildPage, '/auth/signup?next=${next}', 'the compatibility route must preserve an exact signup return target')
+
+const legacyIntakeClient = 'src/app/prompt/new/LegacySourceRunIntakeClient.tsx'
+mustInclude(legacyIntakeClient, 'Queue-only source-run handoff', 'compatibility intake must name its private queue boundary')
+mustInclude(legacyIntakeClient, 'does not publish the conversation or create a public project automatically', 'compatibility intake must state that submission is not publication')
+mustInclude(legacyIntakeClient, 'submitSourceRun', 'compatibility intake must use the checked source-run server action')
+mustInclude(legacyIntakeClient, 'privacy_attested: true', 'compatibility intake must capture privacy attestation')
+mustInclude(legacyIntakeClient, 'queue_only_attested: true', 'compatibility intake must capture queue-only acknowledgement')
 
 const buildPage = 'src/app/build/ProjectSubmissionClient.tsx'
 mustInclude(buildPage, 'Self-contained HTML artifact', 'project submission must lead with a concrete inspectable result')
@@ -209,9 +217,11 @@ for (const path of repoRunbooks) {
 
 mustInclude('src/lib/data/source-runs.ts', 'Add the exact model shown for this source run, or type Not sure.', 'server action must enforce model metadata for user source-run uploads')
 mustInclude('src/lib/data/source-runs.ts', 'Pick the AI service for this source run.', 'server action must enforce provider metadata for user source-run uploads')
-mustInclude('src/lib/data/source-runs.ts', 'New URL-only submissions are retired.', 'legacy source-run mutation must reject every non-repair request')
 mustInclude('src/lib/data/source-runs.ts', "rpc('create_legacy_source_run_repair'", 'legacy repairs must use the service-only database boundary')
-mustNotInclude('src/lib/data/source-runs.ts', '.insert(', 'legacy source-run code must not retain a direct browser-backed insert path')
+mustInclude('src/lib/data/source-runs.ts', ".from('source_run_submissions')", 'compatibility intake must write only to the private source-run queue')
+mustInclude('src/lib/data/source-runs.ts', '.insert({', 'compatibility intake must create a strict queued owner row')
+mustInclude('src/lib/data/source-runs.ts', 'privacy_attested', 'compatibility intake must enforce privacy attestation server-side')
+mustInclude('src/lib/data/source-runs.ts', 'queue_only_attested', 'compatibility intake must enforce no-publication acknowledgement server-side')
 mustInclude('src/lib/data/source-runs.ts', 'sourceRunForkColumnsMissing', 'server action must keep source-run intake working before fork SQL is applied')
 mustInclude('src/lib/data/source-runs.ts', 'assertExactForkTuple', 'prepared publish must compare intake, prepared, and package fork tuples')
 mustInclude('src/lib/data/source-runs.ts', "'publish_prepared_showcase_source_run'", 'prepared publish must prefer the atomic database RPC')

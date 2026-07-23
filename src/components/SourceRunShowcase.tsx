@@ -423,6 +423,7 @@ export function ProtectedArtifactFrame({
   viewerFitControls = false,
   allowArtifactDownloads = true,
   allowArtifactScripts = true,
+  allowArtifactInteraction = allowArtifactScripts,
 }: {
   selectedPackage: ArtifactPackage
   providerName: string
@@ -434,6 +435,7 @@ export function ProtectedArtifactFrame({
   viewerFitControls?: boolean
   allowArtifactDownloads?: boolean
   allowArtifactScripts?: boolean
+  allowArtifactInteraction?: boolean
 }) {
   const frameRef = useRef<HTMLDivElement | null>(null)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
@@ -602,6 +604,7 @@ export function ProtectedArtifactFrame({
             artifactPath,
             srcDoc: buildProtectedArtifactWrapperDocument(protectedArtifactDocument, {
               allowArtifactScripts,
+              allowArtifactInteraction,
             }),
             error: null,
           })
@@ -622,7 +625,13 @@ export function ProtectedArtifactFrame({
     return () => {
       controller.abort()
     }
-  }, [allowArtifactDownloads, allowArtifactScripts, selectedPackage.artifactPath, selectedPackage.id])
+  }, [
+    allowArtifactDownloads,
+    allowArtifactInteraction,
+    allowArtifactScripts,
+    selectedPackage.artifactPath,
+    selectedPackage.id,
+  ])
 
   useEffect(() => {
     const packageId = selectedPackage.id
@@ -871,6 +880,7 @@ export function ProtectedArtifactFrame({
           : 'w-full overflow-hidden border border-surface-800 bg-[#111827] shadow-[0_28px_90px_rgba(0,0,0,0.28)]'}
       data-artifact-viewer-mode={viewerFitControls && allowArtifactScripts ? viewerMode : undefined}
       data-artifact-execution-mode={allowArtifactScripts ? 'interactive-trusted' : 'static-untrusted'}
+      data-artifact-interaction-mode={allowArtifactInteraction ? 'reader-enabled' : 'visual-only'}
     >
       {!bare && (
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-surface-800 bg-surface-900 px-4 py-3 text-white">

@@ -21,7 +21,17 @@ const VIEWPORTS = [
   { name: 'mobile-390', width: 390, height: 844, mobile: true },
 ]
 const COMMUNITY_ARTIFACT_FIXTURE_ID = '10000000-0000-4000-8000-000000000001'
-const COMMUNITY_ARTIFACT_FIXTURE_HTML = '<!doctype html><html><head><style>html,body{margin:0;background:#fff;color:#111;font:700 24px system-ui}main{padding:24px}</style></head><body><main><h1>Community artifact viewer fixture</h1></main><script>document.body.replaceChildren()</script></body></html>'
+const COMMUNITY_ARTIFACT_FIXTURE_HTML = '<!doctype html><html><head><style>html,body{margin:0;background:#fff;color:#111;font:700 24px system-ui}main{min-height:1800px;padding:24px;background:linear-gradient(#fff,#eef6ff)}#community-preview-middle{margin-top:650px;padding:24px;background:#dbeafe;color:#111827}#community-preview-bottom{margin-top:650px;padding:24px;background:#111827;color:#fff}</style></head><body><main><h1>Community artifact viewer fixture</h1><p>This readable result exists before scripts run.</p><p id="community-preview-middle">Static preview midpoint</p><p id="community-preview-bottom">Static preview bottom marker</p></main><script>document.body.replaceChildren()</script></body></html>'
+const LEGACY_FORK_PATH = `/prompt/new?${new URLSearchParams({
+  fork: 'qa-source-project',
+  forkTitle: 'QA source project',
+  forkStep: 'qa-source-project:qa-run:step:2',
+  forkStepNumber: '2',
+  forkDepth: '1',
+  forkBranch: '3',
+  promptFamily: 'qa-source-project:family',
+}).toString()}`
+const LEGACY_FORK_NEXT = encodeURIComponent(LEGACY_FORK_PATH)
 
 function parseArgs(argv) {
   const options = { baseUrl: 'http://127.0.0.1:3012', screenshotDir: '' }
@@ -46,6 +56,149 @@ async function evaluate(client, sessionId, expression) {
   }, sessionId)
   if (exceptionDetails) throw new Error(exceptionDetails.text ?? 'Browser evaluation failed.')
   return result.value
+}
+
+async function evaluateInContext(client, sessionId, contextId, expression, label) {
+  const params = {
+    expression,
+    returnByValue: true,
+    awaitPromise: true,
+  }
+  if (contextId !== undefined) params.contextId = contextId
+  const { result, exceptionDetails } = await client.send('Runtime.evaluate', params, sessionId)
+  if (exceptionDetails) throw new Error(`${label} raised ${exceptionDetails.text ?? 'an evaluation exception'}.`)
+  return result.value
+}
+
+function deepestFrame(frameTree, depth = 0) {
+  let deepest = { frame: frameTree.frame, depth }
+  for (const child of frameTree.childFrames ?? []) {
+    const candidate = deepestFrame(child, depth + 1)
+    if (candidate.depth > deepest.depth) deepest = candidate
+  }
+  return deepest
+}
+
+async function artifactDocumentContext(client, sessionId, requiredSelector, label) {
+  const deadline = Date.now() + 15_000
+  let lastDepth = 0
+  let lastIframeTargetCount = 0
+  while (Date.now() < deadline) {
+    const { frameTree } = await client.send('Page.getFrameTree', {}, sessionId)
+    const candidate = deepestFrame(frameTree)
+    lastDepth = candidate.depth
+    if (candidate.depth >= 2) {
+      const { executionContextId } = await client.send('Page.createIsolatedWorld', {
+        frameId: candidate.frame.id,
+        worldName: `pathforge-community-static-${Date.now()}`,
+      }, sessionId)
+      const matches = await evaluateInContext(
+        client,
+        sessionId,
+        executionContextId,
+        `document.readyState === 'complete' && Boolean(document.querySelector(${JSON.stringify(requiredSelector)}))`,
+        label,
+      )
+      if (matches) return { sessionId, contextId: executionContextId }
+    }
+
+    const { targetInfos } = await client.send('Target.getTargets')
+    const iframeTargets = targetInfos.filter((target) => target.type === 'iframe')
+    lastIframeTargetCount = iframeTargets.length
+    for (const target of iframeTargets) {
+      let attachedSessionId
+      try {
+        const attached = await client.send('Target.attachToTarget', {
+          targetId: target.targetId,
+          flatten: true,
+        })
+        attachedSessionId = attached.sessionId
+        await Promise.all([
+          client.send('Page.enable', {}, attachedSessionId),
+          client.send('Runtime.enable', {}, attachedSessionId),
+        ])
+        const matches = await evaluateInContext(
+          client,
+          attachedSessionId,
+          undefined,
+          `document.readyState === 'complete' && Boolean(document.querySelector(${JSON.stringify(requiredSelector)}))`,
+          `${label} isolated iframe probe`,
+        )
+        if (matches) return { sessionId: attachedSessionId, contextId: undefined }
+
+        const { frameTree: isolatedFrameTree } = await client.send(
+          'Page.getFrameTree',
+          {},
+          attachedSessionId,
+        )
+        const isolatedCandidate = deepestFrame(isolatedFrameTree)
+        if (isolatedCandidate.depth >= 1) {
+          const { executionContextId } = await client.send('Page.createIsolatedWorld', {
+            frameId: isolatedCandidate.frame.id,
+            worldName: `pathforge-community-static-inner-${Date.now()}`,
+          }, attachedSessionId)
+          const nestedMatches = await evaluateInContext(
+            client,
+            attachedSessionId,
+            executionContextId,
+            `document.readyState === 'complete' && Boolean(document.querySelector(${JSON.stringify(requiredSelector)}))`,
+            `${label} nested isolated iframe probe`,
+          )
+          if (nestedMatches) {
+            return { sessionId: attachedSessionId, contextId: executionContextId }
+          }
+        }
+      } catch {
+        // Opaque iframe targets can be replaced while the protected document settles.
+      }
+      if (attachedSessionId) {
+        try {
+          await client.send('Target.detachFromTarget', { sessionId: attachedSessionId })
+        } catch {
+          // A navigated or destroyed target is already detached.
+        }
+      }
+    }
+    await new Promise((resolve) => setTimeout(resolve, 75))
+  }
+  throw new Error(`${label} did not expose the inner artifact document; frame depth ${lastDepth}, iframe targets ${lastIframeTargetCount}.`)
+}
+
+async function waitForContextValue(
+  client,
+  sessionId,
+  contextId,
+  expression,
+  predicate,
+  label,
+  timeoutMs = 15_000,
+) {
+  const deadline = Date.now() + timeoutMs
+  let lastValue
+  while (Date.now() < deadline) {
+    lastValue = await evaluateInContext(client, sessionId, contextId, expression, label)
+    if (predicate(lastValue)) return lastValue
+    await new Promise((resolve) => setTimeout(resolve, 75))
+  }
+  throw new Error(`${label} timed out; last state was ${JSON.stringify(lastValue)}.`)
+}
+
+async function dispatchWheel(client, sessionId, frame, deltaY) {
+  const x = Math.round((frame.left + frame.right) / 2)
+  const y = Math.round((frame.top + frame.bottom) / 2)
+  await client.send('Input.dispatchMouseEvent', {
+    type: 'mouseMoved',
+    x,
+    y,
+    buttons: 0,
+  }, sessionId)
+  await client.send('Input.dispatchMouseEvent', {
+    type: 'mouseWheel',
+    x,
+    y,
+    deltaX: 0,
+    deltaY,
+  }, sessionId)
 }
 
 async function navigate(client, sessionId, url) {
@@ -129,6 +282,14 @@ async function capture(client, sessionId, outputPath) {
       height: Math.ceil(contentSize.height),
       scale: 1,
     },
+  }, sessionId)
+  writeFileSync(outputPath, Buffer.from(data, 'base64'))
+}
+
+async function captureViewport(client, sessionId, outputPath) {
+  const { data } = await client.send('Page.captureScreenshot', {
+    format: 'png',
+    captureBeyondViewport: false,
   }, sessionId)
   writeFileSync(outputPath, Buffer.from(data, 'base64'))
 }
@@ -387,6 +548,87 @@ async function main() {
         }
         if (options.screenshotDir) await capture(client, sessionId, path.join(options.screenshotDir, `signup-${viewport.name}.png`))
 
+        await navigate(client, sessionId, `${options.baseUrl}${LEGACY_FORK_PATH}`)
+        await waitForHeading(client, sessionId, 'Sign in to continue this build', `${viewport.name} legacy fork sign-in handoff`)
+        const legacyFork = await evaluate(client, sessionId, `(() => {
+          const root = document.documentElement;
+          const body = document.body;
+          const viewportWidth = root.clientWidth;
+          const scrollWidth = Math.max(root.scrollWidth, body?.scrollWidth ?? 0);
+          return {
+            heading: document.querySelector('h1')?.textContent?.trim() || '',
+            href: location.pathname + location.search,
+            signInHref: [...document.querySelectorAll('a')].find((link) => link.textContent?.trim() === 'Sign in')?.getAttribute('href') || '',
+            signUpHref: [...document.querySelectorAll('a')].find((link) => link.textContent?.trim() === 'Create account')?.getAttribute('href') || '',
+            hasUpload: Boolean(document.querySelector('form, input[type="file"]')),
+            preservesQueueBoundary: document.body.innerText?.includes('Nothing publishes when you submit this review record.') || false,
+            viewportWidth,
+            scrollWidth,
+            overflowingElements: [...document.querySelectorAll('*')]
+              .map((element) => {
+                const rect = element.getBoundingClientRect();
+                return { tag: element.tagName.toLowerCase(), className: typeof element.className === 'string' ? element.className.slice(0, 90) : '', left: Math.round(rect.left), right: Math.round(rect.right) };
+              })
+              .filter((entry) => entry.right > viewportWidth + 1 || entry.left < -1)
+              .slice(0, 8),
+          };
+        })()`)
+        assertPageFits(legacyFork, viewport)
+        if (
+          legacyFork.heading !== 'Sign in to continue this build' ||
+          legacyFork.href !== LEGACY_FORK_PATH ||
+          legacyFork.signInHref !== `/auth/login?next=${LEGACY_FORK_NEXT}` ||
+          legacyFork.signUpHref !== `/auth/signup?next=${LEGACY_FORK_NEXT}` ||
+          legacyFork.hasUpload ||
+          !legacyFork.preservesQueueBoundary
+        ) {
+          throw new Error(`${viewport.name} legacy fork handoff lost its private queue or exact return path: ${JSON.stringify(legacyFork)}.`)
+        }
+        if (options.screenshotDir) await capture(client, sessionId, path.join(options.screenshotDir, `legacy-fork-signin-${viewport.name}.png`))
+
+        await navigate(client, sessionId, `${options.baseUrl}/qa/community-project-submission`)
+        await waitForHeading(client, sessionId, 'Submit a project', `${viewport.name} admitted project-submission fixture`)
+        const submission = await evaluate(client, sessionId, `(() => {
+          const root = document.documentElement;
+          const body = document.body;
+          const viewportWidth = root.clientWidth;
+          const scrollWidth = Math.max(root.scrollWidth, body?.scrollWidth ?? 0);
+          const requiredChecks = [...document.querySelectorAll('input[type="checkbox"][required]')];
+          return {
+            mounted: Boolean(document.querySelector('[data-community-project-submission-fixture]')),
+            heading: document.querySelector('h1')?.textContent?.trim() || '',
+            hasForm: Boolean(document.querySelector('form[enctype="multipart/form-data"]')),
+            artifactInput: document.querySelector('input[type="file"]')?.id || '',
+            requiredChecks: requiredChecks.length,
+            hasFirstSection: document.body.innerText?.includes('1. Show the result') || false,
+            hasConsentSection: document.body.innerText?.includes('6. Consent and submit for private review') || false,
+            submitLabel: [...document.querySelectorAll('button[type="submit"]')].map((button) => button.textContent?.trim() || '').join(' '),
+            viewportWidth,
+            scrollWidth,
+            overflowingElements: [...document.querySelectorAll('*')]
+              .map((element) => {
+                const rect = element.getBoundingClientRect();
+                return { tag: element.tagName.toLowerCase(), className: typeof element.className === 'string' ? element.className.slice(0, 90) : '', left: Math.round(rect.left), right: Math.round(rect.right) };
+              })
+              .filter((entry) => entry.right > viewportWidth + 1 || entry.left < -1)
+              .slice(0, 8),
+          };
+        })()`)
+        assertPageFits(submission, viewport)
+        if (
+          !submission.mounted ||
+          submission.heading !== 'Submit a project' ||
+          !submission.hasForm ||
+          submission.artifactInput !== 'community-project-artifact' ||
+          submission.requiredChecks < 4 ||
+          !submission.hasFirstSection ||
+          !submission.hasConsentSection ||
+          !submission.submitLabel.includes('Submit private review bundle')
+        ) {
+          throw new Error(`${viewport.name} admitted project-submission form was incomplete: ${JSON.stringify(submission)}.`)
+        }
+        if (options.screenshotDir) await capture(client, sessionId, path.join(options.screenshotDir, `project-upload-admitted-${viewport.name}.png`))
+
         const viewerQuery = new URLSearchParams({
           path: `/api/community-artifacts/${COMMUNITY_ARTIFACT_FIXTURE_ID}`,
           title: 'Community artifact fixture',
@@ -407,7 +649,10 @@ async function main() {
               fixtureLoaded: Boolean(iframe?.srcdoc?.includes('Community artifact viewer fixture')),
               staticExecution: Boolean(
                 iframe?.srcdoc?.includes('data-pathforge-execution-mode="static-untrusted"') &&
-                iframe?.srcdoc?.includes('sandbox=""'),
+                iframe?.srcdoc?.includes('sandbox=""') &&
+                iframe?.srcdoc?.includes('data-pathforge-interaction-mode="reader-enabled"') &&
+                !iframe?.srcdoc?.includes(' tabindex="-1"') &&
+                !iframe?.srcdoc?.includes(' inert'),
               ),
             };
           })()`)
@@ -430,8 +675,9 @@ async function main() {
             heading: document.querySelector('h1')?.textContent?.trim() || '',
             hasDownload: [...document.querySelectorAll('a')].some((link) => link.textContent?.includes('Download HTML')),
             isNotFound: document.body.innerText?.includes('This page could not be found') || false,
-            staticPreviewCopy: document.body.innerText?.includes('script-disabled, visual-only previews') || false,
+            staticPreviewCopy: document.body.innerText?.includes('script-disabled static previews') || false,
             executionMode: document.querySelector('[data-artifact-fit-mode]')?.closest('[data-artifact-execution-mode]')?.getAttribute('data-artifact-execution-mode') || '',
+            interactionMode: document.querySelector('[data-artifact-fit-mode]')?.closest('[data-artifact-interaction-mode]')?.getAttribute('data-artifact-interaction-mode') || '',
             viewportWidth,
             scrollWidth,
             overflowingElements: [...document.querySelectorAll('*')]
@@ -446,10 +692,87 @@ async function main() {
         assertPageFits(viewer, viewport)
         if (viewer.heading !== 'Protected artifact viewer' || viewer.isNotFound) throw new Error(`${viewport.name} community artifact viewer routed to a not-found state.`)
         if (viewer.hasDownload) throw new Error(`${viewport.name} community artifact viewer exposed a download action despite view-only permission.`)
-        if (!viewer.staticPreviewCopy || viewer.executionMode !== 'static-untrusted') {
+        if (
+          !viewer.staticPreviewCopy ||
+          viewer.executionMode !== 'static-untrusted' ||
+          viewer.interactionMode !== 'reader-enabled'
+        ) {
           throw new Error(`${viewport.name} community artifact viewer did not expose its script-disabled preview boundary: ${JSON.stringify(viewer)}.`)
         }
         if (options.screenshotDir) await capture(client, sessionId, path.join(options.screenshotDir, `community-artifact-viewer-${viewport.name}.png`))
+
+        const artifactFrame = await evaluate(client, sessionId, `(() => {
+          const iframe = document.querySelector('[data-artifact-fit-mode] iframe');
+          if (!iframe) return null;
+          const rect = iframe.getBoundingClientRect();
+          return { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom };
+        })()`)
+        if (!artifactFrame) throw new Error(`${viewport.name} community artifact frame was missing before the scroll proof.`)
+        const artifactRuntime = await artifactDocumentContext(
+          client,
+          sessionId,
+          '#community-preview-bottom',
+          `${viewport.name} static community artifact`,
+        )
+        const initialArtifactScroll = await evaluateInContext(
+          client,
+          artifactRuntime.sessionId,
+          artifactRuntime.contextId,
+          `(() => {
+            const root = document.scrollingElement;
+            return { top: root?.scrollTop || 0, max: root ? root.scrollHeight - root.clientHeight : 0 };
+          })()`,
+          `${viewport.name} initial static artifact scroll`,
+        )
+        if (initialArtifactScroll.top > 1 || initialArtifactScroll.max < 500) {
+          throw new Error(`${viewport.name} static artifact did not begin as a tall, top-aligned reader: ${JSON.stringify(initialArtifactScroll)}.`)
+        }
+        await dispatchWheel(client, sessionId, artifactFrame, 700)
+        const scrolledArtifact = await waitForContextValue(
+          client,
+          artifactRuntime.sessionId,
+          artifactRuntime.contextId,
+          `(() => {
+            const root = document.scrollingElement;
+            const middle = document.querySelector('#community-preview-middle')?.getBoundingClientRect();
+            return {
+              top: root?.scrollTop || 0,
+              max: root ? root.scrollHeight - root.clientHeight : 0,
+              viewport: root?.clientHeight || 0,
+              middleTop: middle?.top ?? -1,
+              middleBottom: middle?.bottom ?? -1,
+            };
+          })()`,
+          (value) => (
+            value?.top >= 100 &&
+            value.middleTop < value.viewport &&
+            value.middleBottom > 0
+          ),
+          `${viewport.name} user-wheel static artifact scroll`,
+        )
+        if (options.screenshotDir) await captureViewport(client, sessionId, path.join(options.screenshotDir, `community-artifact-viewer-scrolled-${viewport.name}.png`))
+        await evaluateInContext(
+          client,
+          artifactRuntime.sessionId,
+          artifactRuntime.contextId,
+          'window.scrollTo(0, 0); true',
+          `${viewport.name} static artifact scroll reset`,
+        )
+        await waitForContextValue(
+          client,
+          artifactRuntime.sessionId,
+          artifactRuntime.contextId,
+          'document.scrollingElement?.scrollTop || 0',
+          (value) => value <= 1,
+          `${viewport.name} static artifact scroll reset`,
+        )
+        if (artifactRuntime.sessionId !== sessionId) {
+          try {
+            await client.send('Target.detachFromTarget', { sessionId: artifactRuntime.sessionId })
+          } catch {
+            // A frame replaced during cleanup is already detached.
+          }
+        }
 
         await navigate(client, sessionId, `${options.baseUrl}/qa/community-static-preview`)
         await waitForHeading(client, sessionId, 'Community static preview fixture', `${viewport.name} community card fixture`)
@@ -469,9 +792,13 @@ async function main() {
                 settled: Boolean(frame && frame.dataset.artifactFitMode !== 'loading'),
                 mode: preview?.getAttribute('data-project-preview-mode') || '',
                 executionMode: frame?.closest('[data-artifact-execution-mode]')?.getAttribute('data-artifact-execution-mode') || '',
+                interactionMode: frame?.closest('[data-artifact-interaction-mode]')?.getAttribute('data-artifact-interaction-mode') || '',
                 staticExecution: Boolean(
                   iframe?.srcdoc?.includes('data-pathforge-execution-mode="static-untrusted"') &&
-                  iframe?.srcdoc?.includes('sandbox=""'),
+                  iframe?.srcdoc?.includes('sandbox=""') &&
+                  iframe?.srcdoc?.includes('data-pathforge-interaction-mode="visual-only"') &&
+                  iframe?.srcdoc?.includes(' tabindex="-1"') &&
+                  iframe?.srcdoc?.includes(' inert'),
                 ),
                 visualOnlyCopy: surface?.textContent?.includes('Visual-only community preview') || false,
               };
@@ -484,27 +811,35 @@ async function main() {
             !previewState.settled ||
             previewState.mode !== 'static-untrusted' ||
             previewState.executionMode !== 'static-untrusted' ||
+            previewState.interactionMode !== 'visual-only' ||
             !previewState.staticExecution ||
             !previewState.visualOnlyCopy
           ) {
             throw new Error(`${viewport.name} ${surface} community card did not preserve the visual-only boundary: ${JSON.stringify(previewState)}.`)
           }
-          if (options.screenshotDir) await capture(client, sessionId, path.join(options.screenshotDir, `community-static-${surface}-${viewport.name}.png`))
+          await evaluate(client, sessionId, 'document.activeElement instanceof HTMLElement && document.activeElement.blur(); true')
+          if (options.screenshotDir) await captureViewport(client, sessionId, path.join(options.screenshotDir, `community-static-${surface}-${viewport.name}.png`))
           const previewContrast = await artifactRenderedContrast(client, sessionId, selector)
           if (previewContrast.ratio < 4.5) {
             throw new Error(`${viewport.name} ${surface} community preview did not retain the rendered fixture: ${JSON.stringify(previewContrast)}.`)
           }
         }
-        if (options.screenshotDir) await capture(client, sessionId, path.join(options.screenshotDir, `community-static-cards-${viewport.name}.png`))
+        await evaluate(client, sessionId, 'window.scrollTo(0, 0); document.activeElement instanceof HTMLElement && document.activeElement.blur(); true')
+        // Give opaque-origin OOPIF previews one paint after returning them to
+        // the viewport. An immediate captureBeyondViewport call can otherwise
+        // record the frame's host background even though the visible surface
+        // assertions above already observed the rendered document.
+        await new Promise((resolve) => setTimeout(resolve, 250))
+        if (options.screenshotDir) await captureViewport(client, sessionId, path.join(options.screenshotDir, `community-static-cards-${viewport.name}.png`))
 
-        console.log(`${viewport.name}: anonymous build, fresh-account signup handoff, protected viewer, and Explore/profile static community cards passed at ${signup.viewportWidth}px with ${artifactContrast.ratio.toFixed(2)}:1 default-canvas contrast.`)
+        console.log(`${viewport.name}: anonymous build, signup and exact legacy-fork handoffs, admitted upload form, protected static reader (${Math.round(scrolledArtifact.top)}px wheel scroll), and Explore/profile visual-only cards passed at ${signup.viewportWidth}px with ${artifactContrast.ratio.toFixed(2)}:1 default-canvas contrast.`)
       }
 
       await Promise.all([...pendingFixtureFulfills])
       if (consoleErrors.length > 0) {
         throw new Error(`Community-project auth pages logged errors: ${[...new Set(consoleErrors)].join(' | ')}`)
       }
-      console.log('Community-project fresh-account browser guard passed.')
+      console.log('Community-project auth and upload UI browser guard passed.')
     } finally {
       fixtureInterceptionActive = false
       client.listeners.delete(listener)

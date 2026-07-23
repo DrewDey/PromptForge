@@ -60,6 +60,8 @@ const repairLineageMigrationPath = 'supabase/migrations/20260712030720_source_ru
 const repairLineageMigration = read(repairLineageMigrationPath)
 const communityPilotMigrationPath = 'supabase/migrations/20260723054558_community_project_pilot.sql'
 const communityPilotMigration = read(communityPilotMigrationPath)
+const sourceRunCompatibilityMigrationPath = 'supabase/migrations/20260723152046_restore_legacy_source_run_compatibility_and_source_privacy.sql'
+const sourceRunCompatibilityMigration = read(sourceRunCompatibilityMigrationPath)
 const reservedHandlesMigrationPath = 'supabase/migrations/20260712032100_reserve_legacy_builder_handles.sql'
 const reservedHandlesMigration = read(reservedHandlesMigrationPath)
 const unfinishedForksMigrationPath = 'supabase/migrations/20260712033440_my_forge_unfinished_forks.sql'
@@ -159,10 +161,16 @@ for (const authLayoutPath of ['src/app/auth/login/layout.tsx', 'src/app/auth/sig
   requireText(authLayoutPath, authLayout, "redirect('/my-forge')", 'signed-in auth routes should return to My Forge')
 }
 
-requireText(sourceRunPath, sourceRun, 'if (!resubmissionOfId)', 'legacy source-run action must require a repair parent')
+requireText(sourceRunPath, sourceRun, 'if (resubmissionOfId)', 'legacy source-run repairs must branch into the checked repair RPC')
 requireText(sourceRunPath, sourceRun, "rpc('create_legacy_source_run_repair'", 'legacy source-run repairs must use the checked database RPC')
-forbidText(sourceRunPath, sourceRun, '.insert(', 'legacy source-run code must not directly insert repair or new intake rows')
-requireText(communityPilotMigrationPath, communityPilotMigration, 'REVOKE INSERT ON TABLE public.source_run_submissions FROM authenticated', 'authenticated direct URL-only inserts must be retired')
+requireText(sourceRunPath, sourceRun, ".from('source_run_submissions')", 'queue-only compatibility intake must write only to source-run submissions')
+requireText(sourceRunPath, sourceRun, '.insert({', 'queue-only compatibility intake must create its private review row')
+requireText(sourceRunPath, sourceRun, 'privacy_attested', 'queue-only compatibility intake must require a privacy attestation')
+requireText(sourceRunPath, sourceRun, 'queue_only_attested', 'queue-only compatibility intake must require explicit no-publication acknowledgement')
+requireText(communityPilotMigrationPath, communityPilotMigration, 'REVOKE INSERT ON TABLE public.source_run_submissions FROM authenticated', 'pilot migration must first close the prior broad source-run grant')
+requireText(sourceRunCompatibilityMigrationPath, sourceRunCompatibilityMigration, 'GRANT INSERT (', 'follow-up migration must restore only an exact source-run intake column grant')
+requireText(sourceRunCompatibilityMigrationPath, sourceRunCompatibilityMigration, 'CREATE POLICY "Users submit untouched queued source runs"', 'follow-up migration must restore strict queue-only owner RLS')
+requireText(sourceRunCompatibilityMigrationPath, sourceRunCompatibilityMigration, "status = 'queued'", 'source-run compatibility RLS must prohibit browser publication state')
 requireText(communityPilotMigrationPath, communityPilotMigration, 'prior.fork_source_project_id', 'the repair RPC must derive lineage from the locked prior record')
 requireText(adminSourceRunPath, adminSourceRun, 'requestSourceRunRepair', 'admin review must be able to request an actionable repair')
 requireText(adminSourceRunPath, adminSourceRun, 'user_status_note', 'repair requests need a builder-facing note')

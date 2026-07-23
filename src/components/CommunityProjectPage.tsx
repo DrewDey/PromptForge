@@ -4,7 +4,7 @@ import { BuilderByline } from '@/components/BuilderByline'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
 import { ProtectedArtifactFrame, type ArtifactPackage } from '@/components/SourceRunShowcase'
 import { evidenceScopeLabels, type PublicCommunityProject } from '@/lib/community-project-contract'
-import { buildProjectForkHref } from '@/lib/project-forks'
+import { buildCommunityProjectForkHref } from '@/lib/project-forks'
 import type { PromptWithRelations } from '@/lib/types'
 
 function evidenceExplanation(scope: PublicCommunityProject['evidence_scope']) {
@@ -43,7 +43,7 @@ export default function CommunityProjectPage({
     },
   }
   const forkHref = capsule.reuse_permission === 'allow_pathforge_remix'
-    ? buildProjectForkHref({
+    ? buildCommunityProjectForkHref({
         sourceProjectId: prompt.id,
         sourceProjectTitle: prompt.title,
         sourceStepId: firstStep?.id,
@@ -100,10 +100,11 @@ export default function CommunityProjectPage({
             showOpenAction
             allowArtifactDownloads={false}
             allowArtifactScripts={false}
+            allowArtifactInteraction
             contextLabel="Community project artifact"
           />
           <p className="mt-3 text-sm leading-6 text-surface-600" data-community-static-preview>
-            Community pilot previews are visual-only: uploaded scripts, controls, and downloads are disabled for visitors. The public build evidence below remains available to explain how the project was made.
+            Community pilot previews are script-disabled: uploaded scripts and active forms do not run, downloads are blocked, and you can scroll a taller static result. The public build evidence below remains available to explain how the project was made.
           </p>
         </section>
 

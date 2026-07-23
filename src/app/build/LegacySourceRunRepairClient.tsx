@@ -85,6 +85,8 @@ export default function LegacySourceRunRepairClient({ repairId }: { repairId: st
         model_settings: modelSettings.trim(),
         notes: notes.trim(),
         resubmission_of_id: repairContextReady ? repairSubmissionId : null,
+        privacy_attested: true,
+        queue_only_attested: true,
       })
       if (!result.success) {
         setError(result.error ?? 'PathForge could not submit this repair.')
@@ -123,6 +125,10 @@ export default function LegacySourceRunRepairClient({ repairId }: { repairId: st
             {selectedProvider === 'Other' && <label className="grid gap-2 text-xs font-bold uppercase tracking-wider text-surface-600">Service name<input value={customProvider} onChange={(event) => setCustomProvider(event.target.value)} required maxLength={80} className="min-h-11 border border-surface-300 px-3 text-sm font-normal normal-case tracking-normal text-surface-900" /></label>}
             <label className="grid gap-2 text-xs font-bold uppercase tracking-wider text-surface-600">Model settings <span className="normal-case tracking-normal text-surface-400">optional</span><textarea value={modelSettings} onChange={(event) => setModelSettings(event.target.value)} maxLength={1000} rows={2} className="border border-surface-300 p-3 text-sm font-normal normal-case tracking-normal text-surface-900" /></label>
             <label className="grid gap-2 text-xs font-bold uppercase tracking-wider text-surface-600">Repair notes<textarea value={notes} onChange={(event) => setNotes(event.target.value)} maxLength={4000} rows={4} className="border border-surface-300 p-3 text-sm font-normal normal-case tracking-normal text-surface-900" /></label>
+            <div className="grid gap-3 border border-surface-200 bg-surface-50 p-4 text-sm leading-6 text-surface-700">
+              <label className="flex items-start gap-3"><input type="checkbox" required className="mt-1" /><span>I may share this provider link with PathForge review, and I checked the notes for secrets and personal information.</span></label>
+              <label className="flex items-start gap-3"><input type="checkbox" required className="mt-1" /><span>I understand this creates a private review record and does not publish the conversation or project automatically.</span></label>
+            </div>
             {error && <div role="alert" className="border border-red-200 bg-red-50 p-3 text-sm normal-case tracking-normal text-red-800">{error}</div>}
             <button disabled={submitting} className="min-h-12 bg-brand-orange px-5 py-3 text-sm font-black text-surface-900 disabled:bg-surface-200">{submitting ? 'Submitting replacement…' : 'Submit replacement source evidence'}</button>
           </form>

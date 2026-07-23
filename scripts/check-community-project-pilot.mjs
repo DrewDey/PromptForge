@@ -36,6 +36,7 @@ for (const [name, expected] of [
   ['reject-secret.html', 'OpenAI-style API key'],
   ['reject-pii.html', 'personal email address'],
   ['reject-redirect.html', 'automatic redirect'],
+  ['reject-script-only.html', 'no useful script-disabled preview'],
 ]) {
   assert.ok(findings(name).includes(expected), `${name} must report ${expected}.`)
 }
@@ -67,6 +68,14 @@ const migration = readFileSync(
   path.join(root, 'supabase', 'migrations', '20260723054558_community_project_pilot.sql'),
   'utf8',
 )
+const purgeConfirmationMigration = readFileSync(
+  path.join(root, 'supabase', 'migrations', '20260723140556_harden_immediate_artifact_purge_confirmation.sql'),
+  'utf8',
+)
+const compatibilityMigration = readFileSync(
+  path.join(root, 'supabase', 'migrations', '20260723152046_restore_legacy_source_run_compatibility_and_source_privacy.sql'),
+  'utf8',
+)
 const actions = readFileSync(path.join(root, 'src', 'lib', 'community-project-actions.ts'), 'utf8')
 const adminClient = readFileSync(path.join(root, 'src', 'lib', 'supabase', 'admin.ts'), 'utf8')
 const alerts = readFileSync(path.join(root, 'src', 'lib', 'community-project-alerts.ts'), 'utf8')
@@ -91,6 +100,10 @@ const discovery = readFileSync(path.join(root, 'src', 'lib', 'path-discovery.ts'
 const profilePresentation = readFileSync(path.join(root, 'src', 'lib', 'profile-presentation.ts'), 'utf8')
 const authBrowserGuard = readFileSync(path.join(root, 'scripts', 'check-community-project-auth-browser.mjs'), 'utf8')
 const liveAcceptanceGuard = readFileSync(path.join(root, 'scripts', 'check-community-project-live-acceptance.mjs'), 'utf8')
+const projectSubmissionFixture = readFileSync(
+  path.join(root, 'src', 'app', 'qa', 'community-project-submission', 'page.tsx'),
+  'utf8',
+)
 const artifactViewer = readFileSync(path.join(root, 'src', 'app', 'artifact-viewer', 'page.tsx'), 'utf8')
 const communityProjectPage = readFileSync(path.join(root, 'src', 'components', 'CommunityProjectPage.tsx'), 'utf8')
 const sourceRunShowcase = readFileSync(path.join(root, 'src', 'components', 'SourceRunShowcase.tsx'), 'utf8')
@@ -155,10 +168,34 @@ for (const required of [
 assert.doesNotMatch(migration, /CREATE POLICY "Published community artifacts are readable"/)
 assert.doesNotMatch(migration, /CREATE OR REPLACE FUNCTION public\.community_project_artifact_is_public/)
 assert.match(migration, /GRANT EXECUTE ON FUNCTION public\.get_public_community_project_artifact_path\(UUID\)\s+TO service_role/)
+assert.match(
+  compatibilityMigration,
+  /GRANT INSERT\s*\([\s\S]*title[\s\S]*author_id[\s\S]*status[\s\S]*\)\s+ON TABLE public\.source_run_submissions TO authenticated/,
+)
+assert.match(
+  compatibilityMigration,
+  /CREATE POLICY "Users submit untouched queued source runs"[\s\S]*author_id = \(SELECT auth\.uid\(\)\)[\s\S]*status = 'queued'[\s\S]*extracted_prompt_id IS NULL[\s\S]*resubmission_of_id IS NULL/,
+)
+assert.match(
+  compatibilityMigration,
+  /pathforge_validate_community_source_url[\s\S]*without a query string or fragment/,
+)
+assert.match(compatibilityMigration, /source_url ~ '\[\?#\]'/)
+assert.ok(
+  purgeConfirmationMigration.indexOf('FROM storage.objects')
+    < purgeConfirmationMigration.indexOf('UPDATE public.community_project_submissions'),
+  'Immediate purge confirmation must prove that the quarantine object is gone before clearing its database identity.',
+)
 assert.ok(
   actions.indexOf('scanCommunityProjectArtifact(artifact)') < actions.indexOf('.upload(uploadedPath'),
   'The server must scan bytes before private storage upload.',
 )
+assert.ok(
+  actions.indexOf("select('id', { count: 'exact', head: true })")
+    < actions.indexOf('.upload(uploadedPath'),
+  'The server must preflight pilot capacity before placing bytes in private Storage.',
+)
+assert.match(actions, /sourceUrl,[\s\S]*\.\.\.buildSteps/)
 assert.match(actions, /artifact_original_name: safeOriginalFilename/)
 assert.match(actions, /verifyQuarantinedArtifact/)
 assert.match(actions, /REPORT_RATE_LIMIT_SECRET/)
@@ -207,14 +244,19 @@ assert.match(profilePresentation, /isCommunityArtifact: Boolean\(communityProjec
 assert.match(artifactViewer, /\/api\\\/community-artifacts\\\//)
 assert.match(artifactViewer, /allowArtifactDownloads=\{!isCommunityArtifact\}/)
 assert.match(artifactViewer, /allowArtifactScripts=\{!isCommunityArtifact\}/)
+assert.match(artifactViewer, /allowArtifactInteraction/)
 assert.match(communityProjectPage, /allowArtifactScripts=\{false\}/)
+assert.match(communityProjectPage, /allowArtifactInteraction/)
 assert.match(communityProjectPage, /data-community-static-preview/)
 assert.match(sourceRunShowcase, /STATIC_ARTIFACT_CSP/)
 assert.match(sourceRunShowcase, /"script-src 'none'"/)
 assert.match(sourceRunShowcase, /data-artifact-execution-mode=\{allowArtifactScripts \? 'interactive-trusted' : 'static-untrusted'\}/)
+assert.match(sourceRunShowcase, /data-artifact-interaction-mode=\{allowArtifactInteraction \? 'reader-enabled' : 'visual-only'\}/)
 assert.match(protectedArtifactWrapper, /data-pathforge-execution-mode="\$\{executionMode\}"/)
+assert.match(protectedArtifactWrapper, /data-pathforge-interaction-mode="\$\{interactionMode\}"/)
 assert.match(protectedArtifactWrapper, /sandbox="\$\{artifactSandbox\}"/)
-assert.match(protectedArtifactWrapper, /pointer-events: none/)
+assert.match(protectedArtifactWrapper, /allowArtifactInteraction = allowArtifactScripts \|\| options\.allowArtifactInteraction === true/)
+assert.match(protectedArtifactWrapper, /nonInteractiveFrameStyle[\s\S]*pointer-events: none/)
 assert.match(projectPreview, /isCommunityArtifactPath/)
 assert.match(projectPreview, /isCommunityArtifact \|\| isCommunityArtifactPath\(artifactPath\)/)
 assert.match(projectPreview, /allowArtifactDownloads=\{!isStaticCommunityPreview\}/)
@@ -255,15 +297,29 @@ assert.match(authBrowserGuard, /community artifact viewer routed to a not-found 
 assert.match(authBrowserGuard, /community artifact viewer exposed a download action/)
 assert.match(authBrowserGuard, /contrastRatio/)
 assert.match(authBrowserGuard, /community artifact default-canvas contrast/)
+assert.match(authBrowserGuard, /project-upload-admitted-/)
+assert.match(authBrowserGuard, /user-wheel static artifact scroll/)
+assert.match(authBrowserGuard, /reader-enabled/)
+assert.match(authBrowserGuard, /visual-only/)
 assert.match(authBrowserGuard, /community-static-preview/)
-assert.match(authBrowserGuard, /Explore\/profile static community cards/)
+assert.match(authBrowserGuard, /Explore\/profile visual-only cards/)
 assert.match(authBrowserGuard, /isExpectedFixtureInterceptionCancellation/)
 assert.match(authBrowserGuard, /pendingFixtureFulfills/)
 assert.match(authBrowserGuard, /await closeChrome\(chrome\)/)
 assert.match(authBrowserGuard, /detached: process\.platform !== 'win32'/)
 assert.match(authBrowserGuard, /process\.kill\(-child\.pid, signal\)/)
 assert.match(authBrowserGuard, /await client\.send\('Browser\.close'\)/)
-assert.match(liveAcceptanceGuard, /auth\/login\?next=%2Fbuild/)
+assert.match(projectSubmissionFixture, /ProjectSubmissionClient/)
+assert.match(projectSubmissionFixture, /VERCEL_ENV === 'production'[\s\S]*notFound\(\)/)
+assert.match(liveAcceptanceGuard, /auth\/signup\?next=%2Fbuild/)
+assert.match(liveAcceptanceGuard, /COMMUNITY_PROJECT_ACCEPTANCE_EMAIL/)
+assert.match(liveAcceptanceGuard, /document\.querySelector\('input\[name="username"\]'\)/)
+assert.match(liveAcceptanceGuard, /admin\.auth\.admin\.generateLink/)
+assert.match(liveAcceptanceGuard, /token_hash/)
+assert.match(liveAcceptanceGuard, /type', 'magiclink'/)
+assert.doesNotMatch(liveAcceptanceGuard, /admin\.auth\.admin\.createUser/)
+assert.match(liveAcceptanceGuard, /width: 390,[\s\S]*height: 844,[\s\S]*mobile: true/)
+assert.match(liveAcceptanceGuard, /live-private-submission-receipt-desktop/)
 assert.match(liveAcceptanceGuard, /requested_member_kind: 'internal_acceptance'/)
 assert.match(liveAcceptanceGuard, /SUPABASE_SECRET_KEY[\s\S]*SUPABASE_SERVICE_ROLE_KEY/)
 assert.match(liveAcceptanceGuard, /not currently in the pilot/)
@@ -304,4 +360,4 @@ assert.ok(
   'The deployed acceptance gate must verify cleanup before reporting success.',
 )
 
-console.log('Community project pilot guard passed: 1 safe fixture, 15 hostile fixtures, envelope limits, publication controls, and reconciliation wiring.')
+console.log('Community project pilot guard passed: 1 safe fixture, 16 hostile fixtures, envelope limits, publication controls, compatibility, and reconciliation wiring.')

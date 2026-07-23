@@ -29,7 +29,9 @@ export default function AdminPromptRow({
   const hasMissingSourceRunLink = isSourceRunTagged && !sourceRunHref
   const requiresSourceRunReview = Boolean(sourceRunHref) || isSourceRunTagged
   const requiresSpecialReview = requiresSourceRunReview || isCommunityProject
-  const detailHref = isCommunityProject ? '/admin/community-projects' : sourceRunHref ?? `/prompt/${prompt.id}`
+  const detailHref = isCommunityProject
+    ? '/admin/community-projects'
+    : sourceRunHref ?? (prompt.status === 'approved' ? `/prompt/${prompt.id}` : null)
   const author = prompt.author?.display_name ?? 'Anonymous'
 
   return (
@@ -58,7 +60,7 @@ export default function AdminPromptRow({
             )}
           </div>
 
-          {hasMissingSourceRunLink ? (
+          {hasMissingSourceRunLink || !detailHref ? (
             <div className="block break-words text-base font-black leading-6 text-surface-900">
               {title}
             </div>
@@ -100,6 +102,10 @@ export default function AdminPromptRow({
           {hasMissingSourceRunLink ? (
             <span className="inline-flex min-h-10 items-center justify-center border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-800">
               Source-run link missing
+            </span>
+          ) : !detailHref ? (
+            <span className="inline-flex min-h-10 items-center justify-center border border-surface-200 bg-surface-50 px-3 py-2 text-xs font-bold text-surface-600">
+              Moderate with the controls here
             </span>
           ) : (
             <Link

@@ -31,7 +31,8 @@ Every review-ready submission contains:
      memory or notes.
 5. Builder-reported provider, model, and settings. `Not sure` is an honest
    model value; PathForge must not promote it to verified model proof.
-6. An optional public provider share link. It remains private to review unless
+6. An optional public provider share link with no query string or fragment. It
+   remains private to review unless
    the contributor opts in and an administrator copies it into a clean
    private/incognito browser with no provider account signed in, verifies
    unauthenticated access, and records that point-in-time check at publication.
@@ -99,15 +100,24 @@ The pilot accepts only `.html` or `.htm` files that:
   EventSource, or `sendBeacon`;
 - contain no embedded frames, plugins, base URL rewriting, or active forms;
 - contain none of the high-confidence secret patterns covered by the scanner;
-- contain none of the pilot's high-confidence personal-data patterns.
+- contain none of the pilot's high-confidence personal-data patterns;
+- retain a useful script-disabled result instead of relying on JavaScript to
+  create the entire visible page.
 
 Static acceptance is not a claim that arbitrary HTML or JavaScript is safe.
 Published community HTML is rendered only inside an opaque-origin inner iframe
-without `allow-scripts`, with a restrictive static CSP and no pointer or keyboard
-interaction. It is a visual preview, not a live executable project. The public
-page preserves the contributor's scoped build evidence, while a separately
-trusted, repository-reviewed promotion path is required before any artifact can
-become interactive.
+without `allow-scripts` and with a restrictive static CSP. Explore and profile
+cards remain inert visual previews. The dedicated project page and protected
+viewer allow the reader to scroll a tall static document, but contributor
+scripts, active forms, downloads, automatic navigation, and network APIs do not
+run. The public page preserves the contributor's scoped build evidence, while a
+separately trusted, repository-reviewed promotion path is required before any
+artifact can become executable.
+
+The existing global fork/source-run flow remains a separate compatibility
+lane. It may create only an owned, untouched `queued` review record and never a
+public project. Community-project forks alone enter the invitation-only full
+bundle flow.
 
 ## Public truth contract
 
@@ -174,7 +184,7 @@ This pilot does not accept or perform:
 |---|---|---|
 | Cross-tenant read or delete | Owner/admin RLS and generated owner paths | Deny and log |
 | HTML network exfiltration | Static dependency scan plus no-network CSP | Reject at intake; deny at runtime |
-| Untrusted script execution | Script-disabled opaque-origin inner sandbox, static CSP, and inert visual preview | Contributor code never runs for a community visitor |
+| Untrusted script execution | Script-disabled opaque-origin inner sandbox, static CSP, inert cards, and reader-enabled static full view | Contributor code never runs for a community visitor |
 | Secret or PII publication | Deterministic scan, contributor attestation, human review | Reject or request repair |
 | Provider-link phishing/SSRF | Known public-share host rules; no server fetch | Keep private or reject |
 | MIME/polyglot confusion | UTF-8 HTML-only parser contract; store/serve as text | Reject; never execute direct object |
@@ -201,8 +211,9 @@ hard stops. They are not averaged against engagement.
   withdrawal or administrator suspension.
 - Submission, review, repair, publication, report, and removal work at desktop
   and 390px with keyboard access and no blocking console errors.
-- A fresh non-admin account can complete signup, preserve `/build` as its
-  return destination, remain unable to upload before admission, and upload
+- A fresh non-admin account can complete the public signup form and email-token
+  callback, preserve `/build` as its return destination, remain unable to
+  upload before admission, and upload
   only after an administrator creates the single expiring internal-acceptance
   membership; `allow_invited_submissions` remains false throughout.
 - Publication defaults off and cannot be enabled until authenticated

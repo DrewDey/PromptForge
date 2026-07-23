@@ -244,6 +244,7 @@ export function artifactDownloadBridgeSource() {
 
 export function buildProtectedArtifactWrapperDocument(artifactDocument, options = {}) {
   const allowArtifactScripts = options.allowArtifactScripts !== false
+  const allowArtifactInteraction = allowArtifactScripts || options.allowArtifactInteraction === true
   const preparedArtifactDocument = allowArtifactScripts
     ? hardenArtifactDocument(artifactDocument)
     : artifactDocument
@@ -251,8 +252,9 @@ export function buildProtectedArtifactWrapperDocument(artifactDocument, options 
   const serializedCsp = scriptSafeJson(WRAPPER_CSP)
   const artifactSandbox = allowArtifactScripts ? 'allow-scripts allow-pointer-lock' : ''
   const executionMode = allowArtifactScripts ? 'interactive-trusted' : 'static-untrusted'
-  const staticFrameAttributes = allowArtifactScripts ? '' : '\n    tabindex="-1"\n    inert'
-  const staticFrameStyle = allowArtifactScripts ? '' : '\n    iframe { pointer-events: none; }'
+  const interactionMode = allowArtifactInteraction ? 'reader-enabled' : 'visual-only'
+  const nonInteractiveFrameAttributes = allowArtifactInteraction ? '' : '\n    tabindex="-1"\n    inert'
+  const nonInteractiveFrameStyle = allowArtifactInteraction ? '' : '\n    iframe { pointer-events: none; }'
 
   return `<!doctype html>
 <html>
@@ -263,7 +265,7 @@ export function buildProtectedArtifactWrapperDocument(artifactDocument, options 
   <style>
     html, body, iframe { width: 100%; height: 100%; margin: 0; border: 0; }
     html, body { overflow: hidden; background: #fff; color-scheme: light; }
-    iframe { display: block; background: #fff; }${staticFrameStyle}
+    iframe { display: block; background: #fff; }${nonInteractiveFrameStyle}
   </style>
 </head>
 <body>
@@ -271,7 +273,8 @@ export function buildProtectedArtifactWrapperDocument(artifactDocument, options 
     id="pathforge-artifact-document"
     title="Generated artifact document"
     sandbox="${artifactSandbox}"
-    data-pathforge-execution-mode="${executionMode}"${staticFrameAttributes}
+    data-pathforge-execution-mode="${executionMode}"
+    data-pathforge-interaction-mode="${interactionMode}"${nonInteractiveFrameAttributes}
     allow="clipboard-write"
     referrerpolicy="no-referrer"
   ></iframe>

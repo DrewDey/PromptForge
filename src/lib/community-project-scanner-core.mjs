@@ -34,6 +34,36 @@ function containsExternalResource(text, pattern) {
   return false
 }
 
+function staticPreviewHasUsefulContent(text) {
+  const bodyMatch = text.match(/<body\b[^>]*>([\s\S]*?)<\/body\s*>/i)
+  const body = bodyMatch?.[1] ?? ''
+  const renderedMarkup = body
+    .replace(/<!--[\s\S]*?-->/g, ' ')
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, ' ')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi, ' ')
+    .replace(/<template\b[^>]*>[\s\S]*?<\/template\s*>/gi, ' ')
+  const visibleText = renderedMarkup
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&(?:#\d+|#x[0-9a-f]+|[a-z][a-z0-9-]*);/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (visibleText.length >= 24) return true
+
+  if (/<img\b[^>]*\bsrc\s*=\s*["']data:image\//i.test(renderedMarkup)) return true
+  if (
+    /<svg\b/i.test(renderedMarkup) &&
+    /<(?:path|rect|circle|ellipse|line|polyline|polygon|text|use)\b/i.test(renderedMarkup)
+  ) return true
+
+  const styleText = [...text.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style\s*>/gi)]
+    .map((match) => match[1])
+    .join('\n')
+  const renderedElementCount = (
+    renderedMarkup.match(/<(?:article|aside|button|div|footer|header|li|main|nav|section|span)\b/gi) ?? []
+  ).length
+  return renderedElementCount >= 5 && /(?:background|border|display|grid|flex|height|position|width)\s*:/i.test(styleText)
+}
+
 /** @type {Array<[string, RegExp]>} */
 export const communityArtifactSecretPatterns = [
   ['private key', /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/],
@@ -96,6 +126,9 @@ export function scanCommunityArtifactText(text) {
     if (pattern.test(text)) findings.push(label)
   }
   findings.push(...communityArtifactPiiFindings(text))
+  if (!staticPreviewHasUsefulContent(text)) {
+    findings.push('no useful script-disabled preview')
+  }
   return [...new Set(findings)]
 }
 

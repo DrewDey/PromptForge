@@ -56,6 +56,8 @@ const callback = read(callbackPath)
 requireText(callbackPath, callback, 'safeAuthNextPath', 'callback redirects must validate the requested path')
 requireText(callbackPath, callback, 'new URL(nextPath, origin)', 'callback redirects must use URL parsing rather than string concatenation')
 requireText(callbackPath, callback, "onboardingUrl.searchParams.set('next', nextPath)", 'first-time profile onboarding must retain the requested post-auth destination')
+requireText(callbackPath, callback, 'verifyOtp({', 'callback must support server-consumed email token hashes as well as PKCE codes')
+requireText(callbackPath, callback, 'isTokenHashType', 'callback must restrict token-hash verification to supported email flows')
 forbidText(callbackPath, callback, '`${origin}${next}`', 'unsafe callback redirect concatenation is forbidden')
 
 const profileSettingsPath = 'src/app/settings/profile/page.tsx'

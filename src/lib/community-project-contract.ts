@@ -3,7 +3,7 @@ export const COMMUNITY_PROJECT_MAX_ARTIFACT_BYTES = 2_000_000
 export const COMMUNITY_PROJECT_MAX_STEPS = 5
 export const COMMUNITY_PROJECT_TERMS_VERSION = '2026-07-22-pilot-v1'
 export const COMMUNITY_PROJECT_PRIVACY_VERSION = '2026-07-22-pilot-v1'
-export const COMMUNITY_PROJECT_SCANNER_VERSION = 'html-static-v1'
+export const COMMUNITY_PROJECT_SCANNER_VERSION = 'html-static-v2'
 export const COMMUNITY_PROJECT_REVIEW_VERSION = '2026-07-22-pilot-review-v1'
 
 export const communityProjectCategories = [
@@ -141,6 +141,7 @@ export function isSupportedCommunitySourceUrl(value: string) {
   try {
     const url = new URL(value)
     if (url.protocol !== 'https:') return false
+    if (url.search || url.hash) return false
     const host = url.hostname.toLowerCase()
     const path = url.pathname
     if (host === 'chatgpt.com') return /^\/share\/[A-Za-z0-9-]+\/?$/.test(path)

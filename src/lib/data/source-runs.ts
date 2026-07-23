@@ -5,6 +5,7 @@ import type {
 import type { PreparedShowcaseProject } from '../prepared-showcase-projects'
 import {
   projectForkSourceFromSubmissionFields,
+  projectForkSourceToSubmissionFields,
   type ProjectForkSource,
 } from '../project-forks'
 import {
@@ -43,6 +44,8 @@ export async function createSourceRunSubmission(input: {
   notes?: string
   fork_source?: ProjectForkSource | null
   resubmission_of_id?: string | null
+  privacy_attested?: boolean
+  queue_only_attested?: boolean
 }) {
   if (!SUPABASE_CONFIGURED) throw new Error('Source run intake requires sign in.')
 
@@ -77,36 +80,66 @@ export async function createSourceRunSubmission(input: {
     throw new Error('Add the exact model shown for this source run, or type Not sure.')
   }
 
+  if (!input.privacy_attested || !input.queue_only_attested) {
+    throw new Error('Confirm the privacy and queue-only review statements before submitting.')
+  }
+
   const resubmissionOfId = input.resubmission_of_id?.trim() || null
-  if (!resubmissionOfId) {
-    throw new Error(
-      'New URL-only submissions are retired. Use the invitation-only project upload; this form only repairs an existing source run.',
-    )
-  }
-
-  // Do not accept lineage from this request. The database locks the owned prior
-  // record and copies its complete fork tuple into the append-only repair.
-  if (input.fork_source) {
-    throw new Error('Repair lineage is restored from the prior source run, not from the browser.')
-  }
-
+  const attestation = [
+    'PathForge queue-only intake attestations:',
+    '- The builder confirmed the provider link may be shared with PathForge review.',
+    '- The builder confirmed the notes were checked for secrets and personal information.',
+    '- The builder confirmed this creates a private review record and does not publish automatically.',
+    `- Recorded ${new Date().toISOString()}.`,
+  ].join('\n')
   const notes = composeSourceRunReviewNotes({
     sourceUrl,
     provider,
     modelUsed,
     modelSettings,
-    notes: input.notes,
+    notes: [input.notes?.trim(), attestation].filter(Boolean).join('\n\n'),
   })
-  const { data, error } = await createAdminClient().rpc('create_legacy_source_run_repair', {
-    target_submission: resubmissionOfId,
-    actor: user.id,
-    repair_title: title,
-    repair_source_url: sourceUrl,
-    repair_notes: notes || null,
-    correlation: randomUUID(),
-  })
+
+  if (resubmissionOfId) {
+    // Do not accept lineage from this request. The database locks the owned
+    // prior record and copies its complete fork tuple into the append-only
+    // repair.
+    const { data, error } = await createAdminClient().rpc('create_legacy_source_run_repair', {
+      target_submission: resubmissionOfId,
+      actor: user.id,
+      repair_title: title,
+      repair_source_url: sourceUrl,
+      repair_notes: notes || null,
+      correlation: randomUUID(),
+    })
+    throwReadableSourceRunError(error)
+    return { id: String(data) }
+  }
+
+  const forkFields = projectForkSourceToSubmissionFields(input.fork_source)
+  const { data, error } = await supabase
+    .from('source_run_submissions')
+    .insert({
+      title,
+      source_url: sourceUrl,
+      file_name: null,
+      notes,
+      ...forkFields,
+      resubmission_of_id: null,
+      author_id: user.id,
+      status: 'queued',
+    })
+    .select('id')
+    .single()
+
+  if (sourceRunForkColumnsMissing(error) && input.fork_source) {
+    throw new Error(
+      'This fork intake is unavailable because the database is missing durable lineage columns. No unlinked submission was created.',
+    )
+  }
   throwReadableSourceRunError(error)
-  return { id: String(data) }
+  if (!data?.id) throw new Error('PathForge did not confirm the private review record.')
+  return { id: String(data.id) }
 }
 
 export async function getSourceRunSubmissionForAdmin(id: string): Promise<SourceRunSubmissionWithRelations | null> {

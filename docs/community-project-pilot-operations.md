@@ -138,25 +138,38 @@ older than 26 hours. Do not expand invitations while unhealthy.
 Before merge: run `npm run check:community-project-pilot`,
 `npm run check:community-project-db`, `npm run typecheck`, `npm run lint`, the
 full build, `npm run check:community-project-auth-browser -- --base-url <url>`,
-and signed-in/anonymous browser tests. Apply the database migration before
-deploying code that calls its RPCs.
+and signed-in/anonymous browser tests. Apply the additive database migrations
+in filename order before deploying code that calls their RPCs. In particular,
+the pilot migration is followed by immediate-purge confirmation hardening and
+the exact-column source-run compatibility/source-URL privacy migration. The
+last migration deliberately restores only owned, untouched, queue-only
+source-run inserts; it does not restore browser publication.
 
 After the migration and application are live, run the disposable deployed gate
-with production server credentials loaded locally (never print or commit them):
+with production server credentials and
+`COMMUNITY_PROJECT_ACCEPTANCE_EMAIL` loaded locally (never print or commit
+them). The mailbox must be operator-controlled and accept unique plus-address
+aliases:
 `npm run check:community-project-live-acceptance -- --base-url <production-url>
---screenshot-dir <private-evidence-directory>`. It creates a confirmed disposable
-account, proves denial before owner-operated admission, uploads a real private
-fixture with external invitations still locked, verifies the owner receipt and
-withdrawal, and exits successfully only after verifying its exact account,
-membership, submission, and quarantine objects are gone and the one acceptance
-slot is empty.
+--screenshot-dir <private-evidence-directory>`. It submits the real public
+signup form, requires the unconfirmed state, generates an operator-only
+Supabase magic-link token, consumes that token through PathForge's real
+`/auth/callback`, and verifies the resulting account/profile/session. This
+proves signup and callback behavior but deliberately does **not** claim that
+production email delivery reached the mailbox; perform that final delivery
+check manually. The gate then proves denial before owner-operated admission,
+uploads a real private fixture at 390px with external invitations still
+locked, verifies the desktop owner receipt and withdrawal, and exits
+successfully only after verifying its exact account, membership, submission,
+and quarantine objects are gone and the one acceptance slot is empty.
 
 The production acceptance run uses a fresh non-admin account and never turns
 on external invitations:
 
-1. Open `/build` in a clean browser and choose sign in, then create the account
-   with `/build` preserved as the return destination.
-2. Confirm the signed-in account sees the pilot explanation and no file input.
+1. Open `/build` in a clean browser and choose create account with `/build`
+   preserved as the return destination. Open the real confirmation email and
+   verify that its link returns through `/auth/callback` to `/build`.
+2. Confirm the verified account sees the pilot explanation and no file input.
 3. In `/admin/community-projects`, enter the exact handle—including any
    underscores—and admit it as **Owner-operated acceptance account**. The
    database permits one such active account and expires it after seven days.
@@ -173,7 +186,9 @@ on external invitations:
    slot empty so the product owner can repeat steps 1–4 personally.
 
 For application rollback, keep invited submissions locked and deploy the prior
-application commit. Do not roll back the additive database objects while any
-community submission exists. For a data/control incident, first set
+application commit. Keep the exact-column source-run compatibility migration
+in place so pre-pilot global forks and private source-run intake do not break.
+Do not roll back the additive database objects while any community submission
+exists. For a data/control incident, first set
 `allow_invited_submissions=false` and `allow_publication=false`, remove affected
 public records, run reconciliation, and preserve the audit record for review.

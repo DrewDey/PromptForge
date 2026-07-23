@@ -204,6 +204,7 @@ for (const name of [
   'normalizeProjectForkSource',
   'parseProjectForkSearchParams',
   'buildProjectForkHref',
+  'buildCommunityProjectForkHref',
   'buildProjectResponseForkHref',
   'projectForkSourceToSubmissionFields',
   'projectForkSourceFromSubmissionFields',

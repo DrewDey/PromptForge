@@ -86,6 +86,7 @@ try {
   await waitForPostgres()
   applySql('test-fixtures/community-project/migration-prerequisites.sql')
   applySql('supabase/migrations/20260723054558_community_project_pilot.sql')
+  applySql('supabase/migrations/20260723140556_harden_immediate_artifact_purge_confirmation.sql')
   applySql('test-fixtures/community-project/migration-transaction-test.sql')
   console.log('Community project database check passed in disposable PostgreSQL.')
 } finally {

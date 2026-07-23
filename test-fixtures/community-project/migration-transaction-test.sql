@@ -736,6 +736,26 @@ $test$;
 RESET ROLE;
 
 SET request.jwt.claims = '{"role":"service_role"}';
+DO $test$
+DECLARE
+  failed_closed BOOLEAN := FALSE;
+BEGIN
+  BEGIN
+    PERFORM public.confirm_community_project_artifact_purged(
+      (SELECT submission FROM test_state),
+      (SELECT builder FROM test_state),
+      gen_random_uuid()
+    );
+  EXCEPTION WHEN OTHERS THEN
+    failed_closed := SQLERRM = 'The private artifact still exists and cannot be marked purged.';
+  END;
+
+  IF NOT failed_closed THEN
+    RAISE EXCEPTION 'Immediate artifact cleanup was marked complete before Storage deletion was confirmed.';
+  END IF;
+END;
+$test$;
+
 DELETE FROM storage.objects
 WHERE name IN (
   (SELECT artifact_path FROM test_state),

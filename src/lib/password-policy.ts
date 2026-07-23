@@ -1,4 +1,7 @@
-export const PATHFORGE_PASSWORD_MIN_LENGTH = 10
+// Keep this in lockstep with Supabase Auth's production minimum. A weaker
+// browser-side rule only creates a failed signup after the user has finished
+// the form, while a stronger one needlessly rejects a policy-valid password.
+export const PATHFORGE_PASSWORD_MIN_LENGTH = 12
 
 export function pathForgePasswordChecks(password: string) {
   return [

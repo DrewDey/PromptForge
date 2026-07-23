@@ -64,6 +64,10 @@ requireText(signupPath, signup, ", 'oauth')", 'social signup must route through 
 requireText(signupPath, signup, ".ilike('username'", 'handle conflicts must be caught before Auth creates a user')
 requireText(signupPath, signup, 'enabledOAuthProviders.length > 0', 'disabled social providers must not be advertised')
 
+const passwordPolicyPath = 'src/lib/password-policy.ts'
+const passwordPolicy = read(passwordPolicyPath)
+requireText(passwordPolicyPath, passwordPolicy, 'PATHFORGE_PASSWORD_MIN_LENGTH = 12', 'browser password validation must match the production Supabase minimum')
+
 const loginPath = 'src/app/auth/login/page.tsx'
 const login = read(loginPath)
 requireText(loginPath, login, 'supabase.auth.resend({', 'unconfirmed accounts must be able to request a fresh confirmation link')
@@ -87,6 +91,7 @@ requireText('src/app/auth/forgot-password/page.tsx', forgot, 'If an account exis
 const reset = read('src/app/auth/reset-password/page.tsx')
 requireText('src/app/auth/reset-password/page.tsx', reset, 'updateUser({ password })', 'reset route must replace the password')
 requireText('src/app/auth/reset-password/page.tsx', reset, "signOut({ scope: 'others' })", 'password replacement must remove other sessions')
+requireText('src/app/auth/reset-password/page.tsx', reset, 'PATHFORGE_PASSWORD_MIN_LENGTH', 'password recovery must share the signup password policy')
 
 const migrationPath = 'supabase/migrations/20260713021544_harden_community_mutation_boundaries.sql'
 const restrictionMigrationPath = 'supabase/migrations/20260713023646_restrict_community_mutation_grants.sql'

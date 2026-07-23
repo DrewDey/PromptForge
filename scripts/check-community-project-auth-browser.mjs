@@ -364,6 +364,8 @@ async function main() {
             href: location.pathname + location.search,
             loginHref: [...document.querySelectorAll('a')].find((link) => link.textContent?.trim() === 'Log in' && link.closest('.form-foot'))?.getAttribute('href') || '',
             fields: ['username', 'email', 'password'].every((name) => Boolean(form?.querySelector('[name="' + name + '"]'))),
+            passwordMinLength: Number(form?.querySelector('[name="password"]')?.getAttribute('minlength') || 0),
+            hasTwelveCharacterRule: form?.querySelector('#signup-password-help')?.textContent?.includes('12+ characters') || false,
             viewportWidth,
             scrollWidth,
             overflowingElements: [...document.querySelectorAll('*')]
@@ -380,6 +382,9 @@ async function main() {
         if (signup.href !== '/auth/signup?next=%2Fbuild') throw new Error(`${viewport.name} signup page lost the /build return target.`)
         if (signup.loginHref !== '/auth/login?next=%2Fbuild') throw new Error(`${viewport.name} signup-to-login handoff lost the /build return target.`)
         if (!signup.fields) throw new Error(`${viewport.name} signup form is missing a required account field.`)
+        if (signup.passwordMinLength !== 12 || !signup.hasTwelveCharacterRule) {
+          throw new Error(`${viewport.name} signup password policy does not match the 12-character production minimum.`)
+        }
         if (options.screenshotDir) await capture(client, sessionId, path.join(options.screenshotDir, `signup-${viewport.name}.png`))
 
         const viewerQuery = new URLSearchParams({

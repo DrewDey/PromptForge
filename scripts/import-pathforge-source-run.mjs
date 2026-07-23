@@ -579,6 +579,7 @@ async function createServiceRoleClient(supabaseUrl, serviceRoleKey) {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
+      detectSessionInUrl: false,
     },
   })
 }
@@ -603,7 +604,7 @@ async function createSyntheticSessionClient(supabaseUrl, anonKey, args) {
   if (handleError) throw handleError
   if ((handleMatches ?? []).some(profile => profile.username?.toLowerCase() === args.username.toLowerCase())) {
     throw new Error(
-      `Profile handle ${args.username} already exists. Public signup cannot attach a new auth user to that profile; use --auth-mode password with the existing account or configure SUPABASE_SERVICE_ROLE_KEY.`,
+      `Profile handle ${args.username} already exists. Public signup cannot attach a new auth user to that profile; use --auth-mode password with the existing account or configure a server-only Supabase credential.`,
     )
   }
 
@@ -816,14 +817,14 @@ async function main() {
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const serverKey = process.env.SUPABASE_SECRET_KEY?.trim() || process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
 
   if (!supabaseUrl) throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL.')
   if (!anonKey) throw new Error('Missing NEXT_PUBLIC_SUPABASE_ANON_KEY.')
 
-  const useServiceRole = serviceRoleKey && !['public-signup', 'password'].includes(args.authMode)
+  const useServiceRole = serverKey && !['public-signup', 'password'].includes(args.authMode)
   const supabase = useServiceRole
-    ? await createServiceRoleClient(supabaseUrl, serviceRoleKey)
+    ? await createServiceRoleClient(supabaseUrl, serverKey)
     : null
 
   let profile

@@ -68,6 +68,7 @@ const migration = readFileSync(
   'utf8',
 )
 const actions = readFileSync(path.join(root, 'src', 'lib', 'community-project-actions.ts'), 'utf8')
+const adminClient = readFileSync(path.join(root, 'src', 'lib', 'supabase', 'admin.ts'), 'utf8')
 const alerts = readFileSync(path.join(root, 'src', 'lib', 'community-project-alerts.ts'), 'utf8')
 const preparedPage = readFileSync(path.join(root, 'src', 'components', 'PreparedSourceRunPage.tsx'), 'utf8')
 const privateReview = readFileSync(path.join(root, 'src', 'components', 'CommunityArtifactSourceReview.tsx'), 'utf8')
@@ -106,6 +107,7 @@ const communityReleaseWorkflow = readFileSync(
   path.join(root, '.github', 'workflows', 'community-project-release.yml'),
   'utf8',
 )
+const envExample = readFileSync(path.join(root, '.env.local.example'), 'utf8')
 
 function assertUnfilteredPullRequestWorkflow(workflow) {
   assert.doesNotMatch(
@@ -160,6 +162,12 @@ assert.ok(
 assert.match(actions, /artifact_original_name: safeOriginalFilename/)
 assert.match(actions, /verifyQuarantinedArtifact/)
 assert.match(actions, /REPORT_RATE_LIMIT_SECRET/)
+assert.match(actions, /SUPABASE_SECRET_KEY/)
+assert.match(adminClient, /process\.env\.SUPABASE_SECRET_KEY\?\.trim\(\)\s*\|\|\s*process\.env\.SUPABASE_SERVICE_ROLE_KEY\?\.trim\(\)/)
+assert.match(adminClient, /server-only Supabase credentials/)
+assert.match(adminClient, /detectSessionInUrl: false/)
+assert.match(envExample, /^SUPABASE_SECRET_KEY=your_supabase_secret_key$/m)
+assert.match(envExample, /^SUPABASE_SERVICE_ROLE_KEY=$/m)
 assert.match(actions, /sendCommunityProjectOperatorAlert/)
 assert.match(actions, /communityProjectOperatorAlertsConfigured/)
 assert.match(actions, /membership\?\.member_kind === 'invited_builder'/)
@@ -257,6 +265,7 @@ assert.match(authBrowserGuard, /process\.kill\(-child\.pid, signal\)/)
 assert.match(authBrowserGuard, /await client\.send\('Browser\.close'\)/)
 assert.match(liveAcceptanceGuard, /auth\/login\?next=%2Fbuild/)
 assert.match(liveAcceptanceGuard, /requested_member_kind: 'internal_acceptance'/)
+assert.match(liveAcceptanceGuard, /SUPABASE_SECRET_KEY[\s\S]*SUPABASE_SERVICE_ROLE_KEY/)
 assert.match(liveAcceptanceGuard, /not currently in the pilot/)
 assert.match(liveAcceptanceGuard, /Submit private review bundle/)
 assert.match(liveAcceptanceGuard, /Withdraw and purge artifact|textContent\.includes\('Withdraw'\)/)

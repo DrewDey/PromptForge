@@ -59,6 +59,7 @@ function safeError(error: unknown, fallback: string) {
       : ''
   if (!rawMessage) return fallback
   const message = rawMessage
+    .replace(/SUPABASE_SECRET_KEY/gi, 'server upload configuration')
     .replace(/SUPABASE_SERVICE_ROLE_KEY/gi, 'server upload configuration')
     .replace(/service[_ -]?role/gi, 'server upload service')
   return message.length <= 500 ? message : fallback

@@ -92,20 +92,21 @@ async function main() {
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const serverKey = process.env.SUPABASE_SECRET_KEY?.trim() || process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
 
   if (!supabaseUrl) {
     throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL.')
   }
-  if (!serviceRoleKey) {
-    throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY. Add it locally; never expose it as NEXT_PUBLIC_.')
+  if (!serverKey) {
+    throw new Error('Missing SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY. Add one locally; never expose it as NEXT_PUBLIC_.')
   }
 
   const { createClient } = await import('@supabase/supabase-js')
-  const supabase = createClient(supabaseUrl, serviceRoleKey, {
+  const supabase = createClient(supabaseUrl, serverKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
+      detectSessionInUrl: false,
     },
   })
 

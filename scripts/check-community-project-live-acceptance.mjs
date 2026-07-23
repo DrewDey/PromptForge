@@ -31,6 +31,14 @@ function requiredEnvironment(name) {
   return value
 }
 
+function requiredServerKey() {
+  return process.env.SUPABASE_SECRET_KEY?.trim()
+    || process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
+    || (() => {
+      throw new Error('SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY is required for the disposable live acceptance check.')
+    })()
+}
+
 async function evaluate(client, sessionId, expression) {
   const { result, exceptionDetails } = await client.send('Runtime.evaluate', {
     expression,
@@ -107,9 +115,9 @@ async function recordCleanup(cleanupErrors, label, task) {
 async function main() {
   const options = parseArgs(process.argv.slice(2))
   const supabaseUrl = requiredEnvironment('NEXT_PUBLIC_SUPABASE_URL')
-  const serviceKey = requiredEnvironment('SUPABASE_SERVICE_ROLE_KEY')
-  const admin = createClient(supabaseUrl, serviceKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
+  const serverKey = requiredServerKey()
+  const admin = createClient(supabaseUrl, serverKey, {
+    auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
   })
   const executable = chromeExecutable()
   if (!executable) throw new Error('Chrome was not found for the live acceptance check.')

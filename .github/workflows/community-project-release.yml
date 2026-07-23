@@ -1,19 +1,10 @@
 name: Community project release boundary
 
 on:
+  # This guard is required by main-branch protection. It must run on every PR
+  # so a change outside a hand-maintained path list cannot bypass it—or leave
+  # another PR waiting for a required check that never starts.
   pull_request:
-    paths:
-      - '.github/workflows/community-project-release.yml'
-      # This boundary spans routes, data shaping, cards, and shared preview
-      # styles. Keep it source-wide instead of relying on a brittle allowlist.
-      - 'src/**'
-      - 'supabase/migrations/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'next.config.*'
-      - 'scripts/check-community-project*'
-      - 'scripts/check-protected-artifact-sandbox.mjs'
-      - 'test-fixtures/community-project/**'
 
 jobs:
   database-and-contract:

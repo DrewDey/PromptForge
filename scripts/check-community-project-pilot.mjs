@@ -252,13 +252,11 @@ assert.match(liveAcceptanceGuard, /deleteUser\(userId\)/)
 assert.match(liveAcceptanceGuard, /acceptance-slot postcondition/)
 assert.match(liveAcceptanceGuard, /Disposable cleanup verification failed/)
 assert.match(communityReleaseWorkflow, /npm run check:community-project-auth-browser -- --base-url http:\/\/127\.0\.0\.1:3111/)
-assert.ok(
-  communityReleaseWorkflow.includes("- 'src/**'"),
-  'Community release workflow must run for every application-source change, including new public preview surfaces.',
-)
-assert.ok(
-  communityReleaseWorkflow.includes("- 'supabase/migrations/**'"),
-  'Community release workflow must run for every database migration.',
+assert.match(communityReleaseWorkflow, /pull_request:\s*$/m)
+assert.doesNotMatch(
+  communityReleaseWorkflow,
+  /pull_request:\s*\n\s+paths:/,
+  'The required community release workflow must run for every pull request, not a path-filtered subset.',
 )
 assert.ok(
   liveAcceptanceGuard.indexOf('Disposable cleanup verification failed')

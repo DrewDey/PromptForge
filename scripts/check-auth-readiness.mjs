@@ -55,7 +55,17 @@ const callbackPath = 'src/app/auth/callback/route.ts'
 const callback = read(callbackPath)
 requireText(callbackPath, callback, 'safeAuthNextPath', 'callback redirects must validate the requested path')
 requireText(callbackPath, callback, 'new URL(nextPath, origin)', 'callback redirects must use URL parsing rather than string concatenation')
+requireText(callbackPath, callback, "onboardingUrl.searchParams.set('next', nextPath)", 'first-time profile onboarding must retain the requested post-auth destination')
 forbidText(callbackPath, callback, '`${origin}${next}`', 'unsafe callback redirect concatenation is forbidden')
+
+const profileSettingsPath = 'src/app/settings/profile/page.tsx'
+const profileSettings = read(profileSettingsPath)
+requireText(profileSettingsPath, profileSettings, 'safeAuthNextPath', 'profile onboarding must validate the preserved destination')
+requireText(profileSettingsPath, profileSettings, 'continueHref={continueHref}', 'profile onboarding must pass the preserved destination to its completion control')
+
+const profileSettingsFormPath = 'src/components/ProfileSettingsForm.tsx'
+const profileSettingsForm = read(profileSettingsFormPath)
+requireText(profileSettingsFormPath, profileSettingsForm, 'href={continueHref}', 'profile completion must offer the original destination after a successful save')
 
 const signupPath = 'src/app/auth/signup/page.tsx'
 const signup = read(signupPath)

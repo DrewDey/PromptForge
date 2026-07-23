@@ -92,10 +92,26 @@ async function waitForProcessExit(child, timeoutMs) {
   })
 }
 
+function signalChromeProcessGroup(child, signal) {
+  if (typeof child.pid !== 'number') return
+  if (process.platform !== 'win32') {
+    try {
+      // Chrome starts renderer and crash-handler children. On Unix, use the
+      // detached process group so those children cannot retain the disposable
+      // profile after the browser parent has exited.
+      process.kill(-child.pid, signal)
+      return
+    } catch {
+      // The group may already be gone; fall through to the direct child.
+    }
+  }
+  if (child.exitCode === null) child.kill(signal)
+}
+
 async function closeChrome(child) {
-  if (child.exitCode === null) child.kill('SIGTERM')
+  signalChromeProcessGroup(child, 'SIGTERM')
   if (await waitForProcessExit(child, 5_000)) return
-  if (child.exitCode === null) child.kill('SIGKILL')
+  signalChromeProcessGroup(child, 'SIGKILL')
   if (!await waitForProcessExit(child, 5_000)) {
     throw new Error('Chrome did not exit before temporary-profile cleanup.')
   }
@@ -228,7 +244,10 @@ async function main() {
     '--remote-debugging-port=0',
     `--user-data-dir=${profile}`,
     'about:blank',
-  ], { stdio: ['ignore', 'ignore', 'pipe'] })
+  ], {
+    detached: process.platform !== 'win32',
+    stdio: ['ignore', 'ignore', 'pipe'],
+  })
 
   let client
   try {
@@ -478,9 +497,16 @@ async function main() {
       await client.send('Target.closeTarget', { targetId })
     }
   } finally {
-    client?.close()
+    if (client) {
+      try {
+        await client.send('Browser.close')
+      } catch {
+        // A browser that already exited does not need another close command.
+      }
+      client.close()
+    }
     await closeChrome(chrome)
-    rmSync(profile, { recursive: true, force: true, maxRetries: 40, retryDelay: 125 })
+    rmSync(profile, { recursive: true, force: true, maxRetries: 12, retryDelay: 50 })
   }
 }
 

@@ -55,6 +55,7 @@ export default async function PathCardConceptsPage() {
     modelRunCount: discoveryItem.modelRunCount,
     verifiedModelRunCount: discoveryItem.verifiedModelRunCount,
     hasWorkingArtifact: true,
+    isCommunityArtifact: discoveryItem.isCommunityArtifact,
     hasFork: discoveryItem.hasFork,
     isFork: discoveryItem.isFork,
     forkCount: discoveryItem.forkCount,

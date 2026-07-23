@@ -108,9 +108,10 @@ function contrastRatio(foreground, background) {
     / (Math.min(foregroundLuminance, backgroundLuminance) + 0.05)
 }
 
-async function artifactRenderedContrast(client, sessionId) {
+async function artifactRenderedContrast(client, sessionId, containerSelector = '[data-artifact-fit-mode]') {
+  const serializedSelector = JSON.stringify(containerSelector)
   const rect = await evaluate(client, sessionId, `(() => {
-    const iframe = document.querySelector('[data-artifact-fit-mode] iframe');
+    const iframe = document.querySelector(${serializedSelector} + ' [data-artifact-fit-mode] iframe, ' + ${serializedSelector} + '[data-artifact-fit-mode] iframe');
     if (!iframe) return null;
     const bounds = iframe.getBoundingClientRect();
     return { left: bounds.left, top: bounds.top, width: bounds.width, height: bounds.height };
@@ -126,15 +127,23 @@ async function artifactRenderedContrast(client, sessionId) {
   const { data } = await client.send('Page.captureScreenshot', {
     format: 'png',
     fromSurface: true,
-    clip: {
-      x: Math.max(0, rect.left + 2),
-      y: Math.max(0, rect.top + 2),
-      width,
-      height,
-      scale: 1,
-    },
+    // getBoundingClientRect() is viewport-relative. Capture the current
+    // viewport and crop locally so a scrolled card is sampled at the same
+    // coordinates the browser just rendered, rather than at document origin.
+    captureBeyondViewport: false,
   }, sessionId)
-  const { data: pixels, info } = await sharp(Buffer.from(data, 'base64'))
+  const screenshot = sharp(Buffer.from(data, 'base64'))
+  const screenshotInfo = await screenshot.metadata()
+  const cropLeft = Math.max(0, Math.min(
+    Math.max(0, (screenshotInfo.width ?? 1) - width),
+    Math.floor(rect.left + 2),
+  ))
+  const cropTop = Math.max(0, Math.min(
+    Math.max(0, (screenshotInfo.height ?? 1) - height),
+    Math.floor(rect.top + 2),
+  ))
+  const { data: pixels, info } = await screenshot
+    .extract({ left: cropLeft, top: cropTop, width, height })
     .removeAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true })
@@ -158,6 +167,12 @@ async function artifactRenderedContrast(client, sessionId) {
   const sorted = colors.toSorted((left, right) => relativeLuminance(left) - relativeLuminance(right))
   const foreground = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.01))]
   return {
+    bounds: {
+      left: Math.round(rect.left),
+      top: Math.round(rect.top),
+      width: Math.round(rect.width),
+      height: Math.round(rect.height),
+    },
     sample: `${info.width}x${info.height}`,
     foreground: `rgb(${foreground.red}, ${foreground.green}, ${foreground.blue})`,
     background: `rgb(${background.red}, ${background.green}, ${background.blue})`,
@@ -359,7 +374,53 @@ async function main() {
         }
         if (options.screenshotDir) await capture(client, sessionId, path.join(options.screenshotDir, `community-artifact-viewer-${viewport.name}.png`))
 
-        console.log(`${viewport.name}: anonymous build, fresh-account signup handoff, and community safe viewer passed at ${signup.viewportWidth}px with ${artifactContrast.ratio.toFixed(2)}:1 default-canvas contrast.`)
+        await navigate(client, sessionId, `${options.baseUrl}/qa/community-static-preview`)
+        await waitForHeading(client, sessionId, 'Community static preview fixture', `${viewport.name} community card fixture`)
+        for (const surface of ['explore', 'profile']) {
+          const selector = `[data-community-preview-surface="${surface}"]`
+          await evaluate(client, sessionId, `document.querySelector(${JSON.stringify(selector)})?.scrollIntoView({ block: 'center' })`)
+          const previewDeadline = Date.now() + 15_000
+          let previewState = null
+          while (Date.now() < previewDeadline) {
+            previewState = await evaluate(client, sessionId, `(() => {
+              const surface = document.querySelector(${JSON.stringify(selector)});
+              const preview = surface?.querySelector('[data-project-preview-mode]');
+              const frame = preview?.querySelector('[data-artifact-fit-mode]');
+              const iframe = frame?.querySelector('iframe');
+              return {
+                mounted: Boolean(preview),
+                settled: Boolean(frame && frame.dataset.artifactFitMode !== 'loading'),
+                mode: preview?.getAttribute('data-project-preview-mode') || '',
+                executionMode: frame?.closest('[data-artifact-execution-mode]')?.getAttribute('data-artifact-execution-mode') || '',
+                staticExecution: Boolean(
+                  iframe?.srcdoc?.includes('data-pathforge-execution-mode="static-untrusted"') &&
+                  iframe?.srcdoc?.includes('sandbox=""'),
+                ),
+                visualOnlyCopy: surface?.textContent?.includes('Visual-only community preview') || false,
+              };
+            })()`)
+            if (previewState?.settled) break
+            await new Promise((resolve) => setTimeout(resolve, 75))
+          }
+          if (
+            !previewState?.mounted ||
+            !previewState.settled ||
+            previewState.mode !== 'static-untrusted' ||
+            previewState.executionMode !== 'static-untrusted' ||
+            !previewState.staticExecution ||
+            !previewState.visualOnlyCopy
+          ) {
+            throw new Error(`${viewport.name} ${surface} community card did not preserve the visual-only boundary: ${JSON.stringify(previewState)}.`)
+          }
+          if (options.screenshotDir) await capture(client, sessionId, path.join(options.screenshotDir, `community-static-${surface}-${viewport.name}.png`))
+          const previewContrast = await artifactRenderedContrast(client, sessionId, selector)
+          if (previewContrast.ratio < 4.5) {
+            throw new Error(`${viewport.name} ${surface} community preview did not retain the rendered fixture: ${JSON.stringify(previewContrast)}.`)
+          }
+        }
+        if (options.screenshotDir) await capture(client, sessionId, path.join(options.screenshotDir, `community-static-cards-${viewport.name}.png`))
+
+        console.log(`${viewport.name}: anonymous build, fresh-account signup handoff, protected viewer, and Explore/profile static community cards passed at ${signup.viewportWidth}px with ${artifactContrast.ratio.toFixed(2)}:1 default-canvas contrast.`)
       }
 
       if (consoleErrors.length > 0) {

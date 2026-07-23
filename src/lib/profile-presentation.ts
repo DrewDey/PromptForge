@@ -64,6 +64,8 @@ export type PublicProfileProjectEvidence = {
   artifactStatusLabel: 'Artifact verified' | 'Artifact has known issue' | 'Run recorded'
   artifactStatusExplanation: string | null
   artifactPath: string | null
+  /** Public community artifacts are visual-only previews everywhere. */
+  isCommunityArtifact: boolean
   hasWorkingArtifact: boolean
   outcome: string | null
   forkSource: ReturnType<typeof projectForkSourceFromSubmissionFields>
@@ -192,6 +194,7 @@ export function getPublicProfileProjectEvidence(
     artifactStatusLabel: artifact.label,
     artifactStatusExplanation: artifact.explanation,
     artifactPath,
+    isCommunityArtifact: Boolean(communityProject),
     hasWorkingArtifact: Boolean(artifactPath),
     outcome: lastProjectOutcome(project),
     forkSource: projectForkSourceFromSubmissionFields(project),

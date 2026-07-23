@@ -31,6 +31,7 @@ export default function BuilderWorkCard({
 }) {
   const projectHref = getProjectHref(project)
   const isFork = Boolean(evidence.forkSource)
+  const previewLabel = evidence.isCommunityArtifact ? 'visual-only community preview' : 'working artifact'
   const hasFeaturedArtifact = Boolean(
     featured && showArtifactPreview && evidence.hasWorkingArtifact && evidence.artifactPath,
   )
@@ -54,12 +55,13 @@ export default function BuilderWorkCard({
         <Link
           href={projectHref}
           className="block lg:col-span-2 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-orange-ink"
-          aria-label={`Open the working artifact and full path for ${project.title}`}
+          aria-label={`Open the ${previewLabel} and full path for ${project.title}`}
         >
           <ProjectPreview
             artifactPath={evidence.artifactPath}
             title={project.title}
             label="Featured work · real artifact"
+            isCommunityArtifact={evidence.isCommunityArtifact}
           />
         </Link>
       )}
@@ -80,7 +82,7 @@ export default function BuilderWorkCard({
               <span aria-hidden="true" className="text-surface-300">/</span>
               <span className="inline-flex items-center gap-1 text-emerald-700">
                 <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
-                Working artifact
+                {evidence.isCommunityArtifact ? 'Visual-only preview' : 'Working artifact'}
               </span>
             </>
           )}

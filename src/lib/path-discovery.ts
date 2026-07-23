@@ -55,6 +55,8 @@ export type BuildPathModelVariant = {
   capturedAt: string
   capturedAtLabel: string
   artifactPath: string | null
+  /** Community artifacts must stay static on every discovery surface. */
+  isCommunityArtifact: boolean
   href: string
   promptCount: number
   activityProjectCount: number
@@ -90,6 +92,8 @@ export type BuildPathDiscoveryItem = {
   verifiedModelRunCount: number
   verifiedModelCount: number
   artifactPath: string | null
+  /** The canonical discovery artifact came from the community-pilot channel. */
+  isCommunityArtifact: boolean
   hasWorkingArtifact: boolean
   hasFork: boolean
   isFork: boolean
@@ -243,6 +247,7 @@ function cardModelVariants({
   fallbackVerified,
   fallbackPathForgeRecordChecked,
   fallbackProvider,
+  fallbackIsCommunityArtifact,
 }: {
   prompt: PromptWithRelations
   modelLabel: string
@@ -254,6 +259,7 @@ function cardModelVariants({
   fallbackVerified: boolean
   fallbackPathForgeRecordChecked: boolean
   fallbackProvider?: string
+  fallbackIsCommunityArtifact: boolean
 }): BuildPathModelVariant[] {
   const variantSet = getProjectModelVariantSet(prompt.id)
   const candidates = (variantSet?.variants ?? [])
@@ -281,6 +287,7 @@ function cardModelVariants({
         capturedAt: variant.capturedAt,
         capturedAtLabel: CAPTURED_DATE_FORMATTER.format(new Date(variant.capturedAt)),
         artifactPath: normalizedArtifactPath(variant.finalArtifactPath),
+        isCommunityArtifact: false,
         href: variantHref(
           variantSet?.canonicalRoute ?? fallbackHref,
           variantSet?.defaultSourceRunId ?? fallbackSourceRunId,
@@ -324,6 +331,7 @@ function cardModelVariants({
     capturedAt,
     capturedAtLabel: CAPTURED_DATE_FORMATTER.format(new Date(capturedAt)),
     artifactPath,
+    isCommunityArtifact: fallbackIsCommunityArtifact,
     href: fallbackHref,
     promptCount: promptCount || 1,
     activityProjectCount: 0,
@@ -456,6 +464,7 @@ export function buildPathDiscoveryCatalog(
       fallbackVerified: Boolean(communityProject) || verifiedModelCount > 0,
       fallbackPathForgeRecordChecked: Boolean(prepared || communityProject),
       fallbackProvider: communityProject?.provider,
+      fallbackIsCommunityArtifact: Boolean(communityProject),
     })
     const { modelRunCount, verifiedModelRunCount } = deriveDiscoveryRunCounts(
       modelVariants,
@@ -522,6 +531,7 @@ export function buildPathDiscoveryCatalog(
       verifiedModelRunCount,
       verifiedModelCount,
       artifactPath: canonicalArtifactPath,
+      isCommunityArtifact: canonicalDefaultVariant.isCommunityArtifact,
       hasWorkingArtifact,
       hasFork,
       isFork,

@@ -158,7 +158,7 @@ function pathTraits(item: BuildPathDiscoveryItem) {
     promptLabel(item),
     item.modelRunCount > 1 ? `${item.modelRunCount} model runs` : item.modelLabel,
     item.hasFork ? 'Fork available' : null,
-    item.hasWorkingArtifact ? 'Working artifact' : null,
+    item.hasWorkingArtifact ? (item.isCommunityArtifact ? 'Visual-only community preview' : 'Working artifact') : null,
   ].filter((trait): trait is string => Boolean(trait))
 }
 
@@ -341,12 +341,15 @@ export default async function WhatToBuildPage({
                     title={featured.title}
                     label="Real project artifact"
                     className="ideas-real-project-preview"
+                    isCommunityArtifact={featured.isCommunityArtifact}
                   />
                 ) : (
                   <IdeaArtifactPreview title={featured.title} variant={featured.preview} />
                 )}
                 <span className="ideas-preview-caption">
-                  {featured.hasWorkingArtifact ? 'Working artifact included' : 'Build path preview'}
+                  {featured.hasWorkingArtifact
+                    ? (featured.isCommunityArtifact ? 'Visual-only community preview' : 'Working artifact included')
+                    : 'Build path preview'}
                   <ArrowUpRight aria-hidden="true" />
                 </span>
               </Link>

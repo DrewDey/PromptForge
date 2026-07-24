@@ -71,7 +71,18 @@ CREATE TABLE public.profiles (
   id UUID PRIMARY KEY,
   role TEXT NOT NULL DEFAULT 'user',
   username TEXT UNIQUE,
-  display_name TEXT
+  display_name TEXT,
+  avatar_url TEXT,
+  bio TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE public.profile_provenance (
+  profile_id UUID PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE public.categories (
@@ -80,6 +91,7 @@ CREATE TABLE public.categories (
   name TEXT,
   description TEXT,
   icon TEXT,
+  prompt_count INT NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

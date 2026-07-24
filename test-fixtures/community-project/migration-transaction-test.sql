@@ -15,7 +15,8 @@ CREATE TEMP TABLE test_state (
   fork_submission UUID,
   fork_prompt UUID,
   fork_artifact_path TEXT,
-  artifact_path TEXT
+  artifact_path TEXT,
+  catalog_revision BIGINT
 );
 GRANT SELECT ON test_state TO anon, authenticated;
 
@@ -1025,6 +1026,80 @@ BEGIN
 END;
 $test$;
 
+UPDATE test_state
+SET catalog_revision = public.get_public_catalog_revision()::BIGINT;
+
+INSERT INTO public.prompts (
+  id,
+  title,
+  description,
+  content,
+  category_id,
+  difficulty,
+  status,
+  author_id
+) VALUES (
+  '90000000-0000-4000-8000-000000000001',
+  'Private pending cache fixture',
+  'This pending project must not invalidate the public catalog.',
+  'Private pending prompt',
+  (SELECT id FROM public.categories WHERE slug = 'personal'),
+  'beginner',
+  'pending',
+  (SELECT stranger FROM test_state)
+);
+
+INSERT INTO public.prompt_steps (
+  id,
+  prompt_id,
+  step_number,
+  title,
+  content,
+  description
+) VALUES (
+  '90000000-0000-4000-8000-000000000002',
+  '90000000-0000-4000-8000-000000000001',
+  1,
+  'Private pending step',
+  'Private pending evidence',
+  'Private pending description'
+);
+
+UPDATE public.prompt_steps
+SET description = 'Updated private pending description'
+WHERE id = '90000000-0000-4000-8000-000000000002';
+
+UPDATE public.profiles
+SET display_name = 'Private Queue User'
+WHERE id = (SELECT stranger FROM test_state);
+
+INSERT INTO public.profile_provenance (profile_id, kind)
+VALUES
+  ((SELECT stranger FROM test_state), 'member'),
+  ((SELECT builder FROM test_state), 'member');
+
+UPDATE public.profile_provenance
+SET kind = 'pathforge_seed'
+WHERE profile_id = (SELECT stranger FROM test_state);
+
+DELETE FROM public.profile_provenance
+WHERE profile_id = (SELECT stranger FROM test_state);
+
+DELETE FROM public.prompt_steps
+WHERE id = '90000000-0000-4000-8000-000000000002';
+
+DELETE FROM public.prompts
+WHERE id = '90000000-0000-4000-8000-000000000001';
+
+DO $test$
+BEGIN
+  IF public.get_public_catalog_revision()::BIGINT
+    <> (SELECT catalog_revision FROM test_state) THEN
+    RAISE EXCEPTION 'Private pending catalog rows advanced the public-catalog revision.';
+  END IF;
+END;
+$test$;
+
 UPDATE public.community_project_submissions
 SET artifact_scan = jsonb_set(
       artifact_scan,
@@ -1073,6 +1148,15 @@ SET artifact_scan = jsonb_set(
     updated_at = NOW()
 WHERE id = (SELECT submission FROM test_state);
 
+DO $test$
+BEGIN
+  IF public.get_public_catalog_revision()::BIGINT
+    <> (SELECT catalog_revision FROM test_state) THEN
+    RAISE EXCEPTION 'A private queued artifact-scan edit advanced the public-catalog revision.';
+  END IF;
+END;
+$test$;
+
 UPDATE test_state
 SET prompt = public.publish_community_project_submission(
   submission,
@@ -1085,6 +1169,13 @@ SET prompt = public.publish_community_project_submission(
 
 DO $test$
 BEGIN
+  IF public.get_public_catalog_revision()::BIGINT
+    <= (SELECT catalog_revision FROM test_state) THEN
+    RAISE EXCEPTION 'Publishing did not advance the durable public-catalog revision.';
+  END IF;
+  UPDATE test_state
+  SET catalog_revision = public.get_public_catalog_revision()::BIGINT;
+
   IF (SELECT COUNT(*) FROM public.community_project_publication_drift()) <> 0 THEN
     RAISE EXCEPTION 'Publication drift exists immediately after publish.';
   END IF;
@@ -1119,6 +1210,109 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'Publication did not persist the human review proof.';
   END IF;
+END;
+$test$;
+
+UPDATE public.prompts
+SET tags = tags || ARRAY['catalog-revision-fixture']
+WHERE id = (SELECT prompt FROM test_state);
+
+DO $test$
+BEGIN
+  IF public.get_public_catalog_revision()::BIGINT
+    <= (SELECT catalog_revision FROM test_state) THEN
+    RAISE EXCEPTION 'An approved project update did not advance the durable public-catalog revision.';
+  END IF;
+  UPDATE test_state
+  SET catalog_revision = public.get_public_catalog_revision()::BIGINT;
+END;
+$test$;
+
+UPDATE public.prompts
+SET tags = array_remove(tags, 'catalog-revision-fixture')
+WHERE id = (SELECT prompt FROM test_state);
+
+UPDATE test_state
+SET catalog_revision = public.get_public_catalog_revision()::BIGINT;
+
+UPDATE public.prompt_steps
+SET step_number = step_number + 1
+WHERE prompt_id = (SELECT prompt FROM test_state);
+
+DO $test$
+BEGIN
+  IF public.get_public_catalog_revision()::BIGINT
+    <= (SELECT catalog_revision FROM test_state) THEN
+    RAISE EXCEPTION 'An approved project-step update did not advance the durable public-catalog revision.';
+  END IF;
+  UPDATE test_state
+  SET catalog_revision = public.get_public_catalog_revision()::BIGINT;
+END;
+$test$;
+
+UPDATE public.prompt_steps
+SET step_number = step_number - 1
+WHERE prompt_id = (SELECT prompt FROM test_state);
+
+UPDATE test_state
+SET catalog_revision = public.get_public_catalog_revision()::BIGINT;
+
+UPDATE public.profiles
+SET display_name = 'Pilot Builder revised'
+WHERE id = (SELECT builder FROM test_state);
+
+DO $test$
+BEGIN
+  IF public.get_public_catalog_revision()::BIGINT
+    <= (SELECT catalog_revision FROM test_state) THEN
+    RAISE EXCEPTION 'A published builder-profile update did not advance the durable public-catalog revision.';
+  END IF;
+  UPDATE test_state
+  SET catalog_revision = public.get_public_catalog_revision()::BIGINT;
+END;
+$test$;
+
+UPDATE public.profiles
+SET display_name = 'Pilot Builder'
+WHERE id = (SELECT builder FROM test_state);
+
+UPDATE test_state
+SET catalog_revision = public.get_public_catalog_revision()::BIGINT;
+
+UPDATE public.profile_provenance
+SET kind = 'pathforge_seed'
+WHERE profile_id = (SELECT builder FROM test_state);
+
+DO $test$
+BEGIN
+  IF public.get_public_catalog_revision()::BIGINT
+    <= (SELECT catalog_revision FROM test_state) THEN
+    RAISE EXCEPTION 'A published builder-provenance update did not advance the durable public-catalog revision.';
+  END IF;
+  UPDATE test_state
+  SET catalog_revision = public.get_public_catalog_revision()::BIGINT;
+END;
+$test$;
+
+UPDATE public.profile_provenance
+SET kind = 'member'
+WHERE profile_id = (SELECT builder FROM test_state);
+
+UPDATE test_state
+SET catalog_revision = public.get_public_catalog_revision()::BIGINT;
+
+UPDATE public.community_project_submissions
+SET source_checked_at = source_checked_at + INTERVAL '1 second'
+WHERE id = (SELECT submission FROM test_state);
+
+DO $test$
+BEGIN
+  IF public.get_public_catalog_revision()::BIGINT
+    <= (SELECT catalog_revision FROM test_state) THEN
+    RAISE EXCEPTION 'A published capsule update did not advance the durable public-catalog revision.';
+  END IF;
+  UPDATE test_state
+  SET catalog_revision = public.get_public_catalog_revision()::BIGINT;
 END;
 $test$;
 
@@ -1785,6 +1979,10 @@ SELECT public.withdraw_community_project_submission(
 
 DO $test$
 BEGIN
+  IF public.get_public_catalog_revision()::BIGINT
+    <= (SELECT catalog_revision FROM test_state) THEN
+    RAISE EXCEPTION 'Withdrawal did not advance the durable public-catalog revision.';
+  END IF;
   IF (SELECT COUNT(*) FROM public.community_project_cleanup_candidates()) <> 2 THEN
     RAISE EXCEPTION 'Withdrawn and integrity-failed artifacts were not queued for physical cleanup.';
   END IF;
@@ -1804,6 +2002,24 @@ SET ROLE anon;
 SET request.jwt.claims = '{"role":"anon"}';
 DO $test$
 BEGIN
+  IF public.get_public_catalog_revision()::BIGINT <= 0 THEN
+    RAISE EXCEPTION 'Anonymous catalog readers could not read the durable revision.';
+  END IF;
+  BEGIN
+    PERFORM updated_at
+    FROM public.pathforge_public_catalog_state;
+    RAISE EXCEPTION 'Anonymous catalog readers could read the private revision timestamp.';
+  EXCEPTION
+    WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    UPDATE public.pathforge_public_catalog_state
+    SET revision = revision + 1
+    WHERE singleton;
+    RAISE EXCEPTION 'Anonymous catalog readers could mutate the durable revision.';
+  EXCEPTION
+    WHEN insufficient_privilege THEN NULL;
+  END;
   IF (
     SELECT COUNT(*) FROM public.get_public_community_project(
       (SELECT prompt FROM test_state)

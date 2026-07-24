@@ -21,6 +21,11 @@ const VIEWPORTS = [
   { name: 'mobile-390', width: 390, height: 844, mobile: true },
 ]
 const COMMUNITY_ARTIFACT_FIXTURE_ID = '10000000-0000-4000-8000-000000000001'
+const COMMUNITY_REPAIR_FIXTURE_ID = '10000000-0000-4000-8000-000000000002'
+const COMMUNITY_REPAIR_PATH = `/build?${new URLSearchParams({
+  repairCommunity: COMMUNITY_REPAIR_FIXTURE_ID,
+}).toString()}`
+const COMMUNITY_REPAIR_NEXT = encodeURIComponent(COMMUNITY_REPAIR_PATH)
 const COMMUNITY_ARTIFACT_FIXTURE_HTML = '<!doctype html><html><head><style>html,body{margin:0;background:#fff;color:#111;font:700 24px system-ui}main{min-height:1800px;padding:24px;background:linear-gradient(#fff,#eef6ff)}#community-preview-middle{margin-top:650px;padding:24px;background:#dbeafe;color:#111827}#community-preview-bottom{margin-top:650px;padding:24px;background:#111827;color:#fff}</style></head><body><main><h1>Community artifact viewer fixture</h1><p>This readable result exists before scripts run.</p><p id="community-preview-middle">Static preview midpoint</p><p id="community-preview-bottom">Static preview bottom marker</p></main><script>document.body.replaceChildren()</script></body></html>'
 const COMMUNITY_UPLOAD_FIXTURE = path.join(process.cwd(), 'test-fixtures', 'community-project', 'valid.html')
 const LEGACY_FORK_PATH = `/prompt/new?${new URLSearchParams({
@@ -603,6 +608,61 @@ async function main() {
           throw new Error(`${viewport.name} signup password policy does not match the 12-character production minimum.`)
         }
         if (options.screenshotDir) await capture(client, sessionId, path.join(options.screenshotDir, `signup-${viewport.name}.png`))
+
+        await navigate(client, sessionId, `${options.baseUrl}${COMMUNITY_REPAIR_PATH}`)
+        await waitForHeading(
+          client,
+          sessionId,
+          'Submit the finished project',
+          `${viewport.name} signed-out community repair handoff`,
+        )
+        const communityRepair = await evaluate(client, sessionId, `(() => ({
+          href: location.pathname + location.search,
+          signInHref: [...document.querySelectorAll('a')].find((link) => link.textContent?.includes('Invited already'))?.getAttribute('href') || '',
+          signUpHref: [...document.querySelectorAll('a')].find((link) => link.textContent?.includes('New here?'))?.getAttribute('href') || '',
+          hasUpload: Boolean(document.querySelector('input[type="file"]')),
+        }))()`)
+        if (
+          communityRepair.href !== COMMUNITY_REPAIR_PATH ||
+          communityRepair.signInHref !== `/auth/login?next=${COMMUNITY_REPAIR_NEXT}` ||
+          communityRepair.signUpHref !== `/auth/signup?next=${COMMUNITY_REPAIR_NEXT}` ||
+          communityRepair.hasUpload
+        ) {
+          throw new Error(`${viewport.name} signed-out community repair handoff lost its private return target: ${JSON.stringify(communityRepair)}.`)
+        }
+        const openedCommunityRepairSignup = await evaluate(client, sessionId, `(() => {
+          const link = [...document.querySelectorAll('a')].find((item) => item.textContent?.includes('New here?'))
+          if (!link) return false
+          link.click()
+          return true
+        })()`)
+        if (!openedCommunityRepairSignup) {
+          throw new Error(`${viewport.name} community repair page had no usable signup link.`)
+        }
+        await new Promise((resolve) => setTimeout(resolve, 250))
+        await waitForHeading(
+          client,
+          sessionId,
+          'Start your forge.',
+          `${viewport.name} community repair signup handoff`,
+        )
+        const communityRepairSignup = await evaluate(client, sessionId, `(() => ({
+          href: location.pathname + location.search,
+          loginHref: [...document.querySelectorAll('a')].find((link) => link.textContent?.trim() === 'Log in' && link.closest('.form-foot'))?.getAttribute('href') || '',
+        }))()`)
+        if (
+          communityRepairSignup.href !== `/auth/signup?next=${COMMUNITY_REPAIR_NEXT}` ||
+          communityRepairSignup.loginHref !== `/auth/login?next=${COMMUNITY_REPAIR_NEXT}`
+        ) {
+          throw new Error(`${viewport.name} community repair signup handoff lost its exact return path: ${JSON.stringify(communityRepairSignup)}.`)
+        }
+        if (options.screenshotDir) {
+          await capture(
+            client,
+            sessionId,
+            path.join(options.screenshotDir, `community-repair-signup-${viewport.name}.png`),
+          )
+        }
 
         await navigate(client, sessionId, `${options.baseUrl}${LEGACY_FORK_PATH}`)
         await waitForHeading(client, sessionId, 'Sign in to continue this build', `${viewport.name} legacy fork sign-in handoff`)

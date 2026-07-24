@@ -6,6 +6,7 @@ import {
   getCommunityProjectSubmissionForOwner,
   type CommunityProjectPilotStatus,
 } from '@/lib/data/community-projects'
+import { authHref } from '@/lib/auth-redirects'
 import { canSubmitCommunityProjectRepair } from '@/lib/community-project-pilot-policy.mjs'
 import { canonicalMetadata } from '@/lib/site-url'
 import ProjectSubmissionClient from './ProjectSubmissionClient'
@@ -21,10 +22,12 @@ function PilotExplanation({
   signedIn,
   username,
   status,
+  nextPath,
 }: {
   signedIn: boolean
   username?: string | null
   status: CommunityProjectPilotStatus
+  nextPath: string
 }) {
   const signedInStatus = status === 'temporarily_paused'
     ? 'You are admitted to the pilot, but new project submissions are temporarily paused while the safety and review controls are restored. Your existing projects remain available in My Forge.'
@@ -53,10 +56,10 @@ function PilotExplanation({
             <div className="mt-8 flex flex-wrap gap-3">
               {!signedIn ? (
                 <>
-                  <Link href="/auth/login?next=%2Fbuild" className="bg-brand-orange px-5 py-3 text-sm font-black text-surface-900 hover:bg-brand-orange-light">
+                  <Link href={authHref('/auth/login', nextPath)} className="bg-brand-orange px-5 py-3 text-sm font-black text-surface-900 hover:bg-brand-orange-light">
                     Invited already? Sign in
                   </Link>
-                  <Link href="/auth/signup?next=%2Fbuild" className="border border-surface-300 bg-white px-5 py-3 text-sm font-bold text-surface-900 hover:border-brand-orange">
+                  <Link href={authHref('/auth/signup', nextPath)} className="border border-surface-300 bg-white px-5 py-3 text-sm font-bold text-surface-900 hover:border-brand-orange">
                     New here? Create a profile
                   </Link>
                 </>
@@ -116,6 +119,9 @@ export default async function BuildPage({
   const params = await searchParams
   const legacyRepairId = typeof params.repair === 'string' ? params.repair : null
   const repairId = typeof params.repairCommunity === 'string' ? params.repairCommunity : null
+  const communityRepairNextPath = repairId
+    ? `/build?${new URLSearchParams({ repairCommunity: repairId }).toString()}`
+    : '/build'
   const eligibility = await getCommunityProjectPilotEligibility()
   if (legacyRepairId) {
     if (!eligibility.signedIn) {
@@ -143,6 +149,7 @@ export default async function BuildPage({
         signedIn={eligibility.signedIn}
         username={eligibility.username}
         status={eligibility.status}
+        nextPath={communityRepairNextPath}
       />
     )
   }

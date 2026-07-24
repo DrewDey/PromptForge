@@ -127,6 +127,10 @@ const admissionStatusMigration = readFileSync(
   path.join(root, 'supabase', 'migrations', '20260724032412_distinguish_community_pilot_admission_status.sql'),
   'utf8',
 )
+const migrationTransactionFixture = readFileSync(
+  path.join(root, 'test-fixtures', 'community-project', 'migration-transaction-test.sql'),
+  'utf8',
+)
 const actions = readFileSync(path.join(root, 'src', 'lib', 'community-project-actions.ts'), 'utf8')
 const communityProjectData = readFileSync(path.join(root, 'src', 'lib', 'data', 'community-projects.ts'), 'utf8')
 const buildPage = readFileSync(path.join(root, 'src', 'app', 'build', 'page.tsx'), 'utf8')
@@ -454,9 +458,13 @@ assert.match(
   admissionStatusMigration,
   /REVOKE ALL ON FUNCTION public\.community_project_pilot_status\(\)[\s\S]*GRANT EXECUTE ON FUNCTION public\.community_project_pilot_status\(\)[\s\S]*TO authenticated/,
 )
+const pilotStatusGrantBlock = admissionStatusMigration.slice(
+  admissionStatusMigration.indexOf('REVOKE ALL ON FUNCTION public.community_project_pilot_status()'),
+  admissionStatusMigration.indexOf('REVOKE ALL ON FUNCTION public.get_public_catalog_revision()'),
+)
 assert.doesNotMatch(
-  admissionStatusMigration,
-  /GRANT EXECUTE ON FUNCTION public\.community_project_pilot_status\(\)[\s\S]*TO anon/,
+  pilotStatusGrantBlock,
+  /TO anon/,
 )
 assert.match(
   admissionStatusMigration,
@@ -470,6 +478,99 @@ assert.match(
   admissionStatusMigration,
   /REVOKE EXECUTE ON FUNCTION private\.replace_community_project_submission\(UUID, UUID, JSONB, UUID\)[\s\S]*FROM service_role/,
 )
+for (const required of [
+  'CREATE TABLE public.pathforge_public_catalog_state',
+  'revision BIGINT NOT NULL DEFAULT 1 CHECK (revision > 0)',
+  'ALTER TABLE public.pathforge_public_catalog_state ENABLE ROW LEVEL SECURITY',
+  'CREATE POLICY "Public catalog revision is readable"',
+  'CREATE OR REPLACE FUNCTION public.get_public_catalog_revision()',
+  'SECURITY INVOKER',
+  'CREATE OR REPLACE FUNCTION private.bump_pathforge_public_catalog_revision()',
+  'bump_public_catalog_revision_on_prompts',
+  'bump_public_catalog_revision_on_prompt_steps',
+  'bump_public_catalog_revision_on_categories',
+  'bump_public_catalog_revision_on_profiles',
+  'bump_public_catalog_revision_on_profile_provenance',
+  'bump_public_catalog_revision_on_published_submission_insert',
+  'bump_public_catalog_revision_on_published_submission_delete',
+  'bump_public_catalog_revision_on_published_submission_update',
+]) {
+  assert.ok(
+    admissionStatusMigration.includes(required),
+    `Admission-status migration is missing the catalog revision boundary ${required}.`,
+  )
+}
+assert.match(
+  admissionStatusMigration,
+  /GRANT SELECT \(singleton, revision\) ON TABLE public\.pathforge_public_catalog_state[\s\S]*TO anon, authenticated/,
+)
+assert.match(
+  admissionStatusMigration,
+  /REVOKE ALL ON FUNCTION public\.get_public_catalog_revision\(\)[\s\S]*GRANT EXECUTE ON FUNCTION public\.get_public_catalog_revision\(\)[\s\S]*TO anon, authenticated/,
+)
+assert.match(
+  admissionStatusMigration,
+  /REVOKE ALL ON FUNCTION private\.bump_pathforge_public_catalog_revision\(\)[\s\S]*FROM PUBLIC, anon, authenticated, service_role/,
+)
+assert.match(
+  admissionStatusMigration,
+  /TG_TABLE_NAME = 'prompts'[\s\S]*NEW\.status = 'approved'[\s\S]*OLD\.status = 'approved' OR NEW\.status = 'approved'/,
+  'pending prompts must not become a public-catalog cache-busting surface',
+)
+assert.match(
+  admissionStatusMigration,
+  /TG_TABLE_NAME = 'prompt_steps'[\s\S]*prompt\.status = 'approved'[\s\S]*prompt\.id IN \(OLD\.prompt_id, NEW\.prompt_id\)/,
+  'only steps belonging to approved projects may advance the public catalog revision',
+)
+assert.match(
+  admissionStatusMigration,
+  /TG_TABLE_NAME = 'profiles'[\s\S]*prompt\.status = 'approved'[\s\S]*prompt\.author_id IN \(OLD\.id, NEW\.id\)/,
+  'only profiles represented by approved projects may advance the public catalog revision',
+)
+assert.match(
+  admissionStatusMigration,
+  /TG_TABLE_NAME = 'profile_provenance'[\s\S]*prompt\.status = 'approved'[\s\S]*prompt\.author_id IN \(OLD\.profile_id, NEW\.profile_id\)/,
+  'only provenance represented by approved projects may advance the public catalog revision',
+)
+const promptCatalogRevisionTrigger = admissionStatusMigration.slice(
+  admissionStatusMigration.indexOf('CREATE TRIGGER bump_public_catalog_revision_on_prompts'),
+  admissionStatusMigration.indexOf('CREATE TRIGGER bump_public_catalog_revision_on_prompt_steps'),
+)
+assert.doesNotMatch(
+  promptCatalogRevisionTrigger,
+  /vote_count|bookmark_count|updated_at/,
+  'high-frequency engagement columns must not advance the durable catalog revision',
+)
+assert.match(
+  promptCatalogRevisionTrigger,
+  /FOR EACH ROW/,
+  'public visibility checks require row-level prompt trigger context',
+)
+const publishedSubmissionRevisionTrigger = admissionStatusMigration.slice(
+  admissionStatusMigration.indexOf('CREATE TRIGGER bump_public_catalog_revision_on_published_submission_update'),
+  admissionStatusMigration.indexOf('REVOKE ALL ON FUNCTION private.pathforge_community_project_pilot_status'),
+)
+assert.match(
+  publishedSubmissionRevisionTrigger,
+  /AFTER UPDATE OF[\s\S]*source_access_status,[\s\S]*artifact_sha256,[\s\S]*status,[\s\S]*prompt_id/,
+)
+assert.match(
+  publishedSubmissionRevisionTrigger,
+  /FOR EACH ROW[\s\S]*WHEN \(OLD\.status = 'published' OR NEW\.status = 'published'\)/,
+  'private queued submission edits must not become a public cache invalidation lever',
+)
+assert.match(migrationTransactionFixture, /Publishing did not advance the durable public-catalog revision/)
+assert.match(migrationTransactionFixture, /Private pending catalog rows advanced the public-catalog revision/)
+assert.match(migrationTransactionFixture, /private queued artifact-scan edit advanced the public-catalog revision/)
+assert.match(migrationTransactionFixture, /approved project update did not advance the durable public-catalog revision/)
+assert.match(migrationTransactionFixture, /approved project-step update did not advance the durable public-catalog revision/)
+assert.match(migrationTransactionFixture, /published builder-profile update did not advance the durable public-catalog revision/)
+assert.match(migrationTransactionFixture, /published builder-provenance update did not advance the durable public-catalog revision/)
+assert.match(migrationTransactionFixture, /published capsule update did not advance the durable public-catalog revision/)
+assert.match(migrationTransactionFixture, /Withdrawal did not advance the durable public-catalog revision/)
+assert.match(migrationTransactionFixture, /Anonymous catalog readers could not read the durable revision/)
+assert.match(migrationTransactionFixture, /Anonymous catalog readers could read the private revision timestamp/)
+assert.match(migrationTransactionFixture, /Anonymous catalog readers could mutate the durable revision/)
 assert.match(communityProjectData, /supabase\.rpc\('community_project_pilot_status'\)/)
 assert.match(communityProjectData, /eligible: status === 'eligible'/)
 assert.match(actions, /supabase\.rpc\('community_project_pilot_status'\)/)
@@ -481,6 +582,14 @@ assert.match(buildPage, /status === 'temporarily_paused'/)
 assert.match(buildPage, /You are admitted to the pilot, but new project submissions are temporarily paused/)
 assert.match(buildPage, /status === 'expired'/)
 assert.match(buildPage, /canSubmitCommunityProjectRepair\(eligibility\.status\)/)
+assert.match(buildPage, /import \{ authHref \} from '@\/lib\/auth-redirects'/)
+assert.match(
+  buildPage,
+  /new URLSearchParams\(\{ repairCommunity: repairId \}\)\.toString\(\)/,
+  'the signed-out community repair flow must preserve the exact private return target',
+)
+assert.match(buildPage, /authHref\('\/auth\/login', nextPath\)/)
+assert.match(buildPage, /authHref\('\/auth\/signup', nextPath\)/)
 assert.match(
   ownerProjectPage,
   /submitted === '1' && submission\.status === 'queued'/,
@@ -608,6 +717,8 @@ assert.equal(
 assert.match(packageScripts.prebuild, /check:supabase-server-key-transport/)
 assert.match(packageScripts.autoreview, /check:supabase-server-key-transport/)
 assert.match(authBrowserGuard, /auth\/signup\?next=%2Fbuild/)
+assert.match(authBrowserGuard, /repairCommunity/)
+assert.match(authBrowserGuard, /community repair signup handoff lost its exact return path/)
 assert.match(authBrowserGuard, /anonymous \/build exposed an upload control/)
 assert.match(authBrowserGuard, /overflowed horizontally/)
 assert.match(authBrowserGuard, /community artifact viewer routed to a not-found state/)

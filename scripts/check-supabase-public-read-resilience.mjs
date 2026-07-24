@@ -26,6 +26,7 @@ const {
 } = require('next/dist/server/lib/implicit-tags')
 const {
   revalidatePath,
+  revalidateTag,
 } = require('next/dist/server/web/spec-extension/revalidate')
 const {
   executeRevalidates,
@@ -86,6 +87,7 @@ const dataSources = [
   ['src/lib/data.ts', read('src/lib/data.ts')],
   ['src/lib/data/public-profiles.ts', read('src/lib/data/public-profiles.ts')],
   ['src/lib/data/community-projects.ts', read('src/lib/data/community-projects.ts')],
+  ['src/lib/public-catalog-cache.ts', publicCatalogCache],
 ]
 const packageJson = read('package.json')
 
@@ -249,6 +251,125 @@ async function runNextSoftTagRuntimeProbe() {
 }
 
 await runNextSoftTagRuntimeProbe()
+
+async function runNextCatalogRevisionRaceProbe() {
+  const routePath = '/paths'
+  const runtimeTag = 'pathforge-public-catalog-revision-race-runtime-probe'
+  const implicitTags = await getImplicitTags(
+    '/paths/page',
+    routePath,
+    null,
+  )
+  const incrementalCache = new IncrementalCache({
+    fs: undefined,
+    dev: false,
+    flushToDisk: false,
+    minimalMode: false,
+    serverDistDir: undefined,
+    requestHeaders: {},
+    maxMemoryCacheSize: 0,
+    fetchCacheKeyPrefix: '',
+    CurCacheHandler: RuntimeProbeCacheHandler,
+    allowedRevalidateHeaderKeys: [],
+    getPrerenderManifest: () => ({
+      version: 4,
+      routes: {},
+      dynamicRoutes: {},
+      notFoundRoutes: [],
+      preview: {
+        previewModeId: 'revision-race-probe',
+        previewModeSigningKey: 'revision-race-probe',
+        previewModeEncryptionKey: 'revision-race-probe',
+      },
+    }),
+  })
+  let executions = 0
+  let releaseOldFill
+  let markOldFillStarted
+  const oldFillStarted = new Promise((resolve) => {
+    markOldFillStarted = resolve
+  })
+  const oldFillGate = new Promise((resolve) => {
+    releaseOldFill = resolve
+  })
+  const cachedRead = unstableCache(
+    async (catalogRevision) => {
+      const execution = ++executions
+      if (catalogRevision === '1') {
+        markOldFillStarted()
+        await oldFillGate
+      }
+      return `revision-${catalogRevision}-execution-${execution}`
+    },
+    ['pathforge-public-catalog-revision-race-runtime-probe'],
+    { revalidate: 300, tags: [runtimeTag] },
+  )
+  const renderUnitStore = {
+    type: 'request',
+    phase: 'render',
+    implicitTags,
+    url: new URL(`https://pathforge.test${routePath}`),
+  }
+
+  async function render(catalogRevision) {
+    const store = runtimeProbeWorkStore(incrementalCache)
+    const value = await workAsyncStorage.run(
+      store,
+      () => workUnitAsyncStorage.run(
+        renderUnitStore,
+        () => cachedRead(catalogRevision),
+      ),
+    )
+    await executeRevalidates(store)
+    return value
+  }
+
+  const oldFill = render('1')
+  await oldFillStarted
+  await new Promise((resolve) => setTimeout(resolve, 5))
+
+  const actionStore = runtimeProbeWorkStore(incrementalCache)
+  await workAsyncStorage.run(
+    actionStore,
+    () => workUnitAsyncStorage.run(
+      { ...renderUnitStore, phase: 'action' },
+      async () => {
+        revalidateTag(runtimeTag, { expire: 0 })
+        await executeRevalidates(actionStore)
+      },
+    ),
+  )
+
+  await new Promise((resolve) => setTimeout(resolve, 5))
+  releaseOldFill()
+  const oldValue = await oldFill
+  assert.equal(
+    oldValue,
+    'revision-1-execution-1',
+    'the old catalog fill must complete after invalidation for this race probe',
+  )
+  assert.equal(
+    await render('1'),
+    oldValue,
+    'the runtime probe must reproduce the late old-key cache write',
+  )
+  assert.equal(
+    await render('2'),
+    'revision-2-execution-2',
+    'the durable revision must force the post-mutation read onto a fresh cache key',
+  )
+  assert.equal(
+    await render('2'),
+    'revision-2-execution-2',
+    'the new revision must remain warm after its first fill',
+  )
+  assert.equal(executions, 2)
+
+  for (const tag of implicitTags.tags) tagsManifest.delete(tag)
+  tagsManifest.delete(runtimeTag)
+}
+
+await runNextCatalogRevisionRaceProbe()
 
 assert.match(
   shared,
@@ -455,21 +576,47 @@ for (const [fileName, source] of dataSources) {
 }
 
 assert.match(publicCatalogCache, /import \{ unstable_cache \} from 'next\/cache'/)
+assert.match(publicCatalogCache, /import \{ cache \} from 'react'/)
 assert.match(publicCatalogCache, /PUBLIC_CATALOG_CACHE_TAG = 'public-catalog-v1'/)
 assert.match(publicCatalogCache, /PUBLIC_CATALOG_REVALIDATE_SECONDS = 300/)
 assert.match(
   publicCatalogCache,
-  /readCachedPublicCategories = unstable_cache\([\s\S]*?getCategories[\s\S]*?revalidate: PUBLIC_CATALOG_REVALIDATE_SECONDS[\s\S]*?tags: \[PUBLIC_CATALOG_CACHE_TAG\]/,
+  /const getPublicCatalogRevision = cache\(async \(\): Promise<string \| null> => \{[\s\S]*?rpc\('get_public_catalog_revision'\)[\s\S]*?\.retry\(false\)[\s\S]*?\.abortSignal\(signal\)[\s\S]*?\.throwOnError\(\)[\s\S]*?\^\\d\+\$/,
+  'each server render must share one bounded anonymous read of the durable catalog revision',
+)
+assert.match(
+  publicCatalogCache,
+  /if \(catalogRevision === null\) return getCategories\(\)/,
+  'a failed revision read must bypass the shared category cache',
+)
+assert.match(
+  publicCatalogCache,
+  /if \(catalogRevision === null\) return getPrompts\(options\)/,
+  'a failed revision read must bypass the shared project cache',
+)
+assert.match(
+  publicCatalogCache,
+  /readCachedPublicCategories = unstable_cache\([\s\S]*?catalogRevision: string[\s\S]*?void catalogRevision[\s\S]*?getCategories[\s\S]*?\['public-categories-v2'\][\s\S]*?revalidate: PUBLIC_CATALOG_REVALIDATE_SECONDS[\s\S]*?tags: \[PUBLIC_CATALOG_CACHE_TAG\]/,
   'public categories must use the shared five-minute catalog cache',
 )
 assert.match(
   publicCatalogCache,
-  /readCachedPublicPrompts = unstable_cache\([\s\S]*?getPrompts[\s\S]*?revalidate: PUBLIC_CATALOG_REVALIDATE_SECONDS[\s\S]*?tags: \[PUBLIC_CATALOG_CACHE_TAG\]/,
+  /readCachedPublicPrompts = unstable_cache\([\s\S]*?catalogRevision: string[\s\S]*?void catalogRevision[\s\S]*?getPrompts\(options\)[\s\S]*?\['public-prompts-v2'\][\s\S]*?revalidate: PUBLIC_CATALOG_REVALIDATE_SECONDS[\s\S]*?tags: \[PUBLIC_CATALOG_CACHE_TAG\]/,
   'public projects must use the shared five-minute catalog cache',
 )
 assert.match(publicCatalogCache, /createPublicCatalogSingleFlight\(\)/)
-assert.match(publicCatalogCache, /runPublicCatalogRead\('categories'/)
-assert.match(publicCatalogCache, /runPublicCatalogRead\(key, \(\) => readCachedPublicPrompts\(options\)\)/)
+assert.match(
+  publicCatalogCache,
+  /runPublicCatalogRead\(\s*`categories:\$\{catalogRevision\}`,[\s\S]*?readCachedPublicCategories\(catalogRevision\)/,
+)
+assert.match(
+  publicCatalogCache,
+  /const key = JSON\.stringify\(\[\s*'prompts',\s*catalogRevision,/,
+)
+assert.match(
+  publicCatalogCache,
+  /runPublicCatalogRead\(\s*key,[\s\S]*?readCachedPublicPrompts\(catalogRevision, options\)/,
+)
 assert.match(publicCatalogSingleFlight, /const pendingReads = new Map\(\)/)
 assert.match(publicCatalogSingleFlight, /if \(pending\) return pending/)
 assert.match(publicCatalogSingleFlight, /pendingReads\.delete\(key\)/)

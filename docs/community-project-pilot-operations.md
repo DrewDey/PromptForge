@@ -210,6 +210,17 @@ invitations while unhealthy.
   admitted member is temporarily paused by operational gates. Revoked,
   expired, not-admitted, signed-out, or unverifiable accounts cannot upload a
   repair; the page, server action, and database RPC enforce the same policy.
+- Public catalog caches are keyed by a database revision advanced by
+  catalog-visible project, evidence-step, category, and profile changes. Tag
+  invalidation remains an eager cleanup, but a fill that began before
+  publication or removal can write only to its old revision and cannot
+  resurrect stale state for a later request. A server render memoizes one
+  anonymous scalar revision read across its catalog consumers; if that read is
+  unavailable, the render bypasses the shared cache and uses the existing
+  bounded live-read/fallback path instead of risking an unversioned cache fill.
+  Pending projects and steps, signup-only profiles, and other private queue
+  changes do not advance the revision, so authenticated private work cannot be
+  used to churn the public cache.
 - Direct profile or Auth-user deletion is deliberately blocked while a
   community submission still references that contributor. An account-deletion
   request must first route every submission through withdrawal/removal,

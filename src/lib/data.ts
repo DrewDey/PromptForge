@@ -223,6 +223,15 @@ const publicMockCategories = mockCategories.map((category) => ({
   )).length,
 }))
 
+export type PublicCatalogPromptOptions = {
+  categorySlug?: string
+  difficulty?: string
+  status?: string
+  search?: string
+  limit?: number
+  sort?: 'newest' | 'popular'
+}
+
 function isPublicLibraryPrompt(prompt: { id: string; created_at?: string | null }) {
   if (APPROVED_PROJECT_IDS.has(prompt.id)) return true
   if (!prompt.created_at) return false
@@ -265,8 +274,12 @@ function preparedStepToPromptStep(step: PreparedShowcaseStep, project: PreparedS
 
 // ---- Categories ----
 
+export function getPublicCatalogFallbackCategories(): Category[] {
+  return publicMockCategories.map((category) => ({ ...category }))
+}
+
 export async function getCategories(): Promise<Category[]> {
-  return readWithFallback(publicMockCategories, async (signal) => {
+  return readWithFallback(getPublicCatalogFallbackCategories(), async (signal) => {
     const { createPublicReadClient } = await import('./supabase/server')
     const supabase = await createPublicReadClient({ anonymous: true })
     const { data } = await supabase
@@ -313,14 +326,7 @@ function attachRelations(prompt: typeof mockPrompts[0]): PromptWithRelations {
   }
 }
 
-function getMockPrompts(options?: {
-  categorySlug?: string
-  difficulty?: string
-  status?: string
-  search?: string
-  limit?: number
-  sort?: 'newest' | 'popular'
-}): PromptWithRelations[] {
+function getMockPrompts(options?: PublicCatalogPromptOptions): PromptWithRelations[] {
   let prompts = [...publicMockPrompts]
 
   // Default to approved only
@@ -357,6 +363,24 @@ function getMockPrompts(options?: {
   return prompts.map(attachRelations)
 }
 
+function validatePublicCatalogPromptOptions(options?: PublicCatalogPromptOptions) {
+  const requestedLimit = options?.limit
+  const maximumCheckedRows = PUBLIC_PROMPT_LIST_PAGE_SIZE * PUBLIC_PROMPT_LIST_MAX_PAGES
+  if (
+    requestedLimit !== undefined &&
+    (!Number.isInteger(requestedLimit) || requestedLimit <= 0 || requestedLimit > maximumCheckedRows)
+  ) {
+    throw new RangeError(`Public prompt limits must be between 1 and ${maximumCheckedRows}.`)
+  }
+}
+
+export function getPublicCatalogFallbackPrompts(
+  options?: PublicCatalogPromptOptions,
+): PromptWithRelations[] {
+  validatePublicCatalogPromptOptions(options)
+  return getMockPrompts(options)
+}
+
 function mergeWithPublicMockPrompts(prompts: PromptWithRelations[], options?: Parameters<typeof getMockPrompts>[0]) {
   const seen = new Set(prompts.map(prompt => prompt.id))
   const mockPrompts = getMockPrompts(options).filter(prompt => !seen.has(prompt.id))
@@ -373,24 +397,14 @@ function getPublicMockPromptsForProfile(profile: Pick<Profile, 'id'> & { usernam
   })
 }
 
-export async function getPrompts(options?: {
-  categorySlug?: string
-  difficulty?: string
-  status?: string
-  search?: string
-  limit?: number
-  sort?: 'newest' | 'popular'
-}): Promise<PromptWithRelations[]> {
+export async function getPrompts(
+  options?: PublicCatalogPromptOptions,
+): Promise<PromptWithRelations[]> {
+  validatePublicCatalogPromptOptions(options)
   const requestedLimit = options?.limit
   const maximumCheckedRows = PUBLIC_PROMPT_LIST_PAGE_SIZE * PUBLIC_PROMPT_LIST_MAX_PAGES
-  if (
-    requestedLimit !== undefined &&
-    (!Number.isInteger(requestedLimit) || requestedLimit <= 0 || requestedLimit > maximumCheckedRows)
-  ) {
-    throw new RangeError(`Public prompt limits must be between 1 and ${maximumCheckedRows}.`)
-  }
 
-  return readWithFallback(getMockPrompts(options), async (signal) => {
+  return readWithFallback(getPublicCatalogFallbackPrompts(options), async (signal) => {
     const { createPublicReadClient } = await import('./supabase/server')
     const supabase = await createPublicReadClient({ anonymous: true })
     const status = options?.status ?? 'approved'

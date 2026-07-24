@@ -7,7 +7,11 @@ import { createRequire } from 'node:module'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import ts from 'typescript'
-import { createPublicCatalogSingleFlight } from '../src/lib/public-catalog-single-flight.mjs'
+import {
+  createPublicCatalogReader,
+  createPublicCatalogRevisionReader,
+  createPublicCatalogSingleFlight,
+} from '../src/lib/public-catalog-single-flight.mjs'
 
 globalThis.AsyncLocalStorage ??= AsyncLocalStorage
 const require = createRequire(import.meta.url)
@@ -123,6 +127,114 @@ assert.equal(
   'a rejected fill must release its key for the next request',
 )
 assert.equal(retryExecutions, 2)
+
+let revisionClock = 10_000
+let revisionMode = 'throw'
+let revisionExecutions = 0
+const revisionReader = createPublicCatalogRevisionReader({
+  now: () => revisionClock,
+  failureBackoffMs: 1_000,
+  readRevision: async () => {
+    revisionExecutions += 1
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    if (revisionMode === 'throw') throw new Error('simulated revision outage')
+    if (revisionMode === 'malformed') return 'not-a-revision'
+    return '7'
+  },
+})
+let cachedCategoryExecutions = 0
+let cachedPromptExecutions = 0
+let fallbackCategoryExecutions = 0
+let fallbackPromptExecutions = 0
+const guardedCatalogReader = createPublicCatalogReader({
+  readRevision: revisionReader,
+  readCachedCategories: async () => {
+    cachedCategoryExecutions += 1
+    return ['database-category']
+  },
+  readCachedPrompts: async () => {
+    cachedPromptExecutions += 1
+    return ['database-prompt']
+  },
+  readFallbackCategories: () => {
+    fallbackCategoryExecutions += 1
+    return ['static-category']
+  },
+  readFallbackPrompts: () => {
+    fallbackPromptExecutions += 1
+    return ['static-prompt']
+  },
+})
+
+const failedRevisionRenders = await Promise.all(
+  Array.from({ length: 20 }, (_, index) => (
+    index % 2 === 0
+      ? guardedCatalogReader.readCategories()
+      : guardedCatalogReader.readPrompts({ limit: 1 })
+  )),
+)
+assert.equal(
+  revisionExecutions,
+  1,
+  'concurrent server renders must coalesce one failed durable-revision lookup',
+)
+assert.equal(
+  cachedCategoryExecutions + cachedPromptExecutions,
+  0,
+  'revision failure must not launch raw database-backed catalog readers',
+)
+assert.equal(fallbackCategoryExecutions, 10)
+assert.equal(fallbackPromptExecutions, 10)
+assert.ok(
+  failedRevisionRenders.every(([value]) => value.startsWith('static-')),
+  'every revision-failure render must use the static public catalog',
+)
+
+await guardedCatalogReader.readCategories()
+assert.equal(
+  revisionExecutions,
+  1,
+  'the failure backoff must suppress an immediate durable-revision retry',
+)
+assert.equal(cachedCategoryExecutions + cachedPromptExecutions, 0)
+
+revisionClock += 1_000
+revisionMode = 'malformed'
+assert.deepEqual(await guardedCatalogReader.readPrompts({ limit: 1 }), ['static-prompt'])
+assert.equal(revisionExecutions, 2, 'the backoff must permit one bounded retry')
+assert.equal(
+  cachedCategoryExecutions + cachedPromptExecutions,
+  0,
+  'a malformed revision must also fail closed without a catalog query',
+)
+
+revisionClock += 1_000
+revisionMode = 'success'
+const recoveredRevisionRenders = await Promise.all(
+  Array.from({ length: 20 }, (_, index) => (
+    index % 2 === 0
+      ? guardedCatalogReader.readCategories()
+      : guardedCatalogReader.readPrompts({ limit: 1 })
+  )),
+)
+assert.equal(
+  revisionExecutions,
+  3,
+  'concurrent recovery renders must share one successful revision lookup',
+)
+assert.equal(cachedCategoryExecutions, 1, 'recovery must coalesce the category cache fill')
+assert.equal(cachedPromptExecutions, 1, 'recovery must coalesce the prompt cache fill')
+assert.ok(
+  recoveredRevisionRenders.every(([value]) => value.startsWith('database-')),
+  'a valid revision must restore the database-backed shared cache',
+)
+
+await guardedCatalogReader.readCategories()
+assert.equal(
+  revisionExecutions,
+  4,
+  'a later render must perform at most one fresh revision lookup instead of pinning stale success',
+)
 
 class RuntimeProbeCacheHandler {
   constructor() {
@@ -504,6 +616,10 @@ for (const [fileName, source] of dataSources) {
     assert.match(categories, /return data \?\? \[\]/)
 
     const prompts = functionBody(sourceFile, 'getPrompts')
+    const validatePromptOptions = functionBody(sourceFile, 'validatePublicCatalogPromptOptions')
+    const fallbackCategories = functionBody(sourceFile, 'getPublicCatalogFallbackCategories')
+    const fallbackPrompts = functionBody(sourceFile, 'getPublicCatalogFallbackPrompts')
+    const mockPrompts = functionBody(sourceFile, 'getMockPrompts')
     assert.match(
       prompts,
       /createPublicReadClient\(\{\s*anonymous:\s*true\s*\}\)/,
@@ -529,6 +645,24 @@ for (const [fileName, source] of dataSources) {
       /Public prompt list exceeded \$\{maximumCheckedRows\} checked rows/,
       'public project lists must fail instead of returning a silently truncated catalog',
     )
+    assert.match(
+      validatePromptOptions,
+      /Public prompt limits must be between 1 and \$\{maximumCheckedRows\}/,
+      'database and static catalog paths must enforce the same prompt limit',
+    )
+    assert.match(prompts, /validatePublicCatalogPromptOptions\(options\)/)
+    assert.match(fallbackPrompts, /validatePublicCatalogPromptOptions\(options\)/)
+    for (const [name, body] of [
+      ['category fallback', fallbackCategories],
+      ['project fallback', fallbackPrompts],
+      ['mock project selector', mockPrompts],
+    ]) {
+      assert.doesNotMatch(
+        body,
+        /createPublicReadClient|\.from\(|\.rpc\(/,
+        `${name} must remain a bundled non-database read`,
+      )
+    }
     assert.match(
       prompts,
       /if \(options\?\.categorySlug\) \{[\s\S]*?\.from\('categories'\)[\s\S]*?\.abortSignal\(signal\)\s*\.throwOnError\(\)[\s\S]*?categoryId = cat\?\.id/,
@@ -581,18 +715,28 @@ assert.match(publicCatalogCache, /PUBLIC_CATALOG_CACHE_TAG = 'public-catalog-v1'
 assert.match(publicCatalogCache, /PUBLIC_CATALOG_REVALIDATE_SECONDS = 300/)
 assert.match(
   publicCatalogCache,
-  /const getPublicCatalogRevision = cache\(async \(\): Promise<string \| null> => \{[\s\S]*?rpc\('get_public_catalog_revision'\)[\s\S]*?\.retry\(false\)[\s\S]*?\.abortSignal\(signal\)[\s\S]*?\.throwOnError\(\)[\s\S]*?\^\\d\+\$/,
-  'each server render must share one bounded anonymous read of the durable catalog revision',
+  /createPublicCatalogRevisionReader\(\{[\s\S]*?readRevision: async \(\): Promise<string \| null> => \{[\s\S]*?rpc\('get_public_catalog_revision'\)[\s\S]*?\.retry\(false\)[\s\S]*?\.abortSignal\(signal\)[\s\S]*?\.throwOnError\(\)[\s\S]*?\^\\d\+\$/,
+  'the durable revision must use the bounded anonymous revision reader',
 )
 assert.match(
   publicCatalogCache,
-  /if \(catalogRevision === null\) return getCategories\(\)/,
-  'a failed revision read must bypass the shared category cache',
+  /const getPublicCatalogRevision = cache\(readPublicCatalogRevision\)/,
+  'each server render must share its bounded revision read',
 )
 assert.match(
   publicCatalogCache,
-  /if \(catalogRevision === null\) return getPrompts\(options\)/,
-  'a failed revision read must bypass the shared project cache',
+  /readFallbackCategories: getPublicCatalogFallbackCategories/,
+  'revision failure must route categories to the bundled public fallback',
+)
+assert.match(
+  publicCatalogCache,
+  /readFallbackPrompts: getPublicCatalogFallbackPrompts/,
+  'revision failure must route projects to the bundled public fallback',
+)
+assert.doesNotMatch(
+  publicCatalogCache,
+  /catalogRevision === null[\s\S]{0,100}(?:getCategories|getPrompts)\(/,
+  'revision failure must never call a raw database-backed catalog reader',
 )
 assert.match(
   publicCatalogCache,
@@ -604,22 +748,34 @@ assert.match(
   /readCachedPublicPrompts = unstable_cache\([\s\S]*?catalogRevision: string[\s\S]*?void catalogRevision[\s\S]*?getPrompts\(options\)[\s\S]*?\['public-prompts-v2'\][\s\S]*?revalidate: PUBLIC_CATALOG_REVALIDATE_SECONDS[\s\S]*?tags: \[PUBLIC_CATALOG_CACHE_TAG\]/,
   'public projects must use the shared five-minute catalog cache',
 )
-assert.match(publicCatalogCache, /createPublicCatalogSingleFlight\(\)/)
 assert.match(
   publicCatalogCache,
-  /runPublicCatalogRead\(\s*`categories:\$\{catalogRevision\}`,[\s\S]*?readCachedPublicCategories\(catalogRevision\)/,
+  /createPublicCatalogReader\(\{[\s\S]*?readCachedCategories: readCachedPublicCategories/,
 )
 assert.match(
   publicCatalogCache,
-  /const key = JSON\.stringify\(\[\s*'prompts',\s*catalogRevision,/,
+  /readCachedPrompts: readCachedPublicPrompts/,
 )
 assert.match(
   publicCatalogCache,
-  /runPublicCatalogRead\(\s*key,[\s\S]*?readCachedPublicPrompts\(catalogRevision, options\)/,
+  /return publicCatalogReader\.readCategories\(\)/,
 )
+assert.match(publicCatalogCache, /return publicCatalogReader\.readPrompts\(options\)/)
 assert.match(publicCatalogSingleFlight, /const pendingReads = new Map\(\)/)
 assert.match(publicCatalogSingleFlight, /if \(pending\) return pending/)
 assert.match(publicCatalogSingleFlight, /pendingReads\.delete\(key\)/)
+assert.match(publicCatalogSingleFlight, /createPublicCatalogRevisionReader/)
+assert.match(publicCatalogSingleFlight, /if \(now\(\) < retryAfter\) return null/)
+assert.match(publicCatalogSingleFlight, /retryAfter = now\(\) \+ failureBackoffMs/)
+assert.match(publicCatalogSingleFlight, /createPublicCatalogReader/)
+assert.match(
+  publicCatalogSingleFlight,
+  /if \(catalogRevision === null\) return readFallbackCategories\(\)/,
+)
+assert.match(
+  publicCatalogSingleFlight,
+  /if \(catalogRevision === null\) return readFallbackPrompts\(options\)/,
+)
 
 for (const [fileName, source, requiredCachedReads] of catalogConsumers) {
   for (const cachedRead of requiredCachedReads) {

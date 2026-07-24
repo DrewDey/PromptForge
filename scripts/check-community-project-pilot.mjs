@@ -6,7 +6,11 @@ import {
   scanCommunityArtifactText,
   scanCommunityEvidenceText,
 } from '../src/lib/community-project-scanner-core.mjs'
-import { canSubmitCommunityProjectRepair } from '../src/lib/community-project-pilot-policy.mjs'
+import {
+  canSubmitCommunityProjectRepair,
+  isCommunityProjectSubmissionId,
+  resolveCommunityProjectRepair,
+} from '../src/lib/community-project-pilot-policy.mjs'
 
 const root = process.cwd()
 const fixtureRoot = path.join(root, 'test-fixtures', 'community-project')
@@ -98,6 +102,78 @@ for (const [status, expected] of [
     `repair policy drifted for ${status}`,
   )
 }
+
+const validCommunityRepairId = '10000000-0000-4000-8000-000000000002'
+assert.equal(isCommunityProjectSubmissionId(validCommunityRepairId), true)
+assert.equal(isCommunityProjectSubmissionId('not-a-uuid'), false)
+assert.equal(isCommunityProjectSubmissionId(null), false)
+
+let repairOwnerReadCount = 0
+const readRepairSubmission = async (id) => {
+  repairOwnerReadCount += 1
+  return { id, status: 'needs_repair' }
+}
+assert.deepEqual(
+  await resolveCommunityProjectRepair({
+    requestedRepairId: 'not-a-uuid',
+    signedIn: true,
+    readSubmission: readRepairSubmission,
+  }),
+  {
+    kind: 'invalid',
+    repairId: null,
+    submission: null,
+  },
+  'a malformed signed-in repair link must resolve to the unavailable state',
+)
+assert.equal(
+  repairOwnerReadCount,
+  0,
+  'a malformed signed-in repair link must not query an owner submission',
+)
+assert.equal(
+  (
+    await resolveCommunityProjectRepair({
+      requestedRepairId: [validCommunityRepairId, validCommunityRepairId],
+      signedIn: true,
+      readSubmission: readRepairSubmission,
+    })
+  ).kind,
+  'invalid',
+  'repeated repair query parameters must also fail closed',
+)
+assert.equal(repairOwnerReadCount, 0)
+assert.deepEqual(
+  await resolveCommunityProjectRepair({
+    requestedRepairId: validCommunityRepairId,
+    signedIn: false,
+    readSubmission: readRepairSubmission,
+  }),
+  {
+    kind: 'signed_out',
+    repairId: validCommunityRepairId,
+    submission: null,
+  },
+  'a valid signed-out repair link must preserve the private login target without reading it',
+)
+assert.equal(repairOwnerReadCount, 0)
+assert.deepEqual(
+  await resolveCommunityProjectRepair({
+    requestedRepairId: validCommunityRepairId,
+    signedIn: true,
+    readSubmission: readRepairSubmission,
+  }),
+  {
+    kind: 'resolved',
+    repairId: validCommunityRepairId,
+    submission: {
+      id: validCommunityRepairId,
+      status: 'needs_repair',
+    },
+  },
+  'a valid signed-in repair link must resolve exactly one owner-scoped submission',
+)
+assert.equal(repairOwnerReadCount, 1)
 
 const migration = readFileSync(
   path.join(root, 'supabase', 'migrations', '20260723054558_community_project_pilot.sql'),
@@ -584,6 +660,13 @@ assert.match(buildPage, /status === 'temporarily_paused'/)
 assert.match(buildPage, /You are admitted to the pilot, but new project submissions are temporarily paused/)
 assert.match(buildPage, /status === 'expired'/)
 assert.match(buildPage, /canSubmitCommunityProjectRepair\(eligibility\.status\)/)
+assert.match(buildPage, /resolveCommunityProjectRepair\(\{/)
+assert.match(buildPage, /const requestedRepairId = params\.repairCommunity \?\? null/)
+assert.match(
+  buildPage,
+  /repairRequest\.kind === 'invalid'[\s\S]*?status=\{eligibility\.signedIn \? 'unavailable' : eligibility\.status\}[\s\S]*?nextPath="\/build"/,
+  'malformed authenticated repair links must render the existing unavailable state',
+)
 assert.match(buildPage, /import \{ authHref \} from '@\/lib\/auth-redirects'/)
 assert.match(
   buildPage,
@@ -592,6 +675,11 @@ assert.match(
 )
 assert.match(buildPage, /authHref\('\/auth\/login', nextPath\)/)
 assert.match(buildPage, /authHref\('\/auth\/signup', nextPath\)/)
+assert.match(
+  communityProjectData,
+  /getCommunityProjectSubmissionForOwner\([\s\S]*?if \(!isCommunityProjectSubmissionId\(id\)\) return null[\s\S]*?\.from\('community_project_submissions'\)/,
+  'owner data reads must independently reject malformed submission ids before PostgREST',
+)
 assert.match(
   ownerProjectPage,
   /submitted === '1' && submission\.status === 'queued'/,
@@ -726,6 +814,7 @@ assert.match(artifactSandboxGuard, /--remote-debugging-address=127\.0\.0\.1/)
 assert.match(authBrowserGuard, /auth\/signup\?next=%2Fbuild/)
 assert.match(authBrowserGuard, /repairCommunity/)
 assert.match(authBrowserGuard, /community repair signup handoff lost its exact return path/)
+assert.match(authBrowserGuard, /malformed community repair link was not stripped from the auth handoff/)
 assert.match(authBrowserGuard, /anonymous \/build exposed an upload control/)
 assert.match(authBrowserGuard, /overflowed horizontally/)
 assert.match(authBrowserGuard, /community artifact viewer routed to a not-found state/)

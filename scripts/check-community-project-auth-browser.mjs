@@ -26,6 +26,7 @@ const COMMUNITY_REPAIR_PATH = `/build?${new URLSearchParams({
   repairCommunity: COMMUNITY_REPAIR_FIXTURE_ID,
 }).toString()}`
 const COMMUNITY_REPAIR_NEXT = encodeURIComponent(COMMUNITY_REPAIR_PATH)
+const INVALID_COMMUNITY_REPAIR_PATH = '/build?repairCommunity=not-a-uuid'
 const COMMUNITY_ARTIFACT_FIXTURE_HTML = '<!doctype html><html><head><style>html,body{margin:0;background:#fff;color:#111;font:700 24px system-ui}main{min-height:1800px;padding:24px;background:linear-gradient(#fff,#eef6ff)}#community-preview-middle{margin-top:650px;padding:24px;background:#dbeafe;color:#111827}#community-preview-bottom{margin-top:650px;padding:24px;background:#111827;color:#fff}</style></head><body><main><h1>Community artifact viewer fixture</h1><p>This readable result exists before scripts run.</p><p id="community-preview-middle">Static preview midpoint</p><p id="community-preview-bottom">Static preview bottom marker</p></main><script>document.body.replaceChildren()</script></body></html>'
 const COMMUNITY_UPLOAD_FIXTURE = path.join(process.cwd(), 'test-fixtures', 'community-project', 'valid.html')
 const LEGACY_FORK_PATH = `/prompt/new?${new URLSearchParams({
@@ -661,6 +662,35 @@ async function main() {
             client,
             sessionId,
             path.join(options.screenshotDir, `community-repair-signup-${viewport.name}.png`),
+          )
+        }
+
+        await navigate(client, sessionId, `${options.baseUrl}${INVALID_COMMUNITY_REPAIR_PATH}`)
+        await waitForHeading(
+          client,
+          sessionId,
+          'Submit the finished project',
+          `${viewport.name} malformed community repair handoff`,
+        )
+        const invalidCommunityRepair = await evaluate(client, sessionId, `(() => ({
+          href: location.pathname + location.search,
+          signInHref: [...document.querySelectorAll('a')].find((link) => link.textContent?.includes('Invited already'))?.getAttribute('href') || '',
+          signUpHref: [...document.querySelectorAll('a')].find((link) => link.textContent?.includes('New here?'))?.getAttribute('href') || '',
+          hasUpload: Boolean(document.querySelector('input[type="file"]')),
+        }))()`)
+        if (
+          invalidCommunityRepair.href !== INVALID_COMMUNITY_REPAIR_PATH ||
+          invalidCommunityRepair.signInHref !== '/auth/login?next=%2Fbuild' ||
+          invalidCommunityRepair.signUpHref !== '/auth/signup?next=%2Fbuild' ||
+          invalidCommunityRepair.hasUpload
+        ) {
+          throw new Error(`${viewport.name} malformed community repair link was not stripped from the auth handoff: ${JSON.stringify(invalidCommunityRepair)}.`)
+        }
+        if (options.screenshotDir) {
+          await capture(
+            client,
+            sessionId,
+            path.join(options.screenshotDir, `community-repair-invalid-${viewport.name}.png`),
           )
         }
 

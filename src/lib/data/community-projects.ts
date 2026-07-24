@@ -5,6 +5,7 @@ import type {
 } from '../community-project-contract'
 import { readWithFallback, requireAdminAccess, SUPABASE_CONFIGURED } from './shared'
 import { createAdminClient } from '../supabase/admin'
+import { isCommunityProjectSubmissionId } from '../community-project-pilot-policy.mjs'
 
 // Owner reads deliberately omit reviewer identities/notes and every report or
 // pilot-administration field. Keep this list in sync with the column-level
@@ -268,6 +269,7 @@ export async function getCommunityProjectSubmissionsForOwner(): Promise<Communit
 export async function getCommunityProjectSubmissionForOwner(
   id: string,
 ): Promise<CommunityProjectSubmission | null> {
+  if (!isCommunityProjectSubmissionId(id)) return null
   if (!SUPABASE_CONFIGURED) return null
   const { createClient } = await import('../supabase/server')
   const supabase = await createClient()

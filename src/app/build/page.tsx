@@ -7,7 +7,11 @@ import {
   type CommunityProjectPilotStatus,
 } from '@/lib/data/community-projects'
 import { authHref } from '@/lib/auth-redirects'
-import { canSubmitCommunityProjectRepair } from '@/lib/community-project-pilot-policy.mjs'
+import {
+  canSubmitCommunityProjectRepair,
+  isCommunityProjectSubmissionId,
+  resolveCommunityProjectRepair,
+} from '@/lib/community-project-pilot-policy.mjs'
 import { canonicalMetadata } from '@/lib/site-url'
 import ProjectSubmissionClient from './ProjectSubmissionClient'
 import LegacySourceRunRepairClient from './LegacySourceRunRepairClient'
@@ -118,7 +122,10 @@ export default async function BuildPage({
 }) {
   const params = await searchParams
   const legacyRepairId = typeof params.repair === 'string' ? params.repair : null
-  const repairId = typeof params.repairCommunity === 'string' ? params.repairCommunity : null
+  const requestedRepairId = params.repairCommunity ?? null
+  const repairId = typeof requestedRepairId === 'string' && isCommunityProjectSubmissionId(requestedRepairId)
+    ? requestedRepairId
+    : null
   const communityRepairNextPath = repairId
     ? `/build?${new URLSearchParams({ repairCommunity: repairId }).toString()}`
     : '/build'
@@ -136,9 +143,22 @@ export default async function BuildPage({
     }
     return <LegacySourceRunRepairClient repairId={legacyRepairId} />
   }
-  const repairSubmission = eligibility.signedIn && repairId
-    ? await getCommunityProjectSubmissionForOwner(repairId)
-    : null
+  const repairRequest = await resolveCommunityProjectRepair({
+    requestedRepairId,
+    signedIn: eligibility.signedIn,
+    readSubmission: getCommunityProjectSubmissionForOwner,
+  })
+  if (repairRequest.kind === 'invalid') {
+    return (
+      <PilotExplanation
+        signedIn={eligibility.signedIn}
+        username={eligibility.username}
+        status={eligibility.signedIn ? 'unavailable' : eligibility.status}
+        nextPath="/build"
+      />
+    )
+  }
+  const repairSubmission = repairRequest.submission
   const repairIsAvailable = (
     repairSubmission?.status === 'needs_repair' &&
     canSubmitCommunityProjectRepair(eligibility.status)
@@ -157,7 +177,7 @@ export default async function BuildPage({
   return (
     <ProjectSubmissionClient
       repairSubmission={repairIsAvailable ? repairSubmission : null}
-      requestedRepairId={repairId}
+      requestedRepairId={repairRequest.repairId}
       publicContributorName={eligibility.displayName || eligibility.username || 'Your PathForge profile'}
     />
   )

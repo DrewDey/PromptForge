@@ -456,6 +456,7 @@ async function artifactRenderedContrast(client, sessionId, containerSelector = '
 
 async function main() {
   const options = parseArgs(process.argv.slice(2))
+  const vercelProtectionBypass = process.env.VERCEL_PROTECTION_BYPASS?.trim()
   const executable = chromeExecutable()
   if (!executable) throw new Error('Chrome was not found for the community-project auth browser guard.')
 
@@ -528,6 +529,14 @@ async function main() {
           patterns: [{ urlPattern: '*/api/community-artifacts/*', requestStage: 'Request' }],
         }, sessionId),
       ])
+      if (vercelProtectionBypass) {
+        await client.send('Network.setExtraHTTPHeaders', {
+          headers: {
+            'x-vercel-protection-bypass': vercelProtectionBypass,
+            'x-vercel-set-bypass-cookie': 'true',
+          },
+        }, sessionId)
+      }
 
       for (const viewport of VIEWPORTS) {
         await client.send('Emulation.setDeviceMetricsOverride', {

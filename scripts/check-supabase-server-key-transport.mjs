@@ -142,4 +142,136 @@ assert.equal(
   'The opaque-key transport must remove only the duplicated secret-key bearer token.',
 )
 
+const transientAuthRecords = []
+const transientAuthFetch = createSupabaseSecretKeyFetch(SECRET_KEY, async (input, init = {}) => {
+  const headers = new Headers(init.headers)
+  transientAuthRecords.push({
+    url: String(input),
+    method: init.method,
+    body: init.body,
+    headers,
+  })
+  if (transientAuthRecords.length < 3) {
+    return new Response(JSON.stringify({
+      message: 'invalid JWT: unable to parse or verify signature, token is unverifiable: error while executing keyfunc: unrecognized JWT kid <nil> for algorithm ES256',
+    }), {
+      status: 403,
+      headers: { 'content-type': 'application/json' },
+    })
+  }
+  return jsonResponse({ id: 'transport-retry-user' })
+})
+const transientAuthResponse = await transientAuthFetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+  method: 'POST',
+  headers: {
+    apikey: SECRET_KEY,
+    Authorization: `Bearer ${SECRET_KEY}`,
+    'content-type': 'application/json',
+  },
+  body: JSON.stringify({ email: 'transport-retry@example.invalid' }),
+})
+assert.equal(transientAuthResponse.status, 200)
+assert.equal(transientAuthRecords.length, 3)
+for (const record of transientAuthRecords) {
+  assert.equal(record.method, 'POST')
+  assert.equal(record.body, JSON.stringify({ email: 'transport-retry@example.invalid' }))
+  assert.equal(record.headers.get('apikey'), SECRET_KEY)
+  assert.equal(record.headers.has('authorization'), false)
+}
+
+let escapedGatewayRejectionCalls = 0
+const escapedGatewayRejectionFetch = createSupabaseSecretKeyFetch(SECRET_KEY, async () => {
+  escapedGatewayRejectionCalls += 1
+  if (escapedGatewayRejectionCalls === 1) {
+    return new Response(
+      '{"code":403,"error_code":"bad_jwt","msg":"invalid JWT: unable to parse or verify signature, token is unverifiable: error while executing keyfunc: unrecognized JWT kid \\u003cnil\\u003e for algorithm ES256"}',
+      {
+        status: 403,
+        headers: { 'content-type': 'application/json' },
+      },
+    )
+  }
+  return jsonResponse({ id: 'wire-format-retry-user' })
+})
+const escapedGatewayRejectionResponse = await escapedGatewayRejectionFetch(
+  `${SUPABASE_URL}/auth/v1/admin/users/wire-format-retry-user`,
+  { headers: { apikey: SECRET_KEY } },
+)
+assert.equal(escapedGatewayRejectionResponse.status, 200)
+assert.equal(escapedGatewayRejectionCalls, 2)
+
+let unrelatedRejectionCalls = 0
+const unrelatedRejectionFetch = createSupabaseSecretKeyFetch(SECRET_KEY, async () => {
+  unrelatedRejectionCalls += 1
+  return new Response(JSON.stringify({ message: 'Current pilot admission is required.' }), {
+    status: 403,
+    headers: { 'content-type': 'application/json' },
+  })
+})
+const unrelatedRejectionResponse = await unrelatedRejectionFetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+  headers: { apikey: SECRET_KEY },
+})
+assert.equal(unrelatedRejectionResponse.status, 403)
+assert.equal(unrelatedRejectionCalls, 1)
+
+let transientRestCalls = 0
+const transientRestFetch = createSupabaseSecretKeyFetch(SECRET_KEY, async () => {
+  transientRestCalls += 1
+  if (transientRestCalls === 1) {
+    return new Response(JSON.stringify({
+      message: 'invalid JWT: unable to parse or verify signature, token is unverifiable: error while executing keyfunc: unrecognized JWT kid <nil> for algorithm ES256',
+    }), {
+      status: 403,
+      headers: { 'content-type': 'application/json' },
+    })
+  }
+  return jsonResponse([{ id: 'transport-rest-retry' }])
+})
+const transientRestResponse = await transientRestFetch(`${SUPABASE_URL}/rest/v1/transport_probe`, {
+  headers: { apikey: SECRET_KEY },
+})
+assert.equal(transientRestResponse.status, 200)
+assert.equal(transientRestCalls, 2)
+
+const binaryArtifact = new TextEncoder().encode('<!doctype html><title>transport fixture</title>')
+const transientStorageRecords = []
+const transientStorageFetch = createSupabaseSecretKeyFetch(SECRET_KEY, async (input, init = {}) => {
+  transientStorageRecords.push({
+    url: String(input),
+    method: init.method,
+    body: init.body,
+    headers: new Headers(init.headers),
+  })
+  if (transientStorageRecords.length === 1) {
+    return new Response(
+      '{"code":403,"error_code":"bad_jwt","msg":"invalid JWT: unable to parse or verify signature, token is unverifiable: error while executing keyfunc: unrecognized JWT kid \\u003cnil\\u003e for algorithm ES256"}',
+      {
+        status: 403,
+        headers: { 'content-type': 'application/json' },
+      },
+    )
+  }
+  return jsonResponse({ Key: 'transport-probe/fixture.html' })
+})
+const transientStorageResponse = await transientStorageFetch(
+  `${SUPABASE_URL}/storage/v1/object/transport-probe/fixture.html`,
+  {
+    method: 'POST',
+    headers: {
+      apikey: SECRET_KEY,
+      Authorization: `Bearer ${SECRET_KEY}`,
+      'content-type': 'text/html',
+    },
+    body: binaryArtifact,
+  },
+)
+assert.equal(transientStorageResponse.status, 200)
+assert.equal(transientStorageRecords.length, 2)
+for (const record of transientStorageRecords) {
+  assert.equal(record.method, 'POST')
+  assert.deepEqual([...record.body], [...binaryArtifact])
+  assert.equal(record.headers.get('apikey'), SECRET_KEY)
+  assert.equal(record.headers.has('authorization'), false)
+}
+
 console.log('Supabase server-key transport checks passed.')

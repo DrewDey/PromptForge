@@ -282,6 +282,29 @@ admission, uploads a real private fixture at 390px with external invitations
 still locked, verifies the desktop owner receipt and withdrawal, and exits
 successfully only after verifying its exact account, membership, submission,
 and quarantine objects are gone and the one acceptance slot is empty.
+For a Vercel Authentication-protected preview, load the existing project
+automation credential as `VERCEL_PROTECTION_BYPASS`; the browser guards send it
+only as a request header and never log or commit it.
+The opaque-key server transport retries at most seven times only when the
+Supabase API gateway returns the exact pre-execution ES256 missing-key-id
+rejection. It never
+retries other authorization failures or non-replayable bodies, and a final
+rejection remains a hard acceptance failure.
+When production SMTP is intentionally unavailable, a preview-only lifecycle
+run may additionally set
+`COMMUNITY_PROJECT_ACCEPTANCE_BOOTSTRAP=admin-no-mail` and use a syntactically
+valid reserved-domain base address. That mode creates an unconfirmed disposable
+identity through the operator-only Auth API, then proves the real callback,
+pre-admission denial, private upload, withdrawal, and exact cleanup. It does
+not claim that the public signup request or mailbox delivery succeeded; the
+default `public-signup` mode and the separate mailbox-delivery gate remain
+mandatory before external invitations.
+During a documented Supabase opaque-key platform incident, the preview-only
+no-mail lifecycle may also set
+`COMMUNITY_PROJECT_ACCEPTANCE_ALLOW_LEGACY_KEY=1` and load the project’s
+existing legacy `SUPABASE_SERVICE_ROLE_KEY`. That compatibility run may prove
+the callback/upload/cleanup product path, but it does not satisfy the current
+`sb_secret_` release gate and may never be used to open external invitations.
 
 The production acceptance run uses a fresh non-admin account and never turns
 on external invitations:

@@ -2,6 +2,19 @@ import { createClient } from '@supabase/supabase-js'
 
 const SECRET_KEY_PREFIX = 'sb_secret_'
 const PUBLISHABLE_KEY_PREFIX = 'sb_publishable_'
+const TRANSIENT_AUTH_KEY_REJECTION = /invalid JWT[\s\S]*unrecognized JWT kid <nil> for algorithm ES256/i
+const MAX_TRANSIENT_AUTH_ATTEMPTS = 8
+
+function isReplayableFetchBody(body) {
+  if (body == null || typeof body === 'string') return true
+  if (typeof ArrayBuffer !== 'undefined' && (body instanceof ArrayBuffer || ArrayBuffer.isView(body))) {
+    return true
+  }
+  if (typeof Blob !== 'undefined' && body instanceof Blob) return true
+  if (typeof FormData !== 'undefined' && body instanceof FormData) return true
+  if (typeof URLSearchParams !== 'undefined' && body instanceof URLSearchParams) return true
+  return false
+}
 
 export function isSupabaseSecretKey(value) {
   return typeof value === 'string' && value.startsWith(SECRET_KEY_PREFIX)
@@ -55,7 +68,8 @@ export function createSupabaseSecretKeyFetch(
     const inheritedHeaders = typeof Request !== 'undefined' && input instanceof Request
       ? input.headers
       : undefined
-    const headers = new Headers(init.headers ?? inheritedHeaders)
+    const headers = new Headers(inheritedHeaders)
+    for (const [name, value] of new Headers(init.headers)) headers.set(name, value)
     const apiKey = headers.get('apikey')
     const authorization = headers.get('authorization')
 
@@ -67,7 +81,41 @@ export function createSupabaseSecretKeyFetch(
       headers.delete('authorization')
     }
 
-    return fetchImplementation(input, { ...init, headers })
+    const inputHasBody = typeof Request !== 'undefined' && input instanceof Request && input.body !== null
+    const canReplayBody = !inputHasBody && isReplayableFetchBody(init.body)
+    const attempts = canReplayBody ? MAX_TRANSIENT_AUTH_ATTEMPTS : 1
+
+    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+      const response = await fetchImplementation(input, { ...init, headers })
+      if (attempt === attempts || response.status !== 403) return response
+
+      let retryable = false
+      try {
+        const rejectionBody = await response.clone().text()
+        let rejectionMessage = rejectionBody
+        try {
+          const rejection = JSON.parse(rejectionBody)
+          rejectionMessage = [
+            rejection?.message,
+            rejection?.msg,
+            rejection?.error_description,
+          ].filter((value) => typeof value === 'string').join('\n') || rejectionBody
+        } catch {
+          // Some gateway responses are plain text; match that body directly.
+        }
+        retryable = TRANSIENT_AUTH_KEY_REJECTION.test(rejectionMessage)
+      } catch {
+        return response
+      }
+      if (!retryable) return response
+
+      // The gateway rejected the credential before the Supabase operation ran, so
+      // the exact JSON request is safe to replay. Keep the retry narrow and
+      // bounded; every other response returns immediately to the caller.
+      await new Promise((resolve) => setTimeout(resolve, 50 * attempt))
+    }
+
+    throw new Error('Supabase Auth transport exhausted without a response.')
   }
 }
 

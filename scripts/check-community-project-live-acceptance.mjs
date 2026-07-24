@@ -8,6 +8,7 @@ import path from 'node:path'
 import { CdpClient, chromeExecutable, waitForWebSocketUrl } from './measure-html-artifacts.mjs'
 import {
   createSupabaseServerClient,
+  isLegacyServiceRoleKey,
   isSupabaseSecretKey,
   resolveSupabaseServerKey,
 } from '../src/lib/supabase/server-client.mjs'
@@ -35,12 +36,11 @@ function requiredEnvironment(name) {
   return value
 }
 
-function requiredServerKey() {
+function requiredServerKey({ allowLegacy }) {
   const serverKey = resolveSupabaseServerKey(process.env)
-  if (!isSupabaseSecretKey(serverKey)) {
-    throw new Error('The deployed acceptance gate requires SUPABASE_SECRET_KEY with a current sb_secret_ key.')
-  }
-  return serverKey
+  if (isSupabaseSecretKey(serverKey)) return serverKey
+  if (allowLegacy && isLegacyServiceRoleKey(serverKey)) return serverKey
+  throw new Error('The deployed acceptance gate requires SUPABASE_SECRET_KEY with a current sb_secret_ key.')
 }
 
 function disposableAcceptanceEmail(baseEmail, suffix) {
@@ -59,7 +59,14 @@ async function evaluate(client, sessionId, expression) {
     returnByValue: true,
     awaitPromise: true,
   }, sessionId)
-  if (exceptionDetails) throw new Error(exceptionDetails.text ?? 'Browser evaluation failed.')
+  if (exceptionDetails) {
+    throw new Error(
+      exceptionDetails.exception?.description
+      ?? exceptionDetails.exception?.value
+      ?? exceptionDetails.text
+      ?? 'Browser evaluation failed.',
+    )
+  }
   return result.value
 }
 
@@ -86,6 +93,96 @@ async function capture(client, sessionId, outputPath) {
     captureBeyondViewport: false,
   }, sessionId)
   writeFileSync(outputPath, Buffer.from(data, 'base64'))
+}
+
+function renderedElementExpression(selector) {
+  return `([...document.querySelectorAll(${JSON.stringify(selector)})].find((element) => {
+    const rect = element.getBoundingClientRect();
+    const style = getComputedStyle(element);
+    return !element.hidden &&
+      rect.width > 0 &&
+      rect.height > 0 &&
+      style.display !== 'none' &&
+      style.visibility !== 'hidden';
+  }) ?? null)`
+}
+
+async function clickElement(client, sessionId, selector, label) {
+  const point = await evaluate(client, sessionId, `(async () => {
+    const element = ${renderedElementExpression(selector)};
+    if (!element || element.hidden || element.disabled) {
+      throw new Error(${JSON.stringify(`${label} is unavailable.`)});
+    }
+    element.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' });
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    const rect = element.getBoundingClientRect();
+    const style = getComputedStyle(element);
+    if (
+      rect.width <= 0 ||
+      rect.height <= 0 ||
+      style.display === 'none' ||
+      style.visibility === 'hidden' ||
+      style.pointerEvents === 'none'
+    ) {
+      throw new Error(${JSON.stringify(`${label} is not interactable.`)});
+    }
+    return {
+      x: rect.left + (rect.width / 2),
+      y: rect.top + (rect.height / 2),
+    };
+  })()`)
+  await client.send('Input.dispatchMouseEvent', {
+    type: 'mouseMoved',
+    x: point.x,
+    y: point.y,
+    buttons: 0,
+  }, sessionId)
+  await client.send('Input.dispatchMouseEvent', {
+    type: 'mousePressed',
+    x: point.x,
+    y: point.y,
+    button: 'left',
+    buttons: 1,
+    clickCount: 1,
+  }, sessionId)
+  await client.send('Input.dispatchMouseEvent', {
+    type: 'mouseReleased',
+    x: point.x,
+    y: point.y,
+    button: 'left',
+    buttons: 0,
+    clickCount: 1,
+  }, sessionId)
+}
+
+async function setFileInputFiles(client, sessionId, selector, files, label) {
+  const { result, exceptionDetails } = await client.send('Runtime.evaluate', {
+    expression: `(() => {
+      const element = ${renderedElementExpression(selector)};
+      if (!(element instanceof HTMLInputElement) || element.type !== 'file') {
+        throw new Error(${JSON.stringify(`${label} is unavailable.`)});
+      }
+      return element;
+    })()`,
+    returnByValue: false,
+  }, sessionId)
+  if (exceptionDetails) {
+    throw new Error(
+      exceptionDetails.exception?.description
+      ?? exceptionDetails.exception?.value
+      ?? exceptionDetails.text
+      ?? `${label} could not be resolved.`,
+    )
+  }
+  if (!result.objectId) throw new Error(`${label} could not be resolved.`)
+  try {
+    await client.send('DOM.setFileInputFiles', {
+      objectId: result.objectId,
+      files,
+    }, sessionId)
+  } finally {
+    await client.send('Runtime.releaseObject', { objectId: result.objectId }, sessionId)
+  }
 }
 
 async function waitForProfile(admin, username) {
@@ -140,8 +237,18 @@ async function recordCleanup(cleanupErrors, label, task) {
 async function main() {
   const options = parseArgs(process.argv.slice(2))
   const supabaseUrl = requiredEnvironment('NEXT_PUBLIC_SUPABASE_URL')
-  const serverKey = requiredServerKey()
   const acceptanceMailbox = requiredEnvironment('COMMUNITY_PROJECT_ACCEPTANCE_EMAIL')
+  const accountBootstrap = process.env.COMMUNITY_PROJECT_ACCEPTANCE_BOOTSTRAP?.trim() || 'public-signup'
+  if (!['public-signup', 'admin-no-mail'].includes(accountBootstrap)) {
+    throw new Error('COMMUNITY_PROJECT_ACCEPTANCE_BOOTSTRAP must be public-signup or admin-no-mail.')
+  }
+  const allowLegacy = process.env.COMMUNITY_PROJECT_ACCEPTANCE_ALLOW_LEGACY_KEY === '1'
+  if (allowLegacy && accountBootstrap !== 'admin-no-mail') {
+    throw new Error('Legacy-key compatibility is limited to the operator-only admin-no-mail acceptance mode.')
+  }
+  const serverKey = requiredServerKey({ allowLegacy })
+  const usesLegacyKey = isLegacyServiceRoleKey(serverKey)
+  const vercelProtectionBypass = process.env.VERCEL_PROTECTION_BYPASS?.trim()
   const admin = createSupabaseServerClient(supabaseUrl, serverKey)
   const executable = chromeExecutable()
   if (!executable) throw new Error('Chrome was not found for the live acceptance check.')
@@ -156,7 +263,9 @@ async function main() {
   let administratorId = ''
   let chrome
   let client
+  let sessionId = ''
   let runError = null
+  let acceptanceStage = 'preflight controls'
 
   try {
     const { data: controls, error: controlError } = await admin
@@ -179,6 +288,7 @@ async function main() {
       throw new Error('The disposable acceptance slot is already occupied; no account was created.')
     }
 
+    acceptanceStage = 'administrator lookup'
     const { data: administrators, error: administratorError } = await admin
       .from('profiles')
       .select('id')
@@ -189,6 +299,7 @@ async function main() {
     administratorId = administrators?.[0]?.id ?? ''
     if (!administratorId) throw new Error('No PathForge administrator is available for disposable admission.')
 
+    acceptanceStage = 'browser launch'
     chrome = spawn(executable, [
       '--headless=new',
       '--disable-gpu',
@@ -200,11 +311,12 @@ async function main() {
     client = new CdpClient(await waitForWebSocketUrl(chrome))
     await client.ready()
     const { targetId } = await client.send('Target.createTarget', { url: 'about:blank' })
-    const { sessionId } = await client.send('Target.attachToTarget', { targetId, flatten: true })
+    ;({ sessionId } = await client.send('Target.attachToTarget', { targetId, flatten: true }))
     await Promise.all([
       client.send('Page.enable', {}, sessionId),
       client.send('Runtime.enable', {}, sessionId),
       client.send('DOM.enable', {}, sessionId),
+      client.send('Network.enable', {}, sessionId),
       client.send('Emulation.setDeviceMetricsOverride', {
         width: 390,
         height: 844,
@@ -212,44 +324,73 @@ async function main() {
         mobile: true,
       }, sessionId),
     ])
+    if (vercelProtectionBypass) {
+      await client.send('Network.setExtraHTTPHeaders', {
+        headers: {
+          'x-vercel-protection-bypass': vercelProtectionBypass,
+          'x-vercel-set-bypass-cookie': 'true',
+        },
+      }, sessionId)
+    }
 
-    await navigate(client, sessionId, `${options.baseUrl}/auth/signup?next=%2Fbuild`)
-    await waitFor(client, sessionId, `({ passed: Boolean(document.querySelector('input[name="username"]')) })`, 'public signup form')
-    await evaluate(client, sessionId, `(() => {
-      const setValue = (selector, value) => {
-        const element = document.querySelector(selector);
-        const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
-        setter.call(element, value);
-        element.dispatchEvent(new Event('input', { bubbles: true }));
-        element.dispatchEvent(new Event('change', { bubbles: true }));
-      };
-      setValue('input[name="username"]', ${JSON.stringify(username)});
-      setValue('input[name="email"]', ${JSON.stringify(email)});
-      setValue('input[name="password"]', ${JSON.stringify(password)});
-      document.querySelector('form').requestSubmit();
-      return true;
-    })()`)
-    await waitFor(client, sessionId, `(() => ({
-      passed: document.querySelector('h1')?.textContent?.includes('Check your') &&
-        document.body.textContent.includes('One last step'),
-      path: location.pathname,
-      error: document.querySelector('[role="alert"]')?.textContent || '',
-    }))()`, 'public signup email-confirmation handoff')
-    if (options.screenshotDir) await capture(client, sessionId, path.join(options.screenshotDir, 'live-public-signup-confirmation.png'))
+    acceptanceStage = accountBootstrap === 'public-signup'
+      ? 'public signup'
+      : 'operator-only no-mail account bootstrap'
+    if (accountBootstrap === 'public-signup') {
+      await navigate(client, sessionId, `${options.baseUrl}/auth/signup?next=%2Fbuild`)
+      await waitFor(client, sessionId, `({ passed: Boolean(document.querySelector('input[name="username"]')) })`, 'public signup form')
+      await evaluate(client, sessionId, `(() => {
+        const setValue = (selector, value) => {
+          const element = document.querySelector(selector);
+          const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+          setter.call(element, value);
+          element.dispatchEvent(new Event('input', { bubbles: true }));
+          element.dispatchEvent(new Event('change', { bubbles: true }));
+        };
+        setValue('input[name="username"]', ${JSON.stringify(username)});
+        setValue('input[name="email"]', ${JSON.stringify(email)});
+        setValue('input[name="password"]', ${JSON.stringify(password)});
+        document.querySelector('form').requestSubmit();
+        return true;
+      })()`)
+      await waitFor(client, sessionId, `(() => ({
+        passed: document.querySelector('h1')?.textContent?.includes('Check your') &&
+          document.body.textContent.includes('One last step'),
+        path: location.pathname,
+        error: document.querySelector('[role="alert"]')?.textContent || '',
+      }))()`, 'public signup email-confirmation handoff')
+      if (options.screenshotDir) await capture(client, sessionId, path.join(options.screenshotDir, 'live-public-signup-confirmation.png'))
+    } else {
+      const { data: createdIdentity, error: createIdentityError } = await admin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: false,
+        user_metadata: { username, display_name: username },
+      })
+      if (createIdentityError || !createdIdentity.user) {
+        throw createIdentityError ?? new Error('The operator-only no-mail acceptance identity was not created.')
+      }
+      userId = createdIdentity.user.id
+    }
 
+    acceptanceStage = 'fresh profile verification'
     const createdProfile = await waitForProfile(admin, username)
+    if (userId && createdProfile.id !== userId) {
+      throw new Error('The fresh Auth identity and PathForge profile did not bind to the same user.')
+    }
     userId = createdProfile.id
     if (createdProfile.username !== username) {
-      throw new Error('The public signup did not persist the exact PathForge handle.')
+      throw new Error('The fresh account did not persist the exact PathForge handle.')
     }
     const { data: unconfirmedUser, error: unconfirmedUserError } = await admin.auth.admin.getUserById(userId)
     if (unconfirmedUserError || !unconfirmedUser.user) {
-      throw unconfirmedUserError ?? new Error('The public signup account could not be read back.')
+      throw unconfirmedUserError ?? new Error('The fresh account could not be read back.')
     }
     if (unconfirmedUser.user.email_confirmed_at) {
-      throw new Error('The public signup bypassed the configured email-confirmation boundary.')
+      throw new Error('The fresh account bypassed the configured email-confirmation boundary.')
     }
 
+    acceptanceStage = 'operator verification-link generation'
     const callbackUrl = new URL('/auth/callback', options.baseUrl)
     callbackUrl.searchParams.set('flow', 'signup')
     callbackUrl.searchParams.set('next', '/build')
@@ -262,10 +403,11 @@ async function main() {
       throw verificationLinkError ?? new Error('The operator verification token was not generated.')
     }
     if (verificationLink.user?.id !== userId) {
-      throw new Error('The operator verification token did not bind to the public-signup identity.')
+      throw new Error('The operator verification token did not bind to the fresh identity.')
     }
     callbackUrl.searchParams.set('token_hash', verificationLink.properties.hashed_token)
     callbackUrl.searchParams.set('type', 'magiclink')
+    acceptanceStage = 'token-hash callback and pre-admission denial'
     await navigate(client, sessionId, callbackUrl.toString())
     await waitFor(client, sessionId, `(() => ({
       passed: location.pathname === '/build' && document.body.textContent.includes('not currently in the pilot'),
@@ -274,12 +416,13 @@ async function main() {
     }))()`, 'verified callback and signed-in pre-admission denial')
     const { data: confirmedUser, error: confirmedUserError } = await admin.auth.admin.getUserById(userId)
     if (confirmedUserError || !confirmedUser.user?.email_confirmed_at) {
-      throw confirmedUserError ?? new Error('The email verification callback did not confirm the public-signup identity.')
+      throw confirmedUserError ?? new Error('The email verification callback did not confirm the fresh identity.')
     }
     const denied = await evaluate(client, sessionId, `({ hasUpload: Boolean(document.querySelector('input[type="file"]')) })`)
     if (denied.hasUpload) throw new Error('The fresh account received an upload control before admission.')
     if (options.screenshotDir) await capture(client, sessionId, path.join(options.screenshotDir, 'live-pre-admission-denial.png'))
 
+    acceptanceStage = 'internal acceptance admission'
     const { error: admissionError } = await admin.rpc('set_community_project_pilot_member', {
       target_user: userId,
       administrator: administratorId,
@@ -289,21 +432,40 @@ async function main() {
     })
     if (admissionError) throw admissionError
 
+    acceptanceStage = 'admitted upload form'
     await navigate(client, sessionId, `${options.baseUrl}/build`)
-    await waitFor(client, sessionId, `({ passed: Boolean(document.querySelector('#community-project-artifact')) })`, 'post-admission upload form')
+    await waitFor(client, sessionId, `(() => {
+      const form = ${renderedElementExpression('form[data-active-community-submission-step]')};
+      return {
+        passed: Boolean(
+          form &&
+          form.getAttribute('data-active-community-submission-step') === '1' &&
+          form.querySelector('#community-project-artifact')
+        ),
+        renderedFormCount: [...document.querySelectorAll('form[data-active-community-submission-step]')]
+          .filter((candidate) => candidate.getBoundingClientRect().width > 0).length,
+      };
+    })()`, 'post-admission upload form')
+    if (options.screenshotDir) {
+      await capture(client, sessionId, path.join(options.screenshotDir, 'live-admitted-upload-form-mobile-390.png'))
+    }
 
-    const { root } = await client.send('DOM.getDocument', { depth: -1, pierce: true }, sessionId)
-    const { nodeId } = await client.send('DOM.querySelector', {
-      nodeId: root.nodeId,
-      selector: '#community-project-artifact',
-    }, sessionId)
-    if (!nodeId) throw new Error('The admitted upload form has no artifact input.')
-    await client.send('DOM.setFileInputFiles', { nodeId, files: [ACCEPTANCE_ARTIFACT] }, sessionId)
+    await setFileInputFiles(
+      client,
+      sessionId,
+      'form[data-active-community-submission-step] #community-project-artifact',
+      [ACCEPTANCE_ARTIFACT],
+      'The admitted upload artifact input',
+    )
 
     const projectTitle = `Disposable acceptance ${suffix}`
+    acceptanceStage = 'private project submission field population'
     await evaluate(client, sessionId, `(() => {
+      const form = ${renderedElementExpression('form[data-active-community-submission-step]')};
+      if (!form) throw new Error('The rendered admitted upload form is unavailable.');
       const setControl = (selector, value) => {
-        const element = document.querySelector(selector);
+        const element = form.querySelector(selector);
+        if (!element) throw new Error('Missing upload control: ' + selector);
         const prototype = element instanceof HTMLSelectElement ? HTMLSelectElement.prototype : element instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
         Object.getOwnPropertyDescriptor(prototype, 'value').set.call(element, value);
         element.dispatchEvent(new Event('input', { bubbles: true }));
@@ -317,7 +479,7 @@ async function main() {
       setControl('input[name="model"]', 'Acceptance fixture model');
       setControl('select[name="evidence_scope"]', 'selected_excerpts');
       setControl('select[name="reuse_permission"]', 'view_only');
-      const checkpoint = [...document.querySelectorAll('fieldset')].find((item) => item.querySelector('legend')?.textContent?.trim() === 'Checkpoint 1');
+      const checkpoint = [...form.querySelectorAll('fieldset')].find((item) => item.querySelector('legend')?.textContent?.trim() === 'Checkpoint 1');
       if (!checkpoint) throw new Error('Checkpoint 1 controls were not found.');
       const checkpointInput = checkpoint.querySelector('input');
       const textareas = checkpoint.querySelectorAll('textarea');
@@ -331,55 +493,82 @@ async function main() {
       textareas[0].dispatchEvent(new Event('input', { bubbles: true }));
       textAreaSetter.call(textareas[1], 'Created the self-contained fixture without network access.');
       textareas[1].dispatchEvent(new Event('input', { bubbles: true }));
-      for (const checkbox of document.querySelectorAll('input[type="checkbox"][required]')) {
+      for (const checkbox of form.querySelectorAll('input[type="checkbox"][required]')) {
         checkbox.checked = true;
         checkbox.dispatchEvent(new Event('change', { bubbles: true }));
       }
-      document.querySelector('#community-project-artifact').dispatchEvent(new Event('change', { bubbles: true }));
-      return { checkboxCount: document.querySelectorAll('input[type="checkbox"][required]').length };
+      form.querySelector('#community-project-artifact').dispatchEvent(new Event('change', { bubbles: true }));
+      return { checkboxCount: form.querySelectorAll('input[type="checkbox"][required]').length };
     })()`)
     for (let guidedStep = 1; guidedStep < 6; guidedStep += 1) {
+      acceptanceStage = `private project submission guided step ${guidedStep}`
       await waitFor(client, sessionId, `(() => {
-        const form = document.querySelector('form[enctype="multipart/form-data"]');
+        const form = ${renderedElementExpression('form[data-active-community-submission-step]')};
         const section = form?.querySelector('[data-community-submission-step="${guidedStep}"]');
         return {
           passed: form?.getAttribute('data-active-community-submission-step') === '${guidedStep}' &&
             Boolean(section) &&
             section.querySelectorAll(':invalid').length === 0,
           activeStep: form?.getAttribute('data-active-community-submission-step') || '',
+          formCount: document.querySelectorAll('form[enctype="multipart/form-data"]').length,
+          formAttributes: form ? [...form.attributes].map((attribute) => [attribute.name, attribute.value]) : [],
+          heading: document.querySelector('h1')?.textContent?.trim() || '',
+          pathname: location.pathname,
           invalidControls: [...(section?.querySelectorAll(':invalid') ?? [])].map((item) => item.name || item.id || item.tagName),
         };
-      })()`, `completed guided upload step ${guidedStep}`)
-      await evaluate(client, sessionId, `(() => {
-        const button = document.querySelector('button[data-community-submission-continue]');
-        if (!button || button.hidden) throw new Error('Guided upload continue control is unavailable.');
-        button.click();
-        return true;
-      })()`)
-      await waitFor(client, sessionId, `(() => ({
-        passed: document.querySelector('form[enctype="multipart/form-data"]')
-          ?.getAttribute('data-active-community-submission-step') === '${guidedStep + 1}',
-      }))()`, `guided upload step ${guidedStep + 1}`)
+      })()`, `completed guided upload step ${guidedStep}`, 10_000)
+      await clickElement(
+        client,
+        sessionId,
+        'form[data-active-community-submission-step] button[data-community-submission-continue]',
+        'Guided upload continue control',
+      )
+      await waitFor(client, sessionId, `(() => {
+        const form = ${renderedElementExpression('form[data-active-community-submission-step]')};
+        return {
+          passed: form?.getAttribute('data-active-community-submission-step') === '${guidedStep + 1}',
+          activeStep: form?.getAttribute('data-active-community-submission-step') || '',
+          alert: form?.querySelector('[role="alert"]')?.textContent?.trim() || '',
+          continueHidden: form?.querySelector('button[data-community-submission-continue]')?.hidden ?? null,
+        };
+      })()`, `guided upload step ${guidedStep + 1}`, 10_000)
     }
+    acceptanceStage = 'private project submission final validation'
     await waitFor(client, sessionId, `(() => {
-      const form = document.querySelector('form');
-      const button = [...document.querySelectorAll('button')].find((item) => item.textContent.includes('Submit private review bundle'));
+      const form = ${renderedElementExpression('form[data-active-community-submission-step]')};
+      const button = [...(form?.querySelectorAll('button') ?? [])].find((item) => item.textContent.includes('Submit private review bundle'));
       return {
         passed: Boolean(form?.checkValidity() && button && !button.disabled),
         invalidNames: [...(form?.querySelectorAll(':invalid') ?? [])].map((item) => item.name || item.id || item.tagName),
       };
     })()`, 'completed upload form')
-    await evaluate(client, sessionId, `(() => {
-      const button = [...document.querySelectorAll('button')].find((item) => item.textContent.includes('Submit private review bundle'));
-      if (!button) throw new Error('Submit private review bundle button was not found.');
-      button.click();
-      return true;
-    })()`)
-    await waitFor(client, sessionId, `(() => ({
-      passed: /^\/my-forge\/community-projects\/[0-9a-f-]+$/.test(location.pathname),
-      path: location.pathname,
-      body: document.body.textContent.slice(0, 300),
-    }))()`, 'private submission receipt', 60_000)
+    acceptanceStage = 'private project submission request'
+    await clickElement(
+      client,
+      sessionId,
+      'form[data-active-community-submission-step] button[type="submit"]',
+      'Submit private review bundle button',
+    )
+    acceptanceStage = 'private project submission receipt'
+    await waitFor(client, sessionId, `(() => {
+      const form = ${renderedElementExpression('form[data-active-community-submission-step]')};
+      const heading = ${renderedElementExpression('h1')};
+      const main = ${renderedElementExpression('main')};
+      const submit = form?.querySelector('button[type="submit"]');
+      return {
+        passed: new RegExp('^/my-forge/community-projects/[0-9a-f-]+$').test(location.pathname) &&
+          heading?.textContent?.trim() === ${JSON.stringify(projectTitle)} &&
+          main?.textContent?.includes('Private bundle received.'),
+        path: location.pathname,
+        heading: heading?.textContent?.trim() || '',
+        activeStep: form?.getAttribute('data-active-community-submission-step') || '',
+        alert: form?.querySelector('[role="alert"]')?.textContent?.trim() || '',
+        status: form?.querySelector('[role="status"]')?.textContent?.trim() || '',
+        submitText: submit?.textContent?.trim() || '',
+        submitDisabled: submit?.disabled ?? null,
+        body: document.body.textContent.slice(0, 300),
+      };
+    })()`, 'private submission receipt', 60_000)
     submission = await waitForSubmission(admin, userId)
     if (submission.status !== 'queued' || !submission.artifact_path) {
       throw new Error('The fresh-account upload did not remain queued in private quarantine.')
@@ -397,24 +586,38 @@ async function main() {
     await waitFor(client, sessionId, `(() => {
       const root = document.documentElement;
       const body = document.body;
+      const heading = ${renderedElementExpression('h1')};
+      const main = ${renderedElementExpression('main')};
       return {
-        passed: document.querySelector('h1')?.textContent === ${JSON.stringify(projectTitle)} &&
-          document.body.textContent.includes('Private bundle received.') &&
+        passed: heading?.textContent?.trim() === ${JSON.stringify(projectTitle)} &&
+          main?.textContent?.includes('Private bundle received.') &&
           Math.max(root.scrollWidth, body?.scrollWidth || 0) <= root.clientWidth + 1,
-        heading: document.querySelector('h1')?.textContent || '',
+        heading: heading?.textContent?.trim() || '',
         viewport: root.clientWidth,
         scrollWidth: Math.max(root.scrollWidth, body?.scrollWidth || 0),
       };
     })()`, 'desktop private submission receipt')
     if (options.screenshotDir) await capture(client, sessionId, path.join(options.screenshotDir, 'live-private-submission-receipt-desktop.png'))
 
+    acceptanceStage = 'owner withdrawal'
     await evaluate(client, sessionId, `(() => {
       window.confirm = () => true;
-      const button = [...document.querySelectorAll('button')].find((item) => item.textContent.includes('Withdraw') || item.textContent.includes('Unpublish'));
+      const button = [...document.querySelectorAll('button')].find((item) => {
+        const rect = item.getBoundingClientRect();
+        return rect.width > 0 &&
+          rect.height > 0 &&
+          (item.textContent.includes('Withdraw') || item.textContent.includes('Unpublish'));
+      });
       if (!button) throw new Error('Owner withdrawal button was not found.');
-      button.click();
+      button.setAttribute('data-live-acceptance-withdraw', '');
       return true;
     })()`)
+    await clickElement(
+      client,
+      sessionId,
+      'button[data-live-acceptance-withdraw]',
+      'Owner withdrawal button',
+    )
     for (let attempt = 0; attempt < 120; attempt += 1) {
       const { data, error } = await admin
         .from('community_project_submissions')
@@ -426,11 +629,28 @@ async function main() {
       if (attempt === 119) throw new Error('Owner withdrawal did not confirm private artifact cleanup.')
       await new Promise((resolve) => setTimeout(resolve, 250))
     }
+    await waitFor(client, sessionId, `(() => ({
+      passed: document.body.textContent.includes('The artifact has been purged.') &&
+        ![...document.querySelectorAll('button')].some((item) =>
+          item.textContent.includes('Withdraw') || item.textContent.includes('Unpublish')
+        ),
+      body: document.body.textContent.slice(0, 400),
+    }))()`, 'owner withdrawal receipt', 30_000)
     if (options.screenshotDir) await capture(client, sessionId, path.join(options.screenshotDir, 'live-owner-withdrawal.png'))
 
     await client.send('Target.closeTarget', { targetId })
   } catch (error) {
-    runError = error
+    if (options.screenshotDir && client && sessionId) {
+      try {
+        await capture(client, sessionId, path.join(options.screenshotDir, 'live-acceptance-failure.png'))
+      } catch {
+        // Preserve the original acceptance failure if Chrome has already closed.
+      }
+    }
+    runError = new Error(
+      `${acceptanceStage}: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
+    )
   } finally {
     const cleanupErrors = []
     client?.close()
@@ -555,7 +775,13 @@ async function main() {
     }
   }
   if (runError) throw runError
-  console.log('Live fresh-account acceptance passed and cleanup verified: submitted the public signup form, completed a real token-hash callback, denied upload before admission, admitted with external invitations locked, uploaded privately at 390px, verified the desktop owner receipt, withdrew, removed exact disposable resources, and left the acceptance slot empty. SMTP inbox delivery remains a separate required manual gate before external invitations.')
+  const accountProof = accountBootstrap === 'public-signup'
+    ? 'submitted the public signup form and preserved the unconfirmed boundary'
+    : 'created an unconfirmed disposable identity through the operator-only no-mail bootstrap'
+  const keyProof = usesLegacyKey
+    ? ' The existing legacy service-role key was used only for compatibility; this run does not satisfy the current sb_secret_ production gate.'
+    : ''
+  console.log(`Live fresh-account acceptance passed and cleanup verified: ${accountProof}, completed a real token-hash callback, denied upload before admission, admitted with external invitations locked, uploaded privately at 390px, verified the desktop owner receipt, withdrew, removed exact disposable resources, and left the acceptance slot empty. SMTP inbox delivery remains a separate required manual gate before external invitations.${keyProof}`)
 }
 
 main().catch((error) => {

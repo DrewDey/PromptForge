@@ -244,6 +244,11 @@ hard stops. They are not averaged against engagement.
   upload before admission, and upload
   only after an administrator creates the single expiring internal-acceptance
   membership; `allow_invited_submissions` remains false throughout.
+- Before external invitations, the production Auth Site URL and explicit
+  redirect allowlist use the reviewed PathForge HTTPS origins and
+  `/auth/callback`, and custom SMTP delivers a real confirmation to a fresh
+  address outside the Supabase organization team. The generated-token
+  acceptance harness does not substitute for this mailbox-delivery proof.
 - The emitted-header regression covers Data API queries/RPCs, Auth admin,
   Storage, and Functions with both key formats. Before external invitations,
   the deployed acceptance run must use the production `sb_secret_…` key and

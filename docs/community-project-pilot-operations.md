@@ -76,6 +76,11 @@ Before enabling invited submissions, the private launch record must contain:
 - primary incident commander name, account, phone, and coverage window;
 - a different backup administrator with the same information;
 - the tested operator-alert destination and timestamp of the test alert;
+- confirmation that the production Auth Site URL and explicit redirect
+  allowlist use the reviewed PathForge HTTPS origins and `/auth/callback`;
+- confirmation that custom SMTP is enabled and a fresh address that is not a
+  Supabase organization-team member received a production signup confirmation
+  whose link returned through PathForge's `/auth/callback`;
 - confirmation that Supabase Auth leaked-password protection is enabled and a
   fresh security-advisor run no longer reports
   `auth_leaked_password_protection`;
@@ -85,14 +90,15 @@ Before enabling invited submissions, the private launch record must contain:
   tests passed;
 - the current queue size and the hours available for review that week.
 
-Blank ownership, one-person coverage, an untested alert endpoint, or an
-unresolved policy/counsel question is a hard stop. Disabled leaked-password
-protection is also a hard stop for external invitations. No names are invented
-in source control. The administrator enters only a non-secret ID or date for
-the private record; PathForge persists that reference with the fresh
-reconciliation and alert-readiness snapshot. The database refuses enablement
-without that snapshot and rechecks the same operational gates on every invited
-builder eligibility decision.
+Blank ownership, one-person coverage, an untested alert endpoint, unverified
+production signup-email delivery, an unreviewed Auth redirect, or an unresolved
+policy/counsel question is a hard stop. Disabled leaked-password protection is
+also a hard stop for external invitations. No names are invented in source
+control. The administrator enters only a non-secret ID or date for the private
+record; PathForge persists that reference with the fresh reconciliation and
+alert-readiness snapshot. The database refuses enablement without that snapshot
+and rechecks the same operational gates on every invited builder eligibility
+decision.
 
 ## Alerts and service levels
 
@@ -268,10 +274,12 @@ signup form, requires the unconfirmed state, generates an operator-only
 Supabase magic-link token, consumes that token through PathForge's real
 `/auth/callback`, and verifies the resulting account/profile/session. This
 proves signup and callback behavior but deliberately does **not** claim that
-production email delivery reached the mailbox; perform that final delivery
-check manually. The gate then proves denial before owner-operated admission,
-uploads a real private fixture at 390px with external invitations still
-locked, verifies the desktop owner receipt and withdrawal, and exits
+production email delivery reached the mailbox. Before external invitations,
+perform that final delivery check with custom SMTP and a fresh address that is
+not a Supabase organization-team member; the default Supabase mailer is not a
+production transport. The gate then proves denial before owner-operated
+admission, uploads a real private fixture at 390px with external invitations
+still locked, verifies the desktop owner receipt and withdrawal, and exits
 successfully only after verifying its exact account, membership, submission,
 and quarantine objects are gone and the one acceptance slot is empty.
 

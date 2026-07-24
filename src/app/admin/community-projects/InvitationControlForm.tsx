@@ -85,8 +85,10 @@ export default function InvitationControlForm({
             <span>
               I confirmed the private record has named primary and backup coverage, tested distinct primary and
               escalation alert destinations, a healthy scheduled recovery heartbeat, policy dispositions,
-              production evidence, and capacity; Supabase leaked-password protection is enabled and every current
-              security-advisor warning has a reviewed disposition.
+              production evidence, and capacity; production Auth uses the reviewed Site URL and redirect allowlist,
+              custom SMTP delivered a fresh non-team signup confirmation through PathForge&apos;s callback,
+              Supabase leaked-password protection is enabled, and every current security-advisor warning has a
+              reviewed disposition.
             </span>
           </label>
           <button

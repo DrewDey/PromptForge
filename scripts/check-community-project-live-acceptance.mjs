@@ -555,7 +555,7 @@ async function main() {
     }
   }
   if (runError) throw runError
-  console.log('Live fresh-account acceptance passed and cleanup verified: submitted the public signup form, completed a real token-hash callback, denied upload before admission, admitted with external invitations locked, uploaded privately at 390px, verified the desktop owner receipt, withdrew, removed exact disposable resources, and left the acceptance slot empty.')
+  console.log('Live fresh-account acceptance passed and cleanup verified: submitted the public signup form, completed a real token-hash callback, denied upload before admission, admitted with external invitations locked, uploaded privately at 390px, verified the desktop owner receipt, withdrew, removed exact disposable resources, and left the acceptance slot empty. SMTP inbox delivery remains a separate required manual gate before external invitations.')
 }
 
 main().catch((error) => {

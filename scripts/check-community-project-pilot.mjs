@@ -182,6 +182,8 @@ const publicProfiles = readFileSync(path.join(root, 'src', 'lib', 'data', 'publi
 const discovery = readFileSync(path.join(root, 'src', 'lib', 'path-discovery.ts'), 'utf8')
 const profilePresentation = readFileSync(path.join(root, 'src', 'lib', 'profile-presentation.ts'), 'utf8')
 const authBrowserGuard = readFileSync(path.join(root, 'scripts', 'check-community-project-auth-browser.mjs'), 'utf8')
+const browserHarness = readFileSync(path.join(root, 'scripts', 'measure-html-artifacts.mjs'), 'utf8')
+const artifactSandboxGuard = readFileSync(path.join(root, 'scripts', 'check-protected-artifact-sandbox.mjs'), 'utf8')
 const liveAcceptanceGuard = readFileSync(path.join(root, 'scripts', 'check-community-project-live-acceptance.mjs'), 'utf8')
 const projectSubmissionFixture = readFileSync(
   path.join(root, 'src', 'app', 'qa', 'community-project-submission', 'page.tsx'),
@@ -716,6 +718,11 @@ assert.equal(
 )
 assert.match(packageScripts.prebuild, /check:supabase-server-key-transport/)
 assert.match(packageScripts.autoreview, /check:supabase-server-key-transport/)
+assert.match(browserHarness, /DevToolsActivePort/)
+assert.match(browserHarness, /--user-data-dir=/)
+assert.match(browserHarness, /setInterval\(readActivePort, 50\)/)
+assert.match(artifactSandboxGuard, /--disable-dev-shm-usage/)
+assert.match(artifactSandboxGuard, /--remote-debugging-address=127\.0\.0\.1/)
 assert.match(authBrowserGuard, /auth\/signup\?next=%2Fbuild/)
 assert.match(authBrowserGuard, /repairCommunity/)
 assert.match(authBrowserGuard, /community repair signup handoff lost its exact return path/)

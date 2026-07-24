@@ -228,7 +228,10 @@ async function main() {
   const child = spawn(executable, [
     '--headless=new',
     '--disable-gpu',
+    '--disable-dev-shm-usage',
     '--no-sandbox',
+    '--no-first-run',
+    '--remote-debugging-address=127.0.0.1',
     '--remote-debugging-port=0',
     `--user-data-dir=${profile}`,
     'about:blank',

@@ -43,6 +43,10 @@ export type ProjectForkSource = {
   promptFamilyId?: string
 }
 
+export type ProjectForkHrefOptions = {
+  destination?: '/prompt/new' | '/build'
+}
+
 export type ProjectForkSegmentState = 'shared-history' | 'fork-point' | 'original-continuation'
 
 export type ProjectForkLineageSegment = ProjectForkSourceStep & {
@@ -218,7 +222,10 @@ export function parseProjectForkSearchParams(params: Pick<URLSearchParams, 'get'
   })
 }
 
-export function buildProjectForkHref(source: Partial<ProjectForkSource> & { sourceProjectId: string }) {
+export function buildProjectForkHref(
+  source: Partial<ProjectForkSource> & { sourceProjectId: string },
+  options: ProjectForkHrefOptions = {},
+) {
   const normalized = normalizeProjectForkSource(source)
   const params = new URLSearchParams({ [PROJECT_FORK_QUERY_KEYS.sourceProjectId]: normalized.sourceProjectId })
 
@@ -244,7 +251,13 @@ export function buildProjectForkHref(source: Partial<ProjectForkSource> & { sour
   if (normalized.branchIndex > 0) params.set(PROJECT_FORK_QUERY_KEYS.branchIndex, String(normalized.branchIndex))
   if (normalized.promptFamilyId) params.set(PROJECT_FORK_QUERY_KEYS.promptFamilyId, normalized.promptFamilyId)
 
-  return `/build?${params.toString()}`
+  return `${options.destination ?? '/prompt/new'}?${params.toString()}`
+}
+
+export function buildCommunityProjectForkHref(
+  source: Partial<ProjectForkSource> & { sourceProjectId: string },
+) {
+  return buildProjectForkHref(source, { destination: '/build' })
 }
 
 export function buildProjectResponseForkHref({

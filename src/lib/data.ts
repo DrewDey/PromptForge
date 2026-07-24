@@ -3,6 +3,7 @@ import {
   Profile,
   PromptWithRelations,
 } from './types'
+import type { PublicCommunityProject } from './community-project-contract'
 import {
   mockCategories,
   mockPrompts,
@@ -94,12 +95,11 @@ import {
   PROJECT_FORK_MAX_WIDTH,
   filterProjectForkNetworkBySourceRun,
   projectForkSourceFromSubmissionFields,
-  projectForkSourceToSubmissionFields,
   type ProjectForkContinuationStep,
   type ProjectForkNetworkItem,
   type ProjectForkSource,
 } from './project-forks'
-import { forkColumnsMissing, omitForkFields } from './data/fork-column-compat'
+import { forkColumnsMissing } from './data/fork-column-compat'
 import { attachExactPublicPromptStepCounts } from './data/public-prompt-step-counts'
 export { sourceRunForkColumnsMissing } from './data/fork-column-compat'
 import {
@@ -223,6 +223,15 @@ const publicMockCategories = mockCategories.map((category) => ({
   )).length,
 }))
 
+export type PublicCatalogPromptOptions = {
+  categorySlug?: string
+  difficulty?: string
+  status?: string
+  search?: string
+  limit?: number
+  sort?: 'newest' | 'popular'
+}
+
 function isPublicLibraryPrompt(prompt: { id: string; created_at?: string | null }) {
   if (APPROVED_PROJECT_IDS.has(prompt.id)) return true
   if (!prompt.created_at) return false
@@ -265,10 +274,14 @@ function preparedStepToPromptStep(step: PreparedShowcaseStep, project: PreparedS
 
 // ---- Categories ----
 
+export function getPublicCatalogFallbackCategories(): Category[] {
+  return publicMockCategories.map((category) => ({ ...category }))
+}
+
 export async function getCategories(): Promise<Category[]> {
-  return readWithFallback(publicMockCategories, async (signal) => {
+  return readWithFallback(getPublicCatalogFallbackCategories(), async (signal) => {
     const { createPublicReadClient } = await import('./supabase/server')
-    const supabase = await createPublicReadClient()
+    const supabase = await createPublicReadClient({ anonymous: true })
     const { data } = await supabase
       .from('categories')
       .select('*')
@@ -313,14 +326,7 @@ function attachRelations(prompt: typeof mockPrompts[0]): PromptWithRelations {
   }
 }
 
-function getMockPrompts(options?: {
-  categorySlug?: string
-  difficulty?: string
-  status?: string
-  search?: string
-  limit?: number
-  sort?: 'newest' | 'popular'
-}): PromptWithRelations[] {
+function getMockPrompts(options?: PublicCatalogPromptOptions): PromptWithRelations[] {
   let prompts = [...publicMockPrompts]
 
   // Default to approved only
@@ -357,6 +363,24 @@ function getMockPrompts(options?: {
   return prompts.map(attachRelations)
 }
 
+function validatePublicCatalogPromptOptions(options?: PublicCatalogPromptOptions) {
+  const requestedLimit = options?.limit
+  const maximumCheckedRows = PUBLIC_PROMPT_LIST_PAGE_SIZE * PUBLIC_PROMPT_LIST_MAX_PAGES
+  if (
+    requestedLimit !== undefined &&
+    (!Number.isInteger(requestedLimit) || requestedLimit <= 0 || requestedLimit > maximumCheckedRows)
+  ) {
+    throw new RangeError(`Public prompt limits must be between 1 and ${maximumCheckedRows}.`)
+  }
+}
+
+export function getPublicCatalogFallbackPrompts(
+  options?: PublicCatalogPromptOptions,
+): PromptWithRelations[] {
+  validatePublicCatalogPromptOptions(options)
+  return getMockPrompts(options)
+}
+
 function mergeWithPublicMockPrompts(prompts: PromptWithRelations[], options?: Parameters<typeof getMockPrompts>[0]) {
   const seen = new Set(prompts.map(prompt => prompt.id))
   const mockPrompts = getMockPrompts(options).filter(prompt => !seen.has(prompt.id))
@@ -373,26 +397,16 @@ function getPublicMockPromptsForProfile(profile: Pick<Profile, 'id'> & { usernam
   })
 }
 
-export async function getPrompts(options?: {
-  categorySlug?: string
-  difficulty?: string
-  status?: string
-  search?: string
-  limit?: number
-  sort?: 'newest' | 'popular'
-}): Promise<PromptWithRelations[]> {
+export async function getPrompts(
+  options?: PublicCatalogPromptOptions,
+): Promise<PromptWithRelations[]> {
+  validatePublicCatalogPromptOptions(options)
   const requestedLimit = options?.limit
   const maximumCheckedRows = PUBLIC_PROMPT_LIST_PAGE_SIZE * PUBLIC_PROMPT_LIST_MAX_PAGES
-  if (
-    requestedLimit !== undefined &&
-    (!Number.isInteger(requestedLimit) || requestedLimit <= 0 || requestedLimit > maximumCheckedRows)
-  ) {
-    throw new RangeError(`Public prompt limits must be between 1 and ${maximumCheckedRows}.`)
-  }
 
-  return readWithFallback(getMockPrompts(options), async (signal) => {
+  return readWithFallback(getPublicCatalogFallbackPrompts(options), async (signal) => {
     const { createPublicReadClient } = await import('./supabase/server')
-    const supabase = await createPublicReadClient()
+    const supabase = await createPublicReadClient({ anonymous: true })
     const status = options?.status ?? 'approved'
     let categoryId: string | undefined
 
@@ -443,17 +457,29 @@ export async function getPrompts(options?: {
         .slice(0, remaining)
 
       if (publicPage.length > 0) {
-        const { data: stepCountRows } = await supabase
-          .rpc('read_public_prompt_step_counts', {
-            checked_prompt_ids: publicPage.map((project) => project.id),
-          })
-          .retry(false)
-          .abortSignal(signal)
-          .throwOnError()
+        const promptIds = publicPage.map((project) => project.id)
+        const [{ data: stepCountRows }, { data: communityRows }] = await Promise.all([
+          supabase
+            .rpc('read_public_prompt_step_counts', { checked_prompt_ids: promptIds })
+            .retry(false)
+            .abortSignal(signal)
+            .throwOnError(),
+          supabase
+            .rpc('get_public_community_projects', { target_prompts: promptIds })
+            .retry(false)
+            .abortSignal(signal)
+            .throwOnError(),
+        ])
+        const communityByPrompt = new Map(
+          ((communityRows ?? []) as PublicCommunityProject[]).map((capsule) => [capsule.prompt_id, capsule]),
+        )
         databaseProjects.push(...attachExactPublicPromptStepCounts(
           publicPage as PromptWithRelations[],
           stepCountRows,
-        ).map(normalizeProjectPresentation))
+        ).map((project) => normalizeProjectPresentation({
+          ...project,
+          community_project: communityByPrompt.get(project.id) ?? null,
+        })))
       }
 
       if (
@@ -483,7 +509,10 @@ export async function getAllPromptsForAdmin(): Promise<PromptWithRelations[]> {
 
   if (error) throw error
   const filtered = (data ?? [])
-    .filter(prompt => prompt.status === 'pending' || isPublicLibraryPrompt(prompt))
+    .filter((prompt) => (
+      (prompt.status === 'pending' || isPublicLibraryPrompt(prompt)) &&
+      !prompt.tags?.some((tag: string) => tag.trim().toLowerCase() === 'community-project')
+    ))
     .map(normalizeProjectPresentation)
   return mergeWithPublicMockPrompts(filtered, { status: 'all' })
 }
@@ -853,17 +882,29 @@ export async function getProjectsByAuthor(authorId: string, username?: string): 
       const publicPage = rawPage.filter(isPublicLibraryPrompt)
 
       if (publicPage.length > 0) {
-        const { data: stepCountRows } = await supabase
-          .rpc('read_public_prompt_step_counts', {
-            checked_prompt_ids: publicPage.map((project) => project.id),
-          })
-          .retry(false)
-          .abortSignal(signal)
-          .throwOnError()
+        const promptIds = publicPage.map((project) => project.id)
+        const [{ data: stepCountRows }, { data: communityRows }] = await Promise.all([
+          supabase
+            .rpc('read_public_prompt_step_counts', { checked_prompt_ids: promptIds })
+            .retry(false)
+            .abortSignal(signal)
+            .throwOnError(),
+          supabase
+            .rpc('get_public_community_projects', { target_prompts: promptIds })
+            .retry(false)
+            .abortSignal(signal)
+            .throwOnError(),
+        ])
+        const communityByPrompt = new Map(
+          ((communityRows ?? []) as PublicCommunityProject[]).map((capsule) => [capsule.prompt_id, capsule]),
+        )
         dbProjects.push(...attachExactPublicPromptStepCounts(
           publicPage as PromptWithRelations[],
           stepCountRows,
-        ).map(normalizeProjectPresentation))
+        ).map((project) => normalizeProjectPresentation({
+          ...project,
+          community_project: communityByPrompt.get(project.id) ?? null,
+        })))
       }
 
       if (rawPage.length < PUBLIC_PROMPT_LIST_PAGE_SIZE) break
@@ -1071,96 +1112,23 @@ export async function getPromptStats() {
   }
 }
 
-export async function createProject(project: {
-  title: string
-  description: string
-  content: string
-  result_content: string | null
-  category_slug: string
-  difficulty: string
-  model_used: string | null
-  model_recommendation: string | null
-  tools_used: string[]
-  tags: string[]
-  steps: { title: string; content: string; result_content: string | null; description: string | null }[]
-  fork_source?: ProjectForkSource | null
-}) {
-  if (!SUPABASE_CONFIGURED) return { id: 'mock-id' }
-
-  const { createClient } = await import('./supabase/server')
-  const supabase = await createClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Must be logged in to submit a project')
-
-  // Look up category ID from slug
-  const { data: cat } = await supabase
-    .from('categories')
-    .select('id')
-    .eq('slug', project.category_slug)
-    .single()
-  if (!cat) throw new Error('Invalid category')
-
-  // Insert the project
-  const promptPayload = {
-    title: project.title,
-    description: project.description,
-    content: project.content,
-    result_content: project.result_content || null,
-    category_id: cat.id,
-    difficulty: project.difficulty,
-    model_used: project.model_used || null,
-    model_recommendation: project.model_recommendation || null,
-    tools_used: project.tools_used,
-    tags: project.tags,
-    ...projectForkSourceToSubmissionFields(project.fork_source),
-    status: 'pending',
-    author_id: user.id,
-  }
-  let { data: prompt, error: promptError } = await supabase
-    .from('prompts')
-    .insert(promptPayload)
-    .select('id')
-    .single()
-
-  if (promptError) {
-    if (!forkColumnsMissing(promptError)) throw promptError
-
-    const fallbackResult = await supabase
-      .from('prompts')
-      .insert(omitForkFields(promptPayload))
-      .select('id')
-      .single()
-    prompt = fallbackResult.data
-    promptError = fallbackResult.error
-  }
-
-  if (promptError) throw promptError
-  if (!prompt) throw new Error('Project submission did not return an id.')
-
-  // Insert steps if any
-  if (project.steps.length > 0) {
-    const stepsToInsert = project.steps.map((step, idx) => ({
-      prompt_id: prompt.id,
-      step_number: idx + 1,
-      title: step.title,
-      content: step.content,
-      result_content: step.result_content || null,
-      description: step.description || null,
-    }))
-
-    const { error: stepsError } = await supabase
-      .from('prompt_steps')
-      .insert(stepsToInsert)
-
-    if (stepsError) throw stepsError
-  }
-
-  return { id: prompt.id }
-}
-
 export async function updatePromptStatus(id: string, status: 'approved' | 'rejected') {
   const { supabase } = await requireAdminAccess()
+  const { createAdminClient } = await import('./supabase/admin')
+  const { data: linkedCommunityProject, error: communityProjectError } = await createAdminClient()
+    .from('community_project_submissions')
+    .select('id,status')
+    .or(`prompt_id.eq.${id},former_prompt_id.eq.${id}`)
+    .limit(1)
+    .maybeSingle()
+  if (communityProjectError) {
+    throw new Error(`Generic moderation is blocked because PathForge could not verify community-project ownership for ${id}.`)
+  }
+  if (linkedCommunityProject) {
+    throw new Error(
+      `Generic moderation is blocked for community projects. Review /admin/community-projects/${linkedCommunityProject.id} and use its publication or removal controls.`,
+    )
+  }
 
   if (status === 'approved') {
     const { data: linkedSourceRun, error: sourceRunError } = await supabase

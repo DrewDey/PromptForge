@@ -12,6 +12,10 @@ import {
 import {
   isExpectedLocalActivationFailure,
   isExpectedLocalActivationResponseFailure,
+  isExpectedLocalFaviconFailure,
+  isExpectedLocalFaviconResponseFailure,
+  isExpectedLocalVercelScriptFailure,
+  isExpectedLocalVercelScriptResponseFailure,
 } from './browser-guard-errors.mjs'
 
 const VIEWPORTS = [
@@ -181,11 +185,19 @@ async function measureViewport(client, baseUrl, viewport) {
     }
     if (message.method === 'Log.entryAdded' && message.params.entry?.level === 'error') {
       const entry = message.params.entry
-      if (!isExpectedLocalActivationFailure(baseUrl, entry)) consoleErrors.push(entry.text)
+      if (
+        !isExpectedLocalActivationFailure(baseUrl, entry) &&
+        !isExpectedLocalFaviconFailure(baseUrl, entry) &&
+        !isExpectedLocalVercelScriptFailure(baseUrl, entry)
+      ) consoleErrors.push(entry.text)
     }
     if (message.method === 'Network.responseReceived' && message.params.response?.status >= 400) {
       const response = message.params.response
-      if (!isExpectedLocalActivationResponseFailure(baseUrl, response)) {
+      if (
+        !isExpectedLocalActivationResponseFailure(baseUrl, response) &&
+        !isExpectedLocalFaviconResponseFailure(baseUrl, response) &&
+        !isExpectedLocalVercelScriptResponseFailure(baseUrl, response)
+      ) {
         httpFailures.push(`${response.status} ${response.url}`)
       }
     }

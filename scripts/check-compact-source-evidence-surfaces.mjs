@@ -56,11 +56,18 @@ for (const field of [
     `Profile presentation is missing default-run evidence field: ${field}`,
   )
 }
-mustInclude(
-  profilePresentation,
-  'sourceRunId: defaultVariant?.sourceRunId ?? preparedProject?.sourceRunId',
-  'Profile evidence must resolve source truth from the exact default run.',
-)
+for (const field of [
+  'sourceRunId: defaultVariant?.sourceRunId',
+  '?? preparedProject?.sourceRunId',
+  '`community-project:${communityProject.submission_id}:v${communityProject.submission_version}`',
+  'pathforgeRecordChecked: Boolean(defaultVariant || preparedProject || communityProject)',
+]) {
+  mustInclude(
+    profilePresentation,
+    field,
+    `Profile evidence is missing an authoritative default-run source field: ${field}`,
+  )
+}
 
 mustInclude(
   builderCard,

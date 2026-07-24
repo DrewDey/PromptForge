@@ -10,6 +10,7 @@ export const ACTIVATION_EVENT_NAMES = [
   'builder_action_started',
   'account_created',
   'source_run_submitted',
+  'community_project_submitted',
   'my_forge_returned',
 ] as const
 
@@ -67,7 +68,7 @@ export type ActivationEventPayload = {
 }
 
 export type ActivationFunnelStep = {
-  key: 'project_opened' | 'build_path_reached' | 'builder_action_started' | 'source_run_submitted'
+  key: 'project_opened' | 'build_path_reached' | 'builder_action_started' | 'submission_completed'
   label: string
   sessions: number
   rate_from_previous: number

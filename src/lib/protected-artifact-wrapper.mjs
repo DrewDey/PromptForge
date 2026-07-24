@@ -8,6 +8,7 @@ const WRAPPER_CSP = [
   "frame-src 'none'",
   "child-src 'none'",
   "connect-src 'none'",
+  "webrtc 'block'",
   "img-src 'none'",
   "media-src 'none'",
   "font-src 'none'",
@@ -23,6 +24,200 @@ function scriptSafeJson(value) {
     .replace(/&/g, '\\u0026')
     .replace(/\u2028/g, '\\u2028')
     .replace(/\u2029/g, '\\u2029')
+}
+
+function artifactNetworkLockdownSource() {
+  return `
+(() => {
+  const blockedContextTags = /^(?:iframe|frame|frameset|object|embed|applet|portal|fencedframe)$/i;
+  const blockedContextMarkup = /<(?:iframe|frame|frameset|object|embed|applet|portal|fencedframe)\\b/i;
+  const securityError = () => new DOMException(
+    'Nested browsing contexts and network access are disabled in this artifact.',
+    'SecurityError',
+  );
+  const blockedRtc = function PathForgeBlockedWebRTC() {
+    throw securityError();
+  };
+  for (const name of [
+    'RTCPeerConnection',
+    'webkitRTCPeerConnection',
+    'mozRTCPeerConnection',
+    'RTCIceTransport',
+    'RTCIceGatherer',
+  ]) {
+    try {
+      Object.defineProperty(globalThis, name, {
+        configurable: false,
+        enumerable: false,
+        writable: false,
+        value: blockedRtc,
+      });
+    } catch {
+      try { globalThis[name] = blockedRtc; } catch {}
+    }
+  }
+
+  const lockMethod = (prototype, name, build) => {
+    if (!prototype) return;
+    const descriptor = Object.getOwnPropertyDescriptor(prototype, name);
+    if (!descriptor || typeof descriptor.value !== 'function') return;
+    try {
+      Object.defineProperty(prototype, name, {
+        ...descriptor,
+        configurable: false,
+        writable: false,
+        value: build(descriptor.value),
+      });
+    } catch {}
+  };
+  const containsBlockedContext = (value) => {
+    if (!(value instanceof Node)) return false;
+    if (value.nodeType === Node.ELEMENT_NODE && blockedContextTags.test(value.localName || '')) return true;
+    return typeof value.querySelector === 'function'
+      && Boolean(value.querySelector('iframe,frame,frameset,object,embed,applet,portal,fencedframe'));
+  };
+  const assertSafeNodes = (values) => {
+    if (values.some(containsBlockedContext)) throw securityError();
+  };
+  const assertSafeMarkup = (value) => {
+    if (blockedContextMarkup.test(String(value))) throw securityError();
+  };
+
+  lockMethod(Document.prototype, 'createElement', (original) => function(name, options) {
+    if (blockedContextTags.test(String(name))) throw securityError();
+    return Reflect.apply(original, this, options === undefined ? [name] : [name, options]);
+  });
+  lockMethod(Document.prototype, 'createElementNS', (original) => function(namespace, name, options) {
+    if (blockedContextTags.test(String(name).split(':').pop() || '')) throw securityError();
+    return Reflect.apply(
+      original,
+      this,
+      options === undefined ? [namespace, name] : [namespace, name, options],
+    );
+  });
+  for (const [prototype, name] of [
+    [Node.prototype, 'appendChild'],
+    [Node.prototype, 'insertBefore'],
+    [Node.prototype, 'replaceChild'],
+    [Element.prototype, 'insertAdjacentElement'],
+  ]) {
+    lockMethod(prototype, name, (original) => function(...values) {
+      assertSafeNodes(values);
+      return Reflect.apply(original, this, values);
+    });
+  }
+  for (const prototype of [
+    Element.prototype,
+    Document.prototype,
+    globalThis.DocumentFragment?.prototype,
+  ]) {
+    for (const name of ['append', 'prepend', 'replaceChildren']) {
+      lockMethod(prototype, name, (original) => function(...values) {
+        assertSafeNodes(values);
+        return Reflect.apply(original, this, values);
+      });
+    }
+  }
+  for (const name of ['before', 'after', 'replaceWith']) {
+    lockMethod(Element.prototype, name, (original) => function(...values) {
+      assertSafeNodes(values);
+      return Reflect.apply(original, this, values);
+    });
+  }
+  lockMethod(Element.prototype, 'insertAdjacentHTML', (original) => function(position, value) {
+    assertSafeMarkup(value);
+    return Reflect.apply(original, this, [position, value]);
+  });
+  lockMethod(Document.prototype, 'write', (original) => function(...values) {
+    values.forEach(assertSafeMarkup);
+    return Reflect.apply(original, this, values);
+  });
+  lockMethod(Document.prototype, 'writeln', (original) => function(...values) {
+    values.forEach(assertSafeMarkup);
+    return Reflect.apply(original, this, values);
+  });
+  lockMethod(Range.prototype, 'createContextualFragment', (original) => function(value) {
+    assertSafeMarkup(value);
+    return Reflect.apply(original, this, [value]);
+  });
+  for (const prototype of [Element.prototype, globalThis.ShadowRoot?.prototype]) {
+    for (const name of ['setHTML', 'setHTMLUnsafe']) {
+      lockMethod(prototype, name, (original) => function(value, ...options) {
+        assertSafeMarkup(value);
+        return Reflect.apply(original, this, [value, ...options]);
+      });
+    }
+  }
+
+  const lockMarkupSetter = (prototype, name) => {
+    if (!prototype) return;
+    const descriptor = Object.getOwnPropertyDescriptor(prototype, name);
+    if (!descriptor || typeof descriptor.set !== 'function') return;
+    try {
+      Object.defineProperty(prototype, name, {
+        ...descriptor,
+        configurable: false,
+        set(value) {
+          assertSafeMarkup(value);
+          return Reflect.apply(descriptor.set, this, [value]);
+        },
+      });
+    } catch {}
+  };
+  for (const prototype of [Element.prototype, globalThis.ShadowRoot?.prototype]) {
+    lockMarkupSetter(prototype, 'innerHTML');
+  }
+  lockMarkupSetter(Element.prototype, 'outerHTML');
+  lockMarkupSetter(globalThis.HTMLIFrameElement?.prototype, 'srcdoc');
+})();`
+}
+
+function hardenArtifactDocument(artifactDocument) {
+  // Remove the contributor doctype and prepend our own so the lockdown script
+  // is the first executable byte even if a malformed upload placed content
+  // before its doctype. The opaque sandbox and CSP remain the primary boundary;
+  // this frozen constructor guard covers browsers that do not yet implement
+  // CSP's `webrtc 'block'` directive.
+  const withoutContributorDoctype = artifactDocument.replace(/<!doctype\s+html[^>]*>/i, '')
+  return `<!doctype html><script>${artifactNetworkLockdownSource()}</script>${withoutContributorDoctype}`
+}
+
+function staticAnchorAttributeValue(attribute) {
+  const match = attribute.match(/=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/)
+  return (match?.[1] ?? match?.[2] ?? match?.[3] ?? '').trim()
+}
+
+function decodeStaticHtmlNumericReferences(value) {
+  return value.replace(/&#(?:x([0-9a-f]+)|([0-9]+));?/gi, (reference, hex, decimal) => {
+    const codePoint = Number.parseInt(hex ?? decimal, hex ? 16 : 10)
+    if (!Number.isInteger(codePoint) || codePoint < 0 || codePoint > 0x10FFFF) return reference
+    try {
+      return String.fromCodePoint(codePoint)
+    } catch {
+      return reference
+    }
+  })
+}
+
+function staticMetaRefreshTag(tag) {
+  const attribute = tag.match(/\s+http-equiv\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/i)?.[0]
+  if (!attribute) return false
+  return decodeStaticHtmlNumericReferences(staticAnchorAttributeValue(attribute))
+    .trim()
+    .toLowerCase() === 'refresh'
+}
+
+export function makeArtifactDocumentStatic(artifactDocument) {
+  return artifactDocument
+    .replace(/<meta\b[^>]*>/gi, (tag) => (staticMetaRefreshTag(tag) ? '' : tag))
+    .replace(/<\/?(?:animate|animatemotion|animatetransform|set)\b[^>]*>/gi, '')
+    .replace(/<(?:a|area)\b[^>]*>/gi, (link) => (
+      link
+        .replace(/\s+(?:target|ping|download)\s*(?:=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?/gi, '')
+        .replace(/\s+(?:href|xlink:href)\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, (attribute) => (
+          staticAnchorAttributeValue(attribute).startsWith('#') ? attribute : ''
+        ))
+    ))
 }
 
 export function artifactDownloadBridgeSource() {
@@ -85,9 +280,19 @@ export function artifactDownloadBridgeSource() {
 })();`
 }
 
-export function buildProtectedArtifactWrapperDocument(artifactDocument) {
-  const serializedArtifact = scriptSafeJson(artifactDocument)
+export function buildProtectedArtifactWrapperDocument(artifactDocument, options = {}) {
+  const allowArtifactScripts = options.allowArtifactScripts !== false
+  const allowArtifactInteraction = allowArtifactScripts || options.allowArtifactInteraction === true
+  const preparedArtifactDocument = allowArtifactScripts
+    ? hardenArtifactDocument(artifactDocument)
+    : makeArtifactDocumentStatic(artifactDocument)
+  const serializedArtifact = scriptSafeJson(preparedArtifactDocument)
   const serializedCsp = scriptSafeJson(WRAPPER_CSP)
+  const artifactSandbox = allowArtifactScripts ? 'allow-scripts allow-pointer-lock' : ''
+  const executionMode = allowArtifactScripts ? 'interactive-trusted' : 'static-untrusted'
+  const interactionMode = allowArtifactInteraction ? 'reader-enabled' : 'visual-only'
+  const nonInteractiveFrameAttributes = allowArtifactInteraction ? '' : '\n    tabindex="-1"\n    inert'
+  const nonInteractiveFrameStyle = allowArtifactInteraction ? '' : '\n    iframe { pointer-events: none; }'
 
   return `<!doctype html>
 <html>
@@ -97,15 +302,17 @@ export function buildProtectedArtifactWrapperDocument(artifactDocument) {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     html, body, iframe { width: 100%; height: 100%; margin: 0; border: 0; }
-    html, body { overflow: hidden; background: #111827; }
-    iframe { display: block; background: #111827; }
+    html, body { overflow: hidden; background: #fff; color-scheme: light; }
+    iframe { display: block; background: #fff; }${nonInteractiveFrameStyle}
   </style>
 </head>
 <body>
   <iframe
     id="pathforge-artifact-document"
     title="Generated artifact document"
-    sandbox="allow-scripts allow-pointer-lock"
+    sandbox="${artifactSandbox}"
+    data-pathforge-execution-mode="${executionMode}"
+    data-pathforge-interaction-mode="${interactionMode}"${nonInteractiveFrameAttributes}
     allow="clipboard-write"
     referrerpolicy="no-referrer"
   ></iframe>

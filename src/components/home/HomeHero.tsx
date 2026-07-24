@@ -59,7 +59,7 @@ export function HomeHero({ pathCount, featured }: HomeHeroProps) {
             <Link href={featured.href} className="home-hero-demo" aria-label={`Open featured project: ${featured.title}`}>
               <div className="home-hero-demo-heading">
                 <span>
-                  Open a real working result ·{' '}
+                  {featured.isCommunityArtifact ? 'Open a visual-only community preview' : 'Open a real working result'} ·{' '}
                   <BuilderByline
                     name={featured.authorName}
                     provenanceKind={featured.authorProvenanceKind}
@@ -75,8 +75,9 @@ export function HomeHero({ pathCount, featured }: HomeHeroProps) {
               <ProjectPreview
                 artifactPath={featured.artifactPath}
                 title={featured.title}
-                label="Featured working artifact"
+                label={featured.isCommunityArtifact ? 'Featured visual-only community preview' : 'Featured working artifact'}
                 className="home-hero-project-preview"
+                isCommunityArtifact={featured.isCommunityArtifact}
               />
               {featuredTruth && (
                 <div data-home-hero-public-truth>

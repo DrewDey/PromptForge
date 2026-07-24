@@ -638,6 +638,21 @@ export function getProjectModelVariantSet(projectId: string) {
   return prepared
 }
 
+export function getProjectModelVariantArtifactPublicationEntries() {
+  return ALL_RAW_VARIANT_SETS.flatMap((variantSet) => (
+    variantSet.variants.flatMap((variant) => (
+      [...new Set([
+        variant.firstArtifactPath,
+        variant.finalArtifactPath,
+        ...variant.artifactVersionPaths,
+      ])].map((artifactPath) => ({
+        projectId: variantSet.canonicalProjectId,
+        artifactPath,
+      }))
+    ))
+  ))
+}
+
 export function reconcileProjectModelVariantSet(
   variantSet: ProjectModelVariantSet,
   records: ProjectModelVariantPublicRecord[] | null,

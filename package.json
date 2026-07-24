@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "prebuild": "npm run check:auth-readiness && npm run check:activation-analytics && npm run check:supabase-public-reads && npm run check:model-variants && node scripts/check-project-model-variant-live-registry.mjs && npm run check:source-run-publication-registry",
+    "prebuild": "npm run check:auth-readiness && npm run check:activation-analytics && npm run check:supabase-public-reads && npm run check:supabase-server-key-transport && npm run check:community-project-pilot && npm run check:community-project-alert-recovery && npm run check:model-variants && node scripts/check-project-model-variant-live-registry.mjs && npm run check:source-run-publication-registry",
     "build": "next build",
     "postbuild": "node scripts/check-output-file-tracing.mjs",
     "start": "next start",
@@ -23,6 +23,12 @@
     "check:project-fork-browser": "node scripts/check-project-fork-page-browser.mjs",
     "check:airlock-zero": "node scripts/check-airlock-zero-artifacts.mjs public/artifacts/airlock-zero-gpt-56-sol-max-step-2.html public/artifacts/airlock-zero-swarm-shift-gpt-56-sol-max.html public/artifacts/airlock-zero-gemini-35-flash-step-9.html public/artifacts/airlock-zero-hull-breach-gemini-35-flash-verified-final.html public/artifacts/airlock-zero-claude-sonnet-5-max-step-10.html public/artifacts/airlock-zero-blackout-shift-claude-sonnet-5-max.html",
     "check:source-run-intake": "node scripts/check-source-run-intake.mjs",
+    "check:supabase-server-key-transport": "node scripts/check-supabase-server-key-transport.mjs",
+    "check:community-project-pilot": "node scripts/check-community-project-pilot.mjs",
+    "check:community-project-alert-recovery": "node scripts/check-community-project-alert-recovery.mjs",
+    "check:community-project-db": "node scripts/check-community-project-db.mjs",
+    "check:community-project-auth-browser": "node scripts/check-community-project-auth-browser.mjs",
+    "check:community-project-live-acceptance": "node scripts/check-community-project-live-acceptance.mjs",
     "check:model-identities": "node scripts/check-public-model-identity.mjs && node scripts/check-public-model-identities.mjs && node scripts/check-prepared-project-model-identities.mjs",
     "check:source-run-showcases": "node scripts/check-source-run-showcases.mjs && node scripts/check-public-model-identity.mjs && node scripts/check-public-model-identities.mjs && node scripts/check-prepared-project-model-identities.mjs && node scripts/check-protected-artifact-sandbox.mjs",
     "check:public-source-evidence": "node scripts/check-public-source-evidence.mjs",
@@ -42,7 +48,7 @@
     "check:output-tracing": "node scripts/check-output-file-tracing.mjs",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "autoreview": "npm run lint && npm run typecheck && npm run check:discovery-activity && npm run check:source-run-intake && npm run check:source-run-showcases && npm run check:public-source-evidence && npm run check:public-project-truth && npm run check:generic-public-truth && npm run check:model-variants && npm run check:project-forks && npm run check:my-forge && npm run check:security-boundaries && npm run check:auth-readiness && npm run check:activation-analytics && npm run check:supabase-public-reads",
+    "autoreview": "npm run lint && npm run typecheck && npm run check:discovery-activity && npm run check:source-run-intake && npm run check:supabase-server-key-transport && npm run check:community-project-pilot && npm run check:community-project-alert-recovery && npm run check:source-run-showcases && npm run check:public-source-evidence && npm run check:public-project-truth && npm run check:generic-public-truth && npm run check:model-variants && npm run check:project-forks && npm run check:my-forge && npm run check:security-boundaries && npm run check:auth-readiness && npm run check:activation-analytics && npm run check:supabase-public-reads",
     "autoreview:hourly-manager": "npm run check:hourly-seed-manager"
   },
   "dependencies": {
@@ -51,7 +57,7 @@
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "lucide-react": "^1.8.0",
-    "next": "16.2.10",
+    "next": "16.2.11",
     "react": "^19.2.5",
     "react-dom": "^19.2.5"
   },
@@ -62,15 +68,14 @@
     "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.4.27",
     "eslint": "^9.39.4",
-    "eslint-config-next": "16.2.10",
-    "postcss": "^8.5.9",
+    "eslint-config-next": "16.2.11",
+    "postcss": "8.5.22",
     "tailwindcss": "^4.2.2",
     "typescript": "^6.0.2"
   },
   "overrides": {
+    "sharp": "0.35.3",
     "ws": "8.21.0",
-    "next": {
-      "postcss": "8.5.10"
-    }
+    "postcss": "8.5.22"
   }
 }

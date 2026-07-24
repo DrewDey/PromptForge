@@ -12,6 +12,8 @@ import {
 import {
   isExpectedLocalActivationFailure,
   isExpectedLocalActivationResponseFailure,
+  isExpectedLocalFaviconFailure,
+  isExpectedLocalFaviconResponseFailure,
   isExpectedLocalVercelScriptFailure,
   isExpectedLocalVercelScriptResponseFailure,
 } from './browser-guard-errors.mjs'
@@ -315,6 +317,7 @@ async function verifyViewport(client, options, viewport, scenario) {
       const entry = message.params.entry
       if (
         !isExpectedLocalActivationFailure(options.baseUrl, entry) &&
+        !isExpectedLocalFaviconFailure(options.baseUrl, entry) &&
         !isExpectedLocalVercelScriptFailure(options.baseUrl, entry)
       ) {
         consoleErrors.push(entry.text)
@@ -324,6 +327,7 @@ async function verifyViewport(client, options, viewport, scenario) {
       const response = message.params.response
       if (
         !isExpectedLocalActivationResponseFailure(options.baseUrl, response) &&
+        !isExpectedLocalFaviconResponseFailure(options.baseUrl, response) &&
         !isExpectedLocalVercelScriptResponseFailure(options.baseUrl, response)
       ) {
         httpFailures.push(`${response.status} ${response.url}`)

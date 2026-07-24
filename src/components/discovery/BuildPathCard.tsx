@@ -29,6 +29,7 @@ function clientItem(item: BuildPathDiscoveryItem): BuildPathCardClientItem {
     modelRunCount: item.modelRunCount,
     verifiedModelRunCount: item.verifiedModelRunCount,
     hasWorkingArtifact: item.hasWorkingArtifact,
+    isCommunityArtifact: item.isCommunityArtifact,
     hasFork: item.hasFork,
     isFork: item.isFork,
     forkCount: item.forkCount,

@@ -125,6 +125,19 @@ const ARTIFACT_CSP = [
   "base-uri 'none'",
   "form-action 'none'",
 ].join('; ')
+const STATIC_ARTIFACT_CSP = [
+  "default-src 'none'",
+  "script-src 'none'",
+  "style-src 'unsafe-inline'",
+  'img-src data:',
+  'font-src data:',
+  "media-src 'none'",
+  "connect-src 'none'",
+  "object-src 'none'",
+  "frame-src 'none'",
+  "base-uri 'none'",
+  "form-action 'none'",
+].join('; ')
 
 function artifactViewerHref(artifact: Pick<ArtifactPackage, 'artifactPath' | 'artifactTitle'>, providerName: string) {
   const query = new URLSearchParams({
@@ -369,27 +382,32 @@ function artifactFitProbeSource() {
 function injectArtifactFitProbe(
   html: string,
   storageSnapshots: ArtifactStorageSnapshots,
+  allowArtifactDownloads: boolean,
+  allowArtifactScripts: boolean,
 ) {
   const parsed = new DOMParser().parseFromString(html, 'text/html')
   const csp = parsed.createElement('meta')
   csp.httpEquiv = 'Content-Security-Policy'
-  csp.content = ARTIFACT_CSP
-
-  const storageBootstrap = parsed.createElement('script')
-  storageBootstrap.textContent = artifactStorageBootstrapSource(storageSnapshots)
-  const downloadBridge = parsed.createElement('script')
-  downloadBridge.textContent = artifactDownloadBridgeSource()
+  csp.content = allowArtifactScripts ? ARTIFACT_CSP : STATIC_ARTIFACT_CSP
 
   // Insert trusted policy bytes into the actual parsed head. Text that merely
   // looks like <head> or </body> inside artifact comments and strings cannot
   // redirect these controls into attacker-owned content.
-  parsed.head.prepend(downloadBridge)
-  parsed.head.prepend(storageBootstrap)
-  parsed.head.prepend(csp)
+  if (allowArtifactScripts) {
+    const storageBootstrap = parsed.createElement('script')
+    storageBootstrap.textContent = artifactStorageBootstrapSource(storageSnapshots)
+    if (allowArtifactDownloads) {
+      const downloadBridge = parsed.createElement('script')
+      downloadBridge.textContent = artifactDownloadBridgeSource()
+      parsed.head.prepend(downloadBridge)
+    }
+    parsed.head.prepend(storageBootstrap)
 
-  const fitProbe = parsed.createElement('script')
-  fitProbe.textContent = artifactFitProbeSource()
-  parsed.body.append(fitProbe)
+    const fitProbe = parsed.createElement('script')
+    fitProbe.textContent = artifactFitProbeSource()
+    parsed.body.append(fitProbe)
+  }
+  parsed.head.prepend(csp)
 
   return `<!doctype html>\n${parsed.documentElement.outerHTML}`
 }
@@ -403,6 +421,9 @@ export function ProtectedArtifactFrame({
   bare = false,
   frameId = 'final-result',
   viewerFitControls = false,
+  allowArtifactDownloads = true,
+  allowArtifactScripts = true,
+  allowArtifactInteraction = allowArtifactScripts,
 }: {
   selectedPackage: ArtifactPackage
   providerName: string
@@ -412,6 +433,9 @@ export function ProtectedArtifactFrame({
   bare?: boolean
   frameId?: string
   viewerFitControls?: boolean
+  allowArtifactDownloads?: boolean
+  allowArtifactScripts?: boolean
+  allowArtifactInteraction?: boolean
 }) {
   const frameRef = useRef<HTMLDivElement | null>(null)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
@@ -451,12 +475,14 @@ export function ProtectedArtifactFrame({
   ) ? measuredArtifact.size : null
   const artifactDocumentRemounted =
     settledArtifactDocumentGeneration !== artifactDocumentGeneration
-  const viewerUsesReadableSize = viewerFitControls && (
+  const viewerUsesReadableSize = allowArtifactScripts && viewerFitControls && (
     viewerMode === 'readable' || viewerMeasurementRefreshPending
   )
   const viewerUsesAvailableHeight = viewerFitControls
   const usesMeasuredContentHeight = !bare && frameHeight === undefined
-  const tracksArtifactMeasurement = usesMeasuredContentHeight || viewerFitControls
+  const tracksArtifactMeasurement = allowArtifactScripts && (
+    usesMeasuredContentHeight || viewerFitControls
+  )
   const fallbackFrameHeight = frameHeight ?? ARTIFACT_FRAME_HEIGHT
   const setIframeElement = useCallback((node: HTMLIFrameElement | null) => {
     iframeRef.current = node
@@ -559,17 +585,27 @@ export function ProtectedArtifactFrame({
           return
         }
 
-        const storageSnapshots: ArtifactStorageSnapshots = {
-          local: readArtifactStorageSnapshot('local', selectedPackage.artifactPath),
-          session: readArtifactStorageSnapshot('session', selectedPackage.artifactPath),
-        }
+        const storageSnapshots: ArtifactStorageSnapshots = allowArtifactScripts
+          ? {
+              local: readArtifactStorageSnapshot('local', selectedPackage.artifactPath),
+              session: readArtifactStorageSnapshot('session', selectedPackage.artifactPath),
+            }
+          : { local: {}, session: {} }
 
         if (!controller.signal.aborted) {
-          const protectedArtifactDocument = injectArtifactFitProbe(html, storageSnapshots)
+          const protectedArtifactDocument = injectArtifactFitProbe(
+            html,
+            storageSnapshots,
+            allowArtifactDownloads,
+            allowArtifactScripts,
+          )
           setLoadedArtifact({
             packageId,
             artifactPath,
-            srcDoc: buildProtectedArtifactWrapperDocument(protectedArtifactDocument),
+            srcDoc: buildProtectedArtifactWrapperDocument(protectedArtifactDocument, {
+              allowArtifactScripts,
+              allowArtifactInteraction,
+            }),
             error: null,
           })
         }
@@ -589,7 +625,13 @@ export function ProtectedArtifactFrame({
     return () => {
       controller.abort()
     }
-  }, [selectedPackage.artifactPath, selectedPackage.id])
+  }, [
+    allowArtifactDownloads,
+    allowArtifactInteraction,
+    allowArtifactScripts,
+    selectedPackage.artifactPath,
+    selectedPackage.id,
+  ])
 
   useEffect(() => {
     const packageId = selectedPackage.id
@@ -613,6 +655,7 @@ export function ProtectedArtifactFrame({
       }
 
       if (data.type === 'pathforge-artifact-download') {
+        if (!allowArtifactDownloads) return
         const now = performance.now()
         if (
           now - lastDownloadAtRef.current < 750 ||
@@ -730,6 +773,8 @@ export function ProtectedArtifactFrame({
   }, [
     selectedPackage.artifactPath,
     selectedPackage.id,
+    allowArtifactDownloads,
+    allowArtifactScripts,
     tracksArtifactMeasurement,
     usesMeasuredContentHeight,
     viewerFitControls,
@@ -833,7 +878,9 @@ export function ProtectedArtifactFrame({
         : viewerUsesAvailableHeight
           ? 'flex h-full w-full flex-col overflow-hidden border border-surface-800 bg-[#111827] shadow-[0_28px_90px_rgba(0,0,0,0.28)]'
           : 'w-full overflow-hidden border border-surface-800 bg-[#111827] shadow-[0_28px_90px_rgba(0,0,0,0.28)]'}
-      data-artifact-viewer-mode={viewerFitControls ? viewerMode : undefined}
+      data-artifact-viewer-mode={viewerFitControls && allowArtifactScripts ? viewerMode : undefined}
+      data-artifact-execution-mode={allowArtifactScripts ? 'interactive-trusted' : 'static-untrusted'}
+      data-artifact-interaction-mode={allowArtifactInteraction ? 'reader-enabled' : 'visual-only'}
     >
       {!bare && (
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-surface-800 bg-surface-900 px-4 py-3 text-white">
@@ -849,7 +896,7 @@ export function ProtectedArtifactFrame({
             </div>
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2">
-            {viewerFitControls && (
+            {viewerFitControls && allowArtifactScripts && (
               <div
                 className="inline-flex border border-surface-700 bg-surface-950 p-0.5"
                 aria-label="Artifact display size"

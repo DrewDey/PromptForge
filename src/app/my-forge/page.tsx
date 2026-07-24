@@ -470,10 +470,16 @@ export default async function MyForgePage({
               One work console for review, unfinished branches, saved paths, and the public portfolio they become.
             </p>
           </div>
-          <Link href="/build" className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 bg-surface-900 px-4 py-2 text-xs font-bold text-white hover:bg-primary-700">
-            <Hammer className="h-3.5 w-3.5" aria-hidden="true" />
-            Share another build
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/my-forge/community-projects" className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 border border-surface-300 bg-white px-4 py-2 text-xs font-bold text-surface-800 hover:border-brand-orange">
+              <FolderGit2 className="h-3.5 w-3.5" aria-hidden="true" />
+              Pilot projects
+            </Link>
+            <Link href="/build" className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 bg-surface-900 px-4 py-2 text-xs font-bold text-white hover:bg-primary-700">
+              <Hammer className="h-3.5 w-3.5" aria-hidden="true" />
+              Submit a project
+            </Link>
+          </div>
         </header>
 
         {submittedRun && (

@@ -368,19 +368,31 @@ function rawPackageRunId(value: unknown) {
   return typeof sourceRunId === 'string' ? sourceRunId.trim() || undefined : undefined
 }
 
-export function findSourceRunPackageFileById(sourceRunId: string) {
-  const normalizedRunId = sourceRunId.trim()
-  if (!normalizedRunId) return undefined
-  const matches = listSourceRunPackageJsonFiles().flatMap((candidateFileName) => {
+let sourceRunPackageFileIndex: Map<string, string[]> | null = null
+
+function indexedSourceRunPackageFiles() {
+  if (sourceRunPackageFileIndex) return sourceRunPackageFileIndex
+  const index = new Map<string, string[]>()
+  for (const candidateFileName of listSourceRunPackageJsonFiles()) {
     try {
       const { bytes } = readSourceRunPackageBytes(candidateFileName)
       const raw = JSON.parse(bytes.toString('utf8')) as unknown
-      if (rawPackageRunId(raw) !== normalizedRunId) return []
-      return [candidateFileName]
+      const sourceRunId = rawPackageRunId(raw)
+      if (!sourceRunId) continue
+      index.set(sourceRunId, [...(index.get(sourceRunId) ?? []), candidateFileName])
     } catch {
-      return []
+      // Invalid packages are rejected when loaded by their owning route. They
+      // cannot participate in this immutable run-id index.
     }
-  })
+  }
+  sourceRunPackageFileIndex = index
+  return index
+}
+
+export function findSourceRunPackageFileById(sourceRunId: string) {
+  const normalizedRunId = sourceRunId.trim()
+  if (!normalizedRunId) return undefined
+  const matches = indexedSourceRunPackageFiles().get(normalizedRunId) ?? []
 
   if (matches.length > 1) {
     throw new Error(`Multiple source-run packages claim immutable run ${normalizedRunId}.`)

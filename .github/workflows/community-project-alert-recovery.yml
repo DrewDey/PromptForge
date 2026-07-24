@@ -1,0 +1,44 @@
+name: Community project alert recovery
+
+on:
+  schedule:
+    # Four staggered attempts per hour leave sixteen recovery opportunities
+    # inside the four-hour critical-report response window.
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: community-project-alert-recovery
+  cancel-in-progress: false
+
+jobs:
+  retry-production-alerts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Retry the durable report-alert queue
+        env:
+          PATHFORGE_PRODUCTION_URL: ${{ vars.PATHFORGE_PRODUCTION_URL }}
+          PATHFORGE_CRON_SECRET: ${{ secrets.PATHFORGE_CRON_SECRET }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${PATHFORGE_PRODUCTION_URL}" || "${PATHFORGE_PRODUCTION_URL}" != https://* ]]; then
+            echo "PATHFORGE_PRODUCTION_URL must be a production HTTPS origin." >&2
+            exit 1
+          fi
+          if [[ ${#PATHFORGE_CRON_SECRET} -lt 32 ]]; then
+            echo "PATHFORGE_CRON_SECRET is missing or too short." >&2
+            exit 1
+          fi
+          production_origin="${PATHFORGE_PRODUCTION_URL%/}"
+          curl \
+            --silent \
+            --show-error \
+            --fail-with-body \
+            --max-time 70 \
+            --header "Authorization: Bearer ${PATHFORGE_CRON_SECRET}" \
+            "${production_origin}/api/cron/community-project-alerts"

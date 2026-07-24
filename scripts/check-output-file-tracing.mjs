@@ -71,6 +71,8 @@ const evidenceFiles = [
   ...walkFiles(path.join(root, 'public', 'artifacts')),
 ]
 const evidenceSet = new Set(evidenceFiles.map((file) => path.resolve(file)))
+const preparedArtifactFiles = walkFiles(path.join(root, 'public', 'artifacts'))
+const preparedArtifactSet = new Set(preparedArtifactFiles.map((file) => path.resolve(file)))
 
 for (const routePattern of sourceRunRuntimeRoutes) {
   const matchedTraces = traces.filter((trace) => routePatternMatches(routePattern, trace.route))
@@ -84,6 +86,21 @@ for (const routePattern of sourceRunRuntimeRoutes) {
         `${trace.route} includes ${includedEvidence.size}/${evidenceSet.size} required source-run evidence files.`,
       )
     }
+  }
+}
+
+const preparedArtifactTraces = traces.filter((trace) => (
+  routePatternMatches('/api/prepared-artifacts/*', trace.route)
+))
+if (preparedArtifactTraces.length === 0) {
+  throw new Error('No build trace matched the prepared artifact access-control route.')
+}
+for (const trace of preparedArtifactTraces) {
+  const includedArtifacts = new Set(trace.files.filter((file) => preparedArtifactSet.has(file)))
+  if (includedArtifacts.size !== preparedArtifactSet.size) {
+    throw new Error(
+      `${trace.route} includes ${includedArtifacts.size}/${preparedArtifactSet.size} prepared artifact files.`,
+    )
   }
 }
 

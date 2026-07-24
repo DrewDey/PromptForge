@@ -1,5 +1,4 @@
 import type {
-  SourceRunSubmission,
   SourceRunSubmissionStatus,
   SourceRunSubmissionWithRelations,
 } from '../types'
@@ -18,8 +17,11 @@ import {
   sourceRunEvidenceEquals,
 } from '../source-run-package'
 import { composeSourceRunReviewNotes, detectSourceRunProvider } from '../source-run-review'
+import { isSupportedCommunitySourceUrl } from '../community-project-contract'
 import { sourceRunForkColumnsMissing } from './fork-column-compat'
 import { requireAdminAccess, SUPABASE_CONFIGURED } from './shared'
+import { createAdminClient } from '../supabase/admin'
+import { randomUUID } from 'node:crypto'
 
 function throwReadableSourceRunError(error: { code?: string; message?: string } | null) {
   if (!error) return
@@ -34,19 +36,6 @@ function throwReadableSourceRunError(error: { code?: string; message?: string } 
   throw error
 }
 
-function titleColumnMissing(error: { code?: string; message?: string } | null) {
-  const message = error?.message?.toLowerCase() ?? ''
-  return Boolean(
-    error &&
-    (
-      error.code === '42703' ||
-      error.code === 'PGRST204'
-    ) &&
-    message.includes('title') &&
-    message.includes('source_run_submissions')
-  )
-}
-
 export async function createSourceRunSubmission(input: {
   title?: string
   source_url?: string
@@ -56,6 +45,9 @@ export async function createSourceRunSubmission(input: {
   notes?: string
   fork_source?: ProjectForkSource | null
   resubmission_of_id?: string | null
+  privacy_attested?: boolean
+  queue_only_attested?: boolean
+  source_publication_attested?: boolean
 }) {
   if (!SUPABASE_CONFIGURED) throw new Error('Source run intake requires sign in.')
 
@@ -66,7 +58,8 @@ export async function createSourceRunSubmission(input: {
 
   const title = input.title?.trim() ?? ''
   const sourceUrl = input.source_url?.trim() ?? ''
-  const provider = input.provider?.trim() || detectSourceRunProvider(sourceUrl)
+  const detectedProvider = detectSourceRunProvider(sourceUrl)
+  const provider = input.provider?.trim() || detectedProvider
   const modelUsed = input.model_used?.trim() ?? ''
   const modelSettings = input.model_settings?.trim() ?? ''
 
@@ -78,129 +71,86 @@ export async function createSourceRunSubmission(input: {
     throw new Error('Paste a source run link.')
   }
 
-  if (sourceUrl && !/^https?:\/\/\S+$/i.test(sourceUrl)) {
-    throw new Error('Paste a full source run URL starting with http:// or https://.')
+  if (!isSupportedCommunitySourceUrl(sourceUrl)) {
+    throw new Error(
+      'Use a public ChatGPT, Claude, or Gemini share link without a query string or fragment. Private conversation URLs are not accepted.',
+    )
   }
 
-  if (!provider) {
-    throw new Error('Pick the AI service for this source run.')
+  if (!detectedProvider || provider !== detectedProvider) {
+    throw new Error('The AI service must match the submitted public share link.')
   }
 
   if (!modelUsed) {
     throw new Error('Add the exact model shown for this source run, or type Not sure.')
   }
 
-  const resubmissionOfId = input.resubmission_of_id?.trim() || null
-  let effectiveForkSource = input.fork_source ?? null
-
-  if (resubmissionOfId) {
-    const { data: priorSubmission, error: priorError } = await supabase
-      .from('source_run_submissions')
-      .select([
-        'id',
-        'status',
-        'fork_source_project_id',
-        'fork_source_project_title',
-        'fork_source_model_variant_id',
-        'fork_source_run_id',
-        'fork_source_step_id',
-        'fork_source_step_number',
-        'fork_source_artifact_path',
-        'fork_source_artifact_sha256',
-        'fork_parent_submission_id',
-        'prompt_family_id',
-        'fork_depth',
-        'fork_branch_index',
-      ].join(','))
-      .eq('id', resubmissionOfId)
-      .eq('author_id', user.id)
-      .maybeSingle()
-    throwReadableSourceRunError(priorError)
-    if (!priorSubmission) throw new Error('That repair source run is unavailable.')
-    const prior = priorSubmission as unknown as SourceRunSubmission
-    if (!['needs_repair', 'failed'].includes(prior.status)) {
-      throw new Error('That source run is not eligible for a repair submission.')
-    }
-
-    const { data: existingRepairs, error: repairsError } = await supabase
-      .from('source_run_submissions')
-      .select('id,status')
-      .eq('author_id', user.id)
-      .eq('resubmission_of_id', resubmissionOfId)
-    throwReadableSourceRunError(repairsError)
-    if ((existingRepairs ?? []).some((repair) => !['failed', 'declined'].includes(repair.status))) {
-      throw new Error('A repair submission is already active for this source run.')
-    }
-
-    // The prior server-owned record is authoritative. A crafted action call or
-    // stale fork URL cannot rewrite the fork tuple during repair.
-    effectiveForkSource = projectForkSourceFromSubmissionFields(prior)
+  if (!input.privacy_attested || !input.queue_only_attested || !input.source_publication_attested) {
+    throw new Error('Confirm the privacy, public-link permission, and queue-only review statements before submitting.')
   }
 
+  const resubmissionOfId = input.resubmission_of_id?.trim() || null
+  const sourcePublicationConsentAt = new Date().toISOString()
+  const attestation = [
+    'PathForge queue-only intake attestations:',
+    '- The builder confirmed the provider link may be shared with PathForge review.',
+    '- The builder confirmed the notes were checked for secrets and personal information.',
+    '- The builder explicitly authorized the exact public share link to appear on an approved public showcase.',
+    '- The builder confirmed this creates a private review record and does not publish automatically.',
+    `- Recorded ${sourcePublicationConsentAt}.`,
+  ].join('\n')
   const notes = composeSourceRunReviewNotes({
     sourceUrl,
     provider,
     modelUsed,
     modelSettings,
-    notes: input.notes,
+    notes: [input.notes?.trim(), attestation].filter(Boolean).join('\n\n'),
   })
-  const forkFields = projectForkSourceToSubmissionFields(effectiveForkSource)
 
-  const payload = {
-    title,
-    source_url: sourceUrl || null,
-    file_name: null,
-    notes,
-    ...forkFields,
-    resubmission_of_id: resubmissionOfId,
-    author_id: user.id,
-    status: 'queued',
+  if (resubmissionOfId) {
+    // Do not accept lineage from this request. The database locks the owned
+    // prior record and copies its complete fork tuple into the append-only
+    // repair.
+    const { data, error } = await createAdminClient().rpc('create_legacy_source_run_repair', {
+      target_submission: resubmissionOfId,
+      actor: user.id,
+      repair_title: title,
+      repair_source_url: sourceUrl,
+      repair_notes: notes || null,
+      repair_source_visibility: 'public',
+      repair_source_publication_consent_at: sourcePublicationConsentAt,
+      correlation: randomUUID(),
+    })
+    throwReadableSourceRunError(error)
+    return { id: String(data) }
   }
 
+  const forkFields = projectForkSourceToSubmissionFields(input.fork_source)
   const { data, error } = await supabase
     .from('source_run_submissions')
-    .insert(payload)
+    .insert({
+      title,
+      source_url: sourceUrl,
+      source_visibility: 'public',
+      source_publication_consent_at: sourcePublicationConsentAt,
+      file_name: null,
+      notes,
+      ...forkFields,
+      resubmission_of_id: null,
+      author_id: user.id,
+      status: 'queued',
+    })
     .select('id')
     .single()
 
-  if (sourceRunForkColumnsMissing(error) && (effectiveForkSource || resubmissionOfId)) {
+  if (sourceRunForkColumnsMissing(error) && input.fork_source) {
     throw new Error(
-      'This linked intake is unavailable because the database is missing durable lineage columns. No unlinked submission was created.',
+      'This fork intake is unavailable because the database is missing durable lineage columns. No unlinked submission was created.',
     )
   }
-
-  if (titleColumnMissing(error) || sourceRunForkColumnsMissing(error)) {
-    const fallbackNotes = titleColumnMissing(error)
-      ? [`Title: ${title}`, notes].filter(Boolean).join('\n\n') || null
-      : notes
-    const fallbackPayload = titleColumnMissing(error)
-      ? {
-        source_url: sourceUrl || null,
-        file_name: null,
-        notes: fallbackNotes,
-        author_id: user.id,
-        status: 'queued',
-      }
-      : {
-        title,
-        source_url: sourceUrl || null,
-        file_name: null,
-        notes: fallbackNotes,
-        author_id: user.id,
-        status: 'queued',
-      }
-    const { data: fallbackData, error: fallbackError } = await supabase
-      .from('source_run_submissions')
-      .insert(fallbackPayload)
-      .select('id')
-      .single()
-
-    throwReadableSourceRunError(fallbackError)
-    return { id: fallbackData?.id as string }
-  }
-
   throwReadableSourceRunError(error)
-  return { id: data?.id as string }
+  if (!data?.id) throw new Error('PathForge did not confirm the private review record.')
+  return { id: String(data.id) }
 }
 
 export async function getSourceRunSubmissionForAdmin(id: string): Promise<SourceRunSubmissionWithRelations | null> {
@@ -377,7 +327,7 @@ export async function publishPreparedShowcaseProjectFromSourceRun(
   const { supabase } = await requireAdminAccess()
   const { data: sourceRun, error: sourceRunError } = await supabase
     .from('source_run_submissions')
-    .select('id, author_id, status, title, source_url, canonical_source_url, file_name, notes, source_package_file, source_package_sha256, intake_evidence, fork_source_project_id, fork_source_project_title, fork_source_model_variant_id, fork_source_run_id, fork_source_step_id, fork_source_step_number, fork_source_artifact_path, fork_source_artifact_sha256, fork_parent_submission_id, prompt_family_id, fork_depth, fork_branch_index')
+    .select('id, author_id, status, title, source_url, source_visibility, source_publication_consent_at, canonical_source_url, file_name, notes, source_package_file, source_package_sha256, intake_evidence, fork_source_project_id, fork_source_project_title, fork_source_model_variant_id, fork_source_run_id, fork_source_step_id, fork_source_step_number, fork_source_artifact_path, fork_source_artifact_sha256, fork_parent_submission_id, prompt_family_id, fork_depth, fork_branch_index')
     .eq('id', sourceRunId)
     .maybeSingle()
 
@@ -394,6 +344,12 @@ export async function publishPreparedShowcaseProjectFromSourceRun(
 
   throwReadableSourceRunError(sourceRunError)
   if (!sourceRun) throw new Error('Source run not found.')
+  if (
+    sourceRun.source_visibility !== 'public'
+    || !sourceRun.source_publication_consent_at
+  ) {
+    throw new Error('Prepared publish requires explicit consent to display the public provider share link.')
+  }
   if (!['queued', 'draft_created'].includes(sourceRun.status)) {
     throw new Error(
       `Prepared publish requires a queued intake or exact published replay; current status is ${sourceRun.status}.`,

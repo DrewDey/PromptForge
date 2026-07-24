@@ -1,18 +1,18 @@
 import 'server-only'
-import { createClient } from '@supabase/supabase-js'
+import {
+  createSupabaseServerClient,
+  resolveSupabaseServerKey,
+} from './server-client.mjs'
 
 export function createAdminClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error('Creating source-run drafts requires SUPABASE_SERVICE_ROLE_KEY on the server.')
+  if (!supabaseUrl) {
+    throw new Error('Creating source-run drafts requires server-only Supabase credentials.')
   }
 
-  return createClient(supabaseUrl, serviceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  })
+  return createSupabaseServerClient(
+    supabaseUrl,
+    resolveSupabaseServerKey(process.env),
+  )
 }

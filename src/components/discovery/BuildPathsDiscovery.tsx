@@ -9,7 +9,11 @@ import {
   SlidersHorizontal,
 } from 'lucide-react'
 import { BROAD_DOMAINS, getPromptBroadDomain } from '@/lib/broad-domains'
-import { getCategories, getPrompts, getUserVotesAndBookmarks } from '@/lib/data'
+import { getUserVotesAndBookmarks } from '@/lib/data'
+import {
+  getCachedPublicCategories,
+  getCachedPublicPrompts,
+} from '@/lib/public-catalog-cache'
 import {
   DISCOVERY_INTENTS,
   activeOrder,
@@ -164,8 +168,8 @@ export async function BuildPathsDiscovery({
   }
 
   const [categories, prompts] = await Promise.all([
-    getCategories(),
-    getPrompts({ sort: 'newest' }),
+    getCachedPublicCategories(),
+    getCachedPublicPrompts({ sort: 'newest' }),
   ])
   const catalog = buildPathDiscoveryCatalog(prompts, categories)
   // Multiple models is a distinct artifact-verified model-label filter.

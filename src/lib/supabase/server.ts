@@ -1,4 +1,5 @@
 import { createServerClient as createSSRClient } from '@supabase/ssr'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
 async function createCookieBackedClient() {
@@ -35,6 +36,22 @@ export async function createClient() {
 // the fallback deadline only consumes pool capacity without improving the page.
 // supabase-js does not expose PostgREST retry policy at the client level, so
 // every query issued through this scoped client is guarded with retry(false).
-export async function createPublicReadClient() {
+export async function createPublicReadClient(
+  options: { anonymous?: boolean } = {},
+) {
+  if (options.anonymous) {
+    return createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          detectSessionInUrl: false,
+          persistSession: false,
+        },
+      },
+    )
+  }
+
   return createCookieBackedClient()
 }

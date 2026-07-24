@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
 import { BuilderByline } from '@/components/BuilderByline'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
 import ProjectEngagementBar from '@/components/ProjectEngagementBar'
@@ -40,6 +41,7 @@ import {
   getProjectModelVariantSet,
 } from '@/lib/project-model-variants'
 import { derivePublicProjectTruth } from '@/lib/public-project-truth'
+import { preparedProjectIsPublic } from '@/lib/prepared-release-gates'
 import { getCanonicalPreparedSelectedRunPromptCount } from '@/lib/prompt-public-truth'
 import { getPublicModelIdentityLabel } from '@/lib/public-model-labels'
 import type { SourceRunPackage, SourceRunPackageStep } from '@/lib/source-run-package'
@@ -457,6 +459,8 @@ export default async function PreparedSourceRunPage({
   modelVariantRegistryWarning?: string
   acknowledgeModelUpdates?: boolean
 }) {
+  if (!await preparedProjectIsPublic(project.id)) notFound()
+
   const sourceRun = sourceRunPackage
   const pageRoute = route ?? project.href
   const providerName = getProviderName(sourceRun, project)

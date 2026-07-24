@@ -14,7 +14,7 @@ const footerGroups = [
   {
     label: 'Create',
     links: [
-      { href: '/build', label: 'Share a build' },
+      { href: '/build', label: 'Invitation-only project pilot' },
       { href: '/my-forge', label: 'My Forge' },
       { href: '/guide', label: 'How it works' },
     ],
@@ -24,6 +24,9 @@ const footerGroups = [
     links: [
       { href: '/about', label: 'Vision' },
       { href: '/suggestion-box', label: 'Suggestion Box' },
+      { href: '/terms', label: 'Terms' },
+      { href: '/privacy', label: 'Privacy' },
+      { href: '/community-guidelines', label: 'Community Guidelines' },
     ],
   },
 ] as const

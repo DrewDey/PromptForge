@@ -16,7 +16,8 @@ import { ProjectPreview } from '@/components/ProjectPreview'
 import { PublicTruthSummary } from '@/components/PublicTruthSummary'
 import { BuildPathCard } from '@/components/discovery/BuildPathCard'
 import { IdeaArtifactPreview } from '@/components/ideas/IdeaArtifactPreview'
-import { getPrompts, getUserVotesAndBookmarks } from '@/lib/data'
+import { getUserVotesAndBookmarks } from '@/lib/data'
+import { getCachedPublicPrompts } from '@/lib/public-catalog-cache'
 import {
   buildPathDiscoveryCatalog,
   getCanonicalDefaultDiscoveryTruth,
@@ -158,7 +159,7 @@ function pathTraits(item: BuildPathDiscoveryItem) {
     promptLabel(item),
     item.modelRunCount > 1 ? `${item.modelRunCount} model runs` : item.modelLabel,
     item.hasFork ? 'Fork available' : null,
-    item.hasWorkingArtifact ? 'Working artifact' : null,
+    item.hasWorkingArtifact ? (item.isCommunityArtifact ? 'Visual-only community preview' : 'Working artifact') : null,
   ].filter((trait): trait is string => Boolean(trait))
 }
 
@@ -195,7 +196,7 @@ export default async function WhatToBuildPage({
   const params = await searchParams
   const selectedIntent = parseIntent(firstParam(params.goal))
   const selectedPace = parsePace(firstParam(params.pace))
-  const prompts = await getPrompts()
+  const prompts = await getCachedPublicPrompts()
   const catalog = buildPathDiscoveryCatalog(prompts, [])
   const intentMatches = selectedIntent
     ? catalog.filter((item) => ideaMatchesIntent(item, selectedIntent))
@@ -341,12 +342,15 @@ export default async function WhatToBuildPage({
                     title={featured.title}
                     label="Real project artifact"
                     className="ideas-real-project-preview"
+                    isCommunityArtifact={featured.isCommunityArtifact}
                   />
                 ) : (
                   <IdeaArtifactPreview title={featured.title} variant={featured.preview} />
                 )}
                 <span className="ideas-preview-caption">
-                  {featured.hasWorkingArtifact ? 'Working artifact included' : 'Build path preview'}
+                  {featured.hasWorkingArtifact
+                    ? (featured.isCommunityArtifact ? 'Visual-only community preview' : 'Working artifact included')
+                    : 'Build path preview'}
                   <ArrowUpRight aria-hidden="true" />
                 </span>
               </Link>

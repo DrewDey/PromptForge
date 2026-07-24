@@ -32,6 +32,7 @@ export type BuildPathCardClientItem = {
   modelRunCount: number
   verifiedModelRunCount: number
   hasWorkingArtifact: boolean
+  isCommunityArtifact: boolean
   hasFork: boolean
   isFork: boolean
   forkCount: number
@@ -102,11 +103,13 @@ function LazyProjectPreview({
   title,
   modelLabel,
   instanceKey,
+  isCommunityArtifact,
 }: {
   artifactPath: string
   title: string
   modelLabel: string
   instanceKey: string
+  isCommunityArtifact: boolean
 }) {
   const mountRef = useRef<HTMLDivElement>(null)
   const [shouldMount, setShouldMount] = useState(false)
@@ -143,10 +146,11 @@ function LazyProjectPreview({
           title={title}
           label={`Artifact shown · ${modelLabel}`}
           className="path-real-project-preview"
+          isCommunityArtifact={isCommunityArtifact}
         />
       ) : (
         <div className="path-card-preview-placeholder" aria-hidden="true">
-          Loading real artifact preview
+          Loading {isCommunityArtifact ? 'visual-only community preview' : 'real artifact preview'}
         </div>
       )}
     </div>
@@ -492,6 +496,7 @@ export function InteractiveBuildPathCard({
                 title={item.title}
                 modelLabel={selectedVariant.publicModelLabel}
                 instanceKey={`${item.id}:${selectedVariant.sourceRunId}`}
+                isCommunityArtifact={selectedVariant.isCommunityArtifact}
               />
             ) : (
               <ArtifactPreview
@@ -518,7 +523,11 @@ export function InteractiveBuildPathCard({
                     <i /> Active
                   </span>
                 )}
-                {item.hasWorkingArtifact && <span className="path-card-verified"><i /> Working artifact</span>}
+                {item.hasWorkingArtifact && (
+                  <span className="path-card-verified">
+                    <i /> {selectedVariant.isCommunityArtifact ? 'Visual-only preview' : 'Working artifact'}
+                  </span>
+                )}
               </span>
             )}
           </div>

@@ -52,21 +52,76 @@ function parseArgs(argv) {
   return { files, json, screenshotsDir }
 }
 
-export function waitForWebSocketUrl(child) {
+export function waitForWebSocketUrl(child, { timeoutMs = 30_000 } = {}) {
+  const profileArgument = child.spawnargs.find((argument) => (
+    typeof argument === 'string' && argument.startsWith('--user-data-dir=')
+  ))
+  const profileDirectory = profileArgument?.slice('--user-data-dir='.length) ?? ''
+  const activePortFile = profileDirectory
+    ? path.join(profileDirectory, 'DevToolsActivePort')
+    : ''
+
   return new Promise((resolve, reject) => {
     let stderr = ''
-    const timeout = setTimeout(() => reject(new Error(`Chrome DevTools startup timed out. ${stderr}`)), 15_000)
-    child.stderr.on('data', (chunk) => {
-      stderr += chunk.toString()
+    let settled = false
+    let timeout
+    let poll
+
+    const cleanup = () => {
+      if (timeout) clearTimeout(timeout)
+      if (poll) clearInterval(poll)
+      child.stderr?.off('data', onStderr)
+      child.off('exit', onExit)
+    }
+    const finish = (callback, value) => {
+      if (settled) return
+      settled = true
+      cleanup()
+      callback(value)
+    }
+    const finishResolve = (url) => finish(resolve, url)
+    const finishReject = (error) => finish(reject, error)
+    const readActivePort = () => {
+      if (!activePortFile || !existsSync(activePortFile)) return
+      try {
+        const [portLine, endpointLine] = readFileSync(activePortFile, 'utf8')
+          .trim()
+          .split(/\r?\n/)
+        const port = Number.parseInt(portLine ?? '', 10)
+        if (!Number.isInteger(port) || port <= 0 || !endpointLine) return
+        const url = endpointLine.startsWith('ws://')
+          ? endpointLine
+          : `ws://127.0.0.1:${port}${endpointLine.startsWith('/') ? '' : '/'}${endpointLine}`
+        finishResolve(url)
+      } catch {
+        // Chrome can expose the file between creation and its atomic contents
+        // becoming readable. The next short poll will retry.
+      }
+    }
+    const onStderr = (chunk) => {
+      stderr = `${stderr}${chunk.toString()}`.slice(-65_536)
       const match = stderr.match(/DevTools listening on (ws:\/\/[^\s]+)/)
       if (!match) return
-      clearTimeout(timeout)
-      resolve(match[1])
-    })
-    child.once('exit', (code) => {
-      clearTimeout(timeout)
-      reject(new Error(`Chrome exited before DevTools was ready (code ${code}). ${stderr}`))
-    })
+      finishResolve(match[1])
+    }
+    const onExit = (code, signal) => {
+      finishReject(new Error(
+        `Chrome exited before DevTools was ready (code ${code}, signal ${signal ?? 'none'}). ${stderr}`,
+      ))
+    }
+
+    timeout = setTimeout(() => {
+      const endpointState = activePortFile
+        ? `DevToolsActivePort ${existsSync(activePortFile) ? 'was present but unusable' : 'was not created'}.`
+        : 'Chrome was launched without a discoverable user-data directory.'
+      finishReject(new Error(`Chrome DevTools startup timed out after ${timeoutMs}ms. ${endpointState} ${stderr}`))
+    }, timeoutMs)
+    timeout.unref()
+    poll = setInterval(readActivePort, 50)
+    poll.unref()
+    child.stderr?.on('data', onStderr)
+    child.once('exit', onExit)
+    readActivePort()
   })
 }
 

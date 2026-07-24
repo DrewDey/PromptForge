@@ -17,17 +17,23 @@ function forbidText(path, source, forbidden, message) {
 }
 
 const packageJson = JSON.parse(read('package.json'))
-if (packageJson.dependencies?.next !== '16.2.10') {
-  throw new Error('package.json: Next.js must stay on the reviewed patched 16.2.10 release')
+if (packageJson.dependencies?.next !== '16.2.11') {
+  throw new Error('package.json: Next.js must stay on the reviewed patched 16.2.11 release')
 }
-if (packageJson.devDependencies?.['eslint-config-next'] !== '16.2.10') {
+if (packageJson.devDependencies?.['eslint-config-next'] !== '16.2.11') {
   throw new Error('package.json: eslint-config-next must match the Next.js release')
+}
+if (packageJson.overrides?.sharp !== '0.35.3') {
+  throw new Error('package.json: Next.js image processing must stay on the reviewed patched sharp 0.35.3 release')
 }
 if (packageJson.overrides?.ws !== '8.21.0') {
   throw new Error('package.json: ws must stay on the reviewed patched 8.21.0 release')
 }
-if (packageJson.overrides?.next?.postcss !== '8.5.10') {
-  throw new Error('package.json: Next.js bundled PostCSS must stay on the reviewed patched release')
+if (
+  packageJson.devDependencies?.postcss !== '8.5.22'
+  || packageJson.overrides?.postcss !== '8.5.22'
+) {
+  throw new Error('package.json: every PostCSS consumer must stay on the reviewed patched 8.5.22 release')
 }
 
 const browserClientPath = 'src/lib/supabase/client.ts'
@@ -52,7 +58,19 @@ const callbackPath = 'src/app/auth/callback/route.ts'
 const callback = read(callbackPath)
 requireText(callbackPath, callback, 'safeAuthNextPath', 'callback redirects must validate the requested path')
 requireText(callbackPath, callback, 'new URL(nextPath, origin)', 'callback redirects must use URL parsing rather than string concatenation')
+requireText(callbackPath, callback, "onboardingUrl.searchParams.set('next', nextPath)", 'first-time profile onboarding must retain the requested post-auth destination')
+requireText(callbackPath, callback, 'verifyOtp({', 'callback must support server-consumed email token hashes as well as PKCE codes')
+requireText(callbackPath, callback, 'isTokenHashType', 'callback must restrict token-hash verification to supported email flows')
 forbidText(callbackPath, callback, '`${origin}${next}`', 'unsafe callback redirect concatenation is forbidden')
+
+const profileSettingsPath = 'src/app/settings/profile/page.tsx'
+const profileSettings = read(profileSettingsPath)
+requireText(profileSettingsPath, profileSettings, 'safeAuthNextPath', 'profile onboarding must validate the preserved destination')
+requireText(profileSettingsPath, profileSettings, 'continueHref={continueHref}', 'profile onboarding must pass the preserved destination to its completion control')
+
+const profileSettingsFormPath = 'src/components/ProfileSettingsForm.tsx'
+const profileSettingsForm = read(profileSettingsFormPath)
+requireText(profileSettingsFormPath, profileSettingsForm, 'href={continueHref}', 'profile completion must offer the original destination after a successful save')
 
 const signupPath = 'src/app/auth/signup/page.tsx'
 const signup = read(signupPath)
@@ -60,6 +78,10 @@ requireText(signupPath, signup, 'emailRedirectTo:', 'email confirmation must ret
 requireText(signupPath, signup, ", 'oauth')", 'social signup must route through profile onboarding')
 requireText(signupPath, signup, ".ilike('username'", 'handle conflicts must be caught before Auth creates a user')
 requireText(signupPath, signup, 'enabledOAuthProviders.length > 0', 'disabled social providers must not be advertised')
+
+const passwordPolicyPath = 'src/lib/password-policy.ts'
+const passwordPolicy = read(passwordPolicyPath)
+requireText(passwordPolicyPath, passwordPolicy, 'PATHFORGE_PASSWORD_MIN_LENGTH = 12', 'browser password validation must match the production Supabase minimum')
 
 const loginPath = 'src/app/auth/login/page.tsx'
 const login = read(loginPath)
@@ -84,6 +106,7 @@ requireText('src/app/auth/forgot-password/page.tsx', forgot, 'If an account exis
 const reset = read('src/app/auth/reset-password/page.tsx')
 requireText('src/app/auth/reset-password/page.tsx', reset, 'updateUser({ password })', 'reset route must replace the password')
 requireText('src/app/auth/reset-password/page.tsx', reset, "signOut({ scope: 'others' })", 'password replacement must remove other sessions')
+requireText('src/app/auth/reset-password/page.tsx', reset, 'PATHFORGE_PASSWORD_MIN_LENGTH', 'password recovery must share the signup password policy')
 
 const migrationPath = 'supabase/migrations/20260713021544_harden_community_mutation_boundaries.sql'
 const restrictionMigrationPath = 'supabase/migrations/20260713023646_restrict_community_mutation_grants.sql'

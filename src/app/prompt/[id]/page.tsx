@@ -6,8 +6,8 @@ import {
   getPromptById,
   getSourceRunSubmissionByPromptIdForAdmin,
   getUserVotesAndBookmarks,
-  getPrompts,
 } from '@/lib/data'
+import { getCachedPublicPrompts } from '@/lib/public-catalog-cache'
 import { getModelName } from '@/lib/models'
 import { getPublicModelIdentityLabel } from '@/lib/public-model-labels'
 import VoteBookmarkButtons from '@/components/VoteBookmarkButtons'
@@ -17,6 +17,8 @@ import CodeBlock from '@/components/CodeBlock'
 import Prose from '@/components/Prose'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
 import { PublicTruthSummary } from '@/components/PublicTruthSummary'
+import CommunityProjectPage from '@/components/CommunityProjectPage'
+import { getPublicCommunityProject } from '@/lib/data/community-projects'
 import { detectContentKind } from '@/lib/content-kind'
 import { isPersistableProjectId } from '@/lib/project-engagement'
 import { getProjectRouteOverride } from '@/lib/project-links'
@@ -173,10 +175,18 @@ export default async function PromptDetailPage({
 
   if (!prompt) notFound()
 
+  if (prompt.tags?.includes('community-project')) {
+    const communityProject = await getPublicCommunityProject(prompt.id)
+    if (!communityProject || prompt.status !== 'approved') notFound()
+    return <CommunityProjectPage prompt={prompt} capsule={communityProject} />
+  }
+
   if (prompt.status === 'pending') {
     const sourceRun = await getSourceRunSubmissionByPromptIdForAdmin(prompt.id)
     if (sourceRun) redirect(`/admin/source-runs/${sourceRun.id}`)
   }
+
+  if (prompt.status !== 'approved') notFound()
 
   const hasSteps = prompt.steps && prompt.steps.length > 0
   const rawModel = prompt.model_used ? getModelName(prompt.model_used) : prompt.model_recommendation
@@ -248,9 +258,13 @@ export default async function PromptDetailPage({
     .filter(Boolean)
 
   // Fetch related projects in the same category (for "More in this category" section)
-  let relatedProjects: Awaited<ReturnType<typeof getPrompts>> = []
+  let relatedProjects: Awaited<ReturnType<typeof getCachedPublicPrompts>> = []
   if (prompt.category) {
-    const allInCategory = await getPrompts({ categorySlug: prompt.category.slug, sort: 'popular', limit: 4 })
+    const allInCategory = await getCachedPublicPrompts({
+      categorySlug: prompt.category.slug,
+      sort: 'popular',
+      limit: 4,
+    })
     relatedProjects = allInCategory.filter(p => p.id !== prompt.id).slice(0, 3)
   }
   const relatedItems = buildPathDiscoveryCatalog(

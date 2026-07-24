@@ -26,7 +26,7 @@ export default async function OwnerCommunityProjectDetail({
         <Link href="/my-forge/community-projects" className="inline-flex items-center gap-2 text-sm font-bold text-surface-500">
           <ArrowLeft className="h-4 w-4" aria-hidden="true" /> My project submissions
         </Link>
-        {submitted === '1' && (
+        {submitted === '1' && submission.status === 'queued' && (
           <div role="status" className="mt-5 border border-green-300 bg-green-50 p-4 text-sm text-green-900">
             <strong>Private bundle received.</strong> It is not public and is waiting for review.
           </div>

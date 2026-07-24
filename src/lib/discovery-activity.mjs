@@ -75,12 +75,18 @@ export function requireCanonicalDefaultModelRun(modelVariants) {
  *
  * @param {unknown[]} modelVariants
  * @param {unknown[]} verifiedVariantSummary
+ * @param {boolean} [hasVerifiedFallbackRun=false]
  */
-export function deriveDiscoveryRunCounts(modelVariants, verifiedVariantSummary) {
+export function deriveDiscoveryRunCounts(
+  modelVariants,
+  verifiedVariantSummary,
+  hasVerifiedFallbackRun = false,
+) {
   const modelRunCount = Array.isArray(modelVariants) ? modelVariants.length : 0
-  const verifiedModelRunCount = Array.isArray(verifiedVariantSummary)
-    ? verifiedVariantSummary.length
-    : 0
+  const verifiedModelRunCount = Math.max(
+    Array.isArray(verifiedVariantSummary) ? verifiedVariantSummary.length : 0,
+    hasVerifiedFallbackRun ? 1 : 0,
+  )
 
   if (modelRunCount < 1) {
     throw new Error('Discovery projects must expose at least one recorded model run.')

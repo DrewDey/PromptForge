@@ -469,6 +469,7 @@ export function buildPathDiscoveryCatalog(
     const { modelRunCount, verifiedModelRunCount } = deriveDiscoveryRunCounts(
       modelVariants,
       variantSummary,
+      Boolean(communityProject),
     )
     const canonicalDefaultVariant = requireCanonicalDefaultModelRun(modelVariants)
     const promptCount = canonicalDefaultVariant.promptCount

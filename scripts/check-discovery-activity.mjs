@@ -90,6 +90,32 @@ assert.deepEqual(
   { modelRunCount: 2, verifiedModelRunCount: 2 },
   'the public family total must align with both retained source runs',
 )
+const communityRunCounts = deriveDiscoveryRunCounts(
+  [{ sourceRunId: 'community-project-run' }],
+  [],
+  true,
+)
+assert.deepEqual(
+  communityRunCounts,
+  { modelRunCount: 1, verifiedModelRunCount: 1 },
+  'a reviewed community artifact must count as one artifact-verified run',
+)
+assert.deepEqual(
+  calculateDiscoveryActivity({
+    modelRunCount: communityRunCounts.verifiedModelRunCount,
+    forkCount: 1,
+    voteCount: 0,
+    bookmarkCount: 0,
+  }),
+  {
+    score: 4,
+    isActive: true,
+    modelRunPoints: 2,
+    forkPoints: 2,
+    communityPoints: 0,
+  },
+  'one reviewed community artifact plus one approved fork must qualify as durable activity',
+)
 const longitudinalNewestFirst = longitudinalSameModelRuns.toSorted((left, right) => (
   Date.parse(right.capturedAt) - Date.parse(left.capturedAt)
 ))
@@ -224,6 +250,8 @@ const genericProjectSource = readFileSync('src/app/prompt/[id]/page.tsx', 'utf8'
 const pathsLoadingSource = readFileSync('src/app/paths/loading.tsx', 'utf8')
 const pathsCssSource = readFileSync('src/app/browse.css', 'utf8')
 const catalogSource = readFileSync('src/lib/path-discovery.ts', 'utf8')
+const profilePresentationSource = readFileSync('src/lib/profile-presentation.ts', 'utf8')
+const communityStaticPreviewSource = readFileSync('src/app/qa/community-static-preview/page.tsx', 'utf8')
 const variantSource = readFileSync('src/lib/project-model-variants.ts', 'utf8')
 const dataSource = readFileSync('src/lib/data.ts', 'utf8')
 const summaries = JSON.parse(readFileSync('src/lib/project-model-profile-summaries.json', 'utf8'))
@@ -388,8 +416,18 @@ assert.match(catalogSource, /retainDistinctRecordedModelRuns\(candidates\)/)
 assert.match(catalogSource, /isCanonicalDefault: variant\.sourceRunId === variantSet\?\.defaultSourceRunId/)
 assert.match(catalogSource, /requireCanonicalDefaultModelRun\(modelVariants\)/)
 assert.doesNotMatch(catalogSource, /canonicalDefaultVariant[\s\S]{0,120}\?\? modelVariants\[0\]/)
-assert.match(catalogSource, /deriveDiscoveryRunCounts\(\s*modelVariants,\s*variantSummary,?\s*\)/)
+assert.match(
+  catalogSource,
+  /deriveDiscoveryRunCounts\(\s*modelVariants,\s*variantSummary,\s*Boolean\(communityProject\),?\s*\)/,
+)
 assert.match(catalogSource, /modelRunCount: verifiedModelRunCount/)
+assert.match(
+  profilePresentationSource,
+  /verifiedModelRunCount = Math\.max\(verifiedRuns\.length, communityProject \? 1 : 0\)/,
+)
+assert.match(communityStaticPreviewSource, /data-community-verified-runs=/)
+assert.match(communityStaticPreviewSource, /data-community-fork-count=/)
+assert.match(communityStaticPreviewSource, /data-community-active=/)
 assert.match(catalogSource, /variant\.qualityStatus === 'verified'/)
 assert.doesNotMatch(catalogSource, /\.filter\(\(variant\) => variant\.qualityStatus === 'verified'\)/)
 assert.match(catalogSource, /qualityStatus: variant\.qualityStatus/)

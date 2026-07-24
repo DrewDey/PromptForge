@@ -1,7 +1,11 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { FileCheck2, LockKeyhole, ShieldCheck } from 'lucide-react'
-import { getCommunityProjectPilotEligibility, getCommunityProjectSubmissionForOwner } from '@/lib/data/community-projects'
+import {
+  getCommunityProjectPilotEligibility,
+  getCommunityProjectSubmissionForOwner,
+  type CommunityProjectPilotStatus,
+} from '@/lib/data/community-projects'
 import { canonicalMetadata } from '@/lib/site-url'
 import ProjectSubmissionClient from './ProjectSubmissionClient'
 import LegacySourceRunRepairClient from './LegacySourceRunRepairClient'
@@ -15,10 +19,22 @@ export const metadata: Metadata = {
 function PilotExplanation({
   signedIn,
   username,
+  status,
 }: {
   signedIn: boolean
   username?: string | null
+  status: CommunityProjectPilotStatus
 }) {
+  const signedInStatus = status === 'temporarily_paused'
+    ? 'You are admitted to the pilot, but new project submissions are temporarily paused while the safety and review controls are restored. Your existing projects remain available in My Forge.'
+    : status === 'expired'
+      ? 'Your internal acceptance access has expired. Ask the PathForge operator to renew it before submitting another project.'
+      : status === 'revoked'
+        ? 'Your pilot access is no longer active. Contact the PathForge operator if you think this is a mistake.'
+        : status === 'unavailable'
+          ? 'PathForge could not verify whether submissions are open right now. Try again later; your existing project records remain available in My Forge.'
+          : <>This account is not currently in the pilot. If someone invited you, send them your exact PathForge handle{username ? <>: <strong>@{username}</strong></> : ''}; pilot access is assigned manually and does not require sharing your email or provider account.</>
+
   return (
     <main className="bg-surface-50">
       <section className="border-b border-surface-200 bg-white">
@@ -54,7 +70,7 @@ function PilotExplanation({
             </div>
             {signedIn && (
               <p className="mt-5 max-w-2xl border-l-2 border-brand-orange pl-4 text-sm leading-6 text-surface-600">
-                This account is not currently in the pilot. If someone invited you, send them your exact PathForge handle{username ? <>: <strong>@{username}</strong></> : ''}; pilot access is assigned manually and does not require sharing your email or provider account.
+                {signedInStatus}
               </p>
             )}
             {!signedIn && (
@@ -118,7 +134,13 @@ export default async function BuildPage({
     : null
   const repairIsAvailable = repairSubmission?.status === 'needs_repair'
   if (!eligibility.signedIn || (!eligibility.eligible && !repairIsAvailable)) {
-    return <PilotExplanation signedIn={eligibility.signedIn} username={eligibility.username} />
+    return (
+      <PilotExplanation
+        signedIn={eligibility.signedIn}
+        username={eligibility.username}
+        status={eligibility.status}
+      />
+    )
   }
 
   return (

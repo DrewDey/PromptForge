@@ -47,6 +47,9 @@ BEGIN
   IF private.pathforge_actor_can_submit_community_project(builder) THEN
     RAISE EXCEPTION 'A fresh non-admin became eligible before admission.';
   END IF;
+  IF private.pathforge_community_project_pilot_status(builder) <> 'not_admitted' THEN
+    RAISE EXCEPTION 'A fresh non-admin did not receive the not-admitted status.';
+  END IF;
 
   PERFORM public.set_community_project_pilot_member(
     stranger, administrator, TRUE, 'invited_builder', 'External cohort remains locked'
@@ -54,6 +57,18 @@ BEGIN
   IF private.pathforge_actor_can_submit_community_project(stranger) THEN
     RAISE EXCEPTION 'An invited builder bypassed the locked external invitation control.';
   END IF;
+  IF private.pathforge_community_project_pilot_status(stranger) <> 'temporarily_paused' THEN
+    RAISE EXCEPTION 'An admitted invited builder was mislabeled while the external lane was paused.';
+  END IF;
+  PERFORM public.set_community_project_pilot_member(
+    stranger, administrator, FALSE, 'invited_builder', 'Revoked status transaction check'
+  );
+  IF private.pathforge_community_project_pilot_status(stranger) <> 'revoked' THEN
+    RAISE EXCEPTION 'A revoked pilot member did not receive the revoked status.';
+  END IF;
+  PERFORM public.set_community_project_pilot_member(
+    stranger, administrator, TRUE, 'invited_builder', 'External cohort remains locked'
+  );
   BEGIN
     PERFORM public.set_community_project_invitation_control(administrator, TRUE);
     RAISE EXCEPTION 'External invitations enabled without authoritative readiness.';
@@ -109,6 +124,9 @@ BEGIN
   IF NOT private.pathforge_actor_can_submit_community_project(builder) THEN
     RAISE EXCEPTION 'The admitted internal acceptance account remained ineligible.';
   END IF;
+  IF private.pathforge_community_project_pilot_status(builder) <> 'eligible' THEN
+    RAISE EXCEPTION 'The admitted internal acceptance account did not receive eligible status.';
+  END IF;
 
   BEGIN
     PERFORM public.set_community_project_pilot_member(
@@ -128,6 +146,9 @@ BEGIN
   WHERE user_id = builder;
   IF private.pathforge_actor_can_submit_community_project(builder) THEN
     RAISE EXCEPTION 'An expired internal acceptance account remained eligible.';
+  END IF;
+  IF private.pathforge_community_project_pilot_status(builder) <> 'expired' THEN
+    RAISE EXCEPTION 'Expired internal acceptance was not distinguished from non-admission.';
   END IF;
   PERFORM public.set_community_project_pilot_member(
     builder, administrator, TRUE, 'internal_acceptance', 'Renewed disposable transaction test'
@@ -388,6 +409,9 @@ BEGIN
   IF NOT public.community_project_pilot_eligible() THEN
     RAISE EXCEPTION 'The internal acceptance owner is not eligible.';
   END IF;
+  IF public.community_project_pilot_status() <> 'eligible' THEN
+    RAISE EXCEPTION 'The public pilot status did not report the eligible owner.';
+  END IF;
   BEGIN
     PERFORM public.create_community_project_submission(NULL, '{}'::JSONB, gen_random_uuid());
     RAISE EXCEPTION 'Authenticated role invoked the service-only submission function.';
@@ -633,6 +657,9 @@ BEGIN
   END IF;
   IF public.community_project_pilot_eligible() THEN
     RAISE EXCEPTION 'A member of the locked external cohort became eligible.';
+  END IF;
+  IF public.community_project_pilot_status() <> 'temporarily_paused' THEN
+    RAISE EXCEPTION 'The public pilot status mislabeled an admitted but paused builder.';
   END IF;
 END;
 $test$;

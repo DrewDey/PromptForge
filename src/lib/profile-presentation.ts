@@ -157,7 +157,11 @@ export function getPublicProfileProjectEvidence(
     ...(communityModelLabel ? [communityModelLabel] : []),
     ...(fallbackDefaultModelLabel === 'Unknown model' ? [] : [fallbackDefaultModelLabel]),
   ])
-  const currentModelRunCount = verifiedRuns.filter((run) => run.isCurrent).length
+  const verifiedModelRunCount = Math.max(verifiedRuns.length, communityProject ? 1 : 0)
+  const currentModelRunCount = Math.max(
+    verifiedRuns.filter((run) => run.isCurrent).length,
+    communityProject ? 1 : 0,
+  )
   const artifactPath = defaultVariant?.finalArtifactPath?.trim()
     ? `/${defaultVariant.finalArtifactPath.replace(/^public\//, '')}`
     : preparedProject?.artifactPath?.trim()
@@ -182,7 +186,7 @@ export function getPublicProfileProjectEvidence(
     defaultSourceAccessLabel: defaultSourceEvidence.accessLabel,
     defaultRecordLabel: defaultSourceEvidence.recordLabel,
     defaultModelProofLabel: defaultSourceEvidence.modelProofLabel,
-    verifiedModelRunCount: verifiedRuns.length,
+    verifiedModelRunCount,
     currentModelRunCount,
     modelRunCount: variantSet?.variants.length ?? 1,
     knownIssueRunCount: variantSet?.variants.filter((variant) => (

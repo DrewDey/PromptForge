@@ -91,6 +91,7 @@ try {
   applySql('supabase/migrations/20260723173000_harden_community_project_release_review.sql')
   applySql('supabase/migrations/20260723191235_enforce_community_invitation_and_report_alert_readiness.sql')
   applySql('supabase/migrations/20260723204000_close_community_report_operational_gaps.sql')
+  applySql('supabase/migrations/20260724032412_distinguish_community_pilot_admission_status.sql')
   applySql('test-fixtures/community-project/migration-transaction-test.sql')
   console.log('Community project database check passed in disposable PostgreSQL.')
 } finally {

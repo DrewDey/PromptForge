@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import ts from 'typescript'
+import { createPublicCatalogSingleFlight } from '../src/lib/public-catalog-single-flight.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const read = (relativePath) => readFileSync(path.join(root, relativePath), 'utf8')
@@ -13,6 +14,7 @@ const shared = read('src/lib/data/shared.ts')
 const server = read('src/lib/supabase/server.ts')
 const promptStepCounts = read('src/lib/data/public-prompt-step-counts.ts')
 const publicCatalogCache = read('src/lib/public-catalog-cache.ts')
+const publicCatalogSingleFlight = read('src/lib/public-catalog-single-flight.mjs')
 const catalogConsumers = [
   ['src/app/page.tsx', read('src/app/page.tsx'), ['getCachedPublicCategories', 'getCachedPublicPrompts']],
   [
@@ -30,6 +32,11 @@ const catalogConsumers = [
     read('src/components/discovery/BuildPathsDiscovery.tsx'),
     ['getCachedPublicCategories', 'getCachedPublicPrompts'],
   ],
+  [
+    'src/app/prompt/[id]/page.tsx',
+    read('src/app/prompt/[id]/page.tsx'),
+    ['getCachedPublicPrompts'],
+  ],
 ]
 const catalogMutators = [
   [
@@ -42,12 +49,51 @@ const catalogMutators = [
     read('src/lib/community-project-actions.ts'),
     ['publishCommunityProject', 'withdrawCommunityProject', 'removeCommunityProjectAsAdmin'],
   ],
+  [
+    'src/app/api/cron/community-project-reconcile/route.ts',
+    read('src/app/api/cron/community-project-reconcile/route.ts'),
+    ['GET'],
+  ],
 ]
 const dataSources = [
   ['src/lib/data.ts', read('src/lib/data.ts')],
   ['src/lib/data/public-profiles.ts', read('src/lib/data/public-profiles.ts')],
+  ['src/lib/data/community-projects.ts', read('src/lib/data/community-projects.ts')],
 ]
 const packageJson = read('package.json')
+
+const runSingleFlight = createPublicCatalogSingleFlight()
+let sharedExecutions = 0
+const sharedResults = await Promise.all(
+  Array.from({ length: 20 }, () => runSingleFlight('shared', async () => {
+    sharedExecutions += 1
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    return 'shared-result'
+  })),
+)
+assert.equal(sharedExecutions, 1, '20 same-key cold reads must execute one cache fill per process.')
+assert.deepEqual(
+  [...new Set(sharedResults)],
+  ['shared-result'],
+  'same-key callers must share the successful result',
+)
+let retryExecutions = 0
+await assert.rejects(
+  () => runSingleFlight('retryable', async () => {
+    retryExecutions += 1
+    throw new Error('expected failure')
+  }),
+  /expected failure/,
+)
+assert.equal(
+  await runSingleFlight('retryable', async () => {
+    retryExecutions += 1
+    return 'recovered'
+  }),
+  'recovered',
+  'a rejected fill must release its key for the next request',
+)
+assert.equal(retryExecutions, 2)
 
 assert.match(
   shared,
@@ -258,14 +304,20 @@ assert.match(publicCatalogCache, /PUBLIC_CATALOG_CACHE_TAG = 'public-catalog-v1'
 assert.match(publicCatalogCache, /PUBLIC_CATALOG_REVALIDATE_SECONDS = 300/)
 assert.match(
   publicCatalogCache,
-  /getCachedPublicCategories = unstable_cache\([\s\S]*?getCategories[\s\S]*?revalidate: PUBLIC_CATALOG_REVALIDATE_SECONDS[\s\S]*?tags: \[PUBLIC_CATALOG_CACHE_TAG\]/,
+  /readCachedPublicCategories = unstable_cache\([\s\S]*?getCategories[\s\S]*?revalidate: PUBLIC_CATALOG_REVALIDATE_SECONDS[\s\S]*?tags: \[PUBLIC_CATALOG_CACHE_TAG\]/,
   'public categories must use the shared five-minute catalog cache',
 )
 assert.match(
   publicCatalogCache,
-  /getCachedPublicPrompts = unstable_cache\([\s\S]*?getPrompts[\s\S]*?revalidate: PUBLIC_CATALOG_REVALIDATE_SECONDS[\s\S]*?tags: \[PUBLIC_CATALOG_CACHE_TAG\]/,
+  /readCachedPublicPrompts = unstable_cache\([\s\S]*?getPrompts[\s\S]*?revalidate: PUBLIC_CATALOG_REVALIDATE_SECONDS[\s\S]*?tags: \[PUBLIC_CATALOG_CACHE_TAG\]/,
   'public projects must use the shared five-minute catalog cache',
 )
+assert.match(publicCatalogCache, /createPublicCatalogSingleFlight\(\)/)
+assert.match(publicCatalogCache, /runPublicCatalogRead\('categories'/)
+assert.match(publicCatalogCache, /runPublicCatalogRead\(key, \(\) => readCachedPublicPrompts\(options\)\)/)
+assert.match(publicCatalogSingleFlight, /const pendingReads = new Map\(\)/)
+assert.match(publicCatalogSingleFlight, /if \(pending\) return pending/)
+assert.match(publicCatalogSingleFlight, /pendingReads\.delete\(key\)/)
 
 for (const [fileName, source, requiredCachedReads] of catalogConsumers) {
   for (const cachedRead of requiredCachedReads) {
@@ -281,6 +333,15 @@ for (const [fileName, source, requiredCachedReads] of catalogConsumers) {
     `${fileName}: high-traffic catalog pages must not bypass the shared cache`,
   )
 }
+
+const promptDetail = catalogConsumers.find(([fileName]) => (
+  fileName === 'src/app/prompt/[id]/page.tsx'
+))?.[1] ?? ''
+assert.match(
+  promptDetail,
+  /if \(prompt\.tags\?\.includes\('community-project'\)\) \{\s*const communityProject = await getPublicCommunityProject\(prompt\.id\)/,
+  'generic prompt details must not issue the community-project RPC',
+)
 
 for (const [fileName, source, mutators] of catalogMutators) {
   const sourceFile = ts.createSourceFile(

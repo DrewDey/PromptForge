@@ -230,13 +230,14 @@ async function requireEligibleUser(repairId: string | null = null) {
   const supabase = await createClient()
   const { data: { user }, error: userError } = await supabase.auth.getUser()
   if (userError || !user) throw new Error('Sign in to submit a project.')
-  const { data: eligible, error: eligibilityError } = await supabase.rpc('community_project_pilot_eligible')
   const admin = createAdminClient()
   const [
+    { data: eligibilityStatus, error: eligibilityError },
     { data: profile, error: profileError },
     { data: membership, error: membershipError },
     repairResult,
   ] = await Promise.all([
+    supabase.rpc('community_project_pilot_status'),
     admin.from('profiles').select('role').eq('id', user.id).maybeSingle(),
     admin
       .from('community_project_pilot_members')
@@ -257,11 +258,23 @@ async function requireEligibleUser(repairId: string | null = null) {
   if (membershipError) throw new Error('PathForge could not verify your pilot admission.')
   if (repairResult.error) throw new Error('PathForge could not verify the requested repair.')
   const ownedRepairAllowed = Boolean(repairId && repairResult.data)
-  if ((eligibilityError || eligible !== true) && !ownedRepairAllowed) {
-    throw new Error('This invitation-only pilot is not enabled for your account.')
+  if ((eligibilityError || eligibilityStatus !== 'eligible') && !ownedRepairAllowed) {
+    if (eligibilityError) {
+      throw new Error('PathForge could not verify whether project submissions are open. Try again later.')
+    }
+    if (eligibilityStatus === 'temporarily_paused') {
+      throw new Error('You are admitted to the pilot, but new project submissions are temporarily paused while the safety and review controls are restored.')
+    }
+    if (eligibilityStatus === 'expired') {
+      throw new Error('Your internal acceptance access has expired. Ask the PathForge operator to renew it.')
+    }
+    if (eligibilityStatus === 'revoked') {
+      throw new Error('Your pilot access is no longer active.')
+    }
+    throw new Error('This account has not been admitted to the invitation-only pilot.')
   }
   if (
-    eligible === true &&
+    eligibilityStatus === 'eligible' &&
     profile.role !== 'admin' &&
     membership?.member_kind === 'invited_builder' &&
     !communityProjectOperatorAlertsConfigured()

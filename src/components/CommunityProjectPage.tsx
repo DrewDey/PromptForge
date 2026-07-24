@@ -104,7 +104,7 @@ export default function CommunityProjectPage({
             contextLabel="Community project artifact"
           />
           <p className="mt-3 text-sm leading-6 text-surface-600" data-community-static-preview>
-            Community pilot previews are script-disabled: uploaded scripts and active forms do not run, downloads are blocked, and you can scroll a taller static result. The public build evidence below remains available to explain how the project was made.
+            Community pilot previews are script-disabled: uploaded scripts, active forms, and preview-initiated downloads do not run. You can scroll a taller static result, and the reviewed source remains available separately as a non-executable text download. The public build evidence below explains how the project was made.
           </p>
         </section>
 

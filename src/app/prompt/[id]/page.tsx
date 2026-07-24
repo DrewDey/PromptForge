@@ -6,8 +6,8 @@ import {
   getPromptById,
   getSourceRunSubmissionByPromptIdForAdmin,
   getUserVotesAndBookmarks,
-  getPrompts,
 } from '@/lib/data'
+import { getCachedPublicPrompts } from '@/lib/public-catalog-cache'
 import { getModelName } from '@/lib/models'
 import { getPublicModelIdentityLabel } from '@/lib/public-model-labels'
 import VoteBookmarkButtons from '@/components/VoteBookmarkButtons'
@@ -175,8 +175,8 @@ export default async function PromptDetailPage({
 
   if (!prompt) notFound()
 
-  const communityProject = await getPublicCommunityProject(prompt.id)
   if (prompt.tags?.includes('community-project')) {
+    const communityProject = await getPublicCommunityProject(prompt.id)
     if (!communityProject || prompt.status !== 'approved') notFound()
     return <CommunityProjectPage prompt={prompt} capsule={communityProject} />
   }
@@ -258,9 +258,13 @@ export default async function PromptDetailPage({
     .filter(Boolean)
 
   // Fetch related projects in the same category (for "More in this category" section)
-  let relatedProjects: Awaited<ReturnType<typeof getPrompts>> = []
+  let relatedProjects: Awaited<ReturnType<typeof getCachedPublicPrompts>> = []
   if (prompt.category) {
-    const allInCategory = await getPrompts({ categorySlug: prompt.category.slug, sort: 'popular', limit: 4 })
+    const allInCategory = await getCachedPublicPrompts({
+      categorySlug: prompt.category.slug,
+      sort: 'popular',
+      limit: 4,
+    })
     relatedProjects = allInCategory.filter(p => p.id !== prompt.id).slice(0, 3)
   }
   const relatedItems = buildPathDiscoveryCatalog(

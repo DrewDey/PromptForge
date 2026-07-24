@@ -84,7 +84,29 @@ const communityPrompt: PromptWithRelations = {
   },
 }
 
-const [communityDiscoveryItem] = buildPathDiscoveryCatalog([communityPrompt], [category])
+const COMMUNITY_FIXTURE_FORK_ID = '10000000-0000-4000-8000-000000000003'
+const communityForkPrompt: PromptWithRelations = {
+  ...communityPrompt,
+  id: COMMUNITY_FIXTURE_FORK_ID,
+  title: 'Approved community fixture fork',
+  description: 'A local-only approved fork used to verify durable community activity.',
+  tags: ['qa-fixture', 'fork'],
+  community_project: null,
+  created_at: '2026-07-23T00:00:00.000Z',
+  updated_at: '2026-07-23T00:00:00.000Z',
+  fork_source_project_id: COMMUNITY_FIXTURE_PROMPT_ID,
+  fork_source_project_title: communityPrompt.title,
+  steps: communityPrompt.steps?.map((step) => ({
+    ...step,
+    id: 'qa-community-fork-step-1',
+    prompt_id: COMMUNITY_FIXTURE_FORK_ID,
+  })),
+}
+
+const [communityDiscoveryItem] = buildPathDiscoveryCatalog(
+  [communityPrompt, communityForkPrompt],
+  [category],
+)
 const communityProfileEvidence = getPublicProfileProjectEvidence(communityPrompt)
 
 export default function CommunityStaticPreviewFixturePage() {
@@ -101,12 +123,21 @@ export default function CommunityStaticPreviewFixturePage() {
         </p>
       </header>
 
-      <section className="pf-paths path-card-surface" data-community-preview-surface="explore">
+      <section
+        className="pf-paths path-card-surface"
+        data-community-preview-surface="explore"
+        data-community-verified-runs={communityDiscoveryItem.verifiedModelRunCount}
+        data-community-fork-count={communityDiscoveryItem.forkCount}
+        data-community-active={String(communityDiscoveryItem.isActive)}
+      >
         <h2 className="mb-3 text-lg font-black text-surface-900">Explore card</h2>
         <BuildPathCard item={communityDiscoveryItem} />
       </section>
 
-      <section data-community-preview-surface="profile">
+      <section
+        data-community-preview-surface="profile"
+        data-community-verified-runs={communityProfileEvidence.verifiedModelRunCount}
+      >
         <h2 className="mb-3 text-lg font-black text-surface-900">Featured profile card</h2>
         <BuilderWorkCard
           project={communityPrompt}

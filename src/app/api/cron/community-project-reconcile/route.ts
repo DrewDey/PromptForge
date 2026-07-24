@@ -1,4 +1,5 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
+import { revalidateTag } from 'next/cache'
 import { NextResponse } from 'next/server'
 import {
   COMMUNITY_PROJECT_BUCKET,
@@ -7,6 +8,7 @@ import {
 import {
   sendCommunityProjectOperatorAlert,
 } from '@/lib/community-project-alerts'
+import { PUBLIC_CATALOG_CACHE_TAG } from '@/lib/public-catalog-cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export const dynamic = 'force-dynamic'
@@ -172,6 +174,9 @@ export async function GET(request: Request) {
       })
       if (error) integrityErrors.push(`missing:${drift.submission_id}`)
       else integrityRemoved += 1
+    }
+    if (integrityRemoved > 0) {
+      revalidateTag(PUBLIC_CATALOG_CACHE_TAG, { expire: 0 })
     }
 
     const { data: retentionData, error: retentionError } = await admin.rpc(

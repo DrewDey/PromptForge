@@ -106,7 +106,17 @@ const operationalGapsMigration = readFileSync(
   path.join(root, 'supabase', 'migrations', '20260723204000_close_community_report_operational_gaps.sql'),
   'utf8',
 )
+const admissionStatusMigration = readFileSync(
+  path.join(root, 'supabase', 'migrations', '20260724032412_distinguish_community_pilot_admission_status.sql'),
+  'utf8',
+)
 const actions = readFileSync(path.join(root, 'src', 'lib', 'community-project-actions.ts'), 'utf8')
+const communityProjectData = readFileSync(path.join(root, 'src', 'lib', 'data', 'community-projects.ts'), 'utf8')
+const buildPage = readFileSync(path.join(root, 'src', 'app', 'build', 'page.tsx'), 'utf8')
+const ownerProjectPage = readFileSync(
+  path.join(root, 'src', 'app', 'my-forge', 'community-projects', '[id]', 'page.tsx'),
+  'utf8',
+)
 const sourceRunData = readFileSync(path.join(root, 'src', 'lib', 'data', 'source-runs.ts'), 'utf8')
 const sourceRunReview = readFileSync(path.join(root, 'src', 'lib', 'source-run-review.ts'), 'utf8')
 const legacySourceRunIntake = readFileSync(
@@ -413,6 +423,38 @@ assert.match(alertRecoveryRoute, /criticalRemaining/)
 assert.match(operationalGapsMigration, /private\.get_community_project_report_queue/)
 assert.match(operationalGapsMigration, /private\.get_community_project_report_queue_counts/)
 assert.match(operationalGapsMigration, /operation\.operation = 'report_alerts'[\s\S]*INTERVAL '1 hour'/)
+assert.match(admissionStatusMigration, /private\.pathforge_community_project_pilot_status\(actor UUID\)/)
+assert.match(admissionStatusMigration, /WHEN member\.user_id IS NULL THEN 'not_admitted'/)
+assert.match(admissionStatusMigration, /WHEN NOT member\.active THEN 'revoked'/)
+assert.match(admissionStatusMigration, /member\.expires_at <= NOW\(\)\) THEN 'expired'/)
+assert.match(admissionStatusMigration, /ELSE 'temporarily_paused'/)
+assert.match(admissionStatusMigration, /public\.community_project_pilot_status\(\)/)
+assert.match(
+  admissionStatusMigration,
+  /public\.community_project_pilot_status\(\)[\s\S]*SECURITY DEFINER[\s\S]*SET search_path = ''/,
+)
+assert.match(
+  admissionStatusMigration,
+  /REVOKE ALL ON FUNCTION public\.community_project_pilot_status\(\)[\s\S]*GRANT EXECUTE ON FUNCTION public\.community_project_pilot_status\(\)[\s\S]*TO authenticated/,
+)
+assert.doesNotMatch(
+  admissionStatusMigration,
+  /GRANT EXECUTE ON FUNCTION public\.community_project_pilot_status\(\)[\s\S]*TO anon/,
+)
+assert.match(communityProjectData, /supabase\.rpc\('community_project_pilot_status'\)/)
+assert.match(communityProjectData, /eligible: status === 'eligible'/)
+assert.match(actions, /supabase\.rpc\('community_project_pilot_status'\)/)
+assert.match(actions, /You are admitted to the pilot, but new project submissions are temporarily paused/)
+assert.match(actions, /Your internal acceptance access has expired/)
+assert.match(actions, /This account has not been admitted to the invitation-only pilot/)
+assert.match(buildPage, /status === 'temporarily_paused'/)
+assert.match(buildPage, /You are admitted to the pilot, but new project submissions are temporarily paused/)
+assert.match(buildPage, /status === 'expired'/)
+assert.match(
+  ownerProjectPage,
+  /submitted === '1' && submission\.status === 'queued'/,
+  'the submission receipt must not override a later authoritative status',
+)
 for (const route of [publicArtifactRoute, privateArtifactRoute]) {
   assert.match(route, /SUPABASE_CONFIGURED/)
   assert.match(route, /catch \{/)
@@ -440,6 +482,7 @@ for (const listReader of [publicData, publicProfiles]) {
 }
 assert.match(discovery, /communityProject \? `\/api\/community-artifacts\/\$\{communityProject\.prompt_id\}` : null/)
 assert.match(discovery, /fallbackVerified: Boolean\(communityProject\)/)
+assert.match(discovery, /deriveDiscoveryRunCounts\([\s\S]*Boolean\(communityProject\)/)
 assert.match(discovery, /provider: prompt\.community_project\.provider/)
 assert.match(discovery, /fallbackProvider: communityProject\?\.provider/)
 assert.match(discovery, /fallbackIsCommunityArtifact: Boolean\(communityProject\)/)
@@ -447,6 +490,7 @@ assert.match(discovery, /isCommunityArtifact: canonicalDefaultVariant\.isCommuni
 assert.match(profilePresentation, /communityProject \? `\/api\/community-artifacts\/\$\{communityProject\.prompt_id\}` : null/)
 assert.match(profilePresentation, /provider: communityProject\.provider/)
 assert.match(profilePresentation, /isCommunityArtifact: Boolean\(communityProject\)/)
+assert.match(profilePresentation, /verifiedModelRunCount = Math\.max\(verifiedRuns\.length, communityProject \? 1 : 0\)/)
 assert.match(artifactViewer, /\/api\\\/community-artifacts\\\//)
 assert.match(artifactViewer, /allowArtifactDownloads=\{!isCommunityArtifact\}/)
 assert.match(artifactViewer, /allowArtifactScripts=\{!isCommunityArtifact\}/)
@@ -454,6 +498,8 @@ assert.match(artifactViewer, /allowArtifactInteraction/)
 assert.match(communityProjectPage, /allowArtifactScripts=\{false\}/)
 assert.match(communityProjectPage, /allowArtifactInteraction/)
 assert.match(communityProjectPage, /data-community-static-preview/)
+assert.match(communityProjectPage, /preview-initiated downloads do not run/)
+assert.match(communityProjectPage, /non-executable text download/)
 assert.match(sourceRunShowcase, /STATIC_ARTIFACT_CSP/)
 assert.match(sourceRunShowcase, /"script-src 'none'"/)
 assert.match(sourceRunShowcase, /data-artifact-execution-mode=\{allowArtifactScripts \? 'interactive-trusted' : 'static-untrusted'\}/)

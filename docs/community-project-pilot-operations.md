@@ -221,7 +221,7 @@ Before merge: run `npm run check:supabase-server-key-transport`,
 `npm run check:community-project-db`, `npm run typecheck`, `npm run lint`, the
 full build, `npm run check:community-project-auth-browser -- --base-url <url>`,
 and signed-in/anonymous browser tests. Confirm production migration history and
-apply any pending members of this six-migration chain in filename order before
+apply any pending members of this seven-migration chain in filename order before
 deploying code that calls their RPCs:
 
 1. `20260723054558_community_project_pilot.sql`
@@ -230,6 +230,7 @@ deploying code that calls their RPCs:
 4. `20260723173000_harden_community_project_release_review.sql`
 5. `20260723191235_enforce_community_invitation_and_report_alert_readiness.sql`
 6. `20260723204000_close_community_report_operational_gaps.sql`
+7. `20260724032412_distinguish_community_pilot_admission_status.sql`
 
 The compatibility migration deliberately restores only owned, untouched,
 queue-only source-run inserts; it does not restore browser publication. The
@@ -237,7 +238,9 @@ fifth migration makes report-alert failures durable and prevents a browser
 confirmation from opening external invitations. The sixth adds leased,
 dual-channel alert recovery, an hourly-fresh database heartbeat, exact
 moderation counts, and keyset pagination across both the active queue and all
-retained report statuses.
+retained report statuses. The seventh preserves the same fail-closed submission
+authorization while giving signed-in builders distinct not-admitted, expired,
+revoked, temporarily-paused, and eligible states.
 
 After the migration and application are live, run the disposable deployed gate
 with the production `SUPABASE_SECRET_KEY` and

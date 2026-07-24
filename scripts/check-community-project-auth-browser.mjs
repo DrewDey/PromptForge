@@ -1100,6 +1100,24 @@ async function main() {
 
         await navigate(client, sessionId, `${options.baseUrl}/qa/community-static-preview`)
         await waitForHeading(client, sessionId, 'Community static preview fixture', `${viewport.name} community card fixture`)
+        const communityMetrics = await evaluate(client, sessionId, `(() => {
+          const explore = document.querySelector('[data-community-preview-surface="explore"]');
+          const profile = document.querySelector('[data-community-preview-surface="profile"]');
+          return {
+            exploreVerifiedRuns: explore?.getAttribute('data-community-verified-runs') || '',
+            forkCount: explore?.getAttribute('data-community-fork-count') || '',
+            active: explore?.getAttribute('data-community-active') || '',
+            profileVerifiedRuns: profile?.getAttribute('data-community-verified-runs') || '',
+          };
+        })()`)
+        if (
+          communityMetrics?.exploreVerifiedRuns !== '1' ||
+          communityMetrics.forkCount !== '1' ||
+          communityMetrics.active !== 'true' ||
+          communityMetrics.profileVerifiedRuns !== '1'
+        ) {
+          throw new Error(`${viewport.name} community activity/profile metrics drifted: ${JSON.stringify(communityMetrics)}.`)
+        }
         for (const surface of ['explore', 'profile']) {
           const selector = `[data-community-preview-surface="${surface}"]`
           await evaluate(client, sessionId, `document.querySelector(${JSON.stringify(selector)})?.scrollIntoView({ block: 'center' })`)

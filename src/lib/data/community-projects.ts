@@ -81,6 +81,24 @@ export type CommunityProjectPilotControls = {
   updated_at: string
 }
 
+export type CommunityProjectPilotStatus =
+  | 'signed_out'
+  | 'eligible'
+  | 'not_admitted'
+  | 'expired'
+  | 'revoked'
+  | 'temporarily_paused'
+  | 'unavailable'
+
+export type CommunityProjectPilotEligibility = {
+  signedIn: boolean
+  eligible: boolean
+  status: CommunityProjectPilotStatus
+  userId: string | null
+  displayName: string | null
+  username: string | null
+}
+
 export type CommunityProjectReportQueue = {
   reports: CommunityProjectReport[]
   totalCount: number
@@ -182,21 +200,49 @@ function queueTimestamp(value: unknown) {
   return typeof value === 'string' && Number.isFinite(Date.parse(value)) ? value : null
 }
 
-export async function getCommunityProjectPilotEligibility() {
-  if (!SUPABASE_CONFIGURED) return { signedIn: false, eligible: false, userId: null, displayName: null, username: null }
+export async function getCommunityProjectPilotEligibility(): Promise<CommunityProjectPilotEligibility> {
+  if (!SUPABASE_CONFIGURED) {
+    return {
+      signedIn: false,
+      eligible: false,
+      status: 'signed_out',
+      userId: null,
+      displayName: null,
+      username: null,
+    }
+  }
 
   const { createClient } = await import('../supabase/server')
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { signedIn: false, eligible: false, userId: null, displayName: null, username: null }
+  if (!user) {
+    return {
+      signedIn: false,
+      eligible: false,
+      status: 'signed_out',
+      userId: null,
+      displayName: null,
+      username: null,
+    }
+  }
 
   const [{ data, error }, { data: profile }] = await Promise.all([
-    supabase.rpc('community_project_pilot_eligible'),
+    supabase.rpc('community_project_pilot_status'),
     supabase.from('profiles').select('display_name,username').eq('id', user.id).maybeSingle(),
   ])
+  const status = !error && (
+    data === 'eligible'
+    || data === 'not_admitted'
+    || data === 'expired'
+    || data === 'revoked'
+    || data === 'temporarily_paused'
+  )
+    ? data
+    : 'unavailable'
   return {
     signedIn: true,
-    eligible: !error && data === true,
+    eligible: status === 'eligible',
+    status,
     userId: user.id,
     displayName: profile?.display_name ?? null,
     username: profile?.username ?? null,
@@ -393,11 +439,12 @@ export async function getPublicCommunityProject(
   if (!SUPABASE_CONFIGURED) return null
   return readWithFallback(null, async (signal) => {
     const { createPublicReadClient } = await import('../supabase/server')
-    const supabase = await createPublicReadClient()
-    const { data, error } = await supabase
+    const supabase = await createPublicReadClient({ anonymous: true })
+    const { data } = await supabase
       .rpc('get_public_community_project', { target_prompt: promptId })
+      .retry(false)
       .abortSignal(signal)
-    if (error) throw error
+      .throwOnError()
     const row = Array.isArray(data) ? data[0] : data
     return (row ?? null) as PublicCommunityProject | null
   })

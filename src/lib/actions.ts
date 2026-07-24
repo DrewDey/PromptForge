@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 import {
   approveSuggestionById,
@@ -23,6 +23,7 @@ import {
 } from './data'
 import { getPreparedShowcaseProjectById } from './prepared-showcase-projects'
 import type { ProjectForkSource } from './project-forks'
+import { PUBLIC_CATALOG_CACHE_TAG } from './public-catalog-cache'
 import type { SuggestionPublicStatus, SuggestionResponseVisibility } from './types'
 
 export type SuggestionSubmitState = {
@@ -57,11 +58,13 @@ export async function approvePrompt(id: string) {
   revalidatePath('/browse')
   revalidatePath('/paths')
   revalidatePath('/')
+  revalidateTag(PUBLIC_CATALOG_CACHE_TAG, { expire: 0 })
 }
 
 export async function rejectPrompt(id: string) {
   await updatePromptStatus(id, 'rejected')
   revalidatePath('/admin')
+  revalidateTag(PUBLIC_CATALOG_CACHE_TAG, { expire: 0 })
 }
 
 export async function logout() {
@@ -76,9 +79,9 @@ export async function voteOnProject(promptId: string) {
   try {
     const result = await toggleVote(promptId)
     revalidatePath(`/prompt/${promptId}`)
-    revalidatePath('/browse')
-    revalidatePath('/paths')
-    revalidatePath('/')
+    // Public engagement totals may lag by the five-minute catalog TTL.
+    // Invalidating catalog routes or the global cache for every vote would let
+    // authenticated interaction traffic defeat the anonymous-read load-shedding boundary.
     return result
   } catch {
     return { voted: false, newCount: 0, error: 'Could not save vote.' }
@@ -167,6 +170,7 @@ export async function publishPreparedShowcaseSourceRun(formData: FormData) {
   revalidatePath('/paths')
   revalidatePath('/browse')
   revalidatePath(`/user/${project.authorUsername}`)
+  revalidateTag(PUBLIC_CATALOG_CACHE_TAG, { expire: 0 })
 }
 
 export async function submitSuggestion(

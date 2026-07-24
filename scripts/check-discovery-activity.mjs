@@ -318,8 +318,13 @@ for (const sortValue of ['active', 'forks', 'models', 'newest']) {
 assert.match(discoverySource, /value: 'models', label: 'Multiple models'/)
 assert.match(discoverySource, /rawSort === 'model-runs' \? 'models'/)
 assert.match(discoverySource, /name="sort" value=\{activeSort\}/)
-assert.match(discoverySource, /getPrompts\(\{ sort: 'newest' \}\)/)
-assert.doesNotMatch(discoverySource, /getPrompts\(\{ sort: 'newest', limit:/)
+assert.match(discoverySource, /getCachedPublicPrompts\(\{ sort: 'newest' \}\)/)
+assert.doesNotMatch(discoverySource, /getCachedPublicPrompts\(\{ sort: 'newest', limit:/)
+assert.doesNotMatch(
+  discoverySource,
+  /\bgetPrompts\(/,
+  'Explore must not bypass the shared public-catalog cache',
+)
 assert.match(discoverySource, /activeOrder\(filtered\)/)
 assert.match(discoverySource, /forkCountOrder\(filtered\)/)
 assert.match(discoverySource, /multiModelOrder\(filtered\)/)

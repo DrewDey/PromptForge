@@ -12,6 +12,37 @@ const read = (relativePath) => readFileSync(path.join(root, relativePath), 'utf8
 const shared = read('src/lib/data/shared.ts')
 const server = read('src/lib/supabase/server.ts')
 const promptStepCounts = read('src/lib/data/public-prompt-step-counts.ts')
+const publicCatalogCache = read('src/lib/public-catalog-cache.ts')
+const catalogConsumers = [
+  ['src/app/page.tsx', read('src/app/page.tsx'), ['getCachedPublicCategories', 'getCachedPublicPrompts']],
+  [
+    'src/app/qa/path-card-concepts/page.tsx',
+    read('src/app/qa/path-card-concepts/page.tsx'),
+    ['getCachedPublicCategories', 'getCachedPublicPrompts'],
+  ],
+  [
+    'src/app/what-to-build/page.tsx',
+    read('src/app/what-to-build/page.tsx'),
+    ['getCachedPublicPrompts'],
+  ],
+  [
+    'src/components/discovery/BuildPathsDiscovery.tsx',
+    read('src/components/discovery/BuildPathsDiscovery.tsx'),
+    ['getCachedPublicCategories', 'getCachedPublicPrompts'],
+  ],
+]
+const catalogMutators = [
+  [
+    'src/lib/actions.ts',
+    read('src/lib/actions.ts'),
+    ['approvePrompt', 'rejectPrompt', 'publishPreparedShowcaseSourceRun'],
+  ],
+  [
+    'src/lib/community-project-actions.ts',
+    read('src/lib/community-project-actions.ts'),
+    ['publishCommunityProject', 'withdrawCommunityProject', 'removeCommunityProjectAsAdmin'],
+  ],
+]
 const dataSources = [
   ['src/lib/data.ts', read('src/lib/data.ts')],
   ['src/lib/data/public-profiles.ts', read('src/lib/data/public-profiles.ts')],
@@ -35,7 +66,16 @@ assert.match(
   'fast reads must clear the fallback timer',
 )
 
-assert.match(server, /export async function createPublicReadClient\(\)/)
+assert.match(
+  server,
+  /export async function createPublicReadClient\(\s*options: \{ anonymous\?: boolean \} = \{\},?\s*\)/,
+  'the public-read client must support a cookie-free anonymous mode for shared cache entries',
+)
+assert.match(
+  server,
+  /if \(options\.anonymous\) \{[\s\S]*?createSupabaseClient\([\s\S]*?NEXT_PUBLIC_SUPABASE_URL[\s\S]*?NEXT_PUBLIC_SUPABASE_ANON_KEY[\s\S]*?persistSession: false/,
+  'anonymous public reads must use the anon key without browser session persistence',
+)
 assert.match(
   server,
   /every query issued through this scoped client is guarded with retry\(false\)/,
@@ -91,7 +131,7 @@ for (const [fileName, source] of dataSources) {
       const callbackSource = callback.body.getText(sourceFile)
       assert.match(
         callbackSource,
-        /createPublicReadClient\(\)/,
+        /createPublicReadClient\((?:\{\s*anonymous:\s*true\s*\})?\)/,
         `${fileName}: fallback read must use the scoped public-read client`,
       )
       const callbackAbortCount = (callbackSource.match(/\.abortSignal\(signal\)/g) ?? []).length
@@ -132,11 +172,21 @@ for (const [fileName, source] of dataSources) {
 
   if (fileName === 'src/lib/data.ts') {
     const categories = functionBody(sourceFile, 'getCategories')
+    assert.match(
+      categories,
+      /createPublicReadClient\(\{\s*anonymous:\s*true\s*\}\)/,
+      'shared category reads must not depend on request cookies',
+    )
     assert.match(categories, /\.from\('categories'\)/)
     assert.match(categories, /\.abortSignal\(signal\)\s*\.throwOnError\(\)/)
     assert.match(categories, /return data \?\? \[\]/)
 
     const prompts = functionBody(sourceFile, 'getPrompts')
+    assert.match(
+      prompts,
+      /createPublicReadClient\(\{\s*anonymous:\s*true\s*\}\)/,
+      'shared project-list reads must not depend on request cookies',
+    )
     assert.doesNotMatch(
       prompts,
       /steps:prompt_steps/,
@@ -203,6 +253,73 @@ for (const [fileName, source] of dataSources) {
   }
 }
 
+assert.match(publicCatalogCache, /import \{ unstable_cache \} from 'next\/cache'/)
+assert.match(publicCatalogCache, /PUBLIC_CATALOG_CACHE_TAG = 'public-catalog-v1'/)
+assert.match(publicCatalogCache, /PUBLIC_CATALOG_REVALIDATE_SECONDS = 300/)
+assert.match(
+  publicCatalogCache,
+  /getCachedPublicCategories = unstable_cache\([\s\S]*?getCategories[\s\S]*?revalidate: PUBLIC_CATALOG_REVALIDATE_SECONDS[\s\S]*?tags: \[PUBLIC_CATALOG_CACHE_TAG\]/,
+  'public categories must use the shared five-minute catalog cache',
+)
+assert.match(
+  publicCatalogCache,
+  /getCachedPublicPrompts = unstable_cache\([\s\S]*?getPrompts[\s\S]*?revalidate: PUBLIC_CATALOG_REVALIDATE_SECONDS[\s\S]*?tags: \[PUBLIC_CATALOG_CACHE_TAG\]/,
+  'public projects must use the shared five-minute catalog cache',
+)
+
+for (const [fileName, source, requiredCachedReads] of catalogConsumers) {
+  for (const cachedRead of requiredCachedReads) {
+    assert.match(
+      source,
+      new RegExp(`\\b${cachedRead}\\(`),
+      `${fileName}: high-traffic catalog pages must use ${cachedRead}`,
+    )
+  }
+  assert.doesNotMatch(
+    source,
+    /import \{[^}]*\b(?:getCategories|getPrompts)\b[^}]*\} from ['"]@\/lib\/data['"]/,
+    `${fileName}: high-traffic catalog pages must not bypass the shared cache`,
+  )
+}
+
+for (const [fileName, source, mutators] of catalogMutators) {
+  const sourceFile = ts.createSourceFile(
+    fileName,
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS,
+  )
+  for (const mutator of mutators) {
+    assert.match(
+      functionBody(sourceFile, mutator),
+      /revalidateTag\(PUBLIC_CATALOG_CACHE_TAG,\s*\{\s*expire:\s*0\s*\}\)/,
+      `${fileName}: ${mutator} must immediately invalidate the public catalog cache`,
+    )
+  }
+}
+
+const actionsSourceFile = ts.createSourceFile(
+  'src/lib/actions.ts',
+  catalogMutators[0][1],
+  ts.ScriptTarget.Latest,
+  true,
+  ts.ScriptKind.TS,
+)
+for (const engagementMutator of ['voteOnProject', 'bookmarkProject']) {
+  const body = functionBody(actionsSourceFile, engagementMutator)
+  assert.doesNotMatch(
+    body,
+    /revalidateTag\(PUBLIC_CATALOG_CACHE_TAG/,
+    `${engagementMutator} must not let high-frequency engagement defeat the shared cache`,
+  )
+  assert.doesNotMatch(
+    body,
+    /revalidatePath\((?:'|"|`)\/(?:paths|browse)?(?:'|"|`)\)/,
+    `${engagementMutator} must not invalidate a catalog route on every engagement click`,
+  )
+}
+
 assert.match(
   promptStepCounts,
   /rows\.length !== projects\.length/,
@@ -249,5 +366,5 @@ assert.match(
 )
 
 console.log(
-  `Supabase public-read saturation guard passed for ${fallbackReadCount} fallback reads and ${abortSignalCount} abortable no-retry PostgREST queries.`,
+  `Supabase public-read saturation guard passed for ${fallbackReadCount} fallback reads, ${abortSignalCount} abortable no-retry PostgREST queries, ${catalogConsumers.length} cached catalog consumers, and ${catalogMutators.reduce((total, [, , mutators]) => total + mutators.length, 0)} cache-invalidating mutations.`,
 )

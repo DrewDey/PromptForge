@@ -268,7 +268,7 @@ function preparedStepToPromptStep(step: PreparedShowcaseStep, project: PreparedS
 export async function getCategories(): Promise<Category[]> {
   return readWithFallback(publicMockCategories, async (signal) => {
     const { createPublicReadClient } = await import('./supabase/server')
-    const supabase = await createPublicReadClient()
+    const supabase = await createPublicReadClient({ anonymous: true })
     const { data } = await supabase
       .from('categories')
       .select('*')
@@ -392,7 +392,7 @@ export async function getPrompts(options?: {
 
   return readWithFallback(getMockPrompts(options), async (signal) => {
     const { createPublicReadClient } = await import('./supabase/server')
-    const supabase = await createPublicReadClient()
+    const supabase = await createPublicReadClient({ anonymous: true })
     const status = options?.status ?? 'approved'
     let categoryId: string | undefined
 

@@ -1,7 +1,7 @@
 'use server'
 
 import { createHash, createHmac, randomUUID } from 'node:crypto'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { headers } from 'next/headers'
 import {
   COMMUNITY_PROJECT_BUCKET,
@@ -23,6 +23,7 @@ import {
   scanCommunityProjectEvidenceText,
 } from './community-project-scanner'
 import { requireAdminAccess } from './data/shared'
+import { PUBLIC_CATALOG_CACHE_TAG } from './public-catalog-cache'
 import { createAdminClient } from './supabase/admin'
 import { createClient } from './supabase/server'
 
@@ -542,6 +543,7 @@ export async function publishCommunityProject(formData: FormData): Promise<Commu
     revalidatePath(`/prompt/${promptId}`)
     revalidatePath(`/admin/community-projects/${id}`)
     revalidatePath('/admin/community-projects')
+    revalidateTag(PUBLIC_CATALOG_CACHE_TAG, { expire: 0 })
     return { success: true, id, promptId }
   } catch (error) {
     return { success: false, error: safeError(error, 'PathForge could not publish this project.') }
@@ -632,6 +634,7 @@ export async function withdrawCommunityProject(formData: FormData): Promise<Comm
     revalidatePath('/paths')
     revalidatePath('/my-forge')
     revalidatePath(`/my-forge/community-projects/${id}`)
+    revalidateTag(PUBLIC_CATALOG_CACHE_TAG, { expire: 0 })
     return { success: true, id, warning }
   } catch (error) {
     return { success: false, error: safeError(error, 'PathForge could not withdraw this project.') }
@@ -650,6 +653,7 @@ export async function removeCommunityProjectAsAdmin(formData: FormData): Promise
     revalidatePath('/paths')
     revalidatePath(`/admin/community-projects/${id}`)
     revalidatePath('/admin/community-projects')
+    revalidateTag(PUBLIC_CATALOG_CACHE_TAG, { expire: 0 })
     return { success: true, id, warning }
   } catch (error) {
     return { success: false, error: safeError(error, 'PathForge could not remove this project.') }

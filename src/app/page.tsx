@@ -3,7 +3,6 @@ import { HomeBuildMosaic } from '@/components/home/HomeBuildMosaic'
 import { HomeHero } from '@/components/home/HomeHero'
 import { HomeProcess } from '@/components/home/HomeProcess'
 import { HomeSupportRoutes } from '@/components/home/HomeSupportRoutes'
-import { getCategories, getPrompts } from '@/lib/data'
 import {
   START_HERE_PROJECT_IDS,
   buildPathDiscoveryCatalog,
@@ -11,6 +10,10 @@ import {
   recommendedOrder,
   selectCuratedItems,
 } from '@/lib/path-discovery'
+import {
+  getCachedPublicCategories,
+  getCachedPublicPrompts,
+} from '@/lib/public-catalog-cache'
 import { canonicalMetadata } from '@/lib/site-url'
 import './browse.css'
 import './home.css'
@@ -23,8 +26,8 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   const [categories, prompts] = await Promise.all([
-    getCategories(),
-    getPrompts({ sort: 'newest', limit: 300 }),
+    getCachedPublicCategories(),
+    getCachedPublicPrompts({ sort: 'newest', limit: 300 }),
   ])
   const catalog = buildPathDiscoveryCatalog(prompts, categories)
   const recommended = recommendedOrder(catalog)

@@ -16,7 +16,8 @@ import { ProjectPreview } from '@/components/ProjectPreview'
 import { PublicTruthSummary } from '@/components/PublicTruthSummary'
 import { BuildPathCard } from '@/components/discovery/BuildPathCard'
 import { IdeaArtifactPreview } from '@/components/ideas/IdeaArtifactPreview'
-import { getPrompts, getUserVotesAndBookmarks } from '@/lib/data'
+import { getUserVotesAndBookmarks } from '@/lib/data'
+import { getCachedPublicPrompts } from '@/lib/public-catalog-cache'
 import {
   buildPathDiscoveryCatalog,
   getCanonicalDefaultDiscoveryTruth,
@@ -195,7 +196,7 @@ export default async function WhatToBuildPage({
   const params = await searchParams
   const selectedIntent = parseIntent(firstParam(params.goal))
   const selectedPace = parsePace(firstParam(params.pace))
-  const prompts = await getPrompts()
+  const prompts = await getCachedPublicPrompts()
   const catalog = buildPathDiscoveryCatalog(prompts, [])
   const intentMatches = selectedIntent
     ? catalog.filter((item) => ideaMatchesIntent(item, selectedIntent))

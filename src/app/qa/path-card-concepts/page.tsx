@@ -5,9 +5,12 @@ import {
   InteractiveBuildPathCard,
   type BuildPathCardClientItem,
 } from '@/components/discovery/InteractiveBuildPathCard'
-import { getCategories, getPrompts } from '@/lib/data'
 import { buildPathDiscoveryCatalog } from '@/lib/path-discovery'
 import { getPreparedShowcaseProjectBySourceRunId } from '@/lib/prepared-showcase-projects'
+import {
+  getCachedPublicCategories,
+  getCachedPublicPrompts,
+} from '@/lib/public-catalog-cache'
 import styles from './page.module.css'
 import '../../browse.css'
 
@@ -30,7 +33,10 @@ export default async function PathCardConceptsPage() {
   if (process.env.VERCEL_ENV === 'production') notFound()
 
   const project = getPreparedShowcaseProjectBySourceRunId(BOOKING_FLOW_PROJECT_SOURCE_RUN_ID)
-  const [categories, prompts] = await Promise.all([getCategories(), getPrompts({ sort: 'newest' })])
+  const [categories, prompts] = await Promise.all([
+    getCachedPublicCategories(),
+    getCachedPublicPrompts({ sort: 'newest' }),
+  ])
   const discoveryItem = buildPathDiscoveryCatalog(prompts, categories).find((item) => (
     item.id === BOOKING_FLOW_PROJECT_ID
   ))

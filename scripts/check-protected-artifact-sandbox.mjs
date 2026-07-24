@@ -4,7 +4,8 @@ import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { createSocket } from 'node:dgram'
 import { createServer } from 'node:http'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdtempSync } from 'node:fs'
+import { rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import {
@@ -73,6 +74,21 @@ async function closeChrome(child) {
     }
   }
   child.stderr?.destroy()
+}
+
+async function removeChromeProfile(profile) {
+  let lastError
+  for (let attempt = 1; attempt <= 8; attempt += 1) {
+    try {
+      await rm(profile, { recursive: true, force: true, maxRetries: 4, retryDelay: 125 })
+      return
+    } catch (error) {
+      if (!['EBUSY', 'ENOTEMPTY', 'EPERM'].includes(error?.code)) throw error
+      lastError = error
+      await new Promise((resolve) => setTimeout(resolve, attempt * 250))
+    }
+  }
+  throw lastError
 }
 
 async function main() {
@@ -229,6 +245,8 @@ async function main() {
     '--headless=new',
     '--disable-gpu',
     '--disable-dev-shm-usage',
+    '--disable-extensions',
+    '--disable-component-extensions-with-background-pages',
     '--no-sandbox',
     '--no-first-run',
     '--remote-debugging-address=127.0.0.1',
@@ -332,7 +350,7 @@ async function main() {
     await new Promise((resolve) => positiveStunServer.close(resolve))
     await new Promise((resolve) => positiveSetHtmlStunServer.close(resolve))
     await new Promise((resolve) => positiveShadowHtmlStunServer.close(resolve))
-    rmSync(profile, { recursive: true, force: true, maxRetries: 8, retryDelay: 125 })
+    await removeChromeProfile(profile)
   }
 
   console.log('Protected artifact sandbox navigation, nested-realm, WebRTC, and download guard passed with a positive UDP control.')

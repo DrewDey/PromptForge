@@ -200,7 +200,7 @@ const operationalGapsMigration = readFileSync(
   'utf8',
 )
 const admissionStatusMigration = readFileSync(
-  path.join(root, 'supabase', 'migrations', '20260724032412_distinguish_community_pilot_admission_status.sql'),
+  path.join(root, 'supabase', 'migrations', '20260724132517_distinguish_community_pilot_admission_status.sql'),
   'utf8',
 )
 const migrationTransactionFixture = readFileSync(

@@ -245,7 +245,7 @@ deploying code that calls their RPCs:
 4. `20260723173000_harden_community_project_release_review.sql`
 5. `20260723191235_enforce_community_invitation_and_report_alert_readiness.sql`
 6. `20260723204000_close_community_report_operational_gaps.sql`
-7. `20260724032412_distinguish_community_pilot_admission_status.sql`
+7. `20260724132517_distinguish_community_pilot_admission_status.sql`
 
 The compatibility migration deliberately restores only owned, untouched,
 queue-only source-run inserts; it does not restore browser publication. The

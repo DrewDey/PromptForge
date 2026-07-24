@@ -338,7 +338,9 @@ async function main() {
       : 'operator-only no-mail account bootstrap'
     if (accountBootstrap === 'public-signup') {
       await navigate(client, sessionId, `${options.baseUrl}/auth/signup?next=%2Fbuild`)
-      await waitFor(client, sessionId, `({ passed: Boolean(document.querySelector('input[name="username"]')) })`, 'public signup form')
+      await waitFor(client, sessionId, `(() => ({
+        passed: Boolean(${renderedElementExpression('input[name="username"]')}),
+      }))()`, 'public signup form')
       await evaluate(client, sessionId, `(() => {
         const setValue = (selector, value) => {
           const element = document.querySelector(selector);
@@ -353,12 +355,17 @@ async function main() {
         document.querySelector('form').requestSubmit();
         return true;
       })()`)
-      await waitFor(client, sessionId, `(() => ({
-        passed: document.querySelector('h1')?.textContent?.includes('Check your') &&
-          document.body.textContent.includes('One last step'),
-        path: location.pathname,
-        error: document.querySelector('[role="alert"]')?.textContent || '',
-      }))()`, 'public signup email-confirmation handoff')
+      await waitFor(client, sessionId, `(() => {
+        const heading = ${renderedElementExpression('h1')};
+        const main = ${renderedElementExpression('main')};
+        const alert = ${renderedElementExpression('[role="alert"]')};
+        return {
+          passed: heading?.textContent?.includes('Check your') &&
+            main?.textContent?.includes('One last step'),
+          path: location.pathname,
+          error: alert?.textContent?.trim() || '',
+        };
+      })()`, 'public signup email-confirmation handoff')
       if (options.screenshotDir) await capture(client, sessionId, path.join(options.screenshotDir, 'live-public-signup-confirmation.png'))
     } else {
       const { data: createdIdentity, error: createIdentityError } = await admin.auth.admin.createUser({
@@ -409,16 +416,23 @@ async function main() {
     callbackUrl.searchParams.set('type', 'magiclink')
     acceptanceStage = 'token-hash callback and pre-admission denial'
     await navigate(client, sessionId, callbackUrl.toString())
-    await waitFor(client, sessionId, `(() => ({
-      passed: location.pathname === '/build' && document.body.textContent.includes('not currently in the pilot'),
-      path: location.pathname,
-      hasUpload: Boolean(document.querySelector('input[type="file"]')),
-    }))()`, 'verified callback and signed-in pre-admission denial')
+    await waitFor(client, sessionId, `(() => {
+      const main = ${renderedElementExpression('main')};
+      const upload = ${renderedElementExpression('input[type="file"]')};
+      return {
+        passed: location.pathname === '/build' &&
+          main?.textContent?.includes('not currently in the pilot'),
+        path: location.pathname,
+        hasUpload: Boolean(upload),
+      };
+    })()`, 'verified callback and signed-in pre-admission denial')
     const { data: confirmedUser, error: confirmedUserError } = await admin.auth.admin.getUserById(userId)
     if (confirmedUserError || !confirmedUser.user?.email_confirmed_at) {
       throw confirmedUserError ?? new Error('The email verification callback did not confirm the fresh identity.')
     }
-    const denied = await evaluate(client, sessionId, `({ hasUpload: Boolean(document.querySelector('input[type="file"]')) })`)
+    const denied = await evaluate(client, sessionId, `({
+      hasUpload: Boolean(${renderedElementExpression('input[type="file"]')}),
+    })`)
     if (denied.hasUpload) throw new Error('The fresh account received an upload control before admission.')
     if (options.screenshotDir) await capture(client, sessionId, path.join(options.screenshotDir, 'live-pre-admission-denial.png'))
 

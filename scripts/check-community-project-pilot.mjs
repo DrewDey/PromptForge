@@ -6,6 +6,7 @@ import {
   scanCommunityArtifactText,
   scanCommunityEvidenceText,
 } from '../src/lib/community-project-scanner-core.mjs'
+import { canSubmitCommunityProjectRepair } from '../src/lib/community-project-pilot-policy.mjs'
 
 const root = process.cwd()
 const fixtureRoot = path.join(root, 'test-fixtures', 'community-project')
@@ -81,6 +82,22 @@ assert.throws(
 )
 assert.deepEqual(scanCommunityEvidenceText('safe@example.com and 555-010-1234'), [])
 assert.ok(scanCommunityEvidenceText('private.person@private-mail.test').includes('personal email address'))
+for (const [status, expected] of [
+  ['eligible', true],
+  ['temporarily_paused', true],
+  ['signed_out', false],
+  ['not_admitted', false],
+  ['expired', false],
+  ['revoked', false],
+  ['unavailable', false],
+  ['unexpected', false],
+]) {
+  assert.equal(
+    canSubmitCommunityProjectRepair(status),
+    expected,
+    `repair policy drifted for ${status}`,
+  )
+}
 
 const migration = readFileSync(
   path.join(root, 'supabase', 'migrations', '20260723054558_community_project_pilot.sql'),
@@ -441,15 +458,29 @@ assert.doesNotMatch(
   admissionStatusMigration,
   /GRANT EXECUTE ON FUNCTION public\.community_project_pilot_status\(\)[\s\S]*TO anon/,
 )
+assert.match(
+  admissionStatusMigration,
+  /private\.pathforge_actor_can_repair_community_project\(actor UUID\)[\s\S]*IN \('eligible', 'temporarily_paused'\)/,
+)
+assert.match(
+  admissionStatusMigration,
+  /public\.replace_community_project_submission\([\s\S]*IF NOT private\.pathforge_actor_can_repair_community_project\(actor\)[\s\S]*Current pilot admission is required to repair this community project/,
+)
+assert.match(
+  admissionStatusMigration,
+  /REVOKE EXECUTE ON FUNCTION private\.replace_community_project_submission\(UUID, UUID, JSONB, UUID\)[\s\S]*FROM service_role/,
+)
 assert.match(communityProjectData, /supabase\.rpc\('community_project_pilot_status'\)/)
 assert.match(communityProjectData, /eligible: status === 'eligible'/)
 assert.match(actions, /supabase\.rpc\('community_project_pilot_status'\)/)
+assert.match(actions, /canSubmitCommunityProjectRepair\(eligibilityStatus\)/)
 assert.match(actions, /You are admitted to the pilot, but new project submissions are temporarily paused/)
 assert.match(actions, /Your internal acceptance access has expired/)
 assert.match(actions, /This account has not been admitted to the invitation-only pilot/)
 assert.match(buildPage, /status === 'temporarily_paused'/)
 assert.match(buildPage, /You are admitted to the pilot, but new project submissions are temporarily paused/)
 assert.match(buildPage, /status === 'expired'/)
+assert.match(buildPage, /canSubmitCommunityProjectRepair\(eligibility\.status\)/)
 assert.match(
   ownerProjectPage,
   /submitted === '1' && submission\.status === 'queued'/,

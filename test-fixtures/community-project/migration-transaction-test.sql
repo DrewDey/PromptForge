@@ -50,6 +50,9 @@ BEGIN
   IF private.pathforge_community_project_pilot_status(builder) <> 'not_admitted' THEN
     RAISE EXCEPTION 'A fresh non-admin did not receive the not-admitted status.';
   END IF;
+  IF private.pathforge_actor_can_repair_community_project(builder) THEN
+    RAISE EXCEPTION 'A non-admitted account became eligible to upload a repair.';
+  END IF;
 
   PERFORM public.set_community_project_pilot_member(
     stranger, administrator, TRUE, 'invited_builder', 'External cohort remains locked'
@@ -60,11 +63,17 @@ BEGIN
   IF private.pathforge_community_project_pilot_status(stranger) <> 'temporarily_paused' THEN
     RAISE EXCEPTION 'An admitted invited builder was mislabeled while the external lane was paused.';
   END IF;
+  IF NOT private.pathforge_actor_can_repair_community_project(stranger) THEN
+    RAISE EXCEPTION 'An admitted but paused account could not complete a requested private repair.';
+  END IF;
   PERFORM public.set_community_project_pilot_member(
     stranger, administrator, FALSE, 'invited_builder', 'Revoked status transaction check'
   );
   IF private.pathforge_community_project_pilot_status(stranger) <> 'revoked' THEN
     RAISE EXCEPTION 'A revoked pilot member did not receive the revoked status.';
+  END IF;
+  IF private.pathforge_actor_can_repair_community_project(stranger) THEN
+    RAISE EXCEPTION 'A revoked pilot member remained eligible to upload a repair.';
   END IF;
   PERFORM public.set_community_project_pilot_member(
     stranger, administrator, TRUE, 'invited_builder', 'External cohort remains locked'
@@ -127,6 +136,9 @@ BEGIN
   IF private.pathforge_community_project_pilot_status(builder) <> 'eligible' THEN
     RAISE EXCEPTION 'The admitted internal acceptance account did not receive eligible status.';
   END IF;
+  IF NOT private.pathforge_actor_can_repair_community_project(builder) THEN
+    RAISE EXCEPTION 'An eligible internal acceptance account could not upload a repair.';
+  END IF;
 
   BEGIN
     PERFORM public.set_community_project_pilot_member(
@@ -149,6 +161,9 @@ BEGIN
   END IF;
   IF private.pathforge_community_project_pilot_status(builder) <> 'expired' THEN
     RAISE EXCEPTION 'Expired internal acceptance was not distinguished from non-admission.';
+  END IF;
+  IF private.pathforge_actor_can_repair_community_project(builder) THEN
+    RAISE EXCEPTION 'Expired internal acceptance remained eligible to upload a repair.';
   END IF;
   PERFORM public.set_community_project_pilot_member(
     builder, administrator, TRUE, 'internal_acceptance', 'Renewed disposable transaction test'
@@ -223,6 +238,44 @@ BEGIN
   submission := public.create_community_project_submission(
     builder, payload, gen_random_uuid()
   );
+  PERFORM public.request_community_project_repair(
+    submission,
+    administrator,
+    'Replace the disposable artifact while preserving its reviewed lineage.',
+    gen_random_uuid()
+  );
+  PERFORM public.set_community_project_pilot_member(
+    builder, administrator, FALSE, 'internal_acceptance', 'Revoked repair authorization check'
+  );
+  BEGIN
+    PERFORM public.replace_community_project_submission(
+      submission, builder, payload, gen_random_uuid()
+    );
+    RAISE EXCEPTION 'A revoked owner replaced a community project repair.';
+  EXCEPTION
+    WHEN OTHERS THEN
+      IF SQLERRM = 'A revoked owner replaced a community project repair.'
+        OR SQLERRM <> 'Current pilot admission is required to repair this community project.' THEN
+        RAISE;
+      END IF;
+  END;
+  PERFORM public.set_community_project_pilot_member(
+    builder, administrator, TRUE, 'internal_acceptance', 'Renewed after repair authorization check'
+  );
+  IF public.replace_community_project_submission(
+    submission, builder, payload, gen_random_uuid()
+  ) IS DISTINCT FROM artifact THEN
+    RAISE EXCEPTION 'An eligible repair did not return the prior private artifact path.';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.community_project_submissions
+    WHERE id = submission
+      AND status = 'queued'
+      AND submission_version = 2
+  ) THEN
+    RAISE EXCEPTION 'An eligible repair did not return to queued review as version 2.';
+  END IF;
   BEGIN
     DELETE FROM public.profiles WHERE id = builder;
     RAISE EXCEPTION 'Profile deletion cascaded ahead of the community retention contract.';

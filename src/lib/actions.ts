@@ -78,10 +78,10 @@ export async function logout() {
 export async function voteOnProject(promptId: string) {
   try {
     const result = await toggleVote(promptId)
-    revalidatePath(`/prompt/${promptId}`)
     // Public engagement totals may lag by the five-minute catalog TTL.
-    // Invalidating catalog routes or the global cache for every vote would let
-    // authenticated interaction traffic defeat the anonymous-read load-shedding boundary.
+    // VoteBookmarkButtons reconciles its own state from this result. Any
+    // prompt-path invalidation would also evict that route's shared catalog
+    // cache entry through Next's implicit soft tag.
     return result
   } catch {
     return { voted: false, newCount: 0, error: 'Could not save vote.' }
@@ -91,7 +91,9 @@ export async function voteOnProject(promptId: string) {
 export async function bookmarkProject(promptId: string) {
   try {
     const result = await toggleBookmark(promptId)
-    revalidatePath(`/prompt/${promptId}`)
+    // The current button reconciles from this result. Refresh only the private
+    // saved-project dashboard; prompt-path revalidation would puncture the
+    // shared public catalog cache.
     revalidatePath('/my-forge')
     return result
   } catch {

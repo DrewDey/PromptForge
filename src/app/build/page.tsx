@@ -6,6 +6,7 @@ import {
   getCommunityProjectSubmissionForOwner,
   type CommunityProjectPilotStatus,
 } from '@/lib/data/community-projects'
+import { canSubmitCommunityProjectRepair } from '@/lib/community-project-pilot-policy.mjs'
 import { canonicalMetadata } from '@/lib/site-url'
 import ProjectSubmissionClient from './ProjectSubmissionClient'
 import LegacySourceRunRepairClient from './LegacySourceRunRepairClient'
@@ -132,7 +133,10 @@ export default async function BuildPage({
   const repairSubmission = eligibility.signedIn && repairId
     ? await getCommunityProjectSubmissionForOwner(repairId)
     : null
-  const repairIsAvailable = repairSubmission?.status === 'needs_repair'
+  const repairIsAvailable = (
+    repairSubmission?.status === 'needs_repair' &&
+    canSubmitCommunityProjectRepair(eligibility.status)
+  )
   if (!eligibility.signedIn || (!eligibility.eligible && !repairIsAvailable)) {
     return (
       <PilotExplanation

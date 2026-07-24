@@ -206,6 +206,10 @@ invitations while unhealthy.
 - Queued, repair-needed, or declined submissions remain until the owner
   withdraws them or an administrator removes them, after which the same purge
   windows apply.
+- A requested repair may replace private quarantined bytes while an otherwise
+  admitted member is temporarily paused by operational gates. Revoked,
+  expired, not-admitted, signed-out, or unverifiable accounts cannot upload a
+  repair; the page, server action, and database RPC enforce the same policy.
 - Direct profile or Auth-user deletion is deliberately blocked while a
   community submission still references that contributor. An account-deletion
   request must first route every submission through withdrawal/removal,

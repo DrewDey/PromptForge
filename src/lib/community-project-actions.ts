@@ -22,6 +22,7 @@ import {
   scanCommunityProjectArtifact,
   scanCommunityProjectEvidenceText,
 } from './community-project-scanner'
+import { canSubmitCommunityProjectRepair } from './community-project-pilot-policy.mjs'
 import { requireAdminAccess } from './data/shared'
 import { PUBLIC_CATALOG_CACHE_TAG } from './public-catalog-cache'
 import { createAdminClient } from './supabase/admin'
@@ -257,7 +258,11 @@ async function requireEligibleUser(repairId: string | null = null) {
   if (profileError || !profile) throw new Error('PathForge could not verify your pilot access.')
   if (membershipError) throw new Error('PathForge could not verify your pilot admission.')
   if (repairResult.error) throw new Error('PathForge could not verify the requested repair.')
-  const ownedRepairAllowed = Boolean(repairId && repairResult.data)
+  const ownedRepairAllowed = Boolean(
+    repairId &&
+    repairResult.data &&
+    canSubmitCommunityProjectRepair(eligibilityStatus),
+  )
   if ((eligibilityError || eligibilityStatus !== 'eligible') && !ownedRepairAllowed) {
     if (eligibilityError) {
       throw new Error('PathForge could not verify whether project submissions are open. Try again later.')

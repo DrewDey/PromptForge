@@ -1,11 +1,38 @@
 #!/usr/bin/env node
 
 import assert from 'node:assert/strict'
+import { AsyncLocalStorage } from 'node:async_hooks'
 import { readFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import ts from 'typescript'
 import { createPublicCatalogSingleFlight } from '../src/lib/public-catalog-single-flight.mjs'
+
+globalThis.AsyncLocalStorage ??= AsyncLocalStorage
+const require = createRequire(import.meta.url)
+const { unstable_cache: unstableCache } = require('next/cache')
+const {
+  IncrementalCache,
+} = require('next/dist/server/lib/incremental-cache/index')
+const {
+  workAsyncStorage,
+} = require('next/dist/server/app-render/work-async-storage.external')
+const {
+  workUnitAsyncStorage,
+} = require('next/dist/server/app-render/work-unit-async-storage.external')
+const {
+  getImplicitTags,
+} = require('next/dist/server/lib/implicit-tags')
+const {
+  revalidatePath,
+} = require('next/dist/server/web/spec-extension/revalidate')
+const {
+  executeRevalidates,
+} = require('next/dist/server/revalidation-utils')
+const {
+  tagsManifest,
+} = require('next/dist/server/lib/incremental-cache/tags-manifest.external')
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const read = (relativePath) => readFileSync(path.join(root, relativePath), 'utf8')
@@ -94,6 +121,134 @@ assert.equal(
   'a rejected fill must release its key for the next request',
 )
 assert.equal(retryExecutions, 2)
+
+class RuntimeProbeCacheHandler {
+  constructor() {
+    this.entries = new Map()
+  }
+
+  async get(key) {
+    return this.entries.get(key) ?? null
+  }
+
+  async set(key, value) {
+    this.entries.set(key, { value, lastModified: Date.now() })
+  }
+
+  async revalidateTag(tags) {
+    const invalidatedAt = Date.now()
+    for (const tag of Array.isArray(tags) ? tags : [tags]) {
+      tagsManifest.set(tag, {
+        ...(tagsManifest.get(tag) ?? {}),
+        expired: invalidatedAt,
+      })
+    }
+  }
+
+  resetRequestCache() {}
+}
+
+function runtimeProbeWorkStore(incrementalCache) {
+  return {
+    page: '/prompt/[id]/page',
+    route: '/prompt/[id]',
+    incrementalCache,
+    fetchCache: undefined,
+    isOnDemandRevalidate: false,
+    isDraftMode: false,
+    isStaticGeneration: false,
+    nextFetchId: 1,
+    pendingRevalidatedTags: [],
+    pendingRevalidates: {},
+    pendingRevalidateWrites: [],
+  }
+}
+
+async function runNextSoftTagRuntimeProbe() {
+  const routePath = '/prompt/pathforge-cache-runtime-probe'
+  const implicitTags = await getImplicitTags(
+    '/prompt/[id]/page',
+    routePath,
+    null,
+  )
+  const incrementalCache = new IncrementalCache({
+    fs: undefined,
+    dev: false,
+    flushToDisk: false,
+    minimalMode: false,
+    serverDistDir: undefined,
+    requestHeaders: {},
+    maxMemoryCacheSize: 0,
+    fetchCacheKeyPrefix: '',
+    CurCacheHandler: RuntimeProbeCacheHandler,
+    allowedRevalidateHeaderKeys: [],
+    getPrerenderManifest: () => ({
+      version: 4,
+      routes: {},
+      dynamicRoutes: {},
+      notFoundRoutes: [],
+      preview: {
+        previewModeId: 'runtime-probe',
+        previewModeSigningKey: 'runtime-probe',
+        previewModeEncryptionKey: 'runtime-probe',
+      },
+    }),
+  })
+  let executions = 0
+  const cachedRead = unstableCache(
+    async () => {
+      executions += 1
+      return executions
+    },
+    ['pathforge-public-catalog-soft-tag-runtime-probe'],
+    { revalidate: 300, tags: ['pathforge-public-catalog-runtime-probe'] },
+  )
+  const renderUnitStore = {
+    type: 'request',
+    phase: 'render',
+    implicitTags,
+    url: new URL(`https://pathforge.test${routePath}`),
+  }
+
+  async function render() {
+    const store = runtimeProbeWorkStore(incrementalCache)
+    const value = await workAsyncStorage.run(
+      store,
+      () => workUnitAsyncStorage.run(renderUnitStore, cachedRead),
+    )
+    await executeRevalidates(store)
+    return value
+  }
+
+  assert.equal(await render(), 1, 'the runtime probe must execute its cold cache fill')
+  assert.equal(await render(), 1, 'the runtime probe must reuse its warm soft-tagged entry')
+  assert.equal(executions, 1)
+
+  await new Promise((resolve) => setTimeout(resolve, 5))
+  const actionStore = runtimeProbeWorkStore(incrementalCache)
+  await workAsyncStorage.run(
+    actionStore,
+    () => workUnitAsyncStorage.run(
+      { ...renderUnitStore, phase: 'action' },
+      async () => {
+        revalidatePath(routePath)
+        await executeRevalidates(actionStore)
+      },
+    ),
+  )
+
+  assert.equal(
+    await render(),
+    2,
+    'Next prompt-path revalidation must be treated as a catalog-cache eviction hazard',
+  )
+  assert.equal(executions, 2)
+
+  for (const tag of implicitTags.tags) tagsManifest.delete(tag)
+  tagsManifest.delete('pathforge-public-catalog-runtime-probe')
+}
+
+await runNextSoftTagRuntimeProbe()
 
 assert.match(
   shared,
@@ -378,6 +533,11 @@ for (const engagementMutator of ['voteOnProject', 'bookmarkProject']) {
     body,
     /revalidatePath\((?:'|"|`)\/(?:paths|browse)?(?:'|"|`)\)/,
     `${engagementMutator} must not invalidate a catalog route on every engagement click`,
+  )
+  assert.doesNotMatch(
+    body,
+    /revalidatePath\(\s*`\/prompt\//,
+    `${engagementMutator} must not evict a prompt route's soft-tagged catalog entry`,
   )
 }
 

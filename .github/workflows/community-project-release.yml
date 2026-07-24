@@ -22,6 +22,7 @@ jobs:
       - run: npm run check:community-project-alert-recovery
       - run: npm run check:community-project-db
       - run: npm run check:artifact-sandbox
+      - run: npm run lint
       - run: npm run typecheck
       - run: npm run build
       - name: Verify the rendered community-project boundary

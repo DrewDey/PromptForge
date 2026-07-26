@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { SUPABASE_CONFIGURED } from './data/shared'
+import { preparedReleaseGateIsEnforced } from './prepared-release-gates-core.mjs'
 
 const PREPARED_RELEASE_GATE_TIMEOUT_MS = 2_000
 
@@ -8,7 +9,7 @@ function enforcePreparedReleaseGates() {
   // Vercel production is always fail-closed. Preview and local builds stay
   // inspectable without a production-capable bypass variable that could be
   // misconfigured and expose every prepared route.
-  return process.env.VERCEL_ENV === 'production'
+  return preparedReleaseGateIsEnforced(process.env.VERCEL_ENV)
 }
 
 async function persistedApprovedProjectExists(projectId: string) {

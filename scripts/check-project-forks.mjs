@@ -1,5 +1,9 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import ts from 'typescript'
+import {
+  inspectablePreparedForkFallbacks,
+  preparedReleaseGateIsEnforced,
+} from '../src/lib/prepared-release-gates-core.mjs'
 
 const failures = []
 
@@ -10,6 +14,52 @@ function fail(message) {
 function assert(condition, message) {
   if (!condition) fail(message)
 }
+
+const gateBlockedPreparedFork = [{
+  id: 'f25f83df-29c5-4d07-97b8-e7f6d2a902b8',
+  childRoute: '/school-desk-hp-calculator-fork-demo',
+}]
+const releaseGatedPreparedProjectIds = new Set([
+  gateBlockedPreparedFork[0].id,
+])
+const genericFallbackFork = {
+  id: 'generic-approved-fallback',
+  childRoute: '/prompt/generic-approved-fallback',
+}
+assert(
+  preparedReleaseGateIsEnforced('production'),
+  'prepared release gates must always be enforced in Vercel production',
+)
+assert(
+  !preparedReleaseGateIsEnforced('preview') &&
+  !preparedReleaseGateIsEnforced('development') &&
+  !preparedReleaseGateIsEnforced(undefined),
+  'preview and local prepared fixtures must remain inspectable',
+)
+assert(
+  inspectablePreparedForkFallbacks(
+    gateBlockedPreparedFork,
+    releaseGatedPreparedProjectIds,
+    'production',
+  ).length === 0,
+  'a production parent must not expose a fallback fork link to a release-gated child',
+)
+assert(
+  inspectablePreparedForkFallbacks(
+    gateBlockedPreparedFork,
+    releaseGatedPreparedProjectIds,
+    'preview',
+  ).length === 1,
+  'preview must retain prepared fallback forks for review',
+)
+assert(
+  inspectablePreparedForkFallbacks(
+    [genericFallbackFork],
+    releaseGatedPreparedProjectIds,
+    'production',
+  ).length === 1,
+  'production must retain non-prepared fallback forks whose generic child routes remain available',
+)
 
 function read(path) {
   if (!existsSync(path)) {
@@ -284,6 +334,7 @@ assert(objectPropertiesNamed(communityActions, 'source_project_id').length >= 1,
 const dataPath = 'src/lib/data.ts'
 const dataSource = parse(dataPath)
 assert(importHas(dataSource, './project-forks', 'filterProjectForkNetworkBySourceRun'), `${dataPath}: approved fork reads must use the shared exact-run filter`)
+assert(importHas(dataSource, './prepared-release-gates-core.mjs', 'inspectablePreparedForkFallbacks'), `${dataPath}: prepared fallback fork visibility must share the production release boundary`)
 assert(functionDeclaration(dataSource, 'limitProjectForksPerResponseSocket'), `${dataPath}: public fork reads must enforce width per exact response socket`)
 const mockForkReader = functionDeclaration(dataSource, 'getPublicMockProjectForks')
 assert(mockForkReader?.parameters.some((parameter) => ts.isIdentifier(parameter.name) && parameter.name.text === 'sourceRunId'), `${dataPath}: prepared fallback forks must be filtered by source run before width limiting`)
@@ -340,6 +391,14 @@ if (approvedForkReader) {
   }
   assert(objectPropertiesNamed(approvedForkReader, 'continuationSteps').length >= 1, `${dataPath}: approved branches must expose exact child continuation transcript/artifacts`)
   assert(objectPropertiesNamed(approvedForkReader, 'childRoute').length >= 1, `${dataPath}: approved branches must expose a stable child route`)
+  const fallbackVisibilityCalls = callsNamed(approvedForkReader, 'inspectablePreparedForkFallbacks')
+  assert(fallbackVisibilityCalls.length === 1, `${dataPath}: approved fork reads must apply the prepared fallback visibility guard exactly once`)
+  if (fallbackVisibilityCalls.length === 1) {
+    const callText = fallbackVisibilityCalls[0].getText()
+    assert(callText.includes('getPublicMockProjectForks'), `${dataPath}: the release guard must wrap prepared registry fallback forks`)
+    assert(callText.includes('PREPARED_SHOWCASE_PROJECT_IDS'), `${dataPath}: production must suppress only release-gated prepared fallback children`)
+    assert(callText.includes('process.env.VERCEL_ENV'), `${dataPath}: fallback visibility must use the actual Vercel release environment`)
+  }
 }
 
 const rendererPath = 'src/components/ProjectForkBuildPath.tsx'
@@ -495,6 +554,7 @@ for (const hook of [
 
 const preparedPath = 'src/components/PreparedSourceRunPage.tsx'
 const prepared = parse(preparedPath)
+const preparedSource = read(preparedPath)
 const preparedShowcases = jsxOpenings(prepared, 'SourceRunShowcase')
 assert(preparedShowcases.length === 1, `${preparedPath}: prepared page must have one source-run renderer`)
 if (preparedShowcases.length === 1) {
@@ -512,6 +572,11 @@ if (preparedShowcases.length === 1) {
 }
 const preparedForkReads = callsNamed(prepared, 'getApprovedProjectForks')
 assert(preparedForkReads.some((call) => call.arguments.length >= 2), `${preparedPath}: model pages must read forks using canonical project plus exact source run`)
+assert(
+  preparedSource.indexOf('preparedProjectIsPublic(project.id)') <
+  preparedSource.indexOf('getApprovedProjectForks('),
+  `${preparedPath}: a prepared child must fail closed before its fork network can render`,
+)
 assert(callsNamed(prepared, 'resolvePreparedShowcaseLineage').length >= 1, `${preparedPath}: prepared child pages must reconstruct complete nested ancestry through the shared registry resolver`)
 assert(callsNamed(prepared, 'buildProjectResponseForkHref').length >= 1, `${preparedPath}: prepared child continuations must create exact nested-fork handoffs`)
 for (const nestedEvidence of [
@@ -531,7 +596,7 @@ assert(preparedRegistry.includes('references missing source project'), `${prepar
 
 const preparedReleaseGatesPath = 'src/lib/prepared-release-gates.ts'
 const preparedReleaseGates = read(preparedReleaseGatesPath)
-assert(preparedReleaseGates.includes("process.env.VERCEL_ENV === 'production'"), `${preparedReleaseGatesPath}: Vercel production must always enforce persistence gates`)
+assert(preparedReleaseGates.includes('preparedReleaseGateIsEnforced(process.env.VERCEL_ENV)'), `${preparedReleaseGatesPath}: page and artifact gates must share the production release boundary`)
 assert(!preparedReleaseGates.includes('PATHFORGE_ALLOW_UNPUBLISHED_PREPARED_ROUTES'), `${preparedReleaseGatesPath}: no environment variable may reopen unpublished production routes`)
 
 const nestedFixturePath = 'src/app/qa/fork-lineage-grandchild-fixture/page.tsx'

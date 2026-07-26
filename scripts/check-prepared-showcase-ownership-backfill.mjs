@@ -5,6 +5,7 @@ import { existsSync, readFileSync } from 'node:fs'
 
 const FEATURED_PROJECTS_PATH = 'src/lib/featured-projects.ts'
 const PREPARED_PROJECTS_PATH = 'src/lib/prepared-showcase-projects.ts'
+const SOURCE_RUN_IMPORTER_PATH = 'scripts/import-pathforge-source-run.mjs'
 const DISPLAY_NAME_MIGRATION_PATH =
   'supabase/migrations/20260712021954_backfill_seed_profile_display_names.sql'
 
@@ -42,9 +43,27 @@ const targets = [
     artifactPath:
       'public/artifacts/school-desk-hp-10bii-calculator-claude-5-fable-max-fork.html',
     packageFile: 'school-desk-hp-10bii-calculator-claude-5-fable-max-fork.json',
-    expectedState: 'blocked_non_verbatim_response_evidence',
+    expectedState:
+      'evidence_prepared_blocked_private_source_mock_profile_and_consent_workflow',
     nonVerbatimResponsePattern:
       /Claude responded with one complete self-contained HTML code block/i,
+    rawResponsePath:
+      'public/artifacts/school-desk-hp-10bii-calculator-fable-5-max-claude-capture.html',
+    rawResponseSha256:
+      'fba5d51a27b0ea2d6c83d00d78cdbe260358edd42c0fee35a99f8918f643f78e',
+    expectedRunStartedAt: '2026-06-09T19:27:14.000Z',
+    expectedRunFinishedAt: '2026-06-09T19:43:10.000Z',
+    expectedArtifactCapturedAt: '2026-06-09T19:44:22.000Z',
+    expectedProjectCreatedAt: '2026-06-10T03:15:56.000Z',
+    expectedProjectUpdatedAt: '2026-06-10T03:42:18.000Z',
+    expectedFirstLiveAt: '2026-06-10T03:17:14.000Z',
+    expectedEvidenceScope: 'selected_published_path',
+    expectedResponseCaptureScope: 'generated_html_code_payload',
+    expectedAdminReviewStatus:
+      'evidence_prepared_blocked_pending_authorized_profile_and_public_share_consent',
+    expectedPublicStatus: 'not_public_not_published',
+    requirePreparedSourceUrlMatch: true,
+    requireSameIdPublicConsentWorkflow: true,
   },
 ]
 
@@ -89,6 +108,30 @@ function read(path) {
 
 function sha256(path) {
   return createHash('sha256').update(readFileSync(path)).digest('hex')
+}
+
+function isPublicProviderShareUrl(value) {
+  if (typeof value !== 'string' || !value.trim()) return false
+  try {
+    const url = new URL(value)
+    if (url.protocol !== 'https:' || url.search || url.hash) return false
+    const host = url.hostname.toLowerCase()
+    if (host === 'chatgpt.com') return /^\/share\/[A-Za-z0-9-]+\/?$/.test(url.pathname)
+    if (host === 'claude.ai') return /^\/share\/[A-Za-z0-9-]+\/?$/.test(url.pathname)
+    if (host === 'g.co') return /^\/gemini\/share\/[A-Za-z0-9-]+\/?$/.test(url.pathname)
+    if (host === 'gemini.google.com') return /^\/share\/[A-Za-z0-9-]+\/?$/.test(url.pathname)
+    return false
+  } catch {
+    return false
+  }
+}
+
+function isDurableProfileRegistryId(value) {
+  return (
+    typeof value === 'string' &&
+    Boolean(value.trim()) &&
+    !value.startsWith('prepared-showcase-mock-')
+  )
 }
 
 function exportBlock(source, exportName) {
@@ -137,24 +180,136 @@ function packageAudit(target) {
   }
 
   const steps = Array.isArray(pkg.steps) ? pkg.steps : []
+  const finalStep = steps.at(-1)
   const responseEvidenceVerbatim = steps.length > 0 && steps.every((step) => (
     typeof step.response_exact === 'string' &&
     step.response_exact.trim() &&
     !target.nonVerbatimResponsePattern?.test(step.response_exact)
   ))
+  let finalResponseMatchesPreservedCapture = null
+  let rawResponseSha256 = null
+  if (target.rawResponsePath) {
+    if (!existsSync(target.rawResponsePath)) {
+      fail(`${target.rawResponsePath}: preserved raw response capture is missing`)
+    }
+    rawResponseSha256 = sha256(target.rawResponsePath)
+    if (rawResponseSha256 !== target.rawResponseSha256) {
+      fail(`${target.rawResponsePath}: preserved raw response capture hash drifted`)
+    }
+    finalResponseMatchesPreservedCapture =
+      typeof finalStep?.response_exact === 'string' &&
+      finalStep.response_exact === read(target.rawResponsePath)
+  }
+
+  if (target.expectedRunStartedAt && pkg.run_started_at !== target.expectedRunStartedAt) {
+    fail(`${packagePath}: run_started_at differs from authoritative capture telemetry`)
+  }
+  if (target.expectedRunFinishedAt && pkg.run_finished_at !== target.expectedRunFinishedAt) {
+    fail(`${packagePath}: run_finished_at differs from authoritative capture telemetry`)
+  }
+  if (
+    target.expectedArtifactCapturedAt &&
+    pkg.artifact_captured_at !== target.expectedArtifactCapturedAt
+  ) {
+    fail(`${packagePath}: artifact_captured_at differs from authoritative capture telemetry`)
+  }
+  if (target.expectedEvidenceScope && pkg.evidence_scope !== target.expectedEvidenceScope) {
+    fail(`${packagePath}: evidence_scope must disclose its curated published-path boundary`)
+  }
+  if (
+    target.expectedAdminReviewStatus &&
+    pkg.admin_review_status !== target.expectedAdminReviewStatus
+  ) {
+    fail(`${packagePath}: admin_review_status must remain fail-closed`)
+  }
+  if (target.expectedPublicStatus && pkg.public_status !== target.expectedPublicStatus) {
+    fail(`${packagePath}: public_status must not claim publication`)
+  }
+  if (
+    target.expectedFirstLiveAt &&
+    !String(pkg.verification_notes ?? '').includes(target.expectedFirstLiveAt)
+  ) {
+    fail(`${packagePath}: verification_notes must preserve the first live proof timestamp`)
+  }
+
+  const sourceUrlIsPublicProviderShare = isPublicProviderShareUrl(pkg.source_url)
+  const profileRegistryIdIsDurable = isDurableProfileRegistryId(
+    pkg.submitted_by_profile_registry_id,
+  )
+  const selectedPathIsExplicit = (
+    pkg.evidence_scope === 'selected_published_path' &&
+    Array.isArray(pkg.omitted_provider_turns) &&
+    pkg.omitted_provider_turns.some((turn) => (
+      turn?.status === 'aborted_without_final_response' &&
+      turn?.included_in_published_path === false
+    ))
+  )
+  const responseCaptureNormalizationIsExplicit = (
+    pkg.response_capture_normalization?.scope === target.expectedResponseCaptureScope &&
+    pkg.response_capture_normalization?.removed_provider_ui_language_label === true &&
+    pkg.response_capture_normalization?.trimmed_outer_whitespace === true &&
+    pkg.response_capture_normalization?.appended_final_newline === true &&
+    pkg.response_capture_normalization?.provider_serialization_envelope_preserved === false
+  )
+  const promptCount = Number.isInteger(pkg.prompt_count) ? pkg.prompt_count : steps.length
+  const futureForkSourceReady = (
+    Number.isInteger(finalStep?.step_number) &&
+    promptCount === finalStep.step_number
+  )
+  const sourceRunImporter = read(SOURCE_RUN_IMPORTER_PATH)
+  const sameIdPublicConsentWorkflowAvailable = (
+    /source_visibility\s*:/.test(sourceRunImporter) &&
+    /source_publication_consent_at\s*:/.test(sourceRunImporter)
+  )
   const blockers = []
   if (!pkg.source_run_id) blockers.push('source_run_id is missing (legacy alias alone is not importer identity)')
   if (!pkg.artifact_sha256) blockers.push('artifact_sha256 is missing')
   if (!responseEvidenceVerbatim) blockers.push('response_exact contains non-verbatim summary evidence')
+  if (finalResponseMatchesPreservedCapture === false) {
+    blockers.push('successful response_exact does not match the preserved raw response bytes')
+  }
+  if (!sourceUrlIsPublicProviderShare) {
+    blockers.push('source_url is not an anonymously accessible public provider share URL')
+  }
+  if (!profileRegistryIdIsDurable) {
+    blockers.push('submitted_by_profile_registry_id is a mock or missing profile identity')
+  }
+  if (target.expectedEvidenceScope && !selectedPathIsExplicit) {
+    blockers.push('omitted aborted provider turn is not disclosed')
+  }
+  if (
+    target.expectedResponseCaptureScope &&
+    !responseCaptureNormalizationIsExplicit
+  ) {
+    blockers.push('raw response extraction normalization is not disclosed')
+  }
+  if (
+    target.requireSameIdPublicConsentWorkflow &&
+    !sameIdPublicConsentWorkflowAvailable
+  ) {
+    blockers.push(
+      'canonical importer has no authorized same-ID workflow to record public-source consent',
+    )
+  }
 
   return {
     packagePath,
     packageExists: true,
     packageSha256: sha256(packagePath),
     sourceRunIdentity,
+    sourceUrl: pkg.source_url ?? null,
     artifactSha256Actual: artifactDigest,
     artifactSha256Declared: pkg.artifact_sha256 ?? null,
     responseEvidenceVerbatim,
+    rawResponsePath: target.rawResponsePath ?? null,
+    rawResponseSha256,
+    finalResponseMatchesPreservedCapture,
+    sourceUrlIsPublicProviderShare,
+    profileRegistryIdIsDurable,
+    selectedPathIsExplicit,
+    responseCaptureNormalizationIsExplicit,
+    futureForkSourceReady,
+    sameIdPublicConsentWorkflowAvailable,
     importerReady: blockers.length === 0,
     blockers,
   }
@@ -207,10 +362,31 @@ function main() {
     if (literal(block, 'artifactPath') !== target.artifactPath.replace(/^public/, '')) {
       fail(`${PREPARED_PROJECTS_PATH}: ${target.exportName} artifactPath drifted`)
     }
+    if (
+      target.expectedProjectCreatedAt &&
+      literal(block, 'createdAt') !== target.expectedProjectCreatedAt
+    ) {
+      fail(`${PREPARED_PROJECTS_PATH}: ${target.exportName} createdAt drifted`)
+    }
+    if (
+      target.expectedProjectUpdatedAt &&
+      literal(block, 'updatedAt') !== target.expectedProjectUpdatedAt
+    ) {
+      fail(`${PREPARED_PROJECTS_PATH}: ${target.exportName} updatedAt drifted`)
+    }
     if (target.packageFile && literal(block, 'sourceRunPackageFile') !== target.packageFile) {
       fail(`${PREPARED_PROJECTS_PATH}: ${target.exportName} package declaration drifted`)
     }
     if (!existsSync(target.artifactPath)) fail(`${target.artifactPath}: missing`)
+
+    const evidence = packageAudit(target)
+    const preparedSourceUrl = literal(block, 'sourceUrl')
+    if (
+      target.requirePreparedSourceUrlMatch &&
+      preparedSourceUrl !== evidence.sourceUrl
+    ) {
+      fail(`${PREPARED_PROJECTS_PATH}: ${target.exportName} sourceUrl differs from its package`)
+    }
 
     return {
       projectId: target.projectId,
@@ -220,7 +396,8 @@ function main() {
       artifactPath: target.artifactPath,
       artifactSha256: sha256(target.artifactPath),
       expectedState: target.expectedState,
-      evidence: packageAudit(target),
+      preparedSourceUrl,
+      evidence,
     }
   })
 

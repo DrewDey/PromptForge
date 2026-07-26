@@ -235,8 +235,8 @@ export const SCHOOL_DESK_HP_CALCULATOR_FORK_SHOWCASE_PROJECT: PreparedShowcasePr
     branchIndex: 0,
     promptFamilyId: `${HP_10BII_PROJECT_ID}:${HP_10BII_PROJECT_ID}:cb968686-6546-4218-93df-14c5113b1624:step:2`,
   },
-  createdAt: '2026-06-09T16:00:00.000Z',
-  updatedAt: '2026-06-09T16:00:00.000Z',
+  createdAt: '2026-06-10T03:15:56.000Z',
+  updatedAt: '2026-06-10T03:42:18.000Z',
   steps: [
     {
       id: `${SCHOOL_DESK_HP_CALCULATOR_FORK_PROJECT_ID}-step-2`,

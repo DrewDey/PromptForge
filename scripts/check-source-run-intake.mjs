@@ -91,6 +91,9 @@ mustInclude(importer, 'sourceRunStatus', 'idempotent importer output must report
 mustInclude(importer, 'validatePackageSteps', 'importer must reject invalid step identities before dry-run or upload')
 mustInclude(importer, 'reconcileForkWithParentPackage', 'variant-aware forks must reconcile with parent package evidence when present')
 mustInclude(importer, "pkg.source_url = requireString(pkg.source_url, 'source_url')", 'importer must require a real source_url')
+mustInclude(importer, 'PUBLIC_PROVIDER_SHARE_URL_PATTERN.test(sourceUrl)', 'importer dry-runs must reject private provider conversation URLs before database intake')
+mustInclude(importer, 'Private conversation URLs are not accepted.', 'importer must explain the public provider share-link boundary')
+mustInclude(importer, "profileRegistryId.startsWith('prepared-showcase-mock-')", 'importer must reject prepared showcase mock profile identities')
 mustInclude(importer, "pkg.provider = requireString(pkg.provider, 'provider')", 'importer must require provider metadata')
 mustInclude(importer, "pkg.model = requireString(pkg.model || pkg.model_used, 'model')", 'importer must require model metadata')
 mustInclude(importer, 'Array.isArray(value)', 'importer must preserve array-style package notes instead of dropping them')
@@ -102,6 +105,8 @@ mustNotMatch(importer, /\.from\(['"`]prompts['"`]\)/, 'importer must not insert 
 mustNotMatch(importer, /\.from\(['"`]prompt_steps['"`]\)/, 'importer must not insert into prompt_steps')
 mustNotMatch(importer, /args\.submitDraft\s*=\s*true|submitDraft:\s*true|mode:\s*['"`]draft['"`]/, 'importer must not support direct pending draft mode')
 mustNotMatch(importer, /vote_count|bookmark_count|category_id:\s*category\.id|result_content:\s*pkg/, 'importer must not populate public/upvote-page fields')
+mustInclude('src/lib/source-run-package.ts', 'isSupportedCommunitySourceUrl(sourceUrl)', 'prepared publication must reject private provider conversation URLs before the database gate')
+mustInclude('src/lib/source-run-package.ts', "profileRegistryId.startsWith('prepared-showcase-mock-')", 'prepared publication must reject mock profile provenance')
 
 const packageFiles = listJsonFiles('seed-runs')
 const packagesByRunId = new Map()

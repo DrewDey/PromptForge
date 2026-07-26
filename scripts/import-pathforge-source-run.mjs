@@ -10,6 +10,8 @@ import {
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const POSTGRES_UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const PUBLIC_PROVIDER_SHARE_URL_PATTERN =
+  /^https:\/\/(chatgpt\.com\/share\/[A-Za-z0-9-]+|claude\.ai\/share\/[A-Za-z0-9-]+|g\.co\/gemini\/share\/[A-Za-z0-9-]+|gemini\.google\.com\/share\/[A-Za-z0-9-]+)\/?$/
 
 function loadEnvFile(filePath) {
   if (!existsSync(filePath)) return
@@ -107,6 +109,16 @@ function canonicalSourceUrl(value) {
     return !key.startsWith('utm_') && !['fbclid', 'gclid', 'mc_cid', 'mc_eid'].includes(key)
   }).sort()
   return `${parsed.protocol}//${hostname}${port}${pathname}${queryParts.length ? `?${queryParts.join('&')}` : ''}`
+}
+
+function requirePublicProviderShareUrl(value) {
+  const sourceUrl = requireString(value, 'source_url')
+  if (!PUBLIC_PROVIDER_SHARE_URL_PATTERN.test(sourceUrl)) {
+    throw new Error(
+      'Use a public ChatGPT, Claude, or Gemini share link without a query string or fragment. Private conversation URLs are not accepted.',
+    )
+  }
+  return sourceUrl
 }
 
 function checkedPackageSourceRunId(pkg) {
@@ -354,12 +366,18 @@ function normalizedReviewNotes(value) {
 }
 
 function buildIntakeEvidence({ pkg, forkFields }) {
+  requirePublicProviderShareUrl(pkg.source_url)
   const finalArtifactPath = requireString(pkg.final_artifact_path, 'final_artifact_path')
   const finalArtifactSha256 = requireString(pkg.artifact_sha256, 'artifact_sha256').toLowerCase()
   const profileRegistryId = requireString(
     pkg.submitted_by_profile_registry_id,
     'submitted_by_profile_registry_id',
   )
+  if (profileRegistryId.startsWith('prepared-showcase-mock-')) {
+    throw new Error(
+      'Seed package submitted_by_profile_registry_id must reference a durable authorized profile, not a prepared showcase mock.',
+    )
+  }
   if (
     !finalArtifactPath.startsWith('public/artifacts/') ||
     finalArtifactPath.includes('..') ||

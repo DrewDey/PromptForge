@@ -2,6 +2,7 @@ import 'server-only'
 import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
+import { isSupportedCommunitySourceUrl } from './community-project-contract'
 import { normalizeProjectForkSource, type ProjectForkSource } from './project-forks'
 
 export type SourceRunPackageStep = {
@@ -513,6 +514,7 @@ export function buildSourceRunIntakeEvidence(input: {
   sourceRunPackage: SourceRunPackage
   forkSource?: ProjectForkSource | null
 }): SourceRunIntakeEvidence {
+  const sourceUrl = input.sourceRunPackage.source_url?.trim()
   const provider = input.sourceRunPackage.provider?.trim()
   const model = input.sourceRunPackage.model?.trim()
   const promptCount = input.sourceRunPackage.prompt_count ?? input.sourceRunPackage.steps.length
@@ -521,6 +523,11 @@ export function buildSourceRunIntakeEvidence(input: {
   const profileRegistryId = input.sourceRunPackage.submitted_by_profile_registry_id?.trim()
   if (!provider || !model) {
     throw new Error('Prepared source-run evidence requires provider and exact model.')
+  }
+  if (!sourceUrl || !isSupportedCommunitySourceUrl(sourceUrl)) {
+    throw new Error(
+      'Prepared source-run evidence requires a public provider share URL; private conversation URLs are not accepted.',
+    )
   }
   if (!Number.isInteger(promptCount) || promptCount < 1) {
     throw new Error('Prepared source-run evidence requires a positive prompt count.')
@@ -537,6 +544,11 @@ export function buildSourceRunIntakeEvidence(input: {
   }
   if (!profileRegistryId) {
     throw new Error('Prepared source-run evidence requires a profile registry id.')
+  }
+  if (profileRegistryId.startsWith('prepared-showcase-mock-')) {
+    throw new Error(
+      'Prepared source-run evidence requires a durable authorized profile, not a prepared showcase mock.',
+    )
   }
 
   return {

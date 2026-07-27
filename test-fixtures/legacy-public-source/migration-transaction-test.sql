@@ -70,6 +70,42 @@ BEGIN
     'fork_depth', 1,
     'fork_branch_index', 0
   );
+  intake_a := jsonb_set(
+    intake_a,
+    '{intake_evidence}',
+    jsonb_build_object(
+      'schema_version', 1,
+      'provider', 'ChatGPT',
+      'model_used', 'Legacy parent fixture',
+      'model_settings', 'Fixture',
+      'prompt_count', 1,
+      'final_artifact_path', 'public/artifacts/legacy-parent-step-3.html',
+      'final_artifact_sha256', repeat('c', 64),
+      'profile_registry_id', 'legacy-builder',
+      'verification_notes', '[]'::JSONB,
+      'artifact_version_notes', '[]'::JSONB,
+      'source_inspiration_notes', '[]'::JSONB,
+      'fork', 'null'::JSONB
+    )
+  );
+  intake_b := jsonb_set(
+    intake_b,
+    '{intake_evidence}',
+    jsonb_build_object(
+      'schema_version', 1,
+      'provider', 'ChatGPT',
+      'model_used', 'Legacy child fixture',
+      'model_settings', 'Fixture',
+      'prompt_count', 1,
+      'final_artifact_path', 'public/artifacts/legacy-child-step-4.html',
+      'final_artifact_sha256', repeat('d', 64),
+      'profile_registry_id', 'legacy-builder',
+      'verification_notes', '[]'::JSONB,
+      'artifact_version_notes', '[]'::JSONB,
+      'source_inspiration_notes', '[]'::JSONB,
+      'fork', fork_b
+    )
+  );
 
   SELECT * INTO result_record
   FROM public.import_legacy_prepared_source_run(

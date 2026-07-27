@@ -124,7 +124,31 @@ BEGIN
       'notes', 'Fixture',
       'source_package_file', 'seed-runs/protected-rowan.json',
       'source_package_sha256', repeat('d', 64),
-      'intake_evidence', jsonb_build_object('schema_version', 1)
+      'intake_evidence', jsonb_build_object(
+        'schema_version', 1,
+        'provider', 'Claude',
+        'model_used', 'Fable 5 Max',
+        'model_settings', 'Fixture',
+        'prompt_count', 1,
+        'final_artifact_path', 'public/artifacts/protected-rowan.html',
+        'final_artifact_sha256', repeat('d', 64),
+        'profile_registry_id', 'pathforge-seed-503',
+        'verification_notes', jsonb_build_array('Fixture'),
+        'artifact_version_notes', '[]'::JSONB,
+        'source_inspiration_notes', '[]'::JSONB,
+        'evidence_scope', 'selected_published_path',
+        'source_access', jsonb_build_object(
+          'mode', 'authenticated_owner_session',
+          'public_share_managed_separately', TRUE,
+          'note', 'Private locator retained only as immutable intake evidence.'
+        ),
+        'response_capture_normalization', jsonb_build_object(
+          'scope', 'generated_html_code_payload',
+          'provider_serialization_envelope_preserved', FALSE
+        ),
+        'omitted_provider_turns', '[]'::JSONB,
+        'fork', 'null'::JSONB
+      )
     ),
     NULL
   );
@@ -147,7 +171,31 @@ BEGIN
       'notes', 'Fixture',
       'source_package_file', 'seed-runs/protected-house.json',
       'source_package_sha256', repeat('f', 64),
-      'intake_evidence', jsonb_build_object('schema_version', 1)
+      'intake_evidence', jsonb_build_object(
+        'schema_version', 1,
+        'provider', 'ChatGPT',
+        'model_used', 'Legacy house fixture',
+        'model_settings', 'Fixture',
+        'prompt_count', 1,
+        'final_artifact_path', 'public/artifacts/protected-house.html',
+        'final_artifact_sha256', repeat('f', 64),
+        'profile_registry_id', 'pathforge-house-projects',
+        'verification_notes', '[]'::JSONB,
+        'artifact_version_notes', '[]'::JSONB,
+        'source_inspiration_notes', '[]'::JSONB,
+        'evidence_scope', 'legacy_prepared_one_shot',
+        'source_access', jsonb_build_object(
+          'mode', 'authenticated_owner_session',
+          'public_share_managed_separately', TRUE,
+          'note', 'Private locator retained only as immutable intake evidence.'
+        ),
+        'response_capture_normalization', jsonb_build_object(
+          'scope', 'assistant_text_with_separately_preserved_attachment',
+          'provider_serialization_envelope_preserved', FALSE
+        ),
+        'omitted_provider_turns', '[]'::JSONB,
+        'fork', 'null'::JSONB
+      )
     ),
     NULL
   );
@@ -156,6 +204,46 @@ BEGIN
     OR NOT result_record.inserted THEN
     RAISE EXCEPTION 'The protected house-profile import did not pass its exact binding.';
   END IF;
+
+  BEGIN
+    PERFORM public.import_legacy_prepared_source_run(
+      '23000000-0000-4000-8000-000000000001',
+      '23000000-0000-4000-8000-000000000002',
+      jsonb_build_object(
+        'author_id', rowan,
+        'title', 'Malformed curated evidence',
+        'source_url', 'https://claude.ai/chat/malformed-curated-source',
+        'canonical_source_url', 'https://claude.ai/chat/malformed-curated-source',
+        'file_name', NULL,
+        'notes', 'Fixture',
+        'source_package_file', 'seed-runs/malformed-curated.json',
+        'source_package_sha256', repeat('a', 64),
+        'intake_evidence', jsonb_build_object(
+          'schema_version', 1,
+          'provider', 'Claude',
+          'model_used', 'Fable 5 Max',
+          'model_settings', 'Fixture',
+          'prompt_count', 1,
+          'final_artifact_path', 'public/artifacts/malformed-curated.html',
+          'final_artifact_sha256', repeat('a', 64),
+          'profile_registry_id', 'pathforge-seed-503',
+          'verification_notes', '[]'::JSONB,
+          'artifact_version_notes', '[]'::JSONB,
+          'source_inspiration_notes', '[]'::JSONB,
+          'source_access', 'not-an-object',
+          'fork', 'null'::JSONB
+        )
+      ),
+      NULL
+    );
+    RAISE EXCEPTION 'Malformed curated source-access evidence was accepted.';
+  EXCEPTION
+    WHEN OTHERS THEN
+      IF SQLERRM = 'Malformed curated source-access evidence was accepted.'
+        OR SQLERRM <> 'Prepared source-run intake evidence is malformed or incomplete.' THEN
+        RAISE;
+      END IF;
+  END;
 
   BEGIN
     PERFORM public.import_legacy_prepared_source_run(
@@ -170,7 +258,20 @@ BEGIN
         'notes', 'Fixture',
         'source_package_file', 'seed-runs/protected-wrong-author.json',
         'source_package_sha256', repeat('e', 64),
-        'intake_evidence', jsonb_build_object('schema_version', 1)
+        'intake_evidence', jsonb_build_object(
+          'schema_version', 1,
+          'provider', 'ChatGPT',
+          'model_used', 'Legacy wrong-author fixture',
+          'model_settings', 'Fixture',
+          'prompt_count', 1,
+          'final_artifact_path', 'public/artifacts/protected-wrong-author.html',
+          'final_artifact_sha256', repeat('e', 64),
+          'profile_registry_id', 'pathforge-seed-504',
+          'verification_notes', '[]'::JSONB,
+          'artifact_version_notes', '[]'::JSONB,
+          'source_inspiration_notes', '[]'::JSONB,
+          'fork', 'null'::JSONB
+        )
       ),
       NULL
     );

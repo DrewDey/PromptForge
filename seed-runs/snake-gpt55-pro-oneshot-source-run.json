@@ -4,22 +4,53 @@
   "provider": "ChatGPT",
   "model": "Latest 5.5 / Extended Pro",
   "model_settings": "ChatGPT web run using the Extended Pro lane visible during capture.",
+  "evidence_scope": "legacy_prepared_one_shot_with_separately_preserved_attachment",
   "source_url": "https://chatgpt.com/c/6a122064-6094-832a-9228-e239ce31e79b",
+  "source_url_note": "Immutable private ChatGPT locator retained only as intake evidence. The anonymously verified public share is resolved separately by source_run_id.",
+  "source_access": {
+    "mode": "authenticated_owner_session",
+    "public_share_managed_separately": true,
+    "note": "The package locator requires the captured owner session. Public rendering must use only the separately verified public-link registry, or render no outbound provider link."
+  },
+  "prepared_project_id": "8f5f4f1c-9f59-4f18-9a5e-61c4c3f4f901",
   "run_started_at": "2026-05-23T18:00:00.000Z",
   "run_finished_at": "2026-05-23T18:00:00.000Z",
+  "prompt_count": 1,
   "chain_type": "one-shot",
   "category": "personal",
   "difficulty": "beginner",
   "tags": ["snake", "game", "arcade", "html", "one-shot", "playable artifact"],
   "tools_used": ["ChatGPT", "GPT 5.5 Pro", "HTML", "Browser"],
-  "status": "verified",
+  "status": "prepared_for_service_legacy_import",
   "description": "A one-prompt ChatGPT source run that produced a playable self-contained Snake game.",
-  "agent_notes": "Built from the existing captured Snake project page data and linked ChatGPT source run. Do not replace with simulated branch data.",
+  "agent_notes": "Built from the existing captured Snake project page data and linked ChatGPT source run. The legacy project is already public under the disclosed PathForge Projects house profile; this package prepares its missing immutable source-run record without changing that byline. Public-link consent and anonymous verification remain source_run_id-scoped registry data. Do not replace with simulated branch data.",
   "final_artifact_path": "public/artifacts/snake-gpt55-pro-oneshot.html",
+  "artifact_sha256": "ae69b93214a7684f73bcb9734e72bcaf7ac37bd96dc286ad7e529017a0316992",
   "artifact_type": "html",
-  "artifact_versions": ["public/artifacts/snake-gpt55-pro-oneshot.html"],
+  "artifact_versions": [
+    {
+      "step": 1,
+      "path": "public/artifacts/snake-gpt55-pro-oneshot.html",
+      "sha256": "ae69b93214a7684f73bcb9734e72bcaf7ac37bd96dc286ad7e529017a0316992",
+      "notes": "Preserved self-contained HTML attachment from the approved legacy Snake showcase."
+    }
+  ],
+  "artifact_version_notes": [
+    {
+      "path": "public/artifacts/snake-gpt55-pro-oneshot.html",
+      "sha256": "ae69b93214a7684f73bcb9734e72bcaf7ac37bd96dc286ad7e529017a0316992",
+      "scope": "separately_preserved_attached_html"
+    }
+  ],
+  "response_capture_normalization": {
+    "scope": "assistant_text_with_separately_preserved_attachment",
+    "assistant_text_preserved": true,
+    "attached_file_body_stored_separately": true,
+    "provider_serialization_envelope_preserved": false
+  },
+  "omitted_provider_turns": [],
   "screenshots": [],
-  "verification_notes": "Verified as a public PathForge demo artifact with keyboard play, scoring, restart, and browser-mounted artifact display.",
+  "verification_notes": "The anonymous ChatGPT share matched the exact prompt and substantive assistant response. The share omitted the attached file body and filename, so public evidence is partial; the original 24,572-byte HTML attachment remains separately preserved and SHA-256 bound here. The exact model label remains PathForge-captured evidence because it was not visible on the anonymous share. The artifact was historically verified with keyboard play, scoring, restart, touch controls, and browser-mounted display.",
   "steps": [
     {
       "step_number": 1,
@@ -30,18 +61,27 @@
       "code_blocks": ["public/artifacts/snake-gpt55-pro-oneshot.html"],
       "generated_files": ["public/artifacts/snake-gpt55-pro-oneshot.html"],
       "artifact_version_path": "public/artifacts/snake-gpt55-pro-oneshot.html",
+      "artifact_sha256": "ae69b93214a7684f73bcb9734e72bcaf7ac37bd96dc286ad7e529017a0316992",
       "notes": "No follow-up prompt was needed for the original approved Snake demo."
     }
   ],
   "pathforge_submission_url": "https://prompt-forge-sandy.vercel.app/snake-demo",
   "pathforge_pending_id": "8f5f4f1c-9f59-4f18-9a5e-61c4c3f4f901",
   "submitted_by_account": "PathForge Projects",
-  "submitted_by_profile_registry_id": "pathforge-seed-001",
-  "admin_review_status": "prepared_showcase_page_ready",
+  "submitted_by_profile_registry_id": "pathforge-house-projects",
+  "recommended_seed_profile": {
+    "registry_id": "pathforge-house-projects",
+    "username": "pathforge_projects",
+    "display_name": "PathForge Projects",
+    "profile_url": "/user/pathforge_projects"
+  },
+  "source_run_id": "6a122064-6094-832a-9228-e239ce31e79b",
+  "source_run_submission_id": "6a122064-6094-832a-9228-e239ce31e79b",
+  "admin_review_status": "prepared_for_service_legacy_import_existing_public_project",
   "pathforge_draft_id": "8f5f4f1c-9f59-4f18-9a5e-61c4c3f4f901",
   "pathforge_draft_url": "https://prompt-forge-sandy.vercel.app/snake-demo",
   "vote_count": 0,
   "bookmark_count": 0,
   "comments": [],
-  "public_status": "prepared"
+  "public_status": "legacy_project_public"
 }

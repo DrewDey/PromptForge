@@ -86,6 +86,7 @@ function buildPreparedSteps(projectId: string, steps: PreparedStepInput[]): Prep
 export const SNAKE_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   id: SNAKE_PROJECT_ID,
   sourceRunId: '6a122064-6094-832a-9228-e239ce31e79b',
+  sourceRunPackageFile: 'snake-gpt55-pro-oneshot-source-run.json',
   href: '/snake-demo',
   title: 'Playable Snake Game',
   description:

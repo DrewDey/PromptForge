@@ -9,6 +9,8 @@ const PREPARED_LEGACY_SOURCE_RUNS = Object.freeze([
     username: 'RowanPierce',
     displayName: 'Rowan Pierce',
     profileUrl: '/user/RowanPierce',
+    provenanceKind: 'pathforge_seed',
+    operatorKind: 'pathforge_seed',
     authSeedMarkerRequired: true,
   }),
   Object.freeze({
@@ -21,6 +23,8 @@ const PREPARED_LEGACY_SOURCE_RUNS = Object.freeze([
     username: 'JordanWells',
     displayName: 'Jordan Wells',
     profileUrl: '/user/JordanWells',
+    provenanceKind: 'pathforge_seed',
+    operatorKind: 'pathforge_seed',
     authSeedMarkerRequired: true,
   }),
   Object.freeze({
@@ -33,6 +37,21 @@ const PREPARED_LEGACY_SOURCE_RUNS = Object.freeze([
     username: 'NoraBrooks',
     displayName: 'Nora Brooks',
     profileUrl: '/user/NoraBrooks',
+    provenanceKind: 'pathforge_seed',
+    operatorKind: 'pathforge_seed',
+    authSeedMarkerRequired: false,
+  }),
+  Object.freeze({
+    projectId: '8f5f4f1c-9f59-4f18-9a5e-61c4c3f4f901',
+    sourceRunId: '6a122064-6094-832a-9228-e239ce31e79b',
+    title: 'Playable Snake Game',
+    finalArtifactPath: 'public/artifacts/snake-gpt55-pro-oneshot.html',
+    registryId: 'pathforge-house-projects',
+    username: 'pathforge_projects',
+    displayName: 'PathForge Projects',
+    profileUrl: '/user/pathforge_projects',
+    provenanceKind: 'pathforge_team',
+    operatorKind: 'pathforge_team',
     authSeedMarkerRequired: false,
   }),
 ])
@@ -154,8 +173,10 @@ export function assertPreparedLegacyProfileBinding(binding, profile, provenanceK
   if (profile?.role !== 'user') {
     throw new Error(`Prepared legacy author ${binding.username} must have role=user.`)
   }
-  if (provenanceKind !== 'pathforge_seed') {
-    throw new Error(`Prepared legacy author ${binding.username} must have pathforge_seed provenance.`)
+  if (provenanceKind !== binding.provenanceKind) {
+    throw new Error(
+      `Prepared legacy author ${binding.username} must have ${binding.provenanceKind} provenance.`,
+    )
   }
 }
 
@@ -165,9 +186,9 @@ export function assertAuthoritativePreparedLegacyProfileBinding(binding, profile
     profile,
     profile?.provenance_kind,
   )
-  if (profile?.operator_kind !== 'pathforge_seed') {
+  if (profile?.operator_kind !== binding.operatorKind) {
     throw new Error(
-      `Prepared legacy author ${binding.username} must have a private pathforge_seed operator binding.`,
+      `Prepared legacy author ${binding.username} must have a private ${binding.operatorKind} operator binding.`,
     )
   }
   if (profile?.email_confirmed !== true) {

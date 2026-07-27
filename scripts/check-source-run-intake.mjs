@@ -151,6 +151,7 @@ const preparedPackagesByRunId = new Map([
   ['d9fa40e7-7725-4387-ad5b-14f25cf744ce', 'school-desk-hp-10bii-calculator-claude-5-fable-max-fork.json'],
   ['6a1f9bc4-c390-832f-88a5-d978d2e42577', 'pomodoro-focus-timer-chatgpt-gpt55-instant-source-run.json'],
   ['80b083bb-4f94-4411-b071-a5da731d3e2d', 'weekend-plan-checklist-chatgpt-family-road-trip-fork.json'],
+  ['6a122064-6094-832a-9228-e239ce31e79b', 'snake-gpt55-pro-oneshot-source-run.json'],
 ])
 for (const binding of preparedLegacySourceRunBindings()) {
   const packageFile = preparedPackagesByRunId.get(binding.sourceRunId)
@@ -169,7 +170,7 @@ for (const binding of preparedLegacySourceRunBindings()) {
         display_name: binding.displayName,
         role: 'user',
       },
-      'pathforge_seed',
+      binding.provenanceKind,
     )
     assertAuthoritativePreparedLegacyProfileBinding(
       binding,
@@ -177,8 +178,8 @@ for (const binding of preparedLegacySourceRunBindings()) {
         username: binding.username,
         display_name: binding.displayName,
         role: 'user',
-        provenance_kind: 'pathforge_seed',
-        operator_kind: 'pathforge_seed',
+        provenance_kind: binding.provenanceKind,
+        operator_kind: binding.operatorKind,
         email_confirmed: true,
         auth_seed_marker: true,
       },

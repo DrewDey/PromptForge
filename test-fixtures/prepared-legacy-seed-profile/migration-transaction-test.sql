@@ -9,6 +9,7 @@ DECLARE
   missing_operator UUID := '22000000-0000-4000-8000-000000000003';
   unconfirmed UUID := '22000000-0000-4000-8000-000000000004';
   administrator UUID := '22000000-0000-4000-8000-000000000005';
+  house_profile UUID := '22000000-0000-4000-8000-000000000006';
   result_record RECORD;
 BEGIN
   INSERT INTO public.profiles (id, role, username, display_name) VALUES
@@ -16,27 +17,31 @@ BEGIN
     (nora, 'user', 'NoraBrooks', 'Nora Brooks'),
     (missing_operator, 'user', 'MissingOperator', 'Missing Operator'),
     (unconfirmed, 'user', 'UnconfirmedSeed', 'Unconfirmed Seed'),
-    (administrator, 'admin', 'PreparedAdmin', 'Prepared Admin');
+    (administrator, 'admin', 'PreparedAdmin', 'Prepared Admin'),
+    (house_profile, 'user', 'pathforge_projects', 'PathForge Projects');
 
   INSERT INTO auth.users (id, email_confirmed_at, raw_app_meta_data) VALUES
     (rowan, NOW(), '{"pathforge_seed":true}'),
     (nora, NOW(), '{}'),
     (missing_operator, NOW(), '{"pathforge_seed":true}'),
     (unconfirmed, NULL, '{"pathforge_seed":true}'),
-    (administrator, NOW(), '{"pathforge_seed":true}');
+    (administrator, NOW(), '{"pathforge_seed":true}'),
+    (house_profile, NOW(), '{}');
 
   INSERT INTO public.profile_provenance (profile_id, kind) VALUES
     (rowan, 'pathforge_seed'),
     (nora, 'pathforge_seed'),
     (missing_operator, 'pathforge_seed'),
     (unconfirmed, 'pathforge_seed'),
-    (administrator, 'pathforge_seed');
+    (administrator, 'pathforge_seed'),
+    (house_profile, 'pathforge_team');
 
   INSERT INTO private.pathforge_profile_operators (profile_id, kind) VALUES
     (rowan, 'pathforge_seed'),
     (nora, 'pathforge_seed'),
     (unconfirmed, 'pathforge_seed'),
-    (administrator, 'pathforge_seed');
+    (administrator, 'pathforge_seed'),
+    (house_profile, 'pathforge_team');
 
   SELECT * INTO result_record
   FROM public.check_prepared_legacy_seed_profile_binding(
@@ -59,6 +64,19 @@ BEGIN
     OR NOT result_record.email_confirmed
     OR result_record.auth_seed_marker THEN
     RAISE EXCEPTION 'The historical seed binding did not expose its false Auth marker.';
+  END IF;
+
+  SELECT * INTO result_record
+  FROM public.check_prepared_legacy_seed_profile_binding(
+    house_profile, 'pathforge_projects', 'PathForge Projects'
+  );
+  IF result_record.profile_id IS DISTINCT FROM house_profile
+    OR result_record.role <> 'user'
+    OR result_record.provenance_kind <> 'pathforge_team'
+    OR result_record.operator_kind <> 'pathforge_team'
+    OR NOT result_record.email_confirmed
+    OR result_record.auth_seed_marker THEN
+    RAISE EXCEPTION 'The exact operated house-profile binding was not returned.';
   END IF;
 
   SELECT * INTO result_record
@@ -114,6 +132,29 @@ BEGIN
       'd9fa40e7-7725-4387-ad5b-14f25cf744ce'::UUID
     OR NOT result_record.inserted THEN
     RAISE EXCEPTION 'The exact protected Rowan import did not pass its seed-profile gate.';
+  END IF;
+
+  SELECT * INTO result_record
+  FROM public.import_legacy_prepared_source_run(
+    '6a122064-6094-832a-9228-e239ce31e79b',
+    '8f5f4f1c-9f59-4f18-9a5e-61c4c3f4f901',
+    jsonb_build_object(
+      'author_id', house_profile,
+      'title', 'Protected house-profile import',
+      'source_url', 'https://chatgpt.com/c/protected-house-source',
+      'canonical_source_url', 'https://chatgpt.com/c/protected-house-source',
+      'file_name', NULL,
+      'notes', 'Fixture',
+      'source_package_file', 'seed-runs/protected-house.json',
+      'source_package_sha256', repeat('f', 64),
+      'intake_evidence', jsonb_build_object('schema_version', 1)
+    ),
+    NULL
+  );
+  IF result_record.source_run_id IS DISTINCT FROM
+      '6a122064-6094-832a-9228-e239ce31e79b'::UUID
+    OR NOT result_record.inserted THEN
+    RAISE EXCEPTION 'The protected house-profile import did not pass its exact binding.';
   END IF;
 
   BEGIN

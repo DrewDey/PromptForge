@@ -30,6 +30,25 @@ function legacyPublicationMigrationPath() {
 
 const targets = [
   {
+    constant: 'SNAKE_PROJECT_ID',
+    exportName: 'SNAKE_SHOWCASE_PROJECT',
+    projectId: '8f5f4f1c-9f59-4f18-9a5e-61c4c3f4f901',
+    sourceRunId: '6a122064-6094-832a-9228-e239ce31e79b',
+    authorUsername: 'pathforge_projects',
+    authorDisplayName: 'PathForge Projects',
+    registryId: 'pathforge-house-projects',
+    provenanceKind: 'pathforge_team',
+    operatorKind: 'pathforge_team',
+    artifactPath: 'public/artifacts/snake-gpt55-pro-oneshot.html',
+    artifactSha256: 'ae69b93214a7684f73bcb9734e72bcaf7ac37bd96dc286ad7e529017a0316992',
+    packageFile: 'snake-gpt55-pro-oneshot-source-run.json',
+    evidenceScope: 'legacy_prepared_one_shot_with_separately_preserved_attachment',
+    responseCaptureScope: 'assistant_text_with_separately_preserved_attachment',
+    responseMode: 'assistant_text_with_attachment',
+    expectedPublicStatus: 'legacy_project_public',
+    expectPersistable: true,
+  },
+  {
     constant: 'POMODORO_TIMER_PROJECT_ID',
     exportName: 'POMODORO_TIMER_SHOWCASE_PROJECT',
     projectId: '3b9c61d8-4e27-4f0a-9c5d-2a8f1e6b7c40',
@@ -96,6 +115,7 @@ const targets = [
 
 const liveVerificationSql = `WITH targets(project_id, source_run_id, registry_id, author_username) AS (
   VALUES
+    ('8f5f4f1c-9f59-4f18-9a5e-61c4c3f4f901'::uuid, '6a122064-6094-832a-9228-e239ce31e79b'::uuid, 'pathforge-house-projects', 'pathforge_projects'),
     ('3b9c61d8-4e27-4f0a-9c5d-2a8f1e6b7c40'::uuid, '6a1f9bc4-c390-832f-88a5-d978d2e42577'::uuid, 'pathforge-seed-504', 'JordanWells'),
     ('e3f1d1a7-1d18-4a7b-ba54-045526cd2661'::uuid, '80b083bb-4f94-4411-b071-a5da731d3e2d'::uuid, 'pathforge-seed-006', 'NoraBrooks'),
     ('f25f83df-29c5-4d07-97b8-e7f6d2a902b8'::uuid, 'd9fa40e7-7725-4387-ad5b-14f25cf744ce'::uuid, 'pathforge-seed-503', 'RowanPierce')
@@ -185,7 +205,9 @@ function auditPackage(target) {
     binding.sourceRunId !== target.sourceRunId ||
     binding.registryId !== target.registryId ||
     binding.username !== target.authorUsername ||
-    binding.displayName !== target.authorDisplayName
+    binding.displayName !== target.authorDisplayName ||
+    binding.provenanceKind !== (target.provenanceKind ?? 'pathforge_seed') ||
+    binding.operatorKind !== (target.operatorKind ?? 'pathforge_seed')
   ) {
     fail(`${packagePath}: exact prepared source-run/profile binding drifted`)
   }
@@ -210,8 +232,9 @@ function auditPackage(target) {
   if (pkg.response_capture_normalization?.provider_serialization_envelope_preserved !== false) {
     fail(`${packagePath}: package must not claim a complete provider serialization envelope`)
   }
-  if (pkg.public_status !== 'not_public_not_published') {
-    fail(`${packagePath}: package must not claim publication`)
+  const expectedPublicStatus = target.expectedPublicStatus ?? 'not_public_not_published'
+  if (pkg.public_status !== expectedPublicStatus) {
+    fail(`${packagePath}: package public status drifted from its truthful release boundary`)
   }
   if (/https:\/\/(?:chatgpt\.com|claude\.ai)\/share\//.test(packageText)) {
     fail(`${packagePath}: verified public links belong only in the source-run public-link registry`)
@@ -299,6 +322,25 @@ function auditPackage(target) {
     )
     if (!excludedParentContinuation) {
       fail(`${packagePath}: parent continuation steps 4 through 6 must be explicitly excluded`)
+    }
+  }
+  if (target.responseMode === 'assistant_text_with_attachment') {
+    if (
+      pkg.steps.length !== 1 ||
+      typeof pkg.steps[0]?.response_exact !== 'string' ||
+      !pkg.steps[0].response_exact.trim()
+    ) {
+      fail(`${packagePath}: legacy one-shot assistant response evidence is missing`)
+    }
+    const preservedAttachment = pkg.artifact_version_notes?.some(
+      (entry) => (
+        entry?.path === target.artifactPath &&
+        entry?.sha256 === target.artifactSha256 &&
+        entry?.scope === 'separately_preserved_attached_html'
+      ),
+    )
+    if (!preservedAttachment) {
+      fail(`${packagePath}: separately preserved attachment evidence is missing`)
     }
   }
 
@@ -496,9 +538,14 @@ function verifyWorkflowSource() {
   }
 
   for (const target of targets) {
-    if (!engagement.includes(target.constant)) {
+    if (!target.expectPersistable && !engagement.includes(target.constant)) {
       fail(
         `${ENGAGEMENT_PATH}: ${target.constant} must stay non-persistable until its canonical row is published`,
+      )
+    }
+    if (target.expectPersistable && engagement.includes(target.constant)) {
+      fail(
+        `${ENGAGEMENT_PATH}: ${target.constant} already has a canonical row and must remain persistable`,
       )
     }
   }
@@ -519,7 +566,7 @@ function main() {
   const preparedSource = read(PREPARED_PROJECTS_PATH)
   const registeredBindings = preparedLegacySourceRunBindings()
   if (registeredBindings.length !== targets.length) {
-    fail('Prepared legacy source-run binding registry must contain exactly the three recovery targets')
+    fail('Prepared legacy source-run binding registry must contain exactly the four recovery targets')
   }
 
   const report = targets.map((target) => {

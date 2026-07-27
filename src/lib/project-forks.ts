@@ -25,6 +25,8 @@ export type ProjectForkSourceStep = {
   promptTitle: string
   promptText: string
   responseText?: string | null
+  responseLabel?: string
+  responseDisclosure?: string
   responsePackageId: string
   artifactPath?: string | null
 }

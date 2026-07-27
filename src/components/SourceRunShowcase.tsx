@@ -45,6 +45,8 @@ export type SourceRunShowcaseStep = {
   prompt: string
   response: string
   responseCopyText?: string
+  responseLabel?: string
+  responseDisclosure?: string
   artifactPath?: string | null
   artifactTitle?: string
   artifactVersions?: SourceRunShowcaseArtifactVersion[]
@@ -61,7 +63,8 @@ export type SourceRunShowcaseArtifactVersion = {
 
 export type ArtifactPackage = Pick<
   SourceRunShowcaseStep,
-  'id' | 'stepNumber' | 'title' | 'prompt' | 'response' | 'responseCopyText' | 'callout'
+  'id' | 'stepNumber' | 'title' | 'prompt' | 'response' | 'responseCopyText' |
+  'responseLabel' | 'responseDisclosure' | 'callout'
 > & {
   stepId: string
   artifactPath: string
@@ -1296,30 +1299,47 @@ function PipeNode({
 function ExactResponseBlock({
   text,
   copyText,
+  label = 'Model response',
+  disclosure,
 }: {
   text: string
   copyText: string
+  label?: string
+  disclosure?: string
 }) {
   return (
-    <details className="group/response border border-surface-200 bg-surface-50">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 bg-white px-4 py-3">
-        <span className="min-w-0 truncate font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-          Model response
-        </span>
-        <span className="shrink-0 border border-surface-300 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-surface-600 group-open/response:hidden">
-          View
-        </span>
-        <span className="hidden shrink-0 border border-surface-300 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-surface-600 group-open/response:inline-block">
-          Hide
-        </span>
-      </summary>
-      <div className="flex items-center justify-end border-t border-surface-200 bg-white px-4 py-2">
-        <CopyButton text={copyText} variant="ghost" label="Copy response" visibleLabel="Copy" />
-      </div>
-      <pre className="max-h-[360px] whitespace-pre-wrap overflow-auto p-4 text-sm leading-7 text-surface-900">
-        {text}
-      </pre>
-    </details>
+    <div data-response-capture-boundary>
+      {disclosure && (
+        <p
+          className="mb-2 border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-950"
+          data-response-capture-disclosure
+        >
+          {disclosure}
+        </p>
+      )}
+      <details className="group/response border border-surface-200 bg-surface-50">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 bg-white px-4 py-3">
+          <span
+            className="min-w-0 truncate font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500"
+            data-response-capture-label
+          >
+            {label}
+          </span>
+          <span className="shrink-0 border border-surface-300 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-surface-600 group-open/response:hidden">
+            View
+          </span>
+          <span className="hidden shrink-0 border border-surface-300 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-surface-600 group-open/response:inline-block">
+            Hide
+          </span>
+        </summary>
+        <div className="flex items-center justify-end border-t border-surface-200 bg-white px-4 py-2">
+          <CopyButton text={copyText} variant="ghost" label="Copy response" visibleLabel="Copy" />
+        </div>
+        <pre className="max-h-[360px] whitespace-pre-wrap overflow-auto p-4 text-sm leading-7 text-surface-900">
+          {text}
+        </pre>
+      </details>
+    </div>
   )
 }
 
@@ -1436,7 +1456,12 @@ function ResponsePackageCard({
           </div>
         )}
 
-        <ExactResponseBlock text={step.response} copyText={copyText} />
+        <ExactResponseBlock
+          text={step.response}
+          copyText={copyText}
+          label={step.responseLabel}
+          disclosure={step.responseDisclosure}
+        />
       </div>
     </div>
   )
@@ -1498,6 +1523,8 @@ export default function SourceRunShowcase({
             prompt: step.prompt,
             response: step.response,
             responseCopyText: step.responseCopyText,
+            responseLabel: step.responseLabel,
+            responseDisclosure: step.responseDisclosure,
             callout: step.callout,
             artifactPath: version.artifactPath,
             artifactTitle: version.artifactTitle,
@@ -1520,6 +1547,8 @@ export default function SourceRunShowcase({
           prompt: step.prompt,
           response: step.response,
           responseCopyText: step.responseCopyText,
+          responseLabel: step.responseLabel,
+          responseDisclosure: step.responseDisclosure,
           callout: step.callout,
           artifactPath: step.artifactPath,
           artifactTitle: step.artifactTitle,

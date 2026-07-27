@@ -500,6 +500,7 @@ const sourceRunProjects = [
     projectId: 'POMODORO_TIMER_PROJECT_ID',
     showcaseExport: 'POMODORO_TIMER_SHOWCASE_PROJECT',
     href: '/pomodoro-timer-demo',
+    packagePath: 'seed-runs/pomodoro-focus-timer-chatgpt-gpt55-instant-source-run.json',
     artifactPaths: [
       'public/artifacts/pomodoro-step-1.html',
       'public/artifacts/pomodoro-step-2.html',
@@ -1194,10 +1195,11 @@ for (const project of sourceRunProjects) {
   }
 
   if (project.name === 'Pomodoro Focus Timer') {
-    mustInclude(project.route, routeContent, 'generated_files:', 'Pomodoro must preserve captured and final artifacts as selectable versions')
-    mustInclude(project.route, routeContent, 'pomodoro-focus-timer-gpt55-instant.html', 'Pomodoro must keep the current public final artifact selectable')
+    mustInclude(project.route, routeContent, 'loadSourceRunPackage(', 'Pomodoro must load its immutable source-run package')
+    mustInclude(project.route, routeContent, 'pomodoro-focus-timer-chatgpt-gpt55-instant-source-run.json', 'Pomodoro route must use its registered immutable package')
     mustInclude('src/components/PreparedSourceRunPage.tsx', preparedSourceRunPage, 'isDefault', 'Pomodoro must default to the current public final artifact')
-    mustInclude(project.route, routeContent, 'response_exact: readArtifact', 'Pomodoro must use the captured HTML file as the exact response text')
+    mustNotInclude(project.route, routeContent, 'readArtifact', 'Pomodoro must not synthesize a package or hide a missing artifact')
+    mustNotInclude(project.route, routeContent, 'Artifact capture', 'Pomodoro must not replace missing evidence with an unavailable notice')
   }
 
   if (!project.packagePath) continue

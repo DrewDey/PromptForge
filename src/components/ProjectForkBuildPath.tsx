@@ -263,7 +263,7 @@ function InheritedStepCard({
         )}
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-surface-500">
-            Response {stepLabel(step.stepNumber)}
+            {step.responseLabel ?? `Response ${stepLabel(step.stepNumber)}`}
           </span>
           {isForkPoint && (
             <span className="border border-brand-orange/40 bg-white px-2 py-1 font-mono text-[9px] font-black uppercase tracking-[0.12em] text-brand-orange-ink">
@@ -271,6 +271,14 @@ function InheritedStepCard({
             </span>
           )}
         </div>
+        {step.responseDisclosure && (
+          <p
+            className="mt-2 border border-amber-200 bg-amber-50 px-2.5 py-2 text-xs leading-5 text-amber-950"
+            data-fork-response-capture-disclosure
+          >
+            {step.responseDisclosure}
+          </p>
+        )}
         <p className="mt-1 text-xs font-bold leading-5 text-surface-700">
           {isForkPoint
             ? 'This response created the branch shown here.'
@@ -531,13 +539,24 @@ function ContinuationStepCard({
           />
           <div className="mx-4 border-l-2 border-brand-orange bg-surface-50 p-3 sm:mx-5 sm:p-4">
             <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-surface-500">
-              Response {stepLabel(step.stepNumber)}
+              {step.responseLabel ?? `Response ${stepLabel(step.stepNumber)}`}
             </div>
+            {step.responseDisclosure && (
+              <p
+                className="mt-2 border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-normal leading-5 text-amber-950"
+                data-fork-continuation-capture-disclosure
+              >
+                {step.responseDisclosure}
+              </p>
+            )}
             <p className="mt-2 break-words text-sm font-bold leading-6 text-surface-700 [overflow-wrap:anywhere]">
-              {compactText(step.responseText, 'The complete response is preserved in this branch.', 180)}
+              {compactText(step.responseText, 'A captured response is preserved in this branch.', 180)}
             </p>
             <div className="mt-3">
-              <ExactText label="Show exact response" text={step.responseText} />
+              <ExactText
+                label={step.responseLabel ? `Show ${step.responseLabel.toLowerCase()}` : 'Show exact response'}
+                text={step.responseText}
+              />
             </div>
           </div>
         </div>

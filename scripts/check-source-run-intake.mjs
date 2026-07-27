@@ -3,6 +3,12 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, relative } from 'node:path'
+import {
+  assertAuthoritativePreparedLegacyProfileBinding,
+  assertPreparedLegacyPackageBinding,
+  assertPreparedLegacyProfileBinding,
+  preparedLegacySourceRunBindings,
+} from '../src/lib/prepared-legacy-source-runs.mjs'
 
 const failures = []
 
@@ -54,7 +60,7 @@ const importer = 'scripts/import-pathforge-source-run.mjs'
 mustInclude(importer, "source_run_submissions", 'importer must write only to source_run_submissions')
 mustInclude(importer, "--submit-draft has been disabled", 'importer must hard-fail the old direct draft flag')
 mustInclude(importer, 'checkedPackageSourceRunId', 'importer must centralize checked source-run identity validation')
-mustInclude(importer, 'UUID_PATTERN.test(sourceRunId)', 'importer must validate an explicitly checked source-run identity')
+mustInclude(importer, 'POSTGRES_UUID_PATTERN.test(sourceRunId)', 'importer must validate checked identities using PostgreSQL UUID acceptance')
 mustInclude(importer, 'POSTGRES_UUID_PATTERN.test(args.profileId)', 'connector handoff must accept exact PostgreSQL UUID profile identities, including seeded non-versioned values')
 mustInclude(importer, ".eq('id', checkedSourceRunId)", 'checked source-run imports must be idempotent by immutable identity')
 mustInclude(importer, 'different intake evidence', 'checked source-run identity collisions must fail closed')
@@ -72,7 +78,7 @@ mustInclude(importer, 'intake_evidence', 'package imports must persist canonical
 mustInclude(importer, "if (arg === '--emit-intake-json')", 'importer must expose the checked connector handoff mode')
 mustInclude(importer, '--emit-intake-json requires --profile-id with the exact non-admin profile UUID.', 'connector handoff must require an exact author profile UUID')
 mustInclude(importer, 'Use either --dry-run or --emit-intake-json, not both.', 'dry-run and connector handoff modes must be mutually exclusive')
-mustInclude(importer, 'console.log(JSON.stringify(buildSubmissionPayload({', 'connector handoff must emit the same canonical queue payload used by direct import')
+mustInclude(importer, 'legacyImportHandoff(preparedBinding, payload, validatedForkFields)', 'prepared connector handoff must emit the exact service-only RPC call')
 mustInclude(importer, 'Exact-run fork source is neither a published model variant nor the immutable final response of an approved prepared project.', 'exact-run imports must fail closed unless model-variant or prepared-project evidence resolves')
 for (const evidenceKey of [
   'model_used',
@@ -91,15 +97,23 @@ mustInclude(importer, 'sourceRunStatus', 'idempotent importer output must report
 mustInclude(importer, 'validatePackageSteps', 'importer must reject invalid step identities before dry-run or upload')
 mustInclude(importer, 'reconcileForkWithParentPackage', 'variant-aware forks must reconcile with parent package evidence when present')
 mustInclude(importer, "pkg.source_url = requireString(pkg.source_url, 'source_url')", 'importer must require a real source_url')
-mustInclude(importer, 'PUBLIC_PROVIDER_SHARE_URL_PATTERN.test(sourceUrl)', 'importer dry-runs must reject private provider conversation URLs before database intake')
-mustInclude(importer, 'Private conversation URLs are not accepted.', 'importer must explain the public provider share-link boundary')
+mustInclude(importer, 'if (!preparedBinding) requirePublicProviderShareUrl(pkg.source_url)', 'ordinary imports must remain public-share-only while exact prepared legacy packages preserve private evidence')
+mustInclude(importer, "'import_legacy_prepared_source_run'", 'prepared legacy import must call PM1\'s service-only RPC')
+mustInclude(importer, 'immutable_intake: immutableLegacyIntake(payload)', 'legacy RPC must receive only the immutable review intake')
+mustInclude(importer, 'immutable_fork: canonicalForkEvidence(forkFields)', 'legacy RPC must receive the exact immutable fork tuple')
+mustInclude(importer, 'Prepared legacy imports require SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY', 'prepared legacy import must refuse public-signup fallback')
+mustInclude(importer, "select('id, username, display_name, role')", 'prepared author lookup must verify public identity and non-admin role')
+mustInclude(importer, "'check_prepared_legacy_seed_profile_binding'", 'prepared author lookup must verify protected Auth/operator authority')
+mustInclude(importer, 'assertAuthoritativePreparedLegacyProfileBinding(binding, verified)', 'prepared author lookup must enforce its authoritative package profile binding')
+mustInclude(importer, 'profile.id !== args.profileId', 'prepared connector handoff must compare its requested author UUID with the verified seed profile')
+mustInclude(importer, '--profile-id must exactly match the verified prepared seed profile.', 'prepared connector handoff must fail closed on arbitrary profile UUIDs')
 mustInclude(importer, "profileRegistryId.startsWith('prepared-showcase-mock-')", 'importer must reject prepared showcase mock profile identities')
 mustInclude(importer, "pkg.provider = requireString(pkg.provider, 'provider')", 'importer must require provider metadata')
 mustInclude(importer, "pkg.model = requireString(pkg.model || pkg.model_used, 'model')", 'importer must require model metadata')
 mustInclude(importer, 'Array.isArray(value)', 'importer must preserve array-style package notes instead of dropping them')
 mustInclude(importer, '`Provider: ${provider || \'Not specified\'}`', 'importer notes must include stable provider metadata')
 mustInclude(importer, '`Model used: ${modelUsed || \'Not specified\'}`', 'importer notes must include stable model metadata')
-mustInclude(importer, "mode: 'source-run-intake'", 'importer result must identify source-run intake mode')
+mustInclude(importer, ": 'source-run-intake'", 'importer result must identify source-run intake mode')
 mustInclude(importer, 'No prompt/upvote page is created by this importer.', 'importer output must state that it does not create a prompt page')
 mustNotMatch(importer, /\.from\(['"`]prompts['"`]\)/, 'importer must not insert into prompts')
 mustNotMatch(importer, /\.from\(['"`]prompt_steps['"`]\)/, 'importer must not insert into prompt_steps')
@@ -111,6 +125,190 @@ mustInclude('src/lib/data/source-runs.ts', 'isSupportedCommunitySourceUrl(source
 mustInclude('supabase/migrations/20260726203000_legacy_public_source_grandfathering.sql', 'check_source_run_public_share_for_publication', 'prepared publication must expose the exact project/source-run share gate to the application layer')
 mustInclude('supabase/migrations/20260726203000_legacy_public_source_grandfathering.sql', "'review_only'", 'the service-only legacy import must retain private evidence without legacy public-link consent')
 mustInclude('src/lib/source-run-package.ts', "profileRegistryId.startsWith('prepared-showcase-mock-')", 'prepared publication must reject mock profile provenance')
+mustInclude('src/lib/source-run-package.ts', 'public_share_managed_separately', 'package parser must preserve the separate public-link registry boundary')
+mustInclude('src/lib/source-run-package.ts', 'publicShareManagedSeparately === undefined', 'runtime evidence must omit absent source-access keys just like JSON intake')
+mustInclude('src/lib/source-run-package.ts', 'response_capture_normalization', 'package parser must preserve curated transcript normalization')
+mustInclude('src/lib/source-run-package.ts', 'omitted_provider_turns', 'package parser must preserve omitted-turn disclosure')
+mustInclude('scripts/create-pathforge-seed-profile.mjs', 'findAuthUsersByPreparedUsername(', 'prepared provisioning must reconcile Auth-only partial identities before creating a duplicate')
+mustInclude('scripts/create-pathforge-seed-profile.mjs', 'Repair that partial account before provisioning; no duplicate was created.', 'prepared provisioning must stop on an Auth-only partial identity')
+for (const required of [
+  'CREATE OR REPLACE FUNCTION public.check_prepared_legacy_seed_profile_binding(',
+  'INNER JOIN auth.users AS auth_user',
+  'INNER JOIN private.pathforge_profile_operators AS operator',
+  "operator.kind = 'pathforge_seed'",
+  'auth_user.email_confirmed_at IS NOT NULL',
+  "auth_user.raw_app_meta_data->>'pathforge_seed'",
+]) {
+  mustInclude(
+    'supabase/migrations/20260726210000_prepared_legacy_seed_profile_binding.sql',
+    required,
+    `prepared author authority migration must include ${required}`,
+  )
+}
+
+const preparedPackagesByRunId = new Map([
+  ['d9fa40e7-7725-4387-ad5b-14f25cf744ce', 'school-desk-hp-10bii-calculator-claude-5-fable-max-fork.json'],
+  ['6a1f9bc4-c390-832f-88a5-d978d2e42577', 'pomodoro-focus-timer-chatgpt-gpt55-instant-source-run.json'],
+  ['80b083bb-4f94-4411-b071-a5da731d3e2d', 'weekend-plan-checklist-chatgpt-family-road-trip-fork.json'],
+])
+for (const binding of preparedLegacySourceRunBindings()) {
+  const packageFile = preparedPackagesByRunId.get(binding.sourceRunId)
+  if (!packageFile) {
+    failures.push(`missing exact prepared package fixture for ${binding.sourceRunId}`)
+    continue
+  }
+  const packagePath = join('seed-runs', packageFile)
+  const pkg = JSON.parse(read(packagePath))
+  try {
+    assertPreparedLegacyPackageBinding(pkg)
+    assertPreparedLegacyProfileBinding(
+      binding,
+      {
+        username: binding.username,
+        display_name: binding.displayName,
+        role: 'user',
+      },
+      'pathforge_seed',
+    )
+    assertAuthoritativePreparedLegacyProfileBinding(
+      binding,
+      {
+        username: binding.username,
+        display_name: binding.displayName,
+        role: 'user',
+        provenance_kind: 'pathforge_seed',
+        operator_kind: 'pathforge_seed',
+        email_confirmed: true,
+        auth_seed_marker: true,
+      },
+    )
+  } catch (error) {
+    failures.push(`${packagePath}: ${error instanceof Error ? error.message : String(error)}`)
+  }
+
+  for (const [label, mutate] of [
+    ['Drew reassignment', (value) => {
+      value.recommended_seed_profile.username = 'Drew'
+    }],
+    ['wrong registry id', (value) => {
+      value.submitted_by_profile_registry_id = 'pathforge-seed-001'
+    }],
+    ['wrong display name', (value) => {
+      value.recommended_seed_profile.display_name = 'Jordan Lee'
+    }],
+    ['wrong project id', (value) => {
+      value.prepared_project_id = '00000000-0000-4000-8000-000000000000'
+    }],
+    ['missing protected project id', (value) => {
+      delete value.prepared_project_id
+    }],
+    ['missing protected source-run id', (value) => {
+      delete value.source_run_id
+    }],
+    ['all protected identity fields removed', (value) => {
+      delete value.prepared_project_id
+      delete value.source_run_id
+      delete value.source_run_submission_id
+    }],
+    ...(binding.authSeedMarkerRequired
+      ? [[
+          'identity, title, and artifact markers removed',
+          (value) => {
+            delete value.prepared_project_id
+            delete value.source_run_id
+            delete value.source_run_submission_id
+            value.title = 'Changed title'
+            value.final_artifact_path = 'public/artifacts/changed.html'
+          },
+        ]]
+      : []),
+  ]) {
+    const invalid = structuredClone(pkg)
+    mutate(invalid)
+    try {
+      assertPreparedLegacyPackageBinding(invalid)
+      failures.push(`${packagePath}: ${label} fixture was accepted`)
+    } catch {
+      // Expected fail-closed result.
+    }
+  }
+  for (const [label, profile, provenance] of [
+    ['admin profile', { username: binding.username, display_name: binding.displayName, role: 'admin' }, 'pathforge_seed'],
+    ['member provenance', { username: binding.username, display_name: binding.displayName, role: 'user' }, 'member'],
+    ['wrong runtime handle', { username: 'Drew', display_name: binding.displayName, role: 'user' }, 'pathforge_seed'],
+  ]) {
+    try {
+      assertPreparedLegacyProfileBinding(binding, profile, provenance)
+      failures.push(`${packagePath}: ${label} fixture was accepted`)
+    } catch {
+      // Expected fail-closed result.
+    }
+  }
+  for (const [label, profile] of [
+    [
+      'missing private operator',
+      {
+        username: binding.username,
+        display_name: binding.displayName,
+        role: 'user',
+        provenance_kind: 'pathforge_seed',
+        operator_kind: 'member',
+        email_confirmed: true,
+        auth_seed_marker: true,
+      },
+    ],
+    [
+      'unconfirmed Auth identity',
+      {
+        username: binding.username,
+        display_name: binding.displayName,
+        role: 'user',
+        provenance_kind: 'pathforge_seed',
+        operator_kind: 'pathforge_seed',
+        email_confirmed: false,
+        auth_seed_marker: true,
+      },
+    ],
+    ...(binding.authSeedMarkerRequired
+      ? [[
+          'missing protected Auth seed marker',
+          {
+            username: binding.username,
+            display_name: binding.displayName,
+            role: 'user',
+            provenance_kind: 'pathforge_seed',
+            operator_kind: 'pathforge_seed',
+            email_confirmed: true,
+            auth_seed_marker: false,
+          },
+        ]]
+      : []),
+  ]) {
+    try {
+      assertAuthoritativePreparedLegacyProfileBinding(binding, profile)
+      failures.push(`${packagePath}: ${label} fixture was accepted`)
+    } catch {
+      // Expected fail-closed result.
+    }
+  }
+}
+
+const reusableNoraParent = JSON.parse(
+  read('seed-runs/weekend-plan-checklist-chatgpt-6prompt-fixed.json'),
+)
+try {
+  if (assertPreparedLegacyPackageBinding(reusableNoraParent) !== null) {
+    failures.push(
+      'Nora parent package must not inherit the protected Road-Trip project/run binding',
+    )
+  }
+} catch (error) {
+  failures.push(
+    `Nora parent package must remain a valid non-target seed package: ${
+      error instanceof Error ? error.message : String(error)
+    }`,
+  )
+}
 
 const packageFiles = listJsonFiles('seed-runs')
 const packagesByRunId = new Map()

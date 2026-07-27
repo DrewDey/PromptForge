@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "projectCount": 173,
+  "projectCount": 174,
   "projects": {
     "00a17dd4-5938-5ea9-866b-1355cc95376c": {
       "sourceRunPackageFile": "reader-promise-evidence-ladder-chatgpt-source-run.json",
@@ -414,6 +414,14 @@
       "sourceRunPackageFile": "word-ladder-sprint-chatgpt-source-run.json",
       "provider": "ChatGPT",
       "model": "Latest 5.5 / gpt-5-5-thinking as exposed by ChatGPT message nodes",
+      "setting": "Instant",
+      "exactness": "exact",
+      "publicLabel": "ChatGPT 5.5 · Instant"
+    },
+    "3b9c61d8-4e27-4f0a-9c5d-2a8f1e6b7c40": {
+      "sourceRunPackageFile": "pomodoro-focus-timer-chatgpt-gpt55-instant-source-run.json",
+      "provider": "ChatGPT",
+      "model": "GPT 5.5 Instant",
       "setting": "Instant",
       "exactness": "exact",
       "publicLabel": "ChatGPT 5.5 · Instant"

@@ -24,9 +24,6 @@ const MODEL_VARIANT_MANIFEST_DIRECTORY = 'seed-runs/model-variants'
 const SNAKE_CANONICAL_PROJECT_ID = '8f5f4f1c-9f59-4f18-9a5e-61c4c3f4f901'
 const SNAKE_LEGACY_PROJECT_ID = 'snake-gpt55-pro-oneshot'
 const SNAKE_ROUTE = '/snake-demo'
-const POMODORO_PROJECT_ID = '3b9c61d8-4e27-4f0a-9c5d-2a8f1e6b7c40'
-const POMODORO_ROUTE = '/pomodoro-timer-demo'
-const POMODORO_PAGE_PATH = 'src/app/pomodoro-timer-demo/page.tsx'
 
 const PUBLIC_WORDING_PATHS = [
   'src/components/SourceRunShowcase.tsx',
@@ -301,8 +298,8 @@ async function checkCatalogEvidenceResolution() {
     }
   }
 
-  if (resolvedCount !== 173) {
-    fail(`${SOURCE_EVIDENCE_PATH}: expected evidence fallback resolution for 173 package-backed projects, found ${resolvedCount}`)
+  if (resolvedCount !== 174) {
+    fail(`${SOURCE_EVIDENCE_PATH}: expected evidence fallback resolution for 174 package-backed projects, found ${resolvedCount}`)
   }
   if (curatedCount < 3) {
     fail(`${SOURCE_EVIDENCE_PATH}: expected the three reproduced claim records to remain explicitly curated`)
@@ -342,8 +339,8 @@ function checkPreparedRouteCoverage() {
 
   const projection = readJson(IDENTITY_PROJECTION_PATH)
   const projectedIds = new Set(Object.keys(projection?.projects ?? {}))
-  if (projection?.projectCount !== 173 || projectedIds.size !== 173) {
-    fail(`${IDENTITY_PROJECTION_PATH}: expected 173 checked package-backed projects`)
+  if (projection?.projectCount !== 174 || projectedIds.size !== 174) {
+    fail(`${IDENTITY_PROJECTION_PATH}: expected 174 checked package-backed projects`)
   }
   for (const projectId of projectedIds) {
     if (!routes.has(projectId)) {
@@ -352,17 +349,14 @@ function checkPreparedRouteCoverage() {
   }
 
   const routeOnlyIds = [...routes.keys()].filter((projectId) => !projectedIds.has(projectId)).sort()
-  const expectedRouteOnlyIds = [POMODORO_PROJECT_ID, SNAKE_LEGACY_PROJECT_ID].sort()
+  const expectedRouteOnlyIds = [SNAKE_LEGACY_PROJECT_ID]
   if (JSON.stringify(routeOnlyIds) !== JSON.stringify(expectedRouteOnlyIds)) {
     fail(
-      `${PROJECT_LINKS_PATH}: route-only exemptions must be exactly the Snake alias and Pomodoro inline package; found ${routeOnlyIds.join(', ') || 'none'}`,
+      `${PROJECT_LINKS_PATH}: the legacy Snake alias must be the only route-only exemption; found ${routeOnlyIds.join(', ') || 'none'}`,
     )
   }
   if (routes.get(SNAKE_LEGACY_PROJECT_ID) !== SNAKE_ROUTE) {
     fail(`${PROJECT_LINKS_PATH}: legacy Snake alias must resolve to ${SNAKE_ROUTE}`)
-  }
-  if (routes.get(POMODORO_PROJECT_ID) !== POMODORO_ROUTE) {
-    fail(`${PROJECT_LINKS_PATH}: Pomodoro inline-package exemption must resolve to ${POMODORO_ROUTE}`)
   }
 
   const recoveredHrefs = new Set(
@@ -455,13 +449,6 @@ function checkPreparedRouteCoverage() {
     /pathforgeRecordChecked:\s*Boolean\(activeForkContext\.fork\.childSourceRunId\)/,
     'unknown community fork previews must fail closed unless a checked child run identity exists',
   )
-
-  const pomodoroPage = read(POMODORO_PAGE_PATH)
-  for (const token of ['function sourceRunPackage()', 'prompt_count: project.steps.length', '<PreparedSourceRunPage']) {
-    if (!pomodoroPage.includes(token)) {
-      fail(`${POMODORO_PAGE_PATH}: inline-package exemption must preserve ${token}`)
-    }
-  }
 
   return { routeCount: routes.size, hrefCount: uniqueHrefs.size, projectedCount: projectedIds.size }
 }
@@ -641,6 +628,5 @@ console.log(
     `${variantStats.familyCount} model families, and ${variantStats.runCount} stored runs.`,
 )
 console.log(
-  'Explicit route exceptions preserved: legacy Snake aliases the canonical /snake-demo path; ' +
-    'Pomodoro keeps its checked inline package until it is migrated to a package file.',
+  'Explicit route exception preserved: legacy Snake aliases the canonical /snake-demo path.',
 )

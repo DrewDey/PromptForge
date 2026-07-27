@@ -4,22 +4,70 @@
   "provider": "chatgpt",
   "model": "ChatGPT web, Instant mode visible",
   "model_settings": "Default ChatGPT web chat; Instant mode button visible in the composer. Exact backend model name was not exposed in the UI.",
+  "evidence_scope": "selected_branch_shared_steps_1_through_3_and_child_step_4",
   "source_url": "https://chatgpt.com/c/6a208694-1e78-8327-8ec7-3b231b18169d",
+  "source_access": {
+    "mode": "authenticated_owner_session",
+    "public_share_managed_separately": true,
+    "note": "This immutable locator is shared with the historical parent intake and remains private evidence. Any verified public projection is keyed separately by this child source_run_id."
+  },
+  "prepared_project_id": "e3f1d1a7-1d18-4a7b-ba54-045526cd2661",
   "run_started_at": "2026-06-09T10:23:00-04:00",
   "run_finished_at": "2026-06-09T10:29:00-04:00",
+  "prompt_count": 4,
   "chain_type": "fork",
   "tags": ["productivity", "checklist", "travel", "fork", "local-storage"],
-  "status": "captured",
+  "status": "prepared_for_service_legacy_import",
   "final_artifact_path": "public/artifacts/weekend-plan-checklist-chatgpt-family-road-trip-fork-step-4.html",
+  "artifact_sha256": "ba8142cd693b3b4f659e1ed628e410425fde5f13b2fc749f9f9d7475e8448a1e",
   "artifact_type": "html",
   "artifact_versions": [
     {
+      "step": 1,
+      "path": "public/artifacts/weekend-plan-checklist-chatgpt-step-1.html",
+      "sha256": "67cc1813f7d2813debf2ee0c370254bb38695e310d9cee0d74089070892ee092",
+      "notes": "Shared parent branch response package 01."
+    },
+    {
+      "step": 2,
+      "path": "public/artifacts/weekend-plan-checklist-chatgpt-step-2.html",
+      "sha256": "cbc2101f162d49ee5b4123d7fa5449a3be7f7b6b2393325dee28292100e31fd7",
+      "notes": "Shared parent branch response package 02."
+    },
+    {
+      "step": 3,
+      "path": "public/artifacts/weekend-plan-checklist-chatgpt-step-3.html",
+      "sha256": "bfa61bc6da9dbcc4229bfba9f2d486a13273869ab2ee9f1dbbb7c8c70b217c2d",
+      "notes": "Shared parent response package 03 and the exact legacy fork point."
+    },
+    {
       "step": 4,
       "path": "public/artifacts/weekend-plan-checklist-chatgpt-family-road-trip-fork-step-4.html",
+      "sha256": "ba8142cd693b3b4f659e1ed628e410425fde5f13b2fc749f9f9d7475e8448a1e",
       "notes": "Actual ChatGPT branch generated from edited prompt 04 in the original source run. The branch starts after response package 03."
     }
   ],
-  "verification_notes": "Captured from the exact original ChatGPT conversation after editing prompt 04 to branch from response package 03. Artifact source was extracted from ChatGPT Code view and saved unchanged as the public artifact file.",
+  "artifact_version_notes": [
+    {
+      "scope": "selected_branch_generated_html_files",
+      "normalization": "The captured HTML files omit newline characters from the provider Code view serialization; no claim is made that they are byte-identical provider envelopes."
+    }
+  ],
+  "response_capture_normalization": {
+    "scope": "assistant_text_messages_and_separate_generated_html_files",
+    "assistant_text_preserved": true,
+    "generated_html_stored_separately": true,
+    "artifact_newlines_preserved": false,
+    "provider_serialization_envelope_preserved": false
+  },
+  "omitted_provider_turns": [
+    {
+      "scope": "parent_continuation_steps_4_through_6",
+      "included_in_selected_branch": false,
+      "notes": "The child branch ends at its edited prompt 04. Later Weekend parent steps 04 through 06 are not child ancestry and are not implied by this package."
+    }
+  ],
+  "verification_notes": "Captured from the original ChatGPT conversation after editing prompt 04 to branch from response package 03. The selected child path contains shared steps 01 through 03 and the road-trip branch step 04 only. response_exact preserves the captured assistant text messages; generated HTML is stored separately, and newline normalization means the artifact is not claimed as a byte-identical provider serialization envelope.",
   "fork_source": {
     "source_project_id": "81f2b617-2de5-404f-aa88-c94443f213bd",
     "source_project_title": "Weekend Plan Checklist",
@@ -38,6 +86,7 @@
       "code_blocks": ["public/artifacts/weekend-plan-checklist-chatgpt-step-1.html"],
       "generated_files": ["public/artifacts/weekend-plan-checklist-chatgpt-step-1.html"],
       "artifact_version_path": "public/artifacts/weekend-plan-checklist-chatgpt-step-1.html",
+      "artifact_sha256": "67cc1813f7d2813debf2ee0c370254bb38695e310d9cee0d74089070892ee092",
       "notes": "Shared original source-run prompt 01."
     },
     {
@@ -48,6 +97,7 @@
       "code_blocks": ["public/artifacts/weekend-plan-checklist-chatgpt-step-2.html"],
       "generated_files": ["public/artifacts/weekend-plan-checklist-chatgpt-step-2.html"],
       "artifact_version_path": "public/artifacts/weekend-plan-checklist-chatgpt-step-2.html",
+      "artifact_sha256": "cbc2101f162d49ee5b4123d7fa5449a3be7f7b6b2393325dee28292100e31fd7",
       "notes": "Shared original source-run prompt 02."
     },
     {
@@ -58,6 +108,7 @@
       "code_blocks": ["public/artifacts/weekend-plan-checklist-chatgpt-step-3.html"],
       "generated_files": ["public/artifacts/weekend-plan-checklist-chatgpt-step-3.html"],
       "artifact_version_path": "public/artifacts/weekend-plan-checklist-chatgpt-step-3.html",
+      "artifact_sha256": "bfa61bc6da9dbcc4229bfba9f2d486a13273869ab2ee9f1dbbb7c8c70b217c2d",
       "notes": "Fork point. The real branch starts after this response package."
     },
     {
@@ -68,12 +119,21 @@
       "code_blocks": ["public/artifacts/weekend-plan-checklist-chatgpt-family-road-trip-fork-step-4.html"],
       "generated_files": ["public/artifacts/weekend-plan-checklist-chatgpt-family-road-trip-fork-step-4.html"],
       "artifact_version_path": "public/artifacts/weekend-plan-checklist-chatgpt-family-road-trip-fork-step-4.html",
+      "artifact_sha256": "ba8142cd693b3b4f659e1ed628e410425fde5f13b2fc749f9f9d7475e8448a1e",
       "notes": "Actual fork continuation prompt 04 from the original ChatGPT conversation."
     }
   ],
-  "agent_notes": "Actual fork from the original ChatGPT source run https://chatgpt.com/c/6a208694-1e78-8327-8ec7-3b231b18169d. Prompt 04 was edited in the real chat to branch from response package 03. The resulting ChatGPT response and generated HTML were captured from the live chat and stored as the step 04 fork artifact.",
+  "agent_notes": "Prepared for the service-only legacy import; not publication-approved. Prompt 04 was edited in the real private chat to branch from response package 03. This package preserves the selected child path only and does not incorporate or imply the original Weekend parent continuation steps 04 through 06. The private locator remains immutable evidence and may collide with the parent locator by design; public rendering must use the separately verified source-run link registry.",
+  "source_run_id": "80b083bb-4f94-4411-b071-a5da731d3e2d",
   "source_run_submission_id": "80b083bb-4f94-4411-b071-a5da731d3e2d",
   "submitted_by_account": "NoraBrooks",
   "submitted_by_profile_registry_id": "pathforge-seed-006",
-  "admin_review_status": "captured local prepared source-run fork"
+  "recommended_seed_profile": {
+    "registry_id": "pathforge-seed-006",
+    "username": "NoraBrooks",
+    "display_name": "Nora Brooks",
+    "profile_url": "/user/NoraBrooks"
+  },
+  "admin_review_status": "prepared_for_service_legacy_import_pending_public_link_gate",
+  "public_status": "not_public_not_published"
 }

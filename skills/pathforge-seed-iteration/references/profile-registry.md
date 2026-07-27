@@ -33,6 +33,12 @@ Codex may automate realistic public identity selection, form navigation, public 
 Current project-owned provisioner: `scripts/create-pathforge-seed-profile.mjs`.
 Current project-owned source-run importer: `scripts/import-pathforge-source-run.mjs`. It queues source-run intake only; `--submit-draft` is disabled because page building/publishing is a separate explicit admin step.
 
+Registry IDs are sparse. Before reserving a new ID, scan all source-run
+packages and perform a read-only live intake/profile check; the last row in
+this Markdown table is not a safe next-ID allocator. A `planned` row is only a
+reservation and must not be changed to `active` until exact profile,
+non-admin role, and `pathforge_seed` provenance readback succeeds.
+
 Example dry run:
 
 ```bash
@@ -89,3 +95,5 @@ node scripts/import-pathforge-source-run.mjs --package seed-runs/decision-matrix
 | pathforge-seed-037 | PathForge | Dedicated non-admin profile used for the Porch Light Moth Maze ChatGPT source-run upload. | Blair Nolan | `/user/BlairNolan` | `blairnolan.20260605120519@pathforge-seed.example.com` | 2026-06-05 | Codex public signup importer | public-signup | active | 2026-06-05 | Submitted source-run intake `a858d84f-4280-4ecf-aec5-8480359abe54` for the five-prompt ChatGPT Instant / gpt-5-5-thinking Porch Light Moth Maze run. Generated password was not stored or printed, so this profile is an author record, not a reusable Chrome session. |
 | pathforge-seed-038 | PathForge | Dedicated non-admin profile used for the Breakroom Snack Restock Planner Gemini source-run upload. | Casey Luo | `/user/CaseyLuo` | `caseyluo.20260605120535@pathforge-seed.example.com` | 2026-06-05 | Codex public signup importer | public-signup | active | 2026-06-05 | Submitted source-run intake `0e244880-4d58-40f7-b865-d056d9f4334f` for the six-prompt Gemini Flash Breakroom Snack Restock Planner run. Step 4 was transcript-only and prompt 6 repaired a measured 390px mobile overflow issue. Generated password was not stored or printed, so this profile is an author record, not a reusable Chrome session. |
 | pathforge-seed-039 | PathForge | Dedicated non-admin profile used for the Tiny Train Platform Dispatcher Claude source-run upload. | Maren Ellis | `/user/MarenEllis` | `marenellis.20260605120547@pathforge-seed.example.com` | 2026-06-05 | Codex public signup importer | public-signup | active | 2026-06-05 | Submitted source-run intake `90bf62c0-ae89-4b03-95fd-5d1ad0f29f9f` for the five-prompt Claude Sonnet 4.6 Max Tiny Train Platform Dispatcher run. Prompt 1 was transcript-only after Claude Visualize failed; final manager verification observed keyboard dispatch and 390px no-overflow render. Generated password was not stored or printed, so this profile is an author record, not a reusable Chrome session. |
+| pathforge-seed-503 | PathForge | Reserved non-admin seed profile for the School Desk HP 10Bii+ Fable fork prepared package. | Rowan Pierce | `/user/RowanPierce` |  |  | project_provisioner | project_provisioner | planned |  | Reserved for source run `d9fa40e7-7725-4387-ad5b-14f25cf744ce` and project `f25f83df-29c5-4d07-97b8-e7f6d2a902b8`. Provision only from the exact package and retain planned status until live identity, role, and provenance readback succeeds. |
+| pathforge-seed-504 | PathForge | Reserved non-admin seed profile for the Pomodoro Focus Timer prepared package. | Jordan Wells | `/user/JordanWells` |  |  | project_provisioner | project_provisioner | planned |  | Reserved for source run `6a1f9bc4-c390-832f-88a5-d978d2e42577` and project `3b9c61d8-4e27-4f0a-9c5d-2a8f1e6b7c40`. Provision only from the exact package and retain planned status until live identity, role, and provenance readback succeeds. |

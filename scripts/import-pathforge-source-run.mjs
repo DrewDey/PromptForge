@@ -7,8 +7,11 @@ import {
   createSupabaseServerClient,
   resolveSupabaseServerKey,
 } from '../src/lib/supabase/server-client.mjs'
+import {
+  assertAuthoritativePreparedLegacyProfileBinding,
+  assertPreparedLegacyPackageBinding,
+} from '../src/lib/prepared-legacy-source-runs.mjs'
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const POSTGRES_UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const PUBLIC_PROVIDER_SHARE_URL_PATTERN =
   /^https:\/\/(chatgpt\.com\/share\/[A-Za-z0-9-]+|claude\.ai\/share\/[A-Za-z0-9-]+|g\.co\/gemini\/share\/[A-Za-z0-9-]+|gemini\.google\.com\/share\/[A-Za-z0-9-]+)\/?$/
@@ -40,6 +43,8 @@ function parseArgs(argv) {
     dryRun: false,
     emitIntakeJson: false,
     profileId: '',
+    usernameExplicit: false,
+    displayNameExplicit: false,
   }
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -62,6 +67,8 @@ function parseArgs(argv) {
     if (arg.startsWith('--') && i + 1 < argv.length) {
       const key = arg.slice(2).replace(/-([a-z])/g, (_, char) => char.toUpperCase())
       args[key] = argv[i + 1]
+      if (key === 'username') args.usernameExplicit = true
+      if (key === 'displayName') args.displayNameExplicit = true
       i += 1
     }
   }
@@ -123,10 +130,28 @@ function requirePublicProviderShareUrl(value) {
 
 function checkedPackageSourceRunId(pkg) {
   const sourceRunId = optionalString(pkg.source_run_id)
-  if (sourceRunId && !UUID_PATTERN.test(sourceRunId)) {
+  if (sourceRunId && !POSTGRES_UUID_PATTERN.test(sourceRunId)) {
     throw new Error('Seed package source_run_id must be a valid UUID when supplied.')
   }
   return sourceRunId
+}
+
+function bindPreparedLegacyIdentity(args, pkg) {
+  const binding = assertPreparedLegacyPackageBinding(pkg)
+  if (!binding) return null
+  if (args.usernameExplicit && args.username !== binding.username) {
+    throw new Error(
+      `Prepared legacy package ${binding.sourceRunId} must be imported as ${binding.username}, not ${args.username}.`,
+    )
+  }
+  if (args.displayNameExplicit && args.displayName !== binding.displayName) {
+    throw new Error(
+      `Prepared legacy package ${binding.sourceRunId} must use display name ${binding.displayName}.`,
+    )
+  }
+  args.username = binding.username
+  args.displayName = binding.displayName
+  return binding
 }
 
 function formatModelSettings(value) {
@@ -365,8 +390,8 @@ function normalizedReviewNotes(value) {
     .filter((entry) => typeof entry !== 'string' || Boolean(entry))
 }
 
-function buildIntakeEvidence({ pkg, forkFields }) {
-  requirePublicProviderShareUrl(pkg.source_url)
+function buildIntakeEvidence({ pkg, forkFields, preparedBinding = null }) {
+  if (!preparedBinding) requirePublicProviderShareUrl(pkg.source_url)
   const finalArtifactPath = requireString(pkg.final_artifact_path, 'final_artifact_path')
   const finalArtifactSha256 = requireString(pkg.artifact_sha256, 'artifact_sha256').toLowerCase()
   const profileRegistryId = requireString(
@@ -404,11 +429,31 @@ function buildIntakeEvidence({ pkg, forkFields }) {
     source_inspiration_notes: Array.isArray(pkg.source_inspiration_notes)
       ? pkg.source_inspiration_notes
       : [],
+    ...(preparedBinding ? {
+      evidence_scope: optionalString(pkg.evidence_scope) || null,
+      source_access: pkg.source_access && typeof pkg.source_access === 'object'
+        ? pkg.source_access
+        : null,
+      response_capture_normalization:
+        pkg.response_capture_normalization &&
+        typeof pkg.response_capture_normalization === 'object'
+          ? pkg.response_capture_normalization
+          : null,
+      omitted_provider_turns: Array.isArray(pkg.omitted_provider_turns)
+        ? pkg.omitted_provider_turns
+        : [],
+    } : {}),
     fork: canonicalForkEvidence(forkFields),
   }
 }
 
-function buildSubmissionPayload({ pkg, profile, context, forkFields }) {
+function buildSubmissionPayload({
+  pkg,
+  profile,
+  context,
+  forkFields,
+  preparedBinding = null,
+}) {
   const sourceUrl = requireString(pkg.source_url, 'source_url')
   return {
     ...(checkedPackageSourceRunId(pkg) ? { id: checkedPackageSourceRunId(pkg) } : {}),
@@ -420,9 +465,39 @@ function buildSubmissionPayload({ pkg, profile, context, forkFields }) {
     ...forkFields,
     source_package_file: context.sourcePackageFile,
     source_package_sha256: context.sourcePackageSha256,
-    intake_evidence: buildIntakeEvidence({ pkg, forkFields }),
+    intake_evidence: buildIntakeEvidence({ pkg, forkFields, preparedBinding }),
     author_id: profile.id,
     status: 'queued',
+  }
+}
+
+function immutableLegacyIntake(payload) {
+  return {
+    author_id: payload.author_id,
+    title: payload.title,
+    source_url: payload.source_url,
+    canonical_source_url: payload.canonical_source_url,
+    file_name: null,
+    notes: payload.notes,
+    source_package_file: payload.source_package_file,
+    source_package_sha256: payload.source_package_sha256,
+    intake_evidence: payload.intake_evidence,
+  }
+}
+
+function legacyImportRpcArgs(binding, payload, forkFields) {
+  return {
+    target_source_run_id: binding.sourceRunId,
+    expected_project_id: binding.projectId,
+    immutable_intake: immutableLegacyIntake(payload),
+    immutable_fork: canonicalForkEvidence(forkFields),
+  }
+}
+
+function legacyImportHandoff(binding, payload, forkFields) {
+  return {
+    rpc: 'import_legacy_prepared_source_run',
+    args: legacyImportRpcArgs(binding, payload, forkFields),
   }
 }
 
@@ -557,19 +632,36 @@ function makeAgentNotes(pkg) {
   ].filter(Boolean).join('\n\n')
 }
 
-function publicResult({ sourceRunId, sourceRunStatus, pkg, profile, dryRun, loginIdentifier }) {
+function publicResult({
+  sourceRunId,
+  sourceRunStatus,
+  pkg,
+  profile,
+  dryRun,
+  loginIdentifier,
+  preparedBinding = null,
+  inserted = null,
+}) {
   const status = sourceRunStatus || 'queued'
   const result = {
     dry_run: dryRun,
-    mode: 'source-run-intake',
+    mode: preparedBinding
+      ? 'legacy-prepared-source-run-intake'
+      : 'source-run-intake',
     title: pkg.title,
     status,
     author_username: profile?.username ?? null,
     author_profile_url: profile?.username ? `/user/${profile.username}` : null,
     profile_id: profile?.id ?? null,
-    source_url: pkg.source_url || null,
+    source_url: preparedBinding ? null : (pkg.source_url || null),
+    source_url_scope: preparedBinding
+      ? 'private immutable package evidence; not emitted'
+      : 'ordinary public-share intake',
     artifact_path: pkg.final_artifact_path || null,
     login_identifier: loginIdentifier ?? null,
+    expected_project_id: preparedBinding?.projectId ?? null,
+    profile_registry_id: preparedBinding?.registryId ?? null,
+    inserted,
   }
 
   return {
@@ -692,7 +784,99 @@ async function createPasswordSessionClient(supabaseUrl, anonKey, args) {
   }
 }
 
-async function insertSourceRunSubmission(importClient, pkg, profile, context) {
+async function requirePreparedLegacyProfile(importClient, binding) {
+  const { data: profile, error: profileError } = await importClient
+    .from('profiles')
+    .select('id, username, display_name, role')
+    .eq('username', binding.username)
+    .maybeSingle()
+  if (profileError) throw profileError
+  if (!profile) {
+    throw new Error(
+      `No profile found for ${binding.username}. Run scripts/create-pathforge-seed-profile.mjs with the exact package first.`,
+    )
+  }
+
+  const { data: verifiedRows, error: verifiedError } = await importClient.rpc(
+    'check_prepared_legacy_seed_profile_binding',
+    {
+      target_profile_id: profile.id,
+      expected_username: binding.username,
+      expected_display_name: binding.displayName,
+    },
+  )
+  if (verifiedError) throw verifiedError
+  const verified = Array.isArray(verifiedRows) ? verifiedRows[0] : verifiedRows
+  if (!verified || verified.profile_id !== profile.id) {
+    throw new Error(
+      `${binding.username} lacks its confirmed private seed-operator binding.`,
+    )
+  }
+  assertAuthoritativePreparedLegacyProfileBinding(binding, verified)
+  return {
+    id: verified.profile_id,
+    username: verified.username,
+    display_name: verified.display_name,
+    role: verified.role,
+  }
+}
+
+function normalizeLegacyImportResult(data, binding) {
+  const row = Array.isArray(data) ? data[0] : data
+  if (
+    !row ||
+    row.source_run_id !== binding.sourceRunId ||
+    typeof row.status !== 'string' ||
+    typeof row.inserted !== 'boolean'
+  ) {
+    throw new Error('Legacy prepared source-run RPC returned an invalid result.')
+  }
+  return {
+    id: row.source_run_id,
+    status: row.status,
+    inserted: row.inserted,
+  }
+}
+
+async function importPreparedLegacySourceRun(
+  importClient,
+  binding,
+  pkg,
+  profile,
+  context,
+) {
+  const forkFields = reconcileForkWithParentPackage(pkg, context)
+  const payload = buildSubmissionPayload({
+    pkg,
+    profile,
+    context,
+    forkFields,
+    preparedBinding: binding,
+  })
+  const { data, error } = await importClient.rpc(
+    'import_legacy_prepared_source_run',
+    legacyImportRpcArgs(binding, payload, forkFields),
+  )
+  if (error) throw error
+  return normalizeLegacyImportResult(data, binding)
+}
+
+async function insertSourceRunSubmission(
+  importClient,
+  pkg,
+  profile,
+  context,
+  preparedBinding = null,
+) {
+  if (preparedBinding) {
+    return importPreparedLegacySourceRun(
+      importClient,
+      preparedBinding,
+      pkg,
+      profile,
+      context,
+    )
+  }
   const reconciledForkFields = reconcileForkWithParentPackage(pkg, context)
   const forkFields = await resolveVariantForkFields(importClient, reconciledForkFields)
   const checkedSourceRunId = checkedPackageSourceRunId(pkg)
@@ -800,19 +984,26 @@ async function main() {
   pkg.source_url = requireString(pkg.source_url, 'source_url')
   pkg.provider = requireString(pkg.provider, 'provider')
   pkg.model = requireString(pkg.model || pkg.model_used, 'model')
+  const preparedBinding = bindPreparedLegacyIdentity(args, pkg)
   const checkedSourceRunId = checkedPackageSourceRunId(pkg)
   validatePackageSteps(pkg)
   canonicalSourceUrl(pkg.source_url)
   const validatedForkFields = reconcileForkWithParentPackage(pkg, context)
-  buildIntakeEvidence({ pkg, forkFields: validatedForkFields })
+  buildIntakeEvidence({
+    pkg,
+    forkFields: validatedForkFields,
+    preparedBinding,
+  })
 
-  if (args.emitIntakeJson) {
-    console.log(JSON.stringify(buildSubmissionPayload({
+  if (args.emitIntakeJson && !preparedBinding) {
+    const payload = buildSubmissionPayload({
       pkg,
       profile: { id: args.profileId, username: args.username },
       context,
       forkFields: validatedForkFields,
-    }), null, 2))
+      preparedBinding,
+    })
+    console.log(JSON.stringify(payload, null, 2))
     return
   }
 
@@ -826,6 +1017,7 @@ async function main() {
         username: args.username,
       },
       dryRun: true,
+      preparedBinding,
     }), null, 2))
     return
   }
@@ -836,12 +1028,20 @@ async function main() {
     process.env.SUPABASE_SECRET_KEY?.trim()
       || process.env.SUPABASE_SERVICE_ROLE_KEY?.trim(),
   )
+  if (preparedBinding && args.authMode !== 'auto') {
+    throw new Error('Prepared legacy imports require --auth-mode auto and a service-role key.')
+  }
   const serverKey = args.authMode === 'auto' && hasConfiguredServerKey
     ? resolveSupabaseServerKey(process.env)
     : null
 
   if (!supabaseUrl) throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL.')
-  if (!anonKey) throw new Error('Missing NEXT_PUBLIC_SUPABASE_ANON_KEY.')
+  if (!preparedBinding && !anonKey) throw new Error('Missing NEXT_PUBLIC_SUPABASE_ANON_KEY.')
+  if (preparedBinding && !serverKey) {
+    throw new Error(
+      'Prepared legacy imports require SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY and never fall back to public signup.',
+    )
+  }
 
   const useServiceRole = Boolean(serverKey)
   const supabase = useServiceRole
@@ -854,18 +1054,22 @@ async function main() {
   let loginIdentifier = null
 
   if (useServiceRole) {
-    const { data: foundProfile, error: profileError } = await supabase
-      .from('profiles')
-      .select('id, username')
-      .eq('username', args.username)
-      .maybeSingle()
+    if (preparedBinding) {
+      profile = await requirePreparedLegacyProfile(supabase, preparedBinding)
+    } else {
+      const { data: foundProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, username')
+        .eq('username', args.username)
+        .maybeSingle()
 
-    if (profileError) throw profileError
-    if (!foundProfile) {
-      throw new Error(`No profile found for ${args.username}. Run scripts/create-pathforge-seed-profile.mjs first.`)
+      if (profileError) throw profileError
+      if (!foundProfile) {
+        throw new Error(`No profile found for ${args.username}. Run scripts/create-pathforge-seed-profile.mjs first.`)
+      }
+
+      profile = foundProfile
     }
-
-    profile = foundProfile
   } else if (args.authMode === 'password') {
     const signedIn = await createPasswordSessionClient(supabaseUrl, anonKey, args)
     importClient = signedIn.supabase
@@ -879,7 +1083,37 @@ async function main() {
     loginIdentifier = created.createdEmail
   }
 
-  const sourceRun = await insertSourceRunSubmission(importClient, pkg, profile, context)
+  if (args.emitIntakeJson) {
+    if (!preparedBinding) {
+      throw new Error('Unexpected ordinary connector handoff state.')
+    }
+    if (profile.id !== args.profileId) {
+      throw new Error(
+        '--profile-id must exactly match the verified prepared seed profile.',
+      )
+    }
+    const payload = buildSubmissionPayload({
+      pkg,
+      profile,
+      context,
+      forkFields: validatedForkFields,
+      preparedBinding,
+    })
+    console.log(JSON.stringify(
+      legacyImportHandoff(preparedBinding, payload, validatedForkFields),
+      null,
+      2,
+    ))
+    return
+  }
+
+  const sourceRun = await insertSourceRunSubmission(
+    importClient,
+    pkg,
+    profile,
+    context,
+    preparedBinding,
+  )
 
   console.log(JSON.stringify(publicResult({
     sourceRunId: sourceRun.id,
@@ -888,6 +1122,8 @@ async function main() {
     profile,
     dryRun: false,
     loginIdentifier,
+    preparedBinding,
+    inserted: sourceRun.inserted ?? null,
   }), null, 2))
 
   if (createdEmail) {

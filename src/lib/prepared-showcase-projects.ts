@@ -300,6 +300,7 @@ export const TIC_TAC_TOE_SHOWCASE_PROJECT: PreparedShowcaseProject = {
 export const POMODORO_TIMER_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   id: POMODORO_TIMER_PROJECT_ID,
   sourceRunId: '6a1f9bc4-c390-832f-88a5-d978d2e42577',
+  sourceRunPackageFile: 'pomodoro-focus-timer-chatgpt-gpt55-instant-source-run.json',
   href: '/pomodoro-timer-demo',
   title: 'Pomodoro Focus Timer',
   description:

@@ -580,7 +580,7 @@ assert(
 assert(callsNamed(prepared, 'resolvePreparedShowcaseLineage').length >= 1, `${preparedPath}: prepared child pages must reconstruct complete nested ancestry through the shared registry resolver`)
 assert(callsNamed(prepared, 'buildProjectResponseForkHref').length >= 1, `${preparedPath}: prepared child continuations must create exact nested-fork handoffs`)
 for (const nestedEvidence of [
-  'sourceRun.prompt_count === continuation.stepNumber',
+  'defaultStepNumber(sourceRun) === continuation.stepNumber',
   'nestedArtifactPath === sourceRun.final_artifact_path',
   'forkArtifact.artifactSha256 === sourceRun.artifact_sha256',
   'currentForkSource: forkSource',

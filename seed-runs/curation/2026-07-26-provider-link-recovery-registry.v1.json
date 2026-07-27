@@ -1991,8 +1991,8 @@
       "project_title": "Pomodoro Focus Timer",
       "provider_key": "openai",
       "original_locator_evidence": {
-        "source_path": "src/lib/prepared-showcase-projects.ts",
-        "source_field": "POMODORO_TIMER_SHOWCASE_PROJECT.sourceUrl",
+        "source_path": "seed-runs/pomodoro-focus-timer-chatgpt-gpt55-instant-source-run.json",
+        "source_field": "/source_url",
         "locator_sha256": "sha256:b312ccf88314fdcb218d9676e5ebcc766ac26328c580a1e436274b39fd2f2f50",
         "locator_kind": "private_provider_conversation",
         "conversation_key": "sha256:5d0e92885a12ce876adc8df2535447caf15261aacbbbbf276f5f8441b21f88f8"

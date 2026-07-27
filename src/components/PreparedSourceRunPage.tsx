@@ -118,6 +118,67 @@ function artifactTitle(project: PreparedShowcaseProject, step: SourceRunPackageS
   return `${project.title} step ${step.step_number}`
 }
 
+function responseCapturePresentation(
+  sourceRun: SourceRunPackage,
+  step: SourceRunPackageStep,
+) {
+  const normalization = sourceRun.response_capture_normalization ?? {}
+  const scope = step.response_capture_kind ?? (
+    typeof normalization.scope === 'string' ? normalization.scope : ''
+  )
+  const disclosure: string[] = []
+  let label = 'Model response'
+
+  if (scope === 'generated_html_code_payload' || scope === 'generated_html_code_payloads') {
+    label = 'Captured generated HTML payload'
+  } else if (
+    scope === 'assistant_text' ||
+    scope === 'assistant_text_messages_and_separate_generated_html_files'
+  ) {
+    label = 'Captured assistant text'
+  }
+
+  if (sourceRun.evidence_scope === 'selected_published_path') {
+    disclosure.push('Only the selected published path is represented.')
+  } else if (sourceRun.evidence_scope === 'curated_four_step_generated_html_payload_path') {
+    disclosure.push('These four steps are a curated generated-code path.')
+  } else if (
+    sourceRun.evidence_scope ===
+      'selected_branch_shared_steps_1_through_3_and_child_step_4'
+  ) {
+    disclosure.push(
+      'This is the selected child branch: shared steps 1–3 plus child step 4.',
+    )
+  }
+
+  if (normalization.assistant_prose_preserved === false) {
+    disclosure.push('Assistant prose outside the generated HTML was not preserved.')
+  }
+  if (normalization.generated_html_stored_separately === true) {
+    disclosure.push('Generated HTML is stored separately from this assistant text.')
+  }
+  if (normalization.provider_serialization_envelope_preserved === false) {
+    disclosure.push('The full provider serialization envelope was not preserved.')
+  }
+
+  for (const omittedTurn of sourceRun.omitted_provider_turns ?? []) {
+    if (
+      omittedTurn &&
+      typeof omittedTurn === 'object' &&
+      'notes' in omittedTurn &&
+      typeof omittedTurn.notes === 'string' &&
+      omittedTurn.notes.trim()
+    ) {
+      disclosure.push(omittedTurn.notes.trim())
+    }
+  }
+
+  return {
+    label,
+    disclosure: disclosure.join(' '),
+  }
+}
+
 function artifactVersionsForStep(
   step: SourceRunPackageStep,
   project: PreparedShowcaseProject,
@@ -170,6 +231,7 @@ function toShowcaseStep(
   const isDefault =
     step.artifact_version_path === sourceRun.final_artifact_path ||
     step.generated_files?.includes(sourceRun.final_artifact_path ?? '')
+  const responseCapture = responseCapturePresentation(sourceRun, step)
 
   return {
     id: stepIdentityScope
@@ -180,6 +242,8 @@ function toShowcaseStep(
     prompt: step.prompt_exact,
     response: step.response_exact,
     responseCopyText: step.response_exact,
+    responseLabel: responseCapture.label,
+    responseDisclosure: responseCapture.disclosure,
     artifactPath: primaryArtifact?.artifactPath,
     artifactTitle: primaryArtifact?.artifactTitle ?? artifactTitle(project, step, sourceRun.final_artifact_path),
     artifactVersions,
@@ -211,6 +275,8 @@ function toForkSourceStep(step: SourceRunShowcaseStep): ProjectForkSourceStep {
     promptTitle: step.title,
     promptText: step.prompt,
     responseText: step.response,
+    responseLabel: step.responseLabel,
+    responseDisclosure: step.responseDisclosure,
     responsePackageId: step.id,
     artifactPath: step.artifactPath,
   }
@@ -360,8 +426,7 @@ function buildPreparedForkContext({
       : null
     const hasPublishableFinalEvidence = Boolean(
       nestedSourceRunId &&
-      Number.isInteger(sourceRun.prompt_count) &&
-      sourceRun.prompt_count === continuation.stepNumber &&
+      defaultStepNumber(sourceRun) === continuation.stepNumber &&
       forkArtifact?.artifactSha256 &&
       nestedArtifactPath === sourceRun.final_artifact_path &&
       forkArtifact.artifactSha256 === sourceRun.artifact_sha256,

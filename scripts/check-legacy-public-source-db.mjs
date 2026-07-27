@@ -18,7 +18,10 @@ const sqlFiles = [
   'supabase/migrations/20260724132517_distinguish_community_pilot_admission_status.sql',
   'test-fixtures/legacy-public-source/migration-prerequisites.sql',
   'supabase/migrations/20260726203000_legacy_public_source_grandfathering.sql',
+  'test-fixtures/prepared-legacy-seed-profile/migration-prerequisites.sql',
+  'supabase/migrations/20260726210000_prepared_legacy_seed_profile_binding.sql',
   'test-fixtures/legacy-public-source/migration-transaction-test.sql',
+  'test-fixtures/prepared-legacy-seed-profile/migration-transaction-test.sql',
 ]
 
 function run(program, args, options = {}) {
@@ -188,7 +191,7 @@ try {
     harness.applySql(readFileSync(path.join(root, relativePath), 'utf8'))
   }
   console.log(
-    'Legacy public-source grandfathering database check passed in disposable PostgreSQL.',
+    'Legacy public-source and prepared seed-profile database checks passed in disposable PostgreSQL.',
   )
 } finally {
   harness.cleanup()

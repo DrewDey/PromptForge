@@ -229,6 +229,10 @@ SET request.jwt.claims = '{"role":"service_role"}';
 DO $test$
 DECLARE
   link_id UUID;
+  ordinary_source_run UUID := '22000000-0000-4000-8000-000000000001';
+  ordinary_missing_consent UUID := '22000000-0000-4000-8000-000000000002';
+  ordinary_project UUID := '22000000-0000-4000-8000-000000000003';
+  published_project UUID;
 BEGIN
   IF (
     SELECT data_type
@@ -257,6 +261,121 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'The migration unexpectedly changed global source-run account deletion.';
   END IF;
+
+  INSERT INTO public.source_run_submissions (
+    id,
+    title,
+    source_url,
+    source_visibility,
+    source_publication_consent_at,
+    author_id,
+    status
+  ) VALUES (
+    ordinary_source_run,
+    'Ordinary consented source run',
+    'https://chatgpt.com/share/ordinary-consented-source',
+    'public',
+    NOW() - INTERVAL '2 minutes',
+    (SELECT builder FROM legacy_source_test_state),
+    'queued'
+  );
+
+  published_project := public.publish_prepared_showcase_source_run(
+    ordinary_source_run,
+    '{}'::JSONB,
+    NULL,
+    jsonb_build_object('id', ordinary_project)
+  );
+  IF published_project IS DISTINCT FROM ordinary_project THEN
+    RAISE EXCEPTION 'Ordinary consented intake did not reach the prepared publisher.';
+  END IF;
+  IF EXISTS (
+    SELECT 1
+    FROM public.read_public_source_run_share_link(
+      ordinary_project,
+      ordinary_source_run
+    )
+  ) THEN
+    RAISE EXCEPTION 'Ordinary publication exposed an unverified provider-link projection.';
+  END IF;
+
+  INSERT INTO public.prompts (
+    id,
+    title,
+    description,
+    content,
+    difficulty,
+    status,
+    author_id
+  ) VALUES (
+    ordinary_project,
+    'Ordinary prepared project',
+    'Fixture',
+    'Fixture',
+    'beginner',
+    'approved',
+    (SELECT builder FROM legacy_source_test_state)
+  );
+  UPDATE public.source_run_submissions
+  SET status = 'draft_created',
+      extracted_prompt_id = ordinary_project
+  WHERE id = ordinary_source_run;
+
+  link_id := public.register_source_run_public_share_link(
+    ordinary_source_run,
+    ordinary_project,
+    'https://chatgpt.com/share/ordinary-consented-source',
+    'openai',
+    NOW() - INTERVAL '2 minutes',
+    NOW() - INTERVAL '1 minute',
+    (SELECT administrator FROM legacy_source_test_state),
+    'public_exact'
+  );
+  IF link_id IS NULL OR NOT EXISTS (
+    SELECT 1
+    FROM public.read_public_source_run_share_link(
+      ordinary_project,
+      ordinary_source_run
+    )
+  ) THEN
+    RAISE EXCEPTION 'Ordinary publication could not append its verified provider-link projection.';
+  END IF;
+
+  INSERT INTO public.source_run_submissions (
+    id,
+    title,
+    source_url,
+    source_visibility,
+    source_publication_consent_at,
+    author_id,
+    status
+  ) VALUES (
+    ordinary_missing_consent,
+    'Ordinary source run missing consent',
+    'https://chatgpt.com/share/ordinary-missing-consent',
+    'review_only',
+    NULL,
+    (SELECT builder FROM legacy_source_test_state),
+    'queued'
+  );
+  BEGIN
+    PERFORM public.publish_prepared_showcase_source_run(
+      ordinary_missing_consent,
+      '{}'::JSONB,
+      NULL,
+      jsonb_build_object(
+        'id',
+        '22000000-0000-4000-8000-000000000004'::UUID
+      )
+    );
+    RAISE EXCEPTION 'Ordinary intake published without public-link consent.';
+  EXCEPTION
+    WHEN OTHERS THEN
+      IF SQLERRM = 'Ordinary intake published without public-link consent.'
+        OR SQLERRM <> 'Prepared publication requires explicit consent for the public source link.' THEN
+        RAISE;
+      END IF;
+  END;
 
   IF public.check_source_run_public_share_for_publication(
     (SELECT project_a FROM legacy_source_test_state),

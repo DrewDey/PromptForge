@@ -409,7 +409,10 @@ function verifyWorkflowSource() {
       'Prepared publication requires a separately consented and anonymously verified public source link.',
       'CREATE OR REPLACE FUNCTION public.publish_prepared_showcase_source_run(',
       "'review_only'",
-      'target_project_id,\n    target_source_run_id',
+      'target_project_id IS DISTINCT FROM legacy_expected_project_id',
+      'legacy_expected_project_id,\n        target_source_run_id',
+      "target_source_run.source_visibility IS DISTINCT FROM 'public'",
+      'Prepared publication requires explicit consent for the public source link.',
       'The active public source link belongs to a different prepared project.',
     ]) {
       if (!migration.includes(required)) {

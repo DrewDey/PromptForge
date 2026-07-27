@@ -867,8 +867,11 @@ GRANT EXECUTE ON FUNCTION public.import_legacy_prepared_source_run(
   UUID, UUID, JSONB, JSONB
 ) TO service_role;
 
--- Prepared publication now depends only on the separate exact public-share
--- record. Legacy source_url remains part of the package/hash identity check.
+-- Imported legacy packages depend on the separate exact public-share record.
+-- Ordinary public-share intake keeps the existing source-row consent gate so
+-- it can publish before an operator appends the separately verified display
+-- projection. Legacy source_url remains part of the package/hash identity
+-- check and is never used as a public fallback.
 CREATE OR REPLACE FUNCTION private.require_legacy_source_run_publication_consent()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -877,6 +880,8 @@ SET search_path = ''
 AS $$
 DECLARE
   publication_transition BOOLEAN;
+  legacy_expected_project_id UUID;
+  is_legacy_import BOOLEAN;
 BEGIN
   publication_transition := (
     (
@@ -891,18 +896,40 @@ BEGIN
           NEW.extracted_prompt_id IS NOT NULL
           AND NEW.extracted_prompt_id IS DISTINCT FROM OLD.extracted_prompt_id
         )
+        OR (
+          NEW.status = 'draft_created'
+          AND (
+            NEW.source_url IS DISTINCT FROM OLD.source_url
+            OR NEW.source_visibility IS DISTINCT FROM OLD.source_visibility
+            OR NEW.source_publication_consent_at IS DISTINCT FROM OLD.source_publication_consent_at
+          )
+        )
       )
     )
   );
-  IF publication_transition
-    AND (
-      NEW.extracted_prompt_id IS NULL
+  IF NOT publication_transition THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT legacy_import.expected_project_id
+  INTO legacy_expected_project_id
+  FROM private.legacy_prepared_source_run_imports AS legacy_import
+  WHERE legacy_import.source_run_id = NEW.id;
+  is_legacy_import := FOUND;
+
+  IF is_legacy_import THEN
+    IF NEW.extracted_prompt_id IS DISTINCT FROM legacy_expected_project_id
       OR NOT private.source_run_public_share_is_publishable(
-        NEW.extracted_prompt_id,
+        legacy_expected_project_id,
         NEW.id
-      )
-    ) THEN
-    RAISE EXCEPTION 'Prepared publication requires a separately consented and anonymously verified public source link.';
+      ) THEN
+      RAISE EXCEPTION 'Prepared publication requires a separately consented and anonymously verified public source link.';
+    END IF;
+  ELSIF NEW.source_visibility IS DISTINCT FROM 'public'
+    OR NEW.source_url IS NULL
+    OR NEW.source_publication_consent_at IS NULL
+    OR private.pathforge_public_provider_key(NEW.source_url) IS NULL THEN
+    RAISE EXCEPTION 'Prepared publication requires explicit consent for the public source link.';
   END IF;
   RETURN NEW;
 END;
@@ -922,7 +949,12 @@ CREATE TRIGGER require_legacy_source_run_publication_consent_on_insert
 DROP TRIGGER IF EXISTS require_legacy_source_run_publication_consent_on_update
   ON public.source_run_submissions;
 CREATE TRIGGER require_legacy_source_run_publication_consent_on_update
-  BEFORE UPDATE OF status, extracted_prompt_id
+  BEFORE UPDATE OF
+    status,
+    extracted_prompt_id,
+    source_url,
+    source_visibility,
+    source_publication_consent_at
   ON public.source_run_submissions
   FOR EACH ROW
   EXECUTE FUNCTION private.require_legacy_source_run_publication_consent();
@@ -949,6 +981,9 @@ SET search_path = ''
 AS $$
 DECLARE
   target_project_id UUID;
+  target_source_run public.source_run_submissions%ROWTYPE;
+  legacy_expected_project_id UUID;
+  is_legacy_import BOOLEAN;
 BEGIN
   IF COALESCE((SELECT auth.jwt() ->> 'role'), '') <> 'service_role'
     AND NOT EXISTS (
@@ -964,12 +999,36 @@ BEGIN
     RAISE EXCEPTION 'Prepared project payload is malformed or missing its identity.';
   END IF;
   target_project_id := (project_payload->>'id')::UUID;
-  IF NOT private.source_run_public_share_is_publishable(
-    target_project_id,
-    target_source_run_id
-  ) THEN
-    RAISE EXCEPTION 'Prepared publication requires a separately consented and anonymously verified public source link.';
+
+  SELECT *
+  INTO target_source_run
+  FROM public.source_run_submissions AS source_run
+  WHERE source_run.id = target_source_run_id;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Source run not found.';
   END IF;
+
+  SELECT legacy_import.expected_project_id
+  INTO legacy_expected_project_id
+  FROM private.legacy_prepared_source_run_imports AS legacy_import
+  WHERE legacy_import.source_run_id = target_source_run_id;
+  is_legacy_import := FOUND;
+
+  IF is_legacy_import THEN
+    IF target_project_id IS DISTINCT FROM legacy_expected_project_id
+      OR NOT private.source_run_public_share_is_publishable(
+        legacy_expected_project_id,
+        target_source_run_id
+      ) THEN
+      RAISE EXCEPTION 'Prepared publication requires a separately consented and anonymously verified public source link.';
+    END IF;
+  ELSIF target_source_run.source_visibility IS DISTINCT FROM 'public'
+    OR target_source_run.source_url IS NULL
+    OR target_source_run.source_publication_consent_at IS NULL
+    OR private.pathforge_public_provider_key(target_source_run.source_url) IS NULL THEN
+    RAISE EXCEPTION 'Prepared publication requires explicit consent for the public source link.';
+  END IF;
+
   RETURN private.publish_prepared_showcase_source_run(
     target_source_run_id,
     expected_intake,

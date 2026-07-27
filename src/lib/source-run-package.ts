@@ -2,12 +2,15 @@ import 'server-only'
 import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
+import { assertPreparedLegacyPackageBinding } from './prepared-legacy-source-runs.mjs'
 import { normalizeProjectForkSource, type ProjectForkSource } from './project-forks'
+import { isAllowlistedProviderEvidenceLocator } from './provider-public-share'
 
 export type SourceRunPackageStep = {
   step_number: number
   prompt_exact: string
   response_exact: string
+  response_capture_kind?: 'assistant_text' | 'generated_html_code_payload'
   artifact_version_path?: string | null
   artifact_sha256?: string
   generated_files?: string[]
@@ -16,6 +19,7 @@ export type SourceRunPackageStep = {
 export type SourceRunAccess = {
   mode: 'public_share' | 'authenticated_owner_session'
   public_share_unavailable?: boolean
+  public_share_managed_separately?: boolean
   note?: string
 }
 
@@ -26,6 +30,8 @@ export type SourceRunPackage = {
   provider?: string
   source_url?: string
   source_access?: SourceRunAccess
+  prepared_project_id?: string
+  recommended_seed_profile?: unknown
   source_run_id?: string
   run_started_at?: string
   run_finished_at?: string
@@ -35,6 +41,9 @@ export type SourceRunPackage = {
   verification_notes?: string | string[]
   artifact_version_notes?: unknown[]
   source_inspiration_notes?: unknown[]
+  evidence_scope?: string
+  response_capture_normalization?: Record<string, unknown>
+  omitted_provider_turns?: unknown[]
   final_artifact_path?: string
   pathforge_submission_url?: string
   pathforge_pending_id?: string
@@ -71,6 +80,10 @@ export type SourceRunIntakeEvidence = {
   verification_notes: string[]
   artifact_version_notes: unknown[]
   source_inspiration_notes: unknown[]
+  evidence_scope?: string | null
+  source_access?: SourceRunAccess | null
+  response_capture_normalization?: Record<string, unknown> | null
+  omitted_provider_turns?: unknown[]
   fork: SourceRunIntakeForkEvidence | null
 }
 
@@ -156,18 +169,54 @@ function optionalSourceRunAccess(source: Record<string, unknown>): SourceRunAcce
   if (publicShareUnavailable !== undefined && typeof publicShareUnavailable !== 'boolean') {
     throw new Error('Source-run package source_access.public_share_unavailable must be a boolean.')
   }
+  const publicShareManagedSeparately = value.public_share_managed_separately
+  if (
+    publicShareManagedSeparately !== undefined &&
+    typeof publicShareManagedSeparately !== 'boolean'
+  ) {
+    throw new Error(
+      'Source-run package source_access.public_share_managed_separately must be a boolean.',
+    )
+  }
   const note = value.note
   if (note !== undefined && (typeof note !== 'string' || !note.trim())) {
     throw new Error('Source-run package source_access.note must be a nonblank string.')
   }
-  if (mode === 'authenticated_owner_session' && (publicShareUnavailable !== true || typeof note !== 'string')) {
-    throw new Error('Authenticated owner-session evidence requires public_share_unavailable=true and a note.')
+  if (
+    mode === 'authenticated_owner_session' &&
+    (
+      (publicShareUnavailable !== true && publicShareManagedSeparately !== true) ||
+      typeof note !== 'string'
+    )
+  ) {
+    throw new Error(
+      'Authenticated owner-session evidence requires a note and either public_share_unavailable=true or public_share_managed_separately=true.',
+    )
+  }
+  if (publicShareUnavailable === true && publicShareManagedSeparately === true) {
+    throw new Error(
+      'Source-run access cannot claim both an unavailable public share and a separately managed public share.',
+    )
   }
   return {
     mode,
-    public_share_unavailable: publicShareUnavailable,
+    ...(publicShareUnavailable === undefined
+      ? {}
+      : { public_share_unavailable: publicShareUnavailable }),
+    ...(publicShareManagedSeparately === undefined
+      ? {}
+      : { public_share_managed_separately: publicShareManagedSeparately }),
     note: typeof note === 'string' ? note.trim() : undefined,
   }
+}
+
+function optionalJsonRecord(source: Record<string, unknown>, key: string) {
+  const value = source[key]
+  if (value === undefined || value === null) return undefined
+  if (!isRecord(value)) {
+    throw new Error(`Source-run package field "${key}" must be an object.`)
+  }
+  return value
 }
 
 function formatModelSettings(value: SourceRunPackage['model_settings']) {
@@ -288,11 +337,24 @@ function parseStep(value: unknown, index: number): SourceRunPackageStep {
   if (typeof responseExact !== 'string') {
     throw new Error(`Source-run package step ${index + 1} is missing string "response_exact".`)
   }
+  const responseCaptureKind = value.response_capture_kind
+  if (
+    responseCaptureKind !== undefined &&
+    responseCaptureKind !== 'assistant_text' &&
+    responseCaptureKind !== 'generated_html_code_payload'
+  ) {
+    throw new Error(
+      `Source-run package step ${index + 1} has an invalid "response_capture_kind".`,
+    )
+  }
 
   return {
     step_number: stepNumber,
     prompt_exact: promptExact,
     response_exact: responseExact,
+    ...(responseCaptureKind === undefined
+      ? {}
+      : { response_capture_kind: responseCaptureKind }),
     artifact_version_path: optionalString(value, 'artifact_version_path') ?? null,
     artifact_sha256: optionalString(value, 'artifact_sha256'),
     generated_files: optionalStringList(value, 'generated_files'),
@@ -513,6 +575,8 @@ export function buildSourceRunIntakeEvidence(input: {
   sourceRunPackage: SourceRunPackage
   forkSource?: ProjectForkSource | null
 }): SourceRunIntakeEvidence {
+  const sourceUrl = input.sourceRunPackage.source_url?.trim()
+  const preparedBinding = assertPreparedLegacyPackageBinding(input.sourceRunPackage)
   const provider = input.sourceRunPackage.provider?.trim()
   const model = input.sourceRunPackage.model?.trim()
   const promptCount = input.sourceRunPackage.prompt_count ?? input.sourceRunPackage.steps.length
@@ -521,6 +585,11 @@ export function buildSourceRunIntakeEvidence(input: {
   const profileRegistryId = input.sourceRunPackage.submitted_by_profile_registry_id?.trim()
   if (!provider || !model) {
     throw new Error('Prepared source-run evidence requires provider and exact model.')
+  }
+  if (!isAllowlistedProviderEvidenceLocator(sourceUrl)) {
+    throw new Error(
+      'Prepared source-run evidence requires an allowlisted secure provider locator.',
+    )
   }
   if (!Number.isInteger(promptCount) || promptCount < 1) {
     throw new Error('Prepared source-run evidence requires a positive prompt count.')
@@ -538,6 +607,11 @@ export function buildSourceRunIntakeEvidence(input: {
   if (!profileRegistryId) {
     throw new Error('Prepared source-run evidence requires a profile registry id.')
   }
+  if (profileRegistryId.startsWith('prepared-showcase-mock-')) {
+    throw new Error(
+      'Prepared source-run evidence requires a durable authorized profile, not a prepared showcase mock.',
+    )
+  }
 
   return {
     schema_version: 1,
@@ -551,6 +625,13 @@ export function buildSourceRunIntakeEvidence(input: {
     verification_notes: normalizedStringNotes(input.sourceRunPackage.verification_notes),
     artifact_version_notes: input.sourceRunPackage.artifact_version_notes ?? [],
     source_inspiration_notes: input.sourceRunPackage.source_inspiration_notes ?? [],
+    ...(preparedBinding ? {
+      evidence_scope: input.sourceRunPackage.evidence_scope?.trim() || null,
+      source_access: input.sourceRunPackage.source_access ?? null,
+      response_capture_normalization:
+        input.sourceRunPackage.response_capture_normalization ?? null,
+      omitted_provider_turns: input.sourceRunPackage.omitted_provider_turns ?? [],
+    } : {}),
     fork: canonicalSourceRunForkEvidence(input.forkSource ?? input.sourceRunPackage.fork_source),
   }
 }
@@ -586,13 +667,15 @@ function parseSourceRunPackage(value: unknown, fileName: string): SourceRunPacka
   const forkSource = parseForkSource(value.fork_source)
   reconcileVariantAwareForkWithParentPackage(forkSource, fileName)
 
-  return {
+  const parsedPackage: SourceRunPackage = {
     title: optionalString(value, 'title'),
     model: optionalString(value, 'model'),
     model_settings: optionalModelSettings(value),
     provider: optionalString(value, 'provider'),
     source_url: optionalString(value, 'source_url'),
     source_access: optionalSourceRunAccess(value),
+    prepared_project_id: optionalString(value, 'prepared_project_id'),
+    recommended_seed_profile: value.recommended_seed_profile,
     source_run_id: optionalString(value, 'source_run_id'),
     run_started_at: optionalString(value, 'run_started_at'),
     run_finished_at: optionalString(value, 'run_finished_at'),
@@ -602,6 +685,12 @@ function parseSourceRunPackage(value: unknown, fileName: string): SourceRunPacka
     verification_notes: optionalStringOrStringList(value, 'verification_notes'),
     artifact_version_notes: optionalJsonArray(value, 'artifact_version_notes'),
     source_inspiration_notes: optionalJsonArray(value, 'source_inspiration_notes'),
+    evidence_scope: optionalString(value, 'evidence_scope'),
+    response_capture_normalization: optionalJsonRecord(
+      value,
+      'response_capture_normalization',
+    ),
+    omitted_provider_turns: optionalJsonArray(value, 'omitted_provider_turns'),
     final_artifact_path: optionalString(value, 'final_artifact_path'),
     pathforge_submission_url: optionalString(value, 'pathforge_submission_url'),
     pathforge_pending_id: optionalString(value, 'pathforge_pending_id'),
@@ -610,6 +699,8 @@ function parseSourceRunPackage(value: unknown, fileName: string): SourceRunPacka
     submitted_by_profile_registry_id: optionalString(value, 'submitted_by_profile_registry_id'),
     steps: parsedSteps,
   }
+  assertPreparedLegacyPackageBinding(parsedPackage)
+  return parsedPackage
 }
 
 export function loadSourceRunPackage(fileName: string): SourceRunPackage {

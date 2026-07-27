@@ -86,6 +86,7 @@ function buildPreparedSteps(projectId: string, steps: PreparedStepInput[]): Prep
 export const SNAKE_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   id: SNAKE_PROJECT_ID,
   sourceRunId: '6a122064-6094-832a-9228-e239ce31e79b',
+  sourceRunPackageFile: 'snake-gpt55-pro-oneshot-source-run.json',
   href: '/snake-demo',
   title: 'Playable Snake Game',
   description:
@@ -235,8 +236,8 @@ export const SCHOOL_DESK_HP_CALCULATOR_FORK_SHOWCASE_PROJECT: PreparedShowcasePr
     branchIndex: 0,
     promptFamilyId: `${HP_10BII_PROJECT_ID}:${HP_10BII_PROJECT_ID}:cb968686-6546-4218-93df-14c5113b1624:step:2`,
   },
-  createdAt: '2026-06-09T16:00:00.000Z',
-  updatedAt: '2026-06-09T16:00:00.000Z',
+  createdAt: '2026-06-10T03:15:56.000Z',
+  updatedAt: '2026-06-10T03:42:18.000Z',
   steps: [
     {
       id: `${SCHOOL_DESK_HP_CALCULATOR_FORK_PROJECT_ID}-step-2`,
@@ -300,6 +301,7 @@ export const TIC_TAC_TOE_SHOWCASE_PROJECT: PreparedShowcaseProject = {
 export const POMODORO_TIMER_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   id: POMODORO_TIMER_PROJECT_ID,
   sourceRunId: '6a1f9bc4-c390-832f-88a5-d978d2e42577',
+  sourceRunPackageFile: 'pomodoro-focus-timer-chatgpt-gpt55-instant-source-run.json',
   href: '/pomodoro-timer-demo',
   title: 'Pomodoro Focus Timer',
   description:

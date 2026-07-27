@@ -500,6 +500,7 @@ const sourceRunProjects = [
     projectId: 'POMODORO_TIMER_PROJECT_ID',
     showcaseExport: 'POMODORO_TIMER_SHOWCASE_PROJECT',
     href: '/pomodoro-timer-demo',
+    packagePath: 'seed-runs/pomodoro-focus-timer-chatgpt-gpt55-instant-source-run.json',
     artifactPaths: [
       'public/artifacts/pomodoro-step-1.html',
       'public/artifacts/pomodoro-step-2.html',
@@ -998,7 +999,7 @@ mustInclude(sourceEvidenceFooter, sourceEvidenceFooterContent, 'evidence.provide
 mustInclude(sourceEvidenceFooter, sourceEvidenceFooterContent, 'data-source-access={evidence.accessState}', 'evidence footer must always render source access')
 mustInclude(sourceEvidenceFooter, sourceEvidenceFooterContent, 'evidence.recordLabel &&', 'evidence footer must conditionally render record scope')
 mustInclude(sourceEvidenceFooter, sourceEvidenceFooterContent, 'data-model-proof={evidence.modelProof}', 'evidence footer must always render model proof')
-mustInclude(sourceEvidenceFooter, sourceEvidenceFooterContent, '{sourceRunHref && (', 'evidence footer must condition only the external link on provider URL availability')
+mustInclude(sourceEvidenceFooter, sourceEvidenceFooterContent, '{publicShareHref && (', 'evidence footer must condition the external link on a verified public-share URL and access state')
 mustNotInclude(sharedComponent, sharedComponentContent, '<ArtifactCodeBlock', 'shared showcase must not dump generated HTML into the public response path')
 mustNotInclude(sharedComponent, sharedComponentContent, '<SourceLink', 'shared showcase must not repeat provider links inside every response package')
 mustNotInclude(sharedComponent, sharedComponentContent, 'pathforgeSourceRunUrl', 'shared showcase must not expose admin source-run record links publicly')
@@ -1151,7 +1152,7 @@ for (const project of sourceRunProjects) {
     mustNotInclude(project.route, routeContent, 'route=', `${project.name} prepared wrapper must use the registry href instead of a duplicate route prop`)
   }
   mustInclude(project.route, routeShellContent, 'defaultStepNumber', `${project.name} must explicitly default the mounted artifact`)
-  mustInclude(project.route, routeShellContent, 'sourceRunUrl=', `${project.name} must pass the full provider source-run link to the shared showcase`)
+  mustInclude(project.route, routeShellContent, 'sourceRunUrl=', `${project.name} must pass only the nullable resolved public-share link to the shared showcase`)
   mustInclude(project.route, routeShellContent, 'ProjectEngagementBar', `${project.name} must keep the public project shell`)
   mustInclude(project.route, routeShellContent, 'ProjectCommunityPanel', `${project.name} must keep the community panel`)
 
@@ -1194,10 +1195,11 @@ for (const project of sourceRunProjects) {
   }
 
   if (project.name === 'Pomodoro Focus Timer') {
-    mustInclude(project.route, routeContent, 'generated_files:', 'Pomodoro must preserve captured and final artifacts as selectable versions')
-    mustInclude(project.route, routeContent, 'pomodoro-focus-timer-gpt55-instant.html', 'Pomodoro must keep the current public final artifact selectable')
+    mustInclude(project.route, routeContent, 'loadSourceRunPackage(', 'Pomodoro must load its immutable source-run package')
+    mustInclude(project.route, routeContent, 'pomodoro-focus-timer-chatgpt-gpt55-instant-source-run.json', 'Pomodoro route must use its registered immutable package')
     mustInclude('src/components/PreparedSourceRunPage.tsx', preparedSourceRunPage, 'isDefault', 'Pomodoro must default to the current public final artifact')
-    mustInclude(project.route, routeContent, 'response_exact: readArtifact', 'Pomodoro must use the captured HTML file as the exact response text')
+    mustNotInclude(project.route, routeContent, 'readArtifact', 'Pomodoro must not synthesize a package or hide a missing artifact')
+    mustNotInclude(project.route, routeContent, 'Artifact capture', 'Pomodoro must not replace missing evidence with an unavailable notice')
   }
 
   if (!project.packagePath) continue

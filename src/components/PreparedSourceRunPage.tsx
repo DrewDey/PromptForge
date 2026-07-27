@@ -41,6 +41,12 @@ import {
   getProjectModelVariantSet,
 } from '@/lib/project-model-variants'
 import { derivePublicProjectTruth } from '@/lib/public-project-truth'
+import {
+  applyProviderPublicShareEvidence,
+  resolvePublicSourceEvidence,
+  type PublicEvidenceTruth,
+} from '@/lib/public-source-evidence'
+import { resolveProviderPublicShare } from '@/lib/provider-public-share-resolver'
 import { preparedProjectIsPublic } from '@/lib/prepared-release-gates'
 import { getCanonicalPreparedSelectedRunPromptCount } from '@/lib/prompt-public-truth'
 import { getPublicModelIdentityLabel } from '@/lib/public-model-labels'
@@ -112,6 +118,67 @@ function artifactTitle(project: PreparedShowcaseProject, step: SourceRunPackageS
   return `${project.title} step ${step.step_number}`
 }
 
+function responseCapturePresentation(
+  sourceRun: SourceRunPackage,
+  step: SourceRunPackageStep,
+) {
+  const normalization = sourceRun.response_capture_normalization ?? {}
+  const scope = step.response_capture_kind ?? (
+    typeof normalization.scope === 'string' ? normalization.scope : ''
+  )
+  const disclosure: string[] = []
+  let label = 'Model response'
+
+  if (scope === 'generated_html_code_payload' || scope === 'generated_html_code_payloads') {
+    label = 'Captured generated HTML payload'
+  } else if (
+    scope === 'assistant_text' ||
+    scope === 'assistant_text_messages_and_separate_generated_html_files'
+  ) {
+    label = 'Captured assistant text'
+  }
+
+  if (sourceRun.evidence_scope === 'selected_published_path') {
+    disclosure.push('Only the selected published path is represented.')
+  } else if (sourceRun.evidence_scope === 'curated_four_step_generated_html_payload_path') {
+    disclosure.push('These four steps are a curated generated-code path.')
+  } else if (
+    sourceRun.evidence_scope ===
+      'selected_branch_shared_steps_1_through_3_and_child_step_4'
+  ) {
+    disclosure.push(
+      'This is the selected child branch: shared steps 1–3 plus child step 4.',
+    )
+  }
+
+  if (normalization.assistant_prose_preserved === false) {
+    disclosure.push('Assistant prose outside the generated HTML was not preserved.')
+  }
+  if (normalization.generated_html_stored_separately === true) {
+    disclosure.push('Generated HTML is stored separately from this assistant text.')
+  }
+  if (normalization.provider_serialization_envelope_preserved === false) {
+    disclosure.push('The full provider serialization envelope was not preserved.')
+  }
+
+  for (const omittedTurn of sourceRun.omitted_provider_turns ?? []) {
+    if (
+      omittedTurn &&
+      typeof omittedTurn === 'object' &&
+      'notes' in omittedTurn &&
+      typeof omittedTurn.notes === 'string' &&
+      omittedTurn.notes.trim()
+    ) {
+      disclosure.push(omittedTurn.notes.trim())
+    }
+  }
+
+  return {
+    label,
+    disclosure: disclosure.join(' '),
+  }
+}
+
 function artifactVersionsForStep(
   step: SourceRunPackageStep,
   project: PreparedShowcaseProject,
@@ -164,6 +231,7 @@ function toShowcaseStep(
   const isDefault =
     step.artifact_version_path === sourceRun.final_artifact_path ||
     step.generated_files?.includes(sourceRun.final_artifact_path ?? '')
+  const responseCapture = responseCapturePresentation(sourceRun, step)
 
   return {
     id: stepIdentityScope
@@ -174,6 +242,8 @@ function toShowcaseStep(
     prompt: step.prompt_exact,
     response: step.response_exact,
     responseCopyText: step.response_exact,
+    responseLabel: responseCapture.label,
+    responseDisclosure: responseCapture.disclosure,
     artifactPath: primaryArtifact?.artifactPath,
     artifactTitle: primaryArtifact?.artifactTitle ?? artifactTitle(project, step, sourceRun.final_artifact_path),
     artifactVersions,
@@ -205,6 +275,8 @@ function toForkSourceStep(step: SourceRunShowcaseStep): ProjectForkSourceStep {
     promptTitle: step.title,
     promptText: step.prompt,
     responseText: step.response,
+    responseLabel: step.responseLabel,
+    responseDisclosure: step.responseDisclosure,
     responsePackageId: step.id,
     artifactPath: step.artifactPath,
   }
@@ -277,6 +349,8 @@ function buildPreparedForkContext({
   childSteps,
   forkSource,
   route,
+  childSourceUrl,
+  childSourceEvidence,
   childArtifactQualityStatus,
   childArtifactKnownIssueExplanation,
 }: {
@@ -285,6 +359,8 @@ function buildPreparedForkContext({
   childSteps: SourceRunShowcaseStep[]
   forkSource: ProjectForkSource
   route: string
+  childSourceUrl: string | null
+  childSourceEvidence: PublicEvidenceTruth
   childArtifactQualityStatus: 'verified' | 'known-issue' | 'recorded'
   childArtifactKnownIssueExplanation: string | null
 }): SourceRunShowcaseForkContext {
@@ -350,8 +426,7 @@ function buildPreparedForkContext({
       : null
     const hasPublishableFinalEvidence = Boolean(
       nestedSourceRunId &&
-      Number.isInteger(sourceRun.prompt_count) &&
-      sourceRun.prompt_count === continuation.stepNumber &&
+      defaultStepNumber(sourceRun) === continuation.stepNumber &&
       forkArtifact?.artifactSha256 &&
       nestedArtifactPath === sourceRun.final_artifact_path &&
       forkArtifact.artifactSha256 === sourceRun.artifact_sha256,
@@ -390,7 +465,8 @@ function buildPreparedForkContext({
     forkSource,
     continuationSteps,
     childRoute: route,
-    childSourceUrl: sourceRun.source_url ?? project.sourceUrl,
+    childSourceUrl,
+    childSourceEvidence,
     childProviderName: sourceRun.provider ?? null,
     childArtifactQualityStatus,
     childArtifactKnownIssueExplanation,
@@ -402,7 +478,7 @@ function buildPreparedForkContext({
     branch,
     trail,
     sourceProjectHref: withModelRun(sourceRoute, forkSource.sourceRunId),
-    sourceRunHref: sourceRun.source_url ?? project.sourceUrl,
+    sourceRunHref: childSourceUrl,
     newForkHref,
   }
 }
@@ -464,7 +540,6 @@ export default async function PreparedSourceRunPage({
   const sourceRun = sourceRunPackage
   const pageRoute = route ?? project.href
   const providerName = getProviderName(sourceRun, project)
-  const sourceUrl = sourceRun.source_url || project.sourceUrl
   const usesModelVariants = Boolean(modelVariantSet && activeModelVariant)
   const stepIdentityScope = activeModelVariant?.sourceRunId
     ?? sourceRun.source_run_id
@@ -478,25 +553,23 @@ export default async function PreparedSourceRunPage({
       stepIdentityScope,
     )
   ))
-  const forkNetwork = await getApprovedProjectForks(
-    project.id,
-    usesModelVariants ? activeModelVariant?.sourceRunId : undefined,
-  )
-  const forkContext = forkSource
-    ? buildPreparedForkContext({
-      project,
-      sourceRun,
-      childSteps: steps,
-      forkSource,
-      route: pageRoute,
-      childArtifactQualityStatus: activeModelVariant?.qualityStatus ?? 'recorded',
-      childArtifactKnownIssueExplanation: activeModelVariant
-        ? getProjectModelVariantKnownIssueExplanation(activeModelVariant)
-        : null,
-    })
-    : null
-  const projectContext = await getCurrentUserProjectContext(project.id)
-  const publicAuthorProfile = await getPublicProfileByUsername(project.authorUsername)
+  const [
+    resolvedPublicShare,
+    unresolvedForkNetwork,
+    projectContext,
+    publicAuthorProfile,
+  ] = await Promise.all([
+    resolveProviderPublicShare({
+      projectId: project.id,
+      aliases: sourceRun,
+    }),
+    getApprovedProjectForks(
+      project.id,
+      usesModelVariants ? activeModelVariant?.sourceRunId : undefined,
+    ),
+    getCurrentUserProjectContext(project.id),
+    getPublicProfileByUsername(project.authorUsername),
+  ])
   const currentSourceRunId = activeModelVariant?.sourceRunId
     ?? sourceRun.source_run_id
     ?? project.sourceRunId
@@ -515,8 +588,12 @@ export default async function PreparedSourceRunPage({
     ...(sourceRunSlug === undefined ? {} : { slug: sourceRunSlug }),
     pathforgeRecordChecked: true,
   }
+  const sourceEvidence = applyProviderPublicShareEvidence(
+    resolvePublicSourceEvidence(sourceEvidenceLookup),
+    resolvedPublicShare,
+  )
   const publicTruth = derivePublicProjectTruth({
-    sourceEvidenceLookup,
+    sourceEvidence,
     qualityStatus: activeModelVariant?.qualityStatus ?? 'recorded',
     knownIssueExplanation: activeModelVariant
       ? getProjectModelVariantKnownIssueExplanation(activeModelVariant)
@@ -530,6 +607,42 @@ export default async function PreparedSourceRunPage({
       ? currentSourceRunId === modelVariantSet.defaultSourceRunId
       : true,
   })
+  const forkNetwork = await Promise.all(unresolvedForkNetwork.map(async (fork) => {
+    const childPublicShare = fork.childSourceRunId
+      ? await resolveProviderPublicShare({
+          projectId: fork.id,
+          aliases: { source_run_id: fork.childSourceRunId },
+        })
+      : null
+    const childSourceEvidence = applyProviderPublicShareEvidence(
+      resolvePublicSourceEvidence({
+        sourceRunId: fork.childSourceRunId,
+        pathforgeRecordChecked: Boolean(fork.childSourceRunId),
+      }),
+      childPublicShare,
+    )
+    return {
+      ...fork,
+      childSourceUrl: childPublicShare?.public_share_url ?? null,
+      childSourceEvidence,
+    }
+  }))
+  const sourceUrl = resolvedPublicShare?.public_share_url ?? null
+  const forkContext = forkSource
+    ? buildPreparedForkContext({
+      project,
+      sourceRun,
+      childSteps: steps,
+      forkSource,
+      route: pageRoute,
+      childSourceUrl: sourceUrl,
+      childSourceEvidence: publicTruth.sourceEvidence,
+      childArtifactQualityStatus: activeModelVariant?.qualityStatus ?? 'recorded',
+      childArtifactKnownIssueExplanation: activeModelVariant
+        ? getProjectModelVariantKnownIssueExplanation(activeModelVariant)
+        : null,
+    })
+    : null
   const resumeArtifactPath = projectContext.state?.selectedSourceRunId === currentSourceRunId
     ? projectContext.state.selectedArtifactPath
     : null

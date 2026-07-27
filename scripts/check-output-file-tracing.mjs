@@ -4,6 +4,7 @@ import sourceRunRuntimeRoutes from '../config/source-run-runtime-routes.json' wi
 
 const root = process.cwd()
 const appTraceRoot = path.join(root, '.next', 'server', 'app')
+const clientStaticRoot = path.join(root, '.next', 'static')
 
 if (!existsSync(appTraceRoot)) {
   throw new Error('Build output is missing. Run npm run build before checking output traces.')
@@ -52,6 +53,27 @@ const forbiddenProjectPaths = [
   'src/',
   'supabase/',
 ]
+
+const privateProviderLocatorPattern =
+  /https:\/\/(?:chatgpt\.com\/(?:c|chat)\/|chat\.openai\.com\/c\/|claude\.ai\/chat\/|gemini\.google\.com\/app\/|aistudio\.google\.com\/app\/|openrouter\.ai\/chat\/)/i
+const leakingClientAssets = walkFiles(
+  clientStaticRoot,
+  (file) => file.endsWith('.js') || file.endsWith('.json'),
+).filter((file) => (
+  privateProviderLocatorPattern.test(
+    readFileSync(file, 'utf8').replaceAll('\\/', '/'),
+  )
+))
+if (leakingClientAssets.length > 0) {
+  throw new Error(
+    `Client output contains account-private provider locators: ${
+      leakingClientAssets
+        .slice(0, 5)
+        .map((file) => path.relative(root, file).replaceAll(path.sep, '/'))
+        .join(', ')
+    }`,
+  )
+}
 
 for (const trace of traces) {
   const leaked = trace.files.flatMap((file) => {

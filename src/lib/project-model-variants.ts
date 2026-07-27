@@ -14,6 +14,7 @@ import {
   assertProjectModelVariantOrigin,
   resolveProjectModelVariantOriginMode,
 } from './project-model-variant-origin.mjs'
+import { isAllowlistedProviderEvidenceLocator } from './provider-public-share'
 import { loadSourceRunPackage, type SourceRunPackage } from './source-run-package'
 import type { ProjectModelVariantPublicRecord } from './types'
 
@@ -424,8 +425,10 @@ function prepareVariantSet(rawSet: RawProjectModelVariantSet): ProjectModelVaria
     if (sourceRunPackage.run_finished_at !== variant.capturedAt) {
       throw new Error(`Model variant ${variant.sourceRunId} capture time does not match its package.`)
     }
-    if (!sourceRunPackage.source_url?.startsWith('https://')) {
-      throw new Error(`Model variant ${variant.sourceRunId} needs a public HTTPS source URL.`)
+    if (!isAllowlistedProviderEvidenceLocator(sourceRunPackage.source_url)) {
+      throw new Error(
+        `Model variant ${variant.sourceRunId} needs an allowlisted HTTPS source evidence locator.`,
+      )
     }
     assertModelVariantSourceAccess(variant, sourceRunPackage)
     if (sourceRunPackage.final_artifact_path !== variant.finalArtifactPath) {
@@ -718,7 +721,6 @@ export function reconcileProjectModelVariantSet(
       record.model_release_key !== modelReleaseKey(variant.modelLabel) ||
       record.model_label !== variant.modelLabel ||
       !sameJson(record.model_settings, expectedDatabaseModelSettings(variant)) ||
-      record.source_url !== variant.sourceRunPackage.source_url ||
       record.source_package_file !== `seed-runs/${variant.packageFile}` ||
       record.source_package_sha256 !== variant.packageSha256 ||
       record.opening_prompt_sha256 !== variantSet.contract.openingPromptSha256 ||

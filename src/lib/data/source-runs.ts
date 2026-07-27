@@ -18,6 +18,10 @@ import {
 } from '../source-run-package'
 import { composeSourceRunReviewNotes, detectSourceRunProvider } from '../source-run-review'
 import { isSupportedCommunitySourceUrl } from '../community-project-contract'
+import {
+  assertAuthoritativePreparedLegacyProfileBinding,
+  assertPreparedLegacyPackageBinding,
+} from '../prepared-legacy-source-runs.mjs'
 import { sourceRunForkColumnsMissing } from './fork-column-compat'
 import { requireAdminAccess, SUPABASE_CONFIGURED } from './shared'
 import { createAdminClient } from '../supabase/admin'
@@ -344,12 +348,6 @@ export async function publishPreparedShowcaseProjectFromSourceRun(
 
   throwReadableSourceRunError(sourceRunError)
   if (!sourceRun) throw new Error('Source run not found.')
-  if (
-    sourceRun.source_visibility !== 'public'
-    || !sourceRun.source_publication_consent_at
-  ) {
-    throw new Error('Prepared publish requires explicit consent to display the public provider share link.')
-  }
   if (!['queued', 'draft_created'].includes(sourceRun.status)) {
     throw new Error(
       `Prepared publish requires a queued intake or exact published replay; current status is ${sourceRun.status}.`,
@@ -362,6 +360,61 @@ export async function publishPreparedShowcaseProjectFromSourceRun(
     throw new Error('Prepared publish requires an immutable source-run package file.')
   }
   const packageEvidence = loadSourceRunPackagePublicationEvidence(sourcePackageFile)
+  const preparedBinding = assertPreparedLegacyPackageBinding(
+    packageEvidence.sourceRunPackage,
+  )
+  // Ordinary intake still carries consent on its source row. Exact legacy
+  // packages intentionally remain review_only: the atomic RPC below is the
+  // authoritative gate for their separately consented, anonymously verified
+  // source_run_id + project_id public-share registration.
+  if (
+    !preparedBinding &&
+    (
+      sourceRun.source_visibility !== 'public' ||
+      !sourceRun.source_publication_consent_at
+    )
+  ) {
+    throw new Error(
+      'Ordinary prepared publish requires explicit consent to display the public provider share link.',
+    )
+  }
+  if (preparedBinding) {
+    if (
+      preparedBinding.projectId !== project.id ||
+      preparedBinding.sourceRunId !== sourceRunId
+    ) {
+      throw new Error(
+        'Prepared publish blocked: package project and source-run binding differs from the prepared registry.',
+      )
+    }
+    if (
+      preparedBinding.username !== project.authorUsername ||
+      preparedBinding.displayName !== project.authorDisplayName
+    ) {
+      throw new Error(
+        'Prepared publish blocked: package seed profile differs from the prepared byline.',
+      )
+    }
+    const { data: authorRows, error: authorBindingError } = await supabase.rpc(
+      'check_prepared_legacy_seed_profile_binding',
+      {
+        target_profile_id: sourceRun.author_id,
+        expected_username: preparedBinding.username,
+        expected_display_name: preparedBinding.displayName,
+      },
+    )
+    throwReadableSourceRunError(authorBindingError)
+    const authorProfile = Array.isArray(authorRows) ? authorRows[0] : authorRows
+    if (!authorProfile || authorProfile.profile_id !== sourceRun.author_id) {
+      throw new Error(
+        'Prepared publish blocked: intake author lacks its confirmed private seed-operator binding.',
+      )
+    }
+    assertAuthoritativePreparedLegacyProfileBinding(
+      preparedBinding,
+      authorProfile,
+    )
+  }
   const packageSourceRunId = packageEvidence.sourceRunPackage.source_run_id
     ?? packageEvidence.sourceRunPackage.source_run_submission_id
   if (packageSourceRunId !== sourceRunId) {

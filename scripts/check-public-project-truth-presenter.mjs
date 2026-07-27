@@ -96,7 +96,8 @@ const requiredSurfaceTokens = new Map([
   ['src/lib/data.ts', [
     'PREPARED_SHOWCASE_PROJECTS',
     'project.forkSource?.sourceProjectId === projectId',
-    'childSourceRunId = sourceRun.source_run_id',
+    'childSourceRunId = resolveProviderPublicShareSourceRunId(sourceRun)',
+    'childSourceUrl: null',
     "childArtifactQualityStatus: checkedChildVariant?.qualityStatus ?? 'recorded'",
   ]],
   ['src/components/ProjectForkBuildPath.tsx', [
@@ -247,7 +248,25 @@ const sourceRunEvidenceFooterJavaScript = ts.transpileModule(sourceRunEvidenceFo
 const loadSourceRunEvidenceFooter = vm.runInNewContext(
   `(function (require, module, exports) { ${sourceRunEvidenceFooterJavaScript}\n })`,
 )
-loadSourceRunEvidenceFooter(runtimeRequire, sourceRunEvidenceFooterModule, sourceRunEvidenceFooterModule.exports)
+const sourceRunEvidenceFooterRequire = (specifier) => {
+  if (specifier === '@/lib/provider-public-share') {
+    return {
+      providerPublicShareHref(value, accessState) {
+        return (
+          typeof value === 'string' &&
+          ['public_exact', 'public_partial'].includes(accessState) &&
+          /^https:\/\/chatgpt\.com\/share\/[A-Za-z0-9_-]+\/?$/.test(value)
+        ) ? value : null
+      },
+    }
+  }
+  return runtimeRequire(specifier)
+}
+loadSourceRunEvidenceFooter(
+  sourceRunEvidenceFooterRequire,
+  sourceRunEvidenceFooterModule,
+  sourceRunEvidenceFooterModule.exports,
+)
 const { SourceRunEvidenceFooter } = sourceRunEvidenceFooterModule.exports
 const renderedNoLinkFooter = renderToStaticMarkup(React.createElement(SourceRunEvidenceFooter, {
   sourceRunHref: null,
@@ -259,6 +278,32 @@ assert.match(renderedNoLinkFooter, /data-pathforge-record="true"/)
 assert.match(renderedNoLinkFooter, /PathForge record only/)
 assert.match(renderedNoLinkFooter, /data-model-proof="not_confirmed"/)
 assert.match(renderedNoLinkFooter, /Model proof not confirmed/)
+const renderedPrivateLocatorFooter = renderToStaticMarkup(
+  React.createElement(SourceRunEvidenceFooter, {
+    sourceRunHref: 'https://chatgpt.com/c/account-private-session',
+    evidence: blackoutChildPreviewEvidence,
+  }),
+)
+assert.doesNotMatch(
+  renderedPrivateLocatorFooter,
+  /<a\b|account-private-session/,
+  'private provider evidence must not become a public footer link',
+)
+const renderedVerifiedShareFooter = renderToStaticMarkup(
+  React.createElement(SourceRunEvidenceFooter, {
+    sourceRunHref: 'https://chatgpt.com/share/verified-public-source',
+    evidence: {
+      ...checkedRecord,
+      accessState: 'public_exact',
+      providerLinkLabel: 'Open public source',
+    },
+  }),
+)
+assert.match(
+  renderedVerifiedShareFooter,
+  /href="https:\/\/chatgpt\.com\/share\/verified-public-source"/,
+  'a separately verified public share must remain renderable',
+)
 
 const airlockZeroProjectSource = await readFile('src/lib/airlock-zero-projects.ts', 'utf8')
 assert.doesNotMatch(

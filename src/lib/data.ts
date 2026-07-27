@@ -84,7 +84,9 @@ import {
   PREPARED_SHOWCASE_PROJECTS,
 } from './prepared-showcase-projects'
 import type { PreparedShowcaseProject, PreparedShowcaseStep } from './prepared-showcase-projects'
+import { inspectablePreparedForkFallbacks } from './prepared-release-gates-core.mjs'
 import { getProjectRouteOverride } from './project-links'
+import { resolveProviderPublicShareSourceRunId } from './provider-public-share'
 import { getPublicModelIdentityLabel } from './public-model-labels'
 import {
   getProjectModelVariantKnownIssueExplanation,
@@ -209,6 +211,9 @@ const APPROVED_PROJECT_IDS = new Set([
   BLOCK_BIKE_COURIER_PROJECT_ID,
   ...CURATED_SOURCE_RUN_SHOWCASE_PROJECTS.map((project) => project.id),
 ])
+const PREPARED_SHOWCASE_PROJECT_IDS = new Set(
+  PREPARED_SHOWCASE_PROJECTS.map((project) => project.id),
+)
 const PUBLIC_LIBRARY_START_AT = '2026-05-28T00:00:00.000Z'
 const PUBLIC_PROMPT_LIST_PAGE_SIZE = 300
 const PUBLIC_PROMPT_LIST_MAX_PAGES = 10
@@ -666,13 +671,11 @@ function hydratePreparedForkItem(item: ProjectForkNetworkItem): ProjectForkNetwo
 
   let childProviderName: string | null = null
   let childSourceRunId: string | null = null
-  let childSourceUrl = project.sourceUrl
   let modelUsed = item.modelUsed
   if (project.sourceRunPackageFile) {
     const sourceRun = loadSourceRunPackage(project.sourceRunPackageFile)
     childProviderName = sourceRun.provider ?? null
-    childSourceRunId = sourceRun.source_run_id ?? project.sourceRunId
-    childSourceUrl = sourceRun.source_url ?? childSourceUrl
+    childSourceRunId = resolveProviderPublicShareSourceRunId(sourceRun)
     modelUsed = getPublicModelIdentityLabel({
       provider: sourceRun.provider,
       model: sourceRun.model ?? item.modelUsed,
@@ -688,7 +691,7 @@ function hydratePreparedForkItem(item: ProjectForkNetworkItem): ProjectForkNetwo
     ...item,
     childRoute: getProjectRouteOverride(project.id) ?? project.href,
     childSourceRunId,
-    childSourceUrl,
+    childSourceUrl: null,
     childProviderName,
     modelUsed,
     childArtifactQualityStatus: checkedChildVariant?.qualityStatus ?? 'recorded',
@@ -786,9 +789,13 @@ export async function getApprovedProjectForks(
   sourceRunId?: string | null,
 ): Promise<ProjectForkNetworkItem[]> {
   if (!projectId) return []
-  const fallbackForks = filterProjectForkNetworkBySourceRun(
-    getPublicMockProjectForks(projectId, sourceRunId),
-    sourceRunId,
+  const fallbackForks = inspectablePreparedForkFallbacks(
+    filterProjectForkNetworkBySourceRun(
+      getPublicMockProjectForks(projectId, sourceRunId),
+      sourceRunId,
+    ),
+    PREPARED_SHOWCASE_PROJECT_IDS,
+    process.env.VERCEL_ENV,
   )
 
   return readWithFallback(fallbackForks, async (signal) => {

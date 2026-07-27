@@ -470,6 +470,10 @@ BEGIN
       'verification_notes',
       'artifact_version_notes',
       'source_inspiration_notes',
+      'evidence_scope',
+      'source_access',
+      'response_capture_normalization',
+      'omitted_provider_turns',
       'fork'
     ] <> '{}'::JSONB
     OR jsonb_typeof(NEW.intake_evidence->'schema_version') IS DISTINCT FROM 'number'
@@ -486,7 +490,51 @@ BEGIN
     OR NULLIF(BTRIM(NEW.intake_evidence->>'profile_registry_id'), '') IS NULL
     OR jsonb_typeof(NEW.intake_evidence->'verification_notes') IS DISTINCT FROM 'array'
     OR jsonb_typeof(NEW.intake_evidence->'artifact_version_notes') IS DISTINCT FROM 'array'
-    OR jsonb_typeof(NEW.intake_evidence->'source_inspiration_notes') IS DISTINCT FROM 'array' THEN
+    OR jsonb_typeof(NEW.intake_evidence->'source_inspiration_notes') IS DISTINCT FROM 'array'
+    OR (
+      NEW.intake_evidence ? 'evidence_scope'
+      AND NULLIF(BTRIM(NEW.intake_evidence->>'evidence_scope'), '') IS NULL
+    )
+    OR (
+      NEW.intake_evidence ? 'source_access'
+      AND (
+        jsonb_typeof(NEW.intake_evidence->'source_access') IS DISTINCT FROM 'object'
+        OR NOT (NEW.intake_evidence->'source_access' ? 'mode')
+        OR (NEW.intake_evidence->'source_access') - ARRAY[
+          'mode',
+          'public_share_unavailable',
+          'public_share_managed_separately',
+          'note'
+        ] <> '{}'::JSONB
+        OR NEW.intake_evidence->'source_access'->>'mode'
+          NOT IN ('public_share', 'authenticated_owner_session')
+        OR NULLIF(BTRIM(NEW.intake_evidence->'source_access'->>'note'), '') IS NULL
+        OR (
+          NEW.intake_evidence->'source_access' ? 'public_share_unavailable'
+          AND jsonb_typeof(
+            NEW.intake_evidence->'source_access'->'public_share_unavailable'
+          ) IS DISTINCT FROM 'boolean'
+        )
+        OR (
+          NEW.intake_evidence->'source_access' ? 'public_share_managed_separately'
+          AND jsonb_typeof(
+            NEW.intake_evidence->'source_access'->'public_share_managed_separately'
+          ) IS DISTINCT FROM 'boolean'
+        )
+      )
+    )
+    OR (
+      NEW.intake_evidence ? 'response_capture_normalization'
+      AND jsonb_typeof(
+        NEW.intake_evidence->'response_capture_normalization'
+      ) IS DISTINCT FROM 'object'
+    )
+    OR (
+      NEW.intake_evidence ? 'omitted_provider_turns'
+      AND jsonb_typeof(
+        NEW.intake_evidence->'omitted_provider_turns'
+      ) IS DISTINCT FROM 'array'
+    ) THEN
     RAISE EXCEPTION 'Prepared source-run intake evidence is malformed or incomplete.';
   END IF;
 

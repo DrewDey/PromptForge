@@ -27,9 +27,9 @@ const PUBLIC_REGISTRY_MODULE_PATH = 'src/lib/provider-public-share-registry.ts'
 const EXPECTED_PREPARED_PROJECT_COUNT = 174
 const EXPECTED_ORIGINAL_CONVERSATION_COUNT = 173
 const EXPECTED_PROVIDER_COUNTS = {
-  chatgpt: 73,
-  claude: 35,
-  gemini: 57,
+  openai: 73,
+  anthropic: 35,
+  google: 57,
   openrouter: 9,
 }
 const POMODORO_PROJECT_ID = '3b9c61d8-4e27-4f0a-9c5d-2a8f1e6b7c40'
@@ -101,23 +101,23 @@ function sortedObject(entries) {
 
 function normalizeProvider(value) {
   const provider = String(value ?? '').trim().toLowerCase()
-  if (provider === 'chatgpt' || provider === 'openai') return 'chatgpt'
-  if (provider === 'claude' || provider === 'anthropic') return 'claude'
-  if (provider === 'gemini' || provider === 'google') return 'gemini'
+  if (provider === 'chatgpt' || provider === 'openai') return 'openai'
+  if (provider === 'claude' || provider === 'anthropic') return 'anthropic'
+  if (provider === 'gemini' || provider === 'google') return 'google'
   if (provider === 'openrouter') return 'openrouter'
   throw new Error(`Unsupported provider ${JSON.stringify(value)}.`)
 }
 
 function providerFromUrl(value) {
   const parsed = new URL(value)
-  if (parsed.hostname === 'chatgpt.com') return 'chatgpt'
-  if (parsed.hostname === 'claude.ai') return 'claude'
+  if (parsed.hostname === 'chatgpt.com') return 'openai'
+  if (parsed.hostname === 'claude.ai') return 'anthropic'
   if (
     parsed.hostname === 'gemini.google.com' ||
     parsed.hostname === 'share.gemini.google' ||
     parsed.hostname === 'g.co'
   ) {
-    return 'gemini'
+    return 'google'
   }
   if (parsed.hostname === 'openrouter.ai') return 'openrouter'
   throw new Error(`Unsupported provider URL ${value}.`)
@@ -164,13 +164,13 @@ function assertPublicShareUrl(value, providerKey, label) {
   }
 
   const allowed = {
-    chatgpt:
+    openai:
       parsed.hostname === 'chatgpt.com' &&
       /^\/share\/[A-Za-z0-9-]+\/?$/.test(parsed.pathname),
-    claude:
+    anthropic:
       parsed.hostname === 'claude.ai' &&
       /^\/share\/[A-Za-z0-9-]+\/?$/.test(parsed.pathname),
-    gemini:
+    google:
       (
         parsed.hostname === 'share.gemini.google' &&
         /^\/[A-Za-z0-9_-]+\/?$/.test(parsed.pathname)
@@ -397,9 +397,9 @@ function loadPreparedCatalog() {
   const sourceRunIds = new Set()
   const hrefs = new Set()
   const providerCounts = {
-    chatgpt: 0,
-    claude: 0,
-    gemini: 0,
+    openai: 0,
+    anthropic: 0,
+    google: 0,
     openrouter: 0,
   }
 

@@ -11,15 +11,15 @@
     "unavailable_project_count": 144,
     "checked_unavailable_project_count": 1,
     "provider_coverage": {
-      "chatgpt": {
+      "openai": {
         "catalog_projects": 73,
         "verified_public_projects": 29
       },
-      "claude": {
+      "anthropic": {
         "catalog_projects": 35,
         "verified_public_projects": 1
       },
-      "gemini": {
+      "google": {
         "catalog_projects": 57,
         "verified_public_projects": 0
       },
@@ -34,20 +34,20 @@
         "status": "not_established_for_registry"
       }
     },
-    "catalog_fingerprint_sha256": "sha256:baa5ca867ead752f90f66dda8c54ac3cc6327cd17e46f6fce64a9cdd9271565c"
+    "catalog_fingerprint_sha256": "sha256:69d002602bee639d75b0f19c60decd8dd0580187a667d3f4222a73c3d68af4b3"
   },
   "entries_by_source_run_id": {
     "013ff078-4362-4e65-b13b-a26a065d4660": {
       "source_run_id": "013ff078-4362-4e65-b13b-a26a065d4660",
       "project_id": "4897777e-9a29-5b1a-8f49-c6a103c48591",
       "project_title": "Thumbnail Crop Proof Studio",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/thumbnail-crop-proof-studio-claude-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:e811b87cce9e3e122913fb6bd58287b2ff5f4278e56359a60035a9a07a3a7479",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:d6bd93f87f42b23e6431e0b096e2fdc27b1548bbc924a01179ff357585ff83ad"
+        "conversation_key": "sha256:2c8cb5220076bfb3a91c3a6f75e371fac9bdb75b1406f3d9d6a305b1cc91b43f"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -66,13 +66,13 @@
       "source_run_id": "027b17c4-aa5a-4403-a435-501ad802d015",
       "project_id": "1e7b4c60-b808-4b0b-93ac-a49f8c611289",
       "project_title": "Mini Metro Signal Desk",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/mini-metro-signal-desk-claude-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:2d63c36a07009409c90f2a24430642f6d05aa98a0ff6b412036fedcc510cecad",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:cd6f55deb8d2eab61ccd9ac9136c7491e91b76fba5fa259d20ff76793e810f4e"
+        "conversation_key": "sha256:c945d1762035166c34c64b95f95f3798e33a3900c36b1d6f6b44a43fa2c15d0c"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -91,13 +91,13 @@
       "source_run_id": "03094ad2-a332-41ac-ba45-4b4abcecc9a1",
       "project_id": "8b91d2d7-636d-5a1f-ae0f-f3cbc8c6e48f",
       "project_title": "Search Brief Gap Mapper",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/search-brief-gap-mapper-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:5220f57dfe97b9b4205c285a7a750b6fb8aae4759524bd19d6513d0d86ee1dc9",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:79e53efbd6e9594986b9a00e0d286f65e3db62d6d8dc7c41bde525cd5c329890"
+        "conversation_key": "sha256:7d0d444a624be116125ad6819e3b812f50338dd61d4fcbe9b19839fac0032484"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -116,13 +116,13 @@
       "source_run_id": "036cd2c0-3945-4e23-ab72-26bc91e6d27c",
       "project_id": "e148a2a7-2878-55a2-ae75-8d6108e64cd6",
       "project_title": "Four-Week Content Calendar Capacity Grid",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/four-week-content-calendar-capacity-grid-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:9e1cbf647206f13178b890fbe353e6af827d53b985c2b39515f5cc1a58e33550",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:4cfea50a103a1de58bba031df3eed0599cf2af195f1404875edc2a8a07b35855"
+        "conversation_key": "sha256:6caf16e6d82a4ce1aac825b11df01f90a599f380c25dd7166674362a0a94a07c"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -141,13 +141,13 @@
       "source_run_id": "047c9c81-092e-42db-b505-8ebdbd0be95d",
       "project_id": "aa456f6a-80fd-4530-b3d2-9647ddbf1530",
       "project_title": "Puzzle Box Escape",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/puzzle-box-escape-claude-sonnet-46-max-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:abed20e31229c674a82fc688cf504c2abeefbe96fa7d10c8f0b317e678bc72bd",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:3c92ecb9135860da03433ac5b63ba776083051a417aa15e0d162e80e197f474e"
+        "conversation_key": "sha256:1fe0f36cbf07f83538dedc17241d122b4e35efc7614d2037a1a2a6b4b24fdb34"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -166,13 +166,13 @@
       "source_run_id": "04a3debd-2676-4605-b5bd-a32d401da31e",
       "project_id": "f9699186-9197-53e3-a7c6-435510c6060f",
       "project_title": "Pocket Cover Prompt Board",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/pocket-cover-prompt-board-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:3da858db874f14277af0c7791ea09fd5755bebb2df0c12c61bbd2993ccc9f779",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:c5ad4bb7e9cb06d7f8f2bd00c3a80a1ea85c4caa5a2b8c62ff794d0b2577da58"
+        "conversation_key": "sha256:93bdea9b54fc4415972167853558dcebf07e8f65e3e00e79e5b5b423a088fedb"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -191,13 +191,13 @@
       "source_run_id": "08b06ee4-203b-40c8-a4da-aa299bc79d48",
       "project_id": "86f12905-67b4-4f54-8de3-4f40105e42f0",
       "project_title": "Playable Tic-Tac-Toe",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/tic-tac-toe-gemini-flash-basic.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:8ebfb8116988ad20a4e4a8ca08714df1cc9eea4e1706430091ef01f52c0616b6",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:385279d7fc8547cea40a16abc62062d5b25ea6955da5a7c70c769545c26120be"
+        "conversation_key": "sha256:ef802f4a099a2081e969d1b5e426d0ac5f3aade7478dc79f9f73c90c0a3d3dfb"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -216,13 +216,13 @@
       "source_run_id": "08c8b725-4228-4b24-a6e6-5d7fcf78457c",
       "project_id": "0ddfc7cf-37bf-47ae-8fe0-d8d445ba1bee",
       "project_title": "Booking Flow Handoff Simulator",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/booking-flow-handoff-simulator-claude-sonnet46-low-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:7664f85f7ea02810fd1e7cc3c5878f9a1cdc2c016d0bf4952382a2923cab4ace",
         "locator_kind": "preexisting_public_candidate",
-        "conversation_key": "sha256:49c83afe0773b144929989bae6b04e378055afa914b85e38abae6f6b76645232"
+        "conversation_key": "sha256:254c1c882822cc905c494ef42e77efcca9e4e9e0c486bbf30368ba6d1e0ccb4a"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -241,13 +241,13 @@
       "source_run_id": "09a5f7a3-1d3d-4fd6-9024-f15b0a82c09a",
       "project_id": "12250a14-a7dd-5dfd-bb93-e0d2924fde20",
       "project_title": "Product Photo Prompt Card Studio",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/product-photo-prompt-card-studio-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:f733e6a882ecbea8af4dcddc2bfedc978ad5a5888a7f665f7b98d247017e335f",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:8b8bd4ac8abc85850f62bd968e6bbe1f7ea6785a707e27f9ddc05cda439afceb"
+        "conversation_key": "sha256:a134dcc564aaa53eacc2bd4e003c4e36c8c5c530971181e382779aaf8679feda"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -266,13 +266,13 @@
       "source_run_id": "0a6c15a6-6016-41b3-bcb0-e8fa1814b3a1",
       "project_id": "c07da71e-4a26-5c0a-b4ec-b1a10274e4b8",
       "project_title": "YouTube Cold Open Beat Board",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/youtube-cold-open-beat-board-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:c80a52b27341967bb7d6b253647f68ef4560e5ffa45e2fd9bc97097d99bd4803",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:409aaf2c89ae36f21f9c017be53ca406421533d31f54ccda914445f032aaf667"
+        "conversation_key": "sha256:a74b9f88faf71a306529588542fcf01d8357de5ff4d24712aa733f28cf6d2f31"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -291,13 +291,13 @@
       "source_run_id": "0b1f6439-17b8-4e11-aec9-76545e85805b",
       "project_id": "4a4836b3-e249-5e50-ad41-1bdc5745395b",
       "project_title": "Character Scene Beat Continuity Board",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/character-scene-beat-continuity-board-claude-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:b39f8243aee133397ff3188ba17ba7928fcf5956a88b6c1ae90b6ab17a539bb3",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:dc761f015ad26f6e8acfc5007281b2d74a6412b825c1784a6302db8d37297d7e"
+        "conversation_key": "sha256:0bb9969ae443d59fa4bd7f81436a506639990e4254856252456ededec646630b"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -316,13 +316,13 @@
       "source_run_id": "0bbb482f-281e-4eb4-8d43-941beba33299",
       "project_id": "e201d3a1-53bf-51b0-b49e-a4ceae2387cc",
       "project_title": "Scope Creep Change Order Calculator",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/scope-creep-change-order-calculator-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:25d2b91a4808cef2e505f49cd058dd0a923e9685d92a4603cabe4a4241aeb9b1",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:a90d324ce05bca3c818256a4ffe8206a5a8f4fc8f771c88e51e7de00cdfa8ba8"
+        "conversation_key": "sha256:af640d6bac9552c9a1960e5d8012372e1c5581ba1f59889f845dc7ad6dd5affd"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -341,13 +341,13 @@
       "source_run_id": "0bbf0b39-7e77-49b3-a07b-93c50fba82ea",
       "project_id": "acbf0f92-034d-5bea-8af2-3108026ff93a",
       "project_title": "Tiny Pixel Stamp Card Maker",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/tiny-pixel-stamp-card-maker-chatgpt-recovered-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:4cf247cb4a6b918b8b6429ef4a81858d57e0b26abef704d4bbfe1dc911589abc",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:a428c12302b99f080f5fbc230a7e1368c1f5b64f081db1ab077fe656a3efc226"
+        "conversation_key": "sha256:5853046aed6098f4b21926692eeb845b9a7b85bd3d0ce536874d4c6300943230"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -366,13 +366,13 @@
       "source_run_id": "0d21fb0b-c776-4c74-9a05-90a0031eceac",
       "project_id": "f40f03de-e10c-592a-9ccf-e109a4884a09",
       "project_title": "Leftover Ingredient Swap Cards",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/leftover-ingredient-swap-cards-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:6c3d2f08eae365fca372eb8fd882a491c3d374d9c44877e770411bdf3924c483",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:464801fd056858302bb79778839a4f5d4725b308b09b957a837c7d1781c28422"
+        "conversation_key": "sha256:ec091987862508578fce352f74c4871bbdb57fde6d7d57838090eb83e672dbc2"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -391,13 +391,13 @@
       "source_run_id": "0dc36b62-a578-45fb-9213-400b67ad73f2",
       "project_id": "83c80a17-d9a8-5c76-bc01-1150c9fa3091",
       "project_title": "Short Video Hook Continuity Board",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/short-video-hook-continuity-board-claude-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:550451ceb33440eab2c9fc53cd24eda0d034167a0e9a0f937fd889e1c9c454c3",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:222e0e1d130ce933ceaf83630dac3d01e8edfc326ef47b30d32bbda379375bbf"
+        "conversation_key": "sha256:4f859955b0b88a01037ab952dcfeb982f593f1dafc638ad5d9baf3b2eaf0053e"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -416,13 +416,13 @@
       "source_run_id": "0e244880-4d58-40f7-b865-d056d9f4334f",
       "project_id": "67563a99-93ce-4a51-843b-094d1ddf0844",
       "project_title": "Breakroom Snack Restock Planner",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/breakroom-snack-restock-planner-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:290e996d8023ddfdc019c86eb184ad8aca651ca28e69d3321c3ec01f0841b763",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:e14802addbb1a75cb1b300beeb4b5b405f6008529f88bbdc864843af94f33090"
+        "conversation_key": "sha256:f4dbfb861794f25bcfe0123a6137dcb4c9b6a6269361b80020d59a4cd0f37e77"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -441,13 +441,13 @@
       "source_run_id": "0eea38da-ead0-44e0-b50c-ddc6840cb033",
       "project_id": "ca0c2e08-9e02-4725-90f5-58ef248fe4c7",
       "project_title": "Gym Mirror Progress Shot Consistency Studio",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/gym-mirror-progress-shot-consistency-studio-claude-sonnet46-max-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:82917dcfbb6108a8628855b28d05f234235b69694acb4fdbcef64165098399f8",
         "locator_kind": "preexisting_public_candidate",
-        "conversation_key": "sha256:2369d645e06c0c55587631767eb3d135b11afe93072243a6ef1b19cf5dcbc6ae"
+        "conversation_key": "sha256:4f12a6258e210a73d4f5e60ff9317fdf0f07311bd2bad687c7cfe01e64556ed8"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -466,13 +466,13 @@
       "source_run_id": "10485c88-54e2-409a-a6f6-ce33f50641ce",
       "project_id": "16ad459d-00ba-524e-aa3a-e49cb4086570",
       "project_title": "Thumbnail Safe-Zone Storyboard",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/thumbnail-safe-zone-storyboard-claude-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:68d22cb3113405d1591c501e1db33e59de4f79e6afe3bb48f1d4991349a4864a",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:3e3fea9468450f4cea39a88f2ecb18720c6b6342ae0f19540c2a3444777c62ff"
+        "conversation_key": "sha256:10936fc4ea79c6965b6c11d177f2416e34d7c0033d649b2e2c31f67910f27d4d"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -491,13 +491,13 @@
       "source_run_id": "10e226ee-7783-4045-804e-2b5e837bf8e3",
       "project_id": "5b1157e4-448e-5962-8ffc-0e61f0a844a9",
       "project_title": "Travel Poster Landmark Layer Game",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/travel-poster-landmark-layer-game-claude-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:468c981368298212c79957e2adee26ea95cb56588769b465bdd8da98649ad579",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:68074debfc95e70378f9b76dfb9d409dba3cae5d024b20a61c5d658f49b7a8a2"
+        "conversation_key": "sha256:2849912572ab2fdc3e3fffc72271705b51c3748f3926f741262ff8122bf6872f"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -516,13 +516,13 @@
       "source_run_id": "118dd41f-80ac-462f-954e-d3697dd79e79",
       "project_id": "b2f6d319-e0fa-50e1-ae2c-6591afae049d",
       "project_title": "Proposal Red Flag Heatmap",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/proposal-red-flag-heatmap-claude-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:e2b2c3bfd2691354cda7f46a0356ab176cff324e5aa52faad9425531ffe647f3",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:7e221452d537f41efbf74c0fd653f715ab831cd283099acf19f3573273a19fc7"
+        "conversation_key": "sha256:3aa6892b34cb1c4f9bab929d4dd9342cc10b6f65a29913662a909c60254c7102"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -541,13 +541,13 @@
       "source_run_id": "1293da84-df0b-47b1-b090-d3e89de6f70e",
       "project_id": "c25c6b5b-70a8-58c4-bba3-d9bff00424ec",
       "project_title": "Product Description Shelf Card Stress Tester",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/product-description-shelf-card-stress-tester-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:cbc1b595791f68fa5b4462e746d3acf98a7db8b80b4234cf2b5934fc2dd4290f",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:4fe0eccdbe72d333ae1f6dd714a2812d40aaad4879df0934319a904007113a7d"
+        "conversation_key": "sha256:cd2a3dd0dfe6e7830b8bfd3eaf5ddf99fa65be88e2181054ebffa897841d37a3"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -566,13 +566,13 @@
       "source_run_id": "12c7d579-e874-4581-87d0-40077f190644",
       "project_id": "faca349b-c756-55ac-84c1-d4d2f0478792",
       "project_title": "Recipe Promo Batch QA Board",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/recipe-promo-batch-qa-board-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:aec3eee61fe0bc6dea137e058c6030fe053ff8125dcf2fc872d1def0c3881a0a",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:d2bd1cee9afb6622193121614a8cc8fe7864a81a8462e8c3c3e100a43e7c47fd"
+        "conversation_key": "sha256:6e0ad88ceb1ddf910afacf1de6406140a818762f37b6664c7aa0bbc0c73598e8"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -591,13 +591,13 @@
       "source_run_id": "161912c3-2927-422d-b273-8b7d683b026a",
       "project_id": "c299bd76-a336-54af-954a-c6bcac84187e",
       "project_title": "Interview Answer Proof Drill Cards",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/interview-answer-proof-drill-cards-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:d9980947683c15e1ecdc32101cde74832723b06c14c5f763fbe1273d7de3df1a",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:011e0f7d9ca403c0245fd51f3ad55484df541760941386f29773d0a9c5da4d1b"
+        "conversation_key": "sha256:e8aaf75a33f642cfebdcf614be39f761c3739d65dcaaea4ef4a3a9caf3366122"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -616,13 +616,13 @@
       "source_run_id": "19453950-e191-4f1c-9cdb-b58c46616167",
       "project_id": "862fd975-74ab-493a-adb5-80cbf031c0c2",
       "project_title": "Airlock Zero: Swarm Shift",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/airlock-zero-swarm-shift-gpt-56-sol-max-fork.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:3c1aca668d4b4584dcdff971bc896af61e0b39765f552a5dba5b8c9079bc821d",
         "locator_kind": "preexisting_public_candidate",
-        "conversation_key": "sha256:069310bfbe134a333c04a7cba146d217172556f4c7c5a6417035d14738490a13"
+        "conversation_key": "sha256:85087ff2bf8ffe5bb91130f5f074854e6e0a72db9fb98ececaf3c4d7698bec23"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -641,13 +641,13 @@
       "source_run_id": "1e93886f-37fa-4fef-a331-6ec3f9598a33",
       "project_id": "ac630382-fbff-426a-b4ac-14d54d1d2a9f",
       "project_title": "Mini Golf Windmill Putt",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/mini-golf-windmill-putt-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:066237e73b0dd7607872ed6d568fb3d2c21436e404f6112910b2ecd05b105bf5",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:4aee6a79b82eef31723e52ee73f1370e91646147bbb559381b27159404a5c5fa"
+        "conversation_key": "sha256:47e4d14fca029f174d586e7828527d15e5007cabb0fd39d019a806942884db40"
       },
       "public_url_status": "verified_public",
       "verified_public_url": "https://chatgpt.com/share/6a66a1bb-4b98-83ea-a04f-5e3b0bdb5fbe",
@@ -668,13 +668,13 @@
       "source_run_id": "20dd647b-960f-4c7e-a0de-6bc673954b41",
       "project_id": "18ba00dd-018b-481f-992e-8ab59b75a8b5",
       "project_title": "Garage Sale Price Tag Maker",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/garage-sale-tags-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:12e84da5fcaaf88eed81b904937546b4176bd4bf988f86a5a9070a1e938c0e65",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:a482f1c3cbf5a36c074f1e223bdcf798ccdc30850dfaa07fe8002047d14b5559"
+        "conversation_key": "sha256:2c6c7f0f790c73063147a9449f6ff540a44c0e0b492efa8eb09ddbbd21af570d"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -693,13 +693,13 @@
       "source_run_id": "214e1cbc-92a9-4419-bbcf-7792c99a0c8b",
       "project_id": "e36dc75c-523d-58da-abf5-a1d3df7ca503",
       "project_title": "Keyword Intent Cluster Sprint",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/keyword-intent-cluster-sprint-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:13402ac3daeb19a4d1f2a7359e0f324743f0fadfb1d2b5fa95457205204478e2",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:12013556916685b705f0ef3f2b9c13a0a940b8ad1ddc4f49b230028340055470"
+        "conversation_key": "sha256:efc6e9c793f19df32287db9b8b93c794a6eafe3bf28408fa30be28db2d7c97ef"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -718,13 +718,13 @@
       "source_run_id": "24dcb344-7e06-4c7a-8c13-c5b765ec6799",
       "project_id": "6324a886-6903-5f14-a393-f42c5c67dbf9",
       "project_title": "Fridge Tetris Meal Prep Planner",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/fridge-tetris-meal-prep-planner-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:8088674993fadfcce485f8003658f1ff875e9076da739f4e83667218ba8485ca",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:91bc3aa8397193c212d7545c271bc259f30fd08d8d8ca753978866206128af39"
+        "conversation_key": "sha256:fa4567e25126083c0a5389f9f27489a26a2c0e86150707ae15f7adf05f03646c"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -743,13 +743,13 @@
       "source_run_id": "27173956-7341-4a2a-808e-cfdec12288d2",
       "project_id": "4e6448bc-16f1-4638-9ba0-1ef72321ac67",
       "project_title": "Neighborhood Potluck Balancer",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/neighborhood-potluck-balancer-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:99ced53224ae2aaf2cdd8c23042d5060ac4ec38e6fa769ea56b1df977669df0b",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:fd17818ef85775b09666488dd0f67ba536ee3eba1b54f9490a7466456308040a"
+        "conversation_key": "sha256:2d25c2702dddc1e40e44c99853089bbb6fd16f390f240ae7430328ff61acf7ee"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -768,13 +768,13 @@
       "source_run_id": "2b350849-e48d-42d2-9dfe-ac600ba3a864",
       "project_id": "c1a5fc1f-923a-52f8-af81-21c0bfbfb74e",
       "project_title": "Product Photo Shot-List Tile Sorter",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/product-photo-shot-list-tile-sorter-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:639ca66bce43269b91b76f6775a08677ab77953cb9609389a6c3f5889478206f",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:645b0fd6a2150895da11ff2596f9e0c2181cf5c899162876a920c6139fc1ec9d"
+        "conversation_key": "sha256:cc0bb23ce4d29ec195ebeff2ea18545f6d6c5c3e8c0b6e131b4e1299c3dc0254"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -793,13 +793,13 @@
       "source_run_id": "2dc782f8-bb66-40cf-ad0e-7621484e5bb6",
       "project_id": "7117026d-fe76-5fbb-97c1-023d620de328",
       "project_title": "Logo Brief Constraint Mixer",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/logo-brief-constraint-mixer-claude-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:e47e003e43389338046b79ab7f887a93a014b458d282b3fd0638ed80476f777d",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:bf571175a9df0a47ad1bbbbe9e72f3edf4e028a8b3ea3de7b87b3523d77342b0"
+        "conversation_key": "sha256:e77ae76a51dccbe297d4920b9824a5cfbfe373cec4c9672daf3eee6459b9f57a"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -818,13 +818,13 @@
       "source_run_id": "2dfa5104-d97e-4824-b413-862ea0f7d2f6",
       "project_id": "22b50da6-baea-418b-accb-99eea5bed603",
       "project_title": "Corner Store Change Rush",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/corner-store-change-rush-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:92cd4f53cf9350ff4a3c384a73ac1792c4a67a3ca13d2888c4cddc28e85f38f0",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:0862f1cacb8fdba048238cab592c8251140ea70638b8258e251dbbe943a7cc03"
+        "conversation_key": "sha256:aeee2bee0bbecddfef64a95114bfdd2da71458b7421e3776d0bb12b63a854d96"
       },
       "public_url_status": "verified_public",
       "verified_public_url": "https://chatgpt.com/share/6a66a21d-5df0-83ea-b0dd-0e7895afd27d",
@@ -845,13 +845,13 @@
       "source_run_id": "2e4e1787-a867-498f-aeee-8527d06d5be8",
       "project_id": "0953b801-3290-5399-b93c-1e1199fe2e31",
       "project_title": "Collectible Card Shot Planner",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/collectible-card-shot-planner-claude-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:95f71e6dc431b348ab72bc1f9f5465894445ad89212ebaf1524a042047c3e7cf",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:e7917ed05a464da6cf18572336482783479d775085660a475c977f6cc2da9e22"
+        "conversation_key": "sha256:8fb1a63e6d9682b4f74f7bdd5640f085ff1ef6e4ecc7180f392236f754c7f9c2"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -870,13 +870,13 @@
       "source_run_id": "2e526efa-191c-48ea-9ba0-5ff073403770",
       "project_id": "31faf192-93d1-41d0-a74c-4402d4223937",
       "project_title": "Airlock Zero: Reactor Run",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/model-variants/airlock-zero-reactor-run-chatgpt-56-sol-max-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:c9504f54446bebcafcdd8499cc229fa95d72db23c0df77399a06980f0a34aa93",
         "locator_kind": "preexisting_public_candidate",
-        "conversation_key": "sha256:3fac93d1abdb093377d404cca4a461fa94d8d948e917da7500cd780b4d6484ff"
+        "conversation_key": "sha256:9585d5a690f14a8ce6eb872779cf6ef29662eef51306b084d7132bca0f49bd35"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -895,13 +895,13 @@
       "source_run_id": "2f2bfc9f-019a-4ff3-b51f-3270a7ea9eab",
       "project_id": "384ebd4d-88af-400b-b230-4eb771bb2194",
       "project_title": "Security-Cam Anomaly Timeline Game",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/security-cam-anomaly-timeline-chatgpt-extra-high-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:23571ed279860e7d68f53ccc41c02361ecf0766dcf0aa92a49b13456492ea22e",
         "locator_kind": "preexisting_public_candidate",
-        "conversation_key": "sha256:78d9502a76c6e87336da48ed1ed37185bc6c6f15858ec50e085cb24362c4ca28"
+        "conversation_key": "sha256:000eb27bf060f42b43c53a19034bafbc67fb5c624addaa7dc46e221087f505c6"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -945,13 +945,13 @@
       "source_run_id": "3137def2-964d-49a8-ad22-3b776870e3fe",
       "project_id": "22bcc36b-497f-43f7-824f-3ccba9690da6",
       "project_title": "Rental Walkthrough Red Flag Scorecard",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/rental-walkthrough-red-flag-scorecard-chatgpt-gpt55-medium-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:f503aa138f623f60f4006e512b81bc4f2d88bde3b4275354d02275083a349bda",
         "locator_kind": "preexisting_public_candidate",
-        "conversation_key": "sha256:8400c2e2a81586d65c9b0894e7cd6984b6d7284f380665e176cc1c4c355d3d1f"
+        "conversation_key": "sha256:f0488234506ee026814ca247fcd477d037e893fa79ca62dde7770afe2d21b5f5"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -970,13 +970,13 @@
       "source_run_id": "3216db0c-fd3a-48f0-af70-58b47f34068c",
       "project_id": "e0e4e2b7-082e-4db1-9468-484fc3fd3a69",
       "project_title": "First-Principles Claim Ladder Game",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/first-principles-claim-ladder-game-chatgpt-gpt55-medium-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:9736bb558378ce8432eab7c8bb6426d7dac1dd3bbceaac9c72e4bc146ca39ce0",
         "locator_kind": "preexisting_public_candidate",
-        "conversation_key": "sha256:032f0449b5c4d3fa520dcf209349cf0f13c539105f77ad1217659a6e385f3a73"
+        "conversation_key": "sha256:417869ef9b6eeb7e46d57a4eff18c3051e7ae84e40a4bce00942c874563a5a1f"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -995,13 +995,13 @@
       "source_run_id": "325a14dd-9e7b-42f3-be64-bbaa53462d94",
       "project_id": "ebd1faed-aa6e-46b1-9239-6b8d88eefffa",
       "project_title": "After-School Pickup Roster",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/after-school-pickup-roster-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:a9a11d7b08d6868d26fce59b094c59210d0be691fd34db111b69dbbfc654aa5d",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:9d29ed82e772cc442c27918ca1e0150e8477565357642d606224c34a2d701a75"
+        "conversation_key": "sha256:0db61ced0638602e40cb0a20b0371ebedcd149fe17fc9a396ee9f4dd222d6d96"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -1020,13 +1020,13 @@
       "source_run_id": "334a75d7-3821-47b4-a9ce-dceed677c087",
       "project_id": "271a2352-bbc2-414f-8aa1-7d398bc7d6df",
       "project_title": "Tiny Window Herb Light Planner",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/tiny-window-herb-light-planner-claude-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:115c782415b4e8988171d49eb85df93508d9a5c270ffe690c624bfa9a11fd1db",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:156e57c6f611be4afb9c89e4295ccfac5b1dfd386c88b6c98612a7e2b134f207"
+        "conversation_key": "sha256:1a6710f857ada03033ae27c1b0520c62e3cd9880889801a06d57243efd3aa0a5"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -1045,13 +1045,13 @@
       "source_run_id": "3c613e21-30a3-4fa7-9a5b-c27c0c60520a",
       "project_id": "610d9854-ac70-5349-a9a3-86535e870b78",
       "project_title": "Recipe Pop-Up Menu Profit Cards",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/recipe-pop-up-menu-profit-cards-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:5e2190e8e33bcf2aba802a355485d58212d2cc3a9e37721e633bd5e69f6b291a",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:51c33bdd4b768d699dd8f07621040124c19f4a7dab5e73067b257f26736f69e6"
+        "conversation_key": "sha256:a3a35a5cef1508266c2fab37db01510fa1314256375fed303c79cef5fc31edc4"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -1070,13 +1070,13 @@
       "source_run_id": "3dbee174-f631-458c-bd01-2560ea3fac3f",
       "project_id": "5c12cf80-6586-484a-b3c8-51bc94269508",
       "project_title": "Flashcard Cram Drill",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/flashcard-cram-gemini-31-pro-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:3ed5e4c55de8e4475491f128943e443ed33244bda1794fc98a9e3985b1a4a7ec",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:36914e875170e53759661d5687a8fce488a69a1768c0ef60b0708d11ac282040"
+        "conversation_key": "sha256:d41d482858cd02c2ff98e38caa0261f774e7e53329e575a2abb7f7d4191a4146"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -1095,13 +1095,13 @@
       "source_run_id": "411a6260-a9d2-44d4-a150-430f598d7ebf",
       "project_id": "bf6c897d-2e9a-4f1b-b1b2-4d7874025b83",
       "project_title": "Potluck Table Planner",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/potluck-table-planner-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:03962f4791ecefb8e2a259eaa7acbc7f76cd56d424a47fd809b95229a55ee396",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:7bf92c0e72ccfb7464c15996c089c01b260645af1161a10886c6931c0e9cc4f6"
+        "conversation_key": "sha256:5999f456d5ffb62b38a989db20c33bbfb3fe21bd259b6c5797f787bfb1bf5cdc"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -1120,13 +1120,13 @@
       "source_run_id": "4154efb0-62cd-4b23-9eae-8e205c0f6210",
       "project_id": "00a17dd4-5938-5ea9-866b-1355cc95376c",
       "project_title": "Reader Promise Evidence Ladder",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/reader-promise-evidence-ladder-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:5f3f8511e53a8dd4283d966e3b96c45996ab4ced36ac45b5f67c1997262637e0",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:c576f0812cc2d9fcf0abc78a05fd65aff56ab98d5a3fb92307bae043e00700d1"
+        "conversation_key": "sha256:cb66377f779877868b59c68be5ed9ed045257db5a1d809b72e50996718e47732"
       },
       "public_url_status": "verified_public",
       "verified_public_url": "https://chatgpt.com/share/6a66a234-fe44-83ea-847b-610111aec3ba",
@@ -1147,13 +1147,13 @@
       "source_run_id": "429c74d3-d1d3-41c2-b005-5de10b95c2dc",
       "project_id": "33ba2dc8-da35-5b55-9ab1-6bde7481ab8a",
       "project_title": "Moodboard Contact Sheet Planner",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/moodboard-contact-sheet-planner-claude-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:38465b00bf4fdfbae2a66ad67a77b47cdfc8c8302a3f1b4b3d826bdc6e70147a",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:f893f4152af9ea7c8e61ba2fc91055c3783ff21c658edfeb75ba910efaf3d6e1"
+        "conversation_key": "sha256:d64f7b8f6fecf9090625f5816d5ad996cbe52a384a54cce77c1668ba431f37df"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -1172,13 +1172,13 @@
       "source_run_id": "436baba8-95b0-4aab-b7aa-e5d666a02825",
       "project_id": "54a0dce9-3825-4444-9e40-8cc44a7e84c5",
       "project_title": "Pop-Up Dinner Seating Mixer from Gemini Flash",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/popup-dinner-seating-mixer-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:a40864f6343b2b0e74bb9ef38bbddf90f02d9d7269bfbd30986a1b55303b7c32",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:b2cfd874331c32ad140ece4a0a34238c65b47ca4437e7981cd8b2d4df9c31255"
+        "conversation_key": "sha256:9ed7293e6b01959db22322d39d26ff760b861a5d2f932eb36373ea2cfd40f659"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -1197,13 +1197,13 @@
       "source_run_id": "44f67a85-7179-449d-83b0-6ebd14457f35",
       "project_id": "37d7d169-5516-40d6-9135-64f2389b26ba",
       "project_title": "Tiny Diner Ticket Time Trial",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/tiny-diner-ticket-time-trial-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:35a6c271de86697579dd9ff838494d9bab96c484eaffdb47c81c78cd87283957",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:f817de46900996840a8a06a08965dfbef30989fdfd835a9229a4f946c750bf65"
+        "conversation_key": "sha256:972e78a18ea37cb60bea6715101e727d18d6695a92ebfed5f4350e195b15b020"
       },
       "public_url_status": "verified_public",
       "verified_public_url": "https://chatgpt.com/share/6a66a1d5-be90-83ea-bf45-ad3c86161594",
@@ -1224,13 +1224,13 @@
       "source_run_id": "46bd8b10-bd90-454c-bfd5-4f50413d4d4d",
       "project_id": "1e26ae19-9894-518c-bebd-f2a44b8442ad",
       "project_title": "Forum Reply Helpfulness Dial",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/forum-reply-helpfulness-dial-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:e6f7eb6f8a1b95ddff032063d20b03e7b6f1476d72135b8430bf6afc4ed71a05",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:078eec4304d955830eed04f82bef9cfbf02671db11a4ae71b1c9c92797e15155"
+        "conversation_key": "sha256:ea704c1af7dd6fde2eb8fc6f83f60e53c23895be4be77dff21f1e514c9e1c249"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -1249,13 +1249,13 @@
       "source_run_id": "4777cdee-dd14-4102-9e36-94cc9e9b9be9",
       "project_id": "b715f7ff-5675-4df1-bac2-063406bada78",
       "project_title": "Trip Packing Planner",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/trip-packing-gemini-pro-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:228d999827c15d44caae5432701b1b2b31862b7305d381c4870893ce1a0e7b9e",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:ea0cc1c2425377ccdb0d6ba13343b1082e70b083d4c1c1fa665f100a415cc8b5"
+        "conversation_key": "sha256:613865a07f26a678a9ed007c0af65b69b3be4b0b91f21e5b965a995a4a38c5bc"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -1274,13 +1274,13 @@
       "source_run_id": "4a2225aa-9dc9-498e-a9c0-e89bcb281f6c",
       "project_id": "7e66ba1b-2553-5c73-bdab-54eaccbd08e9",
       "project_title": "Album Cover Composition Planner",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/album-cover-composition-planner-claude-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:6fb29d2e58d06ecedebd3c79e98f5e474800dc0594552f7dc0e84fc26e02830f",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:e4414b1e7725925d90cbf2e9b0ceeb3c1c4078b2c6aeb98e52cd5ae4ce8ba5cf"
+        "conversation_key": "sha256:b887de0f8b68839c4c2eeca7012b08fff41ecc46f081ccc9e998a21bc46b55f5"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -1299,13 +1299,13 @@
       "source_run_id": "4a3b6898-0d17-4691-b793-b7d191835035",
       "project_id": "9dcefba3-beef-40c3-915f-19047b321876",
       "project_title": "Tiny Ferry Loading Puzzle",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/tiny-ferry-loading-puzzle-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:c90b638f8080a3025e966b827c512f1ba734bf6abe443f6e21512d75407e1cf0",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:95f5d558bbe89738d589beee94c588310675f1fbc54feacaf80bcf4901750288"
+        "conversation_key": "sha256:5ca5128a77ea5c8dcacfa9e364261e57c7bcef10e19e879b5cb2c70b478b29c7"
       },
       "public_url_status": "verified_public",
       "verified_public_url": "https://chatgpt.com/share/6a66a1ea-b4c8-83ea-805b-ed1e1984beaf",
@@ -1326,13 +1326,13 @@
       "source_run_id": "4a65e80b-771e-4034-8cdf-f983ce70413e",
       "project_id": "5ccad8ed-ee7c-4a80-9b00-b1a439d986ad",
       "project_title": "Rainy Window Cafe Rush",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/rainy-window-cafe-rush-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:2a216cb2b5e52650d200d57529efe4d6dd2483ea8569fc44c7f979468b16a5e3",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:292c4e944232011b2fe5e2ed4d0ac2347e9cf910c064b2b5354a8012ce726725"
+        "conversation_key": "sha256:66b5e8bbc21bb045ee8a060967474fdd350b8a282623b4ee3a562519050c3caf"
       },
       "public_url_status": "verified_public",
       "verified_public_url": "https://chatgpt.com/share/6a66a0e3-1840-83ea-86b0-be900cd71305",
@@ -1353,13 +1353,13 @@
       "source_run_id": "4b308687-7ec2-49bc-a259-4ae22feee146",
       "project_id": "ba044a13-91f7-548f-8f65-d9a5560b8bf1",
       "project_title": "Visual Brief Consistency Board",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/visual-brief-consistency-board-claude-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:ff17ef4dc363258507409de6c78bd41fdf01125bed7b610a8a8446b70bba7b3d",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:7c2f96174e77bddc2fcc9f7c927e47b418ae2167024b82d1632ed84ecae71f9e"
+        "conversation_key": "sha256:5caa52116ef3e2a1222e632f2948b8c7bdd0a76af0ff4a6140899490e2cea756"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -1378,13 +1378,13 @@
       "source_run_id": "4ba1cf84-7e4f-4ed4-b146-8ae1bf08e293",
       "project_id": "1611a25d-432b-5535-a131-3d9f4da6251c",
       "project_title": "Headline Promise Bracket",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/headline-promise-bracket-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:94964be84e8c4865f8186b95421e6cc78ac877c1e92a89d53f0df5534e606d92",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:59a33027c138c2fcad15349da449355a5b12f72c5f5c4ba48c602e77ae3adf3b"
+        "conversation_key": "sha256:f2d03d60320356d5c2ed503dc9a169cf3c93c3e5222b360d05b328b6fba8f6b8"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -1403,13 +1403,13 @@
       "source_run_id": "4c437457-656a-42cf-94fa-651404c93162",
       "project_id": "ac459234-bbdd-53ff-b56c-8f13cde8ba93",
       "project_title": "Instagram Caption CTA Mix Board",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/instagram-caption-cta-mix-board-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:a177e346eae4f5f918e96f5b38280d7e08bdcf2e78ebc3aa82c915edfe037a2d",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:1dd839d96337d76badc66e59e19a312a49c71cc6153aca58beb56cc27c1ce9c0"
+        "conversation_key": "sha256:25384607151c34ad78f1e6474850b2973d465cdea0c0f4c00dc2a0ae20646c2c"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -1428,13 +1428,13 @@
       "source_run_id": "4cffc0a7-fece-4b99-be42-a9b77e0a8f78",
       "project_id": "e30cbde6-e805-5350-9cf3-8b41a8e72f37",
       "project_title": "Chapter Scope Map for Tiny Books",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/chapter-scope-map-tiny-books-claude-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:7381ab85b927f065be8a21ec29477124c8c5f0553d1439388cdf859907a81549",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:3a310af262617e391f30def8ffde451f4fb191d3d9c13ee868f27d4a34c4827c"
+        "conversation_key": "sha256:6ce7b10addabf952700974c5c79923ae4f08cdf8e7a41278014dc8c72ef6b217"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -1453,13 +1453,13 @@
       "source_run_id": "4d02e29c-ff98-4c73-82ca-942430632443",
       "project_id": "a7201847-c8d6-4e09-814b-0a382f8f8080",
       "project_title": "Tiny Festival Set-Time Clash Game",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/tiny-festival-set-time-clash-game-claude-opus48-medium-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:fcd28093515df54d8d09ca261ce3389323e602cdb58185824928e79cfbf946ef",
         "locator_kind": "preexisting_public_candidate",
-        "conversation_key": "sha256:5f1e4ced6532346bad71095e4c300f251f0e4db6a3002a6dc5a9b4f303388f68"
+        "conversation_key": "sha256:a423ad1eb0f56f26da46dd06ef1c3e2f21aab1ae27104755dc26be353cbcfa5b"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -1478,13 +1478,13 @@
       "source_run_id": "530fdb44-b014-4444-8b1b-545e95b74d5c",
       "project_id": "3afad9bf-1fa4-484d-a694-aca0d19faa3f",
       "project_title": "Word Ladder Sprint",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/word-ladder-sprint-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:bb46c00b8ee72a7f0fb9507da57222001f910ef4011519e2b3139a47f58a40fc",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:6a7c51fb946b92d56cf246acee051fbda27a0c0216ca1847673f91783fa972c6"
+        "conversation_key": "sha256:12dc0fe0e831b47cd9e77a7064954a54482a5d22bd06d5cef25c2403f07bc500"
       },
       "public_url_status": "verified_public",
       "verified_public_url": "https://chatgpt.com/share/6a66a038-d260-83ea-aa78-e1474e2ed357",
@@ -1505,13 +1505,13 @@
       "source_run_id": "53342e1f-f43f-4507-b2db-5b6e05b5a04d",
       "project_id": "6c890a3d-ee2d-5aae-aca1-b85507f19ee7",
       "project_title": "Travel Poster Layout Stamp Game",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/travel-poster-layout-stamp-game-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:b66d8b2a7445fcd9c6479bfe9ff3460adaf566fc738ef78fd933f5650a91667a",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:dcd9d27138f7f8cb761de2d427076a03c4482e009390e6ece6e5ea43e58ab83f"
+        "conversation_key": "sha256:234b0a5a7994ace5e5f9ceaf7f61070032eafa42df9c9edece9e52a26bd5095c"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -1530,13 +1530,13 @@
       "source_run_id": "5433009c-b9d0-4c2c-8b19-bd84819a7731",
       "project_id": "74c87e37-be6e-503b-8d3e-6f634d12d49a",
       "project_title": "Leftover Lunchbox Rotation Builder",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/leftover-lunchbox-rotation-builder-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:bf9ebdd6b4dd3b66d32882f31195bd5352d3977e31db649f429e891988e7f09c",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:2a2f191e4d073f444e940c0cefcb91c7fb20b573c3fc3f111664ecb1c7112213"
+        "conversation_key": "sha256:c6d10db5d7425f5671cda7c0804eda3465cbf2f0b07add2f324d1cce0b96af7b"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -1555,13 +1555,13 @@
       "source_run_id": "54e3e755-c9cb-46fb-918c-ef11b4780e91",
       "project_id": "18c8598b-f62a-4517-9b43-0d6c2bca7ab3",
       "project_title": "Tiny Parking Lot Cone Course",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/tiny-parking-lot-cone-course-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:1b93ff1a8bfc7c58c659f24c6989f09413f3482bf2807010605fd588462141ea",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:72c9208eb08469a72650198003bb3f72dab4369e321ef1a3763191c8eceb35e5"
+        "conversation_key": "sha256:67e3662d65a04134ea2f7239b6dd1b7bf5ed7e0efb11063ed41762bfdab1f137"
       },
       "public_url_status": "verified_public",
       "verified_public_url": "https://chatgpt.com/share/6a66a1ef-fcd8-83ea-ba30-c61eb4eb88fa",
@@ -1582,13 +1582,13 @@
       "source_run_id": "566b6e9b-d521-42c8-8df7-272f20d1030a",
       "project_id": "3d50a55d-f842-5a43-a2c3-d2d1767fbd99",
       "project_title": "Visual Prompt Ingredient Balance Studio",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/visual-prompt-ingredient-balance-studio-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:77894f66f0c6bbcfa369d946d0802d033601c1652bf8294fc89893a665b08f5c",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:53d775a67f71cc05d60d29ea9f0eb7147ff27d417a78af67d37c3ff7b224ac43"
+        "conversation_key": "sha256:c08625a7aada3199fb805935b337f23a669f27e59b9a3fb1074d69a14d48efcd"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -1607,13 +1607,13 @@
       "source_run_id": "567ac639-5660-4010-933c-8c174628c4dd",
       "project_id": "44eb1b20-3bd7-5e9b-8f90-670558a25802",
       "project_title": "FAQ Gap Sprint Board",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/faq-gap-sprint-board-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:488e4be1946f67a97f113c0f93289b62bccdd53d0e67e58a2689f2521fae2a14",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:fd4b6205f6ce825d68cae756353e5a6bd37e03baa71033171367a0ac3ff90c2b"
+        "conversation_key": "sha256:f6fa81275b1a67e1ab91e8047057663fab34cdec9485f8d43846fe6e7e968947"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -1632,13 +1632,13 @@
       "source_run_id": "58487d49-36a8-4555-b6c5-17f898fa4bde",
       "project_id": "26cfbe40-608e-4701-b27f-995f1259fe8a",
       "project_title": "Lunchbox Conveyor Sorter",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/lunchbox-conveyor-sorter-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:79c7f1737c859d74da26011bfea5304b70a20d71dabde30272f06920ab92cf7a",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:59c16d922a37229a536b28a1643f4a26e03ff240757207e71a4e1c101dfdda88"
+        "conversation_key": "sha256:bddda8beb01c01cdc58735db41825a06c69df3164802744f9bf4f9f1b538c2dd"
       },
       "public_url_status": "verified_public",
       "verified_public_url": "https://chatgpt.com/share/6a66a0ee-3ab0-83ea-a2f8-20a4a4ca10e4",
@@ -1659,13 +1659,13 @@
       "source_run_id": "59d48a98-1b9e-4cc0-9522-2f9437680464",
       "project_id": "1df01e0a-b61e-494d-be73-5b6153509810",
       "project_title": "Meeting Cost Calculator",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/meeting-cost-calculator-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:db28040cb389e94f90e388e3ee526bf1b408f9c561b3153917620b179bf683b4",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:1015325114ad4a3a31018737c50630c20ca6b02cf44c8a6584d29e73209fad99"
+        "conversation_key": "sha256:5a5c66185184fa45020d48532b13a56a74006b99bd6c519a9d1474e881f34227"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -1685,13 +1685,13 @@
       "source_run_id": "5a7df2dc-6c27-4b3b-9682-cd6e7d89d11b",
       "project_id": "46761ccf-1c02-500b-afb9-84d9bb0f90cc",
       "project_title": "Product Objection Q&A Shelf",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/product-objection-qa-shelf-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:5ee72aa6e5fc83e13da4e62409918ef6e59b8bea2c4e6d51eabbf8ef3564fbf3",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:c72de32f0715726e800cf3c8733a0f3004e3db567b9246e49731793c5ffce85d"
+        "conversation_key": "sha256:cd256d4aa61860afee352b060e189fc08595d297e03c7119cf6a3dd15f0aea51"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -1710,13 +1710,13 @@
       "source_run_id": "5ca61d12-390f-4b60-a9eb-39e347de9d1f",
       "project_id": "6cbf2cce-57df-4f64-b50c-1a18e6cb2155",
       "project_title": "Airlock Zero: Hull Breach",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/airlock-zero-hull-breach-gemini-35-flash-fork.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:1b093d1f0c723e3236d3d8d363d4f8c5c59cac395e3f3626ca0983805d1b75a5",
         "locator_kind": "preexisting_public_candidate",
-        "conversation_key": "sha256:f3b0e9e94bb2ae75f1dc0af889403f755636f3b5e5a91b63e0065361519bb9f8"
+        "conversation_key": "sha256:278727e584717ffc1770f3db03c982fd81ac7202dcaca61f6076fba004ac8d14"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -1735,13 +1735,13 @@
       "source_run_id": "5da0e93e-511c-4e88-9c6f-9ddb85ecab90",
       "project_id": "d18cac24-5508-5b6a-9b8d-fdb9bd000595",
       "project_title": "Accidental Snapshot Shot List Lab",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/accidental-snapshot-shot-list-lab-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:95a7516dc91b4990efb324bdba13293879f1d1a6692b25db7ac404a03ec10225",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:9abf90f6532e251ae3b24ecc6ef5c54ad51664fb0e3eb500bc4f7e8442f2c6a9"
+        "conversation_key": "sha256:ca0c5b215b3dbb81027e942e0b8c5b2c3e57d19d9cb1b663e0a4ed4122c727c9"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -1760,13 +1760,13 @@
       "source_run_id": "61ea4cdf-d984-4195-be6c-c21db7e2ad85",
       "project_id": "1c0b20da-427e-4507-a95a-02a5332650ff",
       "project_title": "Pantry Shelf-Life Rescue Planner",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/pantry-shelf-life-rescue-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:f4f857790d97ef1bff559c38874e03333c38ab2fdeb3504eafb4c620c9354688",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:ed16fc218725d2c61fa913c4d72a061c05bdebe2b75d1b26fd11094a63908291"
+        "conversation_key": "sha256:3102eb0e07d3faa568bd7dfa154a2e4e31c33ed9b6c9891aca2433f04bb2d2e2"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -1785,13 +1785,13 @@
       "source_run_id": "639eb34e-2f47-4405-95d5-5abdd804e8b1",
       "project_id": "67275201-0297-4a7e-8e29-a414f259678d",
       "project_title": "Block Bike Courier Light Run",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/bike-courier-light-run-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:5e1eade9391ad5b042f49991b608f7a0fcd7296ba0ca056f6bb7d99b1b64058a",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:0e6b9206d67e3d1f8ae701c1b6f5718b1f22e2da9f0b95f29463aef3b76c56bc"
+        "conversation_key": "sha256:bbe4f934fe73709e98193a5ba0762aedaebfcfed5113acf10abaa80aa5d876be"
       },
       "public_url_status": "verified_public",
       "verified_public_url": "https://chatgpt.com/share/6a66a22e-a4ec-83ea-b833-aa2ed9c29d65",
@@ -1837,13 +1837,13 @@
       "source_run_id": "65d023f1-6887-4052-aec6-a55542df33e1",
       "project_id": "c61d8bc9-7bcd-5a3d-b94a-98c7f42f6975",
       "project_title": "YouTube Title Tag Safe-Zone Board",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/youtube-title-tag-safe-zone-board-claude-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:b92d09af25afac8fbd72e7946743a3601a15d9921142188bb42bc3c8d814bf69",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:e00b3ad54c90814b6ac77e195a46e189b0999e2d6d9ad373b62b0b88b584a465"
+        "conversation_key": "sha256:0c2e763696195781656c2851d3f4cd8dbbee59939f3a4cb319eafa63e11ba0a9"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -1862,13 +1862,13 @@
       "source_run_id": "65d3af3f-e10e-4263-ad6a-b94bc7261a6a",
       "project_id": "04b067db-fb8c-5dc1-b818-01ff3686ce86",
       "project_title": "Draft Voice Consistency Meter",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/draft-voice-consistency-meter-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:ff3b5fd3ac561b0bd167b036a1d2e4d225649551dee422d85afb7c5ef05002a3",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:c46e6f10cc049985e9e679c5e47f19b86d32350983b07fc0d06a5cfffcad00b7"
+        "conversation_key": "sha256:323d37ce26ed5907ebe93deaa6c0c92eb0503f184cc98d69b82d3a129025bfd3"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -1937,13 +1937,13 @@
       "source_run_id": "69eced3d-65d2-4d6e-9ad2-90574632c942",
       "project_id": "bb6b5df1-b7db-5f88-bf16-53864a60f79b",
       "project_title": "Voiceover Emotion Tag Timing Board",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/voiceover-emotion-tag-timing-board-claude-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:9e014ce436e6acf08a2fe8696baf9a6368d76b2a230e69d4433a21d114dab9ec",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:8eb36bc354c3a0ef263ec758bfc40a632a3f1f6015f6d97d6e574ed9396f7bf1"
+        "conversation_key": "sha256:bf70a64e3c1a09e9cd46c5ff61b98c45166b58354c86c77330064f4c51afce3f"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -1962,13 +1962,13 @@
       "source_run_id": "6a122064-6094-832a-9228-e239ce31e79b",
       "project_id": "8f5f4f1c-9f59-4f18-9a5e-61c4c3f4f901",
       "project_title": "Playable Snake Game",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/snake-gpt55-pro-oneshot-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:e5dda1106831c769cc59ace87dbacb073840a233fb66bf115dc232a6298f375a",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:cbf73e46f51b27a7e3b43fe238db8f86ecfc82477e6ed039f6582222f7757c36"
+        "conversation_key": "sha256:e021ce9b17a1b7dd2b03f9ad30e54e961179b4c69a035aece7d863e244009912"
       },
       "public_url_status": "verified_public",
       "verified_public_url": "https://chatgpt.com/share/6a66a027-7940-83ea-961d-93ce1058e055",
@@ -1989,13 +1989,13 @@
       "source_run_id": "6a1f9bc4-c390-832f-88a5-d978d2e42577",
       "project_id": "3b9c61d8-4e27-4f0a-9c5d-2a8f1e6b7c40",
       "project_title": "Pomodoro Focus Timer",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "src/lib/prepared-showcase-projects.ts",
         "source_field": "POMODORO_TIMER_SHOWCASE_PROJECT.sourceUrl",
         "locator_sha256": "sha256:b312ccf88314fdcb218d9676e5ebcc766ac26328c580a1e436274b39fd2f2f50",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:f294753dbbf2d39400260bf1f81d7625a026e0a27ce33916596975e4b6fdf190"
+        "conversation_key": "sha256:5d0e92885a12ce876adc8df2535447caf15261aacbbbbf276f5f8441b21f88f8"
       },
       "public_url_status": "verified_public",
       "verified_public_url": "https://chatgpt.com/share/6a201fb5-4a20-832e-9d7d-38a4e7207a50",
@@ -2016,13 +2016,13 @@
       "source_run_id": "6b875335-7fab-42e9-8ca0-8ad1d9868ea8",
       "project_id": "f47235e3-28d5-4a25-9057-f9665e30acdf",
       "project_title": "Neon Block Patrol v3",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/gta-style-fps-chatgpt-gpt55-heavy-five-prompt.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:9a3c8d2ca86bd85a8cacdb880e574ffbd02dc3a3c28b8c61857ec23c3d8dd483",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:6b22b74a1a16e1e7835a903229927bdd1e9ff49dcef4ced3a79e3b42c9432e3f"
+        "conversation_key": "sha256:352afbf424bb5e11c413b67f86af08c58435ff54a88b231c5a24deff62cfa0dd"
       },
       "public_url_status": "verified_public",
       "verified_public_url": "https://chatgpt.com/share/6a66a02b-8978-83ea-b167-5f9c08b68a25",
@@ -2068,13 +2068,13 @@
       "source_run_id": "6f60889e-9d3d-495b-9bfa-dfc13bb828ba",
       "project_id": "4cd3777e-7889-5845-810f-0670e26e3c01",
       "project_title": "Local Micro-Adventure Route Mixer",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/local-micro-adventure-route-mixer-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:7d6e4781a16d0da89dbdfa81506f55fe65a9307b97c236f62a0fc5ef6e509228",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:9ffa6c5b04e54a0054fe6dab1e93135f3a37dfbc434672c0eaa0070e3976d6e0"
+        "conversation_key": "sha256:6ae785735123a9a9bd068253292f7d2f74bdef0b2eecfbe1b8d50f62a9beffaa"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -2093,13 +2093,13 @@
       "source_run_id": "727ce5da-f924-4b72-992c-9bd15628baa2",
       "project_id": "2aa02694-4f3c-5621-b831-df239d2716b0",
       "project_title": "Sticker Sheet Style Drift Mixer",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/sticker-sheet-style-drift-mixer-claude-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:6ffb0e17219db4f2542fe00aac4975d9233a5a65f00fcbcb7c3ae5db2302fafb",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:557bed6f58a010d51aa90d69e635e71f8da8efbc938343a635da423edab96276"
+        "conversation_key": "sha256:cc7b5e68d27c816ca4899878ba5a321e73f23905aa83eb9bf8137be0ee72bfd1"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -2118,13 +2118,13 @@
       "source_run_id": "752c7d52-3c0e-4663-bf88-d834ccd44a1a",
       "project_id": "e02e85b8-1a29-4906-9eae-8ac6d9533840",
       "project_title": "Mailroom Cart Route Puzzle",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/mailroom-cart-route-puzzle-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:e2c5e5f9a971d6affedaa57da3444f7d638eda8a7281d72d0898031a4188a13c",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:6c867a56d53cb311f56b40f351cfa635826c9992260c37b024983acb5c45c95c"
+        "conversation_key": "sha256:5bec94e349cbb1f67a69a716ee8d5e29a46b0095f160cb55a0dca4ab8bfe9b75"
       },
       "public_url_status": "verified_public",
       "verified_public_url": "https://chatgpt.com/share/6a66a1fa-8448-83ea-8aaf-b3405622ee49",
@@ -2145,13 +2145,13 @@
       "source_run_id": "75c81f20-c10d-415a-bac1-ffd16072e3c5",
       "project_id": "4ab1f7a7-2ea7-5232-b7e6-ab0e289a08ed",
       "project_title": "Landing Page Proof Receipt",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/landing-page-proof-receipt-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:9ae4a1c4273b792c884654ee9429f360d75653acb76bddca687196dc86f5eee3",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:c03c4ce336a186379d483c2b049263b67e8d38079603b0a6c8a9b1c9016068ca"
+        "conversation_key": "sha256:68a7c969880cf1c7dd22272b3e8bd61089835906ea01a3fef425d4884e3f7b46"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -2170,13 +2170,13 @@
       "source_run_id": "77764ff2-9ea2-4f6d-b843-4a9f1921c6ab",
       "project_id": "204ab7fd-996c-5304-9fe5-918f46bf045b",
       "project_title": "Content Calendar Collision Resolver",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/content-calendar-collision-resolver-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:bbf576d48abfdfa0c201d3038873c78c04e5725dd6c850b5e25906b5dbec4c91",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:2407868b8f5c1a3e72ae84e2758cd634d22641a50d65052e3a976a81923bcb67"
+        "conversation_key": "sha256:268ea1fd013dccbc4a1a6b9758cc22249f9eb6a97e6be34d6bc6c5dd1ed4e526"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -2195,13 +2195,13 @@
       "source_run_id": "791a6b31-90ab-42ed-ba20-2d730326bc46",
       "project_id": "722acfd1-975a-4e23-9ede-d3047f8223a1",
       "project_title": "Pocket Pirate Map Decoder",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/pocket-pirate-map-decoder-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:461e03bf1b096227a5e16616fdb2613e73f1ecb69016349b39d7ce2dc08d0f36",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:2feab7aad17e47cc294b43cce0b457e8184bb0f8e02a0fc71d58fed8db0b4df1"
+        "conversation_key": "sha256:f7f2e43c927cc26bb6e43eeaf20b4ad7fcf9d8a2724237d7d6b57c3f52b3ecca"
       },
       "public_url_status": "verified_public",
       "verified_public_url": "https://chatgpt.com/share/6a66a0d9-4b98-83ea-8e3e-49217e53e263",
@@ -2222,13 +2222,13 @@
       "source_run_id": "7a7f605a-a5b6-46c3-98e0-a4d5e8026ca3",
       "project_id": "44b2376b-1fa9-5c68-8eaa-09719e61e814",
       "project_title": "Carousel Hook Continuity Checker",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/carousel-hook-continuity-checker-claude-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:7d1976f56f068dd47999943559d66bc8c93d441048a24338af1dbf9976d9ff16",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:9c3543ffecd5e126b9fe9157a8ad3025242dbe880f7a431c2d38a8e2298fba6a"
+        "conversation_key": "sha256:944165c237a67b476c233e7c32d9ee32c68ddb44026b12d2a540f4aabe75d54a"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -2247,13 +2247,13 @@
       "source_run_id": "7a94908b-cb26-4e8e-9b52-eec662066864",
       "project_id": "890021c7-61f2-48f6-b133-fcb23176dcdf",
       "project_title": "Backyard Star-Map Scavenger Hunt Builder",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/star-map-scavenger-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:ecb718990cbe4494863cc15881905d7aeba67cc047846679bf73b4a6eebff3f3",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:fe3b4d3f5ccd09badd9f7a10ad4773211d66dcf2e0b0ce720cdb8297d899b8b4"
+        "conversation_key": "sha256:106371d4e339ecd1dd30ec7375e1c12c643597c2a4d3f90b2810ff11333beaa6"
       },
       "public_url_status": "verified_public",
       "verified_public_url": "https://chatgpt.com/share/6a66a1ce-7850-83ea-aeb3-fcfd231aa4a9",
@@ -2274,13 +2274,13 @@
       "source_run_id": "7acf7e4e-382c-466e-a2cc-f23bdbbd3d94",
       "project_id": "14bef51f-3dad-4ad5-bbb4-4ac0bda6d249",
       "project_title": "Laundromat Sock Sorter",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/laundromat-sock-sorter-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:87787035d5bb351c7403c5acfb80a9312a0c5eb02072a482ea23a5eeda79dc2b",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:440d9672f81e19d45bd587620074b1f6c823408c0fe00b1f82161b99fe20a37a"
+        "conversation_key": "sha256:2810b32b43aeba1e7ac9904784faeca14343224b8a459f88ed2ffaa39d4b4f66"
       },
       "public_url_status": "verified_public",
       "verified_public_url": "https://chatgpt.com/share/6a66a1ff-ec30-83ea-af08-2f733685324f",
@@ -2301,13 +2301,13 @@
       "source_run_id": "7c3e5aaf-5d69-467b-90fe-43cbee495c3c",
       "project_id": "f55c21d5-0d8a-4854-921a-822f82e13346",
       "project_title": "Utility Bill Balance Board",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/utility-bill-balance-board-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:41d88c28e0b8aeeeab375998b9d0e111f30eecf7de2761aa95730347472c9a56",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:3fe8bfe7ed6a3d55db51b9e96d649af0ca2517bf182c95f13b4156b411046877"
+        "conversation_key": "sha256:213ace373ddbe37bd26f1dffc9c2de639b554f6020799356e46125e232542d5a"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -2326,13 +2326,13 @@
       "source_run_id": "7c4f9d44-d233-4816-b4fe-85f80f946dd4",
       "project_id": "56e1646d-0dad-40d3-a194-682691e27eb1",
       "project_title": "Follow-Up CRM Tracker",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/follow-up-crm-chatgpt-gpt55-instant-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:ef7fd4cb0da46bbe51e6c9da486c374c96777bf63cd14c52c5cdb932cc0aeffc",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:b2a53cf13f29f8da5ee249c6dd47754b43c97c6f8dc830e25d79e7979864650c"
+        "conversation_key": "sha256:0544b57a677789e128257369ebf8d16f4c9c1f93ee92a9477f82fb10580cb253"
       },
       "public_url_status": "verified_public",
       "verified_public_url": "https://chatgpt.com/share/6a66a043-e518-83ea-947c-2703ae6c77a3",
@@ -2353,13 +2353,13 @@
       "source_run_id": "7c5f0fde-9a36-40dc-8721-6bb4c73aaabe",
       "project_id": "103c8192-877d-5787-93bc-1bd897c751f5",
       "project_title": "YouTube Scene Budget Beat Sorter",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/youtube-scene-budget-beat-sorter-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:ab18fef9c0754f46a9ee4eb8a30152c4b978a8a61076724a5332c07c031f1e8d",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:878cf79321b6e85408b04c19baba99d527762567eea4ecc943497fb5bf5a403d"
+        "conversation_key": "sha256:a829f4f0408dc66819a2f04b063bf3c92034d10ec1ccc4e956518bb78cdfaa44"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -2378,13 +2378,13 @@
       "source_run_id": "7ecc383f-da44-41a4-b46b-f7bc7f58adcb",
       "project_id": "d80dffab-ffd6-46b2-9643-4f8521766f9b",
       "project_title": "Tiny Lane Defense",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/lane-defense-chatgpt-gpt55-heavy-oneshot.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:ba1a7f6a7bd040d84408fbb23b8160dce0811c33456da21ebdca163f7181dae2",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:db85be2d3f3e50911c823a78af4c450decc420bd445839b12bbe7add5703d415"
+        "conversation_key": "sha256:0df0ea20d6adf87a4a94fb21c3b6ec7aed0f0fd89e5459df3bbfa53d47f3e6e1"
       },
       "public_url_status": "verified_public",
       "verified_public_url": "https://chatgpt.com/share/6a66a049-2a18-83ea-8018-b48811e720c1",
@@ -2405,13 +2405,13 @@
       "source_run_id": "7f8a34ec-f6ae-49f4-a2f8-7b8f8c762f37",
       "project_id": "efefc0a9-6eef-523f-a530-a5c4e191db03",
       "project_title": "SEO Content Promise Coverage Board",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/seo-content-promise-coverage-board-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:8a0500f95058ad87fa2123ac1ddecbce0dfb14cb5982da452729ff02cd5f654f",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:dda227ead71cb2109778898d1522cf89aacbde3405dfc10552c33c0c0ac84475"
+        "conversation_key": "sha256:03dd3a06722ef45d4bd820ed6a9387688d579dae980cfc0ad6c51be467e7ea3f"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -2430,13 +2430,13 @@
       "source_run_id": "80b083bb-4f94-4411-b071-a5da731d3e2d",
       "project_id": "e3f1d1a7-1d18-4a7b-ba54-045526cd2661",
       "project_title": "Family Road-Trip Readiness Board",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/weekend-plan-checklist-chatgpt-family-road-trip-fork.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:e22b42bfe444035f0f75470a39b09a5e8ba93f89654269bd47e93cb157c2cf34",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:0cec774e1c3ec3417a676b93629b6dfdf8906d63c2361e0e4c03c2279b6a9785"
+        "conversation_key": "sha256:1bb3ff125d9dc14f607e14b6441628218d575c68c7787ec1710a53b68044a777"
       },
       "public_url_status": "verified_public",
       "verified_public_url": "https://chatgpt.com/share/6a669ef3-9198-83ea-bbf4-92bb4eca72e2",
@@ -2457,13 +2457,13 @@
       "source_run_id": "8277c5bc-5f70-4e84-a299-5209d7e6c059",
       "project_id": "d572c127-40fc-5e0c-8a17-d5314f3883c4",
       "project_title": "Article Claim Evidence Ladder",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/article-claim-evidence-ladder-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:5eb628fc7f96c7150f15b022b7d237df1ffde3dfe767996ac30c00a0fd79c49d",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:c620ff2f0331e641ac4e76d2e53bd99f87f947a510eb780a13d5a17e11279290"
+        "conversation_key": "sha256:c26cad7f76a469a52a7e741c5c85140769ca0b9b30f228f11153330fc28da23d"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -2482,13 +2482,13 @@
       "source_run_id": "86cc3a7a-e64e-46b8-9e72-13e6177ae288",
       "project_id": "98b7087a-ceb7-5e03-930f-9661634c9389",
       "project_title": "Micro Launch Landing Page Promise Sorter",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/micro-launch-promise-sorter-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:839139f30126e48a7836bafd3d8957457ab103e26f6c89613a6fcaf140964268",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:d04f34766d0cd2506159def0b41a4ab36fb957c18a5eb7842d0e784c6fe068de"
+        "conversation_key": "sha256:21421d4986b3ba134ed32eb1272510fc9d49026de83f7513f60d03cda8ae9c02"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -2507,13 +2507,13 @@
       "source_run_id": "87c0b478-7cfe-49d7-8bc1-33cf5dd09071",
       "project_id": "e907b8dc-5a62-4c34-b68b-32718542f937",
       "project_title": "Weekend Yard Sale Table Mapper",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/weekend-yard-sale-table-mapper-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:0650892f3bb7836e2e4d983ef2f12f45518320419b92c8f2a902f61e272dc0aa",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:5d17f272b8134a40d5385684d371d7a58c28b368735309ffc8f97645200f1c68"
+        "conversation_key": "sha256:1862b86c8c61138c51a7279e3fd71d6df3d1ac084ded618817b8232402bb12ab"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -2532,13 +2532,13 @@
       "source_run_id": "88721d0d-65c8-43c4-a54f-139206a01748",
       "project_id": "29d00ca2-a3e7-5606-b87b-1ab624543225",
       "project_title": "Pantry Reel Shot List Cards",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/pantry-reel-shot-list-cards-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:586ba05ffe771714b263616c267bd2c93459bac77ae217dd50a2af401df9ce6a",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:0e3e60ac76437d422778795857f0effd0aee43548bb3b662e88fd13544adce21"
+        "conversation_key": "sha256:9570db900e8cfef195c0e47eb1bd1923623fe34e9594dd500b97bbc411be4270"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -2557,13 +2557,13 @@
       "source_run_id": "89c291ed-41fc-4e6b-ae1a-c7da9e89427b",
       "project_id": "2b7af826-9d4f-4046-be73-0d18813b0317",
       "project_title": "Mini Harbor Tugboat Switcher",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/mini-harbor-tugboat-switcher-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:b585e3f60aab92141a14fe7632ee3f42bd18a392d7537a16a8c569036d3a8834",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:6561137eb43da21fb560354faf673935280228232bfac9415e605da42027365c"
+        "conversation_key": "sha256:ae7cc2f418fb3086752c7f92043941114f7986213fa774c214d71d0f494829fa"
       },
       "public_url_status": "verified_public",
       "verified_public_url": "https://chatgpt.com/share/6a66a0ce-1a2c-83ea-8023-1404564af79e",
@@ -2584,13 +2584,13 @@
       "source_run_id": "8a2e82c9-4ae1-41bc-b74a-0a77f70516c6",
       "project_id": "ecebe6f1-c71e-47eb-ba99-5b98b91eac1f",
       "project_title": "Pocket Bake-Sale Margin Calculator",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/bake-sale-margin-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:544656fddc9bd5dcd01a3b10164157f08c5256b50d2ce4fd24acab61037ddaee",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:e1ae5d4917189947cebd44728ae0d539a0844a81dabeab33d1f425525c7d9bb6"
+        "conversation_key": "sha256:7c8679be0e3a8fa3ff6893232c0ae83071f92f1ddcdaa5efe2429079d24a4ae6"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -2609,13 +2609,13 @@
       "source_run_id": "8b37bc22-4fa4-4019-9a2c-da3963124e32",
       "project_id": "231a3692-ff5b-5075-b2ef-305f5b3a98b7",
       "project_title": "FAQ Answer Freshness Flashcards",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/faq-answer-freshness-flashcards-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:f5553c44c54895efa04a1afbb3a0639777d4f27f598c2c8a4b6ce41799917c67",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:f036ea9dd537b0a92444ffba43ba67b825d67a75253bca21dab818b2fc0f7d75"
+        "conversation_key": "sha256:f9974b62d7005b43eaf6f7c4ee08f9ecece394a176c6dd761b488c30f4405d60"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -2659,13 +2659,13 @@
       "source_run_id": "8bae7fc4-d9d6-4d1a-8769-2edd0db8d02e",
       "project_id": "97392e06-bb6b-4b91-8f58-d164015bd24a",
       "project_title": "Neighborhood Lost-and-Found Claim Board",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/neighborhood-lost-and-found-claim-board-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:c25c8ecfa3fa12c44a1961ad705f98379bca109c5bed58319963a4059b6780ee",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:f6fcd18edac243987d1c6319a308906bb295476deeecc5a5be00a7caa791209f"
+        "conversation_key": "sha256:3bc88af069057079d937eb2aa3a83f94d34d4f1e7cce4ba56bdbdccb876a1a4b"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -2684,13 +2684,13 @@
       "source_run_id": "8baf4494-4238-4a3f-9b92-4b1dd6ed4a4f",
       "project_id": "d6153b04-1fc6-5715-a1f3-25380226a1c1",
       "project_title": "Search Result Promise Proof Board",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/search-result-promise-proof-board-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:8cc63a0f16ebf35abdc706a7158bc71b2ce075f0c1b0c5f6d79b3e2464045657",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:c1503fc04011eaeee47c74f37495505cd898cf810aa0b17c6f6456a653c4437b"
+        "conversation_key": "sha256:4b0d826958acb105d69297c12cb5cdd38b683e090ce19ea2f4530438984d9c20"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -2709,13 +2709,13 @@
       "source_run_id": "8f0bf0c7-e3fa-4e0b-86f7-d9cfa4e77cef",
       "project_id": "1a9e656f-2fda-4df3-a319-37f72a9b5995",
       "project_title": "Tiny Farmers Market Booth Simulator",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/tiny-farmers-market-booth-claude-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:274f25886994653a1a453909c6e3f12f386e44c287b2d269481f2ef08ba703c7",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:6b5b576461ce7054a4ca57e31148a20c0dfdd6aeb7963145a906667ee390e75e"
+        "conversation_key": "sha256:3aae3e23a0074dc821eac31a87b5816426a63831d253cfa0adcac880995538d0"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -2734,13 +2734,13 @@
       "source_run_id": "90bf62c0-ae89-4b03-95fd-5d1ad0f29f9f",
       "project_id": "c50bb0ba-1e12-4a4f-a75f-8a62d3426a42",
       "project_title": "Tiny Train Platform Dispatcher",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/tiny-train-platform-dispatcher-claude-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:b7cdd32de728e8841abcd739154f672e4676a53d99472a57e3da137770a8c2dc",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:3418972af67490ed4010f4df379afbda3132293f6a6fe94146b1085962b2efcd"
+        "conversation_key": "sha256:f5bae4c98896f7630dadd6aa1ed553b094243bf09f3304f84e6ca9910ff3c01d"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -2759,13 +2759,13 @@
       "source_run_id": "9394217d-c956-4337-adb5-b40576b5d130",
       "project_id": "340c795a-5ce1-402d-a5f5-cdfd5a934aea",
       "project_title": "Small Clinic Callback Queue Board",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/small-clinic-callback-queue-board-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:8f09d6fe5d5298bbb364d5647bcb1407f2af36fa514d8a8dee446a24a20a64aa",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:67a50a99eedcb57f8f957b1bb8e130681b7f98eab1cf40ee23b5982158086522"
+        "conversation_key": "sha256:2c09383c2469c4bfdd535ccb4129f9b87d493e19c43e014eedaf721bc50ba623"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -2784,13 +2784,13 @@
       "source_run_id": "93d79250-aa98-4ca7-9582-718ff81ba55c",
       "project_id": "8a90dbfc-3387-52a5-81a3-8cd9f4716038",
       "project_title": "Client Email Reply Risk Meter",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/client-email-reply-risk-meter-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:3044218e2389cb9ca4ba85d9a9c2a849cad5e3e98cbdd8910fdae4e0cb9d7d19",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:c89cb0157d2c032f0e0b4dafd5ccd504d26b4fa6f4dfd70101cd6919172d5b29"
+        "conversation_key": "sha256:a182f80cd040c1a7b3d842c83aed6772cd4872e1efe21505ea61eb57c7578451"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -2809,13 +2809,13 @@
       "source_run_id": "93fe1750-51f3-475f-a98b-b498492eb024",
       "project_id": "c6f92d30-1129-514c-97f9-fc759461865b",
       "project_title": "Potluck Allergen Label Mixer",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/potluck-allergen-label-mixer-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:a20b522f46685eb0df64412f9ad9207a09ae657110142e93f233830f29953005",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:10f4bde4d4e1679e75e10fa39b31a93001c58864dbcf1e44b6f31991aea6b8ff"
+        "conversation_key": "sha256:f1cb5a47d1c594e8e5aaef54f9db5dfae3c0e5ca40bd873a774c23d5ab48f961"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -2834,13 +2834,13 @@
       "source_run_id": "94e76d4a-a6e4-4fd1-9de6-9b84ff21483e",
       "project_id": "17c42c87-3709-4d5e-9ae3-d4ac4807bc4c",
       "project_title": "T-Shirt Print Alignment Press Game",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/t-shirt-print-alignment-press-chatgpt-medium-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:f42f9bc489758f9547f3e0f1629e2ae276a2416bae677e0d96a0d8fddfd9170c",
         "locator_kind": "preexisting_public_candidate",
-        "conversation_key": "sha256:0c64d8b89f96fcecc3af4c005c01bf424a79015ae84570b6484b304b89b11278"
+        "conversation_key": "sha256:079dad99417553e3fdd87bc42e52d17dc52e17f66c1f4920e7434739740eb9b7"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -2859,13 +2859,13 @@
       "source_run_id": "9781f7a6-c533-41e7-ae9d-ecc8e9ac9efe",
       "project_id": "7a830ddb-43df-45d1-bfaf-8b504aeb69e8",
       "project_title": "Roommate Freezer Board",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/roommate-freezer-board-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:50ab5298de8c4c7ca7e7eb37e270aaf4824df677af8297036eac154549512e4e",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:a9b93c4b12b7cd9d9e82a1dfcf3d8293b727474cb725612469947456ec65b496"
+        "conversation_key": "sha256:b1c050d1439ff3562c5288e97fbe9bb154ad782b069dff8bb0150c634b7c21b9"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -2884,13 +2884,13 @@
       "source_run_id": "97978722-782f-4ecb-97be-6fffd91aa884",
       "project_id": "1ba1fdc3-4e8c-55b5-972e-e839d523f235",
       "project_title": "Bug Report Evidence Triage Board",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/bug-report-evidence-triage-board-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:84e70f2316d66042dd1c92d19b784dab069b5226a4a02ed01c13db426c9dd28a",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:444e063ee2e2c7e271dd9d8dc8aa9abca036fa1d9b0d6f85c36288411afcbc77"
+        "conversation_key": "sha256:e0f30cd8326a9114017f2680c95e495ab9a24cc14e9f47dc7574b275230fe59e"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -2909,13 +2909,13 @@
       "source_run_id": "9e8c98b4-87d3-4a7a-bae6-4fea70de0f6d",
       "project_id": "1acdee0b-9c44-5488-b499-fd3f613cfc25",
       "project_title": "Competitor Content Gap Sprint Board",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/competitor-content-gap-sprint-board-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:805edf8437f99cad45aae3d77878fa9ecf16e7efe8a5a6e7060e3df13ce5983e",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:bd320e617a32d3b63fb3055aa7893fabbb4293afc8d166f95eb94597186c69b3"
+        "conversation_key": "sha256:24f59305cf8567da609098e0d8af95a58d4ca81ca8b9049e84009b92f713ae72"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -2934,13 +2934,13 @@
       "source_run_id": "9f22adde-fcb7-421c-91b2-0c22ffbbe8e6",
       "project_id": "d7acd884-a01f-5cba-b6d0-2242e9c51a33",
       "project_title": "Micro Image Brief Consistency Tiles",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/micro-image-brief-consistency-tiles-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:a6254473d17c1f0c8ebfe7720efd45f9d705bab09cd5174c7a990d3f72e417c1",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:02beec00c593bd86cb6090914a2958afcc058f718afced28e6b6a6d25af02672"
+        "conversation_key": "sha256:ab1161d1b879c448bac1a87f39ec4873f30c5d93d77b1179c58ff32c4b14a9bf"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -2959,13 +2959,13 @@
       "source_run_id": "a214febb-42c2-4a88-a5ed-246d0dcea262",
       "project_id": "6ff98445-8abf-5162-a069-19a88c5b3577",
       "project_title": "Poster Shot Stack Planner",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/poster-shot-stack-planner-claude-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:ab2e10529b616f3f84ec5764cbfcf3f5441ce957fc8d73a45905c89ea66dbaab",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:b23a5b7594de8e3ad6f3e7431d530caf5aa1bcb08ac94ceecf829e7c6963a206"
+        "conversation_key": "sha256:8efa18e5e62abd8125ab0ec1e832bfd38942ded91eaa020e7995b8f7e501b6a3"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -2984,13 +2984,13 @@
       "source_run_id": "a40957e2-317c-4a63-bdfc-1954a02e36f4",
       "project_id": "228c13b6-d83e-58c6-be24-04a839133255",
       "project_title": "Portfolio Case Study Proof Cards",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/portfolio-case-study-proof-cards-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:347e7c5e85542372310eed9f30975c071749c4be8515602f46e713ee733523f6",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:712764af44684976840fd11585eae9ca885e0c91b419758c2b55d4b5c9f8e7aa"
+        "conversation_key": "sha256:8c905c3cd2300acc4173852742147b89288bcbf4baa25948afce0c347eea31c6"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3009,13 +3009,13 @@
       "source_run_id": "a4fd2166-2b88-41fc-8fb4-5d3873018053",
       "project_id": "467c3376-fdb1-5d67-a23d-339f97b5c80b",
       "project_title": "Recipe Pop-Up Menu Profit Cards",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/recipe-pop-up-menu-profit-cards-gemini-a4fd2166-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:a7a4670b872dee191f055a62f1ea7d4e06504f006657b70f6fbdcaed09adf318",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:1b889c2d0859716e3a550ee434f79d6efac21a6d2418af20034a5d7d7a1dec42"
+        "conversation_key": "sha256:3bf74798f203ef68195e6391262d678ad3340bbfd2ecbbc97f15e9f363cc565f"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3034,13 +3034,13 @@
       "source_run_id": "a59e5346-930d-4592-9996-3a23970f7c22",
       "project_id": "10e2eb1e-2495-4bec-a633-c4b2fec1281f",
       "project_title": "Leftover Dinner Decision Board",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/leftover-dinner-board-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:856da137d6d71a9fb39288c6f80f1298e006414c19295b35d27a89feef491c2e",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:3598ee0caa2ed5b2794b7962b312dc101a4706884a6c055690bf0b180d0bad33"
+        "conversation_key": "sha256:79a0b42ad1dc640ca5d90f5ae0f99048746d9e023e008f5e142ed7432d32601e"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3059,13 +3059,13 @@
       "source_run_id": "a858d84f-4280-4ecf-aec5-8480359abe54",
       "project_id": "aeb88293-c246-4547-933e-929ae52609aa",
       "project_title": "Porch Light Moth Maze",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/porch-light-moth-maze-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:dc0fde5d5aad73a6e2e9a830409a836728ab838a85c6fa9826af024fb19756eb",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:7f839eb613de7bc2045da9e11cafd67dae29e087f95fe444e524c8a8c61c70d6"
+        "conversation_key": "sha256:f5dbd74bf622bf9fd2218f7a127b3c4698d9007abeebfc77be8a93733542a3f1"
       },
       "public_url_status": "verified_public",
       "verified_public_url": "https://chatgpt.com/share/6a66a0c3-23a0-83ea-815c-b76291556170",
@@ -3086,13 +3086,13 @@
       "source_run_id": "ad13b3bd-0a26-4b57-b124-134cef27a5f1",
       "project_id": "d7e643e2-4f10-4b74-98f6-61fa730e4776",
       "project_title": "Rooftop Courier Switchbacks",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/rooftop-courier-switchbacks-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:6262318138fab5d5c54338127a7fb17469e09a694ca6641fdba94aae7320d86e",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:22c64226991c45f87839d9bd416bf3f77e1d67f7902548a3303bb72c4d6137a4"
+        "conversation_key": "sha256:43f288d0d1ceb129bb8a347c768e7e8c8820693f6da035d6d638e800b7597774"
       },
       "public_url_status": "verified_public",
       "verified_public_url": "https://chatgpt.com/share/6a66a222-a5f4-83ea-b80b-f572f5565975",
@@ -3113,13 +3113,13 @@
       "source_run_id": "ae548199-a75f-4ed4-be49-8c3e30e758dc",
       "project_id": "bc57af32-b214-5fa5-b9e9-8e106bbebba5",
       "project_title": "Product Claim Shelf Audit Cards",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/product-claim-shelf-audit-cards-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:1d16a8d0089cb2e73fb4d8b84b40c01b7e500d826ce2f206d08f486634a940fe",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:390ca3f6366bfb4d51952789d4331a4cb4228d1b3c8428b437e46d5d0013a6d4"
+        "conversation_key": "sha256:0d4b32836d2a294dff94b707b9a8868557be18bf8be0214c742013d44d733db5"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3138,13 +3138,13 @@
       "source_run_id": "b75a7bfa-5768-4147-af37-d1d52162d28a",
       "project_id": "8dafdf83-1942-5d1b-b28b-527d76088be7",
       "project_title": "Pocket Ad Shot Storyboarder",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/pocket-ad-shot-storyboarder-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:8db46a4700cf7ef1e9faa97c7acff028e1a2ecac5bf41c2fd4ab490b05298cc9",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:29d4c38557d0df4f0c611ac9067fe01100b868156ed0ca1b74e85f6c11cb487b"
+        "conversation_key": "sha256:5cd935e61c0cf632a79cfd6c3fa85fd597839f08204a722364bd18c3d5f9073b"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3163,13 +3163,13 @@
       "source_run_id": "b8a51c31-3d05-422b-a331-2d3fc671a4b7",
       "project_id": "4ccfb1ab-c282-5729-92cd-5668a94937c5",
       "project_title": "Pantry Substitution Confidence Stack",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/pantry-substitution-confidence-stack-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:979fbbff9fb104aa7de3f558ba4a15dea8c6f2d4bd63f5383499a6db1335673e",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:592e8abe70c9a839123c23a5dbb11e9a315c21aac48c355df4f334c32d62891a"
+        "conversation_key": "sha256:f299705f022a154c6e0d5b85888035d30d25eeb67beb45d7ac3532ee4103f557"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3188,13 +3188,13 @@
       "source_run_id": "ba50b977-1d7b-40fc-b365-7d8b1cc8ec61",
       "project_id": "e502847f-5834-5199-aec7-233720b14a27",
       "project_title": "Recipe Launch Card Studio",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/recipe-launch-card-studio-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:a2d93d69293f68a588144d399f33a5d17d796e6f0bb572c99afb98eba5704f0d",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:5e0573e6b6ed83fa1d7b82d43828dd1681714562b0d859d93c97c833c17d3126"
+        "conversation_key": "sha256:90566eb6c245e75566021da2e3241a1395f74f2f3cd0dc1f778a223355e2e82a"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3213,13 +3213,13 @@
       "source_run_id": "bcd6d92c-5ec5-48b6-bad2-048d237d0acf",
       "project_id": "7c402b59-59ec-5b7e-a8fe-a4e9d9b01ca3",
       "project_title": "Short Video Hook Beat Sheet Timer",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/short-video-hook-beat-sheet-timer-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:3543e51b326fc99510dafc96ad7d7ddf295fbac5c20d6cffcf75b3da2238c0b4",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:9bb93bf6f9d337937f95af69e763f32e18fb064df50a1719b89461f25fdf6ba8"
+        "conversation_key": "sha256:54b8822db4c73d98013d7d1269a296c88f094449449b52cd693baa6054f4fb07"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3238,13 +3238,13 @@
       "source_run_id": "bf8a8bf7-1749-4be4-9d34-73e504c66a4f",
       "project_id": "05960e84-6104-44ae-9168-695c32c16155",
       "project_title": "Neighborhood Snow Route Plow Puzzle",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/neighborhood-snow-route-plow-puzzle-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:e91ae72a240a9639ac7135fc64c650ef18e6d37733837b43c19a55ab4611a573",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:816aae684a084790fd3ad0ed8f3bbc404f0dc178e8d5fc9c6a0be55d8460364a"
+        "conversation_key": "sha256:1624659e88036a28e4bb1a79ec7673210bdf856ca59e67250f1154f532ed5de2"
       },
       "public_url_status": "verified_public",
       "verified_public_url": "https://chatgpt.com/share/6a66a228-4e64-83ea-a3e7-2715f35c109c",
@@ -3265,13 +3265,13 @@
       "source_run_id": "c0349c7f-2df9-4c9d-a0e3-5d72af3becee",
       "project_id": "1610bc23-6424-4119-9847-23c055538b75",
       "project_title": "Shared Errand Route Board",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/shared-errand-route-board-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:8dc3d2ba9862d719f6b5b293260441d677f30174212d9ccda6a60ee444e5c7a8",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:871f0ba2292269aa9352130ff42560c1b71ab5df76fd6dd4c97f1719657c56d2"
+        "conversation_key": "sha256:b2cbf0a2fb04bad3d159c1c602d38a53cfb6cd3b23245182015a4c7d4e6f2b57"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3290,13 +3290,13 @@
       "source_run_id": "c678cb0f-5629-4452-ad4e-65595c53220b",
       "project_id": "b8f70cdc-171a-48dd-8fb2-ae4172ab8f6d",
       "project_title": "Moving Day Box Labeler",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/moving-day-box-labeler-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:6a5f37911978475fc385f058c288648e2de579919319740e31115cf48a179da1",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:62985b8f7c2a777abd187482bda18270a0de5a72de2645da35cd6d9dcca33f92"
+        "conversation_key": "sha256:25d31cade6c4aa7dff792b4da345fecdb73d6a2af2cf8e28b801591a8ea6f724"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3315,13 +3315,13 @@
       "source_run_id": "c698d506-dfcb-496d-95c7-445d75e65ccb",
       "project_id": "7ddfa200-b853-45a9-b239-fe639a47aecf",
       "project_title": "Tiny Crosswalk Timing Trainer",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/tiny-crosswalk-timing-trainer-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:97e795fe035a7d9acba5370103925b3826ee14b05a93fbb2781bcf13e703ee09",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:05dc2e02e342512baa3baad699be42e6079ae21e4c29eda201085967302a3154"
+        "conversation_key": "sha256:cc4018ce08a1bb27c44937969ec72d01c92f9b7b295309c267e6d31bed377114"
       },
       "public_url_status": "verified_public",
       "verified_public_url": "https://chatgpt.com/share/6a66a1f5-39b8-83ea-ac65-0981d36a8d4a",
@@ -3342,13 +3342,13 @@
       "source_run_id": "c6b62fca-7316-4a29-bdbf-9e6b101e6195",
       "project_id": "de86c0ef-91ae-5f34-a8d7-5b3cf5dd5aed",
       "project_title": "Prompt Remix Recipe Card Game",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/prompt-remix-recipe-card-game-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:26fd53f4603b32eb18af79dca50bb45d0ce9d0aa5278aa30c94aded4c6908af0",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:7c6ed41aeb924d9d22b162e8ffbf5163adb9b1628d316310d941591de6f76cc4"
+        "conversation_key": "sha256:7fbc65ee49f618faff9f127cf74356f7729d1933269706cac1fb3021d856800d"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3367,13 +3367,13 @@
       "source_run_id": "ca6949a4-1546-4a4f-8e3c-6e9ca084e290",
       "project_id": "01cc7c30-250d-5cbc-be4d-b5fa0d877ef8",
       "project_title": "Cookout Batch Card Sorter",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/cookout-batch-card-sorter-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:0133fad9383fcb9b3ff925ef355985414e138bfee5bfbc4644ca2e7acaf70767",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:8722a332e780006d317ff5b647a921e5d28d9ee207eca6f773c6f304ee25d0bd"
+        "conversation_key": "sha256:e3144219d67248f756eedca5a2bf4d09d5a5d27b9cbc224e3eaba6e3bd276ffc"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3392,13 +3392,13 @@
       "source_run_id": "cad6c310-5c91-4865-bd27-86aa473c218e",
       "project_id": "41103f11-55a7-40b5-927a-d27e5c1b5d91",
       "project_title": "Fridge Leftover Label Printer from Gemini Flash",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/fridge-leftover-label-printer-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:fe749ebd97934a67a2d2254b4e336748062a298d17e8a6502a399ba0651571f1",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:d9bcdec61aca411d84af4d3fe7771debed790bff6482d58bd8bb894b29853c0e"
+        "conversation_key": "sha256:e123d4720fb3f70f939e120ec04bb2647a66d2861db506ed4aec52894b03e37a"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3417,13 +3417,13 @@
       "source_run_id": "cb787f96-e006-41e8-b6e4-f021781877e7",
       "project_id": "878d99cd-ffd8-5b6a-a676-1e4ae031d1bc",
       "project_title": "Visual Prompt Drift Inspector",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/visual-prompt-drift-inspector-claude-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:91493b157f966c95dbf272101f58cb36e2bba6039073a57cf8a137773cc38ca8",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:bed6c965fb62ecda904d404bab882902805c491b5ed20d6df06e4c0ea2c35933"
+        "conversation_key": "sha256:5fbfcc49ffaa0211258352c81edc3b4c3a0159fac5b4c0941c1ea63fd5611086"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3442,13 +3442,13 @@
       "source_run_id": "cb968686-6546-4218-93df-14c5113b1624",
       "project_id": "77da18f4-bf8d-4fef-bdac-c14ff4ea3920",
       "project_title": "HP 10Bii+ Financial Calculator",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/hp-10bii-financial-calculator-claude-opus-48.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:7c2490d37ed0979610174d9dcf3eb02ce6d8cd7b97685ca06d42e87cf6036db8",
         "locator_kind": "preexisting_public_candidate",
-        "conversation_key": "sha256:6e2acb517eff7824dca39411ecbb11f2c2dd36aa6b58c7f08d6d736065adb975"
+        "conversation_key": "sha256:a7d525097668a7b3e0523e6a5594e8228c417c5787cf5809129bbe6e2acea0a6"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3467,13 +3467,13 @@
       "source_run_id": "cca779c2-1dcc-437f-9a31-0ac7ade225fc",
       "project_id": "1f9b23ea-e3bc-5b0b-950a-1487038d03e8",
       "project_title": "Recipe Yield Card Packager",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/recipe-yield-card-packager-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:f084f140b9fbb906ed77d0f44f9d1bae14c411659b9e3a262e4491e25f697708",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:e3329817f3587d706e20bf5bdf33c275eab6e20304e7eb74772e23ba5e4a146a"
+        "conversation_key": "sha256:9822bc4ce739cca27c33f153d25b079a889524f3f6d4437bb1439e9bc3dd5735"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3492,13 +3492,13 @@
       "source_run_id": "cd14139a-c5fd-49b8-a1e9-a3218d07d783",
       "project_id": "c98c2cdc-7f6f-5fc0-afcd-cac0e4546aab",
       "project_title": "Icon Set Style Consistency Tiles",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/icon-set-style-consistency-tiles-claude-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:2a32a135678c99d41c1b2753ecc392a9ed5aea168781970ee3342b67571cfc67",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:5ffe580b7872d53b826198bc0534acd227b21a7de130f985fe6d1faddcbb292f"
+        "conversation_key": "sha256:62f8a93a4541f7f074f71eb9bd6b828c3d9586c0addda9bc6358fe25d9f3c988"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3517,13 +3517,13 @@
       "source_run_id": "cd228bdc-b89b-44b9-9e38-ad3bd5ae53a5",
       "project_id": "4e8fbf3f-4b1c-5e3e-afd0-3cbb70630c56",
       "project_title": "Blog Refresh Brief Sorter",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/blog-refresh-brief-sorter-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:b33028e26649e5a654ff56450e35f69efd24c6f3086c09a4a802ab5198ba9124",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:e0e8153b893fc5fd547d705dfa9524b8022ef57a8e26c934a113b078dc56f180"
+        "conversation_key": "sha256:8e662ec1d7c929b15368f44e0466c0c1e9bd3278c3a9e0ad160577b67fbcc526"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3542,13 +3542,13 @@
       "source_run_id": "cf73efd5-2fb6-48fe-a9fd-a1a0df336d18",
       "project_id": "dc5e67c3-42d0-4823-ae23-586b7d3985cb",
       "project_title": "Calming Sleep-Sound Mixer",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/sleep-sound-mixer-chatgpt-56-luna-extra-high-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:b78810f396bf186debb00db104b5f72d7cbb42b981702e66546869f7fea4c8dd",
         "locator_kind": "preexisting_public_candidate",
-        "conversation_key": "sha256:b9283b6c499000339ce9e0d638be08d3fe3864e113f1d608343dd533104964e3"
+        "conversation_key": "sha256:57dfabcea3a050d808a4bfb65d4b5ce9907e1d857f727272aae8761c835761f0"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3567,13 +3567,13 @@
       "source_run_id": "cfebb4c8-f4aa-4825-a282-eeb9dfc663de",
       "project_id": "85e4b36b-3236-495e-b8d0-b94ea168a645",
       "project_title": "Pocket Rally Time Trial",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/pocket-rally-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:dff39c4d767660fc7d4232428af048261cf8d6965bd640cce2b69da3029c7a72",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:187390368d27c0c2851ce9098298ff13a0138da96171b5d5a1fabf09f614c492"
+        "conversation_key": "sha256:98ef238063d83dd87d884a9766b5c55c6603244c22585ad38c7af18abcda3d22"
       },
       "public_url_status": "verified_public",
       "verified_public_url": "https://chatgpt.com/share/6a66a03d-1868-83ea-8552-127dbbef4b60",
@@ -3594,13 +3594,13 @@
       "source_run_id": "d224897c-0aab-4a01-88d6-a0e3bd5f47d9",
       "project_id": "b01f5f7a-6e08-44fa-bccc-78132f9427bd",
       "project_title": "Roommate Chore Draft Board",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/roommate-chore-draft-board-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:4ad22b1781a6e309832cfe46da25e3a5c681961f3c1d9a87ea044cf287766831",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:6483a5a68d7879f8f1bf85f7f59884b196196907314d01f99583479118c40584"
+        "conversation_key": "sha256:3169b4ea66698f3ccf62a5d721021c3bde8831b89c6a194f4cb89e5ffe840fa4"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3619,13 +3619,13 @@
       "source_run_id": "d2251fce-c4f0-42b0-849f-1d1dd2bfbc17",
       "project_id": "fcfebde3-a18f-4baf-9c62-982dc29d7a42",
       "project_title": "Tiny Invoice Nudge Board from Gemini Flash",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/tiny-invoice-nudge-board-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:32be9341163db127c76fe6f1627dad815de133fc8bbbc6805820c2be53963620",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:a05ecc0ca4ca0f3b2a206cb224d6567a90fd572a2828b97cc36de649f6b76b8b"
+        "conversation_key": "sha256:cd81329904b9d8feb6d2d60706937f3771f7549514c9eea6ad89323f3cb09559"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3644,13 +3644,13 @@
       "source_run_id": "d2d6b9d3-4015-485c-9b9f-c1d160cd62c0",
       "project_id": "e8379e86-d14b-573c-b174-ae50b7d99782",
       "project_title": "Thumbnail Safe-Zone Storyboard",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/thumbnail-safe-zone-storyboard-claude-20260612-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:d0a2a4c12817ac170eb4ee474eb657c347557808e8876491e441bc2e758f02d6",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:07fd791ba3c33eb9b9285eaed34715814cc0c4930e6d3af0f788d1b9537e58dc"
+        "conversation_key": "sha256:f835e245df71109cf8c1abbfa434336a97fd8ca2148d8585c5da00a1273f3693"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3669,13 +3669,13 @@
       "source_run_id": "d32378bc-51e9-4d0b-967e-844bd8880e3e",
       "project_id": "8a421904-3f28-5088-ae28-93c57745d96f",
       "project_title": "Recipe Leftover Caption Pack Sorter",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/recipe-leftover-caption-pack-sorter-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:a69b7c481f1cad781017bb47a84dde3c0dc724e03fe2551da86eb4912600d073",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:5b5fa3ca2a17871486d3a9fd1a7096e4e420a24051f963d39901af3eaa80072f"
+        "conversation_key": "sha256:ff773a2d009885f4ae899a53bc8048a614ab14797ca65de004a691d3c60b8181"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3694,13 +3694,13 @@
       "source_run_id": "d62bd0e9-e893-4c09-9402-997e78ef3031",
       "project_id": "ed38c814-6160-524a-bed2-f1164606727a",
       "project_title": "Homepage Claim Evidence Sorter",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/homepage-claim-evidence-sorter-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:4f5278ad35fa667ab7627eb75b404eacdd1dac9dec89824b20ed3e482cfbfb29",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:16d11bf5a917e583469c195b019c400f9cb6c8108242dc5490cf985043085116"
+        "conversation_key": "sha256:3194d9d6b64d6f0e64ede91002f6b58e06f59e4a37600a27f0e6b60a392bc284"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3719,13 +3719,13 @@
       "source_run_id": "d6348acc-e202-4146-8d28-52710239cd03",
       "project_id": "82b126ca-8529-5a9c-b2df-b9b5daa09ad3",
       "project_title": "Reference Image Change Checklist Deck",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/reference-image-change-checklist-deck-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:fea4542e3811901ef85cd9e59df40f98e72606b1b41436bd85d8f652df1f7806",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:c1dd4ea756b38f88c176e4da052560c9623bd33348a59b31aa20de06ede955c3"
+        "conversation_key": "sha256:5d63e79c1fd8e221736a86e97ed3e489e42e6842bd798edc88bd2981b0858db3"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3744,13 +3744,13 @@
       "source_run_id": "d769c23d-8a0a-45c7-a49a-949205b1ebd7",
       "project_id": "8e4206ad-ddf9-5c62-be51-711b0ec48ca1",
       "project_title": "Back-Cover Blurb Beat Mapper",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/back-cover-blurb-beat-mapper-claude-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:53c4fad0ab92ca1fdfda1307afdaf844d47233a24e44eeccf1aaf847a71dbedd",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:568e8af4d0ff9446537c00423fa098021bdc9e70425688b712f19a2085eedf3e"
+        "conversation_key": "sha256:6d21e815686deb07957d9ee7a94f1ff191fd5b8eafc723cbd9495317144f5955"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3769,13 +3769,13 @@
       "source_run_id": "d9fa40e7-7725-4387-ad5b-14f25cf744ce",
       "project_id": "f25f83df-29c5-4d07-97b8-e7f6d2a902b8",
       "project_title": "School Desk HP 10Bii+ Calculator",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/school-desk-hp-10bii-calculator-claude-5-fable-max-fork.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:ee78a3e68bae9c0e7d7afc3e0b2701a95df26f6f9061e31b7b69d742b908a9fa",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:919127333bd3226436a470a78d6b5d5fc7688776cf0de692270462cb70d9b8cf"
+        "conversation_key": "sha256:c5b369ad0f45379a7fbcd128bc0a05475b7263c72a481f06bc400aacf15a8bb1"
       },
       "public_url_status": "verified_public",
       "verified_public_url": "https://claude.ai/share/90e83c6e-67a0-4613-979a-4067f1b8781e",
@@ -3796,13 +3796,13 @@
       "source_run_id": "da2a13bf-c168-4429-a327-bc581e8c9d57",
       "project_id": "84039f36-82c9-43fd-aa2d-cf90e1b96678",
       "project_title": "Tiny Birthday RSVP Table Planner",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/tiny-birthday-rsvp-table-planner-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:39aaee41cba1ad79fd57a82a06147bf7d558a3f9c50c73b33f5b8c1f2611541f",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:2b25e6f322be63faf55e5a6dddcd8122ae72637aee2b64d35340f6cd23820523"
+        "conversation_key": "sha256:e7780041f5fe97b4100c347a0d624f665b488b8f43aef8cdcfe2b3c17ec562ad"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3846,13 +3846,13 @@
       "source_run_id": "ddbb720e-06dd-49b1-a870-da322efeaec8",
       "project_id": "3931d0b4-5b45-4d25-8f5e-110199785dec",
       "project_title": "Porch Plant Watering Planner",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/porch-plant-watering-planner-claude-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:be939efd661fd3241d8abdfccf688ac6d86254962fac86f81590901ace153842",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:d0cfab127896785d463ef4924d91cb771a7f10f2e10afcc28aaa818a1fae79f8"
+        "conversation_key": "sha256:424237aaa5affa8b19128117faa53d714b32d810de2875cd78aca24be763fe91"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3871,13 +3871,13 @@
       "source_run_id": "dfe655f0-0151-42d5-8eb0-3a8bac3700ff",
       "project_id": "37eeb534-c943-55ce-9612-c453cadf4644",
       "project_title": "Article Freshness Rewrite Triage Wheel",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/article-freshness-rewrite-triage-wheel-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:d109ef2454f6e4532d6af4e0f743f8ec3919715931434bd47c9c6f190de16a6b",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:397e761e3d8a5b0dcb9c3e5a5144820a7d4cb4a163ae3dccf4f4ab84e3ae4f23"
+        "conversation_key": "sha256:cc14f6d6371052ac6e86e25dec1e4324e028287b8cfddc51fc899526582c4e43"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3896,13 +3896,13 @@
       "source_run_id": "e0661130-054a-42a5-844d-b2475268a690",
       "project_id": "1619e565-f8a4-47d7-adf0-884ca9d11d84",
       "project_title": "Reaction-Time Trainer",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/reaction-trainer-gemini-pro-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:f4aacd523c0bc89bfd168316e896ecc3fe450cf9c049cdb5b688d444d11d3c6f",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:0dde002ccf4a705220ea9c97c635703df4ccbd7191c020b823fecc367865104a"
+        "conversation_key": "sha256:705ec7bdda49edc256df1ad750f0776efc1e41460c7c469894c563101b554aa4"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3946,13 +3946,13 @@
       "source_run_id": "e146bc62-75df-4843-b9d5-a3ac4c8a3a4c",
       "project_id": "60196676-ace8-54d0-95a1-848b819802dc",
       "project_title": "Keyword Garden Sprint",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/keyword-garden-sprint-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:286eff9bbf6b60d968c18c4ebda7039a278dd0ca9c5d462a22ee3457bd9a833f",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:8ab28a55406ea380a486bdc383ae292e5f6ef8c1f70d3db38a8414c2ddc0c656"
+        "conversation_key": "sha256:c06468381c13793911b5ff89b10c9293ef7056b93e309f75f3c17cb6a6aec759"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3971,13 +3971,13 @@
       "source_run_id": "e2a70007-df21-4ef3-a576-ba09dcc54d98",
       "project_id": "600d0e72-81aa-58b2-ae09-d6d14c4d7ed8",
       "project_title": "Campaign Caption Ingredient Mixer",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/campaign-caption-ingredient-mixer-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:dc405b9b07b5b3db43d8892b6d0d51366d1340dcdb7fbea3a75c2319fdbc137f",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:5bb08d17d2684dffcb09338d9a43a17062787a82fb8631d3f3c7083c129856bd"
+        "conversation_key": "sha256:88852374d7a36ca32bff58f777f8b5d7ab0247f7d6b13edc06299e3cf6568a2f"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -3996,13 +3996,13 @@
       "source_run_id": "ec366f9d-ae1d-4463-8108-109012788b56",
       "project_id": "d95f6e11-e661-40b7-a162-31f5a5b5906e",
       "project_title": "Tiny Airport Gate Boarding Sorter",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/tiny-airport-gate-boarding-sorter-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:1abdd603e90ca136f329eb8f8f4a1511f02ca27b1212f658d5c99e976b4aac58",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:0259a7413deed11f630c63ba4f0c533f514ed9ae510f5e4e80a5901d2df1567a"
+        "conversation_key": "sha256:9d49bf6af7e534b070b61b485a3edbf98c52734794d60661581b0c2ae4610914"
       },
       "public_url_status": "verified_public",
       "verified_public_url": "https://chatgpt.com/share/6a66a1db-cc1c-83ea-bebc-f7fa0290204c",
@@ -4023,13 +4023,13 @@
       "source_run_id": "ec8f9c83-3e92-48d2-82b5-24b06e333751",
       "project_id": "180a37e5-392d-553f-a44e-fb01027c0185",
       "project_title": "Backwards Week Capacity Planner",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/backwards-week-capacity-planner-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:fed7ac6522a05c95cb402a9b1b831215f5aec7636116cfc39b25cd959adcc644",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:baa075424d9ef84ab75acb798fd706fdad395b886719d24ca74b75b97d567891"
+        "conversation_key": "sha256:14d40b7b01bcb36eac15b255c4ddcd2bd2990dcc4a2d2b65b3f7e5f379dab615"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -4048,13 +4048,13 @@
       "source_run_id": "eda922ca-23cd-4bdb-bf4a-51eb61655672",
       "project_id": "f78d76e0-a86c-59cd-944e-f455b0ae1e77",
       "project_title": "Internal Link Rescue Map",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/internal-link-rescue-map-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:e019e57c1fa319c7ec09ded15e022a0411400af444d0c6415f4bf9707e486d7e",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:5635a4881dd39c47e92f0f0dd01c9b7657a281726618f89a0c3b8760dd09e6d3"
+        "conversation_key": "sha256:41739696216b7ca627d07b1b789de218b36b8deedc2a4de51300a56b1e9d4a94"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -4073,13 +4073,13 @@
       "source_run_id": "ee3641c3-6137-4fa6-8fc3-4561af7cfcde",
       "project_id": "069d354a-ec99-4ee4-aed4-aa1baaec8b29",
       "project_title": "Interactive Decision Matrix",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/decision-matrix-gemini-flash-oneshot.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:785f5fba7b95d4079efd3482f13dfb4b6e89112b948617086e0a9738c81b83b6",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:1d1953a3d4c680a8ba8eece7daab049bd54af899a658c71c74c8e2cbce934948"
+        "conversation_key": "sha256:ec55e170a5671255d8524461e4dcfab074d0922ac92f851336834aecd9a3e785"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -4098,13 +4098,13 @@
       "source_run_id": "ee894951-ce39-4ed6-ad97-f3e181734fda",
       "project_id": "405252a7-ef8c-5e33-b582-eb44642eb4db",
       "project_title": "Offer Salvage Triage Desk",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/offer-salvage-triage-desk-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:b473a99e30f7ccd8ed3fc2dad47ac7e86cbb557effdcf994f6b4ebd791fbdce7",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:1d6f23b3749c7c5ed7fb940ce77403f142d70fe4b3dfbdaff0cd8b317d44e74a"
+        "conversation_key": "sha256:da209e5ba4ad129afd7cb227b92893e07600d9415d0bfdcad189b994bd662f3e"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -4123,13 +4123,13 @@
       "source_run_id": "eec3048a-6cb2-4b57-948f-78cc0f65ae83",
       "project_id": "8c6c15ca-6477-4224-9409-a245518e32f8",
       "project_title": "Micro Dungeon Route Puzzle",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/micro-dungeon-route-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:d35d461bdfeb692c67f442f14bc2185c307671506ec0117321a6b8b847c2782a",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:056975d03a2c0f76b8bbaba14bf3ab4729cbda63c0ce1b426cc4b821d7c925a4"
+        "conversation_key": "sha256:4ffd0e397a0f9759fcef660faa0676a56d875031f2c3b7f347117ff8e1d5c925"
       },
       "public_url_status": "verified_public",
       "verified_public_url": "https://chatgpt.com/share/6a66a1c3-6010-83ea-87be-4e5967a0cfcc",
@@ -4150,13 +4150,13 @@
       "source_run_id": "f08b67b0-3eee-40ec-8760-1bafe3ad9d9b",
       "project_id": "a4c6d007-23a7-5c38-add2-78baccd45eb3",
       "project_title": "Pocket Zine Collage Layout Studio",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/pocket-zine-collage-layout-studio-claude-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:6f01b0da7a4f59ee581a7e0c95b1c53f7549a2a7776365457dc62f0289785d41",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:18486b9478e1e936584c4a78fa624b47b4fef5776c567ca73117105817fe0466"
+        "conversation_key": "sha256:e9320a734af0e735911454a6cfd7b79f0c4d074aa5425e16f4c4bd48499330d4"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -4175,13 +4175,13 @@
       "source_run_id": "f3918d0e-5261-4600-b1da-45199e38b224",
       "project_id": "a60a806f-b289-4bc7-9430-20342279f3ff",
       "project_title": "Swish City Timing Hoops",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/swish-city-claude-opus-4-8-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:269ff0bca0a893c3dff0a65c8b10e0e62b519459cf04d2300d34e30d448f93a4",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:dd4852ac7c285323453586db38e2779c6710e1a233b70b38781aa78955b57732"
+        "conversation_key": "sha256:750cea62c081ac8bb8c798326308a44ed802731fa376671225f3cb8ed1937e56"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -4200,13 +4200,13 @@
       "source_run_id": "f4a48984-3b06-4fa3-b5c2-14c94d89f883",
       "project_id": "905e6a36-4e93-5cc1-96a7-5a9032964890",
       "project_title": "Four-Week Content Gap Heatmap",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/four-week-content-gap-heatmap-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:6e47fa3191b8ebc4087595adabd8e955553b12fac29c34ef992097d7d3a5d8cb",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:56d6c89d55319dd2564fe2e50890dc3476ede95e7053061b836264045ade6964"
+        "conversation_key": "sha256:9c1ccd68bc03c5b1ea0d7954848ef728a14a4d905b5d8d0c66788676924d10fc"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -4225,13 +4225,13 @@
       "source_run_id": "f4b12a53-d899-4619-a0ec-06dcb4e7a67a",
       "project_id": "2a2a8461-6aea-520c-80fb-d6a1c774df10",
       "project_title": "Article Angle Triage Sprint",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/article-angle-triage-sprint-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:eb79885ed8771f04e4ac35fbd7cea8aea20c353f3bcc00357fdbc94bd744112c",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:d131f2394bf9ab4c1e07d7f0ff90aacd6483a6e35fc0926024ae05054e4e8316"
+        "conversation_key": "sha256:17f27a49962f7aec5b84f52153847044897efb16479076e2d45d6fb5bfad6e3c"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -4250,13 +4250,13 @@
       "source_run_id": "f4f0e2df-58c9-4def-bb1c-7785a3989ec9",
       "project_id": "81f2b617-2de5-404f-aa88-c94443f213bd",
       "project_title": "Weekend Plan Checklist",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/weekend-plan-checklist-chatgpt-6prompt-fixed.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:e22b42bfe444035f0f75470a39b09a5e8ba93f89654269bd47e93cb157c2cf34",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:0cec774e1c3ec3417a676b93629b6dfdf8906d63c2361e0e4c03c2279b6a9785"
+        "conversation_key": "sha256:1bb3ff125d9dc14f607e14b6441628218d575c68c7787ec1710a53b68044a777"
       },
       "public_url_status": "verified_public",
       "verified_public_url": "https://chatgpt.com/share/6a669ef3-9198-83ea-bbf4-92bb4eca72e2",
@@ -4302,13 +4302,13 @@
       "source_run_id": "f7680083-b81f-4ba1-8aa0-a2f9821ac6c6",
       "project_id": "20ffe0fe-6589-5000-af34-73f4855c616e",
       "project_title": "SERP Snippet Race Board",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/serp-snippet-race-board-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:8516fde7fce3e1a3fc855f9669931f9332a7821630cfc0d4935fd04f7f1f063b",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:a7e19ae9ab95376a7b33fbe700cd0417546d27b81436ce9fc2757b157114a268"
+        "conversation_key": "sha256:d11bde430be769cf763d99dd0836c89576d60dc3013eed4db39438bff71ce8dd"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -4327,13 +4327,13 @@
       "source_run_id": "f79c4134-baeb-4448-9b39-449da2db62b7",
       "project_id": "0d6d80be-0639-5749-ac95-d693eb3bc674",
       "project_title": "Meta Tag CTR Card Duel",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/meta-tag-ctr-card-duel-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:79b553300c339e64949afd4428f7f4552565fafc81a68f257c2ab251febb7696",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:2a5d73a1b0c72d8421a67293dade26d74a8526aad1cdc937a1963bd1ed1d4526"
+        "conversation_key": "sha256:f3c7df6776c908204a0f762442184e51bcdd70e91e9d64ce4b93781d52a8dd94"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -4352,13 +4352,13 @@
       "source_run_id": "fabb195e-18e9-4f24-8880-f6d784305bc5",
       "project_id": "77dfe78d-6a3d-47f6-9384-2881958098df",
       "project_title": "Airlock Zero: Blackout Shift",
-      "provider_key": "claude",
+      "provider_key": "anthropic",
       "original_locator_evidence": {
         "source_path": "seed-runs/airlock-zero-blackout-shift-claude-sonnet-5-max-fork.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:bfefdedcdcb477d71340d58d8ad2adbdf04077e2c21ec22a3f5109875a4570ff",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:ada674fbcd3c36c666c4a08879df090eb65cd764205735228fa74140cc5b88f0"
+        "conversation_key": "sha256:c3c88c81c289d4e59e6104c8dd9744d33e2ec0b23aeae31cc03c332c9cd041a7"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -4377,13 +4377,13 @@
       "source_run_id": "fc858648-09f6-4af2-b4aa-ace752728b7e",
       "project_id": "4de36e55-33e3-51b4-a928-79f025322888",
       "project_title": "YouTube B-roll Coverage Card Dealer",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/youtube-broll-coverage-card-dealer-chatgpt-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:efde92f2f300719f8a2255ea3e23cdcc87813778cc51b5fdcd414342ba26c0aa",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:aebc545a60b8943ac49441450040ab7fdf472a2d4033c368df4516871d4fc498"
+        "conversation_key": "sha256:19d06d16822cf05b940e731270d159bb5522f54fecafada833a150a13b473bec"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -4402,13 +4402,13 @@
       "source_run_id": "fd2902be-84e7-43ad-a8a0-8a0078a2f1ac",
       "project_id": "e1b37075-94ef-5a97-9ce9-87f9e2553d80",
       "project_title": "Search Result Promise Proof Board",
-      "provider_key": "chatgpt",
+      "provider_key": "openai",
       "original_locator_evidence": {
         "source_path": "seed-runs/search-result-promise-proof-board-chatgpt-source-run.preexisting-20260613.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:b4b82630e38c290e2b22ad03da8ffe7adb1a1ba87b33f6edfffdffc423757a53",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:1f1bd11ae4f747cd494569687f9da95b1922dfe83e7a69b9dd6497b03efdae87"
+        "conversation_key": "sha256:08cd4b71cb3f136814c9bbd4c2dff2672637655502b6fe8717dd5a59708471fb"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,
@@ -4427,13 +4427,13 @@
       "source_run_id": "ff3b02db-cd6d-4b62-a312-c26a703d5b30",
       "project_id": "38a7646e-63ce-5be8-b07e-abbfc92af790",
       "project_title": "Cookbook Promo Readiness Cards",
-      "provider_key": "gemini",
+      "provider_key": "google",
       "original_locator_evidence": {
         "source_path": "seed-runs/cookbook-promo-readiness-cards-gemini-source-run.json",
         "source_field": "/source_url",
         "locator_sha256": "sha256:dba050eca308817f665d16c277a744da2175070e28d7cc97686674582799b471",
         "locator_kind": "private_provider_conversation",
-        "conversation_key": "sha256:ae2eb6c1ab4ca3a7c9f520ff91a214ce28ee361c84b58255c5833bad63ee5922"
+        "conversation_key": "sha256:610268e0938832ee887abb360b693f22b4aef802f4708a1805cb06954b764e84"
       },
       "public_url_status": "unavailable",
       "verified_public_url": null,

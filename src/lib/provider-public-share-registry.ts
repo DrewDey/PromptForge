@@ -3,10 +3,9 @@ import registryData from './provider-public-share-registry.v1.json'
 export type ProviderPublicShareAccessState = 'public_exact' | 'public_partial'
 
 export type ProviderPublicShareProviderKey =
-  | 'chatgpt'
-  | 'claude'
-  | 'gemini'
-  | 'openrouter'
+  | 'openai'
+  | 'anthropic'
+  | 'google'
 
 export type ProviderPublicShareRegistryEntry = Readonly<{
   project_id?: string

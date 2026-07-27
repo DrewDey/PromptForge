@@ -995,7 +995,7 @@ async function main() {
     preparedBinding,
   })
 
-  if (args.emitIntakeJson && !preparedBinding) {
+  if (args.emitIntakeJson) {
     const payload = buildSubmissionPayload({
       pkg,
       profile: { id: args.profileId, username: args.username },
@@ -1003,7 +1003,13 @@ async function main() {
       forkFields: validatedForkFields,
       preparedBinding,
     })
-    console.log(JSON.stringify(payload, null, 2))
+    console.log(JSON.stringify(
+      preparedBinding
+        ? legacyImportHandoff(preparedBinding, payload, validatedForkFields)
+        : payload,
+      null,
+      2,
+    ))
     return
   }
 
@@ -1081,30 +1087,6 @@ async function main() {
     profile = created.profile
     createdEmail = created.createdEmail
     loginIdentifier = created.createdEmail
-  }
-
-  if (args.emitIntakeJson) {
-    if (!preparedBinding) {
-      throw new Error('Unexpected ordinary connector handoff state.')
-    }
-    if (profile.id !== args.profileId) {
-      throw new Error(
-        '--profile-id must exactly match the verified prepared seed profile.',
-      )
-    }
-    const payload = buildSubmissionPayload({
-      pkg,
-      profile,
-      context,
-      forkFields: validatedForkFields,
-      preparedBinding,
-    })
-    console.log(JSON.stringify(
-      legacyImportHandoff(preparedBinding, payload, validatedForkFields),
-      null,
-      2,
-    ))
-    return
   }
 
   const sourceRun = await insertSourceRunSubmission(

@@ -19,10 +19,10 @@ DO $test$
 DECLARE
   builder UUID := '11000000-0000-4000-8000-000000000001';
   administrator UUID := '11000000-0000-4000-8000-000000000002';
-  source_run_a UUID := 'd9fa40e7-7725-4387-ad5b-14f25cf744ce';
-  source_run_b UUID := '80b083bb-4f94-4411-b071-a5da731d3e2d';
-  project_a UUID := 'f25f83df-29c5-4d07-97b8-e7f6d2a902b8';
-  project_b UUID := 'e3f1d1a7-1d18-4a7b-ba54-045526cd2661';
+  source_run_a UUID := '33000000-0000-4000-8000-000000000001';
+  source_run_b UUID := '33000000-0000-4000-8000-000000000002';
+  project_a UUID := '33000000-0000-4000-8000-000000000003';
+  project_b UUID := '33000000-0000-4000-8000-000000000004';
   shared_private_locator TEXT :=
     'https://chatgpt.com/c/6a208694-1e78-8327-8ec7-3b231b18169d';
   intake_a JSONB;

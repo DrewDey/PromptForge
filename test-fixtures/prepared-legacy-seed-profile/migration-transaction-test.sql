@@ -92,6 +92,55 @@ BEGIN
   IF result_record.profile_id IS NOT NULL THEN
     RAISE EXCEPTION 'An admin profile was accepted as a prepared seed byline.';
   END IF;
+
+  SELECT * INTO result_record
+  FROM public.import_legacy_prepared_source_run(
+    'd9fa40e7-7725-4387-ad5b-14f25cf744ce',
+    'f25f83df-29c5-4d07-97b8-e7f6d2a902b8',
+    jsonb_build_object(
+      'author_id', rowan,
+      'title', 'Protected Rowan import',
+      'source_url', 'https://claude.ai/chat/protected-rowan-source',
+      'canonical_source_url', 'https://claude.ai/chat/protected-rowan-source',
+      'file_name', NULL,
+      'notes', 'Fixture',
+      'source_package_file', 'seed-runs/protected-rowan.json',
+      'source_package_sha256', repeat('d', 64),
+      'intake_evidence', jsonb_build_object('schema_version', 1)
+    ),
+    NULL
+  );
+  IF result_record.source_run_id IS DISTINCT FROM
+      'd9fa40e7-7725-4387-ad5b-14f25cf744ce'::UUID
+    OR NOT result_record.inserted THEN
+    RAISE EXCEPTION 'The exact protected Rowan import did not pass its seed-profile gate.';
+  END IF;
+
+  BEGIN
+    PERFORM public.import_legacy_prepared_source_run(
+      '6a1f9bc4-c390-832f-88a5-d978d2e42577',
+      '3b9c61d8-4e27-4f0a-9c5d-2a8f1e6b7c40',
+      jsonb_build_object(
+        'author_id', missing_operator,
+        'title', 'Protected wrong-author import',
+        'source_url', 'https://chatgpt.com/c/protected-wrong-author',
+        'canonical_source_url', 'https://chatgpt.com/c/protected-wrong-author',
+        'file_name', NULL,
+        'notes', 'Fixture',
+        'source_package_file', 'seed-runs/protected-wrong-author.json',
+        'source_package_sha256', repeat('e', 64),
+        'intake_evidence', jsonb_build_object('schema_version', 1)
+      ),
+      NULL
+    );
+    RAISE EXCEPTION 'A protected legacy import accepted an arbitrary author UUID.';
+  EXCEPTION
+    WHEN OTHERS THEN
+      IF SQLERRM = 'A protected legacy import accepted an arbitrary author UUID.'
+        OR SQLERRM <> 'Protected legacy import author lacks its exact confirmed seed-profile binding.' THEN
+        RAISE;
+      END IF;
+  END;
 END;
 $test$;
 

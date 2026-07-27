@@ -222,6 +222,152 @@ BEGIN
 END;
 $test$;
 
+-- A legacy prepared project may already be approved before its immutable
+-- source-run package is imported. The separately registered public share
+-- should resolve without mutating that queued intake or rewriting the project.
+RESET ROLE;
+SET request.jwt.claims = '{"role":"service_role"}';
+CREATE TEMP TABLE preexisting_legacy_projection_state (
+  source_run_id UUID NOT NULL,
+  project_id UUID NOT NULL
+);
+GRANT SELECT ON preexisting_legacy_projection_state TO anon;
+
+DO $test$
+DECLARE
+  source_run_id UUID := '44000000-0000-4000-8000-000000000001';
+  project_id UUID := '44000000-0000-4000-8000-000000000002';
+  builder UUID := (SELECT builder FROM legacy_source_test_state);
+  administrator UUID := (SELECT administrator FROM legacy_source_test_state);
+  immutable_intake JSONB;
+  imported RECORD;
+  link_id UUID;
+BEGIN
+  immutable_intake := (
+    SELECT intake_a
+    FROM legacy_source_test_state
+  ) || jsonb_build_object(
+    'title', 'Pre-existing approved legacy source run',
+    'source_package_file', 'seed-runs/pre-existing-approved-legacy.json',
+    'source_package_sha256', repeat('e', 64)
+  );
+
+  SELECT * INTO imported
+  FROM public.import_legacy_prepared_source_run(
+    source_run_id,
+    project_id,
+    immutable_intake,
+    NULL
+  );
+  IF imported.source_run_id IS DISTINCT FROM source_run_id
+    OR imported.status IS DISTINCT FROM 'queued'
+    OR NOT imported.inserted THEN
+    RAISE EXCEPTION 'The pre-existing project fixture did not import as an untouched queued run.';
+  END IF;
+
+  INSERT INTO public.prompts (
+    id, title, description, content, difficulty, status, author_id
+  ) VALUES (
+    project_id,
+    'Pre-existing approved legacy project',
+    'Approved before its immutable source package was imported.',
+    'Preserve the existing project while attaching its verified public source.',
+    'beginner',
+    'approved',
+    builder
+  );
+
+  link_id := public.register_source_run_public_share_link(
+    source_run_id,
+    project_id,
+    'https://chatgpt.com/share/pre-existing-approved-legacy',
+    'openai',
+    NOW() - INTERVAL '2 minutes',
+    NOW() - INTERVAL '1 minute',
+    administrator,
+    'public_exact'
+  );
+  IF link_id IS NULL THEN
+    RAISE EXCEPTION 'The pre-existing project fixture did not register its exact public share.';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.source_run_submissions
+    WHERE id = source_run_id
+      AND status = 'queued'
+      AND extracted_prompt_id IS NULL
+      AND admin_notes IS NULL
+      AND source_visibility = 'review_only'
+      AND source_publication_consent_at IS NULL
+  ) THEN
+    RAISE EXCEPTION 'Public-share registration rewrote the pre-existing project intake.';
+  END IF;
+
+  UPDATE public.prompts
+  SET author_id = administrator
+  WHERE id = project_id;
+  IF EXISTS (
+    SELECT 1
+    FROM public.read_public_source_run_share_link(project_id, source_run_id)
+  ) THEN
+    RAISE EXCEPTION 'A pre-existing project with a mismatched author exposed the legacy source link.';
+  END IF;
+  UPDATE public.prompts
+  SET author_id = builder
+  WHERE id = project_id;
+
+  INSERT INTO preexisting_legacy_projection_state VALUES (
+    source_run_id,
+    project_id
+  );
+END;
+$test$;
+
+SET ROLE anon;
+SET request.jwt.claims = '{"role":"anon"}';
+DO $test$
+BEGIN
+  IF (
+    SELECT COUNT(*)
+    FROM public.read_public_source_run_share_link(
+      (SELECT project_id FROM preexisting_legacy_projection_state),
+      (SELECT source_run_id FROM preexisting_legacy_projection_state)
+    )
+  ) <> 1 THEN
+    RAISE EXCEPTION 'The exact pre-existing approved legacy project did not expose its verified share.';
+  END IF;
+END;
+$test$;
+
+RESET ROLE;
+SET request.jwt.claims = '{"role":"service_role"}';
+DO $test$
+BEGIN
+  PERFORM public.revoke_source_run_public_share_link(
+    (SELECT source_run_id FROM preexisting_legacy_projection_state),
+    (SELECT administrator FROM legacy_source_test_state),
+    'Pre-existing approved legacy projection revocation test.'
+  );
+  IF EXISTS (
+    SELECT 1
+    FROM public.read_public_source_run_share_link(
+      (SELECT project_id FROM preexisting_legacy_projection_state),
+      (SELECT source_run_id FROM preexisting_legacy_projection_state)
+    )
+  ) THEN
+    RAISE EXCEPTION 'A revoked pre-existing legacy source link remained public.';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.prompts
+    WHERE id = (SELECT project_id FROM preexisting_legacy_projection_state)
+      AND status = 'approved'
+  ) THEN
+    RAISE EXCEPTION 'Revoking a pre-existing legacy source link changed the approved project.';
+  END IF;
+END;
+$test$;
+
 SET ROLE authenticated;
 SET request.jwt.claims =
   '{"role":"authenticated","sub":"11000000-0000-4000-8000-000000000001"}';

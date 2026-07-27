@@ -102,12 +102,8 @@ export function providerPublicShareProviderKeyCore(value) {
 /** @param {unknown} aliases */
 export function resolveProviderPublicShareSourceRunIdCore(aliases) {
   if (!isRecord(aliases)) return null
-  const values = []
-  for (const key of [
-    'source_run_id',
-    'source_run_submission_id',
-    'pathforge_pending_id',
-  ]) {
+  const canonicalValues = []
+  for (const key of ['source_run_id', 'source_run_submission_id']) {
     if (!Object.hasOwn(aliases, key)) continue
     const value = aliases[key]
     if (value === undefined || value === null) continue
@@ -118,10 +114,24 @@ export function resolveProviderPublicShareSourceRunIdCore(aliases) {
       normalized !== value ||
       !isCanonicalProviderPublicShareUuidCore(normalized)
     ) return null
-    values.push(normalized)
+    canonicalValues.push(normalized)
   }
-  const distinct = new Set(values)
-  return distinct.size === 1 ? values[0] : null
+  if (canonicalValues.length > 0) {
+    const distinctCanonicalValues = new Set(canonicalValues)
+    return distinctCanonicalValues.size === 1 ? canonicalValues[0] : null
+  }
+
+  const legacyPendingId = aliases.pathforge_pending_id
+  if (legacyPendingId === undefined || legacyPendingId === null) return null
+  if (typeof legacyPendingId !== 'string') return null
+  const normalizedLegacyPendingId = legacyPendingId.trim()
+  return (
+    normalizedLegacyPendingId &&
+    normalizedLegacyPendingId === legacyPendingId &&
+    isCanonicalProviderPublicShareUuidCore(normalizedLegacyPendingId)
+  )
+    ? normalizedLegacyPendingId
+    : null
 }
 
 /**

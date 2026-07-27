@@ -22,6 +22,7 @@ const sqlFiles = [
   'supabase/migrations/20260726210000_prepared_legacy_seed_profile_binding.sql',
   'supabase/migrations/20260727014500_enforce_prepared_legacy_import_profile_binding.sql',
   'supabase/migrations/20260727024500_allow_curated_legacy_intake_evidence.sql',
+  'supabase/migrations/20260727033000_project_preexisting_legacy_share_projection.sql',
   'test-fixtures/legacy-public-source/migration-transaction-test.sql',
   'test-fixtures/prepared-legacy-seed-profile/migration-transaction-test.sql',
 ]

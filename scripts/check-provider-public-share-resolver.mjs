@@ -101,6 +101,22 @@ assert.equal(
   }),
   sourceRunId,
 )
+assert.equal(
+  resolveProviderPublicShareSourceRunIdCore({
+    source_run_id: sourceRunId,
+    source_run_submission_id: sourceRunId,
+    pathforge_pending_id: projectId,
+  }),
+  sourceRunId,
+  'canonical source-run aliases must outrank a legacy pending project id',
+)
+assert.equal(
+  resolveProviderPublicShareSourceRunIdCore({
+    pathforge_pending_id: sourceRunId,
+  }),
+  sourceRunId,
+  'pathforge_pending_id remains a fallback for packages without canonical aliases',
+)
 for (const aliases of [
   {},
   { source_run_id: 'private-provider-conversation-id' },

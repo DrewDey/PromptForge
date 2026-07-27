@@ -172,6 +172,11 @@ export type ProjectModelVariantRecord = {
 
 export type ProjectModelVariantPublicRecord = Omit<
   ProjectModelVariantRecord,
+  'automation_run_id' | 'source_url'
+>
+
+export type ProjectModelVariantAdminRecord = Omit<
+  ProjectModelVariantRecord,
   'automation_run_id'
 >
 

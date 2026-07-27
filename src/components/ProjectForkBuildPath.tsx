@@ -25,6 +25,7 @@ import {
   resolvePublicSourceEvidence,
   type PublicEvidenceTruth,
 } from '@/lib/public-source-evidence'
+import { providerPublicShareHref } from '@/lib/provider-public-share'
 
 export type ProjectForkBuildPathMode = 'parent' | 'child'
 
@@ -574,6 +575,10 @@ export function ProjectForkBuildPath({
 }: ProjectForkBuildPathProps) {
   const fork = forkSource ? { ...branch, forkSource } : branch
   const publicSourceEvidence = sourceEvidence ?? resolvePublicSourceEvidence(null)
+  const publicShareHref = providerPublicShareHref(
+    sourceRunHref,
+    publicSourceEvidence.accessState,
+  )
   const publicArtifactStatus = publicArtifactStatusPresentation({
     qualityStatus: fork.childArtifactQualityStatus ?? 'recorded',
     knownIssueExplanation: fork.childArtifactKnownIssueExplanation,
@@ -782,9 +787,9 @@ export function ProjectForkBuildPath({
               <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
             </ActionLink>
           )}
-          {sourceRunHref && (
+          {publicShareHref && (
             <ActionLink
-              href={sourceRunHref}
+              href={publicShareHref}
               className="inline-flex min-h-10 items-center justify-center gap-2 border border-surface-300 bg-white px-3 py-2 text-xs font-black uppercase tracking-[0.1em] text-surface-700 transition hover:border-brand-orange hover:text-brand-orange-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
             >
               <FileCode2 className="h-3.5 w-3.5" aria-hidden="true" />

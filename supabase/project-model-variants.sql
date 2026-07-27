@@ -414,7 +414,6 @@ GRANT SELECT (
   model_release_key,
   model_label,
   model_settings,
-  source_url,
   source_package_file,
   source_package_sha256,
   opening_prompt_sha256,

@@ -1,4 +1,7 @@
-import type { ProjectModelVariantPublicRecord } from '../types'
+import type {
+  ProjectModelVariantAdminRecord,
+  ProjectModelVariantPublicRecord,
+} from '../types'
 import {
   requireAdminAccess,
   SUPABASE_PUBLIC_READS_ENABLED,
@@ -45,7 +48,7 @@ export async function getPublishedProjectModelVariants(
         const { data, error } = await supabase
           .from('project_model_variants')
           .select(
-            'id, project_id, source_run_id, provider_key, service_label, model_release_key, model_label, model_settings, source_url, source_package_file, source_package_sha256, opening_prompt_sha256, comparison_contract_version, comparison_contract_sha256, operator_kind, operator_label, run_role, quality_status, run_started_at, run_finished_at, prompt_count, repair_prompt_count, first_artifact_path, final_artifact_path, artifact_version_paths, first_pass_metrics, final_metrics, status, is_current, is_default, supersedes_variant_id, created_at, updated_at',
+            'id, project_id, source_run_id, provider_key, service_label, model_release_key, model_label, model_settings, source_package_file, source_package_sha256, opening_prompt_sha256, comparison_contract_version, comparison_contract_sha256, operator_kind, operator_label, run_role, quality_status, run_started_at, run_finished_at, prompt_count, repair_prompt_count, first_artifact_path, final_artifact_path, artifact_version_paths, first_pass_metrics, final_metrics, status, is_current, is_default, supersedes_variant_id, created_at, updated_at',
           )
           .eq('project_id', projectId)
           .in('status', ['published', 'historical'])
@@ -95,9 +98,10 @@ export async function getPublishedProjectModelVariants(
 
 export async function getProjectModelVariantsForAdmin(
   projectId: string,
-): Promise<ProjectModelVariantPublicRecord[]> {
-  const { supabase } = await requireAdminAccess()
-  const { data, error } = await supabase
+): Promise<ProjectModelVariantAdminRecord[]> {
+  await requireAdminAccess()
+  const { createAdminClient } = await import('../supabase/admin')
+  const { data, error } = await createAdminClient()
     .from('project_model_variants')
     .select(
       'id, project_id, source_run_id, provider_key, service_label, model_release_key, model_label, model_settings, source_url, source_package_file, source_package_sha256, opening_prompt_sha256, comparison_contract_version, comparison_contract_sha256, operator_kind, operator_label, run_role, quality_status, run_started_at, run_finished_at, prompt_count, repair_prompt_count, first_artifact_path, final_artifact_path, artifact_version_paths, first_pass_metrics, final_metrics, status, is_current, is_default, supersedes_variant_id, created_at, updated_at',
@@ -107,5 +111,5 @@ export async function getProjectModelVariantsForAdmin(
     .order('created_at', { ascending: false })
 
   if (error) throw error
-  return (data ?? []) as ProjectModelVariantPublicRecord[]
+  return (data ?? []) as ProjectModelVariantAdminRecord[]
 }

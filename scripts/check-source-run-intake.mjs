@@ -105,7 +105,11 @@ mustNotMatch(importer, /\.from\(['"`]prompts['"`]\)/, 'importer must not insert 
 mustNotMatch(importer, /\.from\(['"`]prompt_steps['"`]\)/, 'importer must not insert into prompt_steps')
 mustNotMatch(importer, /args\.submitDraft\s*=\s*true|submitDraft:\s*true|mode:\s*['"`]draft['"`]/, 'importer must not support direct pending draft mode')
 mustNotMatch(importer, /vote_count|bookmark_count|category_id:\s*category\.id|result_content:\s*pkg/, 'importer must not populate public/upvote-page fields')
-mustInclude('src/lib/source-run-package.ts', 'isSupportedCommunitySourceUrl(sourceUrl)', 'prepared publication must reject private provider conversation URLs before the database gate')
+mustInclude('src/lib/source-run-package.ts', 'isAllowlistedProviderEvidenceLocator(sourceUrl)', 'prepared publication must preserve allowlisted private legacy locators as immutable package evidence')
+mustNotInclude('src/lib/source-run-package.ts', 'isSupportedCommunitySourceUrl(sourceUrl)', 'prepared publication must not confuse immutable package evidence with a public provider share')
+mustInclude('src/lib/data/source-runs.ts', 'isSupportedCommunitySourceUrl(sourceUrl)', 'ordinary source-run intake must remain public-share-only')
+mustInclude('supabase/migrations/20260726203000_legacy_public_source_grandfathering.sql', 'check_source_run_public_share_for_publication', 'prepared publication must expose the exact project/source-run share gate to the application layer')
+mustInclude('supabase/migrations/20260726203000_legacy_public_source_grandfathering.sql', "'review_only'", 'the service-only legacy import must retain private evidence without legacy public-link consent')
 mustInclude('src/lib/source-run-package.ts', "profileRegistryId.startsWith('prepared-showcase-mock-')", 'prepared publication must reject mock profile provenance')
 
 const packageFiles = listJsonFiles('seed-runs')

@@ -1,4 +1,5 @@
 import type { PromptWithRelations } from './types'
+import type { PublicEvidenceTruth } from './public-source-evidence'
 
 export const PROJECT_FORK_MAX_DEPTH = 10
 export const PROJECT_FORK_MAX_WIDTH = 10
@@ -113,6 +114,7 @@ export type ProjectForkNetworkItem = {
   childRoute?: string | null
   childSourceRunId?: string | null
   childSourceUrl?: string | null
+  childSourceEvidence?: PublicEvidenceTruth | null
   childProviderName?: string | null
   childArtifactQualityStatus?: 'verified' | 'known-issue' | 'recorded' | null
   childArtifactKnownIssueExplanation?: string | null

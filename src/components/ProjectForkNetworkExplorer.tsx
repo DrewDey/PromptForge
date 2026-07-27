@@ -18,7 +18,7 @@ export default function ProjectForkNetworkExplorer({
   const [selectedForkId, setSelectedForkId] = useState<string | null>(null)
   const selectedFork = forks.find((fork) => fork.id === selectedForkId) ?? null
   const selectedForkEvidence = selectedFork
-    ? resolvePublicSourceEvidence({
+    ? selectedFork.childSourceEvidence ?? resolvePublicSourceEvidence({
         sourceRunId: selectedFork.childSourceRunId,
         pathforgeRecordChecked: Boolean(selectedFork.childSourceRunId),
       })

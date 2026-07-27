@@ -2,8 +2,8 @@ import 'server-only'
 import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
-import { isSupportedCommunitySourceUrl } from './community-project-contract'
 import { normalizeProjectForkSource, type ProjectForkSource } from './project-forks'
+import { isAllowlistedProviderEvidenceLocator } from './provider-public-share'
 
 export type SourceRunPackageStep = {
   step_number: number
@@ -524,9 +524,9 @@ export function buildSourceRunIntakeEvidence(input: {
   if (!provider || !model) {
     throw new Error('Prepared source-run evidence requires provider and exact model.')
   }
-  if (!sourceUrl || !isSupportedCommunitySourceUrl(sourceUrl)) {
+  if (!isAllowlistedProviderEvidenceLocator(sourceUrl)) {
     throw new Error(
-      'Prepared source-run evidence requires a public provider share URL; private conversation URLs are not accepted.',
+      'Prepared source-run evidence requires an allowlisted secure provider locator.',
     )
   }
   if (!Number.isInteger(promptCount) || promptCount < 1) {

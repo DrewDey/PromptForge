@@ -86,6 +86,7 @@ import {
 import type { PreparedShowcaseProject, PreparedShowcaseStep } from './prepared-showcase-projects'
 import { inspectablePreparedForkFallbacks } from './prepared-release-gates-core.mjs'
 import { getProjectRouteOverride } from './project-links'
+import { resolveProviderPublicShareSourceRunId } from './provider-public-share'
 import { getPublicModelIdentityLabel } from './public-model-labels'
 import {
   getProjectModelVariantKnownIssueExplanation,
@@ -670,13 +671,11 @@ function hydratePreparedForkItem(item: ProjectForkNetworkItem): ProjectForkNetwo
 
   let childProviderName: string | null = null
   let childSourceRunId: string | null = null
-  let childSourceUrl = project.sourceUrl
   let modelUsed = item.modelUsed
   if (project.sourceRunPackageFile) {
     const sourceRun = loadSourceRunPackage(project.sourceRunPackageFile)
     childProviderName = sourceRun.provider ?? null
-    childSourceRunId = sourceRun.source_run_id ?? project.sourceRunId
-    childSourceUrl = sourceRun.source_url ?? childSourceUrl
+    childSourceRunId = resolveProviderPublicShareSourceRunId(sourceRun)
     modelUsed = getPublicModelIdentityLabel({
       provider: sourceRun.provider,
       model: sourceRun.model ?? item.modelUsed,
@@ -692,7 +691,7 @@ function hydratePreparedForkItem(item: ProjectForkNetworkItem): ProjectForkNetwo
     ...item,
     childRoute: getProjectRouteOverride(project.id) ?? project.href,
     childSourceRunId,
-    childSourceUrl,
+    childSourceUrl: null,
     childProviderName,
     modelUsed,
     childArtifactQualityStatus: checkedChildVariant?.qualityStatus ?? 'recorded',

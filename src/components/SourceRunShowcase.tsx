@@ -24,6 +24,7 @@ import {
   resolvePublicSourceEvidence,
   type PublicEvidenceTruth,
 } from '@/lib/public-source-evidence'
+import { providerPublicShareHref } from '@/lib/provider-public-share'
 import {
   buildProjectResponseForkHref,
   groupProjectForkNetworkBySourceStep,
@@ -1042,11 +1043,11 @@ function forkAuthorLabel(fork: ProjectForkNetworkItem) {
   return fork.authorDisplayName ?? compactForkText(fork.title, 'Forked path', 44)
 }
 
-function externalSourceRunHref(value?: string | null) {
-  const trimmed = value?.trim()
-  if (!trimmed) return null
-  if (/^https?:\/\//i.test(trimmed)) return trimmed
-  return `https://${trimmed}`
+function externalSourceRunHref(
+  value: string | null | undefined,
+  evidence: PublicEvidenceTruth,
+) {
+  return providerPublicShareHref(value, evidence.accessState)
 }
 
 function ResponseForkBranchCard({
@@ -1478,8 +1479,8 @@ export default function SourceRunShowcase({
   defaultStepNumber?: number
   allowForks?: boolean
 }) {
-  const sourceRunHref = externalSourceRunHref(sourceRunUrl)
   const publicSourceEvidence = sourceEvidence ?? resolvePublicSourceEvidence(null)
+  const sourceRunHref = externalSourceRunHref(sourceRunUrl, publicSourceEvidence)
   const packages = useMemo<ArtifactPackage[]>(
     () =>
       steps.flatMap((step) => {
@@ -1682,7 +1683,7 @@ export default function SourceRunShowcase({
     return null
   })()
   const activeForkSourceEvidence = activeForkContext
-    ? resolvePublicSourceEvidence({
+    ? activeForkContext.fork.childSourceEvidence ?? resolvePublicSourceEvidence({
         sourceRunId: activeForkContext.fork.childSourceRunId,
         pathforgeRecordChecked: Boolean(activeForkContext.fork.childSourceRunId),
       })

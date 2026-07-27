@@ -998,7 +998,7 @@ mustInclude(sourceEvidenceFooter, sourceEvidenceFooterContent, 'evidence.provide
 mustInclude(sourceEvidenceFooter, sourceEvidenceFooterContent, 'data-source-access={evidence.accessState}', 'evidence footer must always render source access')
 mustInclude(sourceEvidenceFooter, sourceEvidenceFooterContent, 'evidence.recordLabel &&', 'evidence footer must conditionally render record scope')
 mustInclude(sourceEvidenceFooter, sourceEvidenceFooterContent, 'data-model-proof={evidence.modelProof}', 'evidence footer must always render model proof')
-mustInclude(sourceEvidenceFooter, sourceEvidenceFooterContent, '{sourceRunHref && (', 'evidence footer must condition only the external link on provider URL availability')
+mustInclude(sourceEvidenceFooter, sourceEvidenceFooterContent, '{publicShareHref && (', 'evidence footer must condition the external link on a verified public-share URL and access state')
 mustNotInclude(sharedComponent, sharedComponentContent, '<ArtifactCodeBlock', 'shared showcase must not dump generated HTML into the public response path')
 mustNotInclude(sharedComponent, sharedComponentContent, '<SourceLink', 'shared showcase must not repeat provider links inside every response package')
 mustNotInclude(sharedComponent, sharedComponentContent, 'pathforgeSourceRunUrl', 'shared showcase must not expose admin source-run record links publicly')
@@ -1151,7 +1151,7 @@ for (const project of sourceRunProjects) {
     mustNotInclude(project.route, routeContent, 'route=', `${project.name} prepared wrapper must use the registry href instead of a duplicate route prop`)
   }
   mustInclude(project.route, routeShellContent, 'defaultStepNumber', `${project.name} must explicitly default the mounted artifact`)
-  mustInclude(project.route, routeShellContent, 'sourceRunUrl=', `${project.name} must pass the full provider source-run link to the shared showcase`)
+  mustInclude(project.route, routeShellContent, 'sourceRunUrl=', `${project.name} must pass only the nullable resolved public-share link to the shared showcase`)
   mustInclude(project.route, routeShellContent, 'ProjectEngagementBar', `${project.name} must keep the public project shell`)
   mustInclude(project.route, routeShellContent, 'ProjectCommunityPanel', `${project.name} must keep the community panel`)
 

@@ -14,6 +14,7 @@ import {
   PUBLIC_MODEL_PROOF_LABELS as PUBLIC_MODEL_PROOF_LABELS_CORE,
   resolvePublicSourceEvidenceCore,
 } from './public-source-evidence-core.mjs'
+import type { ResolvedProviderPublicShare } from './provider-public-share'
 
 export const PUBLIC_MODEL_PROOF_LABELS = PUBLIC_MODEL_PROOF_LABELS_CORE as Readonly<{
   exact_shown_publicly: 'Exact model shown publicly'
@@ -64,4 +65,43 @@ export function resolvePublicSourceEvidence(
   input: PublicEvidenceLookup,
 ): PublicEvidenceTruth {
   return resolvePublicSourceEvidenceCore(input) as PublicEvidenceTruth
+}
+
+export function applyProviderPublicShareEvidence(
+  evidence: PublicEvidenceTruth,
+  share: ResolvedProviderPublicShare | null,
+): PublicEvidenceTruth {
+  if (!share) return evidence
+
+  const checkedDate = share.anonymous_access_verified_at.slice(0, 10)
+  if (share.access_state === 'public_partial') {
+    return {
+      ...evidence,
+      sourceRunId: share.source_run_id,
+      curated: true,
+      accessState: 'public_partial',
+      accessLabel: 'Partial public source',
+      providerLinkLabel: 'Open partial public source',
+      transcriptCompleteness: 'partial',
+      transcriptLabel: 'Partial public transcript',
+      hasPathForgeRecord: true,
+      recordLabel: 'PathForge record',
+      accessNote:
+        `Anonymous provider access was verified on ${checkedDate}. The public share covers only part of this run; the PathForge record preserves the complete captured evidence.`,
+    }
+  }
+
+  return {
+    ...evidence,
+    sourceRunId: share.source_run_id,
+    curated: true,
+    accessState: 'public_exact',
+    accessLabel: 'Public source verified',
+    providerLinkLabel: 'Open public source',
+    transcriptCompleteness: 'complete',
+    transcriptLabel: 'Complete public transcript',
+    hasPathForgeRecord: true,
+    recordLabel: 'PathForge record',
+    accessNote: `Anonymous provider access was verified on ${checkedDate}.`,
+  }
 }

@@ -256,6 +256,7 @@ for (const name of [
   'buildProjectForkHref',
   'buildCommunityProjectForkHref',
   'buildProjectResponseForkHref',
+  'communityProjectContinuationSteps',
   'projectForkSourceToSubmissionFields',
   'projectForkSourceFromSubmissionFields',
   'resolveProjectForkPoint',
@@ -685,11 +686,16 @@ const communityPath = 'src/components/ProjectCommunityPanel.tsx'
 const community = parse(communityPath)
 assert(importHas(community, '@/components/ProjectForkBuildPath', 'ProjectForkBuildPath'), `${communityPath}: generic project fork lineage must use the shared renderer`)
 assert(importHas(community, '@/lib/project-forks', 'buildProjectResponseForkHref'), `${communityPath}: generic child forks must expose an exact continuation handoff`)
+assert(importHas(community, '@/lib/project-forks', 'communityProjectContinuationSteps'), `${communityPath}: generic child steps must use child-local continuation numbering`)
 assert(jsxOpenings(community, 'ProjectForkBuildPath').length >= 1, `${communityPath}: generic fork pages must render the shared lineage workspace`)
 assert(jsxOpenings(community, 'ProjectForkInheritedPathBand').length === 0, `${communityPath}: remove the divergent legacy inherited-path renderer`)
 assert(
   read(communityPath).includes("destination: '/build'"),
   `${communityPath}: generic child continuations must enter the community build workflow`,
+)
+assert(
+  !read(communityPath).includes('step.stepNumber > forkSource.sourceStepNumber'),
+  `${communityPath}: child-local step numbers must not be compared with the parent fork point`,
 )
 const communityForkRenderers = jsxOpenings(community, 'ProjectForkBuildPath')
 assert(
@@ -712,6 +718,15 @@ if (networkForkRenderers.length === 1) {
     `${networkExplorerPath}: selected branch must expose a sibling fork action`,
   )
 }
+
+assert(
+  forkDataSource.includes('continuationSteps: communityProjectContinuationSteps('),
+  `${dataPath}: database-backed generic parent previews must preserve all child-local continuation steps`,
+)
+assert(
+  !forkDataSource.includes('.filter((step) => step.step_number > (forkSource.sourceStepNumber ?? 0))'),
+  `${dataPath}: database-backed child steps must not compare local numbering with the parent fork point`,
+)
 
 for (const routePath of sharedSourceRunRoutes()) {
   const route = parse(routePath)

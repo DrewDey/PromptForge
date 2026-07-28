@@ -7,6 +7,7 @@ import { getProjectRouteOverride } from '@/lib/project-links'
 import { getPublicModelIdentityLabel } from '@/lib/public-model-labels'
 import {
   buildProjectResponseForkHref,
+  communityProjectContinuationSteps,
   projectForkSourceFromSubmissionFields,
   resolveProjectForkTrail,
   toProjectForkSourceSteps,
@@ -53,11 +54,7 @@ export default async function ProjectCommunityPanel({
   const sourceProject = forkTrail?.immediateSourceProject ?? null
   const sourceSteps = sourceProject ? toProjectForkSourceSteps(sourceProject) : []
   const continuationSourceSteps = forkSource
-    ? currentSteps.filter((step) => (
-      forkSource.sourceStepNumber
-        ? step.stepNumber > forkSource.sourceStepNumber
-        : true
-    ))
+    ? communityProjectContinuationSteps(currentSteps)
     : []
   const continuationSteps = continuationSourceSteps.map((step, index) => (
     index === continuationSourceSteps.length - 1 && project && forkSource

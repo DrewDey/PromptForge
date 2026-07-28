@@ -364,6 +364,12 @@ export function toProjectForkSourceSteps(project: Pick<PromptWithRelations, 'ste
     }))
 }
 
+export function communityProjectContinuationSteps(
+  childSteps: ProjectForkSourceStep[],
+): ProjectForkContinuationStep[] {
+  return [...childSteps].sort((left, right) => left.stepNumber - right.stepNumber)
+}
+
 export function resolveProjectForkPoint(
   sourceSteps: ProjectForkSourceStep[],
   source: Pick<ProjectForkSource, 'sourceStepId' | 'sourceStepNumber'>,

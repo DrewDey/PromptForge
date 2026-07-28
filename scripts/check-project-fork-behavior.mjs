@@ -43,6 +43,7 @@ const {
   buildCommunityProjectForkHref,
   buildProjectForkHref,
   buildProjectResponseForkHref,
+  communityProjectContinuationSteps,
   createProjectForkDraftContract,
   filterProjectForkNetworkBySourceRun,
   groupProjectForkNetworkBySourceStep,
@@ -244,6 +245,27 @@ const communityResponseHref = buildProjectResponseForkHref({
 })
 assert(communityResponseHref?.startsWith('/build?'), 'community response forks should enter the invitation-only project bundle flow')
 assert(communityResponseHref?.includes('forkStep=community-source-step-2'), 'community response forks should preserve the exact source response')
+
+const publishedCommunityChildFixture = {
+  parentForkPoint: 2,
+  childSteps: [{
+    id: 'community-child-step-1',
+    stepNumber: 1,
+    promptTitle: 'Child continuation',
+    promptText: 'Continue from the parent response.',
+    responseText: 'Child response',
+    responsePackageId: 'community-child-response-1',
+  }],
+}
+const communityChildLocalSteps = communityProjectContinuationSteps(
+  publishedCommunityChildFixture.childSteps,
+)
+assert(
+  communityChildLocalSteps.length === 1 &&
+    communityChildLocalSteps[0].stepNumber === 1 &&
+    publishedCommunityChildFixture.parentForkPoint > communityChildLocalSteps[0].stepNumber,
+  'community child steps must remain visible when a parent fork point has a higher step number',
+)
 
 const nestedResponseHref = buildProjectResponseForkHref({
   sourceProjectId: 'current-fork-project',

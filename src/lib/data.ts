@@ -99,6 +99,7 @@ import {
 } from './source-run-presentation'
 import {
   PROJECT_FORK_MAX_WIDTH,
+  communityProjectContinuationSteps,
   filterProjectForkNetworkBySourceRun,
   projectForkSourceFromSubmissionFields,
   type ProjectForkContinuationStep,
@@ -839,17 +840,17 @@ export async function getApprovedProjectForks(
           modelUsed: prompt.model_used,
           createdAt: prompt.created_at,
           forkSource,
-          continuationSteps: [...(prompt.steps ?? [])]
-            .filter((step) => step.step_number > (forkSource.sourceStepNumber ?? 0))
-            .sort((left, right) => left.step_number - right.step_number)
-            .map((step) => ({
-              id: step.id,
-              stepNumber: step.step_number,
-              promptTitle: step.title || `Prompt ${step.step_number}`,
-              promptText: step.content,
-              responseText: step.result_content,
-              responsePackageId: step.id,
-            })),
+          continuationSteps: communityProjectContinuationSteps(
+            [...(prompt.steps ?? [])]
+              .map((step) => ({
+                id: step.id,
+                stepNumber: step.step_number,
+                promptTitle: step.title || `Prompt ${step.step_number}`,
+                promptText: step.content,
+                responseText: step.result_content,
+                responsePackageId: step.id,
+              })),
+          ),
           childRoute: getProjectRouteOverride(prompt.id) ?? `/prompt/${prompt.id}`,
         })
         forks.push(preparedItem)

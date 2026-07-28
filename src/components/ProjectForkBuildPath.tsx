@@ -21,6 +21,7 @@ import type {
 } from '@/lib/project-forks'
 import {
   buildProjectResponseForkHref,
+  reconcileProjectForkFinalArtifactProvenance,
   resolveProjectForkPoint,
 } from '@/lib/project-forks'
 import { ForkTruthDisclosure } from '@/components/ForkTruthDisclosure'
@@ -1037,42 +1038,53 @@ function LegacyProjectForkBuildPath({
 
 export function ProjectForkBuildPath(props: ProjectForkBuildPathProps) {
   if (props.lineage) {
-    const currentGeneration = props.lineage.generations.find((generation) => generation.isCurrent)
-      ?? props.lineage.generations.at(-1)
-    const currentSteps = props.branch.continuationSteps?.length
+    const currentGenerations = props.lineage.generations.filter(
+      (generation) => generation.isCurrent,
+    )
+    const currentGeneration = currentGenerations.length === 1
+      ? currentGenerations[0]
+      : null
+    const displayedSteps = props.branch.continuationSteps?.length
       ? props.branch.continuationSteps
       : currentGeneration?.presentation.localSteps ?? []
-    const finalStep = currentSteps.at(-1)
     const authoritativeFinalStep = currentGeneration?.presentation.localSteps.at(-1)
-    const authoritativeArtifacts = authoritativeFinalStep?.artifactVersions ?? []
-    const authoritativeFinalArtifact = authoritativeArtifacts.find((artifact) => (
-      artifact.artifactPath === authoritativeFinalStep?.artifactPath
-    )) ?? authoritativeArtifacts.find((artifact) => artifact.isDefault)
+    const reconciledFinalArtifact = reconcileProjectForkFinalArtifactProvenance(
+      displayedSteps,
+      (
+        props.lineage.integrity.kind === 'complete' &&
+        currentGeneration?.projectId === props.branch.id
+      )
+        ? authoritativeFinalStep
+        : null,
+    )
+    const currentSteps = reconciledFinalArtifact.steps
+    const finalStep = currentSteps.at(-1)
     const hasCompleteArtifactProvenance = hasCompleteForkArtifactProvenance(
-      authoritativeFinalArtifact,
+      reconciledFinalArtifact.matchedArtifact ?? undefined,
     )
     const authoritativeForkHref = (
       props.lineage.eligibility.allowed &&
       finalStep
     )
-      ? hasCompleteArtifactProvenance && authoritativeFinalArtifact
+      ? (
+          hasCompleteArtifactProvenance &&
+          reconciledFinalArtifact.matchedArtifact
+        )
         ? buildProjectResponseForkHref({
             sourceProjectId: currentGeneration?.projectId ?? props.branch.id,
             sourceProjectTitle: currentGeneration?.title ?? props.branch.title,
-            sourceModelVariantId: authoritativeFinalArtifact.sourceModelVariantId,
-            sourceRunId: authoritativeFinalArtifact.sourceRunId,
-            sourceStepId: authoritativeFinalArtifact.sourceStepId,
-            sourceStepNumber: authoritativeFinalArtifact.sourceStepNumber,
-            sourceArtifactPath: authoritativeFinalArtifact.sourceArtifactPath,
-            sourceArtifactSha256: authoritativeFinalArtifact.artifactSha256,
+            sourceModelVariantId: reconciledFinalArtifact.matchedArtifact.sourceModelVariantId,
+            sourceRunId: reconciledFinalArtifact.matchedArtifact.sourceRunId,
+            sourceStepId: reconciledFinalArtifact.matchedArtifact.sourceStepId,
+            sourceStepNumber: reconciledFinalArtifact.matchedArtifact.sourceStepNumber,
+            sourceArtifactPath: reconciledFinalArtifact.matchedArtifact.sourceArtifactPath,
+            sourceArtifactSha256: reconciledFinalArtifact.matchedArtifact.artifactSha256,
             currentForkSource: currentGeneration?.forkSource ?? props.branch.forkSource,
             promptFamilyId: currentGeneration?.forkSource?.promptFamilyId
               ?? props.branch.forkSource.promptFamilyId,
             destination: '/build',
           })
-        : authoritativeArtifacts.length === 0
-          ? finalStep.forkHref ?? null
-          : null
+        : null
       : null
     const continuationSteps = currentSteps.map((step) => ({
       ...step,

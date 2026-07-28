@@ -111,6 +111,112 @@ async function navigate(client, sessionId, url) {
   )
 }
 
+async function verifyGenericResponseForkActions(
+  client,
+  sessionId,
+  baseUrl,
+  viewportName,
+  screenshotDir,
+) {
+  const url = new URL('/qa/generic-fork-action-fixture', baseUrl).href
+  await client.send('Page.navigate', { url }, sessionId)
+  const snapshot = await waitFor(
+    client,
+    sessionId,
+    `(() => {
+      if (document.readyState !== 'complete') return null;
+      const root=document.querySelector('[data-generic-fork-action-fixture]');
+      if (!root) return null;
+      const positive=[...root.querySelectorAll('[data-generic-fork-positive] a')];
+      const negative=[...root.querySelectorAll('[data-generic-fork-negative] a')];
+      return {
+        positive:positive.map((link)=>{
+          const url=new URL(link.href);
+          const style=getComputedStyle(link);
+          const rect=link.getBoundingClientRect();
+          return {
+            path:url.pathname,
+            project:url.searchParams.get('fork'),
+            step:url.searchParams.get('forkStep'),
+            stepNumber:url.searchParams.get('forkStepNumber'),
+            family:url.searchParams.get('promptFamily'),
+            run:url.searchParams.get('forkRun'),
+            artifact:url.searchParams.get('forkArtifact'),
+            sha:url.searchParams.get('forkArtifactSha256'),
+            visible:style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0,
+            width:rect.width,
+            height:rect.height,
+          };
+        }),
+        negativeCount:negative.length,
+        negativeReason:root.querySelector('[data-generic-fork-negative]')?.getAttribute('data-generic-project-fork-reason'),
+        overflow:document.documentElement.scrollWidth-window.innerWidth,
+      };
+    })()`,
+    (value) => value?.positive?.length === 3,
+    `generic response action fixture at ${viewportName}`,
+  )
+  for (const action of snapshot.positive) {
+    if (
+      action.path !== '/build' ||
+      action.project !== 'qa-generic-fork-project' ||
+      action.step !== 'qa-generic-fork-step-2' ||
+      action.stepNumber !== '2' ||
+      action.family !== 'qa-generic-fork-project:qa-generic-fork-step-2' ||
+      action.run !== null ||
+      action.artifact !== null ||
+      action.sha !== null
+    ) {
+      throw new Error(
+        `Generic ${viewportName} response action lost its exact plain prompt-step identity: ${JSON.stringify(action)}.`,
+      )
+    }
+  }
+  const visibleActions = snapshot.positive.filter((action) => action.visible)
+  if (
+    visibleActions.length < 1 ||
+    visibleActions.some((action) => action.width < 44 || action.height < 40) ||
+    snapshot.negativeCount !== 0 ||
+    snapshot.negativeReason !== 'exact-response-unavailable' ||
+    snapshot.overflow > 1
+  ) {
+    throw new Error(
+      `Generic ${viewportName} response action availability/layout failed: ${JSON.stringify(snapshot)}.`,
+    )
+  }
+  if (screenshotDir) {
+    await captureScreenshot(
+      client,
+      sessionId,
+      path.join(screenshotDir, `generic-response-fork-${viewportName}.png`),
+    )
+  }
+  return snapshot
+}
+
+async function stopChrome(child) {
+  if (child.exitCode !== null || child.signalCode !== null) return
+  let resolveExit
+  const exited = new Promise((resolve) => {
+    resolveExit = resolve
+    child.once('exit', resolve)
+  })
+  child.kill('SIGTERM')
+  const stopped = await Promise.race([
+    exited.then(() => true),
+    new Promise((resolve) => setTimeout(() => resolve(false), 2_000)),
+  ])
+  if (!stopped && child.exitCode === null && child.signalCode === null) {
+    child.kill('SIGKILL')
+    await Promise.race([
+      exited,
+      new Promise((resolve) => setTimeout(resolve, 2_000)),
+    ])
+  }
+  resolveExit?.()
+  child.stderr?.destroy()
+}
+
 const snapshotExpression = `(() => {
   const fixture=document.querySelector('[data-depth-ten-fixture]');
   const root=fixture?.querySelector('[data-testid="fork-lineage"]');
@@ -993,6 +1099,17 @@ async function main() {
           )
         }
       }
+      measurements.push({
+        family: 'generic',
+        viewport: viewport.name,
+        genericResponseActions: await verifyGenericResponseForkActions(
+          client,
+          sessionId,
+          options.baseUrl,
+          viewport.name,
+          options.screenshotDir,
+        ),
+      })
     }
 
     if (browserErrors.length > 0) {
@@ -1006,10 +1123,10 @@ async function main() {
       }, null, 2)}\n`)
     }
     console.log('Depth-10 project-fork browser verification passed.')
-    console.log('Verified local fixture: exact prepared actions, snap ownership/settling, prepared/community, 10 levels, 9 exact edges, desktop, 390x844, keyboard, a11y, reduced motion, ResizeObserver, fail-closed integrity.')
+    console.log('Verified local fixture: exact prepared and generic actions, snap ownership/settling, prepared/community/generic, 10 levels, 9 exact edges, desktop, 390x844, keyboard, a11y, reduced motion, ResizeObserver, fail-closed integrity.')
   } finally {
     client?.close()
-    child.kill('SIGTERM')
+    await stopChrome(child)
     try {
       rmSync(profile, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 })
     } catch (error) {

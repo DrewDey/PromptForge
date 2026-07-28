@@ -159,9 +159,206 @@ export type ProjectForkArtifactVersion = {
   isDefault?: boolean
 }
 
+export type ProjectForkArtifactProvenance = ProjectForkArtifactVersion & Required<Pick<
+  ProjectForkArtifactVersion,
+  | 'sourceRunId'
+  | 'sourceStepId'
+  | 'sourceStepNumber'
+  | 'sourceArtifactPath'
+  | 'artifactSha256'
+>>
+
 export type ProjectForkContinuationStep = ProjectForkSourceStep & {
   artifactVersions?: ProjectForkArtifactVersion[]
   forkHref?: string | null
+}
+
+export type ProjectForkDisplayedResponseIdentity = {
+  sourceStepId: string
+  sourceStepNumber: number
+}
+
+export function reconcileProjectForkDisplayedResponseIdentity(
+  displayedStep?: ProjectForkSourceStep | null,
+  authoritativeStep?: ProjectForkSourceStep | null,
+): ProjectForkDisplayedResponseIdentity | null {
+  if (
+    !displayedStep ||
+    !authoritativeStep ||
+    displayedStep.id !== authoritativeStep.id ||
+    displayedStep.responsePackageId !== displayedStep.id ||
+    authoritativeStep.responsePackageId !== authoritativeStep.id ||
+    !Number.isInteger(displayedStep.stepNumber) ||
+    displayedStep.stepNumber < 1 ||
+    !Number.isInteger(authoritativeStep.stepNumber) ||
+    authoritativeStep.stepNumber < 1 ||
+    displayedStep.stepNumber !== authoritativeStep.stepNumber ||
+    displayedStep.promptText !== authoritativeStep.promptText ||
+    displayedStep.responseText == null ||
+    displayedStep.responseText !== authoritativeStep.responseText
+  ) {
+    return null
+  }
+  return {
+    sourceStepId: authoritativeStep.id,
+    sourceStepNumber: authoritativeStep.stepNumber,
+  }
+}
+
+export function reconcileProjectForkFinalArtifactProvenance(
+  displayedSteps: ProjectForkContinuationStep[],
+  authoritativeStep?: ProjectForkSourceStep | null,
+): {
+  steps: ProjectForkContinuationStep[]
+  matchedArtifact: ProjectForkArtifactProvenance | null
+} {
+  const displayedStep = displayedSteps.at(-1)
+  if (
+    !displayedStep ||
+    !authoritativeStep ||
+    displayedStep.id !== authoritativeStep.id ||
+    !Number.isInteger(displayedStep.stepNumber) ||
+    displayedStep.stepNumber < 1 ||
+    !Number.isInteger(authoritativeStep.stepNumber) ||
+    authoritativeStep.stepNumber < 1 ||
+    displayedStep.stepNumber !== authoritativeStep.stepNumber ||
+    !Array.isArray(authoritativeStep.artifactVersions)
+  ) {
+    return { steps: displayedSteps, matchedArtifact: null }
+  }
+
+  const authoritativeMatches = authoritativeStep.artifactVersions.filter((artifact) => {
+    const sourceArtifactPath = artifact.sourceArtifactPath
+    const artifactSha256 = artifact.artifactSha256
+    if (
+      !artifact.sourceRunId ||
+      artifact.sourceRunId !== artifact.sourceRunId.trim() ||
+      !artifact.sourceStepId ||
+      artifact.sourceStepId !== artifact.sourceStepId.trim() ||
+      !Number.isInteger(artifact.sourceStepNumber) ||
+      artifact.sourceStepNumber !== authoritativeStep.stepNumber ||
+      !isSafeProjectForkArtifactPath(sourceArtifactPath) ||
+      !/^[0-9a-f]{64}$/.test(artifactSha256 ?? '') ||
+      !projectForkArtifactPathsEquivalent(sourceArtifactPath, artifact.artifactPath)
+    ) return false
+
+    for (const key of [
+      'sourceModelVariantId',
+      'sourceRunId',
+      'sourceStepId',
+      'sourceStepNumber',
+    ] as const) {
+      if (
+        authoritativeStep[key] !== undefined &&
+        authoritativeStep[key] !== artifact[key]
+      ) return false
+    }
+    if (
+      authoritativeStep.artifactPath &&
+      !projectForkArtifactPathsEquivalent(
+        sourceArtifactPath,
+        authoritativeStep.artifactPath,
+      )
+    ) return false
+    if (
+      authoritativeStep.artifactSha256 &&
+      authoritativeStep.artifactSha256 !== artifactSha256
+    ) return false
+    return authoritativeStep.artifactPath
+      ? true
+      : artifact.isDefault === true
+  })
+  if (authoritativeMatches.length !== 1) {
+    return { steps: displayedSteps, matchedArtifact: null }
+  }
+  const authoritativeArtifact =
+    authoritativeMatches[0] as ProjectForkArtifactProvenance
+  for (const key of [
+    'sourceModelVariantId',
+    'sourceRunId',
+    'sourceStepId',
+    'sourceStepNumber',
+  ] as const) {
+    if (
+      displayedStep[key] !== undefined &&
+      displayedStep[key] !== authoritativeArtifact[key]
+    ) {
+      return { steps: displayedSteps, matchedArtifact: null }
+    }
+  }
+  const displayedArtifacts = displayedStep.artifactVersions ?? []
+  const matches = displayedArtifacts.filter((artifact) => {
+    if (
+      !projectForkArtifactPathsEquivalent(
+        authoritativeArtifact.sourceArtifactPath!,
+        artifact.artifactPath,
+      ) ||
+      artifact.artifactSha256 !== authoritativeArtifact.artifactSha256
+    ) return false
+
+    if (
+      artifact.sourceArtifactPath &&
+      !projectForkArtifactPathsEquivalent(
+        authoritativeArtifact.sourceArtifactPath!,
+        artifact.sourceArtifactPath,
+      )
+    ) return false
+
+    for (const key of [
+      'sourceModelVariantId',
+      'sourceRunId',
+      'sourceStepId',
+      'sourceStepNumber',
+    ] as const) {
+      if (
+        artifact[key] !== undefined &&
+        artifact[key] !== authoritativeArtifact[key]
+      ) return false
+    }
+    return true
+  })
+  if (matches.length !== 1) {
+    return { steps: displayedSteps, matchedArtifact: null }
+  }
+
+  if (
+    displayedStep.artifactPath &&
+    !projectForkArtifactPathsEquivalent(
+      authoritativeArtifact.sourceArtifactPath!,
+      displayedStep.artifactPath,
+    )
+  ) {
+    return { steps: displayedSteps, matchedArtifact: null }
+  }
+  if (
+    displayedStep.artifactSha256 &&
+    displayedStep.artifactSha256 !== authoritativeArtifact.artifactSha256
+  ) {
+    return { steps: displayedSteps, matchedArtifact: null }
+  }
+  const matchedArtifact: ProjectForkArtifactProvenance = {
+    ...matches[0],
+    sourceModelVariantId: authoritativeArtifact.sourceModelVariantId,
+    sourceRunId: authoritativeArtifact.sourceRunId,
+    sourceStepId: authoritativeArtifact.sourceStepId,
+    sourceStepNumber: authoritativeArtifact.sourceStepNumber,
+    sourceArtifactPath: authoritativeArtifact.sourceArtifactPath,
+    artifactSha256: authoritativeArtifact.artifactSha256,
+  }
+  const artifactVersions = displayedArtifacts.map((artifact) => (
+    artifact === matches[0] ? matchedArtifact : artifact
+  ))
+  return {
+    steps: displayedSteps.map((step, index) => (
+      index === displayedSteps.length - 1
+        ? {
+            ...step,
+            artifactVersions,
+          }
+        : step
+    )),
+    matchedArtifact,
+  }
 }
 
 export type ProjectForkNetworkRow = {
@@ -592,12 +789,40 @@ export function buildProjectResponseForkHref({
 }: BuildProjectResponseForkHrefInput) {
   const nextDepth = currentForkSource ? currentForkSource.depth + 1 : 0
   if (nextDepth > PROJECT_FORK_MAX_STORED_DEPTH) return null
+  const hasDurableArtifactClaim = (
+    sourceModelVariantId !== undefined ||
+    sourceRunId !== undefined ||
+    sourceArtifactPath !== undefined ||
+    sourceArtifactSha256 !== undefined
+  )
   if (
-    sourceRunId &&
+    !sourceStepId ||
+    sourceStepId !== sourceStepId.trim() ||
     (
-      !sourceArtifactPath?.startsWith('public/artifacts/') ||
-      !sourceArtifactSha256 ||
-      !/^[0-9a-f]{64}$/i.test(sourceArtifactSha256)
+      sourceModelVariantId !== undefined &&
+      (
+        !sourceModelVariantId.trim() ||
+        sourceModelVariantId !== sourceModelVariantId.trim()
+      )
+    ) ||
+    (
+      sourceRunId !== undefined &&
+      (
+        !sourceRunId.trim() ||
+        sourceRunId !== sourceRunId.trim()
+      )
+    ) ||
+    !Number.isInteger(sourceStepNumber) ||
+    sourceStepNumber! < 1 ||
+    (
+      hasDurableArtifactClaim &&
+      (
+        !sourceRunId?.trim() ||
+        !sourceArtifactPath ||
+        !isSafeProjectForkArtifactPath(sourceArtifactPath) ||
+        !sourceArtifactSha256 ||
+        !/^[0-9a-f]{64}$/.test(sourceArtifactSha256)
+      )
     )
   ) {
     return null
@@ -812,22 +1037,55 @@ function findArtifactVersion(
   )) ?? null
 }
 
+function hasCanonicalProjectForkArtifactSegments(
+  value: string,
+  prefix: 'public/artifacts/' | '/artifacts/',
+) {
+  if (
+    !value ||
+    value !== value.trim() ||
+    !value.startsWith(prefix) ||
+    value.includes('\\') ||
+    value.includes('?') ||
+    value.includes('#') ||
+    /[\u0000-\u001f\u007f]/.test(value)
+  ) return false
+  const relativePath = value.slice(prefix.length)
+  const segments = relativePath.split('/')
+  return (
+    relativePath.length > 0 &&
+    !relativePath.endsWith('/') &&
+    segments.every((segment) => (
+      segment.length > 0 &&
+      segment !== '.' &&
+      segment !== '..'
+    ))
+  )
+}
+
+export function isSafeProjectForkArtifactPath(
+  value: unknown,
+): value is string {
+  return (
+    typeof value === 'string' &&
+    hasCanonicalProjectForkArtifactSegments(value, 'public/artifacts/')
+  )
+}
+
 export function projectForkArtifactPathsEquivalent(
   evidencePath: string,
   presentationPath: string,
 ) {
-  const hasUnsafePathShape = (value: string) => (
-    !value ||
-    value.includes('\\') ||
-    value.includes('?') ||
-    value.includes('#') ||
-    value.split('/').some((segment) => segment === '.' || segment === '..')
-  )
-  if (hasUnsafePathShape(evidencePath) || hasUnsafePathShape(presentationPath)) {
+  if (
+    !isSafeProjectForkArtifactPath(evidencePath) ||
+    !(
+      isSafeProjectForkArtifactPath(presentationPath) ||
+      hasCanonicalProjectForkArtifactSegments(presentationPath, '/artifacts/')
+    )
+  ) {
     return false
   }
   if (evidencePath === presentationPath) return true
-  if (!evidencePath.startsWith('public/artifacts/')) return false
   return presentationPath === `/${evidencePath.slice('public/'.length)}`
 }
 

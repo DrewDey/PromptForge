@@ -53,6 +53,8 @@ const {
   parseProjectForkSearchParams,
   projectForkSourceFromSubmissionFields,
   projectForkSourceToSubmissionFields,
+  reconcileProjectForkDisplayedResponseIdentity,
+  reconcileProjectForkFinalArtifactProvenance,
   resolveProjectForkTrail,
   resolveProjectForkPoint,
   serializeProjectForkSourceForNotes,
@@ -135,6 +137,233 @@ assert(
   hpStepTwoArtifacts.length === 1 &&
     hpStepTwoArtifacts[0] === hpPreparedArtifactPath,
   'a legacy package default step must expose exactly the prepared canonical artifact',
+)
+
+const displayedFinalStep = {
+  id: 'local-child-step',
+  stepNumber: 4,
+  promptTitle: 'Local child prompt',
+  promptText: 'Local child prompt text',
+  responseText: 'Local child response text',
+  responsePackageId: 'local-child-response-package',
+  artifactVersions: [{
+    id: 'local-child-artifact',
+    artifactPath: '/artifacts/child-final.html',
+    artifactTitle: 'Child final',
+    artifactSha256: 'a'.repeat(64),
+    isDefault: true,
+  }],
+}
+const authoritativeFinalArtifact = {
+  ...displayedFinalStep.artifactVersions[0],
+  sourceModelVariantId: 'model-variant',
+  sourceRunId: 'source-run',
+  sourceStepId: 'persisted-child-response',
+  sourceStepNumber: 4,
+  sourceArtifactPath: 'public/artifacts/child-final.html',
+}
+const authoritativeFinalStep = {
+  ...displayedFinalStep,
+  sourceModelVariantId: authoritativeFinalArtifact.sourceModelVariantId,
+  sourceRunId: authoritativeFinalArtifact.sourceRunId,
+  sourceStepId: authoritativeFinalArtifact.sourceStepId,
+  sourceStepNumber: authoritativeFinalArtifact.sourceStepNumber,
+  artifactPath: authoritativeFinalArtifact.artifactPath,
+  artifactSha256: authoritativeFinalArtifact.artifactSha256,
+  artifactVersions: [authoritativeFinalArtifact],
+  responsePackageId: 'authoritative-local-response-package',
+}
+const reconciledFinalArtifact = reconcileProjectForkFinalArtifactProvenance(
+  [displayedFinalStep],
+  authoritativeFinalStep,
+)
+assert(
+  reconciledFinalArtifact.matchedArtifact?.sourceArtifactPath ===
+    authoritativeFinalArtifact.sourceArtifactPath &&
+    reconciledFinalArtifact.matchedArtifact?.sourceRunId ===
+      authoritativeFinalArtifact.sourceRunId &&
+    reconciledFinalArtifact.steps[0].artifactVersions[0].sourceStepId ===
+      authoritativeFinalArtifact.sourceStepId,
+  'a byte-identical displayed final artifact must receive its separately persisted authoritative provenance',
+)
+assert(
+  reconcileProjectForkFinalArtifactProvenance(
+    [{
+      ...displayedFinalStep,
+      artifactVersions: [{
+        ...displayedFinalStep.artifactVersions[0],
+        artifactSha256: 'b'.repeat(64),
+      }],
+    }],
+    authoritativeFinalStep,
+  ).matchedArtifact === null,
+  'a displayed artifact with a conflicting digest must not receive authoritative provenance',
+)
+assert(
+  reconcileProjectForkFinalArtifactProvenance(
+    [{
+      ...displayedFinalStep,
+      artifactVersions: [
+        displayedFinalStep.artifactVersions[0],
+        { ...displayedFinalStep.artifactVersions[0], id: 'duplicate-artifact' },
+      ],
+    }],
+    authoritativeFinalStep,
+  ).matchedArtifact === null,
+  'ambiguous duplicate displayed artifacts must fail closed instead of receiving the same provenance',
+)
+assert(
+  reconcileProjectForkFinalArtifactProvenance(
+    [{
+      ...displayedFinalStep,
+      artifactVersions: [{
+        ...displayedFinalStep.artifactVersions[0],
+        sourceRunId: 'conflicting-run',
+      }],
+    }],
+    authoritativeFinalStep,
+  ).matchedArtifact === null,
+  'pre-existing conflicting artifact provenance must not be overwritten',
+)
+assert(
+  reconcileProjectForkFinalArtifactProvenance(
+    [{
+      ...displayedFinalStep,
+      artifactVersions: [{
+        ...displayedFinalStep.artifactVersions[0],
+        artifactPath: '/artifacts/wrong-displayed-file.html',
+        sourceArtifactPath: authoritativeFinalArtifact.sourceArtifactPath,
+      }],
+    }],
+    authoritativeFinalStep,
+  ).matchedArtifact === null,
+  'a displayed selector must not borrow a matching source path for different local artifact bytes',
+)
+assert(
+  reconcileProjectForkFinalArtifactProvenance(
+    [{
+      ...displayedFinalStep,
+      sourceRunId: 'conflicting-displayed-step-run',
+    }],
+    authoritativeFinalStep,
+  ).matchedArtifact === null,
+  'pre-existing conflicting displayed-step provenance must not be overwritten',
+)
+assert(
+  reconcileProjectForkFinalArtifactProvenance(
+    [{ ...displayedFinalStep, id: 'different-local-step' }],
+    authoritativeFinalStep,
+  ).matchedArtifact === null,
+  'a matching artifact on a different local response card must not receive authoritative provenance',
+)
+assert(
+  reconcileProjectForkFinalArtifactProvenance(
+    [{ ...displayedFinalStep, artifactVersions: [] }],
+    authoritativeFinalStep,
+  ).matchedArtifact === null,
+  'an authoritative artifact must not synthesize a missing displayed selector',
+)
+assert(
+  reconcileProjectForkFinalArtifactProvenance(
+    [displayedFinalStep],
+    {
+      ...authoritativeFinalStep,
+      artifactVersions: [
+        authoritativeFinalArtifact,
+        { ...authoritativeFinalArtifact, id: 'duplicate-authority' },
+      ],
+    },
+  ).matchedArtifact === null,
+  'ambiguous authoritative artifacts must fail closed',
+)
+assert(
+  reconcileProjectForkFinalArtifactProvenance(
+    [displayedFinalStep],
+    {
+      ...authoritativeFinalStep,
+      sourceRunId: 'conflicting-authoritative-run',
+    },
+  ).matchedArtifact === null,
+  'an authoritative step and artifact with conflicting run identities must fail closed',
+)
+assert(
+  reconcileProjectForkFinalArtifactProvenance(
+    [displayedFinalStep],
+    {
+      ...authoritativeFinalStep,
+      stepNumber: 0,
+      sourceStepNumber: 0,
+      artifactVersions: [{
+        ...authoritativeFinalArtifact,
+        sourceStepNumber: 0,
+      }],
+    },
+  ).matchedArtifact === null,
+  'nonpositive authoritative step numbers must fail closed',
+)
+assert(
+  reconcileProjectForkFinalArtifactProvenance(
+    [displayedFinalStep],
+    {
+      ...authoritativeFinalStep,
+      artifactPath: '../child-final.html',
+      artifactVersions: [{
+        ...authoritativeFinalArtifact,
+        artifactPath: '../child-final.html',
+        sourceArtifactPath: 'public/artifacts/../child-final.html',
+      }],
+    },
+  ).matchedArtifact === null,
+  'unsafe authoritative artifact paths must fail closed',
+)
+const sourceRunOnlyArtifact = {
+  ...authoritativeFinalArtifact,
+  sourceModelVariantId: undefined,
+  sourceRunId: 'source-run-only',
+}
+assert(
+  reconcileProjectForkFinalArtifactProvenance(
+    [displayedFinalStep],
+    {
+      ...authoritativeFinalStep,
+      sourceModelVariantId: undefined,
+      sourceRunId: sourceRunOnlyArtifact.sourceRunId,
+      artifactVersions: [sourceRunOnlyArtifact],
+    },
+  ).matchedArtifact?.sourceRunId === sourceRunOnlyArtifact.sourceRunId,
+  'source-run-only authoritative artifact provenance must remain eligible without inventing a model variant',
+)
+const displayedPlainResponse = {
+  id: 'generic-prompt-step',
+  stepNumber: 2,
+  promptTitle: 'Generic prompt',
+  promptText: 'Build the generic result.',
+  responseText: 'Exact generic response.',
+  responsePackageId: 'generic-prompt-step',
+}
+const authoritativePlainResponse = {
+  ...displayedPlainResponse,
+}
+assert(
+  reconcileProjectForkDisplayedResponseIdentity(
+    displayedPlainResponse,
+    authoritativePlainResponse,
+  )?.sourceStepId === displayedPlainResponse.id,
+  'a displayed generic prompt-step response must reconcile to the same authoritative prompt-step identity',
+)
+assert(
+  reconcileProjectForkDisplayedResponseIdentity(
+    { ...displayedPlainResponse, responseText: 'Different response.' },
+    authoritativePlainResponse,
+  ) === null,
+  'a generic response-text mismatch must fail closed',
+)
+assert(
+  reconcileProjectForkDisplayedResponseIdentity(
+    { ...displayedPlainResponse, responsePackageId: 'different-package' },
+    authoritativePlainResponse,
+  ) === null,
+  'a generic response-package mismatch must fail closed',
 )
 
 const sourceSteps = [
@@ -314,11 +543,17 @@ assert(communityHref.startsWith('/build?'), 'community project forks should targ
 assert(communityHref.includes('fork=community-source-project'), 'community fork href should preserve its source project id')
 assert(communityHref.includes('forkStep=community-source-step-2'), 'community fork href should preserve its exact source response')
 
+const exactResponseEvidence = {
+  sourceRunId: 'exact-response-run',
+  sourceArtifactPath: 'public/artifacts/exact-response.html',
+  sourceArtifactSha256: 'c'.repeat(64),
+}
 const responseHref = buildProjectResponseForkHref({
   sourceProjectId: 'source-project',
   sourceProjectTitle: 'Source Project',
   sourceStepId: 'source-step-1',
   sourceStepNumber: 1,
+  ...exactResponseEvidence,
 })
 assert(responseHref?.includes('fork=source-project'), 'response fork href should include source project id')
 assert(responseHref?.includes('forkStep=source-step-1'), 'response fork href should include exact response step id')
@@ -332,6 +567,7 @@ const communityResponseHref = buildProjectResponseForkHref({
   sourceProjectTitle: 'Community Source Project',
   sourceStepId: 'community-source-step-2',
   sourceStepNumber: 2,
+  ...exactResponseEvidence,
   destination: '/build',
 })
 assert(communityResponseHref?.startsWith('/build?'), 'community response forks should enter the invitation-only project bundle flow')
@@ -343,6 +579,7 @@ const communityDescendantHref = buildProjectResponseForkHref({
   sourceProjectTitle: 'Community Level 2 Project',
   sourceStepId: 'community-level-2-step-1',
   sourceStepNumber: 1,
+  ...exactResponseEvidence,
   currentForkSource: {
     sourceProjectId: 'community-root-project',
     sourceStepId: 'community-root-step-1',
@@ -362,6 +599,7 @@ const communityLevelTenHref = buildProjectResponseForkHref({
   sourceProjectId: 'community-level-9-project',
   sourceStepId: 'community-level-9-step-1',
   sourceStepNumber: 1,
+  ...exactResponseEvidence,
   currentForkSource: {
     sourceProjectId: 'community-level-8-project',
     depth: PROJECT_FORK_MAX_STORED_DEPTH - 1,
@@ -400,6 +638,7 @@ const nestedResponseHref = buildProjectResponseForkHref({
   sourceProjectTitle: 'Current Fork Project',
   sourceStepId: 'current-step-3',
   sourceStepNumber: 3,
+  ...exactResponseEvidence,
   currentForkSource: {
     sourceProjectId: 'root-project',
     sourceStepId: 'root-step-2',
@@ -418,6 +657,7 @@ const maxedResponseHref = buildProjectResponseForkHref({
   sourceProjectId: 'maxed-fork-project',
   sourceStepId: 'maxed-step-1',
   sourceStepNumber: 1,
+  ...exactResponseEvidence,
   currentForkSource: {
     sourceProjectId: 'root-project',
     depth: PROJECT_FORK_MAX_STORED_DEPTH,
@@ -425,6 +665,57 @@ const maxedResponseHref = buildProjectResponseForkHref({
   },
 })
 assert(maxedResponseHref === null, 'a stored-depth-8 terminal fork at public level 10 must not create another generation')
+assert(
+  buildProjectResponseForkHref({
+    sourceProjectId: 'unproven-project',
+    sourceStepId: 'unproven-step',
+    sourceStepNumber: 1,
+  })?.includes('forkStep=unproven-step'),
+  'an authoritative plain prompt-step response must remain forkable without inventing artifact provenance',
+)
+assert(
+  buildProjectResponseForkHref({
+    sourceProjectId: 'partial-evidence-project',
+    sourceRunId: 'partial-run',
+    sourceStepId: 'partial-step',
+    sourceStepNumber: 1,
+  }) === null,
+  'a partial durable-artifact claim must fail closed rather than downgrade to a plain prompt-step fork',
+)
+for (const emptyEvidence of [
+  { sourceArtifactPath: '' },
+  { sourceArtifactSha256: '' },
+]) {
+  assert(
+    buildProjectResponseForkHref({
+      sourceProjectId: 'empty-evidence-project',
+      sourceStepId: 'empty-evidence-step',
+      sourceStepNumber: 1,
+      ...emptyEvidence,
+    }) === null,
+    'an explicitly empty durable-artifact field must not downgrade into a plain prompt-step fork',
+  )
+}
+for (const unsafeArtifactPath of [
+  'public/artifacts/',
+  'public/artifacts/./file.html',
+  'public/artifacts/nested/../file.html',
+  'public/artifacts/file.html ',
+  'public/artifacts//file.html',
+  'public/artifacts/file.html?download=1',
+]) {
+  assert(
+    buildProjectResponseForkHref({
+      sourceProjectId: 'unsafe-evidence-project',
+      sourceRunId: 'unsafe-run',
+      sourceStepId: 'unsafe-step',
+      sourceStepNumber: 1,
+      sourceArtifactPath: unsafeArtifactPath,
+      sourceArtifactSha256: 'd'.repeat(64),
+    }) === null,
+    `unsafe artifact path ${unsafeArtifactPath} must fail closed`,
+  )
+}
 assert(PROJECT_FORK_MAX_LEVELS === 10, 'fork behavior must retain exactly ten total public levels')
 assert(PROJECT_FORK_MAX_DEPTH === PROJECT_FORK_MAX_LEVELS, 'the legacy max-depth export must remain a display-level compatibility alias')
 

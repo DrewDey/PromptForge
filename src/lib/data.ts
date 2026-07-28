@@ -615,7 +615,13 @@ function preparedForkContinuationSteps(
       .map((step) => {
         const preparedStep = project.steps.find((candidate) => candidate.stepNumber === step.step_number)
         const responseCapture = sourceRunResponseCapturePresentation(sourceRun, step)
-        const artifactVersions = sourceRunDisplayArtifactFiles(sourceRun, step).flatMap((filePath, index) => {
+        const artifactVersions = sourceRunDisplayArtifactFiles(
+          sourceRun,
+          step,
+          project.artifactPath.startsWith('/artifacts/')
+            ? `public${project.artifactPath}`
+            : null,
+        ).flatMap((filePath, index) => {
           const artifactPath = publicForkArtifactPath(filePath)
           if (!artifactPath) return []
           return [{

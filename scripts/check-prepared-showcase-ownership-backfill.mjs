@@ -507,7 +507,8 @@ function verifyWorkflowSource() {
     )
   }
   for (const required of [
-    'sourceRunDisplayArtifactFiles(sourceRun, step)',
+    'sourceRunDisplayArtifactFiles(',
+    "project.artifactPath.startsWith('/artifacts/')",
     'sourceRunResponseCapturePresentation(sourceRun, step)',
   ]) {
     if (!preparedPage.includes(required)) {
@@ -516,7 +517,8 @@ function verifyWorkflowSource() {
   }
   const data = read('src/lib/data.ts')
   for (const required of [
-    'sourceRunDisplayArtifactFiles(sourceRun, step)',
+    'sourceRunDisplayArtifactFiles(',
+    "project.artifactPath.startsWith('/artifacts/')",
     'sourceRunResponseCapturePresentation(sourceRun, step)',
   ]) {
     if (!data.includes(required)) {
@@ -524,11 +526,13 @@ function verifyWorkflowSource() {
     }
   }
   if (
-    !sourceRunPresentation.includes("if (artifactVersionPath?.startsWith('public/artifacts/'))") ||
-    !sourceRunPresentation.includes('} else {')
+    !sourceRunPresentation.includes("preparedArtifactPath?.startsWith('public/artifacts/')") ||
+    !sourceRunPresentation.includes('const isDefaultStep = step.step_number === sourceRunDefaultStepNumber(sourceRun)') ||
+    !sourceRunPresentation.includes("if (isDefaultStep && finalArtifactPath?.startsWith('public/artifacts/'))") ||
+    !sourceRunPresentation.includes("} else if (artifactVersionPath?.startsWith('public/artifacts/'))")
   ) {
     fail(
-      'src/lib/source-run-presentation.ts: generated evidence files must remain fallback evidence rather than duplicate display artifacts',
+      'src/lib/source-run-presentation.ts: canonical finals must replace raw/alias evidence on default steps',
     )
   }
   for (const required of [

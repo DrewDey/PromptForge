@@ -519,13 +519,19 @@ assert(
   rendererSource.includes("newForkHref && mode === 'parent'"),
   `${rendererPath}: child pages must not duplicate the continuation fork action in the branch header`,
 )
+assert(
+  rendererSource.includes("querySelectorAll<HTMLElement>('[data-fork-inherited-step]')") &&
+    rendererSource.includes('inheritedSteps.forEach((step) => observer.observe(step))'),
+  `${rendererPath}: connector geometry must observe inherited-step disclosure resizing`,
+)
 
 const sourceRunPresentationPath = 'src/lib/source-run-presentation.ts'
 const sourceRunPresentationSource = read(sourceRunPresentationPath)
 for (const required of [
   'sourceRunDisplayArtifactFiles',
   'sourceRunResponseCapturePresentation',
-  "if (artifactVersionPath?.startsWith('public/artifacts/'))",
+  "if (isDefaultStep && finalArtifactPath?.startsWith('public/artifacts/'))",
+  "} else if (artifactVersionPath?.startsWith('public/artifacts/'))",
 ]) {
   assert(
     sourceRunPresentationSource.includes(required),
@@ -534,7 +540,8 @@ for (const required of [
 }
 const forkDataSource = read('src/lib/data.ts')
 for (const required of [
-  'sourceRunDisplayArtifactFiles(sourceRun, step)',
+  'sourceRunDisplayArtifactFiles(',
+  "project.artifactPath.startsWith('/artifacts/')",
   'sourceRunResponseCapturePresentation(sourceRun, step)',
   'responseLabel: responseCapture.label',
   'responseDisclosure: responseCapture.disclosure',
@@ -613,6 +620,10 @@ assert(
 )
 assert(callsNamed(prepared, 'resolvePreparedShowcaseLineage').length >= 1, `${preparedPath}: prepared child pages must reconstruct complete nested ancestry through the shared registry resolver`)
 assert(callsNamed(prepared, 'buildProjectResponseForkHref').length >= 1, `${preparedPath}: prepared child continuations must create exact nested-fork handoffs`)
+assert(
+  preparedSource.includes("destination: '/build'"),
+  `${preparedPath}: prepared child continuations must enter the community build workflow`,
+)
 for (const nestedEvidence of [
   'sourceRunDefaultStepNumber(sourceRun) === continuation.stepNumber',
   'nestedArtifactPath === sourceRun.final_artifact_path',
@@ -673,8 +684,13 @@ assert(forkBrowserGuard.includes('verifyMobileParentRail') && forkBrowserGuard.i
 const communityPath = 'src/components/ProjectCommunityPanel.tsx'
 const community = parse(communityPath)
 assert(importHas(community, '@/components/ProjectForkBuildPath', 'ProjectForkBuildPath'), `${communityPath}: generic project fork lineage must use the shared renderer`)
+assert(importHas(community, '@/lib/project-forks', 'buildProjectResponseForkHref'), `${communityPath}: generic child forks must expose an exact continuation handoff`)
 assert(jsxOpenings(community, 'ProjectForkBuildPath').length >= 1, `${communityPath}: generic fork pages must render the shared lineage workspace`)
 assert(jsxOpenings(community, 'ProjectForkInheritedPathBand').length === 0, `${communityPath}: remove the divergent legacy inherited-path renderer`)
+assert(
+  read(communityPath).includes("destination: '/build'"),
+  `${communityPath}: generic child continuations must enter the community build workflow`,
+)
 const communityForkRenderers = jsxOpenings(community, 'ProjectForkBuildPath')
 assert(
   communityForkRenderers.every((node) => !jsxAttributeNames(node).has('sourceRunHref')),
@@ -683,12 +699,17 @@ assert(
 
 const networkExplorerPath = 'src/components/ProjectForkNetworkExplorer.tsx'
 const networkExplorer = parse(networkExplorerPath)
+assert(importHas(networkExplorer, '@/lib/project-forks', 'buildCommunityProjectForkHref'), `${networkExplorerPath}: generic parent previews must expose a sibling fork handoff`)
 const networkForkRenderers = jsxOpenings(networkExplorer, 'ProjectForkBuildPath')
 assert(networkForkRenderers.length === 1, `${networkExplorerPath}: selected network branch must use the shared renderer`)
 if (networkForkRenderers.length === 1) {
   assert(
     jsxAttributeNames(networkForkRenderers[0]).has('sourceEvidence'),
     `${networkExplorerPath}: selected branch must pass its complete curated/fail-closed source evidence`,
+  )
+  assert(
+    jsxAttributeNames(networkForkRenderers[0]).has('newForkHref'),
+    `${networkExplorerPath}: selected branch must expose a sibling fork action`,
   )
 }
 

@@ -235,6 +235,16 @@ assert(responseHref?.includes('promptFamily=source-project%3Asource-step-1'), 'r
 assert(!responseHref?.includes('parentFork='), 'root response fork href should not claim an immediate parent fork')
 assert(responseHref?.startsWith('/prompt/new?'), 'global response forks should preserve the queue-only source-run intake')
 
+const communityResponseHref = buildProjectResponseForkHref({
+  sourceProjectId: 'community-source-project',
+  sourceProjectTitle: 'Community Source Project',
+  sourceStepId: 'community-source-step-2',
+  sourceStepNumber: 2,
+  destination: '/build',
+})
+assert(communityResponseHref?.startsWith('/build?'), 'community response forks should enter the invitation-only project bundle flow')
+assert(communityResponseHref?.includes('forkStep=community-source-step-2'), 'community response forks should preserve the exact source response')
+
 const nestedResponseHref = buildProjectResponseForkHref({
   sourceProjectId: 'current-fork-project',
   sourceProjectTitle: 'Current Fork Project',

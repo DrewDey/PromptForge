@@ -86,6 +86,7 @@ export type BuildProjectResponseForkHrefInput = {
   currentForkSource?: ProjectForkSource | null
   promptFamilyId?: string
   branchIndex?: number
+  destination?: ProjectForkHrefOptions['destination']
 }
 
 export type ProjectForkSourceSubmissionFields = {
@@ -276,6 +277,7 @@ export function buildProjectResponseForkHref({
   currentForkSource,
   promptFamilyId,
   branchIndex = 0,
+  destination,
 }: BuildProjectResponseForkHrefInput) {
   const nextDepth = currentForkSource ? currentForkSource.depth + 1 : 0
   if (nextDepth >= PROJECT_FORK_MAX_DEPTH) return null
@@ -303,7 +305,7 @@ export function buildProjectResponseForkHref({
     depth: nextDepth,
     branchIndex,
     promptFamilyId: currentForkSource?.promptFamilyId ?? promptFamilyId ?? `${sourceProjectId}:${sourceStepId}`,
-  })
+  }, { destination })
 }
 
 export function projectForkSourceToSubmissionFields(

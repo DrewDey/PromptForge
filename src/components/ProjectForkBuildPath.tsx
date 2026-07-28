@@ -663,6 +663,9 @@ export function ProjectForkBuildPath({
     const continuationWorkspace = desktopPath.querySelector<HTMLElement>(
       '[data-fork-continuation-workspace]',
     )
+    const inheritedSteps = Array.from(
+      desktopPath.querySelectorAll<HTMLElement>('[data-fork-inherited-step]'),
+    )
     const continuationPairs = continuationSteps.flatMap((step) => {
       const prompt = desktopPath.querySelector<HTMLElement>(
         `[data-fork-continuation-prompt="${CSS.escape(step.id)}"]`,
@@ -730,6 +733,7 @@ export function ProjectForkBuildPath({
     observer.observe(sourceResponse)
     observer.observe(continuationPrompt)
     observer.observe(continuationWorkspace)
+    inheritedSteps.forEach((step) => observer.observe(step))
     continuationPairs.forEach(({ prompt, response }) => {
       observer.observe(prompt)
       observer.observe(response)

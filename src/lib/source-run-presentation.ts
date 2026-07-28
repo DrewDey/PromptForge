@@ -16,23 +16,25 @@ export function sourceRunDefaultStepNumber(sourceRun: SourceRunPackage) {
 export function sourceRunDisplayArtifactFiles(
   sourceRun: SourceRunPackage,
   step: SourceRunPackageStep,
+  preparedArtifactPath?: string | null,
 ) {
   const files = new Set<string>()
   const artifactVersionPath = step.artifact_version_path
+  const finalArtifactPath = sourceRun.final_artifact_path?.startsWith('public/artifacts/')
+    ? sourceRun.final_artifact_path
+    : preparedArtifactPath?.startsWith('public/artifacts/')
+      ? preparedArtifactPath
+      : null
+  const isDefaultStep = step.step_number === sourceRunDefaultStepNumber(sourceRun)
 
-  if (artifactVersionPath?.startsWith('public/artifacts/')) {
+  if (isDefaultStep && finalArtifactPath?.startsWith('public/artifacts/')) {
+    files.add(finalArtifactPath)
+  } else if (artifactVersionPath?.startsWith('public/artifacts/')) {
     files.add(artifactVersionPath)
   } else {
     for (const filePath of step.generated_files ?? []) {
       if (filePath.startsWith('public/artifacts/')) files.add(filePath)
     }
-  }
-
-  if (
-    step.step_number === sourceRunDefaultStepNumber(sourceRun) &&
-    sourceRun.final_artifact_path?.startsWith('public/artifacts/')
-  ) {
-    files.add(sourceRun.final_artifact_path)
   }
 
   return [...files]

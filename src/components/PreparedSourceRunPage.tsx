@@ -120,7 +120,13 @@ function artifactVersionsForStep(
   project: PreparedShowcaseProject,
 ): SourceRunShowcaseArtifactVersion[] {
   const finalArtifactPath = sourceRun.final_artifact_path
-  const files = sourceRunDisplayArtifactFiles(sourceRun, step)
+  const files = sourceRunDisplayArtifactFiles(
+    sourceRun,
+    step,
+    project.artifactPath.startsWith('/artifacts/')
+      ? `public${project.artifactPath}`
+      : null,
+  )
 
   return files.reduce<SourceRunShowcaseArtifactVersion[]>((versions, filePath, index) => {
       const publicArtifactPath = getPublicArtifactPath(filePath)
@@ -375,6 +381,7 @@ function buildPreparedForkContext({
         sourceArtifactSha256: forkArtifact.artifactSha256,
         currentForkSource: forkSource,
         promptFamilyId: forkSource.promptFamilyId,
+        destination: '/build',
       }),
     }
   })

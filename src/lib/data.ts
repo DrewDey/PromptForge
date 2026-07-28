@@ -94,6 +94,10 @@ import {
 } from './project-model-variants'
 import { loadSourceRunPackage } from './source-run-package'
 import {
+  sourceRunDisplayArtifactFiles,
+  sourceRunResponseCapturePresentation,
+} from './source-run-presentation'
+import {
   PROJECT_FORK_MAX_WIDTH,
   filterProjectForkNetworkBySourceRun,
   projectForkSourceFromSubmissionFields,
@@ -610,13 +614,8 @@ function preparedForkContinuationSteps(
       .filter((step) => step.step_number > forkPoint)
       .map((step) => {
         const preparedStep = project.steps.find((candidate) => candidate.stepNumber === step.step_number)
-        const artifactFiles = new Set<string>()
-        if (step.artifact_version_path) artifactFiles.add(step.artifact_version_path)
-        for (const generatedFile of step.generated_files ?? []) artifactFiles.add(generatedFile)
-        if (step.step_number === sourceRun.steps.at(-1)?.step_number && sourceRun.final_artifact_path) {
-          artifactFiles.add(sourceRun.final_artifact_path)
-        }
-        const artifactVersions = [...artifactFiles].flatMap((filePath, index) => {
+        const responseCapture = sourceRunResponseCapturePresentation(sourceRun, step)
+        const artifactVersions = sourceRunDisplayArtifactFiles(sourceRun, step).flatMap((filePath, index) => {
           const artifactPath = publicForkArtifactPath(filePath)
           if (!artifactPath) return []
           return [{
@@ -635,6 +634,8 @@ function preparedForkContinuationSteps(
           promptTitle: preparedStep?.title ?? `Prompt ${step.step_number}`,
           promptText: step.prompt_exact,
           responseText: step.response_exact,
+          responseLabel: responseCapture.label,
+          responseDisclosure: responseCapture.disclosure,
           responsePackageId: `${project.id}:${project.sourceRunId}:response:${step.step_number}`,
           artifactPath: artifactVersions.find((artifact) => artifact.isDefault)?.artifactPath
             ?? artifactVersions.at(-1)?.artifactPath

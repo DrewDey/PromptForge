@@ -52,6 +52,11 @@ import { getCanonicalPreparedSelectedRunPromptCount } from '@/lib/prompt-public-
 import { getPublicModelIdentityLabel } from '@/lib/public-model-labels'
 import type { SourceRunPackage, SourceRunPackageStep } from '@/lib/source-run-package'
 import { loadSourceRunPackage } from '@/lib/source-run-package'
+import {
+  sourceRunDefaultStepNumber,
+  sourceRunDisplayArtifactFiles,
+  sourceRunResponseCapturePresentation,
+} from '@/lib/source-run-presentation'
 
 function getPublicArtifactPath(artifactPath?: string | null) {
   if (!artifactPath?.startsWith('public/artifacts/')) return null
@@ -100,15 +105,6 @@ function sourceRunModelIdentity(
   })
 }
 
-function defaultStepNumber(sourceRun: SourceRunPackage) {
-  const finalPath = sourceRun.final_artifact_path
-  const defaultStep = sourceRun.steps.find((step) => (
-    step.artifact_version_path === finalPath ||
-    step.generated_files?.includes(finalPath ?? '')
-  ))
-  return defaultStep?.step_number ?? sourceRun.steps[sourceRun.steps.length - 1]?.step_number
-}
-
 function artifactTitle(project: PreparedShowcaseProject, step: SourceRunPackageStep, finalArtifactPath?: string) {
   const isDefault =
     step.artifact_version_path === finalArtifactPath ||
@@ -118,81 +114,15 @@ function artifactTitle(project: PreparedShowcaseProject, step: SourceRunPackageS
   return `${project.title} step ${step.step_number}`
 }
 
-function responseCapturePresentation(
-  sourceRun: SourceRunPackage,
-  step: SourceRunPackageStep,
-) {
-  const normalization = sourceRun.response_capture_normalization ?? {}
-  const scope = step.response_capture_kind ?? (
-    typeof normalization.scope === 'string' ? normalization.scope : ''
-  )
-  const disclosure: string[] = []
-  let label = 'Model response'
-
-  if (scope === 'generated_html_code_payload' || scope === 'generated_html_code_payloads') {
-    label = 'Captured generated HTML payload'
-  } else if (
-    scope === 'assistant_text' ||
-    scope === 'assistant_text_messages_and_separate_generated_html_files'
-  ) {
-    label = 'Captured assistant text'
-  }
-
-  if (sourceRun.evidence_scope === 'selected_published_path') {
-    disclosure.push('Only the selected published path is represented.')
-  } else if (sourceRun.evidence_scope === 'curated_four_step_generated_html_payload_path') {
-    disclosure.push('These four steps are a curated generated-code path.')
-  } else if (
-    sourceRun.evidence_scope ===
-      'selected_branch_shared_steps_1_through_3_and_child_step_4'
-  ) {
-    disclosure.push(
-      'This is the selected child branch: shared steps 1–3 plus child step 4.',
-    )
-  }
-
-  if (normalization.assistant_prose_preserved === false) {
-    disclosure.push('Assistant prose outside the generated HTML was not preserved.')
-  }
-  if (normalization.generated_html_stored_separately === true) {
-    disclosure.push('Generated HTML is stored separately from this assistant text.')
-  }
-  if (normalization.provider_serialization_envelope_preserved === false) {
-    disclosure.push('The full provider serialization envelope was not preserved.')
-  }
-
-  for (const omittedTurn of sourceRun.omitted_provider_turns ?? []) {
-    if (
-      omittedTurn &&
-      typeof omittedTurn === 'object' &&
-      'notes' in omittedTurn &&
-      typeof omittedTurn.notes === 'string' &&
-      omittedTurn.notes.trim()
-    ) {
-      disclosure.push(omittedTurn.notes.trim())
-    }
-  }
-
-  return {
-    label,
-    disclosure: disclosure.join(' '),
-  }
-}
-
 function artifactVersionsForStep(
   step: SourceRunPackageStep,
+  sourceRun: SourceRunPackage,
   project: PreparedShowcaseProject,
-  finalArtifactPath?: string,
-  includeFinalArtifact = false,
 ): SourceRunShowcaseArtifactVersion[] {
-  const files = new Set<string>()
-  if (step.artifact_version_path?.startsWith('public/artifacts/')) files.add(step.artifact_version_path)
-  for (const filePath of step.generated_files ?? []) {
-    if (filePath.startsWith('public/artifacts/')) files.add(filePath)
-  }
-  if (includeFinalArtifact && finalArtifactPath?.startsWith('public/artifacts/')) files.add(finalArtifactPath)
+  const finalArtifactPath = sourceRun.final_artifact_path
+  const files = sourceRunDisplayArtifactFiles(sourceRun, step)
 
-  return [...files].reduce<SourceRunShowcaseArtifactVersion[]>((versions, filePath, index) => {
+  return files.reduce<SourceRunShowcaseArtifactVersion[]>((versions, filePath, index) => {
       const publicArtifactPath = getPublicArtifactPath(filePath)
       if (!publicArtifactPath) return versions
 
@@ -218,12 +148,10 @@ function toShowcaseStep(
   stepIdentityScope?: string,
 ): SourceRunShowcaseStep {
   const projectStep = project.steps.find((item) => item.stepNumber === step.step_number)
-  const finalStepNumber = defaultStepNumber(sourceRun)
   const artifactVersions = artifactVersionsForStep(
     step,
+    sourceRun,
     project,
-    sourceRun.final_artifact_path,
-    step.step_number === finalStepNumber,
   )
   const primaryArtifact =
     artifactVersions.find((version) => version.isDefault) ??
@@ -231,7 +159,7 @@ function toShowcaseStep(
   const isDefault =
     step.artifact_version_path === sourceRun.final_artifact_path ||
     step.generated_files?.includes(sourceRun.final_artifact_path ?? '')
-  const responseCapture = responseCapturePresentation(sourceRun, step)
+  const responseCapture = sourceRunResponseCapturePresentation(sourceRun, step)
 
   return {
     id: stepIdentityScope
@@ -426,7 +354,7 @@ function buildPreparedForkContext({
       : null
     const hasPublishableFinalEvidence = Boolean(
       nestedSourceRunId &&
-      defaultStepNumber(sourceRun) === continuation.stepNumber &&
+      sourceRunDefaultStepNumber(sourceRun) === continuation.stepNumber &&
       forkArtifact?.artifactSha256 &&
       nestedArtifactPath === sourceRun.final_artifact_path &&
       forkArtifact.artifactSha256 === sourceRun.artifact_sha256,
@@ -746,7 +674,7 @@ export default async function PreparedSourceRunPage({
         forkNetwork={forkNetwork}
         forkContext={forkContext}
         allowForks
-        defaultStepNumber={defaultStepNumber(sourceRun)}
+        defaultStepNumber={sourceRunDefaultStepNumber(sourceRun)}
         initialArtifactPath={resumeArtifactPath}
         trackResume={projectContext.isAuthenticated}
         acknowledgeModelUpdates={acknowledgeModelUpdates}

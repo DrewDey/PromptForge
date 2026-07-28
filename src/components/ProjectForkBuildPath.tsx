@@ -379,12 +379,14 @@ function AncestryTrail({ ancestry }: { ancestry: ProjectForkBuildPathCrumb[] }) 
 
 function ArtifactActions({
   artifacts,
+  mode,
   providerName,
   artifactOpenHrefs,
   selectedArtifactPath,
   onDisplayArtifact,
 }: {
   artifacts: ProjectForkBuildPathArtifact[]
+  mode: ProjectForkBuildPathMode
   providerName?: string | null
   artifactOpenHrefs?: Record<string, string | undefined>
   selectedArtifactPath?: string | null
@@ -435,7 +437,11 @@ function ArtifactActions({
                       : 'border-surface-300 bg-white text-surface-700 hover:border-brand-orange hover:text-brand-orange-ink',
                   ].join(' ')}
                 >
-                  {isSelected ? 'Displayed here' : 'Display artifact here'}
+                  {isSelected
+                    ? 'Displayed here'
+                    : mode === 'parent'
+                      ? 'Preview here'
+                      : 'Display artifact here'}
                 </button>
               )}
               <ActionLink
@@ -457,6 +463,7 @@ function ArtifactActions({
 function ContinuationStepCard({
   step,
   isFirst,
+  mode,
   providerName,
   artifactOpenHrefs,
   selectedArtifactPath,
@@ -464,6 +471,7 @@ function ContinuationStepCard({
 }: {
   step: ProjectForkContinuationStep
   isFirst: boolean
+  mode: ProjectForkBuildPathMode
   providerName?: string | null
   artifactOpenHrefs?: Record<string, string | undefined>
   selectedArtifactPath?: string | null
@@ -512,7 +520,7 @@ function ContinuationStepCard({
                 className="inline-flex min-h-10 w-fit max-w-full items-center justify-center gap-2 border border-brand-orange bg-white px-3 py-2 text-xs font-black uppercase tracking-[0.1em] text-brand-orange-ink transition hover:bg-primary-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange sm:shrink-0"
               >
                 <GitFork className="h-3.5 w-3.5" aria-hidden="true" />
-                Fork here
+                Fork from this result
                 <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
               </Link>
             )}
@@ -564,6 +572,7 @@ function ContinuationStepCard({
         <div className="px-4 pb-4 sm:px-5 sm:pb-5">
           <ArtifactActions
             artifacts={artifacts}
+            mode={mode}
             providerName={providerName}
             artifactOpenHrefs={artifactOpenHrefs}
             selectedArtifactPath={selectedArtifactPath}
@@ -802,7 +811,7 @@ export function ProjectForkBuildPath({
               href={branchTarget}
               className="inline-flex min-h-10 items-center justify-center gap-2 bg-surface-900 px-3 py-2 text-xs font-black uppercase tracking-[0.1em] text-white transition hover:bg-surface-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
             >
-              Open fork
+              Open this fork
               <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
             </ActionLink>
           )}
@@ -815,13 +824,13 @@ export function ProjectForkBuildPath({
               {publicSourceEvidence.providerLinkLabel}
             </ActionLink>
           )}
-          {newForkHref && (
+          {newForkHref && mode === 'parent' && (
             <ActionLink
               href={newForkHref}
               className="inline-flex min-h-10 items-center justify-center gap-2 border border-brand-orange bg-white px-3 py-2 text-xs font-black uppercase tracking-[0.1em] text-brand-orange-ink transition hover:bg-primary-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
             >
               <GitFork className="h-3.5 w-3.5" aria-hidden="true" />
-              New fork
+              Fork from parent response
             </ActionLink>
           )}
           {onClose && (
@@ -973,6 +982,7 @@ export function ProjectForkBuildPath({
                     key={step.id}
                     step={step}
                     isFirst={index === 0}
+                    mode={mode}
                     providerName={fork.childProviderName}
                     artifactOpenHrefs={artifactOpenHrefs}
                     selectedArtifactPath={selectedArtifactPath}

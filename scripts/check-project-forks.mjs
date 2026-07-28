@@ -507,6 +507,40 @@ assert(
 )
 assert(!hasJsxAttribute(renderer, 'data-fork-prompt-connector'), `${rendererPath}: visual branch geometry must not regress to prompt-centered connector identity`)
 assert(rendererSource.includes("bg-[#2bd15f]") && rendererSource.includes('bg-brand-orange'), `${rendererPath}: selected fork paths must visibly transition from green source piping to orange continuation piping`)
+for (const required of [
+  'Open this fork',
+  'Fork from parent response',
+  'Fork from this result',
+  "'Preview here'",
+]) {
+  assert(rendererSource.includes(required), `${rendererPath}: missing explicit fork-context action label ${required}`)
+}
+assert(
+  rendererSource.includes("newForkHref && mode === 'parent'"),
+  `${rendererPath}: child pages must not duplicate the continuation fork action in the branch header`,
+)
+
+const sourceRunPresentationPath = 'src/lib/source-run-presentation.ts'
+const sourceRunPresentationSource = read(sourceRunPresentationPath)
+for (const required of [
+  'sourceRunDisplayArtifactFiles',
+  'sourceRunResponseCapturePresentation',
+  "if (artifactVersionPath?.startsWith('public/artifacts/'))",
+]) {
+  assert(
+    sourceRunPresentationSource.includes(required),
+    `${sourceRunPresentationPath}: missing shared parent/child fork presentation rule ${required}`,
+  )
+}
+const forkDataSource = read('src/lib/data.ts')
+for (const required of [
+  'sourceRunDisplayArtifactFiles(sourceRun, step)',
+  'sourceRunResponseCapturePresentation(sourceRun, step)',
+  'responseLabel: responseCapture.label',
+  'responseDisclosure: responseCapture.disclosure',
+]) {
+  assert(forkDataSource.includes(required), `src/lib/data.ts: prepared parent preview drops ${required}`)
+}
 
 const showcasePath = 'src/components/SourceRunShowcase.tsx'
 const showcase = parse(showcasePath)
@@ -580,7 +614,7 @@ assert(
 assert(callsNamed(prepared, 'resolvePreparedShowcaseLineage').length >= 1, `${preparedPath}: prepared child pages must reconstruct complete nested ancestry through the shared registry resolver`)
 assert(callsNamed(prepared, 'buildProjectResponseForkHref').length >= 1, `${preparedPath}: prepared child continuations must create exact nested-fork handoffs`)
 for (const nestedEvidence of [
-  'defaultStepNumber(sourceRun) === continuation.stepNumber',
+  'sourceRunDefaultStepNumber(sourceRun) === continuation.stepNumber',
   'nestedArtifactPath === sourceRun.final_artifact_path',
   'forkArtifact.artifactSha256 === sourceRun.artifact_sha256',
   'currentForkSource: forkSource',

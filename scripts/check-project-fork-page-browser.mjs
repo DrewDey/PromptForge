@@ -1454,6 +1454,115 @@ async function verifyMobileFork(client, sessionId, url, label, screenshotPath) {
   await verifyCurrentForkCreationAction(client, sessionId, `${label} mobile`)
 }
 
+const responsiveActiveLevelExpression = `(() => {
+  const root=document.querySelector('[data-project-fork-build-path]');
+  const workspace=root?.querySelector('[data-fork-generation-workspace]');
+  const nodes=[...root?.querySelectorAll('[data-fork-generation]') || []];
+  const current=nodes.find((node)=>node.getAttribute('data-generation-current')==='true');
+  const first=nodes[0];
+  const last=nodes.at(-1);
+  if (!root || !workspace || !current || !first || !last) return null;
+  const workspaceRect=workspace.getBoundingClientRect();
+  const firstRect=first.getBoundingClientRect();
+  const lastRect=last.getBoundingClientRect();
+  const style=getComputedStyle(workspace);
+  const scrollportLeft=workspaceRect.left+workspace.clientLeft;
+  const scrollportRight=scrollportLeft+workspace.clientWidth;
+  const expectedLeft=scrollportLeft+(Number.parseFloat(style.paddingLeft) || 0);
+  const expectedRight=scrollportRight-(Number.parseFloat(style.paddingRight) || 0);
+  return {
+    viewportWidth:window.innerWidth,
+    active:root.querySelector('[data-fork-generation-nav][data-active-view="true"]')
+      ?.getAttribute('data-fork-generation-nav') || '',
+    current:current.getAttribute('data-display-level') || '',
+    first:first.getAttribute('data-display-level') || '',
+    last:last.getAttribute('data-display-level') || '',
+    overflowing:workspace.scrollWidth > workspace.clientWidth + 1,
+    firstAlignmentDelta:Math.abs(firstRect.left-expectedLeft),
+    lastAlignmentDelta:Math.abs(lastRect.right-expectedRight),
+    previousDisabled:Boolean(
+      root.querySelector('[aria-label="Show previous fork generation"]')?.disabled
+    ),
+    nextDisabled:Boolean(
+      root.querySelector('[aria-label="Show next fork generation"]')?.disabled
+    ),
+  };
+})()`
+
+async function verifyResponsiveActiveLevelPreservation(client, sessionId, label) {
+  await client.send('Emulation.setDeviceMetricsOverride', {
+    width: 390,
+    height: 844,
+    deviceScaleFactor: 1,
+    mobile: true,
+  }, sessionId)
+  await waitForValue(
+    client,
+    sessionId,
+    responsiveActiveLevelExpression,
+    (value) => (
+      value?.viewportWidth === 390 &&
+      value.overflowing === true &&
+      value.active === value.current &&
+      value.active === value.last &&
+      value.lastAlignmentDelta <= 8 &&
+      value.previousDisabled === false &&
+      value.nextDisabled === true
+    ),
+    `${label} desktop-current to 390px active-level preservation`,
+  )
+
+  await client.send('Emulation.setDeviceMetricsOverride', {
+    width: 1440,
+    height: 1000,
+    deviceScaleFactor: 1,
+    mobile: false,
+  }, sessionId)
+  await waitForValue(
+    client,
+    sessionId,
+    responsiveActiveLevelExpression,
+    (value) => (
+      value?.viewportWidth === 1440 &&
+      value.overflowing === false &&
+      value.active === value.current
+    ),
+    `${label} 390px-current to desktop active-level preservation`,
+  )
+  await client.send('Runtime.evaluate', {
+    expression: `document.querySelector('[data-fork-generation-nav="1"]')?.click()`,
+    returnByValue: true,
+  }, sessionId)
+  await waitForValue(
+    client,
+    sessionId,
+    responsiveActiveLevelExpression,
+    (value) => value?.active === value?.first,
+    `${label} desktop first-level selection`,
+  )
+
+  await client.send('Emulation.setDeviceMetricsOverride', {
+    width: 390,
+    height: 844,
+    deviceScaleFactor: 1,
+    mobile: true,
+  }, sessionId)
+  await waitForValue(
+    client,
+    sessionId,
+    responsiveActiveLevelExpression,
+    (value) => (
+      value?.viewportWidth === 390 &&
+      value.overflowing === true &&
+      value.active === value.first &&
+      value.firstAlignmentDelta <= 8 &&
+      value.previousDisabled === true &&
+      value.nextDisabled === false
+    ),
+    `${label} desktop-first to 390px active-level preservation`,
+  )
+}
+
 async function verifyMobileParentRail(
   client,
   sessionId,
@@ -1910,12 +2019,11 @@ async function main() {
         }
         await verifyArtifactDisplay(client, sessionId, grandchildSnapshot, 'Grandchild fixture')
       }
-      await client.send('Emulation.setDeviceMetricsOverride', {
-        width: 390,
-        height: 844,
-        deviceScaleFactor: 1,
-        mobile: true,
-      }, sessionId)
+      await verifyResponsiveActiveLevelPreservation(
+        client,
+        sessionId,
+        'Hull Breach child',
+      )
       await verifyMobileParentRail(
         client,
         sessionId,

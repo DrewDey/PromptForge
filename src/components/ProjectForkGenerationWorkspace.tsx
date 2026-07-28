@@ -671,6 +671,11 @@ export default function ProjectForkGenerationWorkspace({
   const viewportRef = useRef<HTMLDivElement | null>(null)
   const canvasRef = useRef<HTMLDivElement | null>(null)
   const [activeLevel, setActiveLevel] = useState(currentGeneration?.displayLevel ?? 1)
+  const activeLevelRef = useRef(activeLevel)
+  const setActiveViewLevel = useCallback((displayLevel: number) => {
+    activeLevelRef.current = displayLevel
+    setActiveLevel(displayLevel)
+  }, [])
   const [connectors, setConnectors] = useState<ConnectorMeasurement[]>([])
   const publicSourceEvidence = sourceEvidence ?? resolvePublicSourceEvidence(null)
   const publicShareHref = providerPublicShareHref(
@@ -729,8 +734,8 @@ export default function ProjectForkGenerationWorkspace({
     behaviorOverride?: ScrollBehavior,
   ) => {
     positionViewportAtLevel(displayLevel, behaviorOverride)
-    setActiveLevel(displayLevel)
-  }, [positionViewportAtLevel])
+    setActiveViewLevel(displayLevel)
+  }, [positionViewportAtLevel, setActiveViewLevel])
 
   const handleWorkspaceKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (generations.length === 0) return
@@ -818,7 +823,7 @@ export default function ProjectForkGenerationWorkspace({
 
     const syncBoundaryLevel = () => {
       if (viewport.scrollWidth <= viewport.clientWidth + 1) {
-        setActiveLevel(
+        setActiveViewLevel(
           currentGenerationDisplayLevel
           ?? generations.at(-1)?.displayLevel
           ?? 1,
@@ -841,11 +846,11 @@ export default function ProjectForkGenerationWorkspace({
         ? Math.abs(lastLane.getBoundingClientRect().right - (scrollportRight - paddingRight))
         : Number.POSITIVE_INFINITY
       if (firstBoundaryDelta <= 8) {
-        setActiveLevel(generations[0]?.displayLevel ?? 1)
+        setActiveViewLevel(generations[0]?.displayLevel ?? 1)
         return true
       }
       if (lastBoundaryDelta <= 8) {
-        setActiveLevel(generations.at(-1)?.displayLevel ?? 1)
+        setActiveViewLevel(generations.at(-1)?.displayLevel ?? 1)
         return true
       }
       return false
@@ -866,7 +871,7 @@ export default function ProjectForkGenerationWorkspace({
           smallestDistance = distance
         }
       }
-      if (centeredLevel !== null) setActiveLevel(centeredLevel)
+      if (centeredLevel !== null) setActiveViewLevel(centeredLevel)
     }
     let animationFrame = 0
     const scheduleCenteredLevelSync = () => {
@@ -888,7 +893,7 @@ export default function ProjectForkGenerationWorkspace({
       observer.disconnect()
       viewport.removeEventListener('scroll', scheduleCenteredLevelSync)
     }
-  }, [currentGenerationDisplayLevel, generations])
+  }, [currentGenerationDisplayLevel, generations, setActiveViewLevel])
 
   useLayoutEffect(() => {
     if (currentGenerationDisplayLevel !== undefined) {
@@ -899,6 +904,24 @@ export default function ProjectForkGenerationWorkspace({
     currentGenerationProjectId,
     positionViewportAtLevel,
   ])
+
+  useEffect(() => {
+    let animationFrame = 0
+    const preserveActiveLevel = () => {
+      const preservedLevel = activeLevelRef.current
+      window.cancelAnimationFrame(animationFrame)
+      animationFrame = window.requestAnimationFrame(() => {
+        positionViewportAtLevel(preservedLevel, 'auto')
+        setActiveViewLevel(preservedLevel)
+      })
+    }
+
+    window.addEventListener('resize', preserveActiveLevel)
+    return () => {
+      window.cancelAnimationFrame(animationFrame)
+      window.removeEventListener('resize', preserveActiveLevel)
+    }
+  }, [positionViewportAtLevel, setActiveViewLevel])
 
   const activeGenerationIndex = Math.max(
     0,

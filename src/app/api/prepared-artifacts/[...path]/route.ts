@@ -26,11 +26,13 @@ export async function GET(
 
   const relative = segments.join('/')
   const artifactPath = `public/artifacts/${relative}`
-  const projectIds = [...preparedProjectIdsForArtifact(artifactPath)]
   const isSharedViewerAsset = artifactPath === 'public/artifacts/pathforge-artifact-banner.js'
-  if (!isSharedViewerAsset && !(await preparedArtifactHasPublicProject(projectIds))) return unavailable()
 
   try {
+    if (!isSharedViewerAsset) {
+      const projectIds = [...preparedProjectIdsForArtifact(artifactPath)]
+      if (!(await preparedArtifactHasPublicProject(projectIds))) return unavailable()
+    }
     const bytes = await readFile(path.join(process.cwd(), 'public', 'artifacts', ...segments))
     return new NextResponse(bytes, {
       headers: {

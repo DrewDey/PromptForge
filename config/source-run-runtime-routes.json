@@ -1,4 +1,5 @@
 [
+  "/api/prepared-artifacts/*",
   "/admin/source-runs/*",
   "/prompt/\\[id\\]",
   "/my-forge",

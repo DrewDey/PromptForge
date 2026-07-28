@@ -9,10 +9,11 @@ import {
   buildProjectResponseForkHref,
   communityProjectContinuationSteps,
   projectForkSourceFromSubmissionFields,
-  resolveProjectForkTrail,
   toProjectForkSourceSteps,
   type ProjectForkNetworkItem,
+  type ProjectForkLineageTruth,
 } from '@/lib/project-forks'
+import type { PromptWithRelations } from '@/lib/types'
 
 function projectHref(projectId: string) {
   return getProjectRouteOverride(projectId) ?? `/prompt/${projectId}`
@@ -40,24 +41,30 @@ function projectModelIdentity(
 
 export default async function ProjectCommunityPanel({
   projectId,
+  project: suppliedProject,
+  lineageTruth,
   showForkLineage = true,
 }: {
   projectId: string
+  project?: PromptWithRelations
+  lineageTruth?: ProjectForkLineageTruth | null
   showForkLineage?: boolean
 }) {
-  const project = await getPromptById(projectId)
+  const project = suppliedProject ?? await getPromptById(projectId)
   const currentSteps = project ? toProjectForkSourceSteps(project) : []
   const forkSource = project ? projectForkSourceFromSubmissionFields(project) : null
-  const forkTrail = showForkLineage && project && forkSource
-    ? await resolveProjectForkTrail(project, getPromptById)
-    : null
-  const sourceProject = forkTrail?.immediateSourceProject ?? null
-  const sourceSteps = sourceProject ? toProjectForkSourceSteps(sourceProject) : []
+  const immediateSourceGeneration = lineageTruth?.generations.at(-2) ?? null
+  const sourceSteps = immediateSourceGeneration
+    ? immediateSourceGeneration.presentation.localSteps
+    : []
   const continuationSourceSteps = forkSource
     ? communityProjectContinuationSteps(currentSteps)
     : []
   const continuationSteps = continuationSourceSteps.map((step, index) => (
-    index === continuationSourceSteps.length - 1 && project && forkSource
+    index === continuationSourceSteps.length - 1 &&
+      project &&
+      forkSource &&
+      lineageTruth?.eligibility.allowed === true
       ? {
           ...step,
           forkHref: buildProjectResponseForkHref({
@@ -100,21 +107,22 @@ export default async function ProjectCommunityPanel({
       className="mx-auto max-w-7xl px-4 pb-28 sm:px-6 lg:px-8 lg:pb-14"
       data-project-id={projectId}
     >
-      {showForkLineage && branch && sourceSteps.length > 0 && (
+      {showForkLineage && branch && (lineageTruth?.generations.length ?? 0) > 0 && (
         <div className="mb-10">
           <ProjectForkBuildPath
             mode="child"
+            lineage={lineageTruth}
             sourceSteps={sourceSteps}
             forkSource={forkSource ?? undefined}
             branch={branch}
-            trail={(forkTrail?.nodes ?? []).map((node) => ({
-              id: node.id,
-              title: node.title,
-              href: node.isMissingSource ? null : projectHref(node.id),
-              isCurrent: node.isCurrent,
+            trail={lineageTruth?.generations.map((generation) => ({
+              id: generation.projectId,
+              title: generation.title,
+              href: generation.presentation.href,
+              isCurrent: generation.isCurrent,
             }))}
             sourceProjectHref={sourceProjectHref(
-              forkSource?.sourceProjectId ?? '',
+              immediateSourceGeneration?.projectId ?? forkSource?.sourceProjectId ?? '',
               forkSource?.sourceRunId,
             )}
             branchHref={projectHref(projectId)}

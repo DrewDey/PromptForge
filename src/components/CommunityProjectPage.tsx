@@ -4,7 +4,11 @@ import { BuilderByline } from '@/components/BuilderByline'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
 import { ProtectedArtifactFrame, type ArtifactPackage } from '@/components/SourceRunShowcase'
 import { evidenceScopeLabels, type PublicCommunityProject } from '@/lib/community-project-contract'
-import { buildCommunityProjectForkHref } from '@/lib/project-forks'
+import {
+  buildProjectResponseForkHref,
+  projectForkSourceFromSubmissionFields,
+} from '@/lib/project-forks'
+import type { ProjectForkLineageTruth } from '@/lib/project-forks'
 import type { PromptWithRelations } from '@/lib/types'
 
 function evidenceExplanation(scope: PublicCommunityProject['evidence_scope']) {
@@ -16,9 +20,11 @@ function evidenceExplanation(scope: PublicCommunityProject['evidence_scope']) {
 export default function CommunityProjectPage({
   prompt,
   capsule,
+  lineageTruth,
 }: {
   prompt: PromptWithRelations
   capsule: PublicCommunityProject
+  lineageTruth: ProjectForkLineageTruth | null
 }) {
   const firstStep = prompt.steps?.[0]
   const artifactPackage: ArtifactPackage = {
@@ -42,14 +48,20 @@ export default function CommunityProjectPage({
       body: 'PathForge re-verifies these reviewed bytes and shows them as a script-disabled static preview during the community pilot.',
     },
   }
-  const forkHref = capsule.reuse_permission === 'allow_pathforge_remix'
-    ? buildCommunityProjectForkHref({
+  const currentForkSource = projectForkSourceFromSubmissionFields(prompt)
+  const forkHref = (
+    capsule.reuse_permission === 'allow_pathforge_remix' &&
+    lineageTruth?.eligibility.allowed === true &&
+    firstStep
+  )
+    ? buildProjectResponseForkHref({
         sourceProjectId: prompt.id,
         sourceProjectTitle: prompt.title,
-        sourceStepId: firstStep?.id,
-        sourceStepNumber: firstStep?.step_number,
-        promptFamilyId: prompt.prompt_family_id ?? prompt.id,
-        depth: (prompt.fork_depth ?? 0) + 1,
+        sourceStepId: firstStep.id,
+        sourceStepNumber: firstStep.step_number,
+        currentForkSource,
+        promptFamilyId: prompt.prompt_family_id ?? undefined,
+        destination: '/build',
       })
     : null
 
@@ -160,13 +172,21 @@ export default function CommunityProjectPage({
           {capsule.source_url && <a href={capsule.source_url} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-2 border border-surface-300 bg-white px-4 py-2 text-sm font-bold hover:border-brand-orange"><ExternalLink className="h-4 w-4" aria-hidden="true" /> Open checked source</a>}
         </section>
 
-        <div className="mx-auto mt-8 flex max-w-4xl flex-wrap gap-3">
-          {forkHref && <Link href={forkHref} className="inline-flex min-h-11 items-center gap-2 bg-[#2bd15f] px-4 py-2 text-sm font-black text-[#063b17]"><GitFork className="h-4 w-4" aria-hidden="true" /> Fork with attribution <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>}
+        <div
+          className="mx-auto mt-8 flex max-w-4xl flex-wrap gap-3"
+          data-community-fork-eligibility={forkHref ? 'allowed' : 'denied'}
+          data-community-fork-reason={lineageTruth?.eligibility.reason ?? 'unavailable'}
+        >
+          {forkHref && <Link href={forkHref} data-community-fork-action className="inline-flex min-h-11 items-center gap-2 bg-[#2bd15f] px-4 py-2 text-sm font-black text-[#063b17]"><GitFork className="h-4 w-4" aria-hidden="true" /> Fork with attribution <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>}
           <Link href={`/report/project/${prompt.id}`} className="inline-flex min-h-11 items-center border border-surface-300 bg-white px-4 py-2 text-sm font-bold text-surface-700 hover:border-red-300 hover:text-red-700">Report this project</Link>
         </div>
       </div>
 
-      <ProjectCommunityPanel projectId={prompt.id} />
+      <ProjectCommunityPanel
+        projectId={prompt.id}
+        project={prompt}
+        lineageTruth={lineageTruth}
+      />
     </main>
   )
 }

@@ -151,10 +151,30 @@ function typeStringLiterals(sourceFile, name) {
   ))
 }
 
-function numericExport(sourceFile, name) {
+function numericExport(sourceFile, name, seen = new Set()) {
+  if (seen.has(name)) return null
+  seen.add(name)
   const declaration = namedDeclarations(sourceFile, name).find(ts.isVariableDeclaration)
-  if (!declaration?.initializer || !ts.isNumericLiteral(declaration.initializer)) return null
-  return Number(declaration.initializer.text)
+  const initializer = declaration?.initializer
+  if (!initializer) return null
+  if (ts.isNumericLiteral(initializer)) return Number(initializer.text)
+  if (ts.isIdentifier(initializer)) return numericExport(sourceFile, initializer.text, seen)
+  if (ts.isBinaryExpression(initializer)) {
+    const left = ts.isNumericLiteral(initializer.left)
+      ? Number(initializer.left.text)
+      : ts.isIdentifier(initializer.left)
+        ? numericExport(sourceFile, initializer.left.text, seen)
+        : null
+    const right = ts.isNumericLiteral(initializer.right)
+      ? Number(initializer.right.text)
+      : ts.isIdentifier(initializer.right)
+        ? numericExport(sourceFile, initializer.right.text, seen)
+        : null
+    if (left === null || right === null) return null
+    if (initializer.operatorToken.kind === ts.SyntaxKind.PlusToken) return left + right
+    if (initializer.operatorToken.kind === ts.SyntaxKind.MinusToken) return left - right
+  }
+  return null
 }
 
 function importHas(sourceFile, moduleName, importedName) {
@@ -238,7 +258,10 @@ function assertSqlColumns(path, columnNames) {
 
 function assertSqlForkConstraints(path) {
   const sql = read(path).replace(/\s+/g, ' ')
-  assert(/fork_depth\s*>=\s*0\s+AND\s+fork_depth\s*<\s*10/i.test(sql), `${path}: must enforce the 10-level fork depth boundary`)
+  assert(
+    /(?:fork_depth\s+BETWEEN\s+0\s+AND\s+8|fork_depth\s*>=\s*0\s+AND\s+(?:fork_depth\s*<\s*9|fork_depth\s*<=\s*8))/i.test(sql),
+    `${path}: must enforce valid stored fork depths 0..8 for ten total public levels`,
+  )
   assert(/fork_branch_index\s*>=\s*0\s+AND\s+fork_branch_index\s*<\s*10/i.test(sql), `${path}: must enforce the 10-branch width boundary`)
   assert(/fork_source_artifact_path[\s\S]*public\/artifacts\/%/i.test(sql), `${path}: fork artifacts must remain production-servable public artifact paths`)
   assert(/fork_source_artifact_sha256[\s\S]*(?:64|\{64\})/i.test(sql), `${path}: fork artifact identity must enforce a 64-character SHA-256 digest`)
@@ -248,6 +271,8 @@ const forkPath = 'src/lib/project-forks.ts'
 const forkSource = parse(forkPath)
 
 assert(numericExport(forkSource, 'PROJECT_FORK_MAX_DEPTH') === 10, `${forkPath}: fork depth capacity must remain 10`)
+assert(numericExport(forkSource, 'PROJECT_FORK_MAX_LEVELS') === 10, `${forkPath}: public fork lineage must remain bounded to ten total levels`)
+assert(numericExport(forkSource, 'PROJECT_FORK_MAX_STORED_DEPTH') === 8, `${forkPath}: persisted fork depth must remain bounded to 0..8`)
 assert(numericExport(forkSource, 'PROJECT_FORK_MAX_WIDTH') === 10, `${forkPath}: fork width capacity must remain 10`)
 
 for (const name of [
@@ -615,6 +640,14 @@ if (preparedShowcases.length === 1) {
 const preparedForkReads = callsNamed(prepared, 'getApprovedProjectForks')
 assert(preparedForkReads.some((call) => call.arguments.length >= 2), `${preparedPath}: model pages must read forks using canonical project plus exact source run`)
 assert(
+  callsNamed(prepared, 'getProjectForkLineageTruth').length === 1 &&
+    preparedSource.includes('codeBackedAuthority: true') &&
+    preparedSource.includes('currentSourceRunId: activeModelVariant?.sourceRunId') &&
+    preparedSource.includes('allowForks={lineageTruth?.eligibility.allowed === true}') &&
+    preparedSource.includes('canFork: lineageTruth?.eligibility.allowed === true'),
+  `${preparedPath}: prepared routes must load one explicit code-backed truth and gate every fork action on its eligibility`,
+)
+assert(
   preparedSource.indexOf('preparedProjectIsPublic(project.id)') <
   preparedSource.indexOf('getApprovedProjectForks('),
   `${preparedPath}: a prepared child must fail closed before its fork network can render`,
@@ -746,12 +779,85 @@ for (const routePath of sharedSourceRunRoutes()) {
 
 const promptDetailPath = 'src/app/prompt/[id]/page.tsx'
 const promptDetail = parse(promptDetailPath)
+const promptDetailSource = read(promptDetailPath)
 assert(callsNamed(promptDetail, 'buildProjectResponseForkHref').length >= 1, `${promptDetailPath}: generic response cards must create exact-response fork handoffs`)
 assert(jsxOpenings(promptDetail, 'ProjectCommunityPanel').length >= 1, `${promptDetailPath}: generic project pages must mount the shared community/lineage surface`)
+assert(
+  callsNamed(promptDetail, 'getProjectForkLineageTruth').length >= 1 &&
+    promptDetailSource.includes('lineageTruth?.eligibility.allowed === true'),
+  `${promptDetailPath}: fork actions must fail closed on the shared authoritative lineage eligibility`,
+)
+
+const dataText = read(dataPath)
+assert(
+  dataText.includes('preparedOnly: seen.has(fork.id)') &&
+    dataText.includes('if (preparedOnly) return null') &&
+    !dataText.includes('if (seen.has(fork.id)) continue'),
+  `${dataPath}: successful DB prepared children must receive exact prepared presentation overlays while generic mock rows remain excluded`,
+)
+assert(
+  jsxOpenings(promptDetail, 'ProjectCommunityPanel').some((opening) => (
+    jsxAttributeNames(opening).has('lineageTruth')
+  )),
+  `${promptDetailPath}: the community panel must reuse the route lineage truth instead of issuing another lineage read`,
+)
+
+const communityProjectPagePath = 'src/components/CommunityProjectPage.tsx'
+const communityProjectPage = parse(communityProjectPagePath)
+const communityProjectPageSource = read(communityProjectPagePath)
+assert(
+  importHas(communityProjectPage, '@/lib/project-forks', 'buildProjectResponseForkHref'),
+  `${communityProjectPagePath}: community fork actions must use the bounded shared response-fork builder`,
+)
+assert(
+  callsNamed(communityProjectPage, 'projectForkSourceFromSubmissionFields').length === 1,
+  `${communityProjectPagePath}: community projects must reconstruct the current stored fork generation before building a descendant`,
+)
+const communityForkBuilders = callsNamed(communityProjectPage, 'buildProjectResponseForkHref')
+assert(
+  communityForkBuilders.length === 1,
+  `${communityProjectPagePath}: community projects must have one shared root/descendant/terminal fork builder`,
+)
+if (communityForkBuilders.length === 1) {
+  const input = communityForkBuilders[0].arguments[0]
+  const properties = input && ts.isObjectLiteralExpression(input)
+    ? new Set(input.properties.flatMap((property) => (
+        property.name && (ts.isIdentifier(property.name) || ts.isStringLiteral(property.name))
+          ? [property.name.text]
+          : []
+      )))
+    : new Set()
+  assert(
+    properties.has('currentForkSource'),
+    `${communityProjectPagePath}: the shared builder must receive nullable currentForkSource so roots start at stored depth 0, descendants advance, and stored-depth-8 terminals fail closed`,
+  )
+  assert(
+    properties.has('destination'),
+    `${communityProjectPagePath}: bounded community fork handoffs must remain in the build workflow`,
+  )
+}
+assert(
+  communityProjectPageSource.includes('capsule.reuse_permission') &&
+    communityProjectPageSource.includes('lineageTruth?.eligibility.allowed === true') &&
+    communityProjectPageSource.includes('{forkHref &&'),
+  `${communityProjectPagePath}: unavailable or ineligible lineage and null terminal builders must suppress the public fork action`,
+)
+
+const lineageScaffoldPath = 'src/components/ProjectForkLineageScaffold.tsx'
+const lineageScaffoldSource = read(lineageScaffoldPath)
+assert(
+  lineageScaffoldSource.includes('contract.source.depth + 2'),
+  `${lineageScaffoldPath}: stored depth 0 must present as public level 2`,
+)
 
 const adminDetailPath = 'src/app/admin/source-runs/[id]/page.tsx'
 const adminDetail = parse(adminDetailPath)
+const adminDetailSource = read(adminDetailPath)
 assert(callsNamed(adminDetail, 'projectForkSourceFromSubmissionFields').length >= 1, `${adminDetailPath}: review detail must reconstruct structured fork identity`)
+assert(
+  adminDetailSource.includes('Level {forkSource.depth + 2} / 10'),
+  `${adminDetailPath}: review detail must map stored depth to the corrected public level with +2`,
+)
 
 const adminDashboardPath = 'src/app/admin/page.tsx'
 const adminDashboard = parse(adminDashboardPath)
@@ -792,7 +898,6 @@ const variantAwareMigrations = readdirSync('supabase/migrations')
 assert(variantAwareMigrations.length >= 1, 'supabase/migrations: variant-aware fork schema must have an additive deployable migration')
 for (const migrationPath of variantAwareMigrations) {
   assertSqlColumns(migrationPath, forkColumns)
-  assertSqlForkConstraints(migrationPath)
   const migrationSql = read(migrationPath)
   assert(/CREATE\s+(?:CONSTRAINT\s+)?TRIGGER/i.test(migrationSql), `${migrationPath}: migration must install fail-closed lineage validation triggers`)
   assert(/REVOKE\s+(?:ALL|EXECUTE)[\s\S]+FROM\s+PUBLIC/i.test(migrationSql), `${migrationPath}: lineage validation helpers must not be publicly executable`)

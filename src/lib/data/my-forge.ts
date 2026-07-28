@@ -1,6 +1,9 @@
 import 'server-only'
 
-import type { ProjectForkSource } from '../project-forks'
+import {
+  PROJECT_FORK_MAX_STORED_DEPTH,
+  type ProjectForkSource,
+} from '../project-forks'
 import { getProjectModelVariantSet } from '../project-model-variants'
 import { deriveProfileIdentityReadiness } from '../profile-readiness'
 import { createClient } from '../supabase/server'
@@ -925,7 +928,11 @@ export async function markMyForgeForkStarted(source: ProjectForkSource) {
   const forkStartedAt = new Date().toISOString()
   const existing = await readRawState(viewer, projectId)
   const modelUpdatesSeenAt = await modelUpdatesBaseline(viewer, projectId, existing)
-  if (!Number.isInteger(source.depth) || source.depth < 0 || source.depth >= 10) {
+  if (
+    !Number.isInteger(source.depth) ||
+    source.depth < 0 ||
+    source.depth > PROJECT_FORK_MAX_STORED_DEPTH
+  ) {
     throw new Error('Fork depth is outside the supported range.')
   }
   if (!Number.isInteger(source.branchIndex) || source.branchIndex < 0 || source.branchIndex >= 10) {

@@ -232,8 +232,8 @@ function forkSubmissionFields(value) {
   const forkBranchIndex = value.fork_branch_index === undefined
     ? 0
     : Number(value.fork_branch_index)
-  if (!Number.isInteger(forkDepth) || forkDepth < 0 || forkDepth >= 10) {
-    throw new Error('Seed package fork_depth must be an integer from 0 through 9.')
+  if (!Number.isInteger(forkDepth) || forkDepth < 0 || forkDepth > 8) {
+    throw new Error('Seed package fork_depth must be an integer from 0 through 8.')
   }
   if (!Number.isInteger(forkBranchIndex) || forkBranchIndex < 0 || forkBranchIndex >= 10) {
     throw new Error('Seed package fork_branch_index must be an integer from 0 through 9.')

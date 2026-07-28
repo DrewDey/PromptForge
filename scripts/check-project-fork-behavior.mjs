@@ -39,6 +39,8 @@ new Script(outputText, { filename: 'project-forks.transpiled.cjs' }).runInNewCon
 
 const {
   PROJECT_FORK_MAX_DEPTH,
+  PROJECT_FORK_MAX_LEVELS,
+  PROJECT_FORK_MAX_STORED_DEPTH,
   PROJECT_FORK_MAX_WIDTH,
   buildCommunityProjectForkHref,
   buildProjectForkHref,
@@ -261,13 +263,29 @@ assert(contract.sharedStepIds.join(',') === 'source-step-1,source-step-2', 'fork
 assert(contract.originalContinuationStepIds.join(',') === 'source-step-3', 'fork contract should mute original continuation after the fork point')
 assert(contract.promptFamilyId === 'source-project:source-step-2', 'fork contract should derive a stable prompt family id')
 
-const clamped = normalizeProjectForkSource({
+const observedOverdepth = normalizeProjectForkSource({
   sourceProjectId: 'source-project',
-  depth: PROJECT_FORK_MAX_DEPTH + 50,
+  depth: PROJECT_FORK_MAX_STORED_DEPTH + 1,
   branchIndex: PROJECT_FORK_MAX_WIDTH + 50,
 })
-assert(clamped.depth === PROJECT_FORK_MAX_DEPTH - 1, 'fork depth should clamp to the supported maximum index')
-assert(clamped.branchIndex === PROJECT_FORK_MAX_WIDTH - 1, 'fork branch should clamp to the supported maximum index')
+assert(
+  observedOverdepth.depth === PROJECT_FORK_MAX_STORED_DEPTH + 1,
+  'legacy over-depth evidence must preserve its observed stored depth instead of clamping into a valid level',
+)
+assert(
+  observedOverdepth.branchIndex === PROJECT_FORK_MAX_WIDTH + 50,
+  'legacy over-width evidence must preserve its observed branch index instead of clamping into a valid lane',
+)
+
+const observedNegativeDepth = projectForkSourceFromSubmissionFields({
+  fork_source_project_id: 'legacy-negative-depth-source',
+  fork_depth: -1,
+  fork_branch_index: 0,
+})
+assert(
+  observedNegativeDepth?.depth === -1,
+  'legacy negative stored depth must remain explicit evidence instead of normalizing into a green level-1 fork',
+)
 
 const href = buildProjectForkHref({
   sourceProjectId: 'source-project',
@@ -318,6 +336,43 @@ const communityResponseHref = buildProjectResponseForkHref({
 })
 assert(communityResponseHref?.startsWith('/build?'), 'community response forks should enter the invitation-only project bundle flow')
 assert(communityResponseHref?.includes('forkStep=community-source-step-2'), 'community response forks should preserve the exact source response')
+assert(!communityResponseHref?.includes('forkDepth='), 'a root community fork must persist stored depth 0 for public level 2')
+
+const communityDescendantHref = buildProjectResponseForkHref({
+  sourceProjectId: 'community-level-2-project',
+  sourceProjectTitle: 'Community Level 2 Project',
+  sourceStepId: 'community-level-2-step-1',
+  sourceStepNumber: 1,
+  currentForkSource: {
+    sourceProjectId: 'community-root-project',
+    sourceStepId: 'community-root-step-1',
+    sourceStepNumber: 1,
+    depth: 0,
+    branchIndex: 0,
+    promptFamilyId: 'community-root-project:community-root-step-1',
+  },
+  destination: '/build',
+})
+assert(
+  communityDescendantHref?.includes('forkDepth=1'),
+  'a community descendant fork must advance from stored depth 0 to stored depth 1 (public level 3)',
+)
+
+const communityLevelTenHref = buildProjectResponseForkHref({
+  sourceProjectId: 'community-level-9-project',
+  sourceStepId: 'community-level-9-step-1',
+  sourceStepNumber: 1,
+  currentForkSource: {
+    sourceProjectId: 'community-level-8-project',
+    depth: PROJECT_FORK_MAX_STORED_DEPTH - 1,
+    branchIndex: 0,
+  },
+  destination: '/build',
+})
+assert(
+  communityLevelTenHref?.includes(`forkDepth=${PROJECT_FORK_MAX_STORED_DEPTH}`),
+  'a community level-9 project must still be able to create the terminal stored-depth-8 fork at public level 10',
+)
 
 const publishedCommunityChildFixture = {
   parentForkPoint: 2,
@@ -365,11 +420,13 @@ const maxedResponseHref = buildProjectResponseForkHref({
   sourceStepNumber: 1,
   currentForkSource: {
     sourceProjectId: 'root-project',
-    depth: PROJECT_FORK_MAX_DEPTH - 1,
+    depth: PROJECT_FORK_MAX_STORED_DEPTH,
     branchIndex: 0,
   },
 })
-assert(maxedResponseHref === null, 'response fork href should stop at the max-depth boundary')
+assert(maxedResponseHref === null, 'a stored-depth-8 terminal fork at public level 10 must not create another generation')
+assert(PROJECT_FORK_MAX_LEVELS === 10, 'fork behavior must retain exactly ten total public levels')
+assert(PROJECT_FORK_MAX_DEPTH === PROJECT_FORK_MAX_LEVELS, 'the legacy max-depth export must remain a display-level compatibility alias')
 
 const artifactSha256 = 'a'.repeat(64)
 const variantAwareHref = buildProjectResponseForkHref({

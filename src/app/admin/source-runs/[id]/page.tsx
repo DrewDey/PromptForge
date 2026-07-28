@@ -199,7 +199,7 @@ export default async function AdminSourceRunDetailPage({
                 <div className="border border-green-200 bg-white px-3 py-2">
                   <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-green-700">Coordinates</div>
                   <div className="mt-1 font-semibold">
-                    Depth {forkSource.depth + 1} / 10 · Branch {forkSource.branchIndex + 1} / 10
+                    Level {forkSource.depth + 2} / 10 · Branch {forkSource.branchIndex + 1} / 10
                   </div>
                 </div>
               </div>

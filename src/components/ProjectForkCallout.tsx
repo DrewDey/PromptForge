@@ -4,6 +4,7 @@ import {
   buildProjectForkHref,
   createProjectForkDraftContract,
   PROJECT_FORK_MAX_DEPTH,
+  PROJECT_FORK_MAX_STORED_DEPTH,
   PROJECT_FORK_MAX_WIDTH,
   type ProjectForkSourceStep,
 } from '@/lib/project-forks'
@@ -44,8 +45,8 @@ export default function ProjectForkCallout({
     ? createProjectForkDraftContract({ source, sourceSteps })
     : null
   const forkPointStep = contract?.forkPointStep
-  const canForkDeeper = depth < PROJECT_FORK_MAX_DEPTH
-  const canForkWider = branchIndex < PROJECT_FORK_MAX_WIDTH
+  const canForkDeeper = depth < PROJECT_FORK_MAX_STORED_DEPTH
+  const canForkWider = branchIndex >= 0 && branchIndex < PROJECT_FORK_MAX_WIDTH
   const forkHref = canForkDeeper && canForkWider
     ? buildProjectForkHref({
         ...source,
@@ -60,7 +61,7 @@ export default function ProjectForkCallout({
       ? 'Max branch width reached'
       : null
   const terminalBody = !canForkDeeper
-    ? `This branch is already at ${PROJECT_FORK_MAX_DEPTH} linked fork levels.`
+    ? `This branch is already at ${PROJECT_FORK_MAX_DEPTH} total project levels.`
     : !canForkWider
       ? `This response already has ${PROJECT_FORK_MAX_WIDTH} approved fork branches.`
       : null

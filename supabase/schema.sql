@@ -53,7 +53,7 @@ CREATE TABLE prompts (
   fork_source_artifact_sha256 TEXT,
   fork_parent_submission_id TEXT,
   prompt_family_id TEXT,
-  fork_depth INT NOT NULL DEFAULT 0 CHECK (fork_depth >= 0 AND fork_depth < 10),
+  fork_depth INT NOT NULL DEFAULT 0 CHECK (fork_depth BETWEEN 0 AND 8),
   fork_branch_index INT NOT NULL DEFAULT 0 CHECK (fork_branch_index >= 0 AND fork_branch_index < 10),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()

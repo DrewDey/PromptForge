@@ -289,6 +289,7 @@ for (const name of [
   'groupProjectForkNetworkBySourceStep',
   'filterProjectForkNetworkBySourceRun',
   'resolveProjectForkTrail',
+  'resolveExactProjectForkModelVariantIdentity',
   'serializeProjectForkSourceForNotes',
 ]) {
   assertExport(forkSource, forkPath, name)
@@ -574,6 +575,30 @@ for (const required of [
 ]) {
   assert(forkDataSource.includes(required), `src/lib/data.ts: prepared parent preview drops ${required}`)
 }
+for (const required of [
+  'registeredModelVariantId: variant.databaseId',
+  'claimedModelVariantId: outgoingChildForkSource?.sourceModelVariantId',
+  'if (!modelVariantIdentity.valid) return null',
+]) {
+  assert(
+    forkDataSource.includes(required),
+    `src/lib/data.ts: exact prepared run model identity recovery drops ${required}`,
+  )
+}
+const lineageDataPath = 'src/lib/data/project-fork-lineage.ts'
+const lineageDataSource = read(lineageDataPath)
+assert(
+  lineageDataSource.includes(
+    'nodes: overlayProjectForkLineagePresentations(',
+  ) &&
+    lineageDataSource.indexOf('nodes: overlayProjectForkLineagePresentations(') <
+      lineageDataSource.indexOf('export async function getAuthoritativeProjectForkLineages'),
+  `${lineageDataPath}: production-shaped RPC nodes must receive exact prepared presentation before lineage validation`,
+)
+assert(
+  !lineageDataSource.includes('selectProjectForkLineageTruth'),
+  `${lineageDataPath}: parent-side prepared hydration must not preserve a prematurely invalidated RPC presentation`,
+)
 
 const showcasePath = 'src/components/SourceRunShowcase.tsx'
 const showcase = parse(showcasePath)

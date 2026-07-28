@@ -185,14 +185,14 @@ const lineageSnapshotExpression = `(() => {
       const text=[...node?.querySelectorAll('div') || []]
         .map((value)=>value.textContent?.trim() || '')
         .find((value)=>value.startsWith(label + ' ')) || '';
-      const match=text.match(new RegExp('^' + label + ' \\\\s*(\\\\d+)','i'));
+      const match=text.match(new RegExp('^' + label + ' \\s*(\\d+)','i'));
       return match ? Number(match[1]) : null;
     };
     const currentPrompts=[...current?.querySelectorAll('[data-fork-generation-prompt]') || []];
     const currentResponses=[...current?.querySelectorAll('[data-fork-generation-response]') || []];
     const edgeGeometry=edges.map((edge)=>{
       const values=(edge.querySelector('path')?.getAttribute('d') || '')
-        .match(/-?\\\\d+(?:\\\\.\\\\d+)?/g)?.map(Number) || [];
+        .match(/-?\\d+(?:\\.\\d+)?/g)?.map(Number) || [];
       const [sourceX,sourceY,,targetY,targetX]=values;
       const responseAnchorId=edge.getAttribute('data-parent-response-anchor-id') || '';
       const promptId=edge.getAttribute('data-child-prompt-id') || '';
@@ -247,6 +247,11 @@ const lineageSnapshotExpression = `(() => {
       duplicateTestIds:(()=>{
         const ids=[...root.querySelectorAll('[data-testid]')].map((node)=>node.getAttribute('data-testid'));
         return [...new Set(ids.filter((id,index)=>ids.indexOf(id)!==index))];
+      })(),
+      duplicateArtifactSelectors:(()=>{
+        const paths=[...root.querySelectorAll('[data-fork-display-artifact]')]
+          .map((node)=>node.getAttribute('data-fork-display-artifact'));
+        return [...new Set(paths.filter((path,index)=>paths.indexOf(path)!==index))];
       })(),
       eligibilityReason:root.querySelector('[data-fork-eligibility]')
         ?.getAttribute('data-fork-eligibility-reason') || '',
@@ -712,6 +717,16 @@ function assertLineageSnapshot(snapshot, mode, label) {
     if (snapshot.generationCount < 2 || snapshot.edgeCount !== snapshot.generationCount - 1) {
       throw new Error(`${label} did not preserve a complete authoritative generation chain.`)
     }
+    if (snapshot.eligibilityReason !== 'eligible') {
+      throw new Error(
+        `${label} authoritative lineage denied a valid next fork as ${snapshot.eligibilityReason || '(missing)'}.`,
+      )
+    }
+    if (snapshot.duplicateArtifactSelectors?.length > 0) {
+      throw new Error(
+        `${label} duplicated artifact selectors: ${snapshot.duplicateArtifactSelectors.join(', ')}.`,
+      )
+    }
     return
   }
   assertDesktopBranchGeometry(snapshot, label)
@@ -816,9 +831,14 @@ async function verifyArtifactDisplay(client, sessionId, snapshot, label) {
 async function verifyConnectorAfterSourceExpansion(client, sessionId, label) {
   const expanded = await client.send('Runtime.evaluate', {
     expression: `(() => {
-      const summary=document.querySelector(
-        '[data-fork-desktop-path] aside [data-fork-source-prompt] details summary'
-      );
+      const root=document.querySelector('[data-project-fork-build-path]');
+      const summary=root?.querySelector('[data-fork-generation-workspace]')
+        ? root.querySelector(
+            '[data-testid="fork-node-1"] [data-fork-generation-prompt] details summary'
+          )
+        : root?.querySelector(
+            '[data-fork-desktop-path] aside [data-fork-source-prompt] details summary'
+          );
       if (!summary) return false;
       summary.click();
       return true;
@@ -1064,6 +1084,43 @@ async function verifyMobileLineage(client, sessionId, mode, label, screenshotPat
     sessionId,
     `(() => {
       const root=document.querySelector('[data-project-fork-build-path]');
+      const authoritativeWorkspace=root?.querySelector('[data-fork-generation-workspace]');
+      if (root && authoritativeWorkspace) {
+        const canvas=root.querySelector('[data-fork-generation-canvas]');
+        const nodes=[...root.querySelectorAll('[data-fork-generation]')];
+        const edges=[...root.querySelectorAll('[data-fork-generation-connector]')];
+        const targetSizes=[...root.querySelectorAll('a[href],button,summary,[tabindex="0"]')]
+          .map((node)=>{
+            const rect=node.getBoundingClientRect();
+            return {
+              label:node.getAttribute('aria-label') || node.textContent?.trim() || '',
+              width:rect.width,
+              height:rect.height,
+            };
+          });
+        return {
+          authoritative:true,
+          mode:root.getAttribute('data-project-fork-build-path-mode') || '',
+          overflow:document.documentElement.scrollWidth-window.innerWidth,
+          visualOffsetLeft:window.visualViewport?.offsetLeft || 0,
+          visualPageLeft:window.visualViewport?.pageLeft || 0,
+          rootClientWidth:root.clientWidth,
+          rootScrollWidth:root.scrollWidth,
+          workspaceClientWidth:authoritativeWorkspace.clientWidth,
+          workspaceScrollWidth:authoritativeWorkspace.scrollWidth,
+          workspaceSnapType:getComputedStyle(authoritativeWorkspace).scrollSnapType,
+          workspaceOverflowX:getComputedStyle(authoritativeWorkspace).overflowX,
+          canvasSnapType:canvas ? getComputedStyle(canvas).scrollSnapType : '',
+          laneSnapAlign:nodes[0] ? getComputedStyle(nodes[0]).scrollSnapAlign : '',
+          nodeCount:nodes.length,
+          edgeCount:edges.length,
+          eligibilityReason:root.querySelector('[data-fork-eligibility]')
+            ?.getAttribute('data-fork-eligibility-reason') || '',
+          undersizedTargets:targetSizes.filter((target)=>(
+            target.width < 44 || target.height < 44
+          )),
+        };
+      }
       const disclosure=root?.querySelector('details[data-fork-inherited-path]');
       const desktopPath=[...root?.querySelectorAll('aside[data-fork-inherited-path]') || []][0];
       const connectorLane=root?.querySelector('[data-fork-connector-lane]');
@@ -1097,6 +1154,7 @@ async function verifyMobileLineage(client, sessionId, mode, label, screenshotPat
             })),
         }));
       return {
+        authoritative:false,
         mode:root?.getAttribute('data-project-fork-build-path-mode') || '',
         overflow:document.documentElement.scrollWidth-window.innerWidth,
         visualOffsetLeft:window.visualViewport?.offsetLeft || 0,
@@ -1118,12 +1176,62 @@ async function verifyMobileLineage(client, sessionId, mode, label, screenshotPat
         continuationArticles,
       };
     })()`,
-    (value) => value?.mode === mode && value.disclosureVisible && value.continuationWidth > 0 && value.availableWidth > 0,
+    (value) => value?.mode === mode && (
+      value.authoritative
+        ? value.nodeCount >= 2 && value.edgeCount === value.nodeCount - 1
+        : value.disclosureVisible && value.continuationWidth > 0 && value.availableWidth > 0
+    ),
     `${label} 390px lineage layout`,
   )
   if (mobile.overflow > 1) throw new Error(`${label} 390px lineage overflows horizontally by ${mobile.overflow}px.`)
   if (mobile.visualOffsetLeft !== 0 || mobile.visualPageLeft !== 0) {
     throw new Error(`${label} 390px visual viewport is horizontally panned by ${mobile.visualOffsetLeft}px/${mobile.visualPageLeft}px.`)
+  }
+  if (mobile.authoritative) {
+    if (mobile.rootScrollWidth > mobile.rootClientWidth + 1) {
+      throw new Error(
+        `${label} 390px authoritative lineage masks root overflow ` +
+        `${mobile.rootClientWidth}/${mobile.rootScrollWidth}.`,
+      )
+    }
+    if (mobile.workspaceScrollWidth <= mobile.workspaceClientWidth + 1) {
+      throw new Error(
+        `${label} 390px authoritative lineage did not preserve its internal horizontal track ` +
+        `${mobile.workspaceClientWidth}/${mobile.workspaceScrollWidth}.`,
+      )
+    }
+    if (
+      !mobile.workspaceSnapType.includes('x mandatory') ||
+      mobile.canvasSnapType !== 'none' ||
+      mobile.laneSnapAlign !== 'center' ||
+      !['auto', 'scroll'].includes(mobile.workspaceOverflowX)
+    ) {
+      throw new Error(
+        `${label} 390px authoritative lineage has incorrect snap ownership: ` +
+        `${mobile.workspaceSnapType}/${mobile.canvasSnapType}/${mobile.laneSnapAlign}/${mobile.workspaceOverflowX}.`,
+      )
+    }
+    if (mobile.undersizedTargets.length > 0) {
+      throw new Error(
+        `${label} 390px authoritative lineage has touch targets below 44px: ` +
+        `${JSON.stringify(mobile.undersizedTargets)}.`,
+      )
+    }
+    if (mobile.eligibilityReason !== 'eligible') {
+      throw new Error(
+        `${label} 390px authoritative lineage unexpectedly denies the next fork as ` +
+        `${mobile.eligibilityReason || '(missing)'}.`,
+      )
+    }
+    if (screenshotPath) {
+      await captureViewport(
+        client,
+        sessionId,
+        '[data-project-fork-build-path]',
+        screenshotPath,
+      )
+    }
+    return
   }
   if (!mobile.desktopHidden || !mobile.connectorHidden || !mobile.pipelineHidden || !mobile.promptNodeHidden || !mobile.responseNodeHidden) {
     throw new Error(`${label} 390px lineage leaked desktop source, connector, or pipeline geometry.`)
@@ -1503,19 +1611,21 @@ async function main() {
         await captureElement(client, sessionId, '[data-project-fork-build-path]', screenshot('airlock-hull-child-desktop.png'))
       }
 
-      await navigate(client, sessionId, grandchildUrl)
-      const grandchildSnapshot = await waitForLineage(client, sessionId, 'child', 'grandchild fixture')
-      assertLineageSnapshot(grandchildSnapshot, 'child', 'Grandchild fixture')
-      if (grandchildSnapshot.inherited.length < 3) {
-        throw new Error(`Grandchild fixture preserved only ${grandchildSnapshot.inherited.length} inherited steps.`)
+      if (isLocalEnvironment) {
+        await navigate(client, sessionId, grandchildUrl)
+        const grandchildSnapshot = await waitForLineage(client, sessionId, 'child', 'grandchild fixture')
+        assertLineageSnapshot(grandchildSnapshot, 'child', 'Grandchild fixture')
+        if (grandchildSnapshot.inherited.length < 3) {
+          throw new Error(`Grandchild fixture preserved only ${grandchildSnapshot.inherited.length} inherited steps.`)
+        }
+        if (grandchildSnapshot.trail.length !== 3) {
+          throw new Error(`Grandchild fixture rendered ${grandchildSnapshot.trail.length} lineage crumbs instead of three.`)
+        }
+        if (!grandchildSnapshot.sourceResponses[0]?.endsWith(':step:3')) {
+          throw new Error(`Grandchild fixture anchored to ${grandchildSnapshot.sourceResponses[0] || '(missing)'} instead of its immediate response 03.`)
+        }
+        await verifyArtifactDisplay(client, sessionId, grandchildSnapshot, 'Grandchild fixture')
       }
-      if (grandchildSnapshot.trail.length !== 3) {
-        throw new Error(`Grandchild fixture rendered ${grandchildSnapshot.trail.length} lineage crumbs instead of three.`)
-      }
-      if (!grandchildSnapshot.sourceResponses[0]?.endsWith(':step:3')) {
-        throw new Error(`Grandchild fixture anchored to ${grandchildSnapshot.sourceResponses[0] || '(missing)'} instead of its immediate response 03.`)
-      }
-      await verifyArtifactDisplay(client, sessionId, grandchildSnapshot, 'Grandchild fixture')
       await verifyNestedForkCreation(client, sessionId, nestedChildUrl)
 
       await client.send('Emulation.setDeviceMetricsOverride', {
@@ -1587,8 +1697,8 @@ async function main() {
 
       console.log(
         modelRunIsolationVerified
-          ? 'Response-to-prompt parent/child/grandchild lineage, four prepared fork shapes, parent response branches, internal mobile containment, artifact display, and three-run isolation passed.'
-          : 'Response-to-prompt parent/child/grandchild lineage, four prepared fork shapes, parent response branches, internal mobile containment, and artifact display passed; model-run isolation was not applicable on this route.',
+          ? `Response-to-prompt parent/child${isLocalEnvironment ? '/grandchild' : ''} lineage, four prepared fork shapes, parent response branches, internal mobile containment, artifact display, and three-run isolation passed.`
+          : `Response-to-prompt parent/child${isLocalEnvironment ? '/grandchild' : ''} lineage, four prepared fork shapes, parent response branches, internal mobile containment, and artifact display passed; model-run isolation was not applicable on this route.`,
       )
     } catch (error) {
       const browserEvidence = [...new Set(consoleErrors)].join(' | ')

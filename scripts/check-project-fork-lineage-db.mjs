@@ -163,6 +163,23 @@ function createLocalHarness() {
 }
 
 const read = (relativePath) => readFileSync(path.join(root, relativePath), 'utf8')
+const migrationSql = read(migration)
+const validatorDefinitions = [...migrationSql.matchAll(
+  /CREATE OR REPLACE FUNCTION (pg_temp|private)\.project_fork_tuple_is_valid\([\s\S]*?\n\$\$;/g,
+)]
+if (validatorDefinitions.length !== 2) {
+  throw new Error('Migration must define one temporary and one permanent tuple validator.')
+}
+const normalizeValidatorDefinition = (definition) => definition[0].replace(
+  /(pg_temp|private)\.project_fork_tuple_is_valid/,
+  'validator_schema.project_fork_tuple_is_valid',
+)
+if (
+  normalizeValidatorDefinition(validatorDefinitions[0]) !==
+  normalizeValidatorDefinition(validatorDefinitions[1])
+) {
+  throw new Error('Temporary and permanent tuple validators have drifted.')
+}
 const harness = localPostgresAvailable()
   ? createLocalHarness()
   : await createDockerHarness()
@@ -170,7 +187,7 @@ const harness = localPostgresAvailable()
 try {
   harness.apply(read('test-fixtures/project-fork-lineage/migration-prerequisites.sql'))
   harness.apply(read('test-fixtures/project-fork-lineage/preflight-overdepth.sql'))
-  const blocked = harness.apply(read(migration), true)
+  const blocked = harness.apply(migrationSql, true)
   const blockedOutput = `${blocked.stdout}\n${blocked.stderr}`
   if (
     blocked.status === 0 ||
@@ -178,17 +195,44 @@ try {
   ) {
     throw new Error('Migration did not fail explicitly on unexpected over-depth data.')
   }
+  harness.apply(
+    read('test-fixtures/project-fork-lineage/verify-preflight-no-residue.sql'),
+  )
+  const transactionBlocked = harness.apply(
+    `BEGIN;\n${migrationSql}\nCOMMIT;\n`,
+    true,
+  )
+  const transactionBlockedOutput =
+    `${transactionBlocked.stdout}\n${transactionBlocked.stderr}`
+  if (
+    transactionBlocked.status === 0 ||
+    !transactionBlockedOutput.includes('unexpected stored depth 9+')
+  ) {
+    throw new Error(
+      'Transaction-owned migration did not fail on unexpected over-depth data.',
+    )
+  }
+  harness.apply(
+    read('test-fixtures/project-fork-lineage/verify-preflight-no-residue.sql'),
+  )
   harness.apply(read('test-fixtures/project-fork-lineage/clear-preflight-overdepth.sql'))
   harness.apply(read('test-fixtures/project-fork-lineage/preflight-provenance.sql'))
-  const provenanceBlocked = harness.apply(read(migration), true)
+  const provenanceBlocked = harness.apply(migrationSql, true)
   const provenanceBlockedOutput =
     `${provenanceBlocked.stdout}\n${provenanceBlocked.stderr}`
   if (
     provenanceBlocked.status === 0 ||
     !provenanceBlockedOutput.includes('invalid legacy tuples') ||
-    !provenanceBlockedOutput.includes('prompts 4 ids') ||
+    !provenanceBlockedOutput.includes('prompts 5 ids') ||
+    !provenanceBlockedOutput.includes('source runs 1 ids') ||
+    !provenanceBlockedOutput.includes('unfinished 1 ids') ||
     !provenanceBlockedOutput.includes('71900000-0000-4000-8000-000000000001') ||
-    !provenanceBlockedOutput.includes('71900000-0000-4000-8000-000000000004')
+    !provenanceBlockedOutput.includes('71900000-0000-4000-8000-000000000004') ||
+    !provenanceBlockedOutput.includes('71900000-0000-4000-8000-000000000005') ||
+    !provenanceBlockedOutput.includes('71700000-0000-4000-8000-000000000105') ||
+    !provenanceBlockedOutput.includes(
+      '71800000-0000-4000-8000-000000000002:71000000-0000-4000-8000-000000000001',
+    )
   ) {
     throw new Error(
       'Migration did not identify and abort on invalid legacy provenance tuples.',
@@ -197,8 +241,11 @@ try {
   harness.apply(
     read('test-fixtures/project-fork-lineage/verify-preflight-provenance-abort.sql'),
   )
+  harness.apply(
+    read('test-fixtures/project-fork-lineage/verify-preflight-no-residue.sql'),
+  )
   harness.apply(read('test-fixtures/project-fork-lineage/clear-invalid-provenance.sql'))
-  harness.apply(read(migration))
+  harness.apply(migrationSql)
   harness.apply(read('test-fixtures/project-fork-lineage/runtime-provenance-test.sql'))
   harness.apply(read('test-fixtures/project-fork-lineage/runtime-action-roundtrip.sql'))
   harness.apply(read('test-fixtures/project-fork-lineage/migration-transaction-test.sql'))

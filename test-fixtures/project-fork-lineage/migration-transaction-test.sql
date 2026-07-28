@@ -286,6 +286,33 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'Private lineage tuple validator remains executable by PUBLIC.';
   END IF;
+  IF has_function_privilege(
+    'public',
+    'private.validate_user_project_fork_source()',
+    'EXECUTE'
+  ) THEN
+    RAISE EXCEPTION
+      'Private unfinished-fork validator remains executable by PUBLIC.';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_trigger
+    WHERE tgrelid = 'public.user_project_states'::REGCLASS
+      AND tgname = 'validate_user_project_fork_source_fields'
+      AND NOT tgisinternal
+  ) THEN
+    RAISE EXCEPTION 'Unfinished-fork authority trigger is not installed.';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_proc
+    CROSS JOIN LATERAL unnest(proconfig) AS setting
+    WHERE oid = 'private.validate_user_project_fork_source()'::REGPROCEDURE
+      AND setting IN ('search_path=', 'search_path=""')
+  ) THEN
+    RAISE EXCEPTION
+      'Unfinished-fork authority validator does not pin an empty search_path.';
+  END IF;
   IF NOT has_function_privilege(
     'anon',
     'public.read_public_project_fork_lineages(uuid[])',

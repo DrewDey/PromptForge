@@ -41,6 +41,90 @@ BEGIN
 END;
 $$;
 
+DO $$
+DECLARE
+  caught BOOLEAN;
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.user_project_states
+    WHERE user_id = '71800000-0000-4000-8000-000000000001'
+      AND project_id = '71000000-0000-4000-8000-000000000001'
+      AND fork_started_at IS NOT NULL
+      AND fork_source_model_variant_id IS NULL
+      AND fork_source_run_id IS NULL
+      AND fork_source_step_id =
+        '71100000-0000-4000-8000-000000000001'
+      AND fork_source_step_number = 1
+      AND fork_depth = 0
+  ) THEN
+    RAISE EXCEPTION
+      'Valid legacy prompt-step unfinished fork was not preserved.';
+  END IF;
+
+  INSERT INTO public.user_project_states (
+    user_id,
+    project_id,
+    fork_started_at,
+    fork_depth,
+    fork_branch_index,
+    fork_parent_submission_id,
+    fork_prompt_family_id,
+    fork_source_model_variant_id,
+    fork_source_run_id,
+    fork_source_step_id,
+    fork_source_step_number,
+    fork_source_artifact_path,
+    fork_source_artifact_sha256
+  ) VALUES (
+    '71800000-0000-4000-8000-000000000003',
+    '71000000-0000-4000-8000-000000000001',
+    NOW(),
+    0,
+    1,
+    NULL,
+    '71000000-0000-4000-8000-000000000001:valid-run-a:step:1',
+    '71200000-0000-4000-8000-000000000001',
+    'valid-run-a',
+    'valid-run-a:step:1',
+    1,
+    'public/artifacts/valid-run-a.html',
+    'sha-valid-run-a'
+  );
+
+  caught := FALSE;
+  BEGIN
+    UPDATE public.user_project_states
+    SET
+      fork_depth = 8,
+      fork_parent_submission_id = 'not-the-parent',
+      fork_prompt_family_id = 'not-the-family'
+    WHERE user_id = '71800000-0000-4000-8000-000000000003'
+      AND project_id = '71000000-0000-4000-8000-000000000001';
+  EXCEPTION WHEN OTHERS THEN
+    caught := TRUE;
+  END;
+  IF NOT caught THEN
+    RAISE EXCEPTION
+      'Forged unfinished-fork family/depth/parent coordinates were accepted.';
+  END IF;
+
+  caught := FALSE;
+  BEGIN
+    UPDATE public.user_project_states
+    SET fork_prompt_family_id = 'not-the-family'
+    WHERE user_id = '71800000-0000-4000-8000-000000000001'
+      AND project_id = '71000000-0000-4000-8000-000000000001';
+  EXCEPTION WHEN OTHERS THEN
+    caught := TRUE;
+  END;
+  IF NOT caught THEN
+    RAISE EXCEPTION
+      'Legacy prompt-step unfinished fork accepted a forged family.';
+  END IF;
+END;
+$$;
+
 ALTER TABLE public.prompts DISABLE TRIGGER enforce_project_fork_lineage_fields;
 
 UPDATE public.prompts

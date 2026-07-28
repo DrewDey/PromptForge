@@ -127,6 +127,12 @@ CREATE TABLE public.user_project_states (
   selected_step_number INT,
   selected_artifact_path TEXT,
   selected_artifact_sha256 TEXT,
+  fork_source_model_variant_id UUID,
+  fork_source_run_id TEXT,
+  fork_source_step_id TEXT,
+  fork_source_step_number INT,
+  fork_source_artifact_path TEXT,
+  fork_source_artifact_sha256 TEXT,
   CONSTRAINT user_project_states_fork_depth_check
     CHECK (fork_depth BETWEEN 0 AND 9),
   PRIMARY KEY (user_id, project_id)

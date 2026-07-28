@@ -208,12 +208,46 @@ INSERT INTO private.prepared_legacy_seed_profile_bindings (
   source_run_id, project_id
 ) VALUES
   (
-    '71700000-0000-4000-8000-000000000004',
+    '71600000-0000-4000-8000-000000000004',
     '71500000-0000-4000-8000-000000000004'
   ),
   (
-    '71700000-0000-4000-8000-000000000005',
+    '71600000-0000-4000-8000-000000000005',
     '71500000-0000-4000-8000-000000000005'
+  );
+
+INSERT INTO public.user_project_states (
+  user_id,
+  project_id,
+  fork_started_at,
+  fork_depth,
+  fork_branch_index,
+  fork_parent_submission_id,
+  fork_prompt_family_id,
+  fork_source_step_id,
+  fork_source_step_number
+) VALUES
+  (
+    '71800000-0000-4000-8000-000000000001',
+    '71000000-0000-4000-8000-000000000001',
+    NOW(),
+    0,
+    0,
+    NULL,
+    '71000000-0000-4000-8000-000000000001:71100000-0000-4000-8000-000000000001',
+    '71100000-0000-4000-8000-000000000001',
+    1
+  ),
+  (
+    '71800000-0000-4000-8000-000000000002',
+    '71000000-0000-4000-8000-000000000001',
+    NOW(),
+    1,
+    0,
+    'forged-parent',
+    'forged-family',
+    '71100000-0000-4000-8000-000000000001',
+    1
   );
 
 INSERT INTO public.prompts (
@@ -285,4 +319,59 @@ INSERT INTO public.prompts (
     '71000000-0000-4000-8000-000000000001:valid-run-a:step:1',
     0,
     8
+  ),
+  (
+    '71900000-0000-4000-8000-000000000005',
+    'Grandfather publication decoy',
+    '71000000-0000-4000-8000-000000000001',
+    NULL,
+    NULL,
+    '71000000-0000-4000-8000-000000000001:decoy-run:step:5',
+    5,
+    'public/artifacts/decoy.html',
+    'sha-decoy',
+    '71000000-0000-4000-8000-000000000001:71000000-0000-4000-8000-000000000001:decoy-run:step:5',
+    0,
+    9
   );
+
+INSERT INTO public.source_run_submissions (
+  id, extracted_prompt_id, status
+) VALUES (
+  '71700000-0000-4000-8000-000000000005',
+  '71900000-0000-4000-8000-000000000005',
+  'draft_created'
+);
+
+INSERT INTO public.source_run_submissions (
+  id,
+  extracted_prompt_id,
+  status,
+  fork_source_project_id,
+  fork_source_step_id,
+  fork_source_step_number,
+  fork_source_artifact_path,
+  fork_source_artifact_sha256,
+  prompt_family_id,
+  fork_depth,
+  fork_branch_index
+) VALUES (
+  '71700000-0000-4000-8000-000000000105',
+  '71900000-0000-4000-8000-000000000005',
+  'draft_created',
+  '71000000-0000-4000-8000-000000000001',
+  '71000000-0000-4000-8000-000000000001:decoy-run:step:5',
+  5,
+  'public/artifacts/decoy.html',
+  'sha-decoy',
+  '71000000-0000-4000-8000-000000000001:71000000-0000-4000-8000-000000000001:decoy-run:step:5',
+  0,
+  9
+);
+
+INSERT INTO private.prepared_legacy_seed_profile_bindings (
+  source_run_id, project_id
+) VALUES (
+  '71700000-0000-4000-8000-000000000005',
+  '71900000-0000-4000-8000-000000000005'
+);

@@ -138,14 +138,32 @@ export function adaptProjectForkLineagePresentation(
   }
 }
 
-function compactText(value: string | null | undefined, fallback: string, max: number) {
-  const normalized = value?.trim()
-  if (!normalized) return fallback
-  return normalized.length > max ? `${normalized.slice(0, max - 3)}...` : normalized
-}
-
 function stepLabel(stepNumber: number) {
   return String(stepNumber).padStart(2, '0')
+}
+
+function compactText(
+  value: string | null | undefined,
+  fallback: string,
+  max: number,
+) {
+  const normalized = value?.replace(/\s+/g, ' ').trim()
+  if (!normalized) return fallback
+  return normalized.length > max
+    ? `${normalized.slice(0, max - 1).trimEnd()}…`
+    : normalized
+}
+
+function responsePreview(step: ProjectForkContinuationStep) {
+  const normalized = step.responseText?.trim()
+  if (normalized && /^(?:<!doctype\s+html|<html[\s>])/i.test(normalized)) {
+    return 'A captured generated HTML payload is preserved in this branch.'
+  }
+  return compactText(
+    normalized,
+    'A captured response is preserved in this branch.',
+    180,
+  )
 }
 
 function isExternalHref(href: string) {
@@ -262,7 +280,7 @@ function ArtifactActions({
   if (artifacts.length === 0) return null
 
   return (
-    <div className="grid gap-2 border-t border-surface-200 p-3" aria-label={`Level ${displayLevel} artifact versions`}>
+    <div className="mt-4 grid gap-2" aria-label={`Level ${displayLevel} artifact versions`}>
       {artifacts.map((artifact) => {
         const isSelected = artifact.artifactPath === selectedArtifactPath
         const openHref = artifactOpenHrefs?.[artifact.artifactPath]
@@ -276,7 +294,7 @@ function ArtifactActions({
           <div
             key={`${artifact.stepId}:${artifact.id}:${artifact.artifactPath}`}
             className={[
-              'grid gap-2 border p-3',
+              'grid gap-2 border p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center',
               isSelected
                 ? 'border-brand-blue bg-brand-blue/5'
                 : 'border-surface-200 bg-surface-50',
@@ -294,7 +312,7 @@ function ArtifactActions({
               <div className="font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-surface-500">
                 Artifact {artifact.isDefault ? '· Default' : ''}
               </div>
-              <div className="mt-1 break-words text-sm font-black text-surface-900">
+              <div className="mt-1 truncate text-sm font-black text-surface-900">
                 {artifact.artifactTitle}
               </div>
               {artifact.artifactSha256 && (
@@ -342,77 +360,116 @@ function ArtifactActions({
   )
 }
 
-function GenerationStep({
+function generationPipeTone(generation: ProjectForkGenerationPresentation) {
+  return !generation.forkSource
+    ? {
+        rail: 'border-[#07551f] bg-[#2bd15f]',
+        promptBorder: 'border-l-[#2bd15f]',
+        text: 'text-[#07551f]',
+      }
+    : {
+        rail: 'border-[#8f3f0a] bg-brand-orange',
+        promptBorder: 'border-l-brand-orange',
+        text: 'text-brand-orange-ink',
+  }
+}
+
+function InheritedHistoryStep({
+  step,
+  generation,
+}: {
+  step: ProjectForkContinuationStep
+  generation: ProjectForkGenerationPresentation
+}) {
+  return (
+    <article
+      className="grid gap-2"
+      data-fork-generation-history-step={step.id}
+      data-display-level={generation.displayLevel}
+      data-generation-index={generation.generationIndex}
+    >
+      <div className="border border-surface-200 border-l-2 border-l-brand-orange bg-white px-3 py-2.5">
+        <div className="font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-brand-orange-ink">
+          Prompt {stepLabel(step.stepNumber)}
+        </div>
+        <div className="mt-1 text-xs font-black leading-5 text-surface-900">
+          {compactText(step.promptTitle, `Prompt ${step.stepNumber}`, 70)}
+        </div>
+        <div className="mt-2">
+          <ExactText label="Show exact prompt" text={step.promptText} />
+        </div>
+      </div>
+
+      <div className="border border-surface-200 bg-surface-50 px-3 py-2.5">
+        <div className="font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-surface-500">
+          {step.responseLabel ?? `Response ${stepLabel(step.stepNumber)}`}
+        </div>
+        {step.responseDisclosure && (
+          <p className="mt-2 border border-amber-200 bg-amber-50 px-2.5 py-2 text-xs leading-5 text-amber-950">
+            {step.responseDisclosure}
+          </p>
+        )}
+        <p className="mt-1 text-xs font-bold leading-5 text-surface-700">
+          {compactText(step.responseText, 'Captured response', 86)}
+        </p>
+        <div className="mt-2">
+          <ExactText label="Show exact response" text={step.responseText} />
+        </div>
+      </div>
+    </article>
+  )
+}
+
+function InheritedGenerationStep({
   step,
   generation,
   outgoingEdge,
   isIncomingTarget,
   isOutgoingSource,
-  providerName,
-  allowForkAction,
-  selectedArtifactPath,
-  artifactOpenHrefs,
-  isArtifactDisplayable,
-  onDisplayArtifact,
 }: {
   step: ProjectForkContinuationStep
   generation: ProjectForkGenerationPresentation
   outgoingEdge: ProjectForkLineageEdge | null
   isIncomingTarget: boolean
   isOutgoingSource: boolean
-  providerName?: string | null
-  allowForkAction: boolean
-  selectedArtifactPath?: string | null
-  artifactOpenHrefs?: Record<string, string | undefined>
-  isArtifactDisplayable?: (artifactPath: string, artifactId: string) => boolean
-  onDisplayArtifact?: (artifactPath: string, artifactTitle: string, artifactId: string) => void
 }) {
-  const tone = !generation.forkSource
-    ? {
-        rail: 'bg-[#2bd15f] border-[#07551f]',
-        border: 'border-[#2bd15f]',
-        text: 'text-[#07551f]',
-      }
-    : {
-        rail: 'bg-brand-orange border-[#8f3f0a]',
-        border: 'border-brand-orange',
-        text: 'text-brand-orange-ink',
-      }
-  const artifacts = stepArtifacts(step)
-  const responseSha = isOutgoingSource ? outgoingEdge?.sourceResponse.artifactSha256 : undefined
+  const tone = generationPipeTone(generation)
 
   return (
     <article
-      className="relative grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2 pl-10"
+      className="relative grid gap-2 pl-[72px]"
       data-fork-generation-step={step.id}
       data-display-level={generation.displayLevel}
       data-generation-index={generation.generationIndex}
     >
-      <span
-        className={`absolute left-3 top-0 h-full w-3 border-x-2 ${tone.rail}`}
-        aria-hidden="true"
-      />
       <div
-        className={[
-          'relative border bg-white p-3',
-          isIncomingTarget ? `${tone.border} ring-2 ring-brand-orange/15` : 'border-surface-200',
-        ].join(' ')}
+        className={`relative border border-surface-200 border-l-2 bg-white px-3 py-2.5 ${tone.promptBorder}`}
         data-fork-generation-prompt={step.id}
         data-generation-id={generation.projectId}
         data-step-id={step.id}
         data-testid={isIncomingTarget ? `fork-prompt-${generation.displayLevel}` : undefined}
       >
         <span
-          className={`absolute -left-[31px] top-1/2 h-5 w-7 -translate-y-1/2 border-y-2 ${tone.rail}`}
+          className={`absolute -left-[52px] bottom-0 top-0 w-8 border-x-4 ${tone.rail} shadow-[inset_5px_0_0_rgba(255,255,255,0.24),inset_-5px_0_0_rgba(0,0,0,0.2)]`}
+          data-fork-generation-pipeline={generation.displayLevel}
           aria-hidden="true"
         />
-        <div className={`font-mono text-[9px] font-black uppercase tracking-[0.14em] ${tone.text}`}>
+        <span
+          className={`absolute -left-[72px] top-1/2 h-14 w-12 -translate-y-1/2 border-4 ${tone.rail} shadow-[inset_6px_0_0_rgba(255,255,255,0.28),inset_-6px_0_0_rgba(0,0,0,0.18)]`}
+          data-fork-generation-prompt-anchor={isIncomingTarget ? step.id : undefined}
+          data-fork-generation-prompt-node={step.id}
+          aria-hidden="true"
+        />
+        <span
+          className={`absolute -left-7 top-1/2 h-7 w-7 -translate-y-1/2 border-y-4 ${tone.rail} shadow-[inset_0_5px_0_rgba(255,255,255,0.18),inset_0_-5px_0_rgba(0,0,0,0.16)]`}
+          aria-hidden="true"
+        />
+        <div className={`font-mono text-[9px] font-bold uppercase tracking-[0.14em] ${tone.text}`}>
           Prompt {stepLabel(step.stepNumber)}
-          {isIncomingTarget ? ' · Continuation entry' : ''}
         </div>
-        <h4 className="mt-1 break-words text-sm font-black leading-5 text-surface-900">
+        <div className="mt-1 text-xs font-black leading-5 text-surface-900">
           {step.promptTitle}
-        </h4>
+        </div>
         <div className="mt-2">
           <ExactText label="Show exact prompt" text={step.promptText} />
         </div>
@@ -420,28 +477,51 @@ function GenerationStep({
 
       <div
         className={[
-          'relative border bg-surface-50 p-3',
-          isOutgoingSource ? `${tone.border} ring-2 ring-brand-orange/15` : 'border-surface-200',
+          'relative border px-3 py-2.5',
+          isOutgoingSource
+            ? 'border-brand-orange bg-primary-50 ring-2 ring-brand-orange/15'
+            : 'border-surface-200 bg-surface-50',
         ].join(' ')}
         data-fork-generation-response={step.id}
         data-generation-id={generation.projectId}
         data-step-id={step.id}
         data-response-package-id={step.responsePackageId}
         data-artifact-path={isOutgoingSource ? outgoingEdge?.sourceResponse.artifactPath : undefined}
-        data-artifact-sha256={responseSha}
+        data-artifact-sha256={isOutgoingSource ? outgoingEdge?.sourceResponse.artifactSha256 : undefined}
         data-testid={isOutgoingSource ? `fork-response-${generation.displayLevel}` : undefined}
       >
         <span
-          className={`absolute -left-[31px] top-1/2 h-5 w-7 -translate-y-1/2 border-y-2 ${tone.rail}`}
+          className={`absolute -left-[52px] top-[-10px] bottom-1/2 w-8 border-x-4 ${tone.rail} shadow-[inset_5px_0_0_rgba(255,255,255,0.24),inset_-5px_0_0_rgba(0,0,0,0.2)]`}
           aria-hidden="true"
         />
+        <span
+          className={`absolute -left-[72px] top-1/2 h-14 w-12 -translate-y-1/2 border-4 ${tone.rail} shadow-[inset_6px_0_0_rgba(255,255,255,0.28),inset_-6px_0_0_rgba(0,0,0,0.18)]`}
+          data-fork-generation-response-node={step.id}
+          aria-hidden="true"
+        />
+        <span
+          className={`absolute -left-7 top-1/2 h-7 w-7 -translate-y-1/2 border-y-4 ${tone.rail} shadow-[inset_0_5px_0_rgba(255,255,255,0.18),inset_0_-5px_0_rgba(0,0,0,0.16)]`}
+          aria-hidden="true"
+        />
+        {isOutgoingSource && outgoingEdge && (
+          <span
+            className="absolute left-full top-1/2 z-30 grid h-12 w-12 -translate-x-1/2 -translate-y-1/2 place-items-center border-4 border-[#8f3f0a] bg-brand-orange shadow-[0_0_0_7px_rgba(232,122,44,0.16)]"
+            data-fork-generation-source-socket
+            aria-hidden="true"
+          >
+            <span
+              className="h-4 w-4 border-2 border-[#8f3f0a] bg-primary-50"
+              data-fork-generation-source-socket-core
+            />
+          </span>
+        )}
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="font-mono text-[9px] font-black uppercase tracking-[0.14em] text-surface-500">
+          <span className="font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-surface-500">
             {step.responseLabel ?? `Response ${stepLabel(step.stepNumber)}`}
-          </div>
+          </span>
           {isOutgoingSource && (
-            <span className={`border bg-white px-2 py-1 font-mono text-[9px] font-black uppercase ${tone.border} ${tone.text}`}>
-              Exact fork source
+            <span className="border border-brand-orange/40 bg-white px-2 py-1 font-mono text-[9px] font-black uppercase tracking-[0.12em] text-brand-orange-ink">
+              Exact fork point
             </span>
           )}
         </div>
@@ -450,36 +530,254 @@ function GenerationStep({
             {step.responseDisclosure}
           </p>
         )}
-        <p className="mt-2 break-words text-xs font-bold leading-5 text-surface-700 [overflow-wrap:anywhere]">
-          {compactText(step.responseText, 'Captured response', 160)}
+        <p className="mt-1 text-xs font-bold leading-5 text-surface-700">
+          {isOutgoingSource
+            ? 'This response created the branch shown here.'
+            : 'A captured response is preserved in this generation.'}
         </p>
         <div className="mt-2">
           <ExactText label="Show exact response" text={step.responseText} />
         </div>
-        {allowForkAction && step.forkHref && (
-          <Link
-            href={step.forkHref}
-            data-fork-continuation-fork={step.id}
-            aria-label={`Fork from response ${stepLabel(step.stepNumber)} in level ${generation.displayLevel}, ${generation.title}`}
-            className="mt-3 inline-flex min-h-11 items-center justify-center gap-2 border border-brand-orange bg-white px-3 py-2 text-xs font-black uppercase tracking-[0.1em] text-brand-orange-ink transition motion-reduce:transition-none hover:bg-primary-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
-          >
-            <GitFork className="h-3.5 w-3.5" aria-hidden="true" />
-            Fork from this result
-          </Link>
-        )}
       </div>
-
-      <ArtifactActions
-        artifacts={artifacts}
-        displayLevel={generation.displayLevel}
-        generationIndex={generation.generationIndex}
-        providerName={providerName}
-        selectedArtifactPath={selectedArtifactPath}
-        artifactOpenHrefs={artifactOpenHrefs}
-        isArtifactDisplayable={isArtifactDisplayable}
-        onDisplayArtifact={onDisplayArtifact}
-      />
     </article>
+  )
+}
+
+function ActiveGenerationStep({
+  step,
+  generation,
+  isIncomingTarget,
+  allowForkAction,
+  providerName,
+  selectedArtifactPath,
+  artifactOpenHrefs,
+  isArtifactDisplayable,
+  onDisplayArtifact,
+}: {
+  step: ProjectForkContinuationStep
+  generation: ProjectForkGenerationPresentation
+  isIncomingTarget: boolean
+  allowForkAction: boolean
+  providerName?: string | null
+  selectedArtifactPath?: string | null
+  artifactOpenHrefs?: Record<string, string | undefined>
+  isArtifactDisplayable?: (artifactPath: string, artifactId: string) => boolean
+  onDisplayArtifact?: (artifactPath: string, artifactTitle: string, artifactId: string) => void
+}) {
+  const artifacts = stepArtifacts(step)
+
+  return (
+    <article
+      className="relative min-w-0 max-w-full pl-[88px]"
+      data-fork-generation-step={step.id}
+      data-display-level={generation.displayLevel}
+      data-generation-index={generation.generationIndex}
+    >
+      <div className="min-w-0 max-w-full border border-surface-200 bg-white shadow-[0_18px_44px_rgba(24,24,27,0.07)]">
+        <div
+          className="relative min-w-0 max-w-full p-4 sm:p-5"
+          data-fork-generation-prompt={step.id}
+          data-generation-id={generation.projectId}
+          data-step-id={step.id}
+          data-testid={isIncomingTarget ? `fork-prompt-${generation.displayLevel}` : undefined}
+        >
+          <span
+            className="absolute -left-[88px] top-1/2 h-14 w-12 -translate-y-1/2 border-4 border-[#8f3f0a] bg-brand-orange shadow-[inset_6px_0_0_rgba(255,255,255,0.28),inset_-6px_0_0_rgba(0,0,0,0.18)]"
+            data-fork-generation-prompt-anchor={isIncomingTarget ? step.id : undefined}
+            data-fork-generation-prompt-node={step.id}
+            aria-hidden="true"
+          />
+          <span
+            className="absolute -left-10 top-1/2 h-7 w-10 -translate-y-1/2 border-y-4 border-[#8f3f0a] bg-brand-orange shadow-[inset_0_5px_0_rgba(255,255,255,0.18),inset_0_-5px_0_rgba(0,0,0,0.16)]"
+            aria-hidden="true"
+          />
+          {isIncomingTarget && (
+            <span
+              className="absolute -left-[104px] top-1/2 h-7 w-4 -translate-y-1/2 border-y-4 border-[#8f3f0a] bg-brand-orange shadow-[inset_0_5px_0_rgba(255,255,255,0.18),inset_0_-5px_0_rgba(0,0,0,0.16)]"
+              aria-hidden="true"
+            />
+          )}
+          <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-brand-orange-ink">
+            Prompt {stepLabel(step.stepNumber)} · Fork continuation
+          </div>
+          <h4 className="mt-2 min-w-0 break-words text-lg font-black text-surface-900">
+            {step.promptTitle}
+          </h4>
+          <div className="mt-3">
+            <ExactText label="Show exact prompt" text={step.promptText} />
+          </div>
+        </div>
+
+        <div
+          className="relative mb-4 sm:mb-5"
+          data-fork-generation-response={step.id}
+          data-generation-id={generation.projectId}
+          data-step-id={step.id}
+          data-response-package-id={step.responsePackageId}
+        >
+          <span
+            className="absolute -left-[88px] top-1/2 h-14 w-12 -translate-y-1/2 border-4 border-[#8f3f0a] bg-brand-orange shadow-[inset_6px_0_0_rgba(255,255,255,0.28),inset_-6px_0_0_rgba(0,0,0,0.18)]"
+            data-fork-generation-response-node={step.id}
+            aria-hidden="true"
+          />
+          <span
+            className="absolute -left-10 top-1/2 h-7 w-14 -translate-y-1/2 border-y-4 border-[#8f3f0a] bg-brand-orange shadow-[inset_0_5px_0_rgba(255,255,255,0.18),inset_0_-5px_0_rgba(0,0,0,0.16)] sm:w-[60px]"
+            aria-hidden="true"
+          />
+          <div className="mx-4 border-l-2 border-brand-orange bg-surface-50 p-3 sm:mx-5 sm:p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-surface-500">
+                {step.responseLabel ?? `Response ${stepLabel(step.stepNumber)}`}
+              </div>
+              {allowForkAction && step.forkHref && (
+                <Link
+                  href={step.forkHref}
+                  data-fork-continuation-fork={step.id}
+                  aria-label={`Fork from response ${stepLabel(step.stepNumber)} in level ${generation.displayLevel}, ${generation.title}`}
+                  className="inline-flex min-h-10 w-fit max-w-full items-center justify-center gap-2 border border-brand-orange bg-white px-3 py-2 text-xs font-black uppercase tracking-[0.1em] text-brand-orange-ink transition hover:bg-primary-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange sm:shrink-0"
+                >
+                  <GitFork className="h-3.5 w-3.5" aria-hidden="true" />
+                  Fork here
+                  <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                </Link>
+              )}
+            </div>
+            {step.responseDisclosure && (
+              <p className="mt-2 border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-normal leading-5 text-amber-950">
+                {step.responseDisclosure}
+              </p>
+            )}
+            <p className="mt-2 text-sm font-bold leading-6 text-surface-700">
+              {responsePreview(step)}
+            </p>
+            <div className="mt-3">
+              <ExactText
+                label={step.responseLabel ? `Show ${step.responseLabel.toLowerCase()}` : 'Show exact response'}
+                text={step.responseText}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="px-4 pb-4 sm:px-5 sm:pb-5">
+          <ArtifactActions
+            artifacts={artifacts}
+            displayLevel={generation.displayLevel}
+            generationIndex={generation.generationIndex}
+            providerName={providerName}
+            selectedArtifactPath={selectedArtifactPath}
+            artifactOpenHrefs={artifactOpenHrefs}
+            isArtifactDisplayable={isArtifactDisplayable}
+            onDisplayArtifact={onDisplayArtifact}
+          />
+        </div>
+      </div>
+    </article>
+  )
+}
+
+function ActiveGenerationPath({
+  generation,
+  incomingTargetId,
+  allowForkAction,
+  selectedArtifactPath,
+  artifactOpenHrefs,
+  isArtifactDisplayable,
+  onDisplayArtifact,
+}: {
+  generation: ProjectForkGenerationPresentation
+  incomingTargetId?: string
+  allowForkAction: boolean
+  selectedArtifactPath?: string | null
+  artifactOpenHrefs?: Record<string, string | undefined>
+  isArtifactDisplayable?: (artifactPath: string, artifactId: string) => boolean
+  onDisplayArtifact?: (artifactPath: string, artifactTitle: string, artifactId: string) => void
+}) {
+  const workspaceRef = useRef<HTMLDivElement | null>(null)
+  const [spine, setSpine] = useState<{ top: number; height: number } | null>(null)
+
+  useLayoutEffect(() => {
+    const workspace = workspaceRef.current
+    if (!workspace) return
+
+    let animationFrame = 0
+    const measure = () => {
+      window.cancelAnimationFrame(animationFrame)
+      animationFrame = window.requestAnimationFrame(() => {
+        const firstPrompt = workspace.querySelector<HTMLElement>(
+          '[data-fork-generation-prompt]',
+        )
+        const responses = workspace.querySelectorAll<HTMLElement>(
+          '[data-fork-generation-response]',
+        )
+        const lastResponse = responses.item(responses.length - 1)
+        if (!firstPrompt || !lastResponse) {
+          setSpine(null)
+          return
+        }
+
+        const workspaceRect = workspace.getBoundingClientRect()
+        const firstPromptRect = firstPrompt.getBoundingClientRect()
+        const lastResponseRect = lastResponse.getBoundingClientRect()
+        const top = firstPromptRect.top - workspaceRect.top + firstPromptRect.height / 2
+        const bottom = lastResponseRect.top - workspaceRect.top + lastResponseRect.height / 2
+        const next = { top, height: Math.max(0, bottom - top) }
+        setSpine((current) => (
+          current &&
+          Math.abs(current.top - next.top) < 0.5 &&
+          Math.abs(current.height - next.height) < 0.5
+            ? current
+            : next
+        ))
+      })
+    }
+
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(workspace)
+    workspace
+      .querySelectorAll<HTMLElement>(
+        'details, [data-fork-generation-prompt], [data-fork-generation-response]',
+      )
+      .forEach((element) => observer.observe(element))
+    window.addEventListener('resize', measure)
+
+    return () => {
+      window.cancelAnimationFrame(animationFrame)
+      observer.disconnect()
+      window.removeEventListener('resize', measure)
+    }
+  }, [generation.localSteps, generation.projectId])
+
+  return (
+    <div
+      ref={workspaceRef}
+      className="relative grid min-w-0 max-w-full gap-4"
+      data-fork-generation-active-path={generation.projectId}
+    >
+      {spine && (
+        <span
+          className="absolute left-[22px] w-8 border-x-4 border-[#8f3f0a] bg-brand-orange shadow-[inset_5px_0_0_rgba(255,255,255,0.24),inset_-5px_0_0_rgba(0,0,0,0.2)]"
+          style={{ top: spine.top, height: spine.height }}
+          data-fork-generation-pipeline={generation.displayLevel}
+          aria-hidden="true"
+        />
+      )}
+      {generation.localSteps.map((step) => (
+        <ActiveGenerationStep
+          key={step.id}
+          step={step}
+          generation={generation}
+          isIncomingTarget={step.id === incomingTargetId}
+          providerName={generation.providerName}
+          allowForkAction={allowForkAction}
+          selectedArtifactPath={selectedArtifactPath}
+          artifactOpenHrefs={artifactOpenHrefs}
+          isArtifactDisplayable={isArtifactDisplayable}
+          onDisplayArtifact={onDisplayArtifact}
+        />
+      ))}
+    </div>
   )
 }
 
@@ -508,23 +806,41 @@ function GenerationLane({
   const outgoingSourceAnchorId = outgoingEdge?.sourceResponse.localStepId
   const generationKind = generation.forkSource ? 'fork' : 'root'
   const allowForkAction = generation.isCurrent && eligibility.allowed
+  const outgoingStep = outgoingEdge
+    ? generation.localSteps.find((step) => step.id === outgoingSourceAnchorId)
+    : generation.localSteps.at(-1)
+  const outgoingArtifact = outgoingStep
+    ? stepArtifacts(outgoingStep).find((artifact) => artifact.isDefault)
+      ?? stepArtifacts(outgoingStep).at(-1)
+    : undefined
+  const outgoingArtifactHref = outgoingArtifact
+    ? artifactOpenHrefs?.[outgoingArtifact.artifactPath]
+      ?? artifactViewerHref(outgoingArtifact, generation.providerName)
+    : undefined
+  const incomingStep = generation.localSteps.find((step) => step.id === incomingTargetId)
+  const visibleInheritedSteps = [
+    ...(incomingStep && incomingStep.id !== outgoingStep?.id ? [incomingStep] : []),
+    ...(outgoingStep ? [outgoingStep] : []),
+  ]
+  const visibleInheritedStepIds = new Set(visibleInheritedSteps.map((step) => step.id))
+  const hiddenInheritedSteps = generation.localSteps.filter(
+    (step) => !visibleInheritedStepIds.has(step.id),
+  )
 
   return (
     <article
       id={`fork-generation-${generation.displayLevel}`}
       tabIndex={-1}
       className={[
-        'relative w-[min(82vw,400px)] shrink-0 border-2 bg-white shadow-[0_18px_44px_rgba(24,24,27,0.09)] sm:w-[400px]',
-        snapAlignment === 'start'
-          ? 'snap-start scroll-mr-4'
-          : snapAlignment === 'end'
-            ? 'snap-end scroll-ml-4'
-            : 'snap-center scroll-mx-4',
+        'relative z-20 shrink-0 border-2 border-surface-900 shadow-[0_16px_38px_rgba(24,24,27,0.07)]',
         generation.isCurrent
-          ? 'border-brand-blue ring-4 ring-brand-blue/10'
-          : generationKind === 'root'
-            ? 'border-[#07551f]'
-            : 'border-[#8f3f0a]',
+          ? 'w-[min(88vw,748px)] bg-surface-50 p-3 sm:w-[748px] sm:p-4'
+          : 'w-[min(82vw,320px)] bg-white p-4 sm:w-[320px]',
+        snapAlignment === 'start'
+          ? 'snap-start'
+          : snapAlignment === 'end'
+            ? 'snap-end'
+            : 'snap-center scroll-mx-4',
       ].join(' ')}
       data-testid={`fork-node-${generation.displayLevel}`}
       data-fork-generation
@@ -533,77 +849,83 @@ function GenerationLane({
       data-generation-id={generation.projectId}
       data-generation-kind={generationKind}
       data-generation-current={generation.isCurrent ? 'true' : 'false'}
+      data-generation-href={generation.href ?? undefined}
+      data-generation-model-label={generation.modelLabel ?? undefined}
+      data-generation-artifact-path={outgoingArtifact?.artifactPath}
+      data-generation-artifact-sha256={outgoingArtifact?.artifactSha256}
+      data-generation-artifact-viewer-href={outgoingArtifactHref}
       aria-label={`Level ${generation.displayLevel} of ${maxDepth}: ${generation.title}${generation.isCurrent ? ', current generation' : ''}`}
     >
-      <header
-        className={[
-          'border-b-2 p-4',
-          generationKind === 'root'
-            ? 'border-[#07551f] bg-[#eafbed]'
-            : 'border-[#8f3f0a] bg-primary-50',
-        ].join(' ')}
-      >
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="font-mono text-[10px] font-black uppercase tracking-[0.16em] text-surface-600">
-              Level {generation.displayLevel} of {maxDepth}
-              {' · '}
-              {generationKind === 'root' ? 'Original source' : 'Fork generation'}
-            </div>
-            <h3 className="mt-1 break-words text-xl font-black text-surface-900">
-              {generation.title}
-            </h3>
-          </div>
-          {generation.isCurrent && (
-            <span className="border border-brand-blue bg-white px-2.5 py-1.5 font-mono text-[9px] font-black uppercase tracking-[0.12em] text-brand-blue">
-              Current
-            </span>
-          )}
+      <header className={generation.isCurrent ? 'mb-4 border-b border-surface-200 pb-3' : 'mb-3'}>
+        <div
+          className={[
+            'font-mono text-[10px] font-black uppercase tracking-[0.14em]',
+            generationKind === 'root' ? 'text-[#07551f]' : 'text-brand-orange-ink',
+          ].join(' ')}
+        >
+          {generation.isCurrent
+            ? 'Active fork continuation'
+            : `Inherited ${generationKind === 'root' ? 'source' : 'fork'} path · Level ${generation.displayLevel}`}
         </div>
-        {generation.modelLabel && (
-          <div
-            className="mt-2 w-fit border border-surface-300 bg-white px-2 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-surface-600"
-            data-public-model-identity
-          >
-            {generation.modelLabel}
-          </div>
-        )}
-        {!generation.isCurrent && generation.href && (
-          <Link
-            href={generation.href}
-            aria-label={`Open level ${generation.displayLevel}, ${generation.title}`}
-            className="mt-3 inline-flex min-h-11 items-center gap-2 text-xs font-black uppercase tracking-[0.1em] text-surface-700 underline decoration-brand-orange/40 underline-offset-4 hover:text-brand-orange-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
-          >
-            Open this generation
-            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-          </Link>
+        {generation.isCurrent && (
+          <p className="mt-1 text-sm leading-6 text-surface-600">
+            The inherited work stays attached for context while this branch takes the primary workspace.
+          </p>
         )}
       </header>
 
-      <div className="grid gap-4 p-3 sm:p-4">
-        {generation.localSteps.length > 0 ? (
-          generation.localSteps.map((step) => (
-            <GenerationStep
+      {generation.localSteps.length === 0 ? (
+        <div className="border border-dashed border-surface-300 bg-white p-4 text-sm leading-6 text-surface-600">
+          This generation is known, but its public prompt and response package is unavailable.
+        </div>
+      ) : generation.isCurrent ? (
+        <ActiveGenerationPath
+          generation={generation}
+          incomingTargetId={incomingTargetId}
+          allowForkAction={allowForkAction}
+          selectedArtifactPath={selectedArtifactPath}
+          artifactOpenHrefs={artifactOpenHrefs}
+          isArtifactDisplayable={isArtifactDisplayable}
+          onDisplayArtifact={onDisplayArtifact}
+        />
+      ) : (
+        <div className="grid gap-3">
+          {hiddenInheritedSteps.length > 0 && (
+            <details className="group/history border border-surface-200 bg-white">
+              <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 marker:content-none hover:text-brand-orange-ink focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand-orange">
+                <span>
+                  <span className="block font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-surface-500">
+                    Earlier inherited history
+                  </span>
+                  <span className="mt-0.5 block text-xs font-bold text-surface-700">
+                    {hiddenInheritedSteps.length} prompt-response pair{hiddenInheritedSteps.length === 1 ? '' : 's'} before the fork point
+                  </span>
+                </span>
+                <ChevronRight className="h-4 w-4 shrink-0 transition-transform group-open/history:rotate-90" aria-hidden="true" />
+              </summary>
+              <div className="grid gap-3 border-t border-surface-200 bg-surface-50 p-3">
+                {hiddenInheritedSteps.map((step) => (
+                  <InheritedHistoryStep
+                    key={step.id}
+                    step={step}
+                    generation={generation}
+                  />
+                ))}
+              </div>
+            </details>
+          )}
+          {visibleInheritedSteps.map((step) => (
+            <InheritedGenerationStep
               key={step.id}
               step={step}
               generation={generation}
               outgoingEdge={outgoingEdge}
               isIncomingTarget={step.id === incomingTargetId}
               isOutgoingSource={step.id === outgoingSourceAnchorId}
-              providerName={generation.providerName}
-              allowForkAction={allowForkAction}
-              selectedArtifactPath={selectedArtifactPath}
-              artifactOpenHrefs={artifactOpenHrefs}
-              isArtifactDisplayable={isArtifactDisplayable}
-              onDisplayArtifact={onDisplayArtifact}
             />
-          ))
-        ) : (
-          <div className="border border-dashed border-surface-300 bg-surface-50 p-4 text-sm leading-6 text-surface-600">
-            This generation is known, but its public prompt and response package is unavailable.
-          </div>
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </article>
   )
 }
@@ -768,10 +1090,10 @@ export default function ProjectForkGenerationWorkspace({
           if (index === 0 || !child.incomingEdge) return []
           const parent = generations[index - 1]
           const source = canvas.querySelector<HTMLElement>(
-            `[data-fork-generation][data-generation-id="${CSS.escape(parent.projectId)}"] [data-fork-generation-response="${CSS.escape(child.incomingEdge.sourceResponse.localStepId)}"]`,
+            `[data-fork-generation][data-generation-id="${CSS.escape(parent.projectId)}"] [data-fork-generation-response="${CSS.escape(child.incomingEdge.sourceResponse.localStepId)}"] [data-fork-generation-source-socket]`,
           )
           const target = canvas.querySelector<HTMLElement>(
-            `[data-fork-generation][data-generation-id="${CSS.escape(child.projectId)}"] [data-fork-generation-prompt="${CSS.escape(child.incomingEdge.targetPrompt.stepId)}"]`,
+            `[data-fork-generation][data-generation-id="${CSS.escape(child.projectId)}"] [data-fork-generation-prompt-anchor="${CSS.escape(child.incomingEdge.targetPrompt.stepId)}"]`,
           )
           if (!source || !target) return []
 
@@ -793,9 +1115,9 @@ export default function ProjectForkGenerationWorkspace({
             sourceRunId: child.incomingEdge.sourceResponse.runId,
             sourceArtifactPath: child.incomingEdge.sourceResponse.artifactPath,
             sourceArtifactSha256: child.incomingEdge.sourceResponse.artifactSha256,
-            sourceX: sourceRect.right - canvasRect.left,
+            sourceX: sourceRect.left - canvasRect.left + sourceRect.width / 2,
             sourceY: sourceRect.top - canvasRect.top + sourceRect.height / 2,
-            targetX: targetRect.left - canvasRect.left,
+            targetX: targetRect.left - canvasRect.left + targetRect.width / 2,
             targetY: targetRect.top - canvasRect.top + targetRect.height / 2,
           }]
         })
@@ -940,14 +1262,14 @@ export default function ProjectForkGenerationWorkspace({
   return (
     <section
       className={[
-        'max-w-full overflow-hidden border border-surface-200 bg-white shadow-[0_18px_44px_rgba(24,24,27,0.07)]',
+        'max-w-full overflow-hidden bg-white',
         className,
       ].join(' ')}
       data-project-fork-build-path
       data-project-fork-build-path-mode={mode}
       data-testid="fork-lineage"
     >
-      <header className="grid gap-4 border-b border-surface-200 bg-white p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+      <header className="grid gap-4 border-b border-surface-200 bg-white px-1 pb-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
         <div className="min-w-0">
           <div className="flex items-center gap-2 font-mono text-[10px] font-black uppercase tracking-[0.16em] text-brand-orange-ink">
             <GitBranch className="h-4 w-4" aria-hidden="true" />
@@ -957,7 +1279,7 @@ export default function ProjectForkGenerationWorkspace({
             {currentGeneration?.title ?? branch.title}
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-surface-600">
-            Each lane is one project generation. Follow the orange connectors from the exact parent response into the exact child continuation prompt.
+            Each project keeps the same build-path rows and piping. The orange branch leaves the exact parent response and enters the exact child prompt.
             Swipe, scroll, or use the left and right arrow keys to inspect earlier levels.
           </p>
         </div>
@@ -1100,12 +1422,12 @@ export default function ProjectForkGenerationWorkspace({
         aria-describedby={`fork-lineage-edges-${branch.id}`}
         tabIndex={0}
         onKeyDown={handleWorkspaceKeyDown}
-        className="max-w-full snap-x snap-mandatory scroll-px-4 touch-pan-x overflow-x-auto overflow-y-hidden overscroll-x-contain bg-surface-50 px-4 py-5 [scrollbar-gutter:stable] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand-orange sm:scroll-px-5 sm:px-5"
+        className="max-w-full snap-x snap-mandatory scroll-px-4 touch-pan-x overflow-x-auto overflow-y-hidden overscroll-x-contain bg-white px-4 py-7 [scrollbar-gutter:stable] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand-orange sm:scroll-px-5 sm:px-5"
         data-fork-generation-workspace
       >
         <div
           ref={canvasRef}
-          className="relative flex w-max min-w-full items-start gap-24 pb-3"
+          className="relative flex w-max min-w-full items-start gap-[104px] pb-4"
           data-fork-generation-canvas
         >
           <svg
@@ -1144,18 +1466,36 @@ export default function ProjectForkGenerationWorkspace({
                     d={path}
                     fill="none"
                     stroke="#8f3f0a"
-                    strokeWidth="14"
+                    strokeWidth="16"
                     strokeLinejoin="miter"
                   />
                   <path
                     d={path}
                     fill="none"
                     stroke="#e87a2c"
-                    strokeWidth="8"
+                    strokeWidth="12"
                     strokeLinejoin="miter"
                   />
-                  <circle cx={connector.sourceX} cy={connector.sourceY} r="8" fill="#e87a2c" stroke="#8f3f0a" strokeWidth="4" />
-                  <circle cx={connector.targetX} cy={connector.targetY} r="8" fill="#e87a2c" stroke="#8f3f0a" strokeWidth="4" />
+                  <rect
+                    x={middleX - 8}
+                    y={connector.sourceY - 8}
+                    width="16"
+                    height="16"
+                    fill="#e87a2c"
+                    stroke="#8f3f0a"
+                    strokeWidth="2"
+                    data-fork-generation-source-elbow
+                  />
+                  <rect
+                    x={middleX - 8}
+                    y={connector.targetY - 8}
+                    width="16"
+                    height="16"
+                    fill="#e87a2c"
+                    stroke="#8f3f0a"
+                    strokeWidth="2"
+                    data-fork-generation-target-elbow
+                  />
                 </g>
               )
             })}

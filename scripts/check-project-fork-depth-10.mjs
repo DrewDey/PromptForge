@@ -280,6 +280,14 @@ const clientPath = 'src/app/qa/fork-lineage-depth-10-fixture/DepthTenForkLineage
 const clientSource = readFileSync(clientPath, 'utf8')
 const buildPathSource = readFileSync('src/components/ProjectForkBuildPath.tsx', 'utf8')
 const workspaceSource = readFileSync('src/components/ProjectForkGenerationWorkspace.tsx', 'utf8')
+const activeStepSource = workspaceSource.slice(
+  workspaceSource.indexOf('function ActiveGenerationStep'),
+  workspaceSource.indexOf('function ActiveGenerationPath'),
+)
+const activePathSource = workspaceSource.slice(
+  workspaceSource.indexOf('function ActiveGenerationPath'),
+  workspaceSource.indexOf('function GenerationLane'),
+)
 const actionRoundTripSql = readFileSync(
   'test-fixtures/project-fork-lineage/runtime-action-roundtrip.sql',
   'utf8',
@@ -301,6 +309,30 @@ assert(
   buildPathSource.includes('<ProjectForkGenerationWorkspace') &&
     buildPathSource.includes('lineage={props.lineage}'),
   'ProjectForkBuildPath lineage mode must delegate to the shared production workspace',
+)
+assert(
+  workspaceSource.includes('data-fork-generation-pipeline') &&
+  workspaceSource.includes('data-fork-generation-prompt-node') &&
+    workspaceSource.includes('data-fork-generation-response-node') &&
+    workspaceSource.includes('data-fork-generation-source-socket') &&
+    workspaceSource.includes('data-fork-generation-source-socket-core') &&
+    workspaceSource.includes('w-[min(82vw,320px)]') &&
+    workspaceSource.includes('w-[min(88vw,748px)]') &&
+    workspaceSource.includes('gap-[104px]') &&
+    workspaceSource.includes('Inherited ${generationKind === \'root\' ? \'source\' : \'fork\'} path') &&
+    workspaceSource.includes('Active fork continuation') &&
+    workspaceSource.includes('strokeWidth="16"') &&
+    workspaceSource.includes('strokeWidth="12"') &&
+    !workspaceSource.includes('<circle'),
+  'depth-10 workspace must extend the approved compact-inherited/wide-active fork composition with square nodes, the square response socket, and the bordered orange connector unchanged',
+)
+assert(
+  activePathSource.includes('data-fork-generation-active-path') &&
+    activePathSource.includes('data-fork-generation-pipeline') &&
+    activePathSource.includes('generation.localSteps.map') &&
+    activePathSource.includes('<ActiveGenerationStep') &&
+    !activeStepSource.includes('data-fork-generation-pipeline'),
+  'the active fork continuation must use one shared orange spine across every local prompt-response step, never one disconnected pipe per step',
 )
 assert(
   buildPathSource.includes('reconciledFinalArtifact.matchedArtifact.sourceStepId') &&

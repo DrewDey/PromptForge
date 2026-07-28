@@ -247,11 +247,11 @@ const lineageSnapshotExpression = `(() => {
       workspaceOverflowing:authoritativeViewport.scrollWidth > authoritativeViewport.clientWidth + 1,
       edgeGeometry,
       rootPipeColor:(()=>{
-        const rail=generations[0]?.querySelector('[data-fork-generation-step] > span');
+        const rail=generations[0]?.querySelector('[data-fork-generation-pipeline]');
         return rail ? getComputedStyle(rail).backgroundColor : '';
       })(),
       forkPipeColors:generations.slice(1).flatMap((generation)=>{
-        const rail=generation.querySelector('[data-fork-generation-step] > span');
+        const rail=generation.querySelector('[data-fork-generation-pipeline]');
         return rail ? [getComputedStyle(rail).backgroundColor] : [];
       }),
       connectorStrokes:[...root.querySelectorAll('[data-fork-generation-connector] path')]

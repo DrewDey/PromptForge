@@ -3,12 +3,44 @@ import type {
   SourceRunPackageStep,
 } from './source-run-package'
 
-export function sourceRunDefaultStepNumber(sourceRun: SourceRunPackage) {
-  const finalPath = sourceRun.final_artifact_path
-  const defaultStep = sourceRun.steps.find((step) => (
-    step.artifact_version_path === finalPath ||
-    step.generated_files?.includes(finalPath ?? '')
-  ))
+function publicArtifactPath(filePath?: string | null) {
+  return filePath?.startsWith('public/artifacts/') ? filePath : null
+}
+
+export function sourceRunCanonicalArtifactPath(
+  sourceRun: SourceRunPackage,
+  preparedArtifactPath?: string | null,
+) {
+  const declaredFinalPath = publicArtifactPath(sourceRun.final_artifact_path)
+  if (declaredFinalPath) return declaredFinalPath
+
+  const preparedFinalPath = publicArtifactPath(preparedArtifactPath)
+  if (preparedFinalPath) return preparedFinalPath
+
+  for (const step of [...sourceRun.steps].reverse()) {
+    const artifactVersionPath = publicArtifactPath(step.artifact_version_path)
+    if (artifactVersionPath) return artifactVersionPath
+
+    const generatedFilePath = [...(step.generated_files ?? [])]
+      .reverse()
+      .find((filePath) => publicArtifactPath(filePath))
+    if (generatedFilePath) return generatedFilePath
+  }
+
+  return null
+}
+
+export function sourceRunDefaultStepNumber(
+  sourceRun: SourceRunPackage,
+  preparedArtifactPath?: string | null,
+) {
+  const finalPath = sourceRunCanonicalArtifactPath(sourceRun, preparedArtifactPath)
+  const defaultStep = finalPath
+    ? sourceRun.steps.find((step) => (
+        step.artifact_version_path === finalPath ||
+        step.generated_files?.includes(finalPath)
+      ))
+    : null
 
   return defaultStep?.step_number ?? sourceRun.steps[sourceRun.steps.length - 1]?.step_number
 }
@@ -20,12 +52,9 @@ export function sourceRunDisplayArtifactFiles(
 ) {
   const files = new Set<string>()
   const artifactVersionPath = step.artifact_version_path
-  const finalArtifactPath = sourceRun.final_artifact_path?.startsWith('public/artifacts/')
-    ? sourceRun.final_artifact_path
-    : preparedArtifactPath?.startsWith('public/artifacts/')
-      ? preparedArtifactPath
-      : null
-  const isDefaultStep = step.step_number === sourceRunDefaultStepNumber(sourceRun)
+  const finalArtifactPath = sourceRunCanonicalArtifactPath(sourceRun, preparedArtifactPath)
+  const isDefaultStep =
+    step.step_number === sourceRunDefaultStepNumber(sourceRun, preparedArtifactPath)
 
   if (isDefaultStep && finalArtifactPath?.startsWith('public/artifacts/')) {
     files.add(finalArtifactPath)

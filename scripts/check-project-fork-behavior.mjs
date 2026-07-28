@@ -56,11 +56,84 @@ const {
   serializeProjectForkSourceForNotes,
 } = transpiledModule.exports
 
+const sourceRunPresentationSource = readFileSync(
+  'src/lib/source-run-presentation.ts',
+  'utf8',
+)
+const {
+  outputText: sourceRunPresentationOutput,
+  diagnostics: sourceRunPresentationDiagnostics,
+} = ts.transpileModule(sourceRunPresentationSource, {
+  compilerOptions: {
+    module: ts.ModuleKind.CommonJS,
+    target: ts.ScriptTarget.ES2022,
+    esModuleInterop: true,
+  },
+  reportDiagnostics: true,
+})
+
+if (sourceRunPresentationDiagnostics?.length) {
+  const messages = sourceRunPresentationDiagnostics
+    .map((diagnostic) => diagnostic.messageText)
+    .join('\n')
+  throw new Error(`Unable to transpile source-run-presentation.ts:\n${messages}`)
+}
+
+const sourceRunPresentationModule = { exports: {} }
+new Script(sourceRunPresentationOutput, {
+  filename: 'source-run-presentation.transpiled.cjs',
+}).runInNewContext({
+  exports: sourceRunPresentationModule.exports,
+  module: sourceRunPresentationModule,
+  require(specifier) {
+    if (specifier === './source-run-package') return {}
+    throw new Error(`Unexpected require from source-run-presentation.ts: ${specifier}`)
+  },
+  Set,
+  Array,
+  String,
+})
+
+const {
+  sourceRunDefaultStepNumber,
+  sourceRunDisplayArtifactFiles,
+} = sourceRunPresentationModule.exports
+
 const failures = []
 
 function assert(condition, message) {
   if (!condition) failures.push(message)
 }
+
+const hpLegacyPackage = JSON.parse(
+  readFileSync('seed-runs/hp-10bii-financial-calculator-claude-opus-48.json', 'utf8'),
+)
+const hpPreparedArtifactPath =
+  'public/artifacts/hp-10bii-financial-calculator-claude-opus-48.html'
+const hpStepOneArtifacts = sourceRunDisplayArtifactFiles(
+  hpLegacyPackage,
+  hpLegacyPackage.steps[0],
+  hpPreparedArtifactPath,
+)
+const hpStepTwoArtifacts = sourceRunDisplayArtifactFiles(
+  hpLegacyPackage,
+  hpLegacyPackage.steps[1],
+  hpPreparedArtifactPath,
+)
+assert(
+  sourceRunDefaultStepNumber(hpLegacyPackage, hpPreparedArtifactPath) === 2,
+  'a legacy package without final_artifact_path must resolve its prepared canonical artifact to the containing step',
+)
+assert(
+  hpStepOneArtifacts.length === 1 &&
+    hpStepOneArtifacts[0].endsWith('-initial.html'),
+  'a legacy package must preserve the genuine initial artifact on its non-default step',
+)
+assert(
+  hpStepTwoArtifacts.length === 1 &&
+    hpStepTwoArtifacts[0] === hpPreparedArtifactPath,
+  'a legacy package default step must expose exactly the prepared canonical artifact',
+)
 
 const sourceSteps = [
   {

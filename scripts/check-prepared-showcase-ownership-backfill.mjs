@@ -526,8 +526,10 @@ function verifyWorkflowSource() {
     }
   }
   if (
-    !sourceRunPresentation.includes("preparedArtifactPath?.startsWith('public/artifacts/')") ||
-    !sourceRunPresentation.includes('const isDefaultStep = step.step_number === sourceRunDefaultStepNumber(sourceRun)') ||
+    !sourceRunPresentation.includes('sourceRunCanonicalArtifactPath(') ||
+    !sourceRunPresentation.includes('if (preparedFinalPath) return preparedFinalPath') ||
+    !sourceRunPresentation.includes('const defaultStep = finalPath') ||
+    !sourceRunPresentation.includes('sourceRunDefaultStepNumber(sourceRun, preparedArtifactPath)') ||
     !sourceRunPresentation.includes("if (isDefaultStep && finalArtifactPath?.startsWith('public/artifacts/'))") ||
     !sourceRunPresentation.includes("} else if (artifactVersionPath?.startsWith('public/artifacts/'))")
   ) {

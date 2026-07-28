@@ -53,6 +53,7 @@ import { getPublicModelIdentityLabel } from '@/lib/public-model-labels'
 import type { SourceRunPackage, SourceRunPackageStep } from '@/lib/source-run-package'
 import { loadSourceRunPackage } from '@/lib/source-run-package'
 import {
+  sourceRunCanonicalArtifactPath,
   sourceRunDefaultStepNumber,
   sourceRunDisplayArtifactFiles,
   sourceRunResponseCapturePresentation,
@@ -106,9 +107,13 @@ function sourceRunModelIdentity(
 }
 
 function artifactTitle(project: PreparedShowcaseProject, step: SourceRunPackageStep, finalArtifactPath?: string) {
-  const isDefault =
-    step.artifact_version_path === finalArtifactPath ||
-    step.generated_files?.includes(finalArtifactPath ?? '')
+  const isDefault = Boolean(
+    finalArtifactPath &&
+    (
+      step.artifact_version_path === finalArtifactPath ||
+      step.generated_files?.includes(finalArtifactPath)
+    ),
+  )
 
   if (isDefault) return `${project.title} final`
   return `${project.title} step ${step.step_number}`
@@ -119,13 +124,17 @@ function artifactVersionsForStep(
   sourceRun: SourceRunPackage,
   project: PreparedShowcaseProject,
 ): SourceRunShowcaseArtifactVersion[] {
-  const finalArtifactPath = sourceRun.final_artifact_path
+  const preparedArtifactPath = project.artifactPath.startsWith('/artifacts/')
+    ? `public${project.artifactPath}`
+    : null
+  const finalArtifactPath = sourceRunCanonicalArtifactPath(
+    sourceRun,
+    preparedArtifactPath,
+  )
   const files = sourceRunDisplayArtifactFiles(
     sourceRun,
     step,
-    project.artifactPath.startsWith('/artifacts/')
-      ? `public${project.artifactPath}`
-      : null,
+    preparedArtifactPath,
   )
 
   return files.reduce<SourceRunShowcaseArtifactVersion[]>((versions, filePath, index) => {
@@ -153,6 +162,13 @@ function toShowcaseStep(
   project: PreparedShowcaseProject,
   stepIdentityScope?: string,
 ): SourceRunShowcaseStep {
+  const preparedArtifactPath = project.artifactPath.startsWith('/artifacts/')
+    ? `public${project.artifactPath}`
+    : null
+  const finalArtifactPath = sourceRunCanonicalArtifactPath(
+    sourceRun,
+    preparedArtifactPath,
+  )
   const projectStep = project.steps.find((item) => item.stepNumber === step.step_number)
   const artifactVersions = artifactVersionsForStep(
     step,
@@ -163,8 +179,7 @@ function toShowcaseStep(
     artifactVersions.find((version) => version.isDefault) ??
     artifactVersions[artifactVersions.length - 1]
   const isDefault =
-    step.artifact_version_path === sourceRun.final_artifact_path ||
-    step.generated_files?.includes(sourceRun.final_artifact_path ?? '')
+    step.step_number === sourceRunDefaultStepNumber(sourceRun, preparedArtifactPath)
   const responseCapture = sourceRunResponseCapturePresentation(sourceRun, step)
 
   return {
@@ -179,7 +194,7 @@ function toShowcaseStep(
     responseLabel: responseCapture.label,
     responseDisclosure: responseCapture.disclosure,
     artifactPath: primaryArtifact?.artifactPath,
-    artifactTitle: primaryArtifact?.artifactTitle ?? artifactTitle(project, step, sourceRun.final_artifact_path),
+    artifactTitle: primaryArtifact?.artifactTitle ?? artifactTitle(project, step, finalArtifactPath ?? undefined),
     artifactVersions,
     callout: primaryArtifact && isDefault
       ? {
@@ -474,6 +489,13 @@ export default async function PreparedSourceRunPage({
 
   const sourceRun = sourceRunPackage
   const pageRoute = route ?? project.href
+  const preparedArtifactPath = project.artifactPath.startsWith('/artifacts/')
+    ? `public${project.artifactPath}`
+    : null
+  const canonicalArtifactPath = sourceRunCanonicalArtifactPath(
+    sourceRun,
+    preparedArtifactPath,
+  )
   const providerName = getProviderName(sourceRun, project)
   const usesModelVariants = Boolean(modelVariantSet && activeModelVariant)
   const stepIdentityScope = activeModelVariant?.sourceRunId
@@ -674,14 +696,14 @@ export default async function PreparedSourceRunPage({
         projectTitle={project.title}
         sourceModelVariantId={activeModelVariant?.databaseId}
         sourceRunId={currentSourceRunId}
-        sourceArtifactPath={activeModelVariant?.finalArtifactPath ?? sourceRun.final_artifact_path}
+        sourceArtifactPath={activeModelVariant?.finalArtifactPath ?? canonicalArtifactPath ?? undefined}
         sourceArtifactSha256={sourceRun.artifact_sha256}
         providerName={providerName}
         steps={steps}
         forkNetwork={forkNetwork}
         forkContext={forkContext}
         allowForks
-        defaultStepNumber={sourceRunDefaultStepNumber(sourceRun)}
+        defaultStepNumber={sourceRunDefaultStepNumber(sourceRun, preparedArtifactPath)}
         initialArtifactPath={resumeArtifactPath}
         trackResume={projectContext.isAuthenticated}
         acknowledgeModelUpdates={acknowledgeModelUpdates}

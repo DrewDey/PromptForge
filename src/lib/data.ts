@@ -94,6 +94,7 @@ import {
 } from './project-model-variants'
 import { loadSourceRunPackage } from './source-run-package'
 import {
+  sourceRunCanonicalArtifactPath,
   sourceRunDisplayArtifactFiles,
   sourceRunResponseCapturePresentation,
 } from './source-run-presentation'
@@ -611,6 +612,13 @@ function preparedForkContinuationSteps(
 
   if (project.sourceRunPackageFile) {
     const sourceRun = loadSourceRunPackage(project.sourceRunPackageFile)
+    const preparedArtifactPath = project.artifactPath.startsWith('/artifacts/')
+      ? `public${project.artifactPath}`
+      : null
+    const canonicalArtifactPath = sourceRunCanonicalArtifactPath(
+      sourceRun,
+      preparedArtifactPath,
+    )
     return sourceRun.steps
       .filter((step) => step.step_number > forkPoint)
       .map((step) => {
@@ -619,19 +627,17 @@ function preparedForkContinuationSteps(
         const artifactVersions = sourceRunDisplayArtifactFiles(
           sourceRun,
           step,
-          project.artifactPath.startsWith('/artifacts/')
-            ? `public${project.artifactPath}`
-            : null,
+          preparedArtifactPath,
         ).flatMap((filePath, index) => {
           const artifactPath = publicForkArtifactPath(filePath)
           if (!artifactPath) return []
           return [{
             id: `${project.id}:${project.sourceRunId}:step:${step.step_number}:artifact:${index + 1}`,
             artifactPath,
-            artifactTitle: filePath === sourceRun.final_artifact_path
+            artifactTitle: filePath === canonicalArtifactPath
               ? `${project.title} final`
               : `${project.title} step ${step.step_number}`,
-            isDefault: filePath === sourceRun.final_artifact_path,
+            isDefault: filePath === canonicalArtifactPath,
           }]
         })
 

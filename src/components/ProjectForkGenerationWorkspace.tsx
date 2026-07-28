@@ -382,7 +382,7 @@ function GenerationStep({
 
   return (
     <article
-      className="relative grid gap-2 pl-10"
+      className="relative grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2 pl-10"
       data-fork-generation-step={step.id}
       data-display-level={generation.displayLevel}
       data-generation-index={generation.generationIndex}

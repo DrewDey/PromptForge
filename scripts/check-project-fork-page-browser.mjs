@@ -818,22 +818,42 @@ async function verifyArtifactDisplay(client, sessionId, snapshot, label) {
   const targets = [...new Set(snapshot.artifactPaths.filter(Boolean))]
 
   for (const expectedPath of targets) {
-    const selected = await client.send('Runtime.evaluate', {
-      expression: `(() => {
+    const selected = await waitForValue(
+      client,
+      sessionId,
+      `(() => {
         const expected=${JSON.stringify(expectedPath)};
-        const button=[...document.querySelectorAll('[data-fork-display-artifact]')]
+        const root=document.querySelector('[data-project-fork-build-path]');
+        const button=[...root?.querySelectorAll('[data-fork-display-artifact]') || []]
           .find((node)=>node.getAttribute('data-fork-display-artifact')===expected);
         const artifact=button?.closest('[data-fork-generation-artifact]');
-        const artifactId=artifact?.getAttribute('data-artifact-id') || '';
-        button?.click();
-        return { clicked:Boolean(button), artifactId };
+        const artifactId=button?.getAttribute('data-artifact-id')
+          || artifact?.getAttribute('data-artifact-id')
+          || '';
+        return {
+          found:Boolean(button),
+          artifactId,
+          authoritative:Boolean(root?.querySelector('[data-fork-generation-workspace]')),
+          buttonTag:button?.tagName || '',
+          buttonLabel:button?.getAttribute('aria-label') || button?.textContent?.trim() || '',
+          generationArtifact:Boolean(artifact),
+        };
       })()`,
-      returnByValue: true,
+      (value) => value?.found && Boolean(value.artifactId),
+      `${label} exact inline artifact identity for ${expectedPath}`,
+    )
+    const expectedArtifactId = selected.artifactId
+    await client.send('Runtime.evaluate', {
+      expression: `(() => {
+        const expected=${JSON.stringify(expectedPath)};
+        const root=document.querySelector('[data-project-fork-build-path]');
+        [...root?.querySelectorAll('[data-fork-display-artifact]') || []]
+          .find((node)=>(
+            node.getAttribute('data-fork-display-artifact')===expected &&
+            node.getAttribute('data-artifact-id')===${JSON.stringify(expectedArtifactId)}
+          ))?.click();
+      })()`,
     }, sessionId)
-    const expectedArtifactId = selected.result.value?.artifactId ?? ''
-    if (!selected.result.value?.clicked || !expectedArtifactId) {
-      throw new Error(`${label} did not expose exact inline artifact identity for ${expectedPath}.`)
-    }
 
     const mounted = await waitForValue(
       client,

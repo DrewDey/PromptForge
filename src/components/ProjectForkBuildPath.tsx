@@ -465,6 +465,7 @@ function ArtifactActions({
                     artifact.id,
                   )}
                   data-fork-display-artifact={artifact.artifactPath}
+                  data-artifact-id={artifact.id}
                   aria-pressed={isSelected}
                   className={[
                     'inline-flex min-h-10 items-center justify-center border px-3 py-2 text-xs font-black uppercase tracking-[0.1em] transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue',

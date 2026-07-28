@@ -312,6 +312,7 @@ function ArtifactActions({
                     artifact.id,
                   )}
                   data-fork-display-artifact={artifact.artifactPath}
+                  data-artifact-id={artifact.id}
                   aria-pressed={isSelected}
                   aria-label={`${isSelected ? 'Displayed' : 'Display'} ${artifact.artifactTitle} from level ${displayLevel}`}
                   className={[

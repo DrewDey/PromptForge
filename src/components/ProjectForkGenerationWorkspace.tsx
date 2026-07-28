@@ -647,7 +647,6 @@ export default function ProjectForkGenerationWorkspace({
   const currentGenerationProjectId = currentGeneration?.projectId
   const viewportRef = useRef<HTMLDivElement | null>(null)
   const canvasRef = useRef<HTMLDivElement | null>(null)
-  const laneVisibilityRef = useRef(new Map<number, number>())
   const [activeLevel, setActiveLevel] = useState(currentGeneration?.displayLevel ?? 1)
   const [connectors, setConnectors] = useState<ConnectorMeasurement[]>([])
   const publicSourceEvidence = sourceEvidence ?? resolvePublicSourceEvidence(null)
@@ -776,7 +775,6 @@ export default function ProjectForkGenerationWorkspace({
     const canvas = canvasRef.current
     if (!viewport || !canvas) return
 
-    laneVisibilityRef.current.clear()
     const syncBoundaryLevel = () => {
       // Chrome scroll snap can settle a few CSS pixels before the mathematical
       // edge because of scroll margins and fractional layout coordinates.
@@ -792,40 +790,43 @@ export default function ProjectForkGenerationWorkspace({
       }
       return false
     }
-    const observer = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        const displayLevel = Number.parseInt(
-          (entry.target as HTMLElement).dataset.displayLevel ?? '',
-          10,
-        )
-        if (!Number.isFinite(displayLevel)) continue
-        laneVisibilityRef.current.set(displayLevel, entry.intersectionRatio)
-      }
-
+    const syncCenteredLevel = () => {
       if (syncBoundaryLevel()) return
 
-      let nextLevel = generations[0]?.displayLevel ?? 1
-      let largestRatio = -1
-      for (const [displayLevel, ratio] of laneVisibilityRef.current) {
-        if (ratio > largestRatio) {
-          nextLevel = displayLevel
-          largestRatio = ratio
+      const viewportCenter = viewport.scrollLeft + viewport.clientWidth / 2
+      let centeredLevel: number | null = null
+      let smallestDistance = Number.POSITIVE_INFINITY
+      for (const lane of canvas.querySelectorAll<HTMLElement>('[data-fork-generation]')) {
+        const displayLevel = Number.parseInt(lane.dataset.displayLevel ?? '', 10)
+        if (!Number.isFinite(displayLevel)) continue
+        const laneCenter = lane.offsetLeft + lane.offsetWidth / 2
+        const distance = Math.abs(laneCenter - viewportCenter)
+        if (distance < smallestDistance) {
+          centeredLevel = displayLevel
+          smallestDistance = distance
         }
       }
-      if (largestRatio > 0) setActiveLevel(nextLevel)
-    }, {
+      if (centeredLevel !== null) setActiveLevel(centeredLevel)
+    }
+    let animationFrame = 0
+    const scheduleCenteredLevelSync = () => {
+      window.cancelAnimationFrame(animationFrame)
+      animationFrame = window.requestAnimationFrame(syncCenteredLevel)
+    }
+    const observer = new IntersectionObserver(scheduleCenteredLevelSync, {
       root: viewport,
       threshold: [0.25, 0.5, 0.75],
     })
 
     canvas.querySelectorAll<HTMLElement>('[data-fork-generation]')
       .forEach((lane) => observer.observe(lane))
-    viewport.addEventListener('scroll', syncBoundaryLevel, { passive: true })
-    syncBoundaryLevel()
+    viewport.addEventListener('scroll', scheduleCenteredLevelSync, { passive: true })
+    scheduleCenteredLevelSync()
 
     return () => {
+      window.cancelAnimationFrame(animationFrame)
       observer.disconnect()
-      viewport.removeEventListener('scroll', syncBoundaryLevel)
+      viewport.removeEventListener('scroll', scheduleCenteredLevelSync)
     }
   }, [generations])
 

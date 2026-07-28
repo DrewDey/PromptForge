@@ -672,6 +672,7 @@ export default function ProjectForkGenerationWorkspace({
   const canvasRef = useRef<HTMLDivElement | null>(null)
   const [activeLevel, setActiveLevel] = useState(currentGeneration?.displayLevel ?? 1)
   const activeLevelRef = useRef(activeLevel)
+  const positionedCurrentProjectRef = useRef(currentGenerationProjectId)
   const setActiveViewLevel = useCallback((displayLevel: number) => {
     activeLevelRef.current = displayLevel
     setActiveLevel(displayLevel)
@@ -823,11 +824,6 @@ export default function ProjectForkGenerationWorkspace({
 
     const syncBoundaryLevel = () => {
       if (viewport.scrollWidth <= viewport.clientWidth + 1) {
-        setActiveViewLevel(
-          currentGenerationDisplayLevel
-          ?? generations.at(-1)?.displayLevel
-          ?? 1,
-        )
         return true
       }
       const lanes = canvas.querySelectorAll<HTMLElement>('[data-fork-generation]')
@@ -899,10 +895,18 @@ export default function ProjectForkGenerationWorkspace({
     if (currentGenerationDisplayLevel !== undefined) {
       positionViewportAtLevel(currentGenerationDisplayLevel, 'auto')
     }
+    if (positionedCurrentProjectRef.current !== currentGenerationProjectId) {
+      positionedCurrentProjectRef.current = currentGenerationProjectId
+      const animationFrame = window.requestAnimationFrame(() => {
+        setActiveViewLevel(currentGenerationDisplayLevel ?? 1)
+      })
+      return () => window.cancelAnimationFrame(animationFrame)
+    }
   }, [
     currentGenerationDisplayLevel,
     currentGenerationProjectId,
     positionViewportAtLevel,
+    setActiveViewLevel,
   ])
 
   useEffect(() => {

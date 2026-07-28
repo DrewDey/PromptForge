@@ -778,12 +778,15 @@ export default function ProjectForkGenerationWorkspace({
 
     laneVisibilityRef.current.clear()
     const syncBoundaryLevel = () => {
+      // Chrome scroll snap can settle a few CSS pixels before the mathematical
+      // edge because of scroll margins and fractional layout coordinates.
+      const boundaryEpsilon = 8
       const maximumScrollLeft = Math.max(0, viewport.scrollWidth - viewport.clientWidth)
-      if (viewport.scrollLeft <= 2) {
+      if (viewport.scrollLeft <= boundaryEpsilon) {
         setActiveLevel(generations[0]?.displayLevel ?? 1)
         return true
       }
-      if (maximumScrollLeft - viewport.scrollLeft <= 2) {
+      if (maximumScrollLeft - viewport.scrollLeft <= boundaryEpsilon) {
         setActiveLevel(generations.at(-1)?.displayLevel ?? 1)
         return true
       }

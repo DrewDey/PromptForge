@@ -140,6 +140,11 @@ function fixture(overrides = {}) {
 
 const valid = buildProjectForkLineageTruth(fixture())
 assert.equal(valid.integrity.kind, 'complete')
+assert.equal(valid.generations[0].presentation.localSteps[0].sourceModelVariantId, undefined)
+assert.equal(
+  valid.generations[1].incomingEdge.sourceResponse.modelVariantId,
+  undefined,
+)
 assert.equal(valid.generations.length, 10)
 assert.equal(
   JSON.stringify(valid.generations.map((node) => node.displayLevel)),
@@ -157,6 +162,69 @@ assert.equal(valid.eligibility.allowed, false)
 assert.equal(valid.eligibility.reason, 'max-depth')
 assert.equal(valid.eligibility.currentStoredDepth, PROJECT_FORK_MAX_STORED_DEPTH)
 assert.equal(valid.eligibility.nextStoredDepth, null)
+
+const validModelVariantInput = fixture()
+validModelVariantInput.nodes[0].presentation.localSteps[0].sourceModelVariantId =
+  'variant-project-1'
+validModelVariantInput.nodes[0].presentation.localSteps[0].sourceStepId = 'step-1'
+validModelVariantInput.nodes[0].presentation.localSteps[0].sourceStepNumber = 1
+validModelVariantInput.nodes[0].presentation.localSteps[0]
+  .artifactVersions[0].sourceModelVariantId = 'variant-project-1'
+validModelVariantInput.nodes[1].forkSource.sourceModelVariantId =
+  'variant-project-1'
+const validModelVariant = buildProjectForkLineageTruth(validModelVariantInput)
+assert.equal(validModelVariant.integrity.kind, 'complete')
+assert.equal(
+  validModelVariant.generations[0].presentation.localSteps[0].sourceStepId,
+  'step-1',
+)
+assert.equal(
+  validModelVariant.generations[1].incomingEdge.sourceResponse.modelVariantId,
+  'variant-project-1',
+)
+
+const nonexistentVariantInput = structuredClone(validModelVariantInput)
+nonexistentVariantInput.nodes[1].forkSource.sourceModelVariantId =
+  'variant-does-not-exist'
+const nonexistentVariant = buildProjectForkLineageTruth(nonexistentVariantInput)
+assert.equal(nonexistentVariant.integrity.kind, 'invalid')
+assert.equal(nonexistentVariant.eligibility.allowed, false)
+assert.equal(
+  nonexistentVariant.generations[1].forkSource.sourceModelVariantId,
+  'variant-does-not-exist',
+)
+assert(nonexistentVariant.integrity.issues.some((issue) => (
+  issue.kind === 'source-model-variant-mismatch' &&
+  issue.observed === 'variant-does-not-exist'
+)))
+
+const foreignVariantInput = structuredClone(validModelVariantInput)
+foreignVariantInput.nodes[0].presentation.localSteps[0].sourceModelVariantId =
+  'variant-foreign-project'
+foreignVariantInput.nodes[0].presentation.localSteps[0]
+  .artifactVersions[0].sourceModelVariantId = 'variant-foreign-project'
+const foreignVariant = buildProjectForkLineageTruth(foreignVariantInput)
+assert.equal(foreignVariant.integrity.kind, 'invalid')
+assert(foreignVariant.integrity.issues.some((issue) => (
+  issue.kind === 'source-model-variant-mismatch'
+)))
+
+const wrongVariantRunInput = structuredClone(validModelVariantInput)
+wrongVariantRunInput.nodes[1].forkSource.sourceRunId = 'run-wrong'
+const wrongVariantRun = buildProjectForkLineageTruth(wrongVariantRunInput)
+assert.equal(wrongVariantRun.integrity.kind, 'invalid')
+assert(wrongVariantRun.integrity.issues.some((issue) => (
+  issue.kind === 'source-run-mismatch'
+)))
+
+const wrongVariantArtifactInput = structuredClone(validModelVariantInput)
+wrongVariantArtifactInput.nodes[1].forkSource.sourceArtifactPath =
+  'public/artifacts/wrong-variant.html'
+const wrongVariantArtifact = buildProjectForkLineageTruth(wrongVariantArtifactInput)
+assert.equal(wrongVariantArtifact.integrity.kind, 'invalid')
+assert(wrongVariantArtifact.integrity.issues.some((issue) => (
+  issue.kind === 'source-artifact-mismatch'
+)))
 
 const idMismatchInput = fixture()
 idMismatchInput.nodes[1].forkSource.sourceStepId = 'wrong-step-id'

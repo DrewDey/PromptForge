@@ -42,6 +42,9 @@ export type ProjectForkSourceStep = {
   responsePackageId: string
   sourceModelVariantId?: string
   sourceRunId?: string
+  /** Exact persisted response evidence; never a DOM/package anchor. */
+  sourceStepId?: string
+  sourceStepNumber?: number
   artifactPath?: string | null
   artifactSha256?: string | null
   artifactVersions?: ProjectForkArtifactVersion[]
@@ -218,6 +221,7 @@ export type ProjectForkLineageIssueKind =
   | 'invalid-branch-index'
   | 'family-mismatch'
   | 'source-project-mismatch'
+  | 'source-model-variant-mismatch'
   | 'source-run-mismatch'
   | 'source-step-mismatch'
   | 'source-artifact-mismatch'
@@ -989,6 +993,54 @@ export function buildProjectForkLineageTruth<TProject = unknown>({
         sourceStep,
         forkSource.sourceArtifactPath,
       )
+      if (
+        forkSource.sourceModelVariantId &&
+        (
+          !sourceStep ||
+          sourceStep.sourceModelVariantId !== forkSource.sourceModelVariantId
+        )
+      ) {
+        integrityKind = strongerLineageIntegrity(integrityKind, 'invalid')
+        affectedProjectId ??= node.projectId
+        issues.push(lineageIssue('source-model-variant-mismatch', {
+          projectId: node.projectId,
+          expected: sourceStep?.sourceModelVariantId
+            ?? 'exact-selected-step-model-variant',
+          observed: forkSource.sourceModelVariantId,
+        }))
+      }
+      if (
+        forkSource.sourceModelVariantId &&
+        (
+          !artifactVersion ||
+          artifactVersion.sourceModelVariantId !== forkSource.sourceModelVariantId
+        )
+      ) {
+        integrityKind = strongerLineageIntegrity(integrityKind, 'invalid')
+        affectedProjectId ??= node.projectId
+        issues.push(lineageIssue('source-model-variant-mismatch', {
+          projectId: node.projectId,
+          expected: artifactVersion?.sourceModelVariantId
+            ?? 'exact-selected-artifact-model-variant',
+          observed: forkSource.sourceModelVariantId,
+        }))
+      }
+      if (
+        forkSource.sourceModelVariantId &&
+        (
+          !forkSource.sourceRunId ||
+          !artifactVersion?.sourceRunId ||
+          forkSource.sourceRunId !== artifactVersion.sourceRunId
+        )
+      ) {
+        integrityKind = strongerLineageIntegrity(integrityKind, 'invalid')
+        affectedProjectId ??= node.projectId
+        issues.push(lineageIssue('source-run-mismatch', {
+          projectId: node.projectId,
+          expected: artifactVersion?.sourceRunId ?? 'exact-model-variant-run',
+          observed: forkSource.sourceRunId ?? null,
+        }))
+      }
       if (
         forkSource.sourceRunId &&
         artifactVersion?.sourceRunId &&

@@ -279,6 +279,13 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'Private lineage trigger remains executable by PUBLIC.';
   END IF;
+  IF has_function_privilege(
+    'public',
+    'private.project_fork_tuple_is_valid(text,uuid,text,text,integer,text,text,text,text,integer,integer,text,boolean)',
+    'EXECUTE'
+  ) THEN
+    RAISE EXCEPTION 'Private lineage tuple validator remains executable by PUBLIC.';
+  END IF;
   IF NOT has_function_privilege(
     'anon',
     'public.read_public_project_fork_lineages(uuid[])',

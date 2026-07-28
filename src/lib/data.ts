@@ -617,6 +617,7 @@ function preparedForkContinuationSteps(
   project: PreparedShowcaseProject,
   forkSource: ProjectForkSource,
   sourceRunOverride?: SourceRunPackage | null,
+  sourceModelVariantId?: string,
 ): ProjectForkContinuationStep[] {
   const forkPoint = forkSource.sourceStepNumber ?? 0
 
@@ -651,6 +652,7 @@ function preparedForkContinuationSteps(
               ? `${project.title} final`
               : `${project.title} step ${step.step_number}`,
             artifactSha256: step.artifact_sha256,
+            sourceModelVariantId,
             sourceRunId,
             sourceStepId,
             sourceStepNumber: step.step_number,
@@ -667,7 +669,10 @@ function preparedForkContinuationSteps(
           responseLabel: responseCapture.label,
           responseDisclosure: responseCapture.disclosure,
           responsePackageId: `${project.id}:${sourceRunId}:response:${step.step_number}`,
+          sourceModelVariantId,
           sourceRunId,
+          sourceStepId: `${project.id}:${sourceRunId}:step:${step.step_number}`,
+          sourceStepNumber: step.step_number,
           artifactPath: artifactVersions.find((artifact) => artifact.isDefault)?.artifactPath
             ?? artifactVersions.at(-1)?.artifactPath
             ?? null,
@@ -688,6 +693,8 @@ function preparedForkContinuationSteps(
       promptText: step.content,
       responseText: step.resultContent,
       responsePackageId: step.id,
+      sourceStepId: step.id,
+      sourceStepNumber: step.stepNumber,
       artifactPath: step.stepNumber === project.steps.at(-1)?.stepNumber ? project.artifactPath : null,
       artifactVersions: step.stepNumber === project.steps.at(-1)?.stepNumber
         ? [{
@@ -734,7 +741,12 @@ function hydratePreparedForkItem(item: ProjectForkNetworkItem): ProjectForkNetwo
     childArtifactKnownIssueExplanation: checkedChildVariant
       ? getProjectModelVariantKnownIssueExplanation(checkedChildVariant)
       : null,
-    continuationSteps: preparedForkContinuationSteps(project, item.forkSource),
+    continuationSteps: preparedForkContinuationSteps(
+      project,
+      item.forkSource,
+      undefined,
+      checkedChildVariant?.databaseId,
+    ),
   }
 }
 
@@ -842,15 +854,18 @@ function resolvePreparedLineageSourceRun(
       return {
         sourceRun: variant.sourceRunPackage,
         sourceRunId: variant.sourceRunId,
+        sourceModelVariantId: variant.databaseId,
       }
     }
     if (
+      !outgoingChildForkSource?.sourceModelVariantId &&
       project.sourceRunPackageFile &&
       project.sourceRunId === requestedSourceRunId
     ) {
       return {
         sourceRun: loadSourceRunPackage(project.sourceRunPackageFile),
         sourceRunId: requestedSourceRunId,
+        sourceModelVariantId: undefined,
       }
     }
     return null
@@ -858,9 +873,14 @@ function resolvePreparedLineageSourceRun(
 
   if (project.sourceRunPackageFile) {
     const sourceRun = loadSourceRunPackage(project.sourceRunPackageFile)
+    const sourceRunId = sourceRun.source_run_id ?? project.sourceRunId
+    const registeredVariant = variantSet?.variants.find((candidate) => (
+      candidate.sourceRunId === sourceRunId
+    ))
     return {
       sourceRun,
-      sourceRunId: sourceRun.source_run_id ?? project.sourceRunId,
+      sourceRunId,
+      sourceModelVariantId: registeredVariant?.databaseId,
     }
   }
 
@@ -871,6 +891,7 @@ function resolvePreparedLineageSourceRun(
     ? {
         sourceRun: defaultVariant.sourceRunPackage,
         sourceRunId: defaultVariant.sourceRunId,
+        sourceModelVariantId: defaultVariant.databaseId,
       }
     : null
 }
@@ -918,6 +939,7 @@ function getCodeBackedLineageNode(
                 branchIndex: 0,
               },
               sourceRun,
+              selectedSourceRun?.sourceModelVariantId,
             )
           : [],
       },

@@ -4,12 +4,165 @@
 -- descendants. The first fork keeps the historical stored depth 0, so valid
 -- persisted fork depths are 0..8. This migration never rewrites lineage.
 
+CREATE SCHEMA IF NOT EXISTS private;
+REVOKE ALL ON SCHEMA private FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION private.project_fork_tuple_is_valid(
+  p_source_project_id TEXT,
+  p_source_model_variant_id UUID,
+  p_source_run_id TEXT,
+  p_source_step_id TEXT,
+  p_source_step_number INT,
+  p_source_artifact_path TEXT,
+  p_source_artifact_sha256 TEXT,
+  p_parent_submission_id TEXT,
+  p_family_id TEXT,
+  p_stored_depth INT,
+  p_branch_index INT,
+  p_fork_project_id TEXT,
+  p_allow_grandfathered BOOLEAN
+)
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SET search_path = ''
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.prompts AS parent
+    WHERE parent.id::TEXT = p_source_project_id
+      AND parent.status = 'approved'
+      AND p_source_step_id IS NOT NULL
+      AND p_source_step_number > 0
+      AND p_branch_index BETWEEN 0 AND 9
+      AND (
+        (
+          parent.fork_source_project_id IS NULL
+          AND p_stored_depth = 0
+          AND p_parent_submission_id IS NULL
+          AND p_family_id = parent.id::TEXT || ':' || p_source_step_id
+        )
+        OR (
+          parent.fork_source_project_id IS NOT NULL
+          AND parent.fork_depth BETWEEN 0 AND 7
+          AND p_stored_depth = parent.fork_depth + 1
+          AND p_parent_submission_id = parent.id::TEXT
+          AND NULLIF(BTRIM(COALESCE(parent.prompt_family_id, '')), '') IS NOT NULL
+          AND p_family_id = parent.prompt_family_id
+        )
+      )
+      AND (
+        (
+          p_source_model_variant_id IS NOT NULL
+          AND p_source_run_id IS NOT NULL
+          AND p_source_artifact_path IS NOT NULL
+          AND p_source_artifact_sha256 IS NOT NULL
+          AND EXISTS (
+            SELECT 1
+            FROM public.project_model_variant_artifacts AS artifact
+            JOIN public.project_model_variants AS variant
+              ON variant.id = artifact.model_variant_id
+            WHERE variant.id = p_source_model_variant_id
+              AND variant.project_id = parent.id
+              AND variant.source_run_id = p_source_run_id
+              AND variant.status IN ('published', 'historical')
+              AND artifact.source_step_id = p_source_step_id
+              AND artifact.source_step_number = p_source_step_number
+              AND artifact.artifact_path = p_source_artifact_path
+              AND artifact.artifact_sha256 = p_source_artifact_sha256
+          )
+        )
+        OR (
+          p_source_model_variant_id IS NULL
+          AND p_source_run_id IS NOT NULL
+          AND p_source_artifact_path IS NOT NULL
+          AND p_source_artifact_sha256 IS NOT NULL
+          AND EXISTS (
+            SELECT 1
+            FROM public.source_run_submissions AS source_run
+            WHERE source_run.extracted_prompt_id = parent.id
+              AND source_run.id::TEXT = p_source_run_id
+              AND source_run.status = 'draft_created'
+              AND source_run.intake_evidence IS NOT NULL
+              AND p_source_step_id = (
+                parent.id::TEXT || ':' || source_run.id::TEXT
+                || ':step:' || p_source_step_number::TEXT
+              )
+              AND source_run.intake_evidence->>'prompt_count' =
+                p_source_step_number::TEXT
+              AND source_run.intake_evidence->>'final_artifact_path' =
+                p_source_artifact_path
+              AND source_run.intake_evidence->>'final_artifact_sha256' =
+                p_source_artifact_sha256
+          )
+        )
+        OR (
+          p_source_model_variant_id IS NULL
+          AND p_source_run_id IS NULL
+          AND p_source_artifact_path IS NULL
+          AND p_source_artifact_sha256 IS NULL
+          AND EXISTS (
+            SELECT 1
+            FROM public.prompt_steps AS step
+            WHERE step.prompt_id = parent.id
+              AND step.id::TEXT = p_source_step_id
+              AND step.step_number = p_source_step_number
+              AND step.result_content IS NOT NULL
+          )
+        )
+        OR (
+          p_allow_grandfathered
+          AND p_source_model_variant_id IS NULL
+          AND p_source_run_id IS NULL
+          AND p_fork_project_id IS NOT NULL
+          AND EXISTS (
+            SELECT 1
+            FROM private.prepared_legacy_seed_profile_bindings AS binding
+            WHERE binding.project_id::TEXT = p_fork_project_id
+          )
+          AND EXISTS (
+            SELECT 1
+            FROM public.source_run_submissions AS publication
+            WHERE publication.extracted_prompt_id::TEXT = p_fork_project_id
+              AND publication.fork_source_project_id = p_source_project_id
+              AND publication.fork_source_model_variant_id IS NULL
+              AND publication.fork_source_run_id IS NULL
+              AND publication.fork_source_step_id = p_source_step_id
+              AND publication.fork_source_step_number = p_source_step_number
+              AND publication.fork_source_artifact_path
+                IS NOT DISTINCT FROM p_source_artifact_path
+              AND publication.fork_source_artifact_sha256
+                IS NOT DISTINCT FROM p_source_artifact_sha256
+              AND publication.fork_parent_submission_id
+                IS NOT DISTINCT FROM p_parent_submission_id
+              AND publication.prompt_family_id IS NOT DISTINCT FROM p_family_id
+              AND publication.fork_depth IS NOT DISTINCT FROM p_stored_depth
+              AND publication.fork_branch_index
+                IS NOT DISTINCT FROM p_branch_index
+          )
+        )
+      )
+  );
+$$;
+
+REVOKE ALL ON FUNCTION private.project_fork_tuple_is_valid(
+  TEXT, UUID, TEXT, TEXT, INT, TEXT, TEXT, TEXT, TEXT, INT, INT, TEXT, BOOLEAN
+) FROM PUBLIC, anon, authenticated;
+
 DO $$
 DECLARE
   prompt_over_depth BIGINT;
   intake_over_depth BIGINT;
   community_over_depth BIGINT;
   unfinished_over_depth BIGINT;
+  invalid_prompts BIGINT;
+  invalid_prompt_ids TEXT[];
+  invalid_source_runs BIGINT;
+  invalid_source_run_ids TEXT[];
+  invalid_community BIGINT;
+  invalid_community_ids TEXT[];
+  invalid_unfinished BIGINT;
+  invalid_unfinished_ids TEXT[];
   intake_publication_drift BIGINT;
   community_publication_drift BIGINT;
 BEGIN
@@ -43,6 +196,137 @@ BEGIN
       intake_over_depth,
       community_over_depth,
       unfinished_over_depth;
+  END IF;
+
+  SELECT
+    COUNT(*),
+    (ARRAY_AGG(fork.id::TEXT ORDER BY fork.id))[1:5]
+  INTO invalid_prompts, invalid_prompt_ids
+  FROM public.prompts AS fork
+  WHERE fork.fork_source_project_id IS NOT NULL
+    AND NOT private.project_fork_tuple_is_valid(
+      fork.fork_source_project_id,
+      fork.fork_source_model_variant_id,
+      fork.fork_source_run_id,
+      fork.fork_source_step_id,
+      fork.fork_source_step_number,
+      fork.fork_source_artifact_path,
+      fork.fork_source_artifact_sha256,
+      fork.fork_parent_submission_id,
+      fork.prompt_family_id,
+      fork.fork_depth,
+      fork.fork_branch_index,
+      fork.id::TEXT,
+      TRUE
+    );
+
+  SELECT
+    COUNT(*),
+    (ARRAY_AGG(fork.id::TEXT ORDER BY fork.id))[1:5]
+  INTO invalid_source_runs, invalid_source_run_ids
+  FROM public.source_run_submissions AS fork
+  WHERE fork.fork_source_project_id IS NOT NULL
+    AND NOT private.project_fork_tuple_is_valid(
+      fork.fork_source_project_id,
+      fork.fork_source_model_variant_id,
+      fork.fork_source_run_id,
+      fork.fork_source_step_id,
+      fork.fork_source_step_number,
+      fork.fork_source_artifact_path,
+      fork.fork_source_artifact_sha256,
+      fork.fork_parent_submission_id,
+      fork.prompt_family_id,
+      fork.fork_depth,
+      fork.fork_branch_index,
+      fork.extracted_prompt_id::TEXT,
+      TRUE
+    );
+
+  SELECT
+    COUNT(*),
+    (ARRAY_AGG(fork.id::TEXT ORDER BY fork.id))[1:5]
+  INTO invalid_community, invalid_community_ids
+  FROM public.community_project_submissions AS fork
+  WHERE fork.fork_source_project_id IS NOT NULL
+    AND NOT private.project_fork_tuple_is_valid(
+      fork.fork_source_project_id,
+      fork.fork_source_model_variant_id,
+      fork.fork_source_run_id,
+      fork.fork_source_step_id,
+      fork.fork_source_step_number,
+      fork.fork_source_artifact_path,
+      fork.fork_source_artifact_sha256,
+      fork.fork_parent_submission_id,
+      fork.prompt_family_id,
+      fork.fork_depth,
+      fork.fork_branch_index,
+      fork.prompt_id::TEXT,
+      TRUE
+    );
+
+  SELECT
+    COUNT(*),
+    (ARRAY_AGG(
+      state.user_id::TEXT || ':' || state.project_id::TEXT
+      ORDER BY state.user_id, state.project_id
+    ))[1:5]
+  INTO invalid_unfinished, invalid_unfinished_ids
+  FROM public.user_project_states AS state
+  LEFT JOIN public.prompts AS project ON project.id = state.project_id
+  WHERE state.fork_started_at IS NOT NULL
+    AND (
+      project.id IS NULL
+      OR project.status <> 'approved'
+      OR state.fork_depth NOT BETWEEN 0 AND 8
+      OR state.fork_branch_index NOT BETWEEN 0 AND 9
+      OR (
+        project.fork_source_project_id IS NULL
+        AND (
+          state.fork_depth <> 0
+          OR state.fork_parent_submission_id IS NOT NULL
+          OR state.fork_prompt_family_id IS DISTINCT FROM
+            project.id::TEXT || ':' || state.selected_step_id
+        )
+      )
+      OR (
+        project.fork_source_project_id IS NOT NULL
+        AND (
+          project.fork_depth >= 8
+          OR state.fork_depth <> project.fork_depth + 1
+          OR state.fork_parent_submission_id IS DISTINCT FROM project.id::TEXT
+          OR state.fork_prompt_family_id IS DISTINCT FROM project.prompt_family_id
+        )
+      )
+      OR NOT EXISTS (
+        SELECT 1
+        FROM public.project_model_variants AS variant
+        JOIN public.project_model_variant_artifacts AS artifact
+          ON artifact.model_variant_id = variant.id
+        WHERE variant.id = state.selected_model_variant_id
+          AND variant.project_id = state.project_id
+          AND variant.source_run_id = state.selected_source_run_id
+          AND variant.status IN ('published', 'historical')
+          AND artifact.source_step_id = state.selected_step_id
+          AND artifact.source_step_number = state.selected_step_number
+          AND artifact.artifact_path = state.selected_artifact_path
+          AND artifact.artifact_sha256 = state.selected_artifact_sha256
+      )
+    );
+
+  IF invalid_prompts > 0
+    OR invalid_source_runs > 0
+    OR invalid_community > 0
+    OR invalid_unfinished > 0 THEN
+    RAISE EXCEPTION
+      'Fork-lineage migration blocked: invalid legacy tuples (prompts % ids %, source runs % ids %, community % ids %, unfinished % ids %).',
+      invalid_prompts,
+      invalid_prompt_ids,
+      invalid_source_runs,
+      invalid_source_run_ids,
+      invalid_community,
+      invalid_community_ids,
+      invalid_unfinished,
+      invalid_unfinished_ids;
   END IF;
 
   SELECT COUNT(*) INTO intake_publication_drift
@@ -530,7 +814,28 @@ AS $$
         FROM lineage
         WHERE NOT cycle
           AND hop >= 10
-      ) AS truncated
+      ) AS truncated,
+      EXISTS (
+        SELECT 1
+        FROM lineage AS fork
+        WHERE NOT fork.cycle
+          AND fork.fork_source_project_id IS NOT NULL
+          AND NOT private.project_fork_tuple_is_valid(
+            fork.fork_source_project_id,
+            fork.fork_source_model_variant_id,
+            fork.fork_source_run_id,
+            fork.fork_source_step_id,
+            fork.fork_source_step_number,
+            fork.fork_source_artifact_path,
+            fork.fork_source_artifact_sha256,
+            fork.fork_parent_submission_id,
+            fork.prompt_family_id,
+            fork.fork_depth,
+            fork.fork_branch_index,
+            fork.id::TEXT,
+            TRUE
+          )
+      ) AS invalid
   ),
   projected AS (
     SELECT
@@ -634,9 +939,53 @@ AS $$
                     'source_run_id', variant.source_run_id,
                     'source_step_id', artifact.source_step_id,
                     'source_step_number', artifact.source_step_number,
-                    'is_default', variant.is_default
+                    'is_default', variant.is_default,
+                    'is_selected', (
+                      (
+                        lineage.hop = 0
+                        AND variant.is_default
+                      )
+                      OR (
+                        lineage.hop > 0
+                        AND EXISTS (
+                          SELECT 1
+                          FROM lineage AS child
+                          WHERE child.hop = lineage.hop - 1
+                            AND (
+                              child.fork_source_model_variant_id = variant.id
+                              OR (
+                                child.fork_source_model_variant_id IS NULL
+                                AND child.fork_source_run_id =
+                                  variant.source_run_id
+                              )
+                            )
+                        )
+                      )
+                    )
                   )
                   ORDER BY
+                    (
+                      (
+                        lineage.hop = 0
+                        AND variant.is_default
+                      )
+                      OR (
+                        lineage.hop > 0
+                        AND EXISTS (
+                          SELECT 1
+                          FROM lineage AS child
+                          WHERE child.hop = lineage.hop - 1
+                            AND (
+                              child.fork_source_model_variant_id = variant.id
+                              OR (
+                                child.fork_source_model_variant_id IS NULL
+                                AND child.fork_source_run_id =
+                                  variant.source_run_id
+                              )
+                            )
+                        )
+                      )
+                    ) DESC,
                     variant.is_default DESC,
                     artifact.created_at,
                     artifact.id
@@ -669,6 +1018,7 @@ AS $$
       WHEN facts.cycle THEN 'cycle'
       WHEN facts.truncated THEN 'truncated'
       WHEN facts.missing_parent THEN 'missing-parent'
+      WHEN facts.invalid THEN 'invalid'
       ELSE 'complete'
     END,
     'affected_project_id', CASE
@@ -691,6 +1041,29 @@ AS $$
               AND parent.status = 'approved'
           )
         ORDER BY child.hop
+        LIMIT 1
+      )
+      WHEN facts.invalid THEN (
+        SELECT fork.id::TEXT
+        FROM lineage AS fork
+        WHERE NOT fork.cycle
+          AND fork.fork_source_project_id IS NOT NULL
+          AND NOT private.project_fork_tuple_is_valid(
+            fork.fork_source_project_id,
+            fork.fork_source_model_variant_id,
+            fork.fork_source_run_id,
+            fork.fork_source_step_id,
+            fork.fork_source_step_number,
+            fork.fork_source_artifact_path,
+            fork.fork_source_artifact_sha256,
+            fork.fork_parent_submission_id,
+            fork.prompt_family_id,
+            fork.fork_depth,
+            fork.fork_branch_index,
+            fork.id::TEXT,
+            TRUE
+          )
+        ORDER BY fork.hop
         LIMIT 1
       )
       ELSE NULL

@@ -179,7 +179,24 @@ try {
     throw new Error('Migration did not fail explicitly on unexpected over-depth data.')
   }
   harness.apply(read('test-fixtures/project-fork-lineage/clear-preflight-overdepth.sql'))
+  harness.apply(read('test-fixtures/project-fork-lineage/preflight-provenance.sql'))
+  const provenanceBlocked = harness.apply(read(migration), true)
+  const provenanceBlockedOutput =
+    `${provenanceBlocked.stdout}\n${provenanceBlocked.stderr}`
+  if (
+    provenanceBlocked.status === 0 ||
+    !provenanceBlockedOutput.includes('invalid legacy tuples') ||
+    !provenanceBlockedOutput.includes('prompts 4 ids') ||
+    !provenanceBlockedOutput.includes('71900000-0000-4000-8000-000000000001') ||
+    !provenanceBlockedOutput.includes('71900000-0000-4000-8000-000000000004')
+  ) {
+    throw new Error(
+      'Migration did not identify and abort on invalid legacy provenance tuples.',
+    )
+  }
+  harness.apply(read('test-fixtures/project-fork-lineage/clear-invalid-provenance.sql'))
   harness.apply(read(migration))
+  harness.apply(read('test-fixtures/project-fork-lineage/runtime-provenance-test.sql'))
   harness.apply(read('test-fixtures/project-fork-lineage/migration-transaction-test.sql'))
   console.log('Project fork lineage migration passed in disposable PostgreSQL 17.')
 } finally {

@@ -37,6 +37,7 @@ type RpcArtifact = {
   source_step_id?: unknown
   source_step_number?: unknown
   is_default?: unknown
+  is_selected?: unknown
 }
 
 type RpcStep = {
@@ -124,7 +125,9 @@ function parseArtifacts(value: unknown): ProjectForkArtifactVersion[] {
       sourceRunId: optionalString(row.source_run_id),
       sourceStepId: optionalString(row.source_step_id),
       sourceStepNumber: optionalInteger(row.source_step_number),
-      isDefault: row.is_default === true,
+      isDefault: typeof row.is_selected === 'boolean'
+        ? row.is_selected
+        : row.is_default === true,
     }
   })
 }
@@ -139,6 +142,8 @@ function parseSteps(value: unknown): ProjectForkContinuationStep[] {
       throw new Error('Fork lineage RPC returned an invalid step number.')
     }
     const artifacts = parseArtifacts(row.artifacts)
+    const selectedArtifact = artifacts.find((artifact) => artifact.isDefault)
+      ?? artifacts.at(-1)
     return {
       id,
       stepNumber,
@@ -148,12 +153,12 @@ function parseSteps(value: unknown): ProjectForkContinuationStep[] {
       responseLabel: optionalString(row.response_label),
       responseDisclosure: optionalString(row.response_disclosure),
       responsePackageId: id,
-      artifactPath: artifacts.find((artifact) => artifact.isDefault)?.artifactPath
-        ?? artifacts.at(-1)?.artifactPath
-        ?? null,
-      artifactSha256: artifacts.find((artifact) => artifact.isDefault)?.artifactSha256
-        ?? artifacts.at(-1)?.artifactSha256
-        ?? null,
+      sourceModelVariantId: selectedArtifact?.sourceModelVariantId,
+      sourceRunId: selectedArtifact?.sourceRunId,
+      sourceStepId: selectedArtifact?.sourceStepId,
+      sourceStepNumber: selectedArtifact?.sourceStepNumber,
+      artifactPath: selectedArtifact?.artifactPath ?? null,
+      artifactSha256: selectedArtifact?.artifactSha256 ?? null,
       artifactVersions: artifacts,
       forkHref: null,
     }

@@ -16,6 +16,11 @@ $$;
 
 CREATE SCHEMA IF NOT EXISTS private;
 
+CREATE TABLE private.prepared_legacy_seed_profile_bindings (
+  source_run_id UUID PRIMARY KEY,
+  project_id UUID NOT NULL UNIQUE
+);
+
 CREATE TABLE public.prompts (
   id UUID PRIMARY KEY,
   title TEXT NOT NULL,
@@ -113,6 +118,15 @@ CREATE TABLE public.user_project_states (
   project_id UUID NOT NULL,
   fork_started_at TIMESTAMPTZ,
   fork_depth INT NOT NULL DEFAULT 0,
+  fork_branch_index INT NOT NULL DEFAULT 0,
+  fork_parent_submission_id TEXT,
+  fork_prompt_family_id TEXT,
+  selected_model_variant_id UUID,
+  selected_source_run_id TEXT,
+  selected_step_id TEXT,
+  selected_step_number INT,
+  selected_artifact_path TEXT,
+  selected_artifact_sha256 TEXT,
   CONSTRAINT user_project_states_fork_depth_check
     CHECK (fork_depth BETWEEN 0 AND 9),
   PRIMARY KEY (user_id, project_id)

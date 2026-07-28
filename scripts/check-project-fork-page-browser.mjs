@@ -189,7 +189,7 @@ const lineageSnapshotExpression = `(() => {
       const text=[...node?.querySelectorAll('div') || []]
         .map((value)=>value.textContent?.trim() || '')
         .find((value)=>value.startsWith(label + ' ')) || '';
-      const match=text.match(new RegExp('^' + label + ' \\s*(\\d+)','i'));
+      const match=text.match(new RegExp('^' + label + ' \\\\s*(\\\\d+)','i'));
       return match ? Number(match[1]) : null;
     };
     const currentPrompts=[...current?.querySelectorAll('[data-fork-generation-prompt]') || []];
@@ -230,7 +230,11 @@ const lineageSnapshotExpression = `(() => {
       })),
       continuationResponses:currentResponses.map((node)=>({
         id:node.getAttribute('data-fork-generation-response'),
-        stepNumber:parseStepNumber(node,'Response'),
+        stepNumber:parseStepNumber(node,'Response') ?? parseStepNumber(
+          node.closest('[data-fork-generation-step]')
+            ?.querySelector('[data-fork-generation-prompt]'),
+          'Prompt'
+        ),
       })),
       artifactPaths:unique([...root.querySelectorAll('[data-fork-display-artifact]')]
         .map((node)=>node.getAttribute('data-fork-display-artifact'))),

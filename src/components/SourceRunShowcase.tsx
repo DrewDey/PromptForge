@@ -14,6 +14,7 @@ import {
   artifactDocumentKey,
   currentArtifactLoad,
 } from '@/lib/model-variant-ui.mjs'
+import { resolveExactArtifactPackage } from '@/lib/source-run-artifact-registry.mjs'
 import {
   artifactDownloadBridgeSource,
   buildProtectedArtifactWrapperDocument,
@@ -28,6 +29,7 @@ import { providerPublicShareHref } from '@/lib/provider-public-share'
 import {
   buildProjectResponseForkHref,
   groupProjectForkNetworkBySourceStep,
+  type ProjectForkContinuationStep,
   type ProjectForkLineageTruth,
   type ProjectForkNetworkItem,
   type ProjectForkSourceStep,
@@ -144,6 +146,44 @@ const STATIC_ARTIFACT_CSP = [
   "base-uri 'none'",
   "form-action 'none'",
 ].join('; ')
+
+function projectForkStepArtifactPackages(
+  step: ProjectForkContinuationStep,
+  providerName?: string | null,
+): ArtifactPackage[] {
+  const versions = [...(step.artifactVersions ?? [])]
+  if (
+    step.artifactPath &&
+    !versions.some((version) => version.artifactPath === step.artifactPath)
+  ) {
+    versions.push({
+      id: `${step.id}:artifact`,
+      artifactPath: step.artifactPath,
+      artifactTitle: `${step.promptTitle} artifact`,
+      artifactSha256: step.artifactSha256 ?? undefined,
+      isDefault: versions.length === 0,
+    })
+  }
+
+  return versions.map((version, index) => ({
+    id: version.id,
+    stepId: step.id,
+    stepNumber: step.stepNumber,
+    title: step.promptTitle,
+    prompt: step.promptText,
+    response: step.responseText ?? '',
+    responseCopyText: step.responseText ?? '',
+    responseLabel: step.responseLabel,
+    responseDisclosure: step.responseDisclosure,
+    artifactPath: version.artifactPath,
+    artifactTitle: version.artifactTitle,
+    artifactSha256: version.artifactSha256,
+    artifactOrdinal: index + 1,
+    artifactCount: versions.length,
+    isDefaultArtifact: Boolean(version.isDefault),
+    providerName: providerName ?? undefined,
+  }))
+}
 
 function artifactViewerHref(artifact: Pick<ArtifactPackage, 'artifactPath' | 'artifactTitle'>, providerName: string) {
   const query = new URLSearchParams({
@@ -1564,42 +1604,35 @@ export default function SourceRunShowcase({
   )
   const forkArtifactPackages = useMemo(
     () => forkNetwork.flatMap((fork) => (
-      (fork.continuationSteps ?? []).flatMap((step) => {
-        const versions = [...(step.artifactVersions ?? [])]
-        if (
-          step.artifactPath &&
-          !versions.some((version) => version.artifactPath === step.artifactPath)
-        ) {
-          versions.push({
-            id: `${step.id}:artifact`,
-            artifactPath: step.artifactPath,
-            artifactTitle: `${step.promptTitle} artifact`,
-            isDefault: versions.length === 0,
-          })
-        }
-
-        return versions.map<ArtifactPackage>((version, index) => ({
-          id: version.id,
-          stepId: step.id,
-          stepNumber: step.stepNumber,
-          title: step.promptTitle,
-          prompt: step.promptText,
-          response: step.responseText ?? '',
-          responseCopyText: step.responseText ?? '',
-          artifactPath: version.artifactPath,
-          artifactTitle: version.artifactTitle,
-          artifactOrdinal: index + 1,
-          artifactCount: versions.length,
-          isDefaultArtifact: Boolean(version.isDefault),
-          providerName: fork.childProviderName ?? undefined,
-        }))
-      })
+      (fork.continuationSteps ?? []).flatMap((step) => (
+        projectForkStepArtifactPackages(step, fork.childProviderName)
+      ))
     )),
     [forkNetwork],
   )
+  const lineageArtifactPackages = useMemo(() => {
+    const lineages = [
+      forkContext?.lineage,
+      ...forkNetwork.map((fork) => fork.lineageTruth),
+    ].filter((lineage): lineage is ProjectForkLineageTruth => Boolean(lineage))
+
+    return lineages.flatMap((lineage) => lineage.generations.flatMap((generation) => (
+      generation.presentation.localSteps.flatMap((step) => (
+        projectForkStepArtifactPackages(step, generation.presentation.providerName)
+      ))
+    )))
+  }, [forkContext?.lineage, forkNetwork])
   const displayPackages = useMemo(
-    () => [...packages, ...forkArtifactPackages],
-    [forkArtifactPackages, packages],
+    () => [...packages, ...forkArtifactPackages, ...lineageArtifactPackages],
+    [forkArtifactPackages, lineageArtifactPackages, packages],
+  )
+  const resolveArtifactPackage = useCallback(
+    (artifactPath: string, artifactId: string) => resolveExactArtifactPackage(
+      displayPackages,
+      artifactPath,
+      artifactId,
+    ),
+    [displayPackages],
   )
   const defaultStepPackages = packages.filter((pkg) => pkg.stepNumber === defaultStepNumber)
   const defaultPackage =
@@ -1876,10 +1909,11 @@ export default function SourceRunShowcase({
             sourceRunHref={forkContext.sourceRunHref ?? forkContext.branch.childSourceUrl}
             sourceEvidence={publicSourceEvidence}
             selectedArtifactPath={selectedPackage?.artifactPath}
+            isArtifactDisplayable={(artifactPath, artifactId) => Boolean(
+              resolveArtifactPackage(artifactPath, artifactId),
+            )}
             onDisplayArtifact={(artifactPath, _artifactTitle, artifactId) => {
-              const artifactPackage = displayPackages.find((pkg) => (
-                pkg.id === artifactId || pkg.artifactPath === artifactPath
-              ))
+              const artifactPackage = resolveArtifactPackage(artifactPath, artifactId)
               if (artifactPackage) selectArtifactPackage(artifactPackage.id)
             }}
           />
@@ -1895,10 +1929,11 @@ export default function SourceRunShowcase({
               sourceRunHref={activeForkContext.fork.childSourceUrl}
               sourceEvidence={activeForkSourceEvidence}
               selectedArtifactPath={selectedPackage?.artifactPath}
+              isArtifactDisplayable={(artifactPath, artifactId) => Boolean(
+                resolveArtifactPackage(artifactPath, artifactId),
+              )}
               onDisplayArtifact={(artifactPath, _artifactTitle, artifactId) => {
-                const artifactPackage = displayPackages.find((pkg) => (
-                  pkg.id === artifactId || pkg.artifactPath === artifactPath
-                ))
+                const artifactPackage = resolveArtifactPackage(artifactPath, artifactId)
                 if (artifactPackage) selectArtifactPackage(artifactPackage.id)
               }}
               onClose={() => {

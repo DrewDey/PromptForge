@@ -815,36 +815,56 @@ async function waitForLineage(client, sessionId, mode, label) {
 }
 
 async function verifyArtifactDisplay(client, sessionId, snapshot, label) {
-  const expectedPath = snapshot.artifactPaths[0]
-  await client.send('Runtime.evaluate', {
-    expression: `(() => {
-      const expected=${JSON.stringify(expectedPath)};
-      [...document.querySelectorAll('[data-fork-display-artifact]')]
-        .find((node)=>node.getAttribute('data-fork-display-artifact')===expected)?.click();
-    })()`,
-  }, sessionId)
+  const targets = [...new Set([
+    snapshot.artifactPaths[0],
+    snapshot.artifactPaths.at(-1),
+  ].filter(Boolean))]
 
-  const mounted = await waitForValue(
-    client,
-    sessionId,
-    `(() => {
-      const expected=${JSON.stringify(expectedPath)};
-      const frame=[...document.querySelectorAll('[data-artifact-package-id]')]
-        .find((node)=>node.getAttribute('data-artifact-path')===expected);
-      return {
-        found: Boolean(frame),
-        loading: Boolean(document.querySelector('[data-artifact-loading]')),
-        error: document.querySelector('[data-artifact-load-error]')?.getAttribute('data-artifact-load-error') || '',
-        iframe: Boolean(frame?.querySelector('iframe[srcdoc]')),
-        sandbox: frame?.querySelector('iframe')?.getAttribute('sandbox') || '',
-      };
-    })()`,
-    (value) => value?.found && !value.loading && value.iframe,
-    `${label} inline artifact ${expectedPath}`,
-  )
-  if (mounted.error) throw new Error(`${label} inline artifact rendered ${mounted.error}.`)
-  if (mounted.sandbox !== 'allow-scripts allow-pointer-lock') {
-    throw new Error(`${label} inline artifact has unexpected sandbox tokens: ${mounted.sandbox}.`)
+  for (const expectedPath of targets) {
+    const selected = await client.send('Runtime.evaluate', {
+      expression: `(() => {
+        const expected=${JSON.stringify(expectedPath)};
+        const button=[...document.querySelectorAll('[data-fork-display-artifact]')]
+          .find((node)=>node.getAttribute('data-fork-display-artifact')===expected);
+        const artifact=button?.closest('[data-fork-generation-artifact]');
+        const artifactId=artifact?.getAttribute('data-artifact-id') || '';
+        button?.click();
+        return { clicked:Boolean(button), artifactId };
+      })()`,
+      returnByValue: true,
+    }, sessionId)
+    const expectedArtifactId = selected.result.value?.artifactId ?? ''
+    if (!selected.result.value?.clicked || !expectedArtifactId) {
+      throw new Error(`${label} did not expose exact inline artifact identity for ${expectedPath}.`)
+    }
+
+    const mounted = await waitForValue(
+      client,
+      sessionId,
+      `(() => {
+        const expectedPath=${JSON.stringify(expectedPath)};
+        const expectedArtifactId=${JSON.stringify(expectedArtifactId)};
+        const frame=document.querySelector('[data-artifact-package-id]');
+        return {
+          found: Boolean(
+            frame?.getAttribute('data-artifact-path')===expectedPath &&
+            frame?.getAttribute('data-artifact-package-id')===expectedArtifactId
+          ),
+          packageId:frame?.getAttribute('data-artifact-package-id') || '',
+          path:frame?.getAttribute('data-artifact-path') || '',
+          loading: Boolean(document.querySelector('[data-artifact-loading]')),
+          error: document.querySelector('[data-artifact-load-error]')?.getAttribute('data-artifact-load-error') || '',
+          iframe: Boolean(frame?.querySelector('iframe[srcdoc]')),
+          sandbox: frame?.querySelector('iframe')?.getAttribute('sandbox') || '',
+        };
+      })()`,
+      (value) => value?.found && !value.loading && value.iframe,
+      `${label} inline artifact ${expectedArtifactId} at ${expectedPath}`,
+    )
+    if (mounted.error) throw new Error(`${label} inline artifact rendered ${mounted.error}.`)
+    if (mounted.sandbox !== 'allow-scripts allow-pointer-lock') {
+      throw new Error(`${label} inline artifact has unexpected sandbox tokens: ${mounted.sandbox}.`)
+    }
   }
 }
 

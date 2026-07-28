@@ -19,7 +19,7 @@
     "build:model-variant-launch": "node scripts/build-project-model-variant-manifests.mjs",
     "release:model-variants": "node scripts/release-project-model-variants.mjs",
     "measure:artifacts": "node scripts/measure-html-artifacts.mjs",
-    "check:project-forks": "node scripts/check-project-forks.mjs && node scripts/check-project-fork-behavior.mjs && node scripts/check-prompt-comparisons.mjs && node scripts/check-project-fork-depth-10.mjs",
+    "check:project-forks": "node scripts/check-source-run-artifact-registry.mjs && node scripts/check-project-forks.mjs && node scripts/check-project-fork-behavior.mjs && node scripts/check-prompt-comparisons.mjs && node scripts/check-project-fork-depth-10.mjs",
     "check:project-fork-lineage-db": "node scripts/check-project-fork-lineage-db.mjs",
     "check:project-fork-lineage-contract": "node scripts/check-project-fork-lineage-contract.mjs",
     "check:project-fork-browser": "node scripts/check-project-fork-page-browser.mjs",

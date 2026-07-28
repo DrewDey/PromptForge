@@ -94,6 +94,7 @@ export type ProjectForkGenerationWorkspaceProps = {
   selectedArtifactPath?: string | null
   artifactOpenHrefs?: Record<string, string | undefined>
   onClose?: () => void
+  isArtifactDisplayable?: (artifactPath: string, artifactId: string) => boolean
   onDisplayArtifact?: (artifactPath: string, artifactTitle: string, artifactId: string) => void
   className?: string
 }
@@ -245,6 +246,7 @@ function ArtifactActions({
   providerName,
   selectedArtifactPath,
   artifactOpenHrefs,
+  isArtifactDisplayable,
   onDisplayArtifact,
 }: {
   artifacts: ArtifactPresentation[]
@@ -253,6 +255,7 @@ function ArtifactActions({
   providerName?: string | null
   selectedArtifactPath?: string | null
   artifactOpenHrefs?: Record<string, string | undefined>
+  isArtifactDisplayable?: (artifactPath: string, artifactId: string) => boolean
   onDisplayArtifact?: (artifactPath: string, artifactTitle: string, artifactId: string) => void
 }) {
   if (artifacts.length === 0) return null
@@ -263,6 +266,10 @@ function ArtifactActions({
         const isSelected = artifact.artifactPath === selectedArtifactPath
         const openHref = artifactOpenHrefs?.[artifact.artifactPath]
           ?? artifactViewerHref(artifact, providerName)
+        const canDisplay = Boolean(
+          onDisplayArtifact &&
+          (isArtifactDisplayable?.(artifact.artifactPath, artifact.id) ?? true),
+        )
 
         return (
           <div
@@ -296,7 +303,7 @@ function ArtifactActions({
               )}
             </div>
             <div className="flex flex-wrap gap-2">
-              {onDisplayArtifact && (
+              {canDisplay && onDisplayArtifact && (
                 <button
                   type="button"
                   onClick={() => onDisplayArtifact(
@@ -343,6 +350,7 @@ function GenerationStep({
   allowForkAction,
   selectedArtifactPath,
   artifactOpenHrefs,
+  isArtifactDisplayable,
   onDisplayArtifact,
 }: {
   step: ProjectForkContinuationStep
@@ -354,6 +362,7 @@ function GenerationStep({
   allowForkAction: boolean
   selectedArtifactPath?: string | null
   artifactOpenHrefs?: Record<string, string | undefined>
+  isArtifactDisplayable?: (artifactPath: string, artifactId: string) => boolean
   onDisplayArtifact?: (artifactPath: string, artifactTitle: string, artifactId: string) => void
 }) {
   const tone = !generation.forkSource
@@ -465,6 +474,7 @@ function GenerationStep({
         providerName={providerName}
         selectedArtifactPath={selectedArtifactPath}
         artifactOpenHrefs={artifactOpenHrefs}
+        isArtifactDisplayable={isArtifactDisplayable}
         onDisplayArtifact={onDisplayArtifact}
       />
     </article>
@@ -478,6 +488,7 @@ function GenerationLane({
   eligibility,
   selectedArtifactPath,
   artifactOpenHrefs,
+  isArtifactDisplayable,
   onDisplayArtifact,
 }: {
   generation: ProjectForkGenerationPresentation
@@ -486,6 +497,7 @@ function GenerationLane({
   eligibility: ProjectForkWorkspaceModel['eligibility']
   selectedArtifactPath?: string | null
   artifactOpenHrefs?: Record<string, string | undefined>
+  isArtifactDisplayable?: (artifactPath: string, artifactId: string) => boolean
   onDisplayArtifact?: (artifactPath: string, artifactTitle: string, artifactId: string) => void
 }) {
   const incomingTargetId = generation.incomingEdge?.targetPrompt.stepId
@@ -573,6 +585,7 @@ function GenerationLane({
               allowForkAction={allowForkAction}
               selectedArtifactPath={selectedArtifactPath}
               artifactOpenHrefs={artifactOpenHrefs}
+              isArtifactDisplayable={isArtifactDisplayable}
               onDisplayArtifact={onDisplayArtifact}
             />
           ))
@@ -633,6 +646,7 @@ export default function ProjectForkGenerationWorkspace({
   selectedArtifactPath,
   artifactOpenHrefs,
   onClose,
+  isArtifactDisplayable,
   onDisplayArtifact,
   className = '',
 }: ProjectForkGenerationWorkspaceProps) {
@@ -1086,6 +1100,7 @@ export default function ProjectForkGenerationWorkspace({
               eligibility={lineage.eligibility}
               selectedArtifactPath={selectedArtifactPath}
               artifactOpenHrefs={artifactOpenHrefs}
+              isArtifactDisplayable={isArtifactDisplayable}
               onDisplayArtifact={onDisplayArtifact}
             />
           ))}

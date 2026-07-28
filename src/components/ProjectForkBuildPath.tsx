@@ -85,6 +85,7 @@ export type ProjectForkBuildPathProps = {
   selectedArtifactPath?: string | null
   artifactOpenHrefs?: Record<string, string | undefined>
   onClose?: () => void
+  isArtifactDisplayable?: (artifactPath: string, artifactId: string) => boolean
   onDisplayArtifact?: (artifactPath: string, artifactTitle: string, artifactId: string) => void
   className?: string
 }
@@ -412,6 +413,7 @@ function ArtifactActions({
   providerName,
   artifactOpenHrefs,
   selectedArtifactPath,
+  isArtifactDisplayable,
   onDisplayArtifact,
 }: {
   artifacts: ProjectForkBuildPathArtifact[]
@@ -419,6 +421,7 @@ function ArtifactActions({
   providerName?: string | null
   artifactOpenHrefs?: Record<string, string | undefined>
   selectedArtifactPath?: string | null
+  isArtifactDisplayable?: (artifactPath: string, artifactId: string) => boolean
   onDisplayArtifact?: (artifactPath: string, artifactTitle: string, artifactId: string) => void
 }) {
   if (artifacts.length === 0) return null
@@ -429,6 +432,10 @@ function ArtifactActions({
         const isSelected = selectedArtifactPath === artifact.artifactPath
         const openHref = artifactOpenHrefs?.[artifact.artifactPath]
           ?? artifactViewerHref(artifact, providerName)
+        const canDisplay = Boolean(
+          onDisplayArtifact &&
+          (isArtifactDisplayable?.(artifact.artifactPath, artifact.id) ?? true),
+        )
 
         return (
           <div
@@ -449,7 +456,7 @@ function ArtifactActions({
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
-              {onDisplayArtifact && (
+              {canDisplay && onDisplayArtifact && (
                 <button
                   type="button"
                   onClick={() => onDisplayArtifact(
@@ -496,6 +503,7 @@ function ContinuationStepCard({
   providerName,
   artifactOpenHrefs,
   selectedArtifactPath,
+  isArtifactDisplayable,
   onDisplayArtifact,
 }: {
   step: ProjectForkContinuationStep
@@ -504,6 +512,7 @@ function ContinuationStepCard({
   providerName?: string | null
   artifactOpenHrefs?: Record<string, string | undefined>
   selectedArtifactPath?: string | null
+  isArtifactDisplayable?: (artifactPath: string, artifactId: string) => boolean
   onDisplayArtifact?: (artifactPath: string, artifactTitle: string, artifactId: string) => void
 }) {
   const artifacts = continuationArtifacts(step)
@@ -605,6 +614,7 @@ function ContinuationStepCard({
             providerName={providerName}
             artifactOpenHrefs={artifactOpenHrefs}
             selectedArtifactPath={selectedArtifactPath}
+            isArtifactDisplayable={isArtifactDisplayable}
             onDisplayArtifact={onDisplayArtifact}
           />
         </div>
@@ -627,6 +637,7 @@ function LegacyProjectForkBuildPath({
   selectedArtifactPath,
   artifactOpenHrefs,
   onClose,
+  isArtifactDisplayable,
   onDisplayArtifact,
   className = '',
 }: ProjectForkBuildPathProps) {
@@ -1019,6 +1030,7 @@ function LegacyProjectForkBuildPath({
                     providerName={fork.childProviderName}
                     artifactOpenHrefs={artifactOpenHrefs}
                     selectedArtifactPath={selectedArtifactPath}
+                    isArtifactDisplayable={isArtifactDisplayable}
                     onDisplayArtifact={onDisplayArtifact}
                   />
                 ))}
@@ -1110,6 +1122,7 @@ export function ProjectForkBuildPath(props: ProjectForkBuildPathProps) {
         selectedArtifactPath={props.selectedArtifactPath}
         artifactOpenHrefs={props.artifactOpenHrefs}
         onClose={props.onClose}
+        isArtifactDisplayable={props.isArtifactDisplayable}
         onDisplayArtifact={props.onDisplayArtifact}
         className={props.className}
       />

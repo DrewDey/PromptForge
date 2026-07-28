@@ -17,6 +17,7 @@ import type {
   ProjectForkNetworkItem,
   ProjectForkSource,
   ProjectForkSourceStep,
+  ProjectForkLineageTruth,
 } from '@/lib/project-forks'
 import { resolveProjectForkPoint } from '@/lib/project-forks'
 import { ForkTruthDisclosure } from '@/components/ForkTruthDisclosure'
@@ -26,6 +27,7 @@ import {
   type PublicEvidenceTruth,
 } from '@/lib/public-source-evidence'
 import { providerPublicShareHref } from '@/lib/provider-public-share'
+import ProjectForkGenerationWorkspace from '@/components/ProjectForkGenerationWorkspace'
 
 export type ProjectForkBuildPathMode = 'parent' | 'child'
 
@@ -44,6 +46,7 @@ export type ProjectForkBuildPathArtifact = ProjectForkArtifactVersion & {
 
 export type ProjectForkBuildPathProps = {
   mode?: ProjectForkBuildPathMode
+  lineage?: ProjectForkLineageTruth | null
   sourceSteps: ProjectForkSourceStep[]
   forkSource?: ProjectForkSource
   branch: ProjectForkNetworkItem
@@ -584,7 +587,7 @@ function ContinuationStepCard({
   )
 }
 
-export function ProjectForkBuildPath({
+function LegacyProjectForkBuildPath({
   mode = 'parent',
   sourceSteps,
   forkSource,
@@ -1005,6 +1008,33 @@ export function ProjectForkBuildPath({
       </div>
     </section>
   )
+}
+
+export function ProjectForkBuildPath(props: ProjectForkBuildPathProps) {
+  if (props.lineage) {
+    const fork = props.forkSource
+      ? { ...props.branch, forkSource: props.forkSource }
+      : props.branch
+
+    return (
+      <ProjectForkGenerationWorkspace
+        lineage={props.lineage}
+        mode={props.mode ?? 'parent'}
+        branch={fork}
+        sourceProjectHref={props.sourceProjectHref}
+        branchHref={props.branchHref}
+        sourceRunHref={props.sourceRunHref}
+        sourceEvidence={props.sourceEvidence}
+        selectedArtifactPath={props.selectedArtifactPath}
+        artifactOpenHrefs={props.artifactOpenHrefs}
+        onClose={props.onClose}
+        onDisplayArtifact={props.onDisplayArtifact}
+        className={props.className}
+      />
+    )
+  }
+
+  return <LegacyProjectForkBuildPath {...props} />
 }
 
 export default ProjectForkBuildPath

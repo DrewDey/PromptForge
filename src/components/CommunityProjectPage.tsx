@@ -172,8 +172,12 @@ export default function CommunityProjectPage({
           {capsule.source_url && <a href={capsule.source_url} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-2 border border-surface-300 bg-white px-4 py-2 text-sm font-bold hover:border-brand-orange"><ExternalLink className="h-4 w-4" aria-hidden="true" /> Open checked source</a>}
         </section>
 
-        <div className="mx-auto mt-8 flex max-w-4xl flex-wrap gap-3">
-          {forkHref && <Link href={forkHref} className="inline-flex min-h-11 items-center gap-2 bg-[#2bd15f] px-4 py-2 text-sm font-black text-[#063b17]"><GitFork className="h-4 w-4" aria-hidden="true" /> Fork with attribution <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>}
+        <div
+          className="mx-auto mt-8 flex max-w-4xl flex-wrap gap-3"
+          data-community-fork-eligibility={forkHref ? 'allowed' : 'denied'}
+          data-community-fork-reason={lineageTruth?.eligibility.reason ?? 'unavailable'}
+        >
+          {forkHref && <Link href={forkHref} data-community-fork-action className="inline-flex min-h-11 items-center gap-2 bg-[#2bd15f] px-4 py-2 text-sm font-black text-[#063b17]"><GitFork className="h-4 w-4" aria-hidden="true" /> Fork with attribution <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>}
           <Link href={`/report/project/${prompt.id}`} className="inline-flex min-h-11 items-center border border-surface-300 bg-white px-4 py-2 text-sm font-bold text-surface-700 hover:border-red-300 hover:text-red-700">Report this project</Link>
         </div>
       </div>

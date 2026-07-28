@@ -28,6 +28,7 @@ import { providerPublicShareHref } from '@/lib/provider-public-share'
 import {
   buildProjectResponseForkHref,
   groupProjectForkNetworkBySourceStep,
+  type ProjectForkLineageTruth,
   type ProjectForkNetworkItem,
   type ProjectForkSourceStep,
 } from '@/lib/project-forks'
@@ -79,6 +80,7 @@ export type ArtifactPackage = Pick<
 export type SourceRunShowcaseForkContext = {
   sourceSteps: ProjectForkSourceStep[]
   branch: ProjectForkNetworkItem
+  lineage?: ProjectForkLineageTruth | null
   trail?: ProjectForkBuildPathCrumb[]
   sourceProjectHref?: string | null
   sourceRunHref?: string | null
@@ -1864,6 +1866,7 @@ export default function SourceRunShowcase({
         {forkContext ? (
           <ProjectForkBuildPath
             mode="child"
+            lineage={forkContext.lineage}
             sourceSteps={forkContext.sourceSteps}
             branch={forkContext.branch}
             trail={forkContext.trail}
@@ -1884,6 +1887,7 @@ export default function SourceRunShowcase({
           <div ref={activeForkStageRef}>
             <ProjectForkBuildPath
               mode="parent"
+              lineage={activeForkContext.fork.lineageTruth}
               sourceSteps={forkSourceSteps}
               branch={activeForkContext.fork}
               branchHref={activeForkContext.fork.childRoute}

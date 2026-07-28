@@ -803,7 +803,12 @@ export default async function PromptDetailPage({
           carries a quiet meta line (difficulty, step count, model) so the
           sticky surface doesn't read as a naked button — it reads as a
           "this is what you're forking" action panel. */}
-      <aside className="hidden lg:block" aria-label="Project actions">
+      <aside
+        className="hidden lg:block"
+        aria-label="Project actions"
+        data-generic-project-fork-eligibility={canForkDeeper ? 'allowed' : 'denied'}
+        data-generic-project-fork-reason={lineageTruth?.eligibility.reason ?? 'unavailable'}
+      >
         <div className="sticky top-16">
           <div className="border border-surface-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
             <div className="border-b border-primary-200 bg-primary-50 px-5 py-4 text-surface-900">
@@ -822,6 +827,7 @@ export default async function PromptDetailPage({
               {forkHref ? (
                 <Link
                   href={forkHref}
+                  data-generic-project-fork-action
                   className="flex w-full items-center justify-center gap-2 bg-brand-orange hover:bg-brand-orange-dark text-white text-sm font-semibold px-4 py-2.5 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2"
                 >
                   <GitFork className="w-4 h-4" aria-hidden="true" />
@@ -834,7 +840,7 @@ export default async function PromptDetailPage({
                   className="flex w-full cursor-not-allowed items-center justify-center gap-2 border border-surface-300 bg-surface-100 px-4 py-2.5 text-sm font-semibold text-surface-400"
                 >
                   <GitFork className="w-4 h-4" aria-hidden="true" />
-                  Max fork depth reached
+                  Fork unavailable
                 </button>
               )}
               <ul className="text-[11px] text-surface-500 space-y-1.5 pt-1 border-t border-surface-200/80">
@@ -891,6 +897,8 @@ export default async function PromptDetailPage({
     <nav
       aria-label="Project actions"
       className="lg:hidden fixed inset-x-0 bottom-0 z-40 border-t border-surface-800 bg-surface-900/92 backdrop-blur-md shadow-[0_-4px_20px_rgba(0,0,0,0.25)]"
+      data-generic-project-fork-eligibility={canForkDeeper ? 'allowed' : 'denied'}
+      data-generic-project-fork-reason={lineageTruth?.eligibility.reason ?? 'unavailable'}
     >
       <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3">
         <div className="min-w-0 flex-1">
@@ -902,6 +910,7 @@ export default async function PromptDetailPage({
         {forkHref ? (
           <Link
             href={forkHref}
+            data-generic-project-fork-action
             className="inline-flex items-center justify-center gap-1.5 bg-brand-orange hover:bg-brand-orange-dark text-white text-[13px] font-semibold px-3.5 py-2.5 transition-colors duration-200 shrink-0 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2"
           >
             <GitFork className="w-4 h-4" aria-hidden="true" />
@@ -914,7 +923,7 @@ export default async function PromptDetailPage({
             className="inline-flex shrink-0 cursor-not-allowed items-center justify-center gap-1.5 border border-surface-700 bg-surface-800 px-3.5 py-2.5 text-[13px] font-semibold text-surface-400"
           >
             <GitFork className="w-4 h-4" aria-hidden="true" />
-            Maxed
+            Unavailable
           </button>
         )}
       </div>

@@ -56,6 +56,7 @@ export default function ProjectForkNetworkExplorer({
       {selectedFork && (
         <ProjectForkBuildPath
           mode="parent"
+          lineage={selectedFork.lineageTruth}
           sourceSteps={sourceSteps}
           branch={selectedFork}
           branchHref={selectedFork.childRoute}

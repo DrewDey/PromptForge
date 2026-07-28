@@ -29,6 +29,7 @@ import {
 import { getProjectRouteOverride } from '@/lib/project-links'
 import type {
   ProjectForkContinuationStep,
+  ProjectForkLineageTruth,
   ProjectForkNetworkItem,
   ProjectForkSource,
   ProjectForkSourceStep,
@@ -306,6 +307,7 @@ function buildPreparedForkContext({
   childArtifactQualityStatus,
   childArtifactKnownIssueExplanation,
   canFork,
+  lineageTruth,
 }: {
   project: PreparedShowcaseProject
   sourceRun: SourceRunPackage
@@ -317,6 +319,7 @@ function buildPreparedForkContext({
   childArtifactQualityStatus: 'verified' | 'known-issue' | 'recorded'
   childArtifactKnownIssueExplanation: string | null
   canFork: boolean
+  lineageTruth: ProjectForkLineageTruth | null
 }): SourceRunShowcaseForkContext {
   const lineage = resolvePreparedShowcaseLineage(project)
   const registeredSource = getPreparedShowcaseProjectById(forkSource.sourceProjectId)
@@ -437,6 +440,7 @@ function buildPreparedForkContext({
   return {
     sourceSteps,
     branch,
+    lineage: lineageTruth,
     trail,
     sourceProjectHref: withModelRun(sourceRoute, forkSource.sourceRunId),
     sourceRunHref: childSourceUrl,
@@ -617,6 +621,7 @@ export default async function PreparedSourceRunPage({
         ? getProjectModelVariantKnownIssueExplanation(activeModelVariant)
         : null,
       canFork: lineageTruth?.eligibility.allowed === true,
+      lineageTruth,
     })
     : null
   const resumeArtifactPath = projectContext.state?.selectedSourceRunId === currentSourceRunId

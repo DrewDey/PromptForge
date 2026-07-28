@@ -513,12 +513,12 @@ function GenerationLane({
       id={`fork-generation-${generation.displayLevel}`}
       tabIndex={-1}
       className={[
-        'relative w-[min(82vw,400px)] shrink-0 scroll-mx-4 border-2 bg-white shadow-[0_18px_44px_rgba(24,24,27,0.09)] sm:w-[400px]',
+        'relative w-[min(82vw,400px)] shrink-0 border-2 bg-white shadow-[0_18px_44px_rgba(24,24,27,0.09)] sm:w-[400px]',
         snapAlignment === 'start'
-          ? 'snap-start'
+          ? 'snap-start scroll-mr-4'
           : snapAlignment === 'end'
-            ? 'snap-end'
-            : 'snap-center',
+            ? 'snap-end scroll-ml-4'
+            : 'snap-center scroll-mx-4',
         generation.isCurrent
           ? 'border-brand-blue ring-4 ring-brand-blue/10'
           : generationKind === 'root'
@@ -806,15 +806,26 @@ export default function ProjectForkGenerationWorkspace({
     if (!viewport || !canvas) return
 
     const syncBoundaryLevel = () => {
-      // The generation cards declare a one-rem scroll margin. Chrome may settle
-      // anywhere inside that snap margin instead of at the mathematical edge.
-      const boundaryEpsilon = 16
-      const maximumScrollLeft = Math.max(0, viewport.scrollWidth - viewport.clientWidth)
-      if (viewport.scrollLeft <= boundaryEpsilon) {
+      const lanes = canvas.querySelectorAll<HTMLElement>('[data-fork-generation]')
+      const firstLane = lanes[0]
+      const lastLane = lanes[lanes.length - 1]
+      const viewportRect = viewport.getBoundingClientRect()
+      const viewportStyle = window.getComputedStyle(viewport)
+      const paddingLeft = Number.parseFloat(viewportStyle.paddingLeft) || 0
+      const paddingRight = Number.parseFloat(viewportStyle.paddingRight) || 0
+      const scrollportLeft = viewportRect.left + viewport.clientLeft
+      const scrollportRight = scrollportLeft + viewport.clientWidth
+      const firstBoundaryDelta = firstLane
+        ? Math.abs(firstLane.getBoundingClientRect().left - (scrollportLeft + paddingLeft))
+        : Number.POSITIVE_INFINITY
+      const lastBoundaryDelta = lastLane
+        ? Math.abs(lastLane.getBoundingClientRect().right - (scrollportRight - paddingRight))
+        : Number.POSITIVE_INFINITY
+      if (firstBoundaryDelta <= 8) {
         setActiveLevel(generations[0]?.displayLevel ?? 1)
         return true
       }
-      if (maximumScrollLeft - viewport.scrollLeft <= boundaryEpsilon) {
+      if (lastBoundaryDelta <= 8) {
         setActiveLevel(generations.at(-1)?.displayLevel ?? 1)
         return true
       }
@@ -1046,7 +1057,7 @@ export default function ProjectForkGenerationWorkspace({
         aria-describedby={`fork-lineage-edges-${branch.id}`}
         tabIndex={0}
         onKeyDown={handleWorkspaceKeyDown}
-        className="max-w-full snap-x snap-mandatory touch-pan-x overflow-x-auto overflow-y-hidden overscroll-x-contain bg-surface-50 px-4 py-5 [scrollbar-gutter:stable] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand-orange sm:px-5"
+        className="max-w-full snap-x snap-mandatory scroll-px-4 touch-pan-x overflow-x-auto overflow-y-hidden overscroll-x-contain bg-surface-50 px-4 py-5 [scrollbar-gutter:stable] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand-orange sm:scroll-px-5 sm:px-5"
         data-fork-generation-workspace
       >
         <div

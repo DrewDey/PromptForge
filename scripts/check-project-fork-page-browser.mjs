@@ -1298,16 +1298,31 @@ async function verifyMobileLineage(client, sessionId, mode, label, screenshotPat
       `(() => {
         const root=document.querySelector('[data-project-fork-build-path]');
         const workspace=root?.querySelector('[data-fork-generation-workspace]');
-        const levels=[...root?.querySelectorAll('[data-fork-generation]') || []]
-          .map((node)=>node.getAttribute('data-display-level'));
+        const nodes=[...root?.querySelectorAll('[data-fork-generation]') || []];
+        const levels=nodes.map((node)=>node.getAttribute('data-display-level'));
+        const workspaceRect=workspace?.getBoundingClientRect();
+        const firstRect=nodes[0]?.getBoundingClientRect();
+        const paddingLeft=workspace
+          ? Number.parseFloat(getComputedStyle(workspace).paddingLeft) || 0
+          : 0;
+        const scrollportLeft=workspaceRect && workspace
+          ? workspaceRect.left+workspace.clientLeft
+          : 0;
         return {
           active:root?.querySelector('[data-fork-generation-nav][data-active-view="true"]')
             ?.getAttribute('data-fork-generation-nav') || '',
           first:levels[0] || '',
           left:workspace?.scrollLeft || 0,
+          alignmentDelta:workspaceRect && firstRect
+            ? Math.abs(firstRect.left-(scrollportLeft+paddingLeft))
+            : null,
         };
       })()`,
-      (value) => value?.active === value?.first && value.left <= 16,
+      (value) => (
+        value?.active === value?.first &&
+        Number.isFinite(value.alignmentDelta) &&
+        value.alignmentDelta <= 8
+      ),
       `${label} 390px first-level scroll synchronization`,
     )
     await client.send('Runtime.evaluate', {
@@ -1330,17 +1345,32 @@ async function verifyMobileLineage(client, sessionId, mode, label, screenshotPat
       `(() => {
         const root=document.querySelector('[data-project-fork-build-path]');
         const workspace=root?.querySelector('[data-fork-generation-workspace]');
-        const levels=[...root?.querySelectorAll('[data-fork-generation]') || []]
-          .map((node)=>node.getAttribute('data-display-level'));
+        const nodes=[...root?.querySelectorAll('[data-fork-generation]') || []];
+        const levels=nodes.map((node)=>node.getAttribute('data-display-level'));
         const max=(workspace?.scrollWidth || 0)-(workspace?.clientWidth || 0);
+        const workspaceRect=workspace?.getBoundingClientRect();
+        const lastRect=nodes.at(-1)?.getBoundingClientRect();
+        const paddingRight=workspace
+          ? Number.parseFloat(getComputedStyle(workspace).paddingRight) || 0
+          : 0;
+        const scrollportRight=workspaceRect && workspace
+          ? workspaceRect.left+workspace.clientLeft+workspace.clientWidth
+          : 0;
         return {
           active:root?.querySelector('[data-fork-generation-nav][data-active-view="true"]')
             ?.getAttribute('data-fork-generation-nav') || '',
           last:levels.at(-1) || '',
           remainder:Math.abs(max-(workspace?.scrollLeft || 0)),
+          alignmentDelta:workspaceRect && lastRect
+            ? Math.abs(lastRect.right-(scrollportRight-paddingRight))
+            : null,
         };
       })()`,
-      (value) => value?.active === value?.last && value.remainder <= 16,
+      (value) => (
+        value?.active === value?.last &&
+        Number.isFinite(value.alignmentDelta) &&
+        value.alignmentDelta <= 8
+      ),
       `${label} 390px terminal-level scroll synchronization`,
     )
     const mobileGeometry = await waitForValue(

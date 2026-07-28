@@ -57,11 +57,18 @@ async function waitForValue(client, sessionId, expression, predicate, label, tim
   const deadline = Date.now() + timeoutMs
   let lastValue
   while (Date.now() < deadline) {
-    const { result } = await client.send('Runtime.evaluate', {
+    const { result, exceptionDetails } = await client.send('Runtime.evaluate', {
       expression,
       returnByValue: true,
       awaitPromise: true,
     }, sessionId)
+    if (exceptionDetails) {
+      throw new Error(
+        `${label} browser evaluation failed: ${
+          exceptionDetails.exception?.description ?? exceptionDetails.text ?? 'unknown exception'
+        }`,
+      )
+    }
     lastValue = result.value
     if (predicate(lastValue)) return lastValue
     await new Promise((resolve) => setTimeout(resolve, 75))
@@ -167,6 +174,92 @@ const lineageSnapshotExpression = `(() => {
   const root=roots[0];
   if (!root) return null;
   const unique=(values)=>[...new Set(values.filter(Boolean))];
+  const authoritativeViewport=root.querySelector('[data-fork-generation-workspace]');
+  if (authoritativeViewport) {
+    const generations=[...root.querySelectorAll('[data-fork-generation]')];
+    const edges=[...root.querySelectorAll('[data-fork-generation-connector]')];
+    const current=generations.find((node)=>node.getAttribute('data-generation-current')==='true') || generations.at(-1);
+    const canvas=root.querySelector('[data-fork-generation-canvas]');
+    const canvasRect=canvas?.getBoundingClientRect();
+    const parseStepNumber=(node,label)=>{
+      const text=[...node?.querySelectorAll('div') || []]
+        .map((value)=>value.textContent?.trim() || '')
+        .find((value)=>value.startsWith(label + ' ')) || '';
+      const match=text.match(new RegExp('^' + label + ' \\\\s*(\\\\d+)','i'));
+      return match ? Number(match[1]) : null;
+    };
+    const currentPrompts=[...current?.querySelectorAll('[data-fork-generation-prompt]') || []];
+    const currentResponses=[...current?.querySelectorAll('[data-fork-generation-response]') || []];
+    const edgeGeometry=edges.map((edge)=>{
+      const values=(edge.querySelector('path')?.getAttribute('d') || '')
+        .match(/-?\\\\d+(?:\\\\.\\\\d+)?/g)?.map(Number) || [];
+      const [sourceX,sourceY,,targetY,targetX]=values;
+      const responseAnchorId=edge.getAttribute('data-parent-response-anchor-id') || '';
+      const promptId=edge.getAttribute('data-child-prompt-id') || '';
+      const response=root.querySelector('[data-response-package-id="' + CSS.escape(responseAnchorId) + '"]');
+      const prompt=root.querySelector('[data-fork-generation-prompt="' + CSS.escape(promptId) + '"]');
+      const responseRect=response?.getBoundingClientRect();
+      const promptRect=prompt?.getBoundingClientRect();
+      return {
+        sourceXDelta:responseRect && canvasRect ? Math.abs(sourceX-(responseRect.right-canvasRect.left)) : null,
+        sourceYDelta:responseRect && canvasRect ? Math.abs(sourceY-(responseRect.top-canvasRect.top+responseRect.height/2)) : null,
+        targetXDelta:promptRect && canvasRect ? Math.abs(targetX-(promptRect.left-canvasRect.left)) : null,
+        targetYDelta:promptRect && canvasRect ? Math.abs(targetY-(promptRect.top-canvasRect.top+promptRect.height/2)) : null,
+      };
+    });
+    const lastEdge=edges.at(-1);
+    const lastGeometry=edgeGeometry.at(-1);
+    return {
+      authoritative:true,
+      count:roots.length,
+      mode:root.getAttribute('data-project-fork-build-path-mode'),
+      title:current?.querySelector('h3')?.textContent?.trim() || '',
+      inherited:unique(generations.slice(0,-1).flatMap((generation)=>
+        [...generation.querySelectorAll('[data-fork-generation-step]')]
+          .map((node)=>node.getAttribute('data-fork-generation-step'))
+      )),
+      sourceResponses:lastEdge ? [lastEdge.getAttribute('data-parent-response-id')] : [],
+      continuation:unique(currentPrompts.map((node)=>node.getAttribute('data-fork-generation-prompt'))),
+      continuationPrompts:currentPrompts.map((node)=>({
+        id:node.getAttribute('data-fork-generation-prompt'),
+        stepNumber:parseStepNumber(node,'Prompt'),
+      })),
+      continuationResponses:currentResponses.map((node)=>({
+        id:node.getAttribute('data-fork-generation-response'),
+        stepNumber:parseStepNumber(node,'Response'),
+      })),
+      artifactPaths:unique([...root.querySelectorAll('[data-fork-display-artifact]')]
+        .map((node)=>node.getAttribute('data-fork-display-artifact'))),
+      trail:generations.map((node)=>node.querySelector('h3')?.textContent?.trim() || '').filter(Boolean),
+      generationCount:generations.length,
+      edgeCount:edges.length,
+      edgeGeometry,
+      rootPipeColor:(()=>{
+        const rail=generations[0]?.querySelector('[data-fork-generation-step] > span');
+        return rail ? getComputedStyle(rail).backgroundColor : '';
+      })(),
+      forkPipeColors:generations.slice(1).flatMap((generation)=>{
+        const rail=generation.querySelector('[data-fork-generation-step] > span');
+        return rail ? [getComputedStyle(rail).backgroundColor] : [];
+      }),
+      connectorStrokes:[...root.querySelectorAll('[data-fork-generation-connector] path')]
+        .map((node)=>node.getAttribute('stroke')),
+      duplicateTestIds:(()=>{
+        const ids=[...root.querySelectorAll('[data-testid]')].map((node)=>node.getAttribute('data-testid'));
+        return [...new Set(ids.filter((id,index)=>ids.indexOf(id)!==index))];
+      })(),
+      eligibilityReason:root.querySelector('[data-fork-eligibility]')
+        ?.getAttribute('data-fork-eligibility-reason') || '',
+      connector:{
+        visible:Boolean(lastEdge && lastGeometry),
+        sourceStep:lastEdge?.getAttribute('data-parent-response-id') || '',
+        targetStep:lastEdge?.getAttribute('data-child-prompt-id') || '',
+        sourceResponseDelta:lastGeometry ? Math.max(lastGeometry.sourceXDelta,lastGeometry.sourceYDelta) : null,
+        continuationPromptDelta:lastGeometry ? Math.max(lastGeometry.targetXDelta,lastGeometry.targetYDelta) : null,
+      },
+      desktopGeometry:{authoritative:true},
+    };
+  }
   const inherited=unique([...root.querySelectorAll('[data-fork-inherited-step]')].map((node)=>node.getAttribute('data-fork-inherited-step')));
   const sourceResponses=unique([...root.querySelectorAll('[data-fork-source-response]')].map((node)=>node.getAttribute('data-fork-source-response-id')));
   const continuation=unique([...root.querySelectorAll('[data-fork-continuation]')].map((node)=>node.getAttribute('data-fork-continuation')));
@@ -411,6 +504,48 @@ function assertDesktopBranchGeometry(snapshot, label) {
 }
 
 function assertResponseToPromptPipeline(snapshot, label, expectedSourceNumber, expectedContinuationNumbers) {
+  if (snapshot.authoritative) {
+    const sourceResponse = snapshot.connector?.sourceStep
+    const targetPrompt = snapshot.connector?.targetStep
+    if (!sourceResponse || sourceResponse !== snapshot.sourceResponses[0]) {
+      throw new Error(`${label} lost exact authoritative response provenance.`)
+    }
+    if (!targetPrompt || targetPrompt !== snapshot.continuationPrompts[0]?.id) {
+      throw new Error(`${label} connector missed the first authoritative continuation prompt.`)
+    }
+    if (!sourceResponse.endsWith(`:step:${expectedSourceNumber}`)) {
+      throw new Error(`${label} authoritative response is ${sourceResponse} instead of response ${expectedSourceNumber}.`)
+    }
+    const promptNumbers = snapshot.continuationPrompts.map((prompt) => prompt.stepNumber)
+    const responseNumbers = snapshot.continuationResponses.map((response) => response.stepNumber)
+    if (
+      JSON.stringify(promptNumbers) !== JSON.stringify(expectedContinuationNumbers) ||
+      JSON.stringify(responseNumbers) !== JSON.stringify(expectedContinuationNumbers)
+    ) {
+      throw new Error(
+        `${label} authoritative continuation is ${JSON.stringify(promptNumbers)}/${JSON.stringify(responseNumbers)} ` +
+        `instead of ${JSON.stringify(expectedContinuationNumbers)}.`,
+      )
+    }
+    if (
+      snapshot.edgeCount !== snapshot.generationCount - 1 ||
+      snapshot.edgeGeometry.some((geometry) => (
+        [geometry.sourceXDelta, geometry.sourceYDelta, geometry.targetXDelta, geometry.targetYDelta]
+          .some((delta) => !Number.isFinite(delta) || delta > 2)
+      ))
+    ) {
+      throw new Error(`${label} authoritative response-to-prompt geometry drifted.`)
+    }
+    if (
+      snapshot.rootPipeColor !== 'rgb(43, 209, 95)' ||
+      snapshot.forkPipeColors.some((color) => color !== 'rgb(232, 122, 44)') ||
+      snapshot.connectorStrokes.some((stroke) => !['#8f3f0a', '#e87a2c'].includes(stroke)) ||
+      snapshot.duplicateTestIds.length > 0
+    ) {
+      throw new Error(`${label} authoritative pipe colors or selector uniqueness drifted.`)
+    }
+    return
+  }
   const sourceResponse = snapshot.connector?.sourceStep
   const targetPrompt = snapshot.connector?.targetStep
   if (!sourceResponse || !targetPrompt) throw new Error(`${label} omitted response-to-prompt connector identity.`)
@@ -573,6 +708,12 @@ function assertLineageSnapshot(snapshot, mode, label) {
   if (snapshot.continuation.length === 0) throw new Error(`${label} did not show the child continuation.`)
   if (snapshot.artifactPaths.length === 0) throw new Error(`${label} did not expose an inline child artifact action.`)
   if (!snapshot.connector?.visible) throw new Error(`${label} did not render the response-to-prompt connector.`)
+  if (snapshot.authoritative) {
+    if (snapshot.generationCount < 2 || snapshot.edgeCount !== snapshot.generationCount - 1) {
+      throw new Error(`${label} did not preserve a complete authoritative generation chain.`)
+    }
+    return
+  }
   assertDesktopBranchGeometry(snapshot, label)
 }
 
@@ -621,9 +762,14 @@ async function waitForLineage(client, sessionId, mode, label) {
       value.mode === mode &&
       value.continuation?.length > 0 &&
       value.connector?.visible &&
-      value.desktopGeometry?.gridColumns?.length === 3 &&
-      value.desktopGeometry?.connector?.width >= 64 &&
-      value.desktopGeometry?.socket?.width >= 44 &&
+      (
+        value.authoritative ||
+        (
+          value.desktopGeometry?.gridColumns?.length === 3 &&
+          value.desktopGeometry?.connector?.width >= 64 &&
+          value.desktopGeometry?.socket?.width >= 44
+        )
+      ) &&
       Number.isFinite(value.connector?.sourceResponseDelta) &&
       value.connector.sourceResponseDelta <= 2 &&
       Number.isFinite(value.connector?.continuationPromptDelta) &&
@@ -1221,6 +1367,27 @@ async function main() {
         )
       }
       await selectOnlyBranch(client, sessionId, 'parent page')
+      if (isLocalEnvironment) {
+        const localAuthority = await waitForValue(
+          client,
+          sessionId,
+          lineageSnapshotExpression,
+          (value) => value?.authoritative === true,
+          'local authoritative lineage state',
+        )
+        if (
+          localAuthority.generationCount === 0 &&
+          localAuthority.eligibilityReason === 'unavailable'
+        ) {
+          console.log(
+            'Local prepared-route browser corpus skipped after the response-origin parent rail: ' +
+            'authoritative lineage reads are unavailable without the production database. ' +
+            'Run check:project-fork-depth-10-browser for deterministic production-renderer geometry; ' +
+            'rerun this guard against the public host for route/data proof.',
+          )
+          return
+        }
+      }
       const parentSnapshot = await waitForLineage(client, sessionId, 'parent', 'parent page')
       assertLineageSnapshot(parentSnapshot, 'parent', 'Parent page')
       assertResponseToPromptPipeline(parentSnapshot, 'Parent page', 2, [3])

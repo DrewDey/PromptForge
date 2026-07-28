@@ -85,7 +85,13 @@ async function evaluate(client, sessionId, expression) {
     returnByValue: true,
     awaitPromise: true,
   }, sessionId)
-  if (exceptionDetails) throw new Error(exceptionDetails.text || 'Browser evaluation failed.')
+  if (exceptionDetails) {
+    throw new Error(
+      exceptionDetails.exception?.description
+        ?? exceptionDetails.text
+        ?? 'Browser evaluation failed.',
+    )
+  }
   return result.value
 }
 
@@ -153,7 +159,10 @@ async function verifyGenericResponseForkActions(
         overflow:document.documentElement.scrollWidth-window.innerWidth,
       };
     })()`,
-    (value) => value?.positive?.length === 3,
+    (value) => (
+      value?.positive?.length === 3 &&
+      value.positive.some((action) => action.visible)
+    ),
     `generic response action fixture at ${viewportName}`,
   )
   for (const action of snapshot.positive) {
@@ -247,18 +256,22 @@ const snapshotExpression = `(() => {
     generationIndexes:nodes.map((node)=>Number(node.getAttribute('data-generation-index'))),
     kinds:nodes.map((node)=>node.getAttribute('data-generation-kind')),
     currentLevels:nodes.filter((node)=>node.getAttribute('data-generation-current') === 'true').map((node)=>Number(node.getAttribute('data-display-level'))),
+    currentActivePaths:nodes.filter((node)=>node.getAttribute('data-generation-current') === 'true')
+      .flatMap((node)=>[...node.querySelectorAll('[data-fork-generation-active-path]')]).length,
+    currentPipelines:nodes.filter((node)=>node.getAttribute('data-generation-current') === 'true')
+      .flatMap((node)=>[...node.querySelectorAll('[data-fork-generation-pipeline]')]).length,
     activeView:root.querySelector('[data-fork-generation-nav][data-active-view="true"]')?.getAttribute('data-fork-generation-nav'),
     identities:nodes.map((node)=>({
       level:Number(node.getAttribute('data-display-level')),
       index:Number(node.getAttribute('data-generation-index')),
       projectId:node.getAttribute('data-generation-id'),
-      href:node.querySelector('a[aria-label^="Open level "]')?.href || '',
-      modelLabel:node.querySelector('[data-public-model-identity]')?.textContent?.trim() || '',
+      href:node.getAttribute('data-generation-href') || '',
+      modelLabel:node.getAttribute('data-generation-model-label') || '',
       responsePackageId:node.querySelector('[data-fork-generation-response]')?.getAttribute('data-response-package-id') || '',
       responseText:node.querySelector('[data-fork-generation-response]')?.textContent || '',
-      artifactPath:node.querySelector('[data-fork-generation-artifact]')?.getAttribute('data-artifact-path'),
-      sha:node.querySelector('[data-fork-generation-artifact]')?.getAttribute('data-artifact-sha256'),
-      artifactViewerHref:node.querySelector('[data-fork-generation-artifact] a[aria-label^="Open "]')?.href || '',
+      artifactPath:node.getAttribute('data-generation-artifact-path'),
+      sha:node.getAttribute('data-generation-artifact-sha256'),
+      artifactViewerHref:node.getAttribute('data-generation-artifact-viewer-href') || '',
     })),
     edgeIdentities:edges.map((edge)=>({
       testId:edge.getAttribute('data-testid'),
@@ -280,24 +293,52 @@ const snapshotExpression = `(() => {
       const responseAnchorId=edge.getAttribute('data-parent-response-anchor-id') || '';
       const promptId=edge.getAttribute('data-child-prompt-id') || '';
       const response=root.querySelector('[data-response-package-id="' + CSS.escape(responseAnchorId) + '"]');
-      const prompt=root.querySelector('[data-fork-generation-prompt="' + CSS.escape(promptId) + '"]');
-      const responseRect=response?.getBoundingClientRect();
-      const promptRect=prompt?.getBoundingClientRect();
+      const sourceAnchor=response?.querySelector('[data-fork-generation-source-socket]');
+      const promptAnchor=root.querySelector('[data-fork-generation-prompt-anchor="' + CSS.escape(promptId) + '"]');
+      const sourceAnchorRect=sourceAnchor?.getBoundingClientRect();
+      const promptAnchorRect=promptAnchor?.getBoundingClientRect();
       const values=(edge.querySelector('path')?.getAttribute('d') || '').match(/-?\\d+(?:\\.\\d+)?/g)?.map(Number) || [];
       const [sourceX,sourceY,,targetY,targetX]=values;
       return {
         cardLocalStepId:response?.getAttribute('data-step-id') || null,
         cardLocalResponsePackageId:response?.getAttribute('data-response-package-id') || null,
-        sourceXDelta:responseRect && canvasRect ? Math.abs(sourceX-(responseRect.right-canvasRect.left)) : null,
-        sourceYDelta:responseRect && canvasRect ? Math.abs(sourceY-(responseRect.top-canvasRect.top+responseRect.height/2)) : null,
-        targetXDelta:promptRect && canvasRect ? Math.abs(targetX-(promptRect.left-canvasRect.left)) : null,
-        targetYDelta:promptRect && canvasRect ? Math.abs(targetY-(promptRect.top-canvasRect.top+promptRect.height/2)) : null,
+        sourceXDelta:sourceAnchorRect && canvasRect ? Math.abs(sourceX-(sourceAnchorRect.left-canvasRect.left+sourceAnchorRect.width/2)) : null,
+        sourceYDelta:sourceAnchorRect && canvasRect ? Math.abs(sourceY-(sourceAnchorRect.top-canvasRect.top+sourceAnchorRect.height/2)) : null,
+        targetXDelta:promptAnchorRect && canvasRect ? Math.abs(targetX-(promptAnchorRect.left-canvasRect.left+promptAnchorRect.width/2)) : null,
+        targetYDelta:promptAnchorRect && canvasRect ? Math.abs(targetY-(promptAnchorRect.top-canvasRect.top+promptAnchorRect.height/2)) : null,
       };
     }),
-    rootPipeColor:getComputedStyle(root.querySelector('[data-testid="fork-node-1"] [data-fork-generation-step] > span')).backgroundColor,
-    forkPipeColors:[...root.querySelectorAll('[data-fork-generation][data-generation-kind="fork"] [data-fork-generation-step] > span')]
+    rootPipeColor:getComputedStyle(root.querySelector('[data-testid="fork-node-1"] [data-fork-generation-pipeline]')).backgroundColor,
+    forkPipeColors:[...root.querySelectorAll('[data-fork-generation][data-generation-kind="fork"] [data-fork-generation-pipeline]')]
       .map((node)=>getComputedStyle(node).backgroundColor),
     connectorStrokes:[...root.querySelectorAll('[data-fork-generation-connector] path')].map((node)=>node.getAttribute('stroke')),
+    approvedCompositionGeometry:{
+      laneWidths:nodes.map((node)=>node.getBoundingClientRect().width),
+      laneGaps:nodes.slice(1).map((node,index)=>{
+        const previousRect=nodes[index].getBoundingClientRect();
+        const currentRect=node.getBoundingClientRect();
+        return currentRect.left-previousRect.right;
+      }),
+      promptNodes:[...root.querySelectorAll('[data-fork-generation-prompt-node]')].map((node)=>{
+        const rect=node.getBoundingClientRect();
+        return {width:rect.width,height:rect.height};
+      }),
+      responseNodes:[...root.querySelectorAll('[data-fork-generation-response-node]')].map((node)=>{
+        const rect=node.getBoundingClientRect();
+        return {width:rect.width,height:rect.height};
+      }),
+      sourceSockets:[...root.querySelectorAll('[data-fork-generation-source-socket]')].map((node)=>{
+        const rect=node.getBoundingClientRect();
+        return {width:rect.width,height:rect.height};
+      }),
+      connectorHorizontalSpans:edges.map((edge)=>{
+        const values=(edge.querySelector('path')?.getAttribute('d') || '').match(/-?\\d+(?:\\.\\d+)?/g)?.map(Number) || [];
+        return values.length >= 5 ? values[4]-values[0] : null;
+      }),
+      connectorStrokeWidths:edges.flatMap((edge)=>
+        [...edge.querySelectorAll('path')].map((path)=>path.getAttribute('stroke-width'))
+      ),
+    },
     duplicateTestIds:[...new Set(testIds.filter((id,index)=>testIds.indexOf(id)!==index))],
     enabledForkActions:root.querySelectorAll('[data-fork-continuation-fork]').length,
     minTargetWidth:Math.min(...targetSizes.map((target)=>target.width)),
@@ -367,6 +408,11 @@ function assertCompleteSnapshot(snapshot, family, viewport) {
     throw new Error(`${family}/${viewport}: root/fork kinds drifted.`)
   }
   if (snapshot.currentLevels.join(',') !== '10') throw new Error(`${family}/${viewport}: level 10 is not current.`)
+  if (snapshot.currentActivePaths !== 1 || snapshot.currentPipelines !== 1) {
+    throw new Error(
+      `${family}/${viewport}: current generation rendered ${snapshot.currentActivePaths} active paths and ${snapshot.currentPipelines} orange spines.`,
+    )
+  }
   if (snapshot.eligibilityAllowed !== 'denied' || snapshot.eligibilityReason !== 'max-depth') {
     throw new Error(`${family}/${viewport}: terminal max-depth denial missing.`)
   }
@@ -398,6 +444,42 @@ function assertCompleteSnapshot(snapshot, family, viewport) {
   ) {
     throw new Error(`${family}/${viewport}: green root or orange fork piping contract failed.`)
   }
+  const composition = snapshot.approvedCompositionGeometry
+  const expectedCompactWidth = Math.min(snapshot.viewportWidth * 0.82, 320)
+  const expectedActiveWidth = Math.min(snapshot.viewportWidth * 0.88, 748)
+  if (
+    !composition ||
+    composition.laneWidths.length !== 10 ||
+    composition.laneWidths.slice(0, -1).some(
+      (width) => Math.abs(width - expectedCompactWidth) > 1,
+    ) ||
+    Math.abs(composition.laneWidths.at(-1) - expectedActiveWidth) > 1 ||
+    composition.laneGaps.length !== 9 ||
+    composition.laneGaps.some((gap) => Math.abs(gap - 104) > 1) ||
+    composition.promptNodes.length !== 10 ||
+    composition.promptNodes.some(({ width, height }) => width !== 48 || height !== 56) ||
+    composition.responseNodes.length !== 10 ||
+    composition.responseNodes.some(({ width, height }) => width !== 48 || height !== 56) ||
+    composition.sourceSockets.length !== 9 ||
+    composition.sourceSockets.some(({ width, height }) => width !== 48 || height !== 48) ||
+    composition.connectorHorizontalSpans.length !== 9 ||
+    composition.connectorHorizontalSpans.some(
+      (span, index) => {
+        const expectedSpan = index === 8
+          ? (snapshot.viewportWidth < 1024 ? 162 : 166)
+          : 167
+        return !Number.isFinite(span) || Math.abs(span - expectedSpan) > 1
+      },
+    ) ||
+    composition.connectorStrokeWidths.length !== 18 ||
+    composition.connectorStrokeWidths.some(
+      (width, index) => width !== (index % 2 === 0 ? '16' : '12'),
+    )
+  ) {
+    throw new Error(
+      `${family}/${viewport}: approved compact-inherited/wide-active pipe composition drifted: ${JSON.stringify(composition)}.`,
+    )
+  }
   if (snapshot.duplicateTestIds.length > 0) throw new Error(`${family}/${viewport}: duplicate selectors ${snapshot.duplicateTestIds.join(',')}.`)
   if (snapshot.pageOverflow !== 0) throw new Error(`${family}/${viewport}: page overflowed by ${snapshot.pageOverflow}px.`)
   if (!snapshot.internalHorizontalOverflow) throw new Error(`${family}/${viewport}: lineage is not horizontally navigable inside its viewport.`)
@@ -407,7 +489,7 @@ function assertCompleteSnapshot(snapshot, family, viewport) {
   snapshot.identities.forEach((identity, index) => {
     const level = index + 1
     const expectedProviders = ['OpenAI', 'Anthropic', null, 'Google']
-    const artifactUrl = new URL(identity.artifactViewerHref)
+    const artifactUrl = new URL(identity.artifactViewerHref, snapshot.pageUrl)
     const expectedProvider = family === 'prepared' && level === 4
       ? 'Anthropic'
       : family === 'prepared' && level === 10
@@ -435,7 +517,7 @@ function assertCompleteSnapshot(snapshot, family, viewport) {
       artifactUrl.searchParams.get('provider') !== expectedProvider
     ) throw new Error(`${family}/${viewport}: exact identity drift at level ${level}.`)
     if (family === 'prepared' && level === 4) {
-      const href = new URL(identity.href)
+      const href = new URL(identity.href, snapshot.pageUrl)
       if (href.searchParams.get('run') !== 'qa-prepared-run-B') {
         throw new Error(`${family}/${viewport}: prepared parent href did not preserve explicit run B.`)
       }
@@ -678,8 +760,7 @@ async function verifyKeyboardAndResize(client, sessionId) {
       const viewport=document.querySelector('[data-fork-generation-workspace]');
       const lane=document.querySelector('[data-testid="fork-node-10"]');
       if (!viewport || !lane) return null;
-      const centered=lane.offsetLeft-Math.max(0,(viewport.clientWidth-lane.offsetWidth)/2);
-      const target=Math.min(centered,viewport.scrollWidth-viewport.clientWidth);
+      const target=viewport.scrollWidth-viewport.clientWidth;
       return Math.abs(viewport.scrollLeft-target);
     })()`,
     (delta) => Number.isFinite(delta) && delta <= 16,

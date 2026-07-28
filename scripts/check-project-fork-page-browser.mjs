@@ -241,6 +241,10 @@ const lineageSnapshotExpression = `(() => {
       trail:generations.map((node)=>node.querySelector('h3')?.textContent?.trim() || '').filter(Boolean),
       generationCount:generations.length,
       edgeCount:edges.length,
+      currentLevel:current?.getAttribute('data-display-level') || '',
+      activeLevel:root.querySelector('[data-fork-generation-nav][data-active-view="true"]')
+        ?.getAttribute('data-fork-generation-nav') || '',
+      workspaceOverflowing:authoritativeViewport.scrollWidth > authoritativeViewport.clientWidth + 1,
       edgeGeometry,
       rootPipeColor:(()=>{
         const rail=generations[0]?.querySelector('[data-fork-generation-step] > span');
@@ -736,6 +740,12 @@ function assertLineageSnapshot(snapshot, mode, label) {
         `${label} authoritative lineage denied a valid next fork as ${snapshot.eligibilityReason || '(missing)'}.`,
       )
     }
+    if (!snapshot.workspaceOverflowing && snapshot.activeLevel !== snapshot.currentLevel) {
+      throw new Error(
+        `${label} marked level ${snapshot.activeLevel || '(missing)'} active while the complete ` +
+        `no-overflow lineage current generation is level ${snapshot.currentLevel || '(missing)'}.`,
+      )
+    }
     if (snapshot.duplicateArtifactSelectors?.length > 0) {
       throw new Error(
         `${label} duplicated artifact selectors: ${snapshot.duplicateArtifactSelectors.join(', ')}.`,
@@ -815,36 +825,73 @@ async function waitForLineage(client, sessionId, mode, label) {
 }
 
 async function verifyArtifactDisplay(client, sessionId, snapshot, label) {
-  const expectedPath = snapshot.artifactPaths[0]
-  await client.send('Runtime.evaluate', {
-    expression: `(() => {
-      const expected=${JSON.stringify(expectedPath)};
-      [...document.querySelectorAll('[data-fork-display-artifact]')]
-        .find((node)=>node.getAttribute('data-fork-display-artifact')===expected)?.click();
-    })()`,
-  }, sessionId)
+  const targets = [...new Set(snapshot.artifactPaths.filter(Boolean))]
 
-  const mounted = await waitForValue(
-    client,
-    sessionId,
-    `(() => {
-      const expected=${JSON.stringify(expectedPath)};
-      const frame=[...document.querySelectorAll('[data-artifact-package-id]')]
-        .find((node)=>node.getAttribute('data-artifact-path')===expected);
-      return {
-        found: Boolean(frame),
-        loading: Boolean(document.querySelector('[data-artifact-loading]')),
-        error: document.querySelector('[data-artifact-load-error]')?.getAttribute('data-artifact-load-error') || '',
-        iframe: Boolean(frame?.querySelector('iframe[srcdoc]')),
-        sandbox: frame?.querySelector('iframe')?.getAttribute('sandbox') || '',
-      };
-    })()`,
-    (value) => value?.found && !value.loading && value.iframe,
-    `${label} inline artifact ${expectedPath}`,
-  )
-  if (mounted.error) throw new Error(`${label} inline artifact rendered ${mounted.error}.`)
-  if (mounted.sandbox !== 'allow-scripts allow-pointer-lock') {
-    throw new Error(`${label} inline artifact has unexpected sandbox tokens: ${mounted.sandbox}.`)
+  for (const expectedPath of targets) {
+    const selected = await waitForValue(
+      client,
+      sessionId,
+      `(() => {
+        const expected=${JSON.stringify(expectedPath)};
+        const root=document.querySelector('[data-project-fork-build-path]');
+        const button=[...root?.querySelectorAll('[data-fork-display-artifact]') || []]
+          .find((node)=>node.getAttribute('data-fork-display-artifact')===expected);
+        const artifact=button?.closest('[data-fork-generation-artifact]');
+        const artifactId=button?.getAttribute('data-artifact-id')
+          || artifact?.getAttribute('data-artifact-id')
+          || '';
+        return {
+          found:Boolean(button),
+          artifactId,
+          authoritative:Boolean(root?.querySelector('[data-fork-generation-workspace]')),
+          buttonTag:button?.tagName || '',
+          buttonLabel:button?.getAttribute('aria-label') || button?.textContent?.trim() || '',
+          generationArtifact:Boolean(artifact),
+        };
+      })()`,
+      (value) => value?.found && Boolean(value.artifactId),
+      `${label} exact inline artifact identity for ${expectedPath}`,
+    )
+    const expectedArtifactId = selected.artifactId
+    await client.send('Runtime.evaluate', {
+      expression: `(() => {
+        const expected=${JSON.stringify(expectedPath)};
+        const root=document.querySelector('[data-project-fork-build-path]');
+        [...root?.querySelectorAll('[data-fork-display-artifact]') || []]
+          .find((node)=>(
+            node.getAttribute('data-fork-display-artifact')===expected &&
+            node.getAttribute('data-artifact-id')===${JSON.stringify(expectedArtifactId)}
+          ))?.click();
+      })()`,
+    }, sessionId)
+
+    const mounted = await waitForValue(
+      client,
+      sessionId,
+      `(() => {
+        const expectedPath=${JSON.stringify(expectedPath)};
+        const expectedArtifactId=${JSON.stringify(expectedArtifactId)};
+        const frame=document.querySelector('[data-artifact-package-id]');
+        return {
+          found: Boolean(
+            frame?.getAttribute('data-artifact-path')===expectedPath &&
+            frame?.getAttribute('data-artifact-package-id')===expectedArtifactId
+          ),
+          packageId:frame?.getAttribute('data-artifact-package-id') || '',
+          path:frame?.getAttribute('data-artifact-path') || '',
+          loading: Boolean(document.querySelector('[data-artifact-loading]')),
+          error: document.querySelector('[data-artifact-load-error]')?.getAttribute('data-artifact-load-error') || '',
+          iframe: Boolean(frame?.querySelector('iframe[srcdoc]')),
+          sandbox: frame?.querySelector('iframe')?.getAttribute('sandbox') || '',
+        };
+      })()`,
+      (value) => value?.found && !value.loading && value.iframe,
+      `${label} inline artifact ${expectedArtifactId} at ${expectedPath}`,
+    )
+    if (mounted.error) throw new Error(`${label} inline artifact rendered ${mounted.error}.`)
+    if (mounted.sandbox !== 'allow-scripts allow-pointer-lock') {
+      throw new Error(`${label} inline artifact has unexpected sandbox tokens: ${mounted.sandbox}.`)
+    }
   }
 }
 
@@ -1131,7 +1178,7 @@ async function verifyMobileLineage(client, sessionId, mode, label, screenshotPat
           workspaceSnapType:getComputedStyle(authoritativeWorkspace).scrollSnapType,
           workspaceOverflowX:getComputedStyle(authoritativeWorkspace).overflowX,
           canvasSnapType:canvas ? getComputedStyle(canvas).scrollSnapType : '',
-          laneSnapAlign:nodes[0] ? getComputedStyle(nodes[0]).scrollSnapAlign : '',
+          laneSnapAlignments:nodes.map((node)=>getComputedStyle(node).scrollSnapAlign),
           nodeCount:nodes.length,
           edgeCount:edges.length,
           eligibilityReason:root.querySelector('[data-fork-eligibility]')
@@ -1223,12 +1270,14 @@ async function verifyMobileLineage(client, sessionId, mode, label, screenshotPat
     if (
       !mobile.workspaceSnapType.includes('x mandatory') ||
       mobile.canvasSnapType !== 'none' ||
-      mobile.laneSnapAlign !== 'center' ||
+      mobile.laneSnapAlignments[0] !== 'start' ||
+      mobile.laneSnapAlignments.at(-1) !== 'end' ||
+      mobile.laneSnapAlignments.slice(1,-1).some((alignment) => alignment !== 'center') ||
       !['auto', 'scroll'].includes(mobile.workspaceOverflowX)
     ) {
       throw new Error(
         `${label} 390px authoritative lineage has incorrect snap ownership: ` +
-        `${mobile.workspaceSnapType}/${mobile.canvasSnapType}/${mobile.laneSnapAlign}/${mobile.workspaceOverflowX}.`,
+        `${mobile.workspaceSnapType}/${mobile.canvasSnapType}/${mobile.laneSnapAlignments.join(',')}/${mobile.workspaceOverflowX}.`,
       )
     }
     if (mobile.undersizedTargets.length > 0) {
@@ -1259,16 +1308,31 @@ async function verifyMobileLineage(client, sessionId, mode, label, screenshotPat
       `(() => {
         const root=document.querySelector('[data-project-fork-build-path]');
         const workspace=root?.querySelector('[data-fork-generation-workspace]');
-        const levels=[...root?.querySelectorAll('[data-fork-generation]') || []]
-          .map((node)=>node.getAttribute('data-display-level'));
+        const nodes=[...root?.querySelectorAll('[data-fork-generation]') || []];
+        const levels=nodes.map((node)=>node.getAttribute('data-display-level'));
+        const workspaceRect=workspace?.getBoundingClientRect();
+        const firstRect=nodes[0]?.getBoundingClientRect();
+        const paddingLeft=workspace
+          ? Number.parseFloat(getComputedStyle(workspace).paddingLeft) || 0
+          : 0;
+        const scrollportLeft=workspaceRect && workspace
+          ? workspaceRect.left+workspace.clientLeft
+          : 0;
         return {
           active:root?.querySelector('[data-fork-generation-nav][data-active-view="true"]')
             ?.getAttribute('data-fork-generation-nav') || '',
           first:levels[0] || '',
           left:workspace?.scrollLeft || 0,
+          alignmentDelta:workspaceRect && firstRect
+            ? Math.abs(firstRect.left-(scrollportLeft+paddingLeft))
+            : null,
         };
       })()`,
-      (value) => value?.active === value?.first && value.left <= 8,
+      (value) => (
+        value?.active === value?.first &&
+        Number.isFinite(value.alignmentDelta) &&
+        value.alignmentDelta <= 8
+      ),
       `${label} 390px first-level scroll synchronization`,
     )
     await client.send('Runtime.evaluate', {
@@ -1291,17 +1355,32 @@ async function verifyMobileLineage(client, sessionId, mode, label, screenshotPat
       `(() => {
         const root=document.querySelector('[data-project-fork-build-path]');
         const workspace=root?.querySelector('[data-fork-generation-workspace]');
-        const levels=[...root?.querySelectorAll('[data-fork-generation]') || []]
-          .map((node)=>node.getAttribute('data-display-level'));
+        const nodes=[...root?.querySelectorAll('[data-fork-generation]') || []];
+        const levels=nodes.map((node)=>node.getAttribute('data-display-level'));
         const max=(workspace?.scrollWidth || 0)-(workspace?.clientWidth || 0);
+        const workspaceRect=workspace?.getBoundingClientRect();
+        const lastRect=nodes.at(-1)?.getBoundingClientRect();
+        const paddingRight=workspace
+          ? Number.parseFloat(getComputedStyle(workspace).paddingRight) || 0
+          : 0;
+        const scrollportRight=workspaceRect && workspace
+          ? workspaceRect.left+workspace.clientLeft+workspace.clientWidth
+          : 0;
         return {
           active:root?.querySelector('[data-fork-generation-nav][data-active-view="true"]')
             ?.getAttribute('data-fork-generation-nav') || '',
           last:levels.at(-1) || '',
           remainder:Math.abs(max-(workspace?.scrollLeft || 0)),
+          alignmentDelta:workspaceRect && lastRect
+            ? Math.abs(lastRect.right-(scrollportRight-paddingRight))
+            : null,
         };
       })()`,
-      (value) => value?.active === value?.last && value.remainder <= 8,
+      (value) => (
+        value?.active === value?.last &&
+        Number.isFinite(value.alignmentDelta) &&
+        value.alignmentDelta <= 8
+      ),
       `${label} 390px terminal-level scroll synchronization`,
     )
     const mobileGeometry = await waitForValue(
@@ -1365,7 +1444,123 @@ async function verifyMobileLineage(client, sessionId, mode, label, screenshotPat
 async function verifyMobileFork(client, sessionId, url, label, screenshotPath) {
   await navigate(client, sessionId, url)
   await verifyMobileLineage(client, sessionId, 'child', label, screenshotPath)
+  const snapshot = await waitForLineage(
+    client,
+    sessionId,
+    'child',
+    `${label} mobile artifact registry`,
+  )
+  await verifyArtifactDisplay(client, sessionId, snapshot, `${label} mobile`)
   await verifyCurrentForkCreationAction(client, sessionId, `${label} mobile`)
+}
+
+const responsiveActiveLevelExpression = `(() => {
+  const root=document.querySelector('[data-project-fork-build-path]');
+  const workspace=root?.querySelector('[data-fork-generation-workspace]');
+  const nodes=[...root?.querySelectorAll('[data-fork-generation]') || []];
+  const current=nodes.find((node)=>node.getAttribute('data-generation-current')==='true');
+  const first=nodes[0];
+  const last=nodes.at(-1);
+  if (!root || !workspace || !current || !first || !last) return null;
+  const workspaceRect=workspace.getBoundingClientRect();
+  const firstRect=first.getBoundingClientRect();
+  const lastRect=last.getBoundingClientRect();
+  const style=getComputedStyle(workspace);
+  const scrollportLeft=workspaceRect.left+workspace.clientLeft;
+  const scrollportRight=scrollportLeft+workspace.clientWidth;
+  const expectedLeft=scrollportLeft+(Number.parseFloat(style.paddingLeft) || 0);
+  const expectedRight=scrollportRight-(Number.parseFloat(style.paddingRight) || 0);
+  return {
+    viewportWidth:window.innerWidth,
+    active:root.querySelector('[data-fork-generation-nav][data-active-view="true"]')
+      ?.getAttribute('data-fork-generation-nav') || '',
+    current:current.getAttribute('data-display-level') || '',
+    first:first.getAttribute('data-display-level') || '',
+    last:last.getAttribute('data-display-level') || '',
+    overflowing:workspace.scrollWidth > workspace.clientWidth + 1,
+    firstAlignmentDelta:Math.abs(firstRect.left-expectedLeft),
+    lastAlignmentDelta:Math.abs(lastRect.right-expectedRight),
+    previousDisabled:Boolean(
+      root.querySelector('[aria-label="Show previous fork generation"]')?.disabled
+    ),
+    nextDisabled:Boolean(
+      root.querySelector('[aria-label="Show next fork generation"]')?.disabled
+    ),
+  };
+})()`
+
+async function verifyResponsiveActiveLevelPreservation(client, sessionId, label) {
+  await client.send('Emulation.setDeviceMetricsOverride', {
+    width: 390,
+    height: 844,
+    deviceScaleFactor: 1,
+    mobile: true,
+  }, sessionId)
+  await waitForValue(
+    client,
+    sessionId,
+    responsiveActiveLevelExpression,
+    (value) => (
+      value?.viewportWidth === 390 &&
+      value.overflowing === true &&
+      value.active === value.current &&
+      value.active === value.last &&
+      value.lastAlignmentDelta <= 8 &&
+      value.previousDisabled === false &&
+      value.nextDisabled === true
+    ),
+    `${label} desktop-current to 390px active-level preservation`,
+  )
+
+  await client.send('Emulation.setDeviceMetricsOverride', {
+    width: 1440,
+    height: 1000,
+    deviceScaleFactor: 1,
+    mobile: false,
+  }, sessionId)
+  await waitForValue(
+    client,
+    sessionId,
+    responsiveActiveLevelExpression,
+    (value) => (
+      value?.viewportWidth === 1440 &&
+      value.overflowing === false &&
+      value.active === value.current
+    ),
+    `${label} 390px-current to desktop active-level preservation`,
+  )
+  await client.send('Runtime.evaluate', {
+    expression: `document.querySelector('[data-fork-generation-nav="1"]')?.click()`,
+    returnByValue: true,
+  }, sessionId)
+  await waitForValue(
+    client,
+    sessionId,
+    responsiveActiveLevelExpression,
+    (value) => value?.active === value?.first,
+    `${label} desktop first-level selection`,
+  )
+
+  await client.send('Emulation.setDeviceMetricsOverride', {
+    width: 390,
+    height: 844,
+    deviceScaleFactor: 1,
+    mobile: true,
+  }, sessionId)
+  await waitForValue(
+    client,
+    sessionId,
+    responsiveActiveLevelExpression,
+    (value) => (
+      value?.viewportWidth === 390 &&
+      value.overflowing === true &&
+      value.active === value.first &&
+      value.firstAlignmentDelta <= 8 &&
+      value.previousDisabled === true &&
+      value.nextDisabled === false
+    ),
+    `${label} desktop-first to 390px active-level preservation`,
+  )
 }
 
 async function verifyMobileParentRail(
@@ -1581,6 +1776,7 @@ async function main() {
         client.send('Page.enable', {}, sessionId),
         client.send('Runtime.enable', {}, sessionId),
         client.send('Log.enable', {}, sessionId),
+        client.send('Network.enable', {}, sessionId),
         client.send('Emulation.setDeviceMetricsOverride', {
           width: 1440,
           height: 1000,
@@ -1588,6 +1784,14 @@ async function main() {
           mobile: false,
         }, sessionId),
       ])
+      const vercelBypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET?.trim()
+      if (vercelBypassSecret) {
+        await client.send('Network.setExtraHTTPHeaders', {
+          headers: {
+            'x-vercel-protection-bypass': vercelBypassSecret,
+          },
+        }, sessionId)
+      }
 
       await navigate(client, sessionId, parentUrl)
       await verifyParentExistingForkRail(client, sessionId, 'HP source parent page')
@@ -1634,6 +1838,7 @@ async function main() {
       const blackoutSnapshot = await waitForLineage(client, sessionId, 'child', 'Blackout child page')
       assertLineageSnapshot(blackoutSnapshot, 'child', 'Blackout child page')
       assertResponseToPromptPipeline(blackoutSnapshot, 'Blackout child page', 10, [11, 12, 13, 14])
+      await verifyArtifactDisplay(client, sessionId, blackoutSnapshot, 'Blackout child page')
       await verifyCurrentForkCreationAction(client, sessionId, 'Blackout child page')
       if (screenshot('airlock-blackout-child-desktop.png')) {
         await captureElement(client, sessionId, '[data-project-fork-build-path]', screenshot('airlock-blackout-child-desktop.png'))
@@ -1698,6 +1903,12 @@ async function main() {
             fixture.label,
             fixture.sourceNumber,
             fixture.continuationNumbers,
+          )
+          await verifyArtifactDisplay(
+            client,
+            sessionId,
+            selectedSnapshot,
+            fixture.label,
           )
           await verifyCurrentForkCreationAction(
             client,
@@ -1777,6 +1988,7 @@ async function main() {
       const swarmSnapshot = await waitForLineage(client, sessionId, 'child', 'Swarm Shift child page')
       assertLineageSnapshot(swarmSnapshot, 'child', 'Swarm Shift child page')
       assertResponseToPromptPipeline(swarmSnapshot, 'Swarm Shift child page', 2, [3])
+      await verifyArtifactDisplay(client, sessionId, swarmSnapshot, 'Swarm Shift child page')
       await verifyCurrentForkCreationAction(client, sessionId, 'Swarm Shift child page')
       if (screenshot('airlock-swarm-child-desktop.png')) {
         await captureElement(client, sessionId, '[data-project-fork-build-path]', screenshot('airlock-swarm-child-desktop.png'))
@@ -1786,6 +1998,7 @@ async function main() {
       const hullSnapshot = await waitForLineage(client, sessionId, 'child', 'Hull Breach child page')
       assertLineageSnapshot(hullSnapshot, 'child', 'Hull Breach child page')
       assertResponseToPromptPipeline(hullSnapshot, 'Hull Breach child page', 2, [3, 4, 5, 6, 7, 8, 9])
+      await verifyArtifactDisplay(client, sessionId, hullSnapshot, 'Hull Breach child page')
       await verifyCurrentForkCreationAction(client, sessionId, 'Hull Breach child page')
       if (screenshot('airlock-hull-child-desktop.png')) {
         await captureElement(client, sessionId, '[data-project-fork-build-path]', screenshot('airlock-hull-child-desktop.png'))
@@ -1806,12 +2019,11 @@ async function main() {
         }
         await verifyArtifactDisplay(client, sessionId, grandchildSnapshot, 'Grandchild fixture')
       }
-      await client.send('Emulation.setDeviceMetricsOverride', {
-        width: 390,
-        height: 844,
-        deviceScaleFactor: 1,
-        mobile: true,
-      }, sessionId)
+      await verifyResponsiveActiveLevelPreservation(
+        client,
+        sessionId,
+        'Hull Breach child',
+      )
       await verifyMobileParentRail(
         client,
         sessionId,
@@ -1826,6 +2038,18 @@ async function main() {
         'parent',
         'HP selected School Desk',
         screenshot('hp-school-desk-selected-mobile-390.png'),
+      )
+      const hpMobileParentSnapshot = await waitForLineage(
+        client,
+        sessionId,
+        'parent',
+        'HP selected School Desk mobile artifact registry',
+      )
+      await verifyArtifactDisplay(
+        client,
+        sessionId,
+        hpMobileParentSnapshot,
+        'HP selected School Desk mobile',
       )
       await verifyCurrentForkCreationAction(
         client,
@@ -1846,7 +2070,7 @@ async function main() {
         await captureElement(
           client,
           sessionId,
-          '[data-fork-continuation-lane]',
+          '[data-fork-generation][data-generation-current="true"], [data-fork-continuation-lane]',
           screenshot('airlock-swarm-prompt-03-lane-mobile-390.png'),
         )
       }
@@ -1869,6 +2093,18 @@ async function main() {
             'parent',
             fixture.label,
             screenshot(`${fixture.slug}-selected-mobile-390.png`),
+          )
+          const selectedMobileSnapshot = await waitForLineage(
+            client,
+            sessionId,
+            'parent',
+            `${fixture.label} mobile artifact registry`,
+          )
+          await verifyArtifactDisplay(
+            client,
+            sessionId,
+            selectedMobileSnapshot,
+            `${fixture.label} mobile`,
           )
           await verifyCurrentForkCreationAction(
             client,

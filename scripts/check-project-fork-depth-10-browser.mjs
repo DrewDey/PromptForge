@@ -308,11 +308,43 @@ const snapshotExpression = `(() => {
     viewportHeight:window.innerHeight,
     workspaceClientWidth:viewport.clientWidth,
     workspaceScrollWidth:viewport.scrollWidth,
+    workspaceScrollLeft:viewport.scrollLeft,
+    workspaceBoundaryRemainder:Math.abs(
+      (viewport.scrollWidth-viewport.clientWidth)-viewport.scrollLeft
+    ),
+    workspaceFirstAlignmentDelta:(() => {
+      const viewportRect=viewport.getBoundingClientRect();
+      const firstRect=nodes[0]?.getBoundingClientRect();
+      const paddingLeft=Number.parseFloat(getComputedStyle(viewport).paddingLeft) || 0;
+      const scrollportLeft=viewportRect.left+viewport.clientLeft;
+      return firstRect ? Math.abs(firstRect.left-(scrollportLeft+paddingLeft)) : null;
+    })(),
+    workspaceFirstAlignmentOffset:(() => {
+      const viewportRect=viewport.getBoundingClientRect();
+      const firstRect=nodes[0]?.getBoundingClientRect();
+      const paddingLeft=Number.parseFloat(getComputedStyle(viewport).paddingLeft) || 0;
+      const scrollportLeft=viewportRect.left+viewport.clientLeft;
+      return firstRect ? firstRect.left-(scrollportLeft+paddingLeft) : null;
+    })(),
+    workspaceLastAlignmentDelta:(() => {
+      const viewportRect=viewport.getBoundingClientRect();
+      const lastRect=nodes.at(-1)?.getBoundingClientRect();
+      const paddingRight=Number.parseFloat(getComputedStyle(viewport).paddingRight) || 0;
+      const scrollportRight=viewportRect.left+viewport.clientLeft+viewport.clientWidth;
+      return lastRect ? Math.abs(lastRect.right-(scrollportRight-paddingRight)) : null;
+    })(),
+    workspaceLastAlignmentOffset:(() => {
+      const viewportRect=viewport.getBoundingClientRect();
+      const lastRect=nodes.at(-1)?.getBoundingClientRect();
+      const paddingRight=Number.parseFloat(getComputedStyle(viewport).paddingRight) || 0;
+      const scrollportRight=viewportRect.left+viewport.clientLeft+viewport.clientWidth;
+      return lastRect ? lastRect.right-(scrollportRight-paddingRight) : null;
+    })(),
     internalHorizontalOverflow:viewport.scrollWidth > viewport.clientWidth + 1,
     scrollSnap:{
       viewport:getComputedStyle(viewport).scrollSnapType,
       canvas:canvas ? getComputedStyle(canvas).scrollSnapType : '',
-      lane:nodes[0] ? getComputedStyle(nodes[0]).scrollSnapAlign : '',
+      lanes:nodes.map((node)=>getComputedStyle(node).scrollSnapAlign),
       overflowX:getComputedStyle(viewport).overflowX,
     },
   };
@@ -345,11 +377,18 @@ function assertCompleteSnapshot(snapshot, family, viewport) {
   if (
     snapshot.scrollSnap.viewport !== 'x mandatory' ||
     snapshot.scrollSnap.canvas !== 'none' ||
-    snapshot.scrollSnap.lane !== 'center' ||
+    snapshot.scrollSnap.lanes[0] !== 'start' ||
+    snapshot.scrollSnap.lanes.at(-1) !== 'end' ||
+    snapshot.scrollSnap.lanes.slice(1,-1).some((alignment) => alignment !== 'center') ||
     snapshot.scrollSnap.overflowX !== 'auto'
   ) {
     throw new Error(
       `${family}/${viewport}: scroll snap is on the wrong element: ${JSON.stringify(snapshot.scrollSnap)}.`,
+    )
+  }
+  if (snapshot.workspaceLastAlignmentDelta > 8) {
+    throw new Error(
+      `${family}/${viewport}: terminal lane is misaligned by ${snapshot.workspaceLastAlignmentDelta}px.`,
     )
   }
   if (
@@ -1031,7 +1070,13 @@ async function main() {
           client,
           sessionId,
           snapshotExpression,
-          (value) => value?.nodeCount === 10 && value?.edgeCount === 9 && value?.activeView === '10',
+          (value) => (
+            value?.nodeCount === 10 &&
+            value?.edgeCount === 9 &&
+            value?.activeView === '10' &&
+            Number.isFinite(value?.workspaceLastAlignmentDelta) &&
+            value.workspaceLastAlignmentDelta <= 8
+          ),
           `${family}/${viewport.name} complete lineage`,
         )
         assertCompleteSnapshot(snapshot, family, viewport.name)
@@ -1063,8 +1108,20 @@ async function main() {
           await waitFor(
             client,
             sessionId,
-            `document.querySelector('[data-fork-generation-nav][data-active-view="true"]')?.getAttribute('data-fork-generation-nav')`,
-            (value) => value === '10',
+            `(() => {
+              const viewport=document.querySelector('[data-fork-generation-workspace]');
+              const last=document.querySelector('[data-fork-generation]:last-of-type');
+              if (!viewport || !last) return null;
+              const viewportRect=viewport.getBoundingClientRect();
+              const lastRect=last.getBoundingClientRect();
+              const paddingRight=Number.parseFloat(getComputedStyle(viewport).paddingRight) || 0;
+              const scrollportRight=viewportRect.left+viewport.clientLeft+viewport.clientWidth;
+              return {
+                active:document.querySelector('[data-fork-generation-nav][data-active-view="true"]')?.getAttribute('data-fork-generation-nav'),
+                alignmentDelta:Math.abs(lastRect.right-(scrollportRight-paddingRight)),
+              };
+            })()`,
+            (value) => value?.active === '10' && value.alignmentDelta <= 8,
             `${family}/${viewport.name} restored current boundary`,
           )
           await evaluate(
@@ -1075,11 +1132,20 @@ async function main() {
           await waitFor(
             client,
             sessionId,
-            `(() => ({
-              active:document.querySelector('[data-fork-generation-nav][data-active-view="true"]')?.getAttribute('data-fork-generation-nav'),
-              scrollLeft:document.querySelector('[data-fork-generation-workspace]')?.scrollLeft,
-            }))()`,
-            (value) => value.active === '1' && value.scrollLeft <= 16,
+            `(() => {
+              const viewport=document.querySelector('[data-fork-generation-workspace]');
+              const first=document.querySelector('[data-fork-generation]');
+              if (!viewport || !first) return null;
+              const viewportRect=viewport.getBoundingClientRect();
+              const firstRect=first.getBoundingClientRect();
+              const paddingLeft=Number.parseFloat(getComputedStyle(viewport).paddingLeft) || 0;
+              const scrollportLeft=viewportRect.left+viewport.clientLeft;
+              return {
+                active:document.querySelector('[data-fork-generation-nav][data-active-view="true"]')?.getAttribute('data-fork-generation-nav'),
+                alignmentDelta:Math.abs(firstRect.left-(scrollportLeft+paddingLeft)),
+              };
+            })()`,
+            (value) => value?.active === '1' && value.alignmentDelta <= 8,
             `${family}/${viewport.name} screenshot start boundary`,
           )
           await captureScreenshot(

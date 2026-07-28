@@ -493,6 +493,7 @@ assertTypeProperties(renderer, rendererPath, 'ProjectForkBuildPathProps', [
   'sourceRunHref',
   'sourceEvidence',
   'onClose',
+  'isArtifactDisplayable',
   'onDisplayArtifact',
   'selectedArtifactPath',
   'artifactOpenHrefs',
@@ -689,13 +690,57 @@ const showcaseRenderers = jsxOpenings(showcase, 'ProjectForkBuildPath')
 assert(showcaseRenderers.length >= 1, `${showcasePath}: must render ProjectForkBuildPath for active branch/lineage state`)
 if (showcaseRenderers.length > 0) {
   const attributes = jsxAttributeNames(showcaseRenderers[0])
-  for (const property of ['mode', 'sourceSteps', 'branch', 'onDisplayArtifact', 'selectedArtifactPath']) {
+  for (const property of [
+    'mode',
+    'sourceSteps',
+    'branch',
+    'isArtifactDisplayable',
+    'onDisplayArtifact',
+    'selectedArtifactPath',
+  ]) {
     assert(attributes.has(property), `${showcasePath}: shared renderer integration must pass ${property}`)
   }
   for (const rendererNode of showcaseRenderers) {
-    assert(jsxAttributeNames(rendererNode).has('sourceEvidence'), `${showcasePath}: every child/parent branch preview must pass complete per-run source evidence`)
+    const attributes = jsxAttributeNames(rendererNode)
+    assert(attributes.has('sourceEvidence'), `${showcasePath}: every child/parent branch preview must pass complete per-run source evidence`)
+    assert(
+      attributes.has('isArtifactDisplayable'),
+      `${showcasePath}: every child/parent branch preview must suppress unresolved inline artifact controls`,
+    )
   }
 }
+assert(
+  importHas(
+    showcase,
+    '@/lib/source-run-artifact-registry.mjs',
+    'resolveExactArtifactPackage',
+  ),
+  `${showcasePath}: inline fork artifact controls must use the exact shared package resolver`,
+)
+for (const required of [
+  'forkContext?.lineage',
+  'forkNetwork.map((fork) => fork.lineageTruth)',
+  'generation.presentation.localSteps',
+  'projectForkStepArtifactPackages',
+  'resolveArtifactPackage',
+]) {
+  assert(
+    read(showcasePath).includes(required),
+    `${showcasePath}: bounded lineage artifact registry must retain ${required}`,
+  )
+}
+assert(
+  read(showcasePath).includes(
+    '(selectedPrimaryPackage?.stepId === step.id ? selectedPrimaryPackage : undefined)',
+  ),
+  `${showcasePath}: parent fork provenance must stay bound to a primary source-run package while lineage artifacts are displayed`,
+)
+assert(
+  !read(showcasePath).includes(
+    '(selectedPackage?.stepId === step.id ? selectedPackage : undefined)',
+  ),
+  `${showcasePath}: lineage-only artifact packages must not replace the parent fork provenance package`,
+)
 assert(namedDeclarations(showcase, 'ResponseForkFocusStage').length === 0, `${showcasePath}: remove the divergent legacy fork focus renderer`)
 for (const hook of [
   'data-fork-existing-branch-origin',

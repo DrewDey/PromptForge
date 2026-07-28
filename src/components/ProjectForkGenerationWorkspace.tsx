@@ -14,6 +14,7 @@ import {
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -94,6 +95,7 @@ export type ProjectForkGenerationWorkspaceProps = {
   selectedArtifactPath?: string | null
   artifactOpenHrefs?: Record<string, string | undefined>
   onClose?: () => void
+  isArtifactDisplayable?: (artifactPath: string, artifactId: string) => boolean
   onDisplayArtifact?: (artifactPath: string, artifactTitle: string, artifactId: string) => void
   className?: string
 }
@@ -245,6 +247,7 @@ function ArtifactActions({
   providerName,
   selectedArtifactPath,
   artifactOpenHrefs,
+  isArtifactDisplayable,
   onDisplayArtifact,
 }: {
   artifacts: ArtifactPresentation[]
@@ -253,6 +256,7 @@ function ArtifactActions({
   providerName?: string | null
   selectedArtifactPath?: string | null
   artifactOpenHrefs?: Record<string, string | undefined>
+  isArtifactDisplayable?: (artifactPath: string, artifactId: string) => boolean
   onDisplayArtifact?: (artifactPath: string, artifactTitle: string, artifactId: string) => void
 }) {
   if (artifacts.length === 0) return null
@@ -263,6 +267,10 @@ function ArtifactActions({
         const isSelected = artifact.artifactPath === selectedArtifactPath
         const openHref = artifactOpenHrefs?.[artifact.artifactPath]
           ?? artifactViewerHref(artifact, providerName)
+        const canDisplay = Boolean(
+          onDisplayArtifact &&
+          (isArtifactDisplayable?.(artifact.artifactPath, artifact.id) ?? true),
+        )
 
         return (
           <div
@@ -296,7 +304,7 @@ function ArtifactActions({
               )}
             </div>
             <div className="flex flex-wrap gap-2">
-              {onDisplayArtifact && (
+              {canDisplay && onDisplayArtifact && (
                 <button
                   type="button"
                   onClick={() => onDisplayArtifact(
@@ -305,6 +313,7 @@ function ArtifactActions({
                     artifact.id,
                   )}
                   data-fork-display-artifact={artifact.artifactPath}
+                  data-artifact-id={artifact.id}
                   aria-pressed={isSelected}
                   aria-label={`${isSelected ? 'Displayed' : 'Display'} ${artifact.artifactTitle} from level ${displayLevel}`}
                   className={[
@@ -343,6 +352,7 @@ function GenerationStep({
   allowForkAction,
   selectedArtifactPath,
   artifactOpenHrefs,
+  isArtifactDisplayable,
   onDisplayArtifact,
 }: {
   step: ProjectForkContinuationStep
@@ -354,6 +364,7 @@ function GenerationStep({
   allowForkAction: boolean
   selectedArtifactPath?: string | null
   artifactOpenHrefs?: Record<string, string | undefined>
+  isArtifactDisplayable?: (artifactPath: string, artifactId: string) => boolean
   onDisplayArtifact?: (artifactPath: string, artifactTitle: string, artifactId: string) => void
 }) {
   const tone = !generation.forkSource
@@ -372,7 +383,7 @@ function GenerationStep({
 
   return (
     <article
-      className="relative grid gap-2 pl-10"
+      className="relative grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2 pl-10"
       data-fork-generation-step={step.id}
       data-display-level={generation.displayLevel}
       data-generation-index={generation.generationIndex}
@@ -465,6 +476,7 @@ function GenerationStep({
         providerName={providerName}
         selectedArtifactPath={selectedArtifactPath}
         artifactOpenHrefs={artifactOpenHrefs}
+        isArtifactDisplayable={isArtifactDisplayable}
         onDisplayArtifact={onDisplayArtifact}
       />
     </article>
@@ -476,16 +488,20 @@ function GenerationLane({
   outgoingEdge,
   maxDepth,
   eligibility,
+  snapAlignment,
   selectedArtifactPath,
   artifactOpenHrefs,
+  isArtifactDisplayable,
   onDisplayArtifact,
 }: {
   generation: ProjectForkGenerationPresentation
   outgoingEdge: ProjectForkLineageEdge | null
   maxDepth: number
   eligibility: ProjectForkWorkspaceModel['eligibility']
+  snapAlignment: 'start' | 'center' | 'end'
   selectedArtifactPath?: string | null
   artifactOpenHrefs?: Record<string, string | undefined>
+  isArtifactDisplayable?: (artifactPath: string, artifactId: string) => boolean
   onDisplayArtifact?: (artifactPath: string, artifactTitle: string, artifactId: string) => void
 }) {
   const incomingTargetId = generation.incomingEdge?.targetPrompt.stepId
@@ -498,7 +514,12 @@ function GenerationLane({
       id={`fork-generation-${generation.displayLevel}`}
       tabIndex={-1}
       className={[
-        'relative w-[min(82vw,400px)] shrink-0 snap-center scroll-mx-4 border-2 bg-white shadow-[0_18px_44px_rgba(24,24,27,0.09)] sm:w-[400px]',
+        'relative w-[min(82vw,400px)] shrink-0 border-2 bg-white shadow-[0_18px_44px_rgba(24,24,27,0.09)] sm:w-[400px]',
+        snapAlignment === 'start'
+          ? 'snap-start scroll-mr-4'
+          : snapAlignment === 'end'
+            ? 'snap-end scroll-ml-4'
+            : 'snap-center scroll-mx-4',
         generation.isCurrent
           ? 'border-brand-blue ring-4 ring-brand-blue/10'
           : generationKind === 'root'
@@ -573,6 +594,7 @@ function GenerationLane({
               allowForkAction={allowForkAction}
               selectedArtifactPath={selectedArtifactPath}
               artifactOpenHrefs={artifactOpenHrefs}
+              isArtifactDisplayable={isArtifactDisplayable}
               onDisplayArtifact={onDisplayArtifact}
             />
           ))
@@ -633,6 +655,7 @@ export default function ProjectForkGenerationWorkspace({
   selectedArtifactPath,
   artifactOpenHrefs,
   onClose,
+  isArtifactDisplayable,
   onDisplayArtifact,
   className = '',
 }: ProjectForkGenerationWorkspaceProps) {
@@ -648,6 +671,11 @@ export default function ProjectForkGenerationWorkspace({
   const viewportRef = useRef<HTMLDivElement | null>(null)
   const canvasRef = useRef<HTMLDivElement | null>(null)
   const [activeLevel, setActiveLevel] = useState(currentGeneration?.displayLevel ?? 1)
+  const activeLevelRef = useRef(activeLevel)
+  const setActiveViewLevel = useCallback((displayLevel: number) => {
+    activeLevelRef.current = displayLevel
+    setActiveLevel(displayLevel)
+  }, [])
   const [connectors, setConnectors] = useState<ConnectorMeasurement[]>([])
   const publicSourceEvidence = sourceEvidence ?? resolvePublicSourceEvidence(null)
   const publicShareHref = providerPublicShareHref(
@@ -674,22 +702,40 @@ export default function ProjectForkGenerationWorkspace({
     ? 'Original source'
     : 'Earliest verified level'
 
-  const scrollToLevel = useCallback((displayLevel: number) => {
+  const positionViewportAtLevel = useCallback((
+    displayLevel: number,
+    behaviorOverride?: ScrollBehavior,
+  ) => {
     const viewport = viewportRef.current
     const canvas = canvasRef.current
     const lane = canvas?.querySelector<HTMLElement>(
       `[data-fork-generation][data-display-level="${displayLevel}"]`,
     )
-    if (!viewport || !lane) return
+    if (!viewport || !canvas || !lane) return
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const targetLeft = lane.offsetLeft - Math.max(0, (viewport.clientWidth - lane.offsetWidth) / 2)
+    const lanes = Array.from(
+      canvas.querySelectorAll<HTMLElement>('[data-fork-generation]'),
+    )
+    const maximumScrollLeft = Math.max(0, viewport.scrollWidth - viewport.clientWidth)
+    const targetLeft = lane === lanes[0]
+      ? 0
+      : lane === lanes.at(-1)
+        ? maximumScrollLeft
+        : lane.offsetLeft - Math.max(0, (viewport.clientWidth - lane.offsetWidth) / 2)
     viewport.scrollTo({
       left: targetLeft,
-      behavior: reducedMotion ? 'auto' : 'smooth',
+      behavior: reducedMotion ? 'auto' : (behaviorOverride ?? 'smooth'),
     })
-    setActiveLevel(displayLevel)
   }, [])
+
+  const scrollToLevel = useCallback((
+    displayLevel: number,
+    behaviorOverride?: ScrollBehavior,
+  ) => {
+    positionViewportAtLevel(displayLevel, behaviorOverride)
+    setActiveViewLevel(displayLevel)
+  }, [positionViewportAtLevel, setActiveViewLevel])
 
   const handleWorkspaceKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (generations.length === 0) return
@@ -776,16 +822,35 @@ export default function ProjectForkGenerationWorkspace({
     if (!viewport || !canvas) return
 
     const syncBoundaryLevel = () => {
-      // Chrome scroll snap can settle a few CSS pixels before the mathematical
-      // edge because of scroll margins and fractional layout coordinates.
-      const boundaryEpsilon = 8
-      const maximumScrollLeft = Math.max(0, viewport.scrollWidth - viewport.clientWidth)
-      if (viewport.scrollLeft <= boundaryEpsilon) {
-        setActiveLevel(generations[0]?.displayLevel ?? 1)
+      if (viewport.scrollWidth <= viewport.clientWidth + 1) {
+        setActiveViewLevel(
+          currentGenerationDisplayLevel
+          ?? generations.at(-1)?.displayLevel
+          ?? 1,
+        )
         return true
       }
-      if (maximumScrollLeft - viewport.scrollLeft <= boundaryEpsilon) {
-        setActiveLevel(generations.at(-1)?.displayLevel ?? 1)
+      const lanes = canvas.querySelectorAll<HTMLElement>('[data-fork-generation]')
+      const firstLane = lanes[0]
+      const lastLane = lanes[lanes.length - 1]
+      const viewportRect = viewport.getBoundingClientRect()
+      const viewportStyle = window.getComputedStyle(viewport)
+      const paddingLeft = Number.parseFloat(viewportStyle.paddingLeft) || 0
+      const paddingRight = Number.parseFloat(viewportStyle.paddingRight) || 0
+      const scrollportLeft = viewportRect.left + viewport.clientLeft
+      const scrollportRight = scrollportLeft + viewport.clientWidth
+      const firstBoundaryDelta = firstLane
+        ? Math.abs(firstLane.getBoundingClientRect().left - (scrollportLeft + paddingLeft))
+        : Number.POSITIVE_INFINITY
+      const lastBoundaryDelta = lastLane
+        ? Math.abs(lastLane.getBoundingClientRect().right - (scrollportRight - paddingRight))
+        : Number.POSITIVE_INFINITY
+      if (firstBoundaryDelta <= 8) {
+        setActiveViewLevel(generations[0]?.displayLevel ?? 1)
+        return true
+      }
+      if (lastBoundaryDelta <= 8) {
+        setActiveViewLevel(generations.at(-1)?.displayLevel ?? 1)
         return true
       }
       return false
@@ -806,7 +871,7 @@ export default function ProjectForkGenerationWorkspace({
           smallestDistance = distance
         }
       }
-      if (centeredLevel !== null) setActiveLevel(centeredLevel)
+      if (centeredLevel !== null) setActiveViewLevel(centeredLevel)
     }
     let animationFrame = 0
     const scheduleCenteredLevelSync = () => {
@@ -828,20 +893,35 @@ export default function ProjectForkGenerationWorkspace({
       observer.disconnect()
       viewport.removeEventListener('scroll', scheduleCenteredLevelSync)
     }
-  }, [generations])
+  }, [currentGenerationDisplayLevel, generations, setActiveViewLevel])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (currentGenerationDisplayLevel !== undefined) {
-      const frame = window.requestAnimationFrame(() => (
-        scrollToLevel(currentGenerationDisplayLevel)
-      ))
-      return () => window.cancelAnimationFrame(frame)
+      positionViewportAtLevel(currentGenerationDisplayLevel, 'auto')
     }
   }, [
     currentGenerationDisplayLevel,
     currentGenerationProjectId,
-    scrollToLevel,
+    positionViewportAtLevel,
   ])
+
+  useEffect(() => {
+    let animationFrame = 0
+    const preserveActiveLevel = () => {
+      const preservedLevel = activeLevelRef.current
+      window.cancelAnimationFrame(animationFrame)
+      animationFrame = window.requestAnimationFrame(() => {
+        positionViewportAtLevel(preservedLevel, 'auto')
+        setActiveViewLevel(preservedLevel)
+      })
+    }
+
+    window.addEventListener('resize', preserveActiveLevel)
+    return () => {
+      window.cancelAnimationFrame(animationFrame)
+      window.removeEventListener('resize', preserveActiveLevel)
+    }
+  }, [positionViewportAtLevel, setActiveViewLevel])
 
   const activeGenerationIndex = Math.max(
     0,
@@ -1016,7 +1096,7 @@ export default function ProjectForkGenerationWorkspace({
         aria-describedby={`fork-lineage-edges-${branch.id}`}
         tabIndex={0}
         onKeyDown={handleWorkspaceKeyDown}
-        className="max-w-full snap-x snap-mandatory touch-pan-x overflow-x-auto overflow-y-hidden overscroll-x-contain bg-surface-50 px-4 py-5 [scrollbar-gutter:stable] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand-orange sm:px-5"
+        className="max-w-full snap-x snap-mandatory scroll-px-4 touch-pan-x overflow-x-auto overflow-y-hidden overscroll-x-contain bg-surface-50 px-4 py-5 [scrollbar-gutter:stable] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand-orange sm:scroll-px-5 sm:px-5"
         data-fork-generation-workspace
       >
         <div
@@ -1084,8 +1164,16 @@ export default function ProjectForkGenerationWorkspace({
               outgoingEdge={generations[index + 1]?.incomingEdge ?? null}
               maxDepth={lineage.maxLevels}
               eligibility={lineage.eligibility}
+              snapAlignment={
+                index === 0
+                  ? 'start'
+                  : index === generations.length - 1
+                    ? 'end'
+                    : 'center'
+              }
               selectedArtifactPath={selectedArtifactPath}
               artifactOpenHrefs={artifactOpenHrefs}
+              isArtifactDisplayable={isArtifactDisplayable}
               onDisplayArtifact={onDisplayArtifact}
             />
           ))}

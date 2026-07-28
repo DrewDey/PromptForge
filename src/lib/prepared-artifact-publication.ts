@@ -30,7 +30,13 @@ function buildArtifactProjectMap() {
 
   for (const project of PREPARED_SHOWCASE_PROJECTS) {
     attach(normalizedArtifactPath(project.artifactPath), project.id)
-    const packageFile = findSourceRunPackageFileById(project.sourceRunId)
+    // Legacy prepared packages may predate canonical top-level source_run_id
+    // even though the owning prepared project pins the exact package file.
+    // Their historical artifacts are rendered by the shared lineage workspace,
+    // so publish them through the same approved-project gate as newer indexed
+    // packages instead of exposing controls that deterministically 404.
+    const packageFile = project.sourceRunPackageFile
+      ?? findSourceRunPackageFileById(project.sourceRunId)
     if (!packageFile) continue
     const sourceRun = loadSourceRunPackage(packageFile)
     attach(normalizedArtifactPath(sourceRun.final_artifact_path), project.id)

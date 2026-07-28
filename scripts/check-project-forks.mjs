@@ -599,6 +599,17 @@ assert(
   !lineageDataSource.includes('selectProjectForkLineageTruth'),
   `${lineageDataPath}: parent-side prepared hydration must not preserve a prematurely invalidated RPC presentation`,
 )
+const preparedArtifactPublicationPath = 'src/lib/prepared-artifact-publication.ts'
+const preparedArtifactPublicationSource = read(preparedArtifactPublicationPath)
+assert(
+  preparedArtifactPublicationSource.includes(
+    'const packageFile = project.sourceRunPackageFile',
+  ) &&
+    preparedArtifactPublicationSource.includes(
+      '?? findSourceRunPackageFileById(project.sourceRunId)',
+    ),
+  `${preparedArtifactPublicationPath}: rendered legacy package artifacts must remain available through their approved prepared project`,
+)
 
 const showcasePath = 'src/components/SourceRunShowcase.tsx'
 const showcase = parse(showcasePath)

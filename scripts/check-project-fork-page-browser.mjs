@@ -815,10 +815,7 @@ async function waitForLineage(client, sessionId, mode, label) {
 }
 
 async function verifyArtifactDisplay(client, sessionId, snapshot, label) {
-  const targets = [...new Set([
-    snapshot.artifactPaths[0],
-    snapshot.artifactPaths.at(-1),
-  ].filter(Boolean))]
+  const targets = [...new Set(snapshot.artifactPaths.filter(Boolean))]
 
   for (const expectedPath of targets) {
     const selected = await client.send('Runtime.evaluate', {
@@ -1385,6 +1382,13 @@ async function verifyMobileLineage(client, sessionId, mode, label, screenshotPat
 async function verifyMobileFork(client, sessionId, url, label, screenshotPath) {
   await navigate(client, sessionId, url)
   await verifyMobileLineage(client, sessionId, 'child', label, screenshotPath)
+  const snapshot = await waitForLineage(
+    client,
+    sessionId,
+    'child',
+    `${label} mobile artifact registry`,
+  )
+  await verifyArtifactDisplay(client, sessionId, snapshot, `${label} mobile`)
   await verifyCurrentForkCreationAction(client, sessionId, `${label} mobile`)
 }
 
@@ -1601,6 +1605,7 @@ async function main() {
         client.send('Page.enable', {}, sessionId),
         client.send('Runtime.enable', {}, sessionId),
         client.send('Log.enable', {}, sessionId),
+        client.send('Network.enable', {}, sessionId),
         client.send('Emulation.setDeviceMetricsOverride', {
           width: 1440,
           height: 1000,
@@ -1608,6 +1613,14 @@ async function main() {
           mobile: false,
         }, sessionId),
       ])
+      const vercelBypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET?.trim()
+      if (vercelBypassSecret) {
+        await client.send('Network.setExtraHTTPHeaders', {
+          headers: {
+            'x-vercel-protection-bypass': vercelBypassSecret,
+          },
+        }, sessionId)
+      }
 
       await navigate(client, sessionId, parentUrl)
       await verifyParentExistingForkRail(client, sessionId, 'HP source parent page')
@@ -1654,6 +1667,7 @@ async function main() {
       const blackoutSnapshot = await waitForLineage(client, sessionId, 'child', 'Blackout child page')
       assertLineageSnapshot(blackoutSnapshot, 'child', 'Blackout child page')
       assertResponseToPromptPipeline(blackoutSnapshot, 'Blackout child page', 10, [11, 12, 13, 14])
+      await verifyArtifactDisplay(client, sessionId, blackoutSnapshot, 'Blackout child page')
       await verifyCurrentForkCreationAction(client, sessionId, 'Blackout child page')
       if (screenshot('airlock-blackout-child-desktop.png')) {
         await captureElement(client, sessionId, '[data-project-fork-build-path]', screenshot('airlock-blackout-child-desktop.png'))
@@ -1718,6 +1732,12 @@ async function main() {
             fixture.label,
             fixture.sourceNumber,
             fixture.continuationNumbers,
+          )
+          await verifyArtifactDisplay(
+            client,
+            sessionId,
+            selectedSnapshot,
+            fixture.label,
           )
           await verifyCurrentForkCreationAction(
             client,
@@ -1797,6 +1817,7 @@ async function main() {
       const swarmSnapshot = await waitForLineage(client, sessionId, 'child', 'Swarm Shift child page')
       assertLineageSnapshot(swarmSnapshot, 'child', 'Swarm Shift child page')
       assertResponseToPromptPipeline(swarmSnapshot, 'Swarm Shift child page', 2, [3])
+      await verifyArtifactDisplay(client, sessionId, swarmSnapshot, 'Swarm Shift child page')
       await verifyCurrentForkCreationAction(client, sessionId, 'Swarm Shift child page')
       if (screenshot('airlock-swarm-child-desktop.png')) {
         await captureElement(client, sessionId, '[data-project-fork-build-path]', screenshot('airlock-swarm-child-desktop.png'))
@@ -1806,6 +1827,7 @@ async function main() {
       const hullSnapshot = await waitForLineage(client, sessionId, 'child', 'Hull Breach child page')
       assertLineageSnapshot(hullSnapshot, 'child', 'Hull Breach child page')
       assertResponseToPromptPipeline(hullSnapshot, 'Hull Breach child page', 2, [3, 4, 5, 6, 7, 8, 9])
+      await verifyArtifactDisplay(client, sessionId, hullSnapshot, 'Hull Breach child page')
       await verifyCurrentForkCreationAction(client, sessionId, 'Hull Breach child page')
       if (screenshot('airlock-hull-child-desktop.png')) {
         await captureElement(client, sessionId, '[data-project-fork-build-path]', screenshot('airlock-hull-child-desktop.png'))
@@ -1847,6 +1869,18 @@ async function main() {
         'HP selected School Desk',
         screenshot('hp-school-desk-selected-mobile-390.png'),
       )
+      const hpMobileParentSnapshot = await waitForLineage(
+        client,
+        sessionId,
+        'parent',
+        'HP selected School Desk mobile artifact registry',
+      )
+      await verifyArtifactDisplay(
+        client,
+        sessionId,
+        hpMobileParentSnapshot,
+        'HP selected School Desk mobile',
+      )
       await verifyCurrentForkCreationAction(
         client,
         sessionId,
@@ -1866,7 +1900,7 @@ async function main() {
         await captureElement(
           client,
           sessionId,
-          '[data-fork-continuation-lane]',
+          '[data-fork-generation][data-generation-current="true"], [data-fork-continuation-lane]',
           screenshot('airlock-swarm-prompt-03-lane-mobile-390.png'),
         )
       }
@@ -1889,6 +1923,18 @@ async function main() {
             'parent',
             fixture.label,
             screenshot(`${fixture.slug}-selected-mobile-390.png`),
+          )
+          const selectedMobileSnapshot = await waitForLineage(
+            client,
+            sessionId,
+            'parent',
+            `${fixture.label} mobile artifact registry`,
+          )
+          await verifyArtifactDisplay(
+            client,
+            sessionId,
+            selectedMobileSnapshot,
+            `${fixture.label} mobile`,
           )
           await verifyCurrentForkCreationAction(
             client,

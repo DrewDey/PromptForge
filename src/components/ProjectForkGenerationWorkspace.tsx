@@ -694,10 +694,18 @@ export default function ProjectForkGenerationWorkspace({
     const lane = canvas?.querySelector<HTMLElement>(
       `[data-fork-generation][data-display-level="${displayLevel}"]`,
     )
-    if (!viewport || !lane) return
+    if (!viewport || !canvas || !lane) return
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const targetLeft = lane.offsetLeft - Math.max(0, (viewport.clientWidth - lane.offsetWidth) / 2)
+    const lanes = Array.from(
+      canvas.querySelectorAll<HTMLElement>('[data-fork-generation]'),
+    )
+    const maximumScrollLeft = Math.max(0, viewport.scrollWidth - viewport.clientWidth)
+    const targetLeft = lane === lanes[0]
+      ? 0
+      : lane === lanes.at(-1)
+        ? maximumScrollLeft
+        : lane.offsetLeft - Math.max(0, (viewport.clientWidth - lane.offsetWidth) / 2)
     viewport.scrollTo({
       left: targetLeft,
       behavior: reducedMotion ? 'auto' : 'smooth',

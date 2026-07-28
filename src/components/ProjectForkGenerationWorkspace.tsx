@@ -14,6 +14,7 @@ import {
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -635,7 +636,10 @@ export default function ProjectForkGenerationWorkspace({
   onDisplayArtifact,
   className = '',
 }: ProjectForkGenerationWorkspaceProps) {
-  const lineage = adaptProjectForkLineagePresentation(lineageTruth, branch)
+  const lineage = useMemo(
+    () => adaptProjectForkLineagePresentation(lineageTruth, branch),
+    [branch, lineageTruth],
+  )
   const generations = lineage.generations
   const currentGeneration = generations.find((generation) => generation.isCurrent)
     ?? generations.at(-1)
@@ -773,6 +777,18 @@ export default function ProjectForkGenerationWorkspace({
     if (!viewport || !canvas) return
 
     laneVisibilityRef.current.clear()
+    const syncBoundaryLevel = () => {
+      const maximumScrollLeft = Math.max(0, viewport.scrollWidth - viewport.clientWidth)
+      if (viewport.scrollLeft <= 2) {
+        setActiveLevel(generations[0]?.displayLevel ?? 1)
+        return true
+      }
+      if (maximumScrollLeft - viewport.scrollLeft <= 2) {
+        setActiveLevel(generations.at(-1)?.displayLevel ?? 1)
+        return true
+      }
+      return false
+    }
     const observer = new IntersectionObserver((entries) => {
       for (const entry of entries) {
         const displayLevel = Number.parseInt(
@@ -782,6 +798,8 @@ export default function ProjectForkGenerationWorkspace({
         if (!Number.isFinite(displayLevel)) continue
         laneVisibilityRef.current.set(displayLevel, entry.intersectionRatio)
       }
+
+      if (syncBoundaryLevel()) return
 
       let nextLevel = generations[0]?.displayLevel ?? 1
       let largestRatio = -1
@@ -799,8 +817,13 @@ export default function ProjectForkGenerationWorkspace({
 
     canvas.querySelectorAll<HTMLElement>('[data-fork-generation]')
       .forEach((lane) => observer.observe(lane))
+    viewport.addEventListener('scroll', syncBoundaryLevel, { passive: true })
+    syncBoundaryLevel()
 
-    return () => observer.disconnect()
+    return () => {
+      observer.disconnect()
+      viewport.removeEventListener('scroll', syncBoundaryLevel)
+    }
   }, [generations])
 
   useEffect(() => {

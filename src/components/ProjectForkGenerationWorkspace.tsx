@@ -639,6 +639,8 @@ export default function ProjectForkGenerationWorkspace({
   const generations = lineage.generations
   const currentGeneration = generations.find((generation) => generation.isCurrent)
     ?? generations.at(-1)
+  const currentGenerationDisplayLevel = currentGeneration?.displayLevel
+  const currentGenerationProjectId = currentGeneration?.projectId
   const viewportRef = useRef<HTMLDivElement | null>(null)
   const canvasRef = useRef<HTMLDivElement | null>(null)
   const laneVisibilityRef = useRef(new Map<number, number>())
@@ -802,11 +804,17 @@ export default function ProjectForkGenerationWorkspace({
   }, [generations])
 
   useEffect(() => {
-    if (currentGeneration) {
-      const frame = window.requestAnimationFrame(() => scrollToLevel(currentGeneration.displayLevel))
+    if (currentGenerationDisplayLevel !== undefined) {
+      const frame = window.requestAnimationFrame(() => (
+        scrollToLevel(currentGenerationDisplayLevel)
+      ))
       return () => window.cancelAnimationFrame(frame)
     }
-  }, [currentGeneration, scrollToLevel])
+  }, [
+    currentGenerationDisplayLevel,
+    currentGenerationProjectId,
+    scrollToLevel,
+  ])
 
   const activeGenerationIndex = Math.max(
     0,

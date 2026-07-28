@@ -28,7 +28,6 @@ const nextConfig: NextConfig = {
   // instead of tracing it into every route in the application.
   outputFileTracingIncludes: Object.fromEntries([
     ...sourceRunRuntimeRoutes.map((route) => [route, sourceRunRuntimeFiles] as const),
-    ['/api/prepared-artifacts/*', ['./public/artifacts/**/*']] as const,
   ]),
   async rewrites() {
     return {

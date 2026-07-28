@@ -610,6 +610,20 @@ assert(
     ),
   `${preparedArtifactPublicationPath}: rendered legacy package artifacts must remain available through their approved prepared project`,
 )
+const sourceRunRuntimeRoutes = JSON.parse(read('config/source-run-runtime-routes.json'))
+assert(
+  sourceRunRuntimeRoutes.includes('/api/prepared-artifacts/*'),
+  'config/source-run-runtime-routes.json: protected artifact reads must trace source-run packages as well as artifact bytes',
+)
+const preparedArtifactRoutePath = 'src/app/api/prepared-artifacts/[...path]/route.ts'
+const preparedArtifactRouteSource = read(preparedArtifactRoutePath)
+assert(
+  preparedArtifactRouteSource.indexOf('try {') <
+    preparedArtifactRouteSource.indexOf(
+      'const projectIds = [...preparedProjectIdsForArtifact(artifactPath)]',
+    ),
+  `${preparedArtifactRoutePath}: package-map failures must fail closed instead of returning a server error`,
+)
 
 const showcasePath = 'src/components/SourceRunShowcase.tsx'
 const showcase = parse(showcasePath)

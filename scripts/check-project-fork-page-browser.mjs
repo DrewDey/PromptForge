@@ -1365,6 +1365,7 @@ async function verifyMobileLineage(client, sessionId, mode, label, screenshotPat
 async function verifyMobileFork(client, sessionId, url, label, screenshotPath) {
   await navigate(client, sessionId, url)
   await verifyMobileLineage(client, sessionId, 'child', label, screenshotPath)
+  await verifyCurrentForkCreationAction(client, sessionId, `${label} mobile`)
 }
 
 async function verifyMobileParentRail(
@@ -1826,6 +1827,11 @@ async function main() {
         'HP selected School Desk',
         screenshot('hp-school-desk-selected-mobile-390.png'),
       )
+      await verifyCurrentForkCreationAction(
+        client,
+        sessionId,
+        'HP selected School Desk mobile',
+      )
       await verifyMobileFork(client, sessionId, childUrl, 'School Desk child', screenshot('hp-school-desk-child-mobile-390.png'))
       await verifyMobileFork(
         client,
@@ -1863,6 +1869,11 @@ async function main() {
             'parent',
             fixture.label,
             screenshot(`${fixture.slug}-selected-mobile-390.png`),
+          )
+          await verifyCurrentForkCreationAction(
+            client,
+            sessionId,
+            `${fixture.label} mobile`,
           )
         }
       }

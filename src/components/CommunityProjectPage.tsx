@@ -7,6 +7,8 @@ import { evidenceScopeLabels, type PublicCommunityProject } from '@/lib/communit
 import {
   buildProjectResponseForkHref,
   projectForkSourceFromSubmissionFields,
+  reconcileProjectForkFinalArtifactProvenance,
+  type ProjectForkContinuationStep,
 } from '@/lib/project-forks'
 import type { ProjectForkLineageTruth } from '@/lib/project-forks'
 import type { PromptWithRelations } from '@/lib/types'
@@ -49,21 +51,62 @@ export default function CommunityProjectPage({
     },
   }
   const currentForkSource = projectForkSourceFromSubmissionFields(prompt)
+  const currentGenerations = lineageTruth?.generations.filter(
+    (generation) => generation.isCurrent,
+  ) ?? []
+  const currentGeneration = currentGenerations.length === 1 &&
+    currentGenerations[0].projectId === prompt.id &&
+    lineageTruth?.integrity.kind === 'complete'
+    ? currentGenerations[0]
+    : null
+  const displayedStep: ProjectForkContinuationStep | null = firstStep
+    ? {
+        id: firstStep.id,
+        stepNumber: firstStep.step_number,
+        promptTitle: firstStep.title || `Prompt ${firstStep.step_number}`,
+        promptText: firstStep.content,
+        responseText: firstStep.result_content,
+        responsePackageId: firstStep.id,
+        artifactPath: artifactPackage.artifactPath,
+        artifactSha256: artifactPackage.artifactSha256,
+        artifactVersions: [{
+          id: artifactPackage.id,
+          artifactPath: artifactPackage.artifactPath,
+          artifactTitle: artifactPackage.artifactTitle,
+          artifactSha256: artifactPackage.artifactSha256,
+          isDefault: true,
+        }],
+      }
+    : null
+  const reconciledArtifact = reconcileProjectForkFinalArtifactProvenance(
+    displayedStep ? [displayedStep] : [],
+    currentGeneration?.presentation.localSteps.at(-1),
+  ).matchedArtifact
   const forkHref = (
     capsule.reuse_permission === 'allow_pathforge_remix' &&
     lineageTruth?.eligibility.allowed === true &&
-    firstStep
+    currentGeneration &&
+    reconciledArtifact
   )
     ? buildProjectResponseForkHref({
         sourceProjectId: prompt.id,
         sourceProjectTitle: prompt.title,
-        sourceStepId: firstStep.id,
-        sourceStepNumber: firstStep.step_number,
-        currentForkSource,
+        sourceModelVariantId: reconciledArtifact.sourceModelVariantId,
+        sourceRunId: reconciledArtifact.sourceRunId,
+        sourceStepId: reconciledArtifact.sourceStepId,
+        sourceStepNumber: reconciledArtifact.sourceStepNumber,
+        sourceArtifactPath: reconciledArtifact.sourceArtifactPath,
+        sourceArtifactSha256: reconciledArtifact.artifactSha256,
+        currentForkSource: currentGeneration.forkSource ?? currentForkSource,
         promptFamilyId: prompt.prompt_family_id ?? undefined,
         destination: '/build',
       })
     : null
+  const forkActionReason = forkHref
+    ? 'eligible'
+    : lineageTruth?.eligibility.allowed === true
+      ? 'exact-artifact-unavailable'
+      : lineageTruth?.eligibility.reason ?? 'unavailable'
 
   return (
     <main data-community-project={prompt.id}>
@@ -175,7 +218,7 @@ export default function CommunityProjectPage({
         <div
           className="mx-auto mt-8 flex max-w-4xl flex-wrap gap-3"
           data-community-fork-eligibility={forkHref ? 'allowed' : 'denied'}
-          data-community-fork-reason={lineageTruth?.eligibility.reason ?? 'unavailable'}
+          data-community-fork-reason={forkActionReason}
         >
           {forkHref && <Link href={forkHref} data-community-fork-action className="inline-flex min-h-11 items-center gap-2 bg-[#2bd15f] px-4 py-2 text-sm font-black text-[#063b17]"><GitFork className="h-4 w-4" aria-hidden="true" /> Fork with attribution <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>}
           <Link href={`/report/project/${prompt.id}`} className="inline-flex min-h-11 items-center border border-surface-300 bg-white px-4 py-2 text-sm font-bold text-surface-700 hover:border-red-300 hover:text-red-700">Report this project</Link>

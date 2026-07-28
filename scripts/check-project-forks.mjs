@@ -274,6 +274,20 @@ assert(numericExport(forkSource, 'PROJECT_FORK_MAX_DEPTH') === 10, `${forkPath}:
 assert(numericExport(forkSource, 'PROJECT_FORK_MAX_LEVELS') === 10, `${forkPath}: public fork lineage must remain bounded to ten total levels`)
 assert(numericExport(forkSource, 'PROJECT_FORK_MAX_STORED_DEPTH') === 8, `${forkPath}: persisted fork depth must remain bounded to 0..8`)
 assert(numericExport(forkSource, 'PROJECT_FORK_MAX_WIDTH') === 10, `${forkPath}: fork width capacity must remain 10`)
+const forkSourceText = read(forkPath)
+for (const requiredExactResponseEvidence of [
+  'sourceStepId !== sourceStepId.trim()',
+  'sourceRunId !== sourceRunId.trim()',
+  '!Number.isInteger(sourceStepNumber)',
+  'hasDurableArtifactClaim',
+  '!isSafeProjectForkArtifactPath(sourceArtifactPath)',
+  "!/^[0-9a-f]{64}$/.test(sourceArtifactSha256)",
+]) {
+  assert(
+    forkSourceText.includes(requiredExactResponseEvidence),
+    `${forkPath}: response-fork URLs must fail closed without ${requiredExactResponseEvidence}`,
+  )
+}
 
 for (const name of [
   'normalizeProjectForkSource',
@@ -282,8 +296,11 @@ for (const name of [
   'buildCommunityProjectForkHref',
   'buildProjectResponseForkHref',
   'communityProjectContinuationSteps',
+  'isSafeProjectForkArtifactPath',
   'projectForkSourceToSubmissionFields',
   'projectForkSourceFromSubmissionFields',
+  'reconcileProjectForkDisplayedResponseIdentity',
+  'reconcileProjectForkFinalArtifactProvenance',
   'resolveProjectForkPoint',
   'createProjectForkDraftContract',
   'groupProjectForkNetworkBySourceStep',
@@ -435,7 +452,32 @@ assertExport(renderer, rendererPath, 'ProjectForkBuildPath')
 assertExport(renderer, rendererPath, 'ProjectForkBuildPathProps')
 assertExport(renderer, rendererPath, 'ProjectForkBuildPathMode')
 assert(importHas(renderer, '@/lib/project-forks', 'resolveProjectForkPoint'), `${rendererPath}: source-response anchoring must use the shared strict resolver`)
+assert(
+  importHas(
+    renderer,
+    '@/lib/project-forks',
+    'reconcileProjectForkFinalArtifactProvenance',
+  ),
+  `${rendererPath}: displayed final artifacts must be reconciled to exact authoritative provenance`,
+)
 assert(callsNamed(renderer, 'resolveProjectForkPoint').length >= 1, `${rendererPath}: source-response anchoring must reject stale exact ids without numeric fallback`)
+assert(
+  rendererSource.includes('reconciledFinalArtifact.matchedArtifact'),
+  `${rendererPath}: new-fork actions must fail closed unless one displayed artifact matches exact authoritative provenance`,
+)
+for (const required of [
+  "props.lineage.integrity.kind === 'complete'",
+  'currentGeneration?.projectId === props.branch.id',
+]) {
+  assert(
+    rendererSource.includes(required),
+    `${rendererPath}: artifact reconciliation must require ${required}`,
+  )
+}
+assert(
+  !rendererSource.includes('authoritativeArtifacts.length === 0'),
+  `${rendererPath}: route-supplied hrefs must not bypass missing authoritative artifact evidence`,
+)
 const rendererModes = new Set(typeStringLiterals(renderer, 'ProjectForkBuildPathMode'))
 assert(rendererModes.has('parent'), `${rendererPath}: shared renderer must represent a parent branch focus state`)
 assert(rendererModes.has('child'), `${rendererPath}: shared renderer must represent a child lineage page state`)
@@ -764,18 +806,25 @@ assert(forkBrowserGuard.includes('pipelineHidden') && forkBrowserGuard.includes(
 assert(forkBrowserGuard.includes('rootScrollWidth > mobile.rootClientWidth + 1') && forkBrowserGuard.includes('continuation article escapes its grid track'), 'fork browser guard must reject masked internal overflow and oversized continuation articles at 390px')
 assert(forkBrowserGuard.includes('visualOffsetLeft') && forkBrowserGuard.includes('viewport screenshot clip'), 'fork browser guard must reject horizontally panned 390px capture surfaces')
 assert(forkBrowserGuard.includes('verifyMobileParentRail') && forkBrowserGuard.includes("'HP selected School Desk'"), 'fork browser guard must inspect response-row and selected-parent mobile states')
+assert(
+  forkBrowserGuard.includes('await verifyCurrentForkCreationAction(client, sessionId, `${label} mobile`)') &&
+    forkBrowserGuard.includes("'HP selected School Desk mobile'") &&
+    forkBrowserGuard.includes('`${fixture.label} mobile`'),
+  'fork browser guard must require the exact action-to-displayed-artifact match on every direct and parent-selected 390px fork surface',
+)
 
 const communityPath = 'src/components/ProjectCommunityPanel.tsx'
 const community = parse(communityPath)
+const communitySource = read(communityPath)
 assert(importHas(community, '@/components/ProjectForkBuildPath', 'ProjectForkBuildPath'), `${communityPath}: generic project fork lineage must use the shared renderer`)
-assert(importHas(community, '@/lib/project-forks', 'buildProjectResponseForkHref'), `${communityPath}: generic child forks must expose an exact continuation handoff`)
+assert(
+  !importHas(community, '@/lib/project-forks', 'buildProjectResponseForkHref') &&
+    !communitySource.includes('forkHref: buildProjectResponseForkHref'),
+  `${communityPath}: generic child routes must not seed a non-authoritative fork action`,
+)
 assert(importHas(community, '@/lib/project-forks', 'communityProjectContinuationSteps'), `${communityPath}: generic child steps must use child-local continuation numbering`)
 assert(jsxOpenings(community, 'ProjectForkBuildPath').length >= 1, `${communityPath}: generic fork pages must render the shared lineage workspace`)
 assert(jsxOpenings(community, 'ProjectForkInheritedPathBand').length === 0, `${communityPath}: remove the divergent legacy inherited-path renderer`)
-assert(
-  read(communityPath).includes("destination: '/build'"),
-  `${communityPath}: generic child continuations must enter the community build workflow`,
-)
 assert(
   !read(communityPath).includes('step.stepNumber > forkSource.sourceStepNumber'),
   `${communityPath}: child-local step numbers must not be compared with the parent fork point`,
@@ -784,6 +833,32 @@ const communityForkRenderers = jsxOpenings(community, 'ProjectForkBuildPath')
 assert(
   communityForkRenderers.every((node) => !jsxAttributeNames(node).has('sourceRunHref')),
   `${communityPath}: URL-less community child pages must exercise the renderer's unconditional fail-closed evidence path`,
+)
+const communityPagePath = 'src/components/CommunityProjectPage.tsx'
+const communityPage = parse(communityPagePath)
+const communityPageSource = read(communityPagePath)
+assert(
+  importHas(
+    communityPage,
+    '@/lib/project-forks',
+    'reconcileProjectForkFinalArtifactProvenance',
+  ),
+  `${communityPagePath}: the separate community fork action must use the same exact displayed-artifact resolver`,
+)
+for (const required of [
+  'sourceRunId: reconciledArtifact.sourceRunId',
+  'sourceStepId: reconciledArtifact.sourceStepId',
+  'sourceArtifactPath: reconciledArtifact.sourceArtifactPath',
+  'sourceArtifactSha256: reconciledArtifact.artifactSha256',
+]) {
+  assert(
+    communityPageSource.includes(required),
+    `${communityPagePath}: community fork action drops ${required}`,
+  )
+}
+assert(
+  !communityPageSource.includes('sourceStepId: firstStep.id'),
+  `${communityPagePath}: prompt-step identity alone must not authorize an artifact fork`,
 )
 
 const networkExplorerPath = 'src/components/ProjectForkNetworkExplorer.tsx'
@@ -831,11 +906,75 @@ const promptDetailPath = 'src/app/prompt/[id]/page.tsx'
 const promptDetail = parse(promptDetailPath)
 const promptDetailSource = read(promptDetailPath)
 assert(callsNamed(promptDetail, 'buildProjectResponseForkHref').length >= 1, `${promptDetailPath}: generic response cards must create exact-response fork handoffs`)
+assert(
+  importHas(
+    promptDetail,
+    '@/components/ResponseStepForkAffordance',
+    'ResponseStepForkAffordance',
+  ),
+  `${promptDetailPath}: generic response cards must use the shared browser-tested fork affordance`,
+)
+assert(
+  importHas(
+    promptDetail,
+    '@/lib/project-forks',
+    'reconcileProjectForkDisplayedResponseIdentity',
+  ) &&
+    callsNamed(promptDetail, 'reconcileProjectForkDisplayedResponseIdentity').length >= 1,
+  `${promptDetailPath}: generic response actions must reconcile the exact displayed prompt-step response`,
+)
+assert(
+  importHas(
+    promptDetail,
+    '@/lib/project-forks',
+    'reconcileProjectForkFinalArtifactProvenance',
+  ) &&
+    callsNamed(promptDetail, 'reconcileProjectForkFinalArtifactProvenance').length >= 1,
+  `${promptDetailPath}: generic response actions must reconcile one displayed artifact with authoritative provenance`,
+)
+assert(
+  !importHas(promptDetail, '@/lib/project-forks', 'buildProjectForkHref') &&
+    !callsNamed(promptDetail, 'buildProjectForkHref').length,
+  `${promptDetailPath}: generic project actions must not bypass the exact response-artifact resolver`,
+)
+for (const required of [
+  "lineageTruth?.integrity.kind === 'complete'",
+  'sourceRunId: exactArtifact?.sourceRunId',
+  'sourceStepId: exactArtifact?.sourceStepId ?? exactResponse.sourceStepId',
+  'sourceStepNumber: exactArtifact?.sourceStepNumber ?? exactResponse.sourceStepNumber',
+  'sourceArtifactPath: exactArtifact?.sourceArtifactPath',
+  'sourceArtifactSha256: exactArtifact?.artifactSha256',
+  "destination: '/build'",
+  "data-generic-project-fork-eligibility={forkHref ? 'allowed' : 'denied'}",
+  "'exact-response-unavailable'",
+]) {
+  assert(
+    promptDetailSource.includes(required),
+    `${promptDetailPath}: generic response actions must preserve ${required}`,
+  )
+}
 assert(jsxOpenings(promptDetail, 'ProjectCommunityPanel').length >= 1, `${promptDetailPath}: generic project pages must mount the shared community/lineage surface`)
 assert(
   callsNamed(promptDetail, 'getProjectForkLineageTruth').length >= 1 &&
     promptDetailSource.includes('lineageTruth?.eligibility.allowed === true'),
   `${promptDetailPath}: fork actions must fail closed on the shared authoritative lineage eligibility`,
+)
+const genericActionFixturePath = 'src/app/qa/generic-fork-action-fixture/page.tsx'
+const genericActionFixture = parse(genericActionFixturePath)
+const genericActionFixtureSource = read(genericActionFixturePath)
+const depthTenBrowserGuard = read('scripts/check-project-fork-depth-10-browser.mjs')
+assert(
+  genericActionFixtureSource.includes("process.env.VERCEL_ENV === 'production'") &&
+    callsNamed(genericActionFixture, 'reconcileProjectForkDisplayedResponseIdentity').length >= 2 &&
+    callsNamed(genericActionFixture, 'buildProjectResponseForkHref').length === 1,
+  `${genericActionFixturePath}: local QA must render one positive exact-response action and one mismatch denial without shipping the fixture publicly`,
+)
+assert(
+  depthTenBrowserGuard.includes('verifyGenericResponseForkActions') &&
+    depthTenBrowserGuard.includes("'qa-generic-fork-step-2'") &&
+    depthTenBrowserGuard.includes('action.run !== null') &&
+    depthTenBrowserGuard.includes("snapshot.negativeReason !== 'exact-response-unavailable'"),
+  'depth-10 browser verification must cover positive and mismatched generic response actions at desktop and 390px',
 )
 
 const dataText = read(dataPath)

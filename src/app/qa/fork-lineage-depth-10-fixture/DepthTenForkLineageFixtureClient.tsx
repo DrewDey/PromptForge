@@ -57,20 +57,38 @@ export default function DepthTenForkLineageFixtureClient() {
       depth: 0,
       branchIndex: 0,
     }
+    const continuationSteps = (currentGeneration?.presentation.localSteps ?? [])
+      .map((step) => scenario === 'terminal'
+        ? step
+        : {
+            ...step,
+            sourceModelVariantId: undefined,
+            sourceRunId: undefined,
+            sourceStepId: undefined,
+            sourceStepNumber: undefined,
+            artifactVersions: step.artifactVersions?.map((artifact) => ({
+              ...artifact,
+              sourceModelVariantId: undefined,
+              sourceRunId: undefined,
+              sourceStepId: undefined,
+              sourceStepNumber: undefined,
+              sourceArtifactPath: undefined,
+            })),
+          })
     return {
       id: currentGeneration?.projectId ?? `${family}-fixture-unavailable`,
       title: currentGeneration?.title ?? `${family} lineage unavailable`,
       modelUsed: currentGeneration?.presentation.modelLabel ?? null,
       createdAt: '2026-07-27T00:00:00.000Z',
       forkSource: currentGeneration?.forkSource ?? fallbackForkSource,
-      continuationSteps: currentGeneration?.presentation.localSteps ?? [],
+      continuationSteps,
       childRoute: currentGeneration?.presentation.href,
       childSourceRunId:
         currentGeneration?.presentation.localSteps[0]?.sourceRunId ?? null,
       childProviderName: 'MUST_NOT_INHERIT_ACROSS_GENERATIONS',
       lineageTruth: lineage,
     }
-  }, [currentGeneration, family, lineage])
+  }, [currentGeneration, family, lineage, scenario])
 
   const evidence = lineage.integrity.issues.map((issue) => (
     issue.kind === 'stale-stored-depth'

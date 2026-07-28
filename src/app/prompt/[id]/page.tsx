@@ -16,6 +16,7 @@ import { BuildPathCard } from '@/components/discovery/BuildPathCard'
 import { BuilderByline } from '@/components/BuilderByline'
 import CodeBlock from '@/components/CodeBlock'
 import Prose from '@/components/Prose'
+import ResponseStepForkAffordance from '@/components/ResponseStepForkAffordance'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
 import { PublicTruthSummary } from '@/components/PublicTruthSummary'
 import CommunityProjectPage from '@/components/CommunityProjectPage'
@@ -27,10 +28,10 @@ import { getProfileProvenance } from '@/lib/profile-presentation'
 import { deriveCanonicalPromptPublicTruth } from '@/lib/prompt-public-truth'
 import { buildPathDiscoveryCatalog } from '@/lib/path-discovery'
 import {
-  buildProjectForkHref,
   buildProjectResponseForkHref,
-  createProjectForkDraftContract,
   projectForkSourceFromSubmissionFields,
+  reconcileProjectForkDisplayedResponseIdentity,
+  reconcileProjectForkFinalArtifactProvenance,
   toProjectForkSourceSteps,
 } from '@/lib/project-forks'
 import '../../browse.css'
@@ -73,63 +74,6 @@ function StepContent({
   }
   const proseLabel = variant === 'prompt' ? 'ask' : 'response'
   return <Prose text={text} label={proseLabel} variant={variant} meta={meta} />
-}
-
-function ResponseStepForkAffordance({
-  forkHref,
-  forkLabel,
-}: {
-  forkHref: string | null
-  forkLabel: string
-}) {
-  if (!forkHref) return null
-
-  return (
-    <>
-      <span
-        data-response-fork-socket
-        data-generic-response-fork-socket
-        className="absolute right-[-34px] top-5 z-20 hidden h-10 w-10 border-4 border-[#07551f] bg-[#effdf3] shadow-[0_0_0_0_rgba(43,209,95,0)] transition duration-300 group-hover/response-fork-node:shadow-[0_0_0_8px_rgba(43,209,95,0.16)] group-focus-within/response-fork-node:shadow-[0_0_0_8px_rgba(43,209,95,0.16)] xl:block"
-        aria-hidden="true"
-      >
-        <span className="absolute left-1/2 top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 border-2 border-[#07551f] bg-[#2bd15f]" />
-      </span>
-
-      <div
-        data-response-fork-hover-rail
-        data-generic-response-fork-hover-rail
-        className="pointer-events-none absolute right-[-24px] top-5 z-30 hidden translate-x-3 items-center opacity-0 transition duration-300 group-hover/response-fork-node:pointer-events-auto group-hover/response-fork-node:translate-x-0 group-hover/response-fork-node:opacity-100 group-focus-within/response-fork-node:pointer-events-auto group-focus-within/response-fork-node:translate-x-0 group-focus-within/response-fork-node:opacity-100 xl:flex"
-      >
-        <div className="relative h-10 w-28 shrink-0" aria-hidden="true">
-          <span className="absolute left-0 top-1/2 h-4 w-full origin-left -translate-y-1/2 scale-x-0 border-y-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_0_4px_0_rgba(255,255,255,0.2),inset_0_-4px_0_rgba(0,0,0,0.16)] transition-transform duration-300 group-hover/response-fork-node:scale-x-100 group-focus-within/response-fork-node:scale-x-100" />
-          <span className="absolute right-[-2px] top-1/2 h-8 w-8 -translate-y-1/2 border-4 border-[#07551f] bg-[#effdf3] shadow-[0_0_0_6px_rgba(43,209,95,0.14)]" />
-        </div>
-        <Link
-          href={forkHref}
-          data-generic-response-fork-action
-          className="inline-flex min-h-10 shrink-0 translate-x-[-10px] items-center gap-2 border-2 border-[#07551f] bg-white px-3 py-2 text-[11px] font-black uppercase tracking-[0.12em] text-[#07551f] shadow-[0_14px_34px_rgba(7,85,31,0.18)] transition duration-300 hover:bg-[#effdf3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2bd15f] group-hover/response-fork-node:translate-x-0 group-focus-within/response-fork-node:translate-x-0"
-          aria-label={forkLabel}
-        >
-          <GitFork className="h-3.5 w-3.5" aria-hidden="true" />
-          Fork here
-          <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-        </Link>
-      </div>
-
-      <Link
-        href={forkHref}
-        data-generic-response-fork-action
-        className="relative mt-3 inline-flex min-h-11 items-center gap-2 border border-[#07551f] bg-[#effdf3] py-2 pl-10 pr-3 text-xs font-black uppercase tracking-[0.12em] text-[#07551f] transition hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2bd15f] xl:hidden"
-        aria-label={forkLabel}
-      >
-        <span className="absolute left-0 top-1/2 h-2 w-8 -translate-y-1/2 border-y border-[#07551f] bg-[#2bd15f]" aria-hidden="true" />
-        <span className="absolute left-6 top-1/2 h-4 w-4 -translate-y-1/2 border-2 border-[#07551f] bg-white" aria-hidden="true" />
-        <GitFork className="h-3.5 w-3.5" aria-hidden="true" />
-        Fork from this response
-        <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-      </Link>
-    </>
-  )
 }
 
 const difficultyConfig = {
@@ -208,33 +152,66 @@ export default async function PromptDetailPage({
   const difficulty = difficultyConfig[prompt.difficulty] || difficultyConfig.beginner
   const existingForkSource = projectForkSourceFromSubmissionFields(prompt)
   const forkSourceSteps = toProjectForkSourceSteps(prompt)
-  const forkContract = createProjectForkDraftContract({
-    source: { sourceProjectId: prompt.id, sourceProjectTitle: prompt.title },
-    sourceSteps: forkSourceSteps,
-  })
-  const nextForkDepth = lineageTruth?.eligibility.nextStoredDepth ?? null
   const canForkDeeper = lineageTruth?.eligibility.allowed === true
-  const forkHref = canForkDeeper
-    ? buildProjectForkHref({
-        sourceProjectId: prompt.id,
-        sourceProjectTitle: prompt.title,
-        sourceStepId: forkContract.forkPointStep?.id,
-        sourceStepNumber: forkContract.forkPointStep?.stepNumber,
-        parentForkId: existingForkSource ? prompt.id : undefined,
-        depth: nextForkDepth!,
-        promptFamilyId: existingForkSource?.promptFamilyId ?? forkContract.promptFamilyId,
-      })
+  const currentGenerations = lineageTruth?.generations.filter(
+    (generation) => generation.isCurrent,
+  ) ?? []
+  const currentGeneration = (
+    currentGenerations.length === 1 &&
+    currentGenerations[0].projectId === prompt.id &&
+    lineageTruth?.integrity.kind === 'complete'
+  )
+    ? currentGenerations[0]
     : null
-  const getResponseForkHref = (step: NonNullable<typeof prompt.steps>[number]) => canForkDeeper
-    ? buildProjectResponseForkHref({
-        sourceProjectId: prompt.id,
-        sourceProjectTitle: prompt.title,
-        sourceStepId: step.id,
-        sourceStepNumber: step.step_number,
-        currentForkSource: existingForkSource,
-        promptFamilyId: existingForkSource?.promptFamilyId ?? `${prompt.id}:${step.id}`,
-      })
+  const responseForkHrefs = new Map(forkSourceSteps.map((displayedStep) => {
+    const authoritativeStep = currentGeneration?.presentation.localSteps.find(
+      (step) => (
+        step.id === displayedStep.id &&
+        step.stepNumber === displayedStep.stepNumber
+      ),
+    )
+    const exactArtifact = reconcileProjectForkFinalArtifactProvenance(
+      [displayedStep],
+      authoritativeStep,
+    ).matchedArtifact
+    const exactResponse = reconcileProjectForkDisplayedResponseIdentity(
+      displayedStep,
+      authoritativeStep,
+    )
+    const href = (
+      canForkDeeper &&
+      currentGeneration &&
+      exactResponse
+    )
+      ? buildProjectResponseForkHref({
+          sourceProjectId: currentGeneration.projectId,
+          sourceProjectTitle: currentGeneration.title,
+          sourceModelVariantId: exactArtifact?.sourceModelVariantId,
+          sourceRunId: exactArtifact?.sourceRunId,
+          sourceStepId: exactArtifact?.sourceStepId ?? exactResponse.sourceStepId,
+          sourceStepNumber: exactArtifact?.sourceStepNumber ?? exactResponse.sourceStepNumber,
+          sourceArtifactPath: exactArtifact?.sourceArtifactPath,
+          sourceArtifactSha256: exactArtifact?.artifactSha256,
+          currentForkSource: currentGeneration.forkSource ?? existingForkSource,
+          promptFamilyId: currentGeneration.forkSource?.promptFamilyId
+            ?? existingForkSource?.promptFamilyId
+            ?? `${prompt.id}:${displayedStep.id}`,
+          destination: '/build',
+        })
+      : null
+    return [displayedStep.id, href] as const
+  }))
+  const forkHref = forkSourceSteps.length > 0
+    ? responseForkHrefs.get(forkSourceSteps.at(-1)!.id) ?? null
     : null
+  const forkActionReason = forkHref
+    ? 'eligible'
+    : canForkDeeper
+      ? 'exact-response-unavailable'
+      : lineageTruth?.eligibility.reason ?? 'unavailable'
+  const getResponseForkHref = (step: NonNullable<typeof prompt.steps>[number]) => (
+    responseForkHrefs.get(step.id) ?? null
+  )
 
   // Hero "Final output" exhibit (iter 51 — Polish #1).
   // Prefer the project-level final result_content; if absent, fall back to
@@ -806,8 +783,8 @@ export default async function PromptDetailPage({
       <aside
         className="hidden lg:block"
         aria-label="Project actions"
-        data-generic-project-fork-eligibility={canForkDeeper ? 'allowed' : 'denied'}
-        data-generic-project-fork-reason={lineageTruth?.eligibility.reason ?? 'unavailable'}
+        data-generic-project-fork-eligibility={forkHref ? 'allowed' : 'denied'}
+        data-generic-project-fork-reason={forkActionReason}
       >
         <div className="sticky top-16">
           <div className="border border-surface-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
@@ -897,8 +874,8 @@ export default async function PromptDetailPage({
     <nav
       aria-label="Project actions"
       className="lg:hidden fixed inset-x-0 bottom-0 z-40 border-t border-surface-800 bg-surface-900/92 backdrop-blur-md shadow-[0_-4px_20px_rgba(0,0,0,0.25)]"
-      data-generic-project-fork-eligibility={canForkDeeper ? 'allowed' : 'denied'}
-      data-generic-project-fork-reason={lineageTruth?.eligibility.reason ?? 'unavailable'}
+      data-generic-project-fork-eligibility={forkHref ? 'allowed' : 'denied'}
+      data-generic-project-fork-reason={forkActionReason}
     >
       <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3">
         <div className="min-w-0 flex-1">

@@ -303,10 +303,10 @@ assert(
   'ProjectForkBuildPath lineage mode must delegate to the shared production workspace',
 )
 assert(
-  buildPathSource.includes('authoritativeFinalArtifact.sourceStepId') &&
-    buildPathSource.includes('authoritativeFinalArtifact.sourceStepNumber') &&
-    buildPathSource.includes('authoritativeFinalArtifact.sourceArtifactPath') &&
-    buildPathSource.includes('authoritativeFinalArtifact.artifactSha256') &&
+  buildPathSource.includes('reconciledFinalArtifact.matchedArtifact.sourceStepId') &&
+    buildPathSource.includes('reconciledFinalArtifact.matchedArtifact.sourceStepNumber') &&
+    buildPathSource.includes('reconciledFinalArtifact.matchedArtifact.sourceArtifactPath') &&
+    buildPathSource.includes('reconciledFinalArtifact.matchedArtifact.artifactSha256') &&
     !/sourceStepId:\s*finalStep\.responsePackageId/.test(buildPathSource),
   'prepared parent action must use authoritative artifact provenance and never the local response package',
 )

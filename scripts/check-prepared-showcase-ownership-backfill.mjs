@@ -481,6 +481,7 @@ function verifyWorkflowSource() {
   }
 
   const preparedPage = read('src/components/PreparedSourceRunPage.tsx')
+  const sourceRunPresentation = read('src/lib/source-run-presentation.ts')
   const showcase = read('src/components/SourceRunShowcase.tsx')
   const forkBuildPath = read('src/components/ProjectForkBuildPath.tsx')
   for (const required of [
@@ -492,17 +493,48 @@ function verifyWorkflowSource() {
     'This is the selected child branch: shared steps 1–3 plus child step 4.',
     'The full provider serialization envelope was not preserved.',
   ]) {
-    if (!preparedPage.includes(required)) {
-      fail(`src/components/PreparedSourceRunPage.tsx: missing visible capture boundary ${required}`)
+    if (!sourceRunPresentation.includes(required)) {
+      fail(`src/lib/source-run-presentation.ts: missing visible capture boundary ${required}`)
     }
   }
   if (
     !preparedPage.includes(
-      'defaultStepNumber(sourceRun) === continuation.stepNumber',
+      'sourceRunDefaultStepNumber(sourceRun) === continuation.stepNumber',
     )
   ) {
     fail(
       'src/components/PreparedSourceRunPage.tsx: final fork evidence must use the historical final step rather than curated prompt count',
+    )
+  }
+  for (const required of [
+    'sourceRunDisplayArtifactFiles(',
+    "project.artifactPath.startsWith('/artifacts/')",
+    'sourceRunResponseCapturePresentation(sourceRun, step)',
+  ]) {
+    if (!preparedPage.includes(required)) {
+      fail(`src/components/PreparedSourceRunPage.tsx: child fork presentation drops shared rule ${required}`)
+    }
+  }
+  const data = read('src/lib/data.ts')
+  for (const required of [
+    'sourceRunDisplayArtifactFiles(',
+    "project.artifactPath.startsWith('/artifacts/')",
+    'sourceRunResponseCapturePresentation(sourceRun, step)',
+  ]) {
+    if (!data.includes(required)) {
+      fail(`src/lib/data.ts: parent fork presentation drops shared rule ${required}`)
+    }
+  }
+  if (
+    !sourceRunPresentation.includes('sourceRunCanonicalArtifactPath(') ||
+    !sourceRunPresentation.includes('if (preparedFinalPath) return preparedFinalPath') ||
+    !sourceRunPresentation.includes('const defaultStep = finalPath') ||
+    !sourceRunPresentation.includes('sourceRunDefaultStepNumber(sourceRun, preparedArtifactPath)') ||
+    !sourceRunPresentation.includes("if (isDefaultStep && finalArtifactPath?.startsWith('public/artifacts/'))") ||
+    !sourceRunPresentation.includes("} else if (artifactVersionPath?.startsWith('public/artifacts/'))")
+  ) {
+    fail(
+      'src/lib/source-run-presentation.ts: canonical finals must replace raw/alias evidence on default steps',
     )
   }
   for (const required of [

@@ -6,6 +6,8 @@ import { getPreparedProjectModelIdentity } from '@/lib/prepared-project-model-id
 import { getProjectRouteOverride } from '@/lib/project-links'
 import { getPublicModelIdentityLabel } from '@/lib/public-model-labels'
 import {
+  buildProjectResponseForkHref,
+  communityProjectContinuationSteps,
   projectForkSourceFromSubmissionFields,
   resolveProjectForkTrail,
   toProjectForkSourceSteps,
@@ -51,13 +53,25 @@ export default async function ProjectCommunityPanel({
     : null
   const sourceProject = forkTrail?.immediateSourceProject ?? null
   const sourceSteps = sourceProject ? toProjectForkSourceSteps(sourceProject) : []
-  const continuationSteps = forkSource
-    ? currentSteps.filter((step) => (
-      forkSource.sourceStepNumber
-        ? step.stepNumber > forkSource.sourceStepNumber
-        : true
-    ))
+  const continuationSourceSteps = forkSource
+    ? communityProjectContinuationSteps(currentSteps)
     : []
+  const continuationSteps = continuationSourceSteps.map((step, index) => (
+    index === continuationSourceSteps.length - 1 && project && forkSource
+      ? {
+          ...step,
+          forkHref: buildProjectResponseForkHref({
+            sourceProjectId: project.id,
+            sourceProjectTitle: project.title,
+            sourceStepId: step.id,
+            sourceStepNumber: step.stepNumber,
+            currentForkSource: forkSource,
+            promptFamilyId: forkSource.promptFamilyId,
+            destination: '/build',
+          }),
+        }
+      : step
+  ))
   const branch: ProjectForkNetworkItem | null = project && forkSource
     ? {
       id: project.id,

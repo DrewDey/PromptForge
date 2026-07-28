@@ -94,7 +94,13 @@ import {
 } from './project-model-variants'
 import { loadSourceRunPackage } from './source-run-package'
 import {
+  sourceRunCanonicalArtifactPath,
+  sourceRunDisplayArtifactFiles,
+  sourceRunResponseCapturePresentation,
+} from './source-run-presentation'
+import {
   PROJECT_FORK_MAX_WIDTH,
+  communityProjectContinuationSteps,
   filterProjectForkNetworkBySourceRun,
   projectForkSourceFromSubmissionFields,
   type ProjectForkContinuationStep,
@@ -606,26 +612,32 @@ function preparedForkContinuationSteps(
 
   if (project.sourceRunPackageFile) {
     const sourceRun = loadSourceRunPackage(project.sourceRunPackageFile)
+    const preparedArtifactPath = project.artifactPath.startsWith('/artifacts/')
+      ? `public${project.artifactPath}`
+      : null
+    const canonicalArtifactPath = sourceRunCanonicalArtifactPath(
+      sourceRun,
+      preparedArtifactPath,
+    )
     return sourceRun.steps
       .filter((step) => step.step_number > forkPoint)
       .map((step) => {
         const preparedStep = project.steps.find((candidate) => candidate.stepNumber === step.step_number)
-        const artifactFiles = new Set<string>()
-        if (step.artifact_version_path) artifactFiles.add(step.artifact_version_path)
-        for (const generatedFile of step.generated_files ?? []) artifactFiles.add(generatedFile)
-        if (step.step_number === sourceRun.steps.at(-1)?.step_number && sourceRun.final_artifact_path) {
-          artifactFiles.add(sourceRun.final_artifact_path)
-        }
-        const artifactVersions = [...artifactFiles].flatMap((filePath, index) => {
+        const responseCapture = sourceRunResponseCapturePresentation(sourceRun, step)
+        const artifactVersions = sourceRunDisplayArtifactFiles(
+          sourceRun,
+          step,
+          preparedArtifactPath,
+        ).flatMap((filePath, index) => {
           const artifactPath = publicForkArtifactPath(filePath)
           if (!artifactPath) return []
           return [{
             id: `${project.id}:${project.sourceRunId}:step:${step.step_number}:artifact:${index + 1}`,
             artifactPath,
-            artifactTitle: filePath === sourceRun.final_artifact_path
+            artifactTitle: filePath === canonicalArtifactPath
               ? `${project.title} final`
               : `${project.title} step ${step.step_number}`,
-            isDefault: filePath === sourceRun.final_artifact_path,
+            isDefault: filePath === canonicalArtifactPath,
           }]
         })
 
@@ -635,6 +647,8 @@ function preparedForkContinuationSteps(
           promptTitle: preparedStep?.title ?? `Prompt ${step.step_number}`,
           promptText: step.prompt_exact,
           responseText: step.response_exact,
+          responseLabel: responseCapture.label,
+          responseDisclosure: responseCapture.disclosure,
           responsePackageId: `${project.id}:${project.sourceRunId}:response:${step.step_number}`,
           artifactPath: artifactVersions.find((artifact) => artifact.isDefault)?.artifactPath
             ?? artifactVersions.at(-1)?.artifactPath
@@ -832,17 +846,17 @@ export async function getApprovedProjectForks(
           modelUsed: prompt.model_used,
           createdAt: prompt.created_at,
           forkSource,
-          continuationSteps: [...(prompt.steps ?? [])]
-            .filter((step) => step.step_number > (forkSource.sourceStepNumber ?? 0))
-            .sort((left, right) => left.step_number - right.step_number)
-            .map((step) => ({
-              id: step.id,
-              stepNumber: step.step_number,
-              promptTitle: step.title || `Prompt ${step.step_number}`,
-              promptText: step.content,
-              responseText: step.result_content,
-              responsePackageId: step.id,
-            })),
+          continuationSteps: communityProjectContinuationSteps(
+            [...(prompt.steps ?? [])]
+              .map((step) => ({
+                id: step.id,
+                stepNumber: step.step_number,
+                promptTitle: step.title || `Prompt ${step.step_number}`,
+                promptText: step.content,
+                responseText: step.result_content,
+                responsePackageId: step.id,
+              })),
+          ),
           childRoute: getProjectRouteOverride(prompt.id) ?? `/prompt/${prompt.id}`,
         })
         forks.push(preparedItem)

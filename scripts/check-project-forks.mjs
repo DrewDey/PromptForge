@@ -256,6 +256,7 @@ for (const name of [
   'buildProjectForkHref',
   'buildCommunityProjectForkHref',
   'buildProjectResponseForkHref',
+  'communityProjectContinuationSteps',
   'projectForkSourceToSubmissionFields',
   'projectForkSourceFromSubmissionFields',
   'resolveProjectForkPoint',
@@ -507,6 +508,47 @@ assert(
 )
 assert(!hasJsxAttribute(renderer, 'data-fork-prompt-connector'), `${rendererPath}: visual branch geometry must not regress to prompt-centered connector identity`)
 assert(rendererSource.includes("bg-[#2bd15f]") && rendererSource.includes('bg-brand-orange'), `${rendererPath}: selected fork paths must visibly transition from green source piping to orange continuation piping`)
+for (const required of [
+  'Open this fork',
+  'Fork from parent response',
+  'Fork from this result',
+  "'Preview here'",
+]) {
+  assert(rendererSource.includes(required), `${rendererPath}: missing explicit fork-context action label ${required}`)
+}
+assert(
+  rendererSource.includes("newForkHref && mode === 'parent'"),
+  `${rendererPath}: child pages must not duplicate the continuation fork action in the branch header`,
+)
+assert(
+  rendererSource.includes("querySelectorAll<HTMLElement>('[data-fork-inherited-step]')") &&
+    rendererSource.includes('inheritedSteps.forEach((step) => observer.observe(step))'),
+  `${rendererPath}: connector geometry must observe inherited-step disclosure resizing`,
+)
+
+const sourceRunPresentationPath = 'src/lib/source-run-presentation.ts'
+const sourceRunPresentationSource = read(sourceRunPresentationPath)
+for (const required of [
+  'sourceRunDisplayArtifactFiles',
+  'sourceRunResponseCapturePresentation',
+  "if (isDefaultStep && finalArtifactPath?.startsWith('public/artifacts/'))",
+  "} else if (artifactVersionPath?.startsWith('public/artifacts/'))",
+]) {
+  assert(
+    sourceRunPresentationSource.includes(required),
+    `${sourceRunPresentationPath}: missing shared parent/child fork presentation rule ${required}`,
+  )
+}
+const forkDataSource = read('src/lib/data.ts')
+for (const required of [
+  'sourceRunDisplayArtifactFiles(',
+  "project.artifactPath.startsWith('/artifacts/')",
+  'sourceRunResponseCapturePresentation(sourceRun, step)',
+  'responseLabel: responseCapture.label',
+  'responseDisclosure: responseCapture.disclosure',
+]) {
+  assert(forkDataSource.includes(required), `src/lib/data.ts: prepared parent preview drops ${required}`)
+}
 
 const showcasePath = 'src/components/SourceRunShowcase.tsx'
 const showcase = parse(showcasePath)
@@ -579,8 +621,12 @@ assert(
 )
 assert(callsNamed(prepared, 'resolvePreparedShowcaseLineage').length >= 1, `${preparedPath}: prepared child pages must reconstruct complete nested ancestry through the shared registry resolver`)
 assert(callsNamed(prepared, 'buildProjectResponseForkHref').length >= 1, `${preparedPath}: prepared child continuations must create exact nested-fork handoffs`)
+assert(
+  preparedSource.includes("destination: '/build'"),
+  `${preparedPath}: prepared child continuations must enter the community build workflow`,
+)
 for (const nestedEvidence of [
-  'defaultStepNumber(sourceRun) === continuation.stepNumber',
+  'sourceRunDefaultStepNumber(sourceRun) === continuation.stepNumber',
   'nestedArtifactPath === sourceRun.final_artifact_path',
   'forkArtifact.artifactSha256 === sourceRun.artifact_sha256',
   'currentForkSource: forkSource',
@@ -639,8 +685,18 @@ assert(forkBrowserGuard.includes('verifyMobileParentRail') && forkBrowserGuard.i
 const communityPath = 'src/components/ProjectCommunityPanel.tsx'
 const community = parse(communityPath)
 assert(importHas(community, '@/components/ProjectForkBuildPath', 'ProjectForkBuildPath'), `${communityPath}: generic project fork lineage must use the shared renderer`)
+assert(importHas(community, '@/lib/project-forks', 'buildProjectResponseForkHref'), `${communityPath}: generic child forks must expose an exact continuation handoff`)
+assert(importHas(community, '@/lib/project-forks', 'communityProjectContinuationSteps'), `${communityPath}: generic child steps must use child-local continuation numbering`)
 assert(jsxOpenings(community, 'ProjectForkBuildPath').length >= 1, `${communityPath}: generic fork pages must render the shared lineage workspace`)
 assert(jsxOpenings(community, 'ProjectForkInheritedPathBand').length === 0, `${communityPath}: remove the divergent legacy inherited-path renderer`)
+assert(
+  read(communityPath).includes("destination: '/build'"),
+  `${communityPath}: generic child continuations must enter the community build workflow`,
+)
+assert(
+  !read(communityPath).includes('step.stepNumber > forkSource.sourceStepNumber'),
+  `${communityPath}: child-local step numbers must not be compared with the parent fork point`,
+)
 const communityForkRenderers = jsxOpenings(community, 'ProjectForkBuildPath')
 assert(
   communityForkRenderers.every((node) => !jsxAttributeNames(node).has('sourceRunHref')),
@@ -649,6 +705,7 @@ assert(
 
 const networkExplorerPath = 'src/components/ProjectForkNetworkExplorer.tsx'
 const networkExplorer = parse(networkExplorerPath)
+assert(importHas(networkExplorer, '@/lib/project-forks', 'buildCommunityProjectForkHref'), `${networkExplorerPath}: generic parent previews must expose a sibling fork handoff`)
 const networkForkRenderers = jsxOpenings(networkExplorer, 'ProjectForkBuildPath')
 assert(networkForkRenderers.length === 1, `${networkExplorerPath}: selected network branch must use the shared renderer`)
 if (networkForkRenderers.length === 1) {
@@ -656,7 +713,20 @@ if (networkForkRenderers.length === 1) {
     jsxAttributeNames(networkForkRenderers[0]).has('sourceEvidence'),
     `${networkExplorerPath}: selected branch must pass its complete curated/fail-closed source evidence`,
   )
+  assert(
+    jsxAttributeNames(networkForkRenderers[0]).has('newForkHref'),
+    `${networkExplorerPath}: selected branch must expose a sibling fork action`,
+  )
 }
+
+assert(
+  forkDataSource.includes('continuationSteps: communityProjectContinuationSteps('),
+  `${dataPath}: database-backed generic parent previews must preserve all child-local continuation steps`,
+)
+assert(
+  !forkDataSource.includes('.filter((step) => step.step_number > (forkSource.sourceStepNumber ?? 0))'),
+  `${dataPath}: database-backed child steps must not compare local numbering with the parent fork point`,
+)
 
 for (const routePath of sharedSourceRunRoutes()) {
   const route = parse(routePath)

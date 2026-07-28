@@ -2,9 +2,10 @@
 
 import { useState } from 'react'
 import ProjectForkBuildPath from '@/components/ProjectForkBuildPath'
-import type {
-  ProjectForkNetworkItem,
-  ProjectForkSourceStep,
+import {
+  buildCommunityProjectForkHref,
+  type ProjectForkNetworkItem,
+  type ProjectForkSourceStep,
 } from '@/lib/project-forks'
 import { resolvePublicSourceEvidence } from '@/lib/public-source-evidence'
 
@@ -58,6 +59,7 @@ export default function ProjectForkNetworkExplorer({
           sourceSteps={sourceSteps}
           branch={selectedFork}
           branchHref={selectedFork.childRoute}
+          newForkHref={buildCommunityProjectForkHref(selectedFork.forkSource)}
           sourceRunHref={selectedFork.childSourceUrl}
           sourceEvidence={selectedForkEvidence}
           onClose={() => setSelectedForkId(null)}

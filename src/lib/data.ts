@@ -108,6 +108,7 @@ import {
   filterProjectForkNetworkBySourceRun,
   markProjectForkNetworkLineageUnavailable,
   projectForkSourceFromSubmissionFields,
+  resolveExactProjectForkModelVariantIdentity,
   selectProjectForkLocalSteps,
   toProjectForkSourceSteps,
   type BuildProjectForkLineageTruthInput,
@@ -851,10 +852,15 @@ function resolvePreparedLineageSourceRun(
       candidate.sourceRunId === requestedSourceRunId
     ))
     if (variant) {
+      const modelVariantIdentity = resolveExactProjectForkModelVariantIdentity({
+        registeredModelVariantId: variant.databaseId,
+        claimedModelVariantId: outgoingChildForkSource?.sourceModelVariantId,
+      })
+      if (!modelVariantIdentity.valid) return null
       return {
         sourceRun: variant.sourceRunPackage,
         sourceRunId: variant.sourceRunId,
-        sourceModelVariantId: variant.databaseId,
+        sourceModelVariantId: modelVariantIdentity.sourceModelVariantId,
       }
     }
     if (

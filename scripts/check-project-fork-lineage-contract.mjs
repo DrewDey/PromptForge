@@ -59,11 +59,43 @@ const {
   chunkProjectForkLineageIds,
   markProjectForkNetworkLineageUnavailable,
   normalizeProjectForkSource,
+  overlayProjectForkLineagePresentations,
   projectForkArtifactPathsEquivalent,
+  resolveExactProjectForkModelVariantIdentity,
   selectProjectForkLocalSteps,
   selectProjectForkLineageTruth,
   unavailableProjectForkLineageTruth,
 } = loadedModule.exports
+
+const recoveredModelVariant = resolveExactProjectForkModelVariantIdentity({
+  claimedModelVariantId: 'variant-from-authoritative-edge',
+})
+assert.equal(recoveredModelVariant.valid, true)
+assert.equal(
+  recoveredModelVariant.sourceModelVariantId,
+  'variant-from-authoritative-edge',
+  'an exact prepared run may recover its database-validated outgoing model identity',
+)
+const reconciledModelVariant = resolveExactProjectForkModelVariantIdentity({
+  registeredModelVariantId: 'variant-reconciled',
+  claimedModelVariantId: 'variant-reconciled',
+})
+assert.equal(reconciledModelVariant.valid, true)
+assert.equal(
+  reconciledModelVariant.sourceModelVariantId,
+  'variant-reconciled',
+  'matching reconciled and claimed model identities must remain valid',
+)
+const conflictingModelVariant = resolveExactProjectForkModelVariantIdentity({
+  registeredModelVariantId: 'variant-reconciled',
+  claimedModelVariantId: 'variant-conflict',
+})
+assert.equal(
+  conflictingModelVariant.valid,
+  false,
+  'conflicting reconciled and claimed model identities must fail closed',
+)
+assert.equal(conflictingModelVariant.sourceModelVariantId, undefined)
 
 const inheritedPreparedSteps = [
   { stepNumber: 1, id: 'inherited-1' },
@@ -451,6 +483,85 @@ assert.equal(selectProjectForkLineageTruth({
   codeBackedTruth: sameIdCodeBacked,
   codeBackedAuthority: true,
 }).readSource, 'code-backed')
+
+const legacyDatabasePresentationInput = fixture({ readSource: 'database-rpc' })
+legacyDatabasePresentationInput.nodes =
+  legacyDatabasePresentationInput.nodes.slice(0, 2)
+legacyDatabasePresentationInput.currentProjectId = 'project-2'
+for (const node of legacyDatabasePresentationInput.nodes) {
+  node.presentation.localSteps = []
+}
+const exactPreparedPresentationInput = fixture({ readSource: 'code-backed' })
+exactPreparedPresentationInput.nodes =
+  exactPreparedPresentationInput.nodes.slice(0, 2)
+exactPreparedPresentationInput.currentProjectId = 'project-2'
+const exactPreparedPresentation = buildProjectForkLineageTruth(
+  exactPreparedPresentationInput,
+)
+const unhydratedLegacyDatabase = buildProjectForkLineageTruth(
+  legacyDatabasePresentationInput,
+)
+assert.equal(unhydratedLegacyDatabase.integrity.kind, 'invalid')
+assert(unhydratedLegacyDatabase.integrity.issues.some((issue) => (
+  issue.kind === 'source-step-mismatch'
+)))
+assert(unhydratedLegacyDatabase.integrity.issues.some((issue) => (
+  issue.kind === 'invalid-target-prompt'
+)))
+const hydratedLegacyDatabase = buildProjectForkLineageTruth({
+  ...legacyDatabasePresentationInput,
+  nodes: overlayProjectForkLineagePresentations(
+    legacyDatabasePresentationInput.nodes,
+    exactPreparedPresentation,
+  ),
+})
+assert.equal(hydratedLegacyDatabase.readSource, 'database-rpc')
+assert.equal(hydratedLegacyDatabase.integrity.kind, 'complete')
+assert.equal(hydratedLegacyDatabase.eligibility.reason, 'eligible')
+assert.equal(
+  hydratedLegacyDatabase.generations[1].incomingEdge.sourceResponse.stepId,
+  'step-1',
+)
+assert.equal(
+  hydratedLegacyDatabase.generations[1].incomingEdge.targetPrompt.stepId,
+  'step-2',
+)
+const wrongPreparedPresentationInput = structuredClone(
+  exactPreparedPresentationInput,
+)
+wrongPreparedPresentationInput.nodes[0].presentation.localSteps[0].id =
+  'wrong-parent-response'
+wrongPreparedPresentationInput.nodes[0]
+  .presentation.localSteps[0].artifactVersions[0].sourceStepId =
+  'wrong-parent-response'
+const wrongPreparedPresentation = buildProjectForkLineageTruth(
+  wrongPreparedPresentationInput,
+)
+const wrongHydratedLegacyDatabase = buildProjectForkLineageTruth({
+  ...legacyDatabasePresentationInput,
+  nodes: overlayProjectForkLineagePresentations(
+    legacyDatabasePresentationInput.nodes,
+    wrongPreparedPresentation,
+  ),
+})
+assert.equal(wrongHydratedLegacyDatabase.integrity.kind, 'invalid')
+assert(wrongHydratedLegacyDatabase.integrity.issues.some((issue) => (
+  issue.kind === 'source-step-mismatch'
+)))
+const authoritativeInvalidLegacyDatabase = buildProjectForkLineageTruth({
+  ...legacyDatabasePresentationInput,
+  nodes: overlayProjectForkLineagePresentations(
+    legacyDatabasePresentationInput.nodes,
+    exactPreparedPresentation,
+  ),
+  integrity: {
+    kind: 'invalid',
+    affectedProjectId: 'project-2',
+    issues: [],
+  },
+})
+assert.equal(authoritativeInvalidLegacyDatabase.integrity.kind, 'invalid')
+assert.equal(authoritativeInvalidLegacyDatabase.eligibility.reason, 'invalid')
 
 const databaseRunBInput = fixture({ readSource: 'database-rpc' })
 const localRunBInput = fixture({ readSource: 'code-backed' })

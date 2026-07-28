@@ -4,7 +4,7 @@ import {
   buildProjectForkLineageTruth,
   chunkProjectForkLineageIds,
   normalizeProjectForkSource,
-  selectProjectForkLineageTruth,
+  overlayProjectForkLineagePresentations,
   unavailableProjectForkLineageTruth,
   type BuildProjectForkLineageTruthInput,
   type ProjectForkArtifactVersion,
@@ -247,10 +247,10 @@ export function adaptCodeBackedProjectForkLineage<TProject>(
   })
 }
 
-function parseRpcLineage(
+function parseRpcLineageInput(
   projectId: string,
   payload: RpcLineagePayload | null,
-) {
+): BuildProjectForkLineageTruthInput<AuthoritativeProjectForkProject> {
   const status = optionalString(payload?.status)
   if (!status || !INTEGRITY_KINDS.has(status as ProjectForkLineageIntegrityKind)) {
     throw new Error('Fork lineage RPC returned an unknown integrity status.')
@@ -262,7 +262,7 @@ function parseRpcLineage(
   }
   const nodes = payload.nodes.map(parseNode)
 
-  return buildProjectForkLineageTruth({
+  return {
     nodes,
     currentProjectId: projectId,
     readSource: 'database-rpc',
@@ -271,6 +271,21 @@ function parseRpcLineage(
       affectedProjectId,
       issues: integrityIssue(kind, affectedProjectId),
     },
+  }
+}
+
+function parseRpcLineage<TPresentationProject>(
+  projectId: string,
+  payload: RpcLineagePayload | null,
+  presentationTruth?: ProjectForkLineageTruth<TPresentationProject> | null,
+) {
+  const input = parseRpcLineageInput(projectId, payload)
+  return buildProjectForkLineageTruth({
+    ...input,
+    nodes: overlayProjectForkLineagePresentations(
+      input.nodes,
+      presentationTruth,
+    ),
   })
 }
 
@@ -346,20 +361,17 @@ export async function getAuthoritativeProjectForkLineages<TCodeProject = never>(
       if (!expected.delete(projectId) || truths.has(projectId)) {
         throw new Error('Fork lineage batch RPC returned an unknown or duplicate project.')
       }
-      const databaseTruth = parseRpcLineage(
-        projectId,
-        row.lineage as RpcLineagePayload | null,
-      )
       const codeBacked = options.codeBacked?.get(projectId)
       const codeBackedTruth = codeBacked
         ? adaptCodeBackedProjectForkLineage(codeBacked)
         : null
-      truths.set(projectId, selectProjectForkLineageTruth<
+      truths.set(projectId, parseRpcLineage<
         AuthoritativeProjectForkProject | TCodeProject
-      >({
-        databaseTruth,
+      >(
+        projectId,
+        row.lineage as RpcLineagePayload | null,
         codeBackedTruth,
-      })!)
+      ))
     }
     if (expected.size > 0) {
       throw new Error('Fork lineage batch RPC omitted a requested project.')

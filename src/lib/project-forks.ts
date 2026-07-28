@@ -394,6 +394,32 @@ export function selectProjectForkLineageTruth<TProject>({
 }
 
 /**
+ * Attach exact local presentation packages to database-owned candidate nodes
+ * before the shared builder validates response and prompt anchors.
+ *
+ * Database rows remain the only source of project order, stored fork
+ * coordinates, families, and provenance. The presentation truth may replace
+ * only the route/model/step payload for the same project IDs.
+ */
+export function overlayProjectForkLineagePresentations<TProject>(
+  nodes: ProjectForkLineageCandidateNode<TProject>[],
+  presentationTruth?: Pick<ProjectForkLineageTruth<unknown>, 'generations'> | null,
+) {
+  if (!presentationTruth) return nodes
+  const presentationByProjectId = new Map(
+    presentationTruth.generations.map((generation) => [
+      generation.projectId,
+      generation.presentation,
+    ]),
+  )
+  return nodes.map((node) => ({
+    ...node,
+    presentation: presentationByProjectId.get(node.projectId)
+      ?? node.presentation,
+  }))
+}
+
+/**
  * Preserve database lineage authority while replacing only known presentation
  * payloads with exact code-backed run packages. The rebuilt truth revalidates
  * every DB-owned edge against the overlaid local response/artifact package.
@@ -405,27 +431,23 @@ export function enrichAuthoritativeProjectForkPresentation<
   databaseTruth: ProjectForkLineageTruth<TDatabaseProject>,
   presentationTruth: ProjectForkLineageTruth<TPresentationProject>,
 ): ProjectForkLineageTruth<TDatabaseProject> {
-  const presentationByProjectId = new Map(
-    presentationTruth.generations.map((generation) => [
-      generation.projectId,
-      generation.presentation,
-    ]),
-  )
   const currentProjectId = databaseTruth.generations
     .find((generation) => generation.isCurrent)?.projectId
     ?? databaseTruth.integrity.affectedProjectId
     ?? ''
 
   return buildProjectForkLineageTruth({
-    nodes: databaseTruth.generations.map((generation) => ({
-      projectId: generation.projectId,
-      title: generation.title,
-      project: generation.project,
-      presentation: presentationByProjectId.get(generation.projectId)
-        ?? generation.presentation,
-      promptFamilyId: generation.forkSource?.promptFamilyId ?? null,
-      forkSource: generation.forkSource,
-    })),
+    nodes: overlayProjectForkLineagePresentations(
+      databaseTruth.generations.map((generation) => ({
+        projectId: generation.projectId,
+        title: generation.title,
+        project: generation.project,
+        presentation: generation.presentation,
+        promptFamilyId: generation.forkSource?.promptFamilyId ?? null,
+        forkSource: generation.forkSource,
+      })),
+      presentationTruth,
+    ),
     currentProjectId,
     readSource: 'database-rpc',
     integrity: databaseTruth.integrity,
@@ -447,6 +469,32 @@ function normalizeStoredForkCoordinate(value: number) {
 function normalizeOptional(value: string | null | undefined) {
   const trimmed = value?.trim()
   return trimmed || undefined
+}
+
+/**
+ * Resolve the model-variant identity for an already exact-matched source run.
+ *
+ * Prepared variant manifests do not always carry their reconciled database ID.
+ * In that case the exact prepared outgoing fork edge may supply it. A
+ * reconciled manifest and prepared edge must agree when both identities exist.
+ */
+export function resolveExactProjectForkModelVariantIdentity({
+  registeredModelVariantId,
+  claimedModelVariantId,
+}: {
+  registeredModelVariantId?: string | null
+  claimedModelVariantId?: string | null
+}): {
+  valid: boolean
+  sourceModelVariantId?: string
+} {
+  const registered = normalizeOptional(registeredModelVariantId)
+  const claimed = normalizeOptional(claimedModelVariantId)
+  if (registered && claimed && registered !== claimed) return { valid: false }
+  return {
+    valid: true,
+    sourceModelVariantId: registered ?? claimed,
+  }
 }
 
 export function normalizeProjectForkSource(source: Partial<ProjectForkSource> & { sourceProjectId: string }): ProjectForkSource {

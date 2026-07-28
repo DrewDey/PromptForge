@@ -20,6 +20,8 @@ function parseArgs(argv) {
     baseUrl: 'http://localhost:3012',
     parentRoute: '/hp-10bii-calculator-demo#source-run-path',
     childRoute: '/school-desk-hp-calculator-fork-demo#source-run-path',
+    roadTripParentRoute: '/weekend-plan-checklist-demo#source-run-path',
+    roadTripChildRoute: '/weekend-family-road-trip-readiness-fork-demo#source-run-path',
     grandchildRoute: '/qa/fork-lineage-grandchild-fixture#source-run-path',
     nestedChildRoute: '/airlock-zero-swarm-shift-fork-demo#source-run-path',
     sourceParentRoute: '/airlock-zero-reactor-run-demo?run=562f5775-9739-4704-be3e-d85efbbd2a5c#source-run-path',
@@ -37,6 +39,8 @@ function parseArgs(argv) {
     if (key === '--base-url') options.baseUrl = value
     else if (key === '--parent-route') options.parentRoute = value
     else if (key === '--child-route') options.childRoute = value
+    else if (key === '--road-trip-parent-route') options.roadTripParentRoute = value
+    else if (key === '--road-trip-child-route') options.roadTripChildRoute = value
     else if (key === '--grandchild-route') options.grandchildRoute = value
     else if (key === '--nested-child-route') options.nestedChildRoute = value
     else if (key === '--source-parent-route') options.sourceParentRoute = value
@@ -185,14 +189,14 @@ const lineageSnapshotExpression = `(() => {
       const text=[...node?.querySelectorAll('div') || []]
         .map((value)=>value.textContent?.trim() || '')
         .find((value)=>value.startsWith(label + ' ')) || '';
-      const match=text.match(new RegExp('^' + label + ' \\\\s*(\\\\d+)','i'));
+      const match=text.match(new RegExp('^' + label + ' \\s*(\\d+)','i'));
       return match ? Number(match[1]) : null;
     };
     const currentPrompts=[...current?.querySelectorAll('[data-fork-generation-prompt]') || []];
     const currentResponses=[...current?.querySelectorAll('[data-fork-generation-response]') || []];
     const edgeGeometry=edges.map((edge)=>{
       const values=(edge.querySelector('path')?.getAttribute('d') || '')
-        .match(/-?\\\\d+(?:\\\\.\\\\d+)?/g)?.map(Number) || [];
+        .match(/-?\\d+(?:\\.\\d+)?/g)?.map(Number) || [];
       const [sourceX,sourceY,,targetY,targetX]=values;
       const responseAnchorId=edge.getAttribute('data-parent-response-anchor-id') || '';
       const promptId=edge.getAttribute('data-child-prompt-id') || '';
@@ -248,6 +252,17 @@ const lineageSnapshotExpression = `(() => {
         const ids=[...root.querySelectorAll('[data-testid]')].map((node)=>node.getAttribute('data-testid'));
         return [...new Set(ids.filter((id,index)=>ids.indexOf(id)!==index))];
       })(),
+      duplicateArtifactSelectors:(()=>{
+        const paths=[...root.querySelectorAll('[data-fork-display-artifact]')]
+          .map((node)=>node.getAttribute('data-fork-display-artifact'));
+        return [...new Set(paths.filter((path,index)=>paths.indexOf(path)!==index))];
+      })(),
+      multiArtifactSteps:[...root.querySelectorAll('[data-fork-generation-step]')]
+        .map((step)=>({
+          id:step.getAttribute('data-fork-generation-step') || '',
+          count:step.querySelectorAll('[data-fork-generation-artifact]').length,
+        }))
+        .filter((step)=>step.count > 1),
       eligibilityReason:root.querySelector('[data-fork-eligibility]')
         ?.getAttribute('data-fork-eligibility-reason') || '',
       connector:{
@@ -712,6 +727,22 @@ function assertLineageSnapshot(snapshot, mode, label) {
     if (snapshot.generationCount < 2 || snapshot.edgeCount !== snapshot.generationCount - 1) {
       throw new Error(`${label} did not preserve a complete authoritative generation chain.`)
     }
+    if (snapshot.eligibilityReason !== 'eligible') {
+      throw new Error(
+        `${label} authoritative lineage denied a valid next fork as ${snapshot.eligibilityReason || '(missing)'}.`,
+      )
+    }
+    if (snapshot.duplicateArtifactSelectors?.length > 0) {
+      throw new Error(
+        `${label} duplicated artifact selectors: ${snapshot.duplicateArtifactSelectors.join(', ')}.`,
+      )
+    }
+    if (snapshot.multiArtifactSteps?.length > 0) {
+      throw new Error(
+        `${label} rendered multiple artifact selectors for one prepared response: ` +
+        `${JSON.stringify(snapshot.multiArtifactSteps)}.`,
+      )
+    }
     return
   }
   assertDesktopBranchGeometry(snapshot, label)
@@ -816,9 +847,14 @@ async function verifyArtifactDisplay(client, sessionId, snapshot, label) {
 async function verifyConnectorAfterSourceExpansion(client, sessionId, label) {
   const expanded = await client.send('Runtime.evaluate', {
     expression: `(() => {
-      const summary=document.querySelector(
-        '[data-fork-desktop-path] aside [data-fork-source-prompt] details summary'
-      );
+      const root=document.querySelector('[data-project-fork-build-path]');
+      const summary=root?.querySelector('[data-fork-generation-workspace]')
+        ? root.querySelector(
+            '[data-testid="fork-node-1"] [data-fork-generation-prompt] details summary'
+          )
+        : root?.querySelector(
+            '[data-fork-desktop-path] aside [data-fork-source-prompt] details summary'
+          );
       if (!summary) return false;
       summary.click();
       return true;
@@ -1064,6 +1100,43 @@ async function verifyMobileLineage(client, sessionId, mode, label, screenshotPat
     sessionId,
     `(() => {
       const root=document.querySelector('[data-project-fork-build-path]');
+      const authoritativeWorkspace=root?.querySelector('[data-fork-generation-workspace]');
+      if (root && authoritativeWorkspace) {
+        const canvas=root.querySelector('[data-fork-generation-canvas]');
+        const nodes=[...root.querySelectorAll('[data-fork-generation]')];
+        const edges=[...root.querySelectorAll('[data-fork-generation-connector]')];
+        const targetSizes=[...root.querySelectorAll('a[href],button,summary,[tabindex="0"]')]
+          .map((node)=>{
+            const rect=node.getBoundingClientRect();
+            return {
+              label:node.getAttribute('aria-label') || node.textContent?.trim() || '',
+              width:rect.width,
+              height:rect.height,
+            };
+          });
+        return {
+          authoritative:true,
+          mode:root.getAttribute('data-project-fork-build-path-mode') || '',
+          overflow:document.documentElement.scrollWidth-window.innerWidth,
+          visualOffsetLeft:window.visualViewport?.offsetLeft || 0,
+          visualPageLeft:window.visualViewport?.pageLeft || 0,
+          rootClientWidth:root.clientWidth,
+          rootScrollWidth:root.scrollWidth,
+          workspaceClientWidth:authoritativeWorkspace.clientWidth,
+          workspaceScrollWidth:authoritativeWorkspace.scrollWidth,
+          workspaceSnapType:getComputedStyle(authoritativeWorkspace).scrollSnapType,
+          workspaceOverflowX:getComputedStyle(authoritativeWorkspace).overflowX,
+          canvasSnapType:canvas ? getComputedStyle(canvas).scrollSnapType : '',
+          laneSnapAlign:nodes[0] ? getComputedStyle(nodes[0]).scrollSnapAlign : '',
+          nodeCount:nodes.length,
+          edgeCount:edges.length,
+          eligibilityReason:root.querySelector('[data-fork-eligibility]')
+            ?.getAttribute('data-fork-eligibility-reason') || '',
+          undersizedTargets:targetSizes.filter((target)=>(
+            target.width < 44 || target.height < 44
+          )),
+        };
+      }
       const disclosure=root?.querySelector('details[data-fork-inherited-path]');
       const desktopPath=[...root?.querySelectorAll('aside[data-fork-inherited-path]') || []][0];
       const connectorLane=root?.querySelector('[data-fork-connector-lane]');
@@ -1097,6 +1170,7 @@ async function verifyMobileLineage(client, sessionId, mode, label, screenshotPat
             })),
         }));
       return {
+        authoritative:false,
         mode:root?.getAttribute('data-project-fork-build-path-mode') || '',
         overflow:document.documentElement.scrollWidth-window.innerWidth,
         visualOffsetLeft:window.visualViewport?.offsetLeft || 0,
@@ -1118,12 +1192,144 @@ async function verifyMobileLineage(client, sessionId, mode, label, screenshotPat
         continuationArticles,
       };
     })()`,
-    (value) => value?.mode === mode && value.disclosureVisible && value.continuationWidth > 0 && value.availableWidth > 0,
+    (value) => value?.mode === mode && (
+      value.authoritative
+        ? value.nodeCount >= 2 && value.edgeCount === value.nodeCount - 1
+        : value.disclosureVisible && value.continuationWidth > 0 && value.availableWidth > 0
+    ),
     `${label} 390px lineage layout`,
   )
   if (mobile.overflow > 1) throw new Error(`${label} 390px lineage overflows horizontally by ${mobile.overflow}px.`)
   if (mobile.visualOffsetLeft !== 0 || mobile.visualPageLeft !== 0) {
     throw new Error(`${label} 390px visual viewport is horizontally panned by ${mobile.visualOffsetLeft}px/${mobile.visualPageLeft}px.`)
+  }
+  if (mobile.authoritative) {
+    if (mobile.rootScrollWidth > mobile.rootClientWidth + 1) {
+      throw new Error(
+        `${label} 390px authoritative lineage masks root overflow ` +
+        `${mobile.rootClientWidth}/${mobile.rootScrollWidth}.`,
+      )
+    }
+    if (mobile.workspaceScrollWidth <= mobile.workspaceClientWidth + 1) {
+      throw new Error(
+        `${label} 390px authoritative lineage did not preserve its internal horizontal track ` +
+        `${mobile.workspaceClientWidth}/${mobile.workspaceScrollWidth}.`,
+      )
+    }
+    if (
+      !mobile.workspaceSnapType.includes('x mandatory') ||
+      mobile.canvasSnapType !== 'none' ||
+      mobile.laneSnapAlign !== 'center' ||
+      !['auto', 'scroll'].includes(mobile.workspaceOverflowX)
+    ) {
+      throw new Error(
+        `${label} 390px authoritative lineage has incorrect snap ownership: ` +
+        `${mobile.workspaceSnapType}/${mobile.canvasSnapType}/${mobile.laneSnapAlign}/${mobile.workspaceOverflowX}.`,
+      )
+    }
+    if (mobile.undersizedTargets.length > 0) {
+      throw new Error(
+        `${label} 390px authoritative lineage has touch targets below 44px: ` +
+        `${JSON.stringify(mobile.undersizedTargets)}.`,
+      )
+    }
+    if (mobile.eligibilityReason !== 'eligible') {
+      throw new Error(
+        `${label} 390px authoritative lineage unexpectedly denies the next fork as ` +
+        `${mobile.eligibilityReason || '(missing)'}.`,
+      )
+    }
+    await client.send('Runtime.evaluate', {
+      expression: `(() => {
+        const workspace=document.querySelector(
+          '[data-project-fork-build-path] [data-fork-generation-workspace]'
+        );
+        workspace?.scrollTo({left:0,behavior:'instant'});
+        return Boolean(workspace);
+      })()`,
+      returnByValue: true,
+    }, sessionId)
+    await waitForValue(
+      client,
+      sessionId,
+      `(() => {
+        const root=document.querySelector('[data-project-fork-build-path]');
+        const workspace=root?.querySelector('[data-fork-generation-workspace]');
+        const levels=[...root?.querySelectorAll('[data-fork-generation]') || []]
+          .map((node)=>node.getAttribute('data-display-level'));
+        return {
+          active:root?.querySelector('[data-fork-generation-nav][data-active-view="true"]')
+            ?.getAttribute('data-fork-generation-nav') || '',
+          first:levels[0] || '',
+          left:workspace?.scrollLeft || 0,
+        };
+      })()`,
+      (value) => value?.active === value?.first && value.left <= 8,
+      `${label} 390px first-level scroll synchronization`,
+    )
+    await client.send('Runtime.evaluate', {
+      expression: `(() => {
+        const workspace=document.querySelector(
+          '[data-project-fork-build-path] [data-fork-generation-workspace]'
+        );
+        if (!workspace) return false;
+        workspace.scrollTo({
+          left:workspace.scrollWidth-workspace.clientWidth,
+          behavior:'instant',
+        });
+        return true;
+      })()`,
+      returnByValue: true,
+    }, sessionId)
+    await waitForValue(
+      client,
+      sessionId,
+      `(() => {
+        const root=document.querySelector('[data-project-fork-build-path]');
+        const workspace=root?.querySelector('[data-fork-generation-workspace]');
+        const levels=[...root?.querySelectorAll('[data-fork-generation]') || []]
+          .map((node)=>node.getAttribute('data-display-level'));
+        const max=(workspace?.scrollWidth || 0)-(workspace?.clientWidth || 0);
+        return {
+          active:root?.querySelector('[data-fork-generation-nav][data-active-view="true"]')
+            ?.getAttribute('data-fork-generation-nav') || '',
+          last:levels.at(-1) || '',
+          remainder:Math.abs(max-(workspace?.scrollLeft || 0)),
+        };
+      })()`,
+      (value) => value?.active === value?.last && value.remainder <= 8,
+      `${label} 390px terminal-level scroll synchronization`,
+    )
+    const mobileGeometry = await waitForValue(
+      client,
+      sessionId,
+      lineageSnapshotExpression,
+      (value) => (
+        value?.authoritative === true &&
+        value.edgeGeometry?.length === value.edgeCount &&
+        value.edgeGeometry.every((geometry) => (
+          [
+            geometry.sourceXDelta,
+            geometry.sourceYDelta,
+            geometry.targetXDelta,
+            geometry.targetYDelta,
+          ].every((delta) => Number.isFinite(delta) && delta <= 2)
+        ))
+      ),
+      `${label} 390px connector geometry after horizontal scroll`,
+    )
+    if (!mobileGeometry.connector?.visible) {
+      throw new Error(`${label} 390px connector was not visible after horizontal scrolling.`)
+    }
+    if (screenshotPath) {
+      await captureViewport(
+        client,
+        sessionId,
+        '[data-project-fork-build-path]',
+        screenshotPath,
+      )
+    }
+    return
   }
   if (!mobile.desktopHidden || !mobile.connectorHidden || !mobile.pipelineHidden || !mobile.promptNodeHidden || !mobile.responseNodeHidden) {
     throw new Error(`${label} 390px lineage leaked desktop source, connector, or pipeline geometry.`)
@@ -1202,20 +1408,24 @@ async function verifyMobileParentRail(
   }
 }
 
-async function verifyNestedForkCreation(client, sessionId, nestedChildUrl) {
-  await navigate(client, sessionId, nestedChildUrl)
-  await waitForLineage(client, sessionId, 'child', 'nested-fork child page')
-
+async function verifyCurrentForkCreationAction(client, sessionId, label) {
   const nested = await waitForValue(
     client,
     sessionId,
     `(() => {
       const links=[...document.querySelectorAll('[data-fork-continuation-fork]')];
       if (links.length !== 1) return { count: links.length };
-      const url=new URL(links[0].href);
+      const link=links[0];
+      const url=new URL(link.href);
+      const current=link.closest('[data-fork-generation]');
+      const step=link.closest('[data-fork-generation-step]');
+      const artifacts=[...step?.querySelectorAll('[data-fork-generation-artifact]') || []];
+      const sourceArtifactPath=url.searchParams.get('forkArtifact');
+      const sourceArtifactSha256=url.searchParams.get('forkArtifactSha256');
       return {
         count: links.length,
         path: url.pathname,
+        currentProjectId:current?.getAttribute('data-generation-id') || '',
         sourceProjectId: url.searchParams.get('fork'),
         sourceRunId: url.searchParams.get('forkRun'),
         sourceStepId: url.searchParams.get('forkStep'),
@@ -1225,29 +1435,45 @@ async function verifyNestedForkCreation(client, sessionId, nestedChildUrl) {
         parentForkId: url.searchParams.get('parentFork'),
         depth: url.searchParams.get('forkDepth'),
         promptFamilyId: url.searchParams.get('promptFamily'),
+        exactArtifactMatches:artifacts.filter((artifact)=>(
+          artifact.getAttribute('data-source-artifact-path') === sourceArtifactPath &&
+          artifact.getAttribute('data-artifact-sha256') === sourceArtifactSha256
+        )).length,
       };
     })()`,
     (value) => value?.count === 1,
-    'nested fork creation action',
+    `${label} fork creation action`,
   )
-  if (nested.path !== '/build') throw new Error(`Nested fork action targets ${nested.path || '(missing)'} instead of /build.`)
-  if (!nested.sourceProjectId || nested.parentForkId !== nested.sourceProjectId) {
-    throw new Error('Nested fork action did not preserve the immediate child as its parent.')
+  if (nested.path !== '/build') {
+    throw new Error(`${label} fork action targets ${nested.path || '(missing)'} instead of /build.`)
+  }
+  if (
+    !nested.sourceProjectId ||
+    nested.sourceProjectId !== nested.currentProjectId ||
+    nested.parentForkId !== nested.sourceProjectId
+  ) {
+    throw new Error(`${label} fork action did not preserve the exact current child as its parent.`)
   }
   if (!nested.sourceRunId || !nested.sourceStepId || !nested.promptFamilyId) {
-    throw new Error('Nested fork action omitted exact run, response, or prompt-family identity.')
+    throw new Error(`${label} fork action omitted exact run, response, or prompt-family identity.`)
   }
   if (!nested.sourceStepId.endsWith(`:step:${nested.sourceStepNumber}`)) {
-    throw new Error('Nested fork response ID and response number drifted.')
+    throw new Error(`${label} fork response ID and response number drifted.`)
   }
   if (!nested.sourceArtifactPath?.startsWith('public/artifacts/')) {
-    throw new Error('Nested fork action omitted its exact public artifact path.')
+    throw new Error(`${label} fork action omitted its exact public artifact path.`)
   }
   if (!/^[0-9a-f]{64}$/.test(nested.sourceArtifactSha256 ?? '')) {
-    throw new Error('Nested fork action omitted its exact artifact SHA-256.')
+    throw new Error(`${label} fork action omitted its exact artifact SHA-256.`)
+  }
+  if (nested.exactArtifactMatches !== 1) {
+    throw new Error(
+      `${label} fork action matched ${nested.exactArtifactMatches} displayed artifacts ` +
+      'instead of one exact current response artifact.',
+    )
   }
   if (nested.depth !== '1') {
-    throw new Error(`Nested fork action used depth ${nested.depth ?? '(missing)'} instead of 1.`)
+    throw new Error(`${label} fork action used depth ${nested.depth ?? '(missing)'} instead of 1.`)
   }
 }
 
@@ -1294,6 +1520,8 @@ async function main() {
   const options = parseArgs(process.argv.slice(2))
   const parentUrl = new URL(options.parentRoute, options.baseUrl).href
   const childUrl = new URL(options.childRoute, options.baseUrl).href
+  const roadTripParentUrl = new URL(options.roadTripParentRoute, options.baseUrl).href
+  const roadTripChildUrl = new URL(options.roadTripChildRoute, options.baseUrl).href
   const grandchildUrl = new URL(options.grandchildRoute, options.baseUrl).href
   const nestedChildUrl = new URL(options.nestedChildRoute, options.baseUrl).href
   const sourceParentUrl = new URL(options.sourceParentRoute, options.baseUrl).href
@@ -1392,6 +1620,7 @@ async function main() {
       assertLineageSnapshot(parentSnapshot, 'parent', 'Parent page')
       assertResponseToPromptPipeline(parentSnapshot, 'Parent page', 2, [3])
       await verifyArtifactDisplay(client, sessionId, parentSnapshot, 'Parent page')
+      await verifyCurrentForkCreationAction(client, sessionId, 'Parent page')
       if (screenshot('hp-school-desk-selected-desktop.png')) {
         await captureElement(client, sessionId, '[data-project-fork-build-path]', screenshot('hp-school-desk-selected-desktop.png'))
       }
@@ -1400,11 +1629,19 @@ async function main() {
       const blackoutSnapshot = await waitForLineage(client, sessionId, 'child', 'Blackout child page')
       assertLineageSnapshot(blackoutSnapshot, 'child', 'Blackout child page')
       assertResponseToPromptPipeline(blackoutSnapshot, 'Blackout child page', 10, [11, 12, 13, 14])
+      await verifyCurrentForkCreationAction(client, sessionId, 'Blackout child page')
       if (screenshot('airlock-blackout-child-desktop.png')) {
         await captureElement(client, sessionId, '[data-project-fork-build-path]', screenshot('airlock-blackout-child-desktop.png'))
       }
 
       const hostedParentFixtures = [
+        {
+          url: roadTripParentUrl,
+          label: 'Weekend selected Family Road-Trip',
+          sourceNumber: 3,
+          continuationNumbers: [4],
+          slug: 'weekend-family-road-trip',
+        },
         {
           url: sourceParentUrl,
           label: 'Reactor Claude selected Blackout',
@@ -1457,6 +1694,11 @@ async function main() {
             fixture.sourceNumber,
             fixture.continuationNumbers,
           )
+          await verifyCurrentForkCreationAction(
+            client,
+            sessionId,
+            fixture.label,
+          )
           if (screenshot(`${fixture.slug}-selected-desktop.png`)) {
             await captureElement(
               client,
@@ -1482,15 +1724,55 @@ async function main() {
         throw new Error(`Parent and child pages did not render the same fork continuation (${JSON.stringify(parentSnapshot.continuation)} vs ${JSON.stringify(childSnapshot.continuation)}).`)
       }
       await verifyArtifactDisplay(client, sessionId, childSnapshot, 'Child page')
+      await verifyCurrentForkCreationAction(client, sessionId, 'Child page')
       await verifyConnectorAfterSourceExpansion(client, sessionId, 'Child page')
       if (screenshot('hp-school-desk-child-desktop.png')) {
         await captureElement(client, sessionId, '[data-project-fork-build-path]', screenshot('hp-school-desk-child-desktop.png'))
+      }
+
+      await navigate(client, sessionId, roadTripChildUrl)
+      const roadTripSnapshot = await waitForLineage(
+        client,
+        sessionId,
+        'child',
+        'Family Road-Trip child page',
+      )
+      assertLineageSnapshot(
+        roadTripSnapshot,
+        'child',
+        'Family Road-Trip child page',
+      )
+      assertResponseToPromptPipeline(
+        roadTripSnapshot,
+        'Family Road-Trip child page',
+        3,
+        [4],
+      )
+      await verifyArtifactDisplay(
+        client,
+        sessionId,
+        roadTripSnapshot,
+        'Family Road-Trip child page',
+      )
+      await verifyCurrentForkCreationAction(
+        client,
+        sessionId,
+        'Family Road-Trip child page',
+      )
+      if (screenshot('weekend-family-road-trip-child-desktop.png')) {
+        await captureElement(
+          client,
+          sessionId,
+          '[data-project-fork-build-path]',
+          screenshot('weekend-family-road-trip-child-desktop.png'),
+        )
       }
 
       await navigate(client, sessionId, nestedChildUrl)
       const swarmSnapshot = await waitForLineage(client, sessionId, 'child', 'Swarm Shift child page')
       assertLineageSnapshot(swarmSnapshot, 'child', 'Swarm Shift child page')
       assertResponseToPromptPipeline(swarmSnapshot, 'Swarm Shift child page', 2, [3])
+      await verifyCurrentForkCreationAction(client, sessionId, 'Swarm Shift child page')
       if (screenshot('airlock-swarm-child-desktop.png')) {
         await captureElement(client, sessionId, '[data-project-fork-build-path]', screenshot('airlock-swarm-child-desktop.png'))
       }
@@ -1499,25 +1781,26 @@ async function main() {
       const hullSnapshot = await waitForLineage(client, sessionId, 'child', 'Hull Breach child page')
       assertLineageSnapshot(hullSnapshot, 'child', 'Hull Breach child page')
       assertResponseToPromptPipeline(hullSnapshot, 'Hull Breach child page', 2, [3, 4, 5, 6, 7, 8, 9])
+      await verifyCurrentForkCreationAction(client, sessionId, 'Hull Breach child page')
       if (screenshot('airlock-hull-child-desktop.png')) {
         await captureElement(client, sessionId, '[data-project-fork-build-path]', screenshot('airlock-hull-child-desktop.png'))
       }
 
-      await navigate(client, sessionId, grandchildUrl)
-      const grandchildSnapshot = await waitForLineage(client, sessionId, 'child', 'grandchild fixture')
-      assertLineageSnapshot(grandchildSnapshot, 'child', 'Grandchild fixture')
-      if (grandchildSnapshot.inherited.length < 3) {
-        throw new Error(`Grandchild fixture preserved only ${grandchildSnapshot.inherited.length} inherited steps.`)
+      if (isLocalEnvironment) {
+        await navigate(client, sessionId, grandchildUrl)
+        const grandchildSnapshot = await waitForLineage(client, sessionId, 'child', 'grandchild fixture')
+        assertLineageSnapshot(grandchildSnapshot, 'child', 'Grandchild fixture')
+        if (grandchildSnapshot.inherited.length < 3) {
+          throw new Error(`Grandchild fixture preserved only ${grandchildSnapshot.inherited.length} inherited steps.`)
+        }
+        if (grandchildSnapshot.trail.length !== 3) {
+          throw new Error(`Grandchild fixture rendered ${grandchildSnapshot.trail.length} lineage crumbs instead of three.`)
+        }
+        if (!grandchildSnapshot.sourceResponses[0]?.endsWith(':step:3')) {
+          throw new Error(`Grandchild fixture anchored to ${grandchildSnapshot.sourceResponses[0] || '(missing)'} instead of its immediate response 03.`)
+        }
+        await verifyArtifactDisplay(client, sessionId, grandchildSnapshot, 'Grandchild fixture')
       }
-      if (grandchildSnapshot.trail.length !== 3) {
-        throw new Error(`Grandchild fixture rendered ${grandchildSnapshot.trail.length} lineage crumbs instead of three.`)
-      }
-      if (!grandchildSnapshot.sourceResponses[0]?.endsWith(':step:3')) {
-        throw new Error(`Grandchild fixture anchored to ${grandchildSnapshot.sourceResponses[0] || '(missing)'} instead of its immediate response 03.`)
-      }
-      await verifyArtifactDisplay(client, sessionId, grandchildSnapshot, 'Grandchild fixture')
-      await verifyNestedForkCreation(client, sessionId, nestedChildUrl)
-
       await client.send('Emulation.setDeviceMetricsOverride', {
         width: 390,
         height: 844,
@@ -1540,6 +1823,13 @@ async function main() {
         screenshot('hp-school-desk-selected-mobile-390.png'),
       )
       await verifyMobileFork(client, sessionId, childUrl, 'School Desk child', screenshot('hp-school-desk-child-mobile-390.png'))
+      await verifyMobileFork(
+        client,
+        sessionId,
+        roadTripChildUrl,
+        'Family Road-Trip child',
+        screenshot('weekend-family-road-trip-child-mobile-390.png'),
+      )
       await verifyMobileFork(client, sessionId, blackoutChildUrl, 'Blackout child', screenshot('airlock-blackout-child-mobile-390.png'))
       await verifyMobileFork(client, sessionId, nestedChildUrl, 'Swarm Shift child', screenshot('airlock-swarm-child-mobile-390.png'))
       if (screenshot('airlock-swarm-prompt-03-lane-mobile-390.png')) {
@@ -1587,8 +1877,8 @@ async function main() {
 
       console.log(
         modelRunIsolationVerified
-          ? 'Response-to-prompt parent/child/grandchild lineage, four prepared fork shapes, parent response branches, internal mobile containment, artifact display, and three-run isolation passed.'
-          : 'Response-to-prompt parent/child/grandchild lineage, four prepared fork shapes, parent response branches, internal mobile containment, and artifact display passed; model-run isolation was not applicable on this route.',
+          ? `Response-to-prompt parent/child${isLocalEnvironment ? '/grandchild' : ''} lineage, five prepared fork families, parent response branches, internal mobile containment, artifact display, and three-run isolation passed.`
+          : `Response-to-prompt parent/child${isLocalEnvironment ? '/grandchild' : ''} lineage, five prepared fork families, parent response branches, internal mobile containment, and artifact display passed; model-run isolation was not applicable on this route.`,
       )
     } catch (error) {
       const browserEvidence = [...new Set(consoleErrors)].join(' | ')

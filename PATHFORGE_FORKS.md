@@ -26,7 +26,7 @@ Parent and child routes use the same lineage workspace:
 
 At narrow widths, the desktop inherited rail collapses into a disclosure and the relationship stacks as inherited path -> response socket -> child continuation. The 390px layout must not require horizontal scrolling.
 
-Forks are nested-ready. `prompt_family_id` groups the tree, `parent_fork_id` links the immediate parent, and `fork_depth`/`fork_branch_index` locate a node. Prepared pages resolve the complete root-to-current registry trail with cycle and missing-parent rejection; they do not hard-code one parent hop. Depth and width are both capped at 10, with stored indexes `0` through `9`. Do not bypass those limits in route code or seed data.
+Forks are nested-ready. `prompt_family_id` groups the tree, `parent_fork_id` links the immediate parent, and `fork_depth`/`fork_branch_index` locate a node. Prepared pages resolve the complete root-to-current registry trail with cycle and missing-parent rejection; they do not hard-code one parent hop. A complete lineage has at most 10 total display levels and nine response-to-prompt edges: the original project is level 1, and fork descendants are levels 2 through 10. For compatibility, the first fork stores `fork_depth = 0`, so valid fork depths are `0` through `8`; stored depth `9` is invalid legacy evidence that must be reported and denied rather than rendered as level 11. Branch width remains 10, with `fork_branch_index` values `0` through `9`. Do not bypass those limits in route code or seed data.
 
 ## Source-run package
 
@@ -51,7 +51,7 @@ For a model-run fork, `source_run_id` requires a real `public/artifacts/...` sou
 
 ## Import and publish order
 
-1. Apply `supabase/migrations/20260711145005_variant_aware_project_forks.sql` before importing a structured fork. Missing lineage columns are a hard blocker; there is no notes-only fallback.
+1. Apply `supabase/migrations/20260711145005_variant_aware_project_forks.sql`, then `supabase/migrations/20260728024959_authoritative_project_fork_lineage.sql`, before importing a structured fork. The latter preflights existing lineage, rejects stored depth 9+, installs database monotonicity enforcement, and exposes the bounded public read. Missing lineage authority is a hard blocker; there is no notes-only fallback.
 2. Run the structural checks below.
 3. Import only through source-run intake:
 

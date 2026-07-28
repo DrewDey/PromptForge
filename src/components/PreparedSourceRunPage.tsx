@@ -16,7 +16,10 @@ import SourceRunShowcase, {
 } from '@/components/SourceRunShowcase'
 import ProjectActivationTracker from '@/components/analytics/ProjectActivationTracker'
 import { PublicTruthSummary } from '@/components/PublicTruthSummary'
-import { getApprovedProjectForks } from '@/lib/data'
+import {
+  getApprovedProjectForks,
+  getProjectForkLineageTruth,
+} from '@/lib/data'
 import { getPublicProfileByUsername } from '@/lib/data/public-profiles'
 import {
   getPreparedShowcaseProjectById,
@@ -302,6 +305,7 @@ function buildPreparedForkContext({
   childSourceEvidence,
   childArtifactQualityStatus,
   childArtifactKnownIssueExplanation,
+  canFork,
 }: {
   project: PreparedShowcaseProject
   sourceRun: SourceRunPackage
@@ -312,6 +316,7 @@ function buildPreparedForkContext({
   childSourceEvidence: PublicEvidenceTruth
   childArtifactQualityStatus: 'verified' | 'known-issue' | 'recorded'
   childArtifactKnownIssueExplanation: string | null
+  canFork: boolean
 }): SourceRunShowcaseForkContext {
   const lineage = resolvePreparedShowcaseLineage(project)
   const registeredSource = getPreparedShowcaseProjectById(forkSource.sourceProjectId)
@@ -380,7 +385,13 @@ function buildPreparedForkContext({
       nestedArtifactPath === sourceRun.final_artifact_path &&
       forkArtifact.artifactSha256 === sourceRun.artifact_sha256,
     )
-    if (!hasPublishableFinalEvidence || !nestedSourceRunId || !nestedArtifactPath || !forkArtifact?.artifactSha256) {
+    if (
+      !canFork ||
+      !hasPublishableFinalEvidence ||
+      !nestedSourceRunId ||
+      !nestedArtifactPath ||
+      !forkArtifact?.artifactSha256
+    ) {
       return continuation
     }
 
@@ -515,6 +526,7 @@ export default async function PreparedSourceRunPage({
     unresolvedForkNetwork,
     projectContext,
     publicAuthorProfile,
+    lineageTruth,
   ] = await Promise.all([
     resolveProviderPublicShare({
       projectId: project.id,
@@ -526,6 +538,12 @@ export default async function PreparedSourceRunPage({
     ),
     getCurrentUserProjectContext(project.id),
     getPublicProfileByUsername(project.authorUsername),
+    getProjectForkLineageTruth(project.id, {
+      codeBackedAuthority: true,
+      currentSourceRunId: activeModelVariant?.sourceRunId
+        ?? sourceRun.source_run_id
+        ?? project.sourceRunId,
+    }),
   ])
   const currentSourceRunId = activeModelVariant?.sourceRunId
     ?? sourceRun.source_run_id
@@ -598,6 +616,7 @@ export default async function PreparedSourceRunPage({
       childArtifactKnownIssueExplanation: activeModelVariant
         ? getProjectModelVariantKnownIssueExplanation(activeModelVariant)
         : null,
+      canFork: lineageTruth?.eligibility.allowed === true,
     })
     : null
   const resumeArtifactPath = projectContext.state?.selectedSourceRunId === currentSourceRunId
@@ -702,7 +721,7 @@ export default async function PreparedSourceRunPage({
         steps={steps}
         forkNetwork={forkNetwork}
         forkContext={forkContext}
-        allowForks
+        allowForks={lineageTruth?.eligibility.allowed === true}
         defaultStepNumber={sourceRunDefaultStepNumber(sourceRun, preparedArtifactPath)}
         initialArtifactPath={resumeArtifactPath}
         trackResume={projectContext.isAuthenticated}

@@ -262,8 +262,9 @@ function parseForkSource(value: unknown): ProjectForkSource | undefined {
     ['fork_depth', forkDepthValue],
     ['fork_branch_index', forkBranchIndexValue],
   ] as const) {
-    if (typeof entry !== 'number' || !Number.isInteger(entry) || entry < 0 || entry >= 10) {
-      throw new Error(`Source-run package fork_source.${field} must be an integer from 0 through 9.`)
+    const maximum = field === 'fork_depth' ? 8 : 9
+    if (typeof entry !== 'number' || !Number.isInteger(entry) || entry < 0 || entry > maximum) {
+      throw new Error(`Source-run package fork_source.${field} must be an integer from 0 through ${maximum}.`)
     }
   }
 

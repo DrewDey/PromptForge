@@ -120,7 +120,7 @@ export default function ProjectForkLineageScaffold({
   const sharedSegments = contract.lineageSegments.filter((segment) => segment.state === 'shared-history')
   const originalContinuationSegments = contract.lineageSegments.filter((segment) => segment.state === 'original-continuation')
   const forkPointSegment = contract.lineageSegments.find((segment) => segment.state === 'fork-point')
-  const depthValue = Math.min(contract.source.depth + 1, contract.maxDepth)
+  const levelValue = Math.min(contract.source.depth + 2, contract.maxDepth)
   const branchValue = Math.min(contract.source.branchIndex + 1, contract.maxWidth)
   const forkLabel = forkPointStep
     ? `Response ${String(forkPointStep.stepNumber).padStart(2, '0')}`
@@ -197,7 +197,7 @@ export default function ProjectForkLineageScaffold({
                 The build flow opens with this project, response package, prompt family, depth, and branch coordinates attached.
               </p>
               <div className="grid gap-3 sm:grid-cols-2">
-                <CapacityDots label="Depth" value={depthValue} max={contract.maxDepth} />
+                <CapacityDots label="Level" value={levelValue} max={contract.maxDepth} />
                 <CapacityDots label="Branch" value={branchValue} max={contract.maxWidth} />
               </div>
             </div>

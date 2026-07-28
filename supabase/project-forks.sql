@@ -22,7 +22,7 @@ ALTER TABLE prompts
     CHECK (fork_source_step_number IS NULL OR fork_source_step_number > 0),
   DROP CONSTRAINT IF EXISTS prompts_fork_depth_check,
   ADD CONSTRAINT prompts_fork_depth_check
-    CHECK (fork_depth >= 0 AND fork_depth < 10),
+    CHECK (fork_depth BETWEEN 0 AND 8),
   DROP CONSTRAINT IF EXISTS prompts_fork_branch_index_check,
   ADD CONSTRAINT prompts_fork_branch_index_check
     CHECK (fork_branch_index >= 0 AND fork_branch_index < 10),

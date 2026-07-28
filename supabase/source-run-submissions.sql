@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS source_run_submissions (
   fork_source_artifact_sha256 TEXT,
   fork_parent_submission_id TEXT,
   prompt_family_id TEXT,
-  fork_depth INT NOT NULL DEFAULT 0 CHECK (fork_depth >= 0 AND fork_depth < 10),
+  fork_depth INT NOT NULL DEFAULT 0 CHECK (fork_depth BETWEEN 0 AND 8),
   fork_branch_index INT NOT NULL DEFAULT 0 CHECK (fork_branch_index >= 0 AND fork_branch_index < 10),
   resubmission_of_id UUID,
   author_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
@@ -70,7 +70,7 @@ ALTER TABLE source_run_submissions
     CHECK (fork_source_step_number IS NULL OR fork_source_step_number > 0),
   DROP CONSTRAINT IF EXISTS source_run_submissions_fork_depth_check,
   ADD CONSTRAINT source_run_submissions_fork_depth_check
-    CHECK (fork_depth >= 0 AND fork_depth < 10),
+    CHECK (fork_depth BETWEEN 0 AND 8),
   DROP CONSTRAINT IF EXISTS source_run_submissions_fork_branch_index_check,
   ADD CONSTRAINT source_run_submissions_fork_branch_index_check
     CHECK (fork_branch_index >= 0 AND fork_branch_index < 10),

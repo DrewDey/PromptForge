@@ -4,6 +4,7 @@ import { Fragment } from 'react'
 import { ChevronRight, Tag, Cpu, Wrench, ArrowRight, GitFork } from 'lucide-react'
 import {
   getPromptById,
+  getProjectForkLineageTruth,
   getSourceRunSubmissionByPromptIdForAdmin,
   getUserVotesAndBookmarks,
 } from '@/lib/data'
@@ -26,7 +27,6 @@ import { getProfileProvenance } from '@/lib/profile-presentation'
 import { deriveCanonicalPromptPublicTruth } from '@/lib/prompt-public-truth'
 import { buildPathDiscoveryCatalog } from '@/lib/path-discovery'
 import {
-  PROJECT_FORK_MAX_DEPTH,
   buildProjectForkHref,
   buildProjectResponseForkHref,
   createProjectForkDraftContract,
@@ -178,7 +178,14 @@ export default async function PromptDetailPage({
   if (prompt.tags?.includes('community-project')) {
     const communityProject = await getPublicCommunityProject(prompt.id)
     if (!communityProject || prompt.status !== 'approved') notFound()
-    return <CommunityProjectPage prompt={prompt} capsule={communityProject} />
+    const lineageTruth = await getProjectForkLineageTruth(prompt.id)
+    return (
+      <CommunityProjectPage
+        prompt={prompt}
+        capsule={communityProject}
+        lineageTruth={lineageTruth}
+      />
+    )
   }
 
   if (prompt.status === 'pending') {
@@ -187,6 +194,7 @@ export default async function PromptDetailPage({
   }
 
   if (prompt.status !== 'approved') notFound()
+  const lineageTruth = await getProjectForkLineageTruth(prompt.id)
 
   const hasSteps = prompt.steps && prompt.steps.length > 0
   const rawModel = prompt.model_used ? getModelName(prompt.model_used) : prompt.model_recommendation
@@ -204,8 +212,8 @@ export default async function PromptDetailPage({
     source: { sourceProjectId: prompt.id, sourceProjectTitle: prompt.title },
     sourceSteps: forkSourceSteps,
   })
-  const nextForkDepth = existingForkSource ? existingForkSource.depth + 1 : 0
-  const canForkDeeper = nextForkDepth < PROJECT_FORK_MAX_DEPTH
+  const nextForkDepth = lineageTruth?.eligibility.nextStoredDepth ?? null
+  const canForkDeeper = lineageTruth?.eligibility.allowed === true
   const forkHref = canForkDeeper
     ? buildProjectForkHref({
         sourceProjectId: prompt.id,
@@ -213,7 +221,7 @@ export default async function PromptDetailPage({
         sourceStepId: forkContract.forkPointStep?.id,
         sourceStepNumber: forkContract.forkPointStep?.stepNumber,
         parentForkId: existingForkSource ? prompt.id : undefined,
-        depth: nextForkDepth,
+        depth: nextForkDepth!,
         promptFamilyId: existingForkSource?.promptFamilyId ?? forkContract.promptFamilyId,
       })
     : null
@@ -867,7 +875,11 @@ export default async function PromptDetailPage({
       </aside>
     </div>
 
-    <ProjectCommunityPanel projectId={prompt.id} />
+    <ProjectCommunityPanel
+      projectId={prompt.id}
+      project={prompt}
+      lineageTruth={lineageTruth}
+    />
 
     {/* ─── Mobile sticky bottom bar (iter 55 — Polish #1) ────────────────
         Below lg the right-rail is hidden; the primary CTA resurfaces here

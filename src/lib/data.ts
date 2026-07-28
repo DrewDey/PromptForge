@@ -92,18 +92,27 @@ import {
   getProjectModelVariantKnownIssueExplanation,
   getProjectModelVariantSet,
 } from './project-model-variants'
-import { loadSourceRunPackage } from './source-run-package'
+import {
+  loadSourceRunPackage,
+  type SourceRunPackage,
+} from './source-run-package'
 import {
   sourceRunCanonicalArtifactPath,
   sourceRunDisplayArtifactFiles,
   sourceRunResponseCapturePresentation,
 } from './source-run-presentation'
 import {
+  PROJECT_FORK_MAX_LEVELS,
   PROJECT_FORK_MAX_WIDTH,
   communityProjectContinuationSteps,
   filterProjectForkNetworkBySourceRun,
+  markProjectForkNetworkLineageUnavailable,
   projectForkSourceFromSubmissionFields,
+  selectProjectForkLocalSteps,
+  toProjectForkSourceSteps,
+  type BuildProjectForkLineageTruthInput,
   type ProjectForkContinuationStep,
+  type ProjectForkLineageCandidateNode,
   type ProjectForkNetworkItem,
   type ProjectForkSource,
 } from './project-forks'
@@ -607,11 +616,14 @@ function publicForkArtifactPath(filePath?: string | null) {
 function preparedForkContinuationSteps(
   project: PreparedShowcaseProject,
   forkSource: ProjectForkSource,
+  sourceRunOverride?: SourceRunPackage | null,
 ): ProjectForkContinuationStep[] {
   const forkPoint = forkSource.sourceStepNumber ?? 0
 
-  if (project.sourceRunPackageFile) {
-    const sourceRun = loadSourceRunPackage(project.sourceRunPackageFile)
+  if (sourceRunOverride || project.sourceRunPackageFile) {
+    const sourceRun = sourceRunOverride
+      ?? loadSourceRunPackage(project.sourceRunPackageFile!)
+    const sourceRunId = sourceRun.source_run_id ?? project.sourceRunId
     const preparedArtifactPath = project.artifactPath.startsWith('/artifacts/')
       ? `public${project.artifactPath}`
       : null
@@ -619,8 +631,7 @@ function preparedForkContinuationSteps(
       sourceRun,
       preparedArtifactPath,
     )
-    return sourceRun.steps
-      .filter((step) => step.step_number > forkPoint)
+    const localSteps = sourceRun.steps
       .map((step) => {
         const preparedStep = project.steps.find((candidate) => candidate.stepNumber === step.step_number)
         const responseCapture = sourceRunResponseCapturePresentation(sourceRun, step)
@@ -631,35 +642,45 @@ function preparedForkContinuationSteps(
         ).flatMap((filePath, index) => {
           const artifactPath = publicForkArtifactPath(filePath)
           if (!artifactPath) return []
+          const sourceStepId = `${project.id}:${sourceRunId}:step:${step.step_number}`
           return [{
-            id: `${project.id}:${project.sourceRunId}:step:${step.step_number}:artifact:${index + 1}`,
+            id: `${project.id}:${sourceRunId}:step:${step.step_number}:artifact:${index + 1}`,
             artifactPath,
+            sourceArtifactPath: filePath,
             artifactTitle: filePath === canonicalArtifactPath
               ? `${project.title} final`
               : `${project.title} step ${step.step_number}`,
+            artifactSha256: step.artifact_sha256,
+            sourceRunId,
+            sourceStepId,
+            sourceStepNumber: step.step_number,
             isDefault: filePath === canonicalArtifactPath,
           }]
         })
 
         return {
-          id: `${project.id}:${project.sourceRunId}:step:${step.step_number}`,
+          id: `${project.id}:${sourceRunId}:step:${step.step_number}`,
           stepNumber: step.step_number,
           promptTitle: preparedStep?.title ?? `Prompt ${step.step_number}`,
           promptText: step.prompt_exact,
           responseText: step.response_exact,
           responseLabel: responseCapture.label,
           responseDisclosure: responseCapture.disclosure,
-          responsePackageId: `${project.id}:${project.sourceRunId}:response:${step.step_number}`,
+          responsePackageId: `${project.id}:${sourceRunId}:response:${step.step_number}`,
+          sourceRunId,
           artifactPath: artifactVersions.find((artifact) => artifact.isDefault)?.artifactPath
             ?? artifactVersions.at(-1)?.artifactPath
+            ?? null,
+          artifactSha256: artifactVersions.find((artifact) => artifact.isDefault)?.artifactSha256
+            ?? artifactVersions.at(-1)?.artifactSha256
             ?? null,
           artifactVersions,
         }
       })
+    return selectProjectForkLocalSteps(localSteps, forkPoint)
   }
 
-  return project.steps
-    .filter((step) => step.stepNumber > forkPoint)
+  const localSteps = project.steps
     .map((step) => ({
       id: step.id,
       stepNumber: step.stepNumber,
@@ -677,6 +698,7 @@ function preparedForkContinuationSteps(
         }]
         : [],
     }))
+  return selectProjectForkLocalSteps(localSteps, forkPoint)
 }
 
 function hydratePreparedForkItem(item: ProjectForkNetworkItem): ProjectForkNetworkItem {
@@ -798,19 +820,273 @@ function getPublicMockProjectForks(
   )
 }
 
+type CodeBackedLineageProject = PromptWithRelations | PreparedShowcaseProject
+
+function withPreparedLineageRun(href: string, sourceRunId?: string | null) {
+  if (!sourceRunId) return href
+  return `${href}?${new URLSearchParams({ run: sourceRunId }).toString()}`
+}
+
+function resolvePreparedLineageSourceRun(
+  project: PreparedShowcaseProject,
+  outgoingChildForkSource?: ProjectForkSource | null,
+) {
+  const requestedSourceRunId = outgoingChildForkSource?.sourceRunId ?? null
+  const variantSet = getProjectModelVariantSet(project.id)
+
+  if (requestedSourceRunId) {
+    const variant = variantSet?.variants.find((candidate) => (
+      candidate.sourceRunId === requestedSourceRunId
+    ))
+    if (variant) {
+      return {
+        sourceRun: variant.sourceRunPackage,
+        sourceRunId: variant.sourceRunId,
+      }
+    }
+    if (
+      project.sourceRunPackageFile &&
+      project.sourceRunId === requestedSourceRunId
+    ) {
+      return {
+        sourceRun: loadSourceRunPackage(project.sourceRunPackageFile),
+        sourceRunId: requestedSourceRunId,
+      }
+    }
+    return null
+  }
+
+  if (project.sourceRunPackageFile) {
+    const sourceRun = loadSourceRunPackage(project.sourceRunPackageFile)
+    return {
+      sourceRun,
+      sourceRunId: sourceRun.source_run_id ?? project.sourceRunId,
+    }
+  }
+
+  const defaultVariant = variantSet?.variants.find((candidate) => (
+    candidate.sourceRunId === variantSet.defaultSourceRunId
+  ))
+  return defaultVariant
+    ? {
+        sourceRun: defaultVariant.sourceRunPackage,
+        sourceRunId: defaultVariant.sourceRunId,
+      }
+    : null
+}
+
+function getCodeBackedLineageNode(
+  projectId: string,
+  outgoingChildForkSource?: ProjectForkSource | null,
+  preparedOnly = false,
+): ProjectForkLineageCandidateNode<CodeBackedLineageProject> | null {
+  const prepared = getPreparedShowcaseProjectById(projectId)
+  if (prepared) {
+    const forkSource = prepared.forkSource ?? null
+    const selectedSourceRun = resolvePreparedLineageSourceRun(
+      prepared,
+      outgoingChildForkSource,
+    )
+    const sourceRun = selectedSourceRun?.sourceRun ?? null
+    const baseHref = getProjectRouteOverride(prepared.id) ?? prepared.href
+    return {
+      projectId: prepared.id,
+      title: prepared.title,
+      project: prepared,
+      promptFamilyId: forkSource?.promptFamilyId ?? null,
+      presentation: {
+        href: withPreparedLineageRun(
+          baseHref,
+          outgoingChildForkSource?.sourceRunId
+            ? selectedSourceRun?.sourceRunId
+            : null,
+        ),
+        modelLabel: sourceRun
+          ? getPublicModelIdentityLabel({
+              provider: sourceRun.provider,
+              model: sourceRun.model ?? prepared.modelUsed,
+              modelSettings: sourceRun.model_settings,
+            }) || prepared.modelUsed
+          : prepared.modelUsed,
+        providerName: sourceRun?.provider ?? null,
+        localSteps: sourceRun
+          ? preparedForkContinuationSteps(
+              prepared,
+              forkSource ?? {
+                sourceProjectId: prepared.id,
+                depth: 0,
+                branchIndex: 0,
+              },
+              sourceRun,
+            )
+          : [],
+      },
+      forkSource,
+    }
+  }
+
+  if (preparedOnly) return null
+  const rawPrompt = publicMockPrompts.find((prompt) => prompt.id === projectId)
+  if (!rawPrompt) return null
+  const prompt = normalizeProjectPresentation(attachRelations(rawPrompt))
+  const forkSource = projectForkSourceFromSubmissionFields(prompt)
+  return {
+    projectId: prompt.id,
+    title: prompt.title,
+    project: prompt,
+    promptFamilyId: prompt.prompt_family_id ?? null,
+    presentation: {
+      href: getProjectRouteOverride(prompt.id) ?? `/prompt/${prompt.id}`,
+      modelLabel: prompt.model_used,
+      localSteps: toProjectForkSourceSteps(prompt),
+    },
+    forkSource,
+  }
+}
+
+function getCodeBackedLineage(
+  currentProjectId: string,
+  options: {
+    preparedOnly?: boolean
+    currentSourceRunId?: string | null
+  } = {},
+): Omit<BuildProjectForkLineageTruthInput<CodeBackedLineageProject>, 'readSource'> | null {
+  const currentToRoot: ProjectForkLineageCandidateNode<CodeBackedLineageProject>[] = []
+  const seen = new Set<string>()
+  let projectId = currentProjectId
+  let integrity: NonNullable<
+    BuildProjectForkLineageTruthInput<CodeBackedLineageProject>['integrity']
+  > = { kind: 'complete' }
+
+  for (let index = 0; index < PROJECT_FORK_MAX_LEVELS; index += 1) {
+    if (seen.has(projectId)) {
+      integrity = {
+        kind: 'cycle',
+        affectedProjectId: projectId,
+        issues: [{ kind: 'cycle', projectId }],
+      }
+      break
+    }
+    seen.add(projectId)
+
+    const outgoingChildForkSource = currentToRoot.at(-1)?.forkSource
+      ?? (
+        currentToRoot.length === 0 && options.currentSourceRunId
+          ? {
+              sourceProjectId: currentProjectId,
+              sourceRunId: options.currentSourceRunId,
+              depth: 0,
+              branchIndex: 0,
+            }
+          : null
+      )
+    const node = getCodeBackedLineageNode(
+      projectId,
+      outgoingChildForkSource,
+      options.preparedOnly,
+    )
+    if (!node) {
+      integrity = {
+        kind: 'missing-parent',
+        affectedProjectId: projectId,
+        issues: [{ kind: 'missing-parent', projectId }],
+      }
+      break
+    }
+    if (
+      currentToRoot.length === 0 &&
+      options.currentSourceRunId &&
+      node.presentation?.localSteps?.length === 0
+    ) {
+      integrity = {
+        kind: 'invalid',
+        affectedProjectId: currentProjectId,
+        issues: [{
+          kind: 'source-run-mismatch',
+          projectId: currentProjectId,
+          expected: 'registered-prepared-current-source-run',
+          observed: options.currentSourceRunId,
+        }],
+      }
+    }
+    currentToRoot.push(node)
+    if (!node.forkSource) break
+
+    if (index === PROJECT_FORK_MAX_LEVELS - 1) {
+      integrity = {
+        kind: 'truncated',
+        affectedProjectId: node.forkSource.sourceProjectId,
+        issues: [{
+          kind: 'truncated',
+          projectId: node.forkSource.sourceProjectId,
+          expected: PROJECT_FORK_MAX_LEVELS,
+          observed: PROJECT_FORK_MAX_LEVELS + 1,
+        }],
+      }
+      break
+    }
+    projectId = node.forkSource.sourceProjectId
+  }
+
+  if (currentToRoot.length === 0) return null
+  return {
+    nodes: currentToRoot.reverse(),
+    currentProjectId,
+    integrity,
+  }
+}
+
+/**
+ * Public presentation seam for one current project. Database truth is the
+ * default even when a same-ID local registry entry exists. Prepared static
+ * routes may explicitly opt into a labeled code-backed authority projection.
+ * Neither path derives authority from route/query hints.
+ */
+export async function getProjectForkLineageTruth(
+  projectId: string,
+  options: {
+    codeBackedAuthority?: boolean
+    currentSourceRunId?: string | null
+  } = {},
+) {
+  if (options.currentSourceRunId && !options.codeBackedAuthority) {
+    throw new Error('A current source run requires explicit code-backed authority.')
+  }
+  const codeBackedLineage = options.codeBackedAuthority
+    ? getCodeBackedLineage(projectId, {
+        currentSourceRunId: options.currentSourceRunId,
+      })
+    : null
+  const codeBacked = new Map<string, NonNullable<typeof codeBackedLineage>>()
+  if (codeBackedLineage) codeBacked.set(projectId, codeBackedLineage)
+  const { getAuthoritativeProjectForkLineages } = await import(
+    './data/project-fork-lineage'
+  )
+  const truths = await getAuthoritativeProjectForkLineages(
+    [projectId],
+    {
+      codeBacked,
+      codeBackedAuthorityIds: options.codeBackedAuthority
+        ? new Set([projectId])
+        : undefined,
+    },
+  )
+  return truths.get(projectId) ?? null
+}
+
 export async function getApprovedProjectForks(
   projectId: string,
   sourceRunId?: string | null,
 ): Promise<ProjectForkNetworkItem[]> {
   if (!projectId) return []
-  const fallbackForks = inspectablePreparedForkFallbacks(
+  const fallbackForks = markProjectForkNetworkLineageUnavailable(inspectablePreparedForkFallbacks(
     filterProjectForkNetworkBySourceRun(
       getPublicMockProjectForks(projectId, sourceRunId),
       sourceRunId,
     ),
     PREPARED_SHOWCASE_PROJECT_IDS,
     process.env.VERCEL_ENV,
-  )
+  ))
 
   return readWithFallback(fallbackForks, async (signal) => {
     const { createPublicReadClient } = await import('./supabase/server')
@@ -864,13 +1140,34 @@ export async function getApprovedProjectForks(
       }, []), sourceRunId)
 
     const seen = new Set(dbForks.map((fork) => fork.id))
-    return limitProjectForksPerResponseSocket([
+    const mergedForks = limitProjectForksPerResponseSocket([
       ...dbForks,
       ...fallbackForks.filter((fork) => !seen.has(fork.id)),
     ].sort((left, right) => (
         left.forkSource.branchIndex - right.forkSource.branchIndex ||
         Date.parse(left.createdAt) - Date.parse(right.createdAt)
       )))
+    signal.throwIfAborted()
+    const codeBacked = new Map<string, NonNullable<ReturnType<typeof getCodeBackedLineage>>>()
+    for (const fork of mergedForks) {
+      const lineage = getCodeBackedLineage(fork.id, {
+        // Successful DB children may receive presentation bytes only from the
+        // registered prepared corpus, never from the generic mock registry.
+        preparedOnly: seen.has(fork.id),
+      })
+      if (lineage) codeBacked.set(fork.id, lineage)
+    }
+    const { getAuthoritativeProjectForkLineages } = await import(
+      './data/project-fork-lineage'
+    )
+    const truths = await getAuthoritativeProjectForkLineages(
+      mergedForks.map((fork) => fork.id),
+      { codeBacked },
+    )
+    return mergedForks.map((fork) => ({
+      ...fork,
+      lineageTruth: truths.get(fork.id) ?? null,
+    }))
   })
 }
 

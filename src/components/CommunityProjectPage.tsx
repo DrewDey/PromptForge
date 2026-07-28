@@ -4,7 +4,11 @@ import { BuilderByline } from '@/components/BuilderByline'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
 import { ProtectedArtifactFrame, type ArtifactPackage } from '@/components/SourceRunShowcase'
 import { evidenceScopeLabels, type PublicCommunityProject } from '@/lib/community-project-contract'
-import { buildCommunityProjectForkHref } from '@/lib/project-forks'
+import {
+  buildProjectResponseForkHref,
+  projectForkSourceFromSubmissionFields,
+} from '@/lib/project-forks'
+import type { ProjectForkLineageTruth } from '@/lib/project-forks'
 import type { PromptWithRelations } from '@/lib/types'
 
 function evidenceExplanation(scope: PublicCommunityProject['evidence_scope']) {
@@ -16,9 +20,11 @@ function evidenceExplanation(scope: PublicCommunityProject['evidence_scope']) {
 export default function CommunityProjectPage({
   prompt,
   capsule,
+  lineageTruth,
 }: {
   prompt: PromptWithRelations
   capsule: PublicCommunityProject
+  lineageTruth: ProjectForkLineageTruth | null
 }) {
   const firstStep = prompt.steps?.[0]
   const artifactPackage: ArtifactPackage = {
@@ -42,14 +48,20 @@ export default function CommunityProjectPage({
       body: 'PathForge re-verifies these reviewed bytes and shows them as a script-disabled static preview during the community pilot.',
     },
   }
-  const forkHref = capsule.reuse_permission === 'allow_pathforge_remix'
-    ? buildCommunityProjectForkHref({
+  const currentForkSource = projectForkSourceFromSubmissionFields(prompt)
+  const forkHref = (
+    capsule.reuse_permission === 'allow_pathforge_remix' &&
+    lineageTruth?.eligibility.allowed === true &&
+    firstStep
+  )
+    ? buildProjectResponseForkHref({
         sourceProjectId: prompt.id,
         sourceProjectTitle: prompt.title,
-        sourceStepId: firstStep?.id,
-        sourceStepNumber: firstStep?.step_number,
-        promptFamilyId: prompt.prompt_family_id ?? prompt.id,
-        depth: (prompt.fork_depth ?? 0) + 1,
+        sourceStepId: firstStep.id,
+        sourceStepNumber: firstStep.step_number,
+        currentForkSource,
+        promptFamilyId: prompt.prompt_family_id ?? undefined,
+        destination: '/build',
       })
     : null
 
@@ -166,7 +178,11 @@ export default function CommunityProjectPage({
         </div>
       </div>
 
-      <ProjectCommunityPanel projectId={prompt.id} />
+      <ProjectCommunityPanel
+        projectId={prompt.id}
+        project={prompt}
+        lineageTruth={lineageTruth}
+      />
     </main>
   )
 }

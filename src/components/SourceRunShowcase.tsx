@@ -1717,7 +1717,7 @@ export default function SourceRunShowcase({
 
       const sourceStepPackages = packages.filter((pkg) => pkg.stepId === step.id)
       const sourceArtifactPackage =
-        (selectedPackage?.stepId === step.id ? selectedPackage : undefined) ??
+        (selectedPrimaryPackage?.stepId === step.id ? selectedPrimaryPackage : undefined) ??
         sourceStepPackages.find((pkg) => pkg.isDefaultArtifact) ??
         sourceStepPackages.at(-1)
 

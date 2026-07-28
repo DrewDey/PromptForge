@@ -729,6 +729,18 @@ for (const required of [
     `${showcasePath}: bounded lineage artifact registry must retain ${required}`,
   )
 }
+assert(
+  read(showcasePath).includes(
+    '(selectedPrimaryPackage?.stepId === step.id ? selectedPrimaryPackage : undefined)',
+  ),
+  `${showcasePath}: parent fork provenance must stay bound to a primary source-run package while lineage artifacts are displayed`,
+)
+assert(
+  !read(showcasePath).includes(
+    '(selectedPackage?.stepId === step.id ? selectedPackage : undefined)',
+  ),
+  `${showcasePath}: lineage-only artifact packages must not replace the parent fork provenance package`,
+)
 assert(namedDeclarations(showcase, 'ResponseForkFocusStage').length === 0, `${showcasePath}: remove the divergent legacy fork focus renderer`)
 for (const hook of [
   'data-fork-existing-branch-origin',

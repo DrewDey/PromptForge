@@ -1168,7 +1168,7 @@ async function verifyMobileLineage(client, sessionId, mode, label, screenshotPat
           workspaceSnapType:getComputedStyle(authoritativeWorkspace).scrollSnapType,
           workspaceOverflowX:getComputedStyle(authoritativeWorkspace).overflowX,
           canvasSnapType:canvas ? getComputedStyle(canvas).scrollSnapType : '',
-          laneSnapAlign:nodes[0] ? getComputedStyle(nodes[0]).scrollSnapAlign : '',
+          laneSnapAlignments:nodes.map((node)=>getComputedStyle(node).scrollSnapAlign),
           nodeCount:nodes.length,
           edgeCount:edges.length,
           eligibilityReason:root.querySelector('[data-fork-eligibility]')
@@ -1260,12 +1260,14 @@ async function verifyMobileLineage(client, sessionId, mode, label, screenshotPat
     if (
       !mobile.workspaceSnapType.includes('x mandatory') ||
       mobile.canvasSnapType !== 'none' ||
-      mobile.laneSnapAlign !== 'center' ||
+      mobile.laneSnapAlignments[0] !== 'start' ||
+      mobile.laneSnapAlignments.at(-1) !== 'end' ||
+      mobile.laneSnapAlignments.slice(1,-1).some((alignment) => alignment !== 'center') ||
       !['auto', 'scroll'].includes(mobile.workspaceOverflowX)
     ) {
       throw new Error(
         `${label} 390px authoritative lineage has incorrect snap ownership: ` +
-        `${mobile.workspaceSnapType}/${mobile.canvasSnapType}/${mobile.laneSnapAlign}/${mobile.workspaceOverflowX}.`,
+        `${mobile.workspaceSnapType}/${mobile.canvasSnapType}/${mobile.laneSnapAlignments.join(',')}/${mobile.workspaceOverflowX}.`,
       )
     }
     if (mobile.undersizedTargets.length > 0) {
@@ -1305,7 +1307,7 @@ async function verifyMobileLineage(client, sessionId, mode, label, screenshotPat
           left:workspace?.scrollLeft || 0,
         };
       })()`,
-      (value) => value?.active === value?.first && value.left <= 8,
+      (value) => value?.active === value?.first && value.left <= 16,
       `${label} 390px first-level scroll synchronization`,
     )
     await client.send('Runtime.evaluate', {
@@ -1338,7 +1340,7 @@ async function verifyMobileLineage(client, sessionId, mode, label, screenshotPat
           remainder:Math.abs(max-(workspace?.scrollLeft || 0)),
         };
       })()`,
-      (value) => value?.active === value?.last && value.remainder <= 8,
+      (value) => value?.active === value?.last && value.remainder <= 16,
       `${label} 390px terminal-level scroll synchronization`,
     )
     const mobileGeometry = await waitForValue(

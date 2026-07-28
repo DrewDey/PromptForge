@@ -487,6 +487,7 @@ function GenerationLane({
   outgoingEdge,
   maxDepth,
   eligibility,
+  snapAlignment,
   selectedArtifactPath,
   artifactOpenHrefs,
   isArtifactDisplayable,
@@ -496,6 +497,7 @@ function GenerationLane({
   outgoingEdge: ProjectForkLineageEdge | null
   maxDepth: number
   eligibility: ProjectForkWorkspaceModel['eligibility']
+  snapAlignment: 'start' | 'center' | 'end'
   selectedArtifactPath?: string | null
   artifactOpenHrefs?: Record<string, string | undefined>
   isArtifactDisplayable?: (artifactPath: string, artifactId: string) => boolean
@@ -511,7 +513,12 @@ function GenerationLane({
       id={`fork-generation-${generation.displayLevel}`}
       tabIndex={-1}
       className={[
-        'relative w-[min(82vw,400px)] shrink-0 snap-center scroll-mx-4 border-2 bg-white shadow-[0_18px_44px_rgba(24,24,27,0.09)] sm:w-[400px]',
+        'relative w-[min(82vw,400px)] shrink-0 scroll-mx-4 border-2 bg-white shadow-[0_18px_44px_rgba(24,24,27,0.09)] sm:w-[400px]',
+        snapAlignment === 'start'
+          ? 'snap-start'
+          : snapAlignment === 'end'
+            ? 'snap-end'
+            : 'snap-center',
         generation.isCurrent
           ? 'border-brand-blue ring-4 ring-brand-blue/10'
           : generationKind === 'root'
@@ -799,9 +806,9 @@ export default function ProjectForkGenerationWorkspace({
     if (!viewport || !canvas) return
 
     const syncBoundaryLevel = () => {
-      // Chrome scroll snap can settle a few CSS pixels before the mathematical
-      // edge because of scroll margins and fractional layout coordinates.
-      const boundaryEpsilon = 8
+      // The generation cards declare a one-rem scroll margin. Chrome may settle
+      // anywhere inside that snap margin instead of at the mathematical edge.
+      const boundaryEpsilon = 16
       const maximumScrollLeft = Math.max(0, viewport.scrollWidth - viewport.clientWidth)
       if (viewport.scrollLeft <= boundaryEpsilon) {
         setActiveLevel(generations[0]?.displayLevel ?? 1)
@@ -1107,6 +1114,13 @@ export default function ProjectForkGenerationWorkspace({
               outgoingEdge={generations[index + 1]?.incomingEdge ?? null}
               maxDepth={lineage.maxLevels}
               eligibility={lineage.eligibility}
+              snapAlignment={
+                index === 0
+                  ? 'start'
+                  : index === generations.length - 1
+                    ? 'end'
+                    : 'center'
+              }
               selectedArtifactPath={selectedArtifactPath}
               artifactOpenHrefs={artifactOpenHrefs}
               isArtifactDisplayable={isArtifactDisplayable}

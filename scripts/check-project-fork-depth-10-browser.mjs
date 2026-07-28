@@ -308,11 +308,15 @@ const snapshotExpression = `(() => {
     viewportHeight:window.innerHeight,
     workspaceClientWidth:viewport.clientWidth,
     workspaceScrollWidth:viewport.scrollWidth,
+    workspaceScrollLeft:viewport.scrollLeft,
+    workspaceBoundaryRemainder:Math.abs(
+      (viewport.scrollWidth-viewport.clientWidth)-viewport.scrollLeft
+    ),
     internalHorizontalOverflow:viewport.scrollWidth > viewport.clientWidth + 1,
     scrollSnap:{
       viewport:getComputedStyle(viewport).scrollSnapType,
       canvas:canvas ? getComputedStyle(canvas).scrollSnapType : '',
-      lane:nodes[0] ? getComputedStyle(nodes[0]).scrollSnapAlign : '',
+      lanes:nodes.map((node)=>getComputedStyle(node).scrollSnapAlign),
       overflowX:getComputedStyle(viewport).overflowX,
     },
   };
@@ -345,7 +349,9 @@ function assertCompleteSnapshot(snapshot, family, viewport) {
   if (
     snapshot.scrollSnap.viewport !== 'x mandatory' ||
     snapshot.scrollSnap.canvas !== 'none' ||
-    snapshot.scrollSnap.lane !== 'center' ||
+    snapshot.scrollSnap.lanes[0] !== 'start' ||
+    snapshot.scrollSnap.lanes.at(-1) !== 'end' ||
+    snapshot.scrollSnap.lanes.slice(1,-1).some((alignment) => alignment !== 'center') ||
     snapshot.scrollSnap.overflowX !== 'auto'
   ) {
     throw new Error(

@@ -696,7 +696,10 @@ export default function ProjectForkGenerationWorkspace({
     ? 'Original source'
     : 'Earliest verified level'
 
-  const scrollToLevel = useCallback((displayLevel: number) => {
+  const scrollToLevel = useCallback((
+    displayLevel: number,
+    behaviorOverride?: ScrollBehavior,
+  ) => {
     const viewport = viewportRef.current
     const canvas = canvasRef.current
     const lane = canvas?.querySelector<HTMLElement>(
@@ -716,7 +719,7 @@ export default function ProjectForkGenerationWorkspace({
         : lane.offsetLeft - Math.max(0, (viewport.clientWidth - lane.offsetWidth) / 2)
     viewport.scrollTo({
       left: targetLeft,
-      behavior: reducedMotion ? 'auto' : 'smooth',
+      behavior: reducedMotion ? 'auto' : (behaviorOverride ?? 'smooth'),
     })
     setActiveLevel(displayLevel)
   }, [])
@@ -874,7 +877,7 @@ export default function ProjectForkGenerationWorkspace({
   useEffect(() => {
     if (currentGenerationDisplayLevel !== undefined) {
       const frame = window.requestAnimationFrame(() => (
-        scrollToLevel(currentGenerationDisplayLevel)
+        scrollToLevel(currentGenerationDisplayLevel, 'auto')
       ))
       return () => window.cancelAnimationFrame(frame)
     }

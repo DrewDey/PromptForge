@@ -194,9 +194,13 @@ try {
       'Migration did not identify and abort on invalid legacy provenance tuples.',
     )
   }
+  harness.apply(
+    read('test-fixtures/project-fork-lineage/verify-preflight-provenance-abort.sql'),
+  )
   harness.apply(read('test-fixtures/project-fork-lineage/clear-invalid-provenance.sql'))
   harness.apply(read(migration))
   harness.apply(read('test-fixtures/project-fork-lineage/runtime-provenance-test.sql'))
+  harness.apply(read('test-fixtures/project-fork-lineage/runtime-action-roundtrip.sql'))
   harness.apply(read('test-fixtures/project-fork-lineage/migration-transaction-test.sql'))
   console.log('Project fork lineage migration passed in disposable PostgreSQL 17.')
 } finally {

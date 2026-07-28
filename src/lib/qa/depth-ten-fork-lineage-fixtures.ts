@@ -12,6 +12,10 @@ export type DepthTenFixtureInvalidCase =
   | 'stale-depth'
   | 'family-mismatch'
   | 'edge-mismatch'
+export type PreparedEligibilityFixtureKind =
+  | 'model-present'
+  | 'source-run-only'
+  | 'incomplete'
 
 export type DepthTenFixtureProject = {
   defaultRunId?: string
@@ -26,6 +30,35 @@ export type DepthTenFixtureTruth = ProjectForkLineageTruth<DepthTenFixtureProjec
 export const DEPTH_TEN_FIXTURE_ROUTE = '/qa/fork-lineage-depth-10-fixture'
 export const DEPTH_TEN_FIXTURE_LEVEL_COUNT = 10
 export const DEPTH_TEN_FIXTURE_EDGE_COUNT = 9
+
+export const PREPARED_ELIGIBLE_PROVENANCE = {
+  modelPresent: {
+    currentProjectId: '71500000-0000-4000-8000-000000000001',
+    modelVariantId: '72200000-0000-4000-8000-000000000001',
+    runId: 'eligible-child-run-b',
+    stepId: 'eligible-child-run-b:step:2',
+    stepNumber: 2,
+    localStepId: '72100000-0000-4000-8000-000000000001',
+    localResponsePackageId: 'qa-local-model-response-package-only',
+    artifactPath: 'public/artifacts/airlock-zero-gemini-35-flash-step-2.html',
+    artifactSha256: '7b14d660c95d448ae7c8bd8df9953819f608c8236fbe35e4a328a9de3a834497',
+    promptFamilyId:
+      '71000000-0000-4000-8000-000000000001:valid-run-a:step:1',
+  },
+  sourceRunOnly: {
+    currentProjectId: '71500000-0000-4000-8000-000000000003',
+    runId: '72500000-0000-4000-8000-000000000001',
+    stepId:
+      '71500000-0000-4000-8000-000000000003:72500000-0000-4000-8000-000000000001:step:3',
+    stepNumber: 3,
+    localStepId: '72100000-0000-4000-8000-000000000003',
+    localResponsePackageId: 'qa-local-source-run-response-package-only',
+    artifactPath: 'public/artifacts/airlock-zero-gemini-35-flash-step-3.html',
+    artifactSha256: 'b390710493d8bc2797a1fe211b112ae5d3d8a1f610438f2ebed5aa153028fa35',
+    promptFamilyId:
+      '71000000-0000-4000-8000-000000000001:71000000-0000-4000-8000-000000000001:71400000-0000-4000-8000-000000000001:step:2',
+  },
+} as const
 
 export const DEPTH_TEN_FIXTURE_ARTIFACTS = [
   ['public/artifacts/airlock-zero-blackout-shift-claude-sonnet-5-max.html', '7af1f063c94b567a2e72d7a5c85a9d28aab65b7e77b6d391d3713ec466e3452c'],
@@ -275,6 +308,161 @@ export function buildDepthTenForkLineageFixture(
     nodes.at(-1)?.projectId ?? '',
     { kind: 'invalid', affectedProjectId: affected.projectId },
     invalidCase,
+  )
+}
+
+function preparedEligibilityRoot(
+  kind: Exclude<PreparedEligibilityFixtureKind, 'incomplete'>,
+): ProjectForkLineageCandidateNode<DepthTenFixtureProject> {
+  const isModelPresent = kind === 'model-present'
+  const sourceRunId = isModelPresent
+    ? 'valid-run-a'
+    : '71400000-0000-4000-8000-000000000001'
+  const sourceStepId = isModelPresent
+    ? 'valid-run-a:step:1'
+    : '71000000-0000-4000-8000-000000000001:71400000-0000-4000-8000-000000000001:step:2'
+  const sourceStepNumber = isModelPresent ? 1 : 2
+  const sourceArtifactPath = isModelPresent
+    ? 'public/artifacts/valid-run-a.html'
+    : 'public/artifacts/source-run-only.html'
+  const sourceArtifactSha256 = isModelPresent
+    ? 'sha-valid-run-a'
+    : 'sha-source-run-only'
+  const sourceModelVariantId = isModelPresent
+    ? '71200000-0000-4000-8000-000000000001'
+    : undefined
+  const localStepId = isModelPresent
+    ? '71100000-0000-4000-8000-000000000001'
+    : '71100000-0000-4000-8000-000000000003'
+
+  return {
+    projectId: '71000000-0000-4000-8000-000000000001',
+    title: 'Eligible prepared root',
+    project: {},
+    presentation: {
+      href: `${DEPTH_TEN_FIXTURE_ROUTE}#eligible-root`,
+      modelLabel: sourceModelVariantId ?? 'Source-run-only root',
+      providerName: isModelPresent ? 'Anthropic' : null,
+      localSteps: [{
+        id: localStepId,
+        stepNumber: sourceStepNumber,
+        promptTitle: 'Eligible root prompt',
+        promptText: 'Exact eligible root prompt.',
+        responseText: 'Exact eligible root response.',
+        responsePackageId: localStepId,
+        sourceModelVariantId,
+        sourceRunId,
+        sourceStepId,
+        sourceStepNumber,
+        artifactPath: sourceArtifactPath,
+        artifactSha256: sourceArtifactSha256,
+        artifactVersions: [{
+          id: `${localStepId}:artifact`,
+          artifactPath: sourceArtifactPath,
+          sourceArtifactPath,
+          artifactTitle: 'Eligible root artifact',
+          artifactSha256: sourceArtifactSha256,
+          sourceModelVariantId,
+          sourceRunId,
+          sourceStepId,
+          sourceStepNumber,
+          isDefault: true,
+        }],
+      }],
+    },
+    promptFamilyId: null,
+    forkSource: null,
+  }
+}
+
+export function buildEligiblePreparedParentFixture(
+  kind: PreparedEligibilityFixtureKind,
+): DepthTenFixtureTruth {
+  const provenanceKind = kind === 'incomplete' ? 'model-present' : kind
+  const provenance = provenanceKind === 'model-present'
+    ? PREPARED_ELIGIBLE_PROVENANCE.modelPresent
+    : PREPARED_ELIGIBLE_PROVENANCE.sourceRunOnly
+  const sourceModelVariantId = provenanceKind === 'model-present'
+    ? PREPARED_ELIGIBLE_PROVENANCE.modelPresent.modelVariantId
+    : undefined
+  const root = preparedEligibilityRoot(provenanceKind)
+  const currentStep: ProjectForkContinuationStep = {
+    id: provenance.localStepId,
+    stepNumber: provenance.stepNumber,
+    promptTitle: 'Eligible prepared child prompt',
+    promptText: 'Continue from the selected prepared child.',
+    responseText: 'Exact eligible prepared child response.',
+    responsePackageId: provenance.localResponsePackageId,
+    sourceModelVariantId,
+    sourceRunId: provenance.runId,
+    sourceStepId: provenance.stepId,
+    sourceStepNumber: provenance.stepNumber,
+    artifactPath: provenance.artifactPath,
+    artifactSha256: provenance.artifactSha256,
+    artifactVersions: [{
+      id: `${provenance.currentProjectId}:eligible-artifact`,
+      artifactPath: provenance.artifactPath,
+      sourceArtifactPath: provenance.artifactPath,
+      artifactTitle: 'Eligible prepared child artifact',
+      artifactSha256: kind === 'incomplete'
+        ? undefined
+        : provenance.artifactSha256,
+      sourceModelVariantId,
+      sourceRunId: provenance.runId,
+      sourceStepId: provenance.stepId,
+      sourceStepNumber: provenance.stepNumber,
+      isDefault: true,
+    }],
+  }
+  const current: ProjectForkLineageCandidateNode<DepthTenFixtureProject> = {
+    projectId: provenance.currentProjectId,
+    title: kind === 'source-run-only'
+      ? 'Eligible source-run-only prepared child'
+      : 'Eligible model-present prepared child',
+    project: {
+      selectedRunId: provenance.runId,
+    },
+    presentation: {
+      href: `${DEPTH_TEN_FIXTURE_ROUTE}#eligible-child`,
+      modelLabel: sourceModelVariantId ?? 'Source-run-only evidence',
+      providerName: sourceModelVariantId ? 'Google' : null,
+      localSteps: [currentStep],
+    },
+    promptFamilyId: provenance.promptFamilyId,
+    forkSource: provenanceKind === 'model-present'
+      ? {
+          sourceProjectId: root.projectId,
+          sourceProjectTitle: root.title,
+          sourceModelVariantId:
+            '71200000-0000-4000-8000-000000000001',
+          sourceRunId: 'valid-run-a',
+          sourceStepId: 'valid-run-a:step:1',
+          sourceStepNumber: 1,
+          sourceArtifactPath: 'public/artifacts/valid-run-a.html',
+          sourceArtifactSha256: 'sha-valid-run-a',
+          depth: 0,
+          branchIndex: 0,
+          promptFamilyId: provenance.promptFamilyId,
+        }
+      : {
+          sourceProjectId: root.projectId,
+          sourceProjectTitle: root.title,
+          sourceRunId: '71400000-0000-4000-8000-000000000001',
+          sourceStepId:
+            '71000000-0000-4000-8000-000000000001:71400000-0000-4000-8000-000000000001:step:2',
+          sourceStepNumber: 2,
+          sourceArtifactPath: 'public/artifacts/source-run-only.html',
+          sourceArtifactSha256: 'sha-source-run-only',
+          depth: 0,
+          branchIndex: 2,
+          promptFamilyId: provenance.promptFamilyId,
+        },
+  }
+
+  return fixtureTruth(
+    'prepared',
+    [root, current],
+    current.projectId,
   )
 }
 

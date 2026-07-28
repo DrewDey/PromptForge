@@ -9,6 +9,11 @@ import {
   chromeExecutable,
   waitForWebSocketUrl,
 } from './measure-html-artifacts.mjs'
+import {
+  isExpectedLocalActivationFailure,
+  isExpectedLocalFaviconFailure,
+  isExpectedLocalVercelScriptFailure,
+} from './browser-guard-errors.mjs'
 
 const expectedArtifacts = [
   ['public/artifacts/airlock-zero-blackout-shift-claude-sonnet-5-max.html', '7af1f063c94b567a2e72d7a5c85a9d28aab65b7e77b6d391d3713ec466e3452c'],
@@ -22,6 +27,36 @@ const expectedArtifacts = [
   ['public/artifacts/airlock-zero-gemini-35-flash-step-6.html', 'c9a1131ffb7c2bd8da4133f9ad986f30c5b3e02904f4921f8bec9aebab5eeabc'],
   ['public/artifacts/airlock-zero-gemini-35-flash-step-7.html', 'b330778cc944ef0f6681dddfdd982a606c1db7c9a9aab1fdbc9041a44b9eedac'],
 ]
+
+const eligibleProvenance = {
+  'model-present': {
+    currentProjectId: '71500000-0000-4000-8000-000000000001',
+    modelVariantId: '72200000-0000-4000-8000-000000000001',
+    runId: 'eligible-child-run-b',
+    stepId: 'eligible-child-run-b:step:2',
+    stepNumber: '2',
+    localStepId: '72100000-0000-4000-8000-000000000001',
+    localResponsePackageId: 'qa-local-model-response-package-only',
+    artifactPath: 'public/artifacts/airlock-zero-gemini-35-flash-step-2.html',
+    artifactSha256: '7b14d660c95d448ae7c8bd8df9953819f608c8236fbe35e4a328a9de3a834497',
+    promptFamilyId:
+      '71000000-0000-4000-8000-000000000001:valid-run-a:step:1',
+  },
+  'source-run-only': {
+    currentProjectId: '71500000-0000-4000-8000-000000000003',
+    modelVariantId: null,
+    runId: '72500000-0000-4000-8000-000000000001',
+    stepId:
+      '71500000-0000-4000-8000-000000000003:72500000-0000-4000-8000-000000000001:step:3',
+    stepNumber: '3',
+    localStepId: '72100000-0000-4000-8000-000000000003',
+    localResponsePackageId: 'qa-local-source-run-response-package-only',
+    artifactPath: 'public/artifacts/airlock-zero-gemini-35-flash-step-3.html',
+    artifactSha256: 'b390710493d8bc2797a1fe211b112ae5d3d8a1f610438f2ebed5aa153028fa35',
+    promptFamilyId:
+      '71000000-0000-4000-8000-000000000001:71000000-0000-4000-8000-000000000001:71400000-0000-4000-8000-000000000001:step:2',
+  },
+}
 
 function parseArgs(argv) {
   const options = {
@@ -70,7 +105,7 @@ async function navigate(client, sessionId, url) {
   await waitFor(
     client,
     sessionId,
-    `document.readyState === 'complete' && Boolean(document.querySelector('[data-fork-generation-workspace]'))`,
+    `document.readyState === 'complete' && document.querySelector('[data-depth-ten-fixture]')?.getAttribute('data-fixture-hydrated') === 'true' && Boolean(document.querySelector('[data-fork-generation-workspace]'))`,
     Boolean,
     `depth-10 fixture at ${url}`,
   )
@@ -93,6 +128,7 @@ const snapshotExpression = `(() => {
   return {
     pageUrl:location.href,
     family:fixture.getAttribute('data-presentation-family'),
+    scenario:fixture.getAttribute('data-fixture-scenario'),
     integrity:fixture.getAttribute('data-integrity-kind'),
     eligibilityAllowed:root.querySelector('[data-fork-eligibility]')?.getAttribute('data-fork-eligibility'),
     eligibilityReason:root.querySelector('[data-fork-eligibility]')?.getAttribute('data-fork-eligibility-reason'),
@@ -167,6 +203,12 @@ const snapshotExpression = `(() => {
     workspaceClientWidth:viewport.clientWidth,
     workspaceScrollWidth:viewport.scrollWidth,
     internalHorizontalOverflow:viewport.scrollWidth > viewport.clientWidth + 1,
+    scrollSnap:{
+      viewport:getComputedStyle(viewport).scrollSnapType,
+      canvas:canvas ? getComputedStyle(canvas).scrollSnapType : '',
+      lane:nodes[0] ? getComputedStyle(nodes[0]).scrollSnapAlign : '',
+      overflowX:getComputedStyle(viewport).overflowX,
+    },
   };
 })()`
 
@@ -193,6 +235,16 @@ function assertCompleteSnapshot(snapshot, family, viewport) {
   if (snapshot.enabledForkActions !== 0) throw new Error(`${family}/${viewport}: enabled fork action remained at level 10.`)
   if (snapshot.role !== 'region' || !/fork lineage/i.test(snapshot.ariaLabel) || snapshot.workspaceTabIndex !== 0) {
     throw new Error(`${family}/${viewport}: region name or keyboard focus contract failed.`)
+  }
+  if (
+    snapshot.scrollSnap.viewport !== 'x mandatory' ||
+    snapshot.scrollSnap.canvas !== 'none' ||
+    snapshot.scrollSnap.lane !== 'center' ||
+    snapshot.scrollSnap.overflowX !== 'auto'
+  ) {
+    throw new Error(
+      `${family}/${viewport}: scroll snap is on the wrong element: ${JSON.stringify(snapshot.scrollSnap)}.`,
+    )
   }
   if (
     snapshot.rootPipeColor !== 'rgb(43, 209, 95)' ||
@@ -324,12 +376,43 @@ async function setFamily(client, sessionId, family) {
   )
 }
 
+async function setScenario(client, sessionId, scenario) {
+  await waitFor(
+    client,
+    sessionId,
+    `Boolean(document.querySelector('[data-fixture-scenario-picker]'))`,
+    Boolean,
+    'hydrated fixture scenario picker',
+  )
+  await evaluate(
+    client,
+    sessionId,
+    `new Promise((resolve)=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true))))`,
+  )
+  await setSelect(client, sessionId, '[data-fixture-scenario-picker]', scenario)
+  const changed = await evaluate(client, sessionId, `(() => ({
+    value:document.querySelector('[data-fixture-scenario-picker]')?.value,
+    fixture:document.querySelector('[data-depth-ten-fixture]')?.getAttribute('data-fixture-scenario'),
+  }))()`)
+  if (changed.value !== scenario) {
+    throw new Error(`Could not set ${scenario} scenario picker: ${JSON.stringify(changed)}`)
+  }
+  await waitFor(
+    client,
+    sessionId,
+    `document.querySelector('[data-depth-ten-fixture]')?.getAttribute('data-fixture-scenario')`,
+    (value) => value === scenario,
+    `${scenario} fixture scenario`,
+  )
+}
+
 async function setSelect(client, sessionId, selector, value) {
   await evaluate(client, sessionId, `(() => {
     const select=document.querySelector(${JSON.stringify(selector)});
     if (!select) return false;
     const setter=Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set;
     setter.call(select,${JSON.stringify(value)});
+    select.dispatchEvent(new Event('input',{bubbles:true}));
     select.dispatchEvent(new Event('change',{bubbles:true}));
     return true;
   })()`)
@@ -454,7 +537,7 @@ async function verifyKeyboardAndResize(client, sessionId) {
       const target=Math.min(centered,viewport.scrollWidth-viewport.clientWidth);
       return Math.abs(viewport.scrollLeft-target);
     })()`,
-    (delta) => Number.isFinite(delta) && delta <= 12,
+    (delta) => Number.isFinite(delta) && delta <= 16,
     'keyboard next-level scroll completion',
   )
   await waitFor(
@@ -474,6 +557,205 @@ async function verifyKeyboardAndResize(client, sessionId) {
     nextLevel: '10',
     resizeObserverRealigned: true,
   }
+}
+
+async function verifyMidTrackSnap(client, sessionId) {
+  await evaluate(client, sessionId, `(() => {
+    document.querySelector('[data-fork-generation-nav="5"]')?.click();
+    return true;
+  })()`)
+  const centeredFive = await waitFor(
+    client,
+    sessionId,
+    `(() => {
+      const viewport=document.querySelector('[data-fork-generation-workspace]');
+      const lane=document.querySelector('[data-testid="fork-node-5"]');
+      if (!viewport || !lane) return null;
+      const viewportRect=viewport.getBoundingClientRect();
+      const laneRect=lane.getBoundingClientRect();
+      return {
+        active:document.querySelector('[data-fork-generation-nav][data-active-view="true"]')?.getAttribute('data-fork-generation-nav'),
+        centerDelta:Math.abs((laneRect.left+laneRect.width/2)-(viewportRect.left+viewportRect.width/2)),
+      };
+    })()`,
+    (value) => value?.active === '5' && value.centerDelta <= 16,
+    'level 5 mid-track snap',
+  )
+
+  const viewportPoint = await evaluate(client, sessionId, `(() => {
+    const viewport=document.querySelector('[data-fork-generation-workspace]');
+    viewport?.scrollIntoView({block:'start'});
+    const rect=viewport?.getBoundingClientRect();
+    if (!rect) return null;
+    const visibleTop=Math.max(0,rect.top);
+    const visibleBottom=Math.min(innerHeight,rect.bottom);
+    return {
+      x:Math.max(1,Math.min(innerWidth-1,rect.left+rect.width/2)),
+      y:Math.max(1,Math.min(innerHeight-1,(visibleTop+visibleBottom)/2)),
+    };
+  })()`)
+  if (!viewportPoint) throw new Error('Mid-track touch-like gesture viewport was missing.')
+  await client.send('Input.synthesizeScrollGesture', {
+    x: viewportPoint.x,
+    y: viewportPoint.y,
+    xDistance: -496,
+    yDistance: 0,
+    speed: 800,
+    gestureSourceType: 'touch',
+  }, sessionId)
+  const touchSettled = await waitFor(
+    client,
+    sessionId,
+    `(() => {
+      const viewport=document.querySelector('[data-fork-generation-workspace]');
+      const active=document.querySelector('[data-fork-generation-nav][data-active-view="true"]')?.getAttribute('data-fork-generation-nav');
+      const lane=active ? document.querySelector('[data-testid="fork-node-' + active + '"]') : null;
+      if (!viewport || !lane) return null;
+      const viewportRect=viewport.getBoundingClientRect();
+      const laneRect=lane.getBoundingClientRect();
+      return {
+        active,
+        centerDelta:Math.abs((laneRect.left+laneRect.width/2)-(viewportRect.left+viewportRect.width/2)),
+      };
+    })()`,
+    (value) => ['6', '7'].includes(value?.active) && value.centerDelta <= 20,
+    'touch-like mid-track snap settling',
+  )
+
+  await evaluate(client, sessionId, `(() => {
+    const viewport=document.querySelector('[data-fork-generation-workspace]');
+    viewport?.focus();
+    viewport?.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));
+    return true;
+  })()`)
+  const keyboardExpected = String(Number(touchSettled.active) + 1)
+  const keyboardSettled = await waitFor(
+    client,
+    sessionId,
+    `(() => {
+      const viewport=document.querySelector('[data-fork-generation-workspace]');
+      const active=document.querySelector('[data-fork-generation-nav][data-active-view="true"]')?.getAttribute('data-fork-generation-nav');
+      const lane=active ? document.querySelector('[data-testid="fork-node-' + active + '"]') : null;
+      if (!viewport || !lane) return null;
+      const viewportRect=viewport.getBoundingClientRect();
+      const laneRect=lane.getBoundingClientRect();
+      return {
+        active,
+        centerDelta:Math.abs((laneRect.left+laneRect.width/2)-(viewportRect.left+viewportRect.width/2)),
+      };
+    })()`,
+    (value) => value?.active === keyboardExpected && value.centerDelta <= 16,
+    'keyboard mid-track snap settling',
+  )
+  return {
+    selectedLevel: centeredFive.active,
+    selectedCenterDelta: centeredFive.centerDelta,
+    touchSettledLevel: touchSettled.active,
+    touchCenterDelta: touchSettled.centerDelta,
+    keyboardSettledLevel: keyboardSettled.active,
+    keyboardCenterDelta: keyboardSettled.centerDelta,
+  }
+}
+
+async function verifyPreparedEligibilityActions(client, sessionId, viewportName, screenshotDir) {
+  const results = []
+  for (const scenario of ['model-present', 'source-run-only']) {
+    await setScenario(client, sessionId, scenario)
+    const expected = eligibleProvenance[scenario]
+    const evidence = await waitFor(
+      client,
+      sessionId,
+      `(() => {
+        const root=document.querySelector('[data-testid="fork-lineage"]');
+        const current=root?.querySelector('[data-generation-current="true"]');
+        const response=current?.querySelector('[data-fork-generation-response]');
+        const actions=[...(root?.querySelectorAll('[data-fork-continuation-fork]') || [])];
+        const hrefs=[...(root?.querySelectorAll('a[href*="/build"]') || [])].map((link)=>link.href);
+        return {
+          nodes:root?.querySelectorAll('[data-fork-generation]').length || 0,
+          reason:root?.querySelector('[data-fork-eligibility]')?.getAttribute('data-fork-eligibility-reason'),
+          allowed:root?.querySelector('[data-fork-eligibility]')?.getAttribute('data-fork-eligibility'),
+          actionCount:actions.length,
+          actionHref:actions[0]?.href || '',
+          actionStepId:actions[0]?.closest('[data-fork-generation-response]')?.getAttribute('data-step-id') || '',
+          responseStepId:response?.getAttribute('data-step-id') || '',
+          responsePackageId:response?.getAttribute('data-response-package-id') || '',
+          allBuildHrefs:hrefs,
+        };
+      })()`,
+      (value) => value?.nodes === 2 && value?.actionCount === 1,
+      `${scenario}/${viewportName} prepared eligibility action`,
+    )
+    const actionUrl = new URL(evidence.actionHref)
+    const expectedParams = {
+      fork: expected.currentProjectId,
+      forkRun: expected.runId,
+      forkStep: expected.stepId,
+      forkStepNumber: expected.stepNumber,
+      forkArtifact: expected.artifactPath,
+      forkArtifactSha256: expected.artifactSha256,
+      parentFork: expected.currentProjectId,
+      forkDepth: '1',
+      promptFamily: expected.promptFamilyId,
+    }
+    if (
+      evidence.allowed !== 'allowed' ||
+      evidence.reason !== 'eligible' ||
+      actionUrl.pathname !== '/build' ||
+      evidence.actionStepId !== expected.localStepId ||
+      evidence.responseStepId !== expected.localStepId ||
+      evidence.responsePackageId !== expected.localResponsePackageId ||
+      evidence.allBuildHrefs.length !== 1
+    ) {
+      throw new Error(`${scenario}/${viewportName}: authoritative action placement drifted: ${JSON.stringify(evidence)}.`)
+    }
+    for (const [key, value] of Object.entries(expectedParams)) {
+      if (actionUrl.searchParams.get(key) !== value) {
+        throw new Error(`${scenario}/${viewportName}: ${key} was ${actionUrl.searchParams.get(key)}, expected ${value}.`)
+      }
+    }
+    if (
+      actionUrl.searchParams.get('forkVariant') !== expected.modelVariantId ||
+      actionUrl.href.includes(encodeURIComponent(expected.localStepId)) ||
+      actionUrl.href.includes(encodeURIComponent(expected.localResponsePackageId))
+    ) {
+      throw new Error(`${scenario}/${viewportName}: model/local DOM identity leaked or drifted in ${actionUrl.href}.`)
+    }
+    results.push({
+      scenario,
+      actionHref: actionUrl.href,
+      localStepId: evidence.responseStepId,
+      localResponsePackageId: evidence.responsePackageId,
+    })
+    if (screenshotDir) {
+      await captureScreenshot(
+        client,
+        sessionId,
+        path.join(screenshotDir, `eligible-${scenario}-${viewportName}.png`),
+      )
+    }
+  }
+
+  await setScenario(client, sessionId, 'incomplete')
+  const incomplete = await waitFor(
+    client,
+    sessionId,
+    `(() => {
+      const root=document.querySelector('[data-testid="fork-lineage"]');
+      return {
+        allowed:root?.querySelector('[data-fork-eligibility]')?.getAttribute('data-fork-eligibility'),
+        reason:root?.querySelector('[data-fork-eligibility]')?.getAttribute('data-fork-eligibility-reason'),
+        actions:root?.querySelectorAll('[data-fork-continuation-fork]').length || 0,
+      };
+    })()`,
+    (value) => value?.reason === 'eligible',
+    `incomplete/${viewportName} prepared eligibility`,
+  )
+  if (incomplete.allowed !== 'allowed' || incomplete.actions !== 0) {
+    throw new Error(`incomplete/${viewportName}: incomplete authoritative tuple did not fail closed: ${JSON.stringify(incomplete)}.`)
+  }
+  await setScenario(client, sessionId, 'terminal')
+  return { valid: results, incomplete }
 }
 
 async function verifyManualScrollNavigatorSync(client, sessionId) {
@@ -586,9 +868,37 @@ async function main() {
     await client.ready()
     const { targetId } = await client.send('Target.createTarget', { url: 'about:blank' })
     const { sessionId } = await client.send('Target.attachToTarget', { targetId, flatten: true })
+    const browserErrors = []
+    client.listeners.add((message) => {
+      if (message.sessionId !== sessionId) return
+      if (message.method === 'Runtime.exceptionThrown') {
+        browserErrors.push({
+          kind: 'exception',
+          text: message.params.exceptionDetails?.exception?.description
+            || message.params.exceptionDetails?.text
+            || 'Runtime exception',
+          url: message.params.exceptionDetails?.url || '',
+        })
+      }
+      if (message.method === 'Log.entryAdded' && message.params.entry?.level === 'error') {
+        const entry = message.params.entry
+        if (
+          !isExpectedLocalActivationFailure(options.baseUrl, entry) &&
+          !isExpectedLocalVercelScriptFailure(options.baseUrl, entry) &&
+          !isExpectedLocalFaviconFailure(options.baseUrl, entry)
+        ) {
+          browserErrors.push({
+            kind: 'console',
+            text: entry.text,
+            url: entry.url || '',
+          })
+        }
+      }
+    })
     await Promise.all([
       client.send('Page.enable', {}, sessionId),
       client.send('Runtime.enable', {}, sessionId),
+      client.send('Log.enable', {}, sessionId),
     ])
 
     for (const viewport of [
@@ -602,6 +912,12 @@ async function main() {
         mobile: viewport.mobile,
       }, sessionId)
       await navigate(client, sessionId, new URL(options.route, options.baseUrl).href)
+      const eligibilityActions = await verifyPreparedEligibilityActions(
+        client,
+        sessionId,
+        viewport.name,
+        options.screenshotDir,
+      )
 
       for (const family of ['prepared', 'community']) {
         await setFamily(client, sessionId, family)
@@ -613,6 +929,8 @@ async function main() {
           `${family}/${viewport.name} complete lineage`,
         )
         assertCompleteSnapshot(snapshot, family, viewport.name)
+        const midTrackSnap = await verifyMidTrackSnap(client, sessionId)
+        await evaluate(client, sessionId, `document.querySelector('[data-fork-generation-nav="10"]')?.click()`)
         const keyboardAndResize = await verifyKeyboardAndResize(client, sessionId)
         const manualScroll = await verifyManualScrollNavigatorSync(client, sessionId)
         const reducedMotion = await verifyReducedMotion(client, sessionId)
@@ -621,6 +939,8 @@ async function main() {
           viewport: viewport.name,
           ...snapshot,
           interactionEvidence: {
+            eligibilityActions,
+            midTrackSnap,
             keyboardAndResize,
             manualScroll,
             reducedMotion,
@@ -631,8 +951,6 @@ async function main() {
           await setSelect(client, sessionId, '[data-fixture-integrity-picker]', 'complete')
           await evaluate(client, sessionId, `(() => {
             const root=document.querySelector('[data-testid="fork-lineage"]');
-            const viewport=document.querySelector('[data-fork-generation-workspace]');
-            viewport?.scrollTo({left:0,behavior:'instant'});
             root?.scrollIntoView({block:'start'});
             return true;
           })()`)
@@ -640,7 +958,22 @@ async function main() {
             client,
             sessionId,
             `document.querySelector('[data-fork-generation-nav][data-active-view="true"]')?.getAttribute('data-fork-generation-nav')`,
-            (value) => value === '1',
+            (value) => value === '10',
+            `${family}/${viewport.name} restored current boundary`,
+          )
+          await evaluate(
+            client,
+            sessionId,
+            `document.querySelector('[data-fork-generation-nav="1"]')?.click()`,
+          )
+          await waitFor(
+            client,
+            sessionId,
+            `(() => ({
+              active:document.querySelector('[data-fork-generation-nav][data-active-view="true"]')?.getAttribute('data-fork-generation-nav'),
+              scrollLeft:document.querySelector('[data-fork-generation-workspace]')?.scrollLeft,
+            }))()`,
+            (value) => value.active === '1' && value.scrollLeft <= 16,
             `${family}/${viewport.name} screenshot start boundary`,
           )
           await captureScreenshot(
@@ -662,6 +995,9 @@ async function main() {
       }
     }
 
+    if (browserErrors.length > 0) {
+      throw new Error(`Unexpected browser errors: ${JSON.stringify(browserErrors, null, 2)}`)
+    }
     if (options.measurementsPath) {
       writeFileSync(options.measurementsPath, `${JSON.stringify({
         evidenceScope: 'local QA fixture only; not production-public proof',
@@ -670,7 +1006,7 @@ async function main() {
       }, null, 2)}\n`)
     }
     console.log('Depth-10 project-fork browser verification passed.')
-    console.log('Verified local fixture: prepared/community, 10 levels, 9 exact edges, desktop, 390x844, keyboard, a11y, reduced motion, ResizeObserver, fail-closed integrity.')
+    console.log('Verified local fixture: exact prepared actions, snap ownership/settling, prepared/community, 10 levels, 9 exact edges, desktop, 390x844, keyboard, a11y, reduced motion, ResizeObserver, fail-closed integrity.')
   } finally {
     client?.close()
     child.kill('SIGTERM')

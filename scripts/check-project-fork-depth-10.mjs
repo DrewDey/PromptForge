@@ -51,7 +51,9 @@ const {
   DEPTH_TEN_FIXTURE_LEVEL_COUNT,
   DEPTH_TEN_FIXTURE_EDGE_COUNT,
   DEPTH_TEN_FIXTURE_ARTIFACTS,
+  PREPARED_ELIGIBLE_PROVENANCE,
   buildDepthTenForkLineageFixture,
+  buildEligiblePreparedParentFixture,
   depthTenForkLineageFixtures,
 } = fixture
 
@@ -234,12 +236,54 @@ for (const family of ['prepared', 'community']) {
 
 assert(depthTenForkLineageFixtures.length === 16, 'fixture corpus must cover two families, all integrity kinds, and three invalid identity cases')
 
+for (const kind of ['model-present', 'source-run-only']) {
+  const truth = buildEligiblePreparedParentFixture(kind)
+  const provenance = kind === 'model-present'
+    ? PREPARED_ELIGIBLE_PROVENANCE.modelPresent
+    : PREPARED_ELIGIBLE_PROVENANCE.sourceRunOnly
+  const current = truth.generations.at(-1)
+  const finalStep = current?.presentation.localSteps.at(-1)
+  const artifact = finalStep?.artifactVersions?.at(-1)
+  assert(truth.integrity.kind === 'complete', `${kind}: eligible lineage must remain complete`)
+  assert(truth.eligibility.allowed === true, `${kind}: below-max prepared child must be eligible`)
+  assert(truth.eligibility.nextStoredDepth === 1, `${kind}: next stored depth must be 1`)
+  assert(current?.displayLevel === 2, `${kind}: selected child must render at level 2`)
+  assert(finalStep?.id === provenance.localStepId, `${kind}: local step identity drifted`)
+  assert(
+    finalStep?.responsePackageId === provenance.localResponsePackageId,
+    `${kind}: local response package identity drifted`,
+  )
+  assert(artifact?.sourceRunId === provenance.runId, `${kind}: authoritative run identity drifted`)
+  assert(artifact?.sourceStepId === provenance.stepId, `${kind}: authoritative step identity drifted`)
+  assert(artifact?.sourceStepNumber === provenance.stepNumber, `${kind}: authoritative step number drifted`)
+  assert(artifact?.sourceArtifactPath === provenance.artifactPath, `${kind}: authoritative artifact path drifted`)
+  assert(artifact?.artifactSha256 === provenance.artifactSha256, `${kind}: authoritative artifact SHA drifted`)
+  assert(
+    kind === 'model-present'
+      ? artifact?.sourceModelVariantId === provenance.modelVariantId
+      : artifact?.sourceModelVariantId === undefined,
+    `${kind}: optional model-variant projection drifted`,
+  )
+}
+const incompleteEligible = buildEligiblePreparedParentFixture('incomplete')
+assert(
+  incompleteEligible.integrity.kind === 'complete' &&
+    incompleteEligible.eligibility.allowed === true &&
+    !incompleteEligible.generations.at(-1)?.presentation.localSteps.at(-1)
+      ?.artifactVersions?.at(-1)?.artifactSha256,
+  'incomplete fixture must isolate presentation provenance denial from lineage eligibility',
+)
+
 const routePath = 'src/app/qa/fork-lineage-depth-10-fixture/page.tsx'
 const routeSource = readFileSync(routePath, 'utf8')
 const clientPath = 'src/app/qa/fork-lineage-depth-10-fixture/DepthTenForkLineageFixtureClient.tsx'
 const clientSource = readFileSync(clientPath, 'utf8')
 const buildPathSource = readFileSync('src/components/ProjectForkBuildPath.tsx', 'utf8')
 const workspaceSource = readFileSync('src/components/ProjectForkGenerationWorkspace.tsx', 'utf8')
+const actionRoundTripSql = readFileSync(
+  'test-fixtures/project-fork-lineage/runtime-action-roundtrip.sql',
+  'utf8',
+)
 assert(
   routeSource.includes("process.env.VERCEL_ENV === 'production'") &&
     routeSource.includes('notFound()'),
@@ -258,6 +302,38 @@ assert(
     buildPathSource.includes('lineage={props.lineage}'),
   'ProjectForkBuildPath lineage mode must delegate to the shared production workspace',
 )
+assert(
+  buildPathSource.includes('authoritativeFinalArtifact.sourceStepId') &&
+    buildPathSource.includes('authoritativeFinalArtifact.sourceStepNumber') &&
+    buildPathSource.includes('authoritativeFinalArtifact.sourceArtifactPath') &&
+    buildPathSource.includes('authoritativeFinalArtifact.artifactSha256') &&
+    !/sourceStepId:\s*finalStep\.responsePackageId/.test(buildPathSource),
+  'prepared parent action must use authoritative artifact provenance and never the local response package',
+)
+for (const provenance of [
+  PREPARED_ELIGIBLE_PROVENANCE.modelPresent,
+  PREPARED_ELIGIBLE_PROVENANCE.sourceRunOnly,
+]) {
+  for (const value of [
+    provenance.currentProjectId,
+    provenance.runId,
+    provenance.stepId,
+    String(provenance.stepNumber),
+    provenance.artifactPath,
+    provenance.artifactSha256,
+    provenance.promptFamilyId,
+    provenance.modelVariantId,
+  ].filter(Boolean)) {
+    assert(
+      actionRoundTripSql.includes(value),
+      `PostgreSQL round-trip must use the browser-emitted provenance literal ${value}`,
+    )
+  }
+  assert(
+    !actionRoundTripSql.includes(provenance.localResponsePackageId),
+    `${provenance.localResponsePackageId} must remain DOM-only and never enter persistence proof`,
+  )
+}
 for (const hook of [
   'data-testid="fork-lineage"',
   'data-fork-generation-workspace',

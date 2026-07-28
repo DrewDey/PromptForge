@@ -47,6 +47,28 @@ export type ProjectForkBuildPathArtifact = ProjectForkArtifactVersion & {
   stepNumber: number
 }
 
+type ProjectForkArtifactProvenance = ProjectForkArtifactVersion & Required<Pick<
+  ProjectForkArtifactVersion,
+  | 'sourceRunId'
+  | 'sourceStepId'
+  | 'sourceStepNumber'
+  | 'sourceArtifactPath'
+  | 'artifactSha256'
+>>
+
+function hasCompleteForkArtifactProvenance(
+  artifact: ProjectForkArtifactVersion | undefined,
+): artifact is ProjectForkArtifactProvenance {
+  return Boolean(
+    artifact?.sourceRunId?.trim() &&
+    artifact.sourceStepId?.trim() &&
+    Number.isInteger(artifact.sourceStepNumber) &&
+    (artifact.sourceStepNumber ?? 0) > 0 &&
+    artifact.sourceArtifactPath?.trim() &&
+    artifact.artifactSha256?.trim(),
+  )
+}
+
 export type ProjectForkBuildPathProps = {
   mode?: ProjectForkBuildPathMode
   lineage?: ProjectForkLineageTruth | null
@@ -1021,26 +1043,36 @@ export function ProjectForkBuildPath(props: ProjectForkBuildPathProps) {
       ? props.branch.continuationSteps
       : currentGeneration?.presentation.localSteps ?? []
     const finalStep = currentSteps.at(-1)
-    const finalArtifact = finalStep?.artifactVersions?.find((artifact) => artifact.isDefault)
-      ?? finalStep?.artifactVersions?.at(-1)
+    const authoritativeFinalStep = currentGeneration?.presentation.localSteps.at(-1)
+    const authoritativeArtifacts = authoritativeFinalStep?.artifactVersions ?? []
+    const authoritativeFinalArtifact = authoritativeArtifacts.find((artifact) => (
+      artifact.artifactPath === authoritativeFinalStep?.artifactPath
+    )) ?? authoritativeArtifacts.find((artifact) => artifact.isDefault)
+    const hasCompleteArtifactProvenance = hasCompleteForkArtifactProvenance(
+      authoritativeFinalArtifact,
+    )
     const authoritativeForkHref = (
       props.lineage.eligibility.allowed &&
       finalStep
     )
-      ? finalStep.forkHref ?? buildProjectResponseForkHref({
-          sourceProjectId: currentGeneration?.projectId ?? props.branch.id,
-          sourceProjectTitle: currentGeneration?.title ?? props.branch.title,
-          sourceModelVariantId: finalArtifact?.sourceModelVariantId,
-          sourceRunId: finalArtifact?.sourceRunId ?? props.branch.childSourceRunId ?? undefined,
-          sourceStepId: finalStep.responsePackageId,
-          sourceStepNumber: finalStep.stepNumber,
-          sourceArtifactPath: finalArtifact?.sourceArtifactPath,
-          sourceArtifactSha256: finalArtifact?.artifactSha256,
-          currentForkSource: currentGeneration?.forkSource ?? props.branch.forkSource,
-          promptFamilyId: currentGeneration?.forkSource?.promptFamilyId
-            ?? props.branch.forkSource.promptFamilyId,
-          destination: '/build',
-        })
+      ? hasCompleteArtifactProvenance && authoritativeFinalArtifact
+        ? buildProjectResponseForkHref({
+            sourceProjectId: currentGeneration?.projectId ?? props.branch.id,
+            sourceProjectTitle: currentGeneration?.title ?? props.branch.title,
+            sourceModelVariantId: authoritativeFinalArtifact.sourceModelVariantId,
+            sourceRunId: authoritativeFinalArtifact.sourceRunId,
+            sourceStepId: authoritativeFinalArtifact.sourceStepId,
+            sourceStepNumber: authoritativeFinalArtifact.sourceStepNumber,
+            sourceArtifactPath: authoritativeFinalArtifact.sourceArtifactPath,
+            sourceArtifactSha256: authoritativeFinalArtifact.artifactSha256,
+            currentForkSource: currentGeneration?.forkSource ?? props.branch.forkSource,
+            promptFamilyId: currentGeneration?.forkSource?.promptFamilyId
+              ?? props.branch.forkSource.promptFamilyId,
+            destination: '/build',
+          })
+        : authoritativeArtifacts.length === 0
+          ? finalStep.forkHref ?? null
+          : null
       : null
     const continuationSteps = currentSteps.map((step) => ({
       ...step,

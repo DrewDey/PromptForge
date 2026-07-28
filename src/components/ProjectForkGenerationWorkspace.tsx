@@ -1015,12 +1015,12 @@ export default function ProjectForkGenerationWorkspace({
         aria-describedby={`fork-lineage-edges-${branch.id}`}
         tabIndex={0}
         onKeyDown={handleWorkspaceKeyDown}
-        className="max-w-full touch-pan-x overflow-x-auto overflow-y-hidden overscroll-x-contain bg-surface-50 px-4 py-5 [scrollbar-gutter:stable] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand-orange sm:px-5"
+        className="max-w-full snap-x snap-mandatory touch-pan-x overflow-x-auto overflow-y-hidden overscroll-x-contain bg-surface-50 px-4 py-5 [scrollbar-gutter:stable] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand-orange sm:px-5"
         data-fork-generation-workspace
       >
         <div
           ref={canvasRef}
-          className="relative flex w-max min-w-full snap-x snap-mandatory items-start gap-24 pb-3"
+          className="relative flex w-max min-w-full items-start gap-24 pb-3"
           data-fork-generation-canvas
         >
           <svg

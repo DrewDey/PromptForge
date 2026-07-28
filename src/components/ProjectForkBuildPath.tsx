@@ -19,7 +19,10 @@ import type {
   ProjectForkSourceStep,
   ProjectForkLineageTruth,
 } from '@/lib/project-forks'
-import { resolveProjectForkPoint } from '@/lib/project-forks'
+import {
+  buildProjectResponseForkHref,
+  resolveProjectForkPoint,
+} from '@/lib/project-forks'
 import { ForkTruthDisclosure } from '@/components/ForkTruthDisclosure'
 import { publicArtifactStatusPresentation } from '@/lib/public-project-truth'
 import {
@@ -1012,9 +1015,44 @@ function LegacyProjectForkBuildPath({
 
 export function ProjectForkBuildPath(props: ProjectForkBuildPathProps) {
   if (props.lineage) {
-    const fork = props.forkSource
+    const currentGeneration = props.lineage.generations.find((generation) => generation.isCurrent)
+      ?? props.lineage.generations.at(-1)
+    const currentSteps = props.branch.continuationSteps?.length
+      ? props.branch.continuationSteps
+      : currentGeneration?.presentation.localSteps ?? []
+    const finalStep = currentSteps.at(-1)
+    const finalArtifact = finalStep?.artifactVersions?.find((artifact) => artifact.isDefault)
+      ?? finalStep?.artifactVersions?.at(-1)
+    const authoritativeForkHref = (
+      props.lineage.eligibility.allowed &&
+      finalStep
+    )
+      ? finalStep.forkHref ?? buildProjectResponseForkHref({
+          sourceProjectId: currentGeneration?.projectId ?? props.branch.id,
+          sourceProjectTitle: currentGeneration?.title ?? props.branch.title,
+          sourceModelVariantId: finalArtifact?.sourceModelVariantId,
+          sourceRunId: finalArtifact?.sourceRunId ?? props.branch.childSourceRunId ?? undefined,
+          sourceStepId: finalStep.responsePackageId,
+          sourceStepNumber: finalStep.stepNumber,
+          sourceArtifactPath: finalArtifact?.sourceArtifactPath,
+          sourceArtifactSha256: finalArtifact?.artifactSha256,
+          currentForkSource: currentGeneration?.forkSource ?? props.branch.forkSource,
+          promptFamilyId: currentGeneration?.forkSource?.promptFamilyId
+            ?? props.branch.forkSource.promptFamilyId,
+          destination: '/build',
+        })
+      : null
+    const continuationSteps = currentSteps.map((step) => ({
+      ...step,
+      forkHref: step.id === finalStep?.id ? authoritativeForkHref : null,
+    }))
+    const forkBase = props.forkSource
       ? { ...props.branch, forkSource: props.forkSource }
       : props.branch
+    const fork = {
+      ...forkBase,
+      continuationSteps,
+    }
 
     return (
       <ProjectForkGenerationWorkspace

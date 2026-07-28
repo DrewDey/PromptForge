@@ -14,6 +14,7 @@ import {
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -696,7 +697,7 @@ export default function ProjectForkGenerationWorkspace({
     ? 'Original source'
     : 'Earliest verified level'
 
-  const scrollToLevel = useCallback((
+  const positionViewportAtLevel = useCallback((
     displayLevel: number,
     behaviorOverride?: ScrollBehavior,
   ) => {
@@ -721,8 +722,15 @@ export default function ProjectForkGenerationWorkspace({
       left: targetLeft,
       behavior: reducedMotion ? 'auto' : (behaviorOverride ?? 'smooth'),
     })
-    setActiveLevel(displayLevel)
   }, [])
+
+  const scrollToLevel = useCallback((
+    displayLevel: number,
+    behaviorOverride?: ScrollBehavior,
+  ) => {
+    positionViewportAtLevel(displayLevel, behaviorOverride)
+    setActiveLevel(displayLevel)
+  }, [positionViewportAtLevel])
 
   const handleWorkspaceKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (generations.length === 0) return
@@ -809,6 +817,14 @@ export default function ProjectForkGenerationWorkspace({
     if (!viewport || !canvas) return
 
     const syncBoundaryLevel = () => {
+      if (viewport.scrollWidth <= viewport.clientWidth + 1) {
+        setActiveLevel(
+          currentGenerationDisplayLevel
+          ?? generations.at(-1)?.displayLevel
+          ?? 1,
+        )
+        return true
+      }
       const lanes = canvas.querySelectorAll<HTMLElement>('[data-fork-generation]')
       const firstLane = lanes[0]
       const lastLane = lanes[lanes.length - 1]
@@ -872,19 +888,16 @@ export default function ProjectForkGenerationWorkspace({
       observer.disconnect()
       viewport.removeEventListener('scroll', scheduleCenteredLevelSync)
     }
-  }, [generations])
+  }, [currentGenerationDisplayLevel, generations])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (currentGenerationDisplayLevel !== undefined) {
-      const frame = window.requestAnimationFrame(() => (
-        scrollToLevel(currentGenerationDisplayLevel, 'auto')
-      ))
-      return () => window.cancelAnimationFrame(frame)
+      positionViewportAtLevel(currentGenerationDisplayLevel, 'auto')
     }
   }, [
     currentGenerationDisplayLevel,
     currentGenerationProjectId,
-    scrollToLevel,
+    positionViewportAtLevel,
   ])
 
   const activeGenerationIndex = Math.max(

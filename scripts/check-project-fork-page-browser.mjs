@@ -241,6 +241,10 @@ const lineageSnapshotExpression = `(() => {
       trail:generations.map((node)=>node.querySelector('h3')?.textContent?.trim() || '').filter(Boolean),
       generationCount:generations.length,
       edgeCount:edges.length,
+      currentLevel:current?.getAttribute('data-display-level') || '',
+      activeLevel:root.querySelector('[data-fork-generation-nav][data-active-view="true"]')
+        ?.getAttribute('data-fork-generation-nav') || '',
+      workspaceOverflowing:authoritativeViewport.scrollWidth > authoritativeViewport.clientWidth + 1,
       edgeGeometry,
       rootPipeColor:(()=>{
         const rail=generations[0]?.querySelector('[data-fork-generation-step] > span');
@@ -734,6 +738,12 @@ function assertLineageSnapshot(snapshot, mode, label) {
     if (snapshot.eligibilityReason !== 'eligible') {
       throw new Error(
         `${label} authoritative lineage denied a valid next fork as ${snapshot.eligibilityReason || '(missing)'}.`,
+      )
+    }
+    if (!snapshot.workspaceOverflowing && snapshot.activeLevel !== snapshot.currentLevel) {
+      throw new Error(
+        `${label} marked level ${snapshot.activeLevel || '(missing)'} active while the complete ` +
+        `no-overflow lineage current generation is level ${snapshot.currentLevel || '(missing)'}.`,
       )
     }
     if (snapshot.duplicateArtifactSelectors?.length > 0) {

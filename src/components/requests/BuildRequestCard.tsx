@@ -1,20 +1,15 @@
 import Link from 'next/link'
 import {
-  ArrowUp,
   CheckCircle2,
   ExternalLink,
   MessageSquare,
 } from 'lucide-react'
-import BuildRequestResponseForm from '@/components/BuildRequestResponseForm'
-import { voteOnBuildRequest } from '@/lib/actions'
 import type { BuildRequestWithRelations } from '@/lib/types'
 import styles from '@/app/requests/requests.module.css'
 
 interface BuildRequestCardProps {
   request: BuildRequestWithRelations
   requestNumber: number
-  isAuthenticated: boolean
-  hasVoted: boolean
 }
 
 function statusLabel(status: string) {
@@ -23,18 +18,11 @@ function statusLabel(status: string) {
   return 'Open'
 }
 
-function loginHref(next: string) {
-  return `/auth/login?next=${encodeURIComponent(next)}`
-}
-
 export function BuildRequestCard({
   request,
   requestNumber,
-  isAuthenticated,
-  hasVoted,
 }: BuildRequestCardProps) {
   const responses = request.responses ?? []
-  const canRespond = request.status !== 'closed'
 
   return (
     <article className={styles.requestCard}>
@@ -54,26 +42,7 @@ export function BuildRequestCard({
 
         <div className={styles.requestByline}>
           <p>Requested by <strong>{request.author?.display_name ?? request.author?.username ?? 'a PathForge user'}</strong></p>
-          {isAuthenticated ? (
-            <form action={voteOnBuildRequest}>
-              <input type="hidden" name="request_id" value={request.id} />
-              <button
-                type="submit"
-                className={hasVoted ? styles.votedButton : styles.voteButton}
-                aria-pressed={hasVoted}
-                aria-label={hasVoted ? 'Remove vote from build request' : 'Vote for build request'}
-                title={hasVoted ? 'Remove vote' : 'Vote'}
-              >
-                <ArrowUp aria-hidden="true" />
-                {request.vote_count}
-              </button>
-            </form>
-          ) : (
-            <Link href={loginHref('/requests')} className={styles.voteButton}>
-              <ArrowUp aria-hidden="true" />
-              Log in to vote
-            </Link>
-          )}
+          <span className={styles.legacyVoteCount}>{request.vote_count} archived {request.vote_count === 1 ? 'vote' : 'votes'}</span>
         </div>
 
         {responses.length > 0 && (
@@ -105,20 +74,9 @@ export function BuildRequestCard({
           </section>
         )}
 
-        {canRespond && isAuthenticated ? (
-          <div className={styles.responseComposer}>
-            <BuildRequestResponseForm requestId={request.id} />
-          </div>
-        ) : canRespond ? (
-          <div className={styles.responseSignIn}>
-            <Link href={loginHref('/requests')}>Log in</Link>
-            {' '}to answer with a PathForge build, fork, or source-run result.
-          </div>
-        ) : (
-          <div className={styles.closedNotice}>
-            This request is closed. Its existing responses remain here as part of the public record.
-          </div>
-        )}
+        <div className={styles.closedNotice}>
+          Legacy record — public responses and votes are permanently read-only.
+        </div>
       </div>
     </article>
   )

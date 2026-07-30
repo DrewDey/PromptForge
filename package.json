@@ -45,6 +45,8 @@
     "check:my-forge": "node scripts/check-my-forge.mjs && node scripts/check-prepared-showcase-ownership-backfill.mjs",
     "check:security-boundaries": "node scripts/check-supabase-function-security.mjs",
     "check:auth-readiness": "node scripts/check-auth-readiness.mjs",
+    "check:request-build-freeze": "node scripts/check-request-build-freeze.mjs",
+    "check:request-authority-db": "node scripts/check-request-authority-db.mjs",
     "check:activation-analytics": "node scripts/check-activation-analytics.mjs",
     "check:supabase-public-reads": "node scripts/check-supabase-public-read-resilience.mjs",
     "check:discovery-activity": "node scripts/check-discovery-activity.mjs",

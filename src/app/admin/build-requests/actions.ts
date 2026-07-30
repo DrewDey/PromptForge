@@ -93,8 +93,13 @@ export async function adminRequestCommandAction(formData: FormData) {
   const commandName = text(formData, 'command')
   const resolution = text(formData, 'resolution')
   let command: RequestCommandV1
-  if (resolution === 'existing_resolution') {
+  if (commandName === 'close' && resolution === 'existing_resolution') {
     const kind = text(formData, 'referenceKind')
+    if (kind !== 'project' && kind !== 'response') {
+      redirect(
+        `/admin/build-requests/${encodeURIComponent(requestId)}?actionError=unavailable`,
+      )
+    }
     const reference: PathForgeRequestReference = kind === 'response'
       ? {
           kind: 'response',
@@ -112,7 +117,7 @@ export async function adminRequestCommandAction(formData: FormData) {
         note: text(formData, 'note'),
       },
     }
-  } else if (resolution === 'duplicate') {
+  } else if (commandName === 'close' && resolution === 'duplicate') {
     command = { ...base, kind: 'close', payload: { reason: 'duplicate' } }
   } else if (
     commandName === 'begin_triage' ||
@@ -190,7 +195,15 @@ export async function adminRequestCommandAction(formData: FormData) {
       kind: commandName,
       payload: { resolution: text(formData, 'resolution') },
     }
-  } else {
+  } else if (
+    commandName === 'close' &&
+    (
+      text(formData, 'closeReason') === 'out_of_scope' ||
+      text(formData, 'closeReason') === 'capacity_unavailable' ||
+      text(formData, 'closeReason') === 'declined' ||
+      text(formData, 'closeReason') === 'expired'
+    )
+  ) {
     const closeReason = text(formData, 'closeReason')
     command = {
       ...base,
@@ -200,6 +213,10 @@ export async function adminRequestCommandAction(formData: FormData) {
         note: text(formData, 'note'),
       },
     }
+  } else {
+    redirect(
+      `/admin/build-requests/${encodeURIComponent(requestId)}?actionError=unavailable`,
+    )
   }
   try {
     const service = await getRequestApplicationService()

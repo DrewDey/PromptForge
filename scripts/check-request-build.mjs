@@ -412,6 +412,38 @@ for (const [name, nextName, expectedCommand, requiredFields] of [
     )
   }
 }
+for (const [name, nextName, expectedCommandCount] of [
+  ['ResolutionForms', 'SimpleCommandForm', 2],
+  ['CloseForm', 'AdminRequestDetailOperations', 1],
+]) {
+  const source = functionSource(name, nextName)
+  const commands = [...source.matchAll(/name="command" value="([^"]+)"/g)]
+    .map((match) => match[1])
+  assert.equal(
+    commands.length,
+    expectedCommandCount,
+    `${name} must submit one command discriminant per rendered form.`,
+  )
+  assert.ok(
+    commands.every((command) => command === 'close'),
+    `${name} must submit only the exact close discriminant.`,
+  )
+}
+assert.match(
+  adminActions,
+  /commandName === 'close' && resolution === 'existing_resolution'[\s\S]*commandName === 'close' && resolution === 'duplicate'/,
+  'Resolution parsing must require the exact close command discriminant.',
+)
+assert.match(
+  adminActions,
+  /kind !== 'project' && kind !== 'response'[\s\S]*actionError=unavailable/,
+  'Existing-resolution parsing must reject an unknown reference discriminant.',
+)
+assert.match(
+  adminActions,
+  /\} else \{\s*redirect\([\s\S]*actionError=unavailable/,
+  'Unknown admin command discriminants must fail into bounded recovery.',
+)
 
 for (const expectedCommand of [
   'begin_triage',

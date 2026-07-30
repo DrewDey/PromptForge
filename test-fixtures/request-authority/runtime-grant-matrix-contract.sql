@@ -33,6 +33,7 @@ INSERT INTO expected_request_rpc_grants VALUES
   ('public.list_my_build_requests_v1(integer,text,integer)', FALSE, FALSE, TRUE, FALSE),
   ('public.list_build_request_queue_v1(integer,text,text,integer)', FALSE, FALSE, TRUE, FALSE),
   ('public.resolve_build_request_delivery_revision_action_v1(integer,uuid,uuid,uuid,text)', FALSE, FALSE, FALSE, TRUE),
+  ('public.resolve_build_request_delivery_preparation_replay_v1(integer,uuid,uuid,uuid)', FALSE, FALSE, FALSE, TRUE),
   ('public.list_build_request_eligible_assignees_v1(integer,uuid,text,text,text,integer)', FALSE, FALSE, TRUE, FALSE),
   ('public.list_build_request_pilot_admissions_v1(integer,text,text,integer)', FALSE, FALSE, TRUE, FALSE),
   ('public.list_build_request_events_v1(integer,uuid,text,integer)', FALSE, FALSE, TRUE, FALSE),

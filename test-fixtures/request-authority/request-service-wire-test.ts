@@ -5,12 +5,14 @@ import {
   createRequestDeliveryArtifactCleanupClaimService,
   createRequestDeliveryArtifactCleanupConfirmationService,
   createRequestDeliveryArtifactObjectResolver,
+  createRequestDeliveryPreparationReplayResolver,
   createRequestDeliveryRevisionRetirementService,
   createRequestMaintenanceWorkService,
   createRequestRawTextPurgeService,
   createRequestStagedArtifactCustodyService,
   parseRequestAuthorityErrorCode,
   parseRequestAvailabilityV1,
+  parseRequestDeliveryPreparationReplayBindingV1,
   parseRequestDeliveryManifestV1,
   parseRequestMaintenanceWorkPageV1,
   parseRequestPilotAdmissionCandidatePageV1,
@@ -32,6 +34,7 @@ const requestId = '85000000-0000-4000-8000-000000000001'
 const deliveryRevisionId = '85100000-0000-4000-8000-000000000001'
 const briefRevisionId = '85200000-0000-4000-8000-000000000001'
 const builderAssignmentId = '85300000-0000-4000-8000-000000000001'
+const builderActorId = '85300000-0000-4000-8000-000000000002'
 const artifactId = '85400000-0000-4000-8000-000000000001'
 const acceptanceCheckId = '85400000-0000-4000-8000-000000000002'
 const clarificationId = '85400000-0000-4000-8000-000000000003'
@@ -138,6 +141,35 @@ function verifyMaintenanceWorkParser() {
       rejected = true
     }
     assert(rejected, 'Maintenance work parser accepted an unsafe projection.')
+  }
+}
+
+function verifyDeliveryPreparationReplayParser() {
+  const binding = {
+    requestId,
+    deliveryRevisionId,
+    preparationReceiptId,
+    expectedRequestVersion: 2,
+    idempotencyKey: 'adapter-prepare-0001',
+  }
+  sameJson(
+    parseRequestDeliveryPreparationReplayBindingV1(binding),
+    binding,
+    'delivery preparation replay binding',
+  )
+  for (const hostile of [
+    { ...binding, expectedRequestVersion: -1 },
+    { ...binding, idempotencyKey: 'short' },
+    { ...binding, manifestDigest },
+    { ...binding, objectIdentity },
+  ]) {
+    let rejected = false
+    try {
+      parseRequestDeliveryPreparationReplayBindingV1(hostile)
+    } catch {
+      rejected = true
+    }
+    assert(rejected, 'Hostile preparation replay binding was accepted.')
   }
 }
 
@@ -815,6 +847,21 @@ const client: RequestRpcClient = {
         error: null,
       }
     }
+    if (
+      functionName ===
+      'resolve_build_request_delivery_preparation_replay_v1'
+    ) {
+      return {
+        data: {
+          requestId,
+          deliveryRevisionId,
+          preparationReceiptId,
+          expectedRequestVersion: 2,
+          idempotencyKey: 'adapter-prepare-0001',
+        },
+        error: null,
+      }
+    }
     if (functionName === 'seal_build_request_delivery_revision_v1') {
       return {
         data: {
@@ -845,6 +892,8 @@ const deidentificationReceiptCleanup =
   createRequestAccountDeidentificationReceiptCleanupService(client)
 const deliveryRevisionRetirement =
   createRequestDeliveryRevisionRetirementService(client)
+const preparationReplay =
+  createRequestDeliveryPreparationReplayResolver(client)
 const custody = createRequestStagedArtifactCustodyService(client)
 const objectResolver = createRequestDeliveryArtifactObjectResolver(client)
 const maintenanceWork = createRequestMaintenanceWorkService(client)
@@ -857,6 +906,7 @@ const artifactCleanupConfirmation =
 async function main() {
 verifyCanonicalManifestClarificationProvenance()
 verifyMaintenanceWorkParser()
+verifyDeliveryPreparationReplayParser()
 verifyAvailabilityContract()
 verifyPilotAdmissionCandidateParser()
 verifyAuthorityErrorCodes()
@@ -1055,6 +1105,12 @@ await application.executeCommand({
       evidenceRef: null,
     }],
   },
+})
+
+await preparationReplay.resolveDeliveryPreparationReplay({
+  actorId: builderActorId,
+  requestId,
+  deliveryRevisionId,
 })
 
 const staged = await custody.prepareStagedArtifactObject({
@@ -1303,6 +1359,15 @@ sameJson(
     ))
     .map(({ functionName, parameters }) => ({ functionName, parameters })),
   [
+    {
+      functionName: 'resolve_build_request_delivery_preparation_replay_v1',
+      parameters: {
+        p_contract_version: 1,
+        p_actor_id: builderActorId,
+        p_request_id: requestId,
+        p_delivery_revision_id: deliveryRevisionId,
+      },
+    },
     {
       functionName: 'prepare_build_request_delivery_artifact_object_v1',
       parameters: {

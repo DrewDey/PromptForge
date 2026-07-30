@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "prebuild": "npm run check:auth-readiness && npm run check:activation-analytics && npm run check:supabase-public-reads && npm run check:supabase-server-key-transport && npm run check:community-project-pilot && npm run check:community-project-alert-recovery && npm run check:model-variants && node scripts/check-project-model-variant-live-registry.mjs && npm run check:source-run-publication-registry",
+    "prebuild": "npm run check:auth-readiness && npm run check:activation-analytics && npm run check:supabase-public-reads && npm run check:supabase-server-key-transport && npm run check:community-project-pilot && npm run check:community-project-alert-recovery && npm run check:model-variants && node scripts/check-project-model-variant-live-registry.mjs && npm run check:source-run-publication-registry && npm run check:request-build-release",
     "build": "next build",
     "postbuild": "node scripts/check-output-file-tracing.mjs",
     "start": "next start",
@@ -53,6 +53,7 @@
     "check:activation-analytics": "node scripts/check-activation-analytics.mjs",
     "check:request-build-analytics": "node scripts/check-request-build-analytics.mjs",
     "check:request-build": "node scripts/check-request-build.mjs && node scripts/check-request-intake-action.mjs && node scripts/check-request-pilot-admission-action.mjs",
+    "check:request-build-release": "npm run check:request-build && npm run check:request-delivery-contract && npm run check:request-delivery-integration && npm run check:request-build-maintenance-http && npm run check:request-build-freeze && npm run check:request-build-analytics && npm run check:artifact-sandbox",
     "check:request-build-browser": "node scripts/check-request-build-browser.mjs",
     "check:supabase-public-reads": "node scripts/check-supabase-public-read-resilience.mjs",
     "check:discovery-activity": "node scripts/check-discovery-activity.mjs",

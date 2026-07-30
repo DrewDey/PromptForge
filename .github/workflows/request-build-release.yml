@@ -1,0 +1,41 @@
+name: Request a Build release boundary
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/request-build-release.yml'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'scripts/check-request-*.mjs'
+      - 'src/app/admin/build-requests/**'
+      - 'src/app/api/cron/request-build-maintenance/**'
+      - 'src/app/api/request-deliveries/**'
+      - 'src/app/my-forge/**'
+      - 'src/app/requests/**'
+      - 'src/components/requests/**'
+      - 'src/lib/build-requests/**'
+      - 'src/lib/request-*.ts'
+      - 'supabase/migrations/*request*'
+      - 'test-fixtures/request-authority/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: request-build-release-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  postgres-authority:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Verify the Request authority on disposable PostgreSQL 17
+        run: npm run check:request-authority-db

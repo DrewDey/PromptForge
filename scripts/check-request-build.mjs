@@ -96,6 +96,16 @@ assert.match(
 const participantCaseAction = readFileSync('src/app/requests/[id]/actions.ts', 'utf8')
 const participantCasePage = readFileSync('src/app/requests/[id]/page.tsx', 'utf8')
 const presentation = readFileSync('src/lib/build-requests/presentation.ts', 'utf8')
+assert.match(
+  presentation,
+  /detail\.assignments\.map[\s\S]{0,300}displayName: assignment\.assignee\.displayName/,
+  'Every assignment row must use its own canonical historical assignee attribution.',
+)
+assert.doesNotMatch(
+  presentation,
+  /participantsByRole|get\(assignment\.role\)/,
+  'Historical assignments must never borrow the current active participant name.',
+)
 const serverAdapter = readFileSync('src/lib/build-requests/server.ts', 'utf8')
 const adminActions = readFileSync('src/app/admin/build-requests/actions.ts', 'utf8')
 const adminControls = readFileSync(

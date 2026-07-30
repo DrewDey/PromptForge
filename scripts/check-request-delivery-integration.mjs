@@ -117,8 +117,8 @@ const {
 } = deliveryReaderRoute
 const { validateRequestCommandV1 } = requestLifecycle
 const {
-  REQUEST_DELIVERY_CLEANUP_MAX_BATCH,
-  runRequestDeliveryCleanupBatch,
+  REQUEST_DELIVERY_MAINTENANCE_MAX_BATCH,
+  createRequestDeliveryMaintenanceRunner,
 } = deliveryRetention
 const {
   beginRequestDeliveryPreview,
@@ -938,7 +938,7 @@ adapterParticipantResult = {
   },
 }
 
-assert.equal(REQUEST_DELIVERY_CLEANUP_MAX_BATCH, 25)
+assert.equal(REQUEST_DELIVERY_MAINTENANCE_MAX_BATCH, 25)
 
 function cleanupUuid(sequence) {
   return `40000000-0000-4000-a000-${sequence.toString(16).padStart(12, '0')}`
@@ -955,419 +955,409 @@ function cleanupCandidate(sequence) {
 const cleanupBytes = new TextEncoder().encode('terminal private artifact')
 const cleanupSha256 = createHash('sha256').update(cleanupBytes).digest('hex')
 const cleanupCandidates = {
-  day89Retain: cleanupCandidate(1),
-  day91Delete: cleanupCandidate(2),
-  activeHoldPreserve: cleanupCandidate(3),
-  removedDay91Delete: cleanupCandidate(4),
-  removedHoldPreserve: cleanupCandidate(5),
-  raceToHold: cleanupCandidate(6),
-  identityMismatch: cleanupCandidate(7),
-  hashMismatch: cleanupCandidate(8),
-  byteMismatch: cleanupCandidate(9),
-  typeMismatch: cleanupCandidate(10),
-  isolatedSuccess: cleanupCandidate(11),
-  metadataRequestIdMismatch: cleanupCandidate(12),
-  metadataRevisionIdMismatch: cleanupCandidate(13),
-  metadataArtifactIdMismatch: cleanupCandidate(14),
-  metadataHashMismatch: cleanupCandidate(15),
-  metadataBytesMismatch: cleanupCandidate(16),
-  metadataMediaMismatch: cleanupCandidate(17),
-  metadataPolicyMismatch: cleanupCandidate(18),
-  metadataScannerMismatch: cleanupCandidate(19),
-  metadataCustodyMismatch: cleanupCandidate(20),
+  workerRemoved: cleanupCandidate(1),
+  takeover: cleanupCandidate(2),
+  preexistingMissing: cleanupCandidate(3),
+  activeHold: cleanupCandidate(4),
+  raceToRetention: cleanupCandidate(5),
+  hostileMetadata: cleanupCandidate(6),
 }
+const crashCandidate = cleanupCandidate(7)
 
-function cleanupPlan(
-  candidate,
-  disposition,
-  overrides = {},
-) {
+function cleanupAuthority(candidate, retentionState, overrides = {}) {
   return {
-    disposition,
     ...candidate,
     objectIdentity: `private/retention/${candidate.artifactId}`,
     sha256: cleanupSha256,
     byteLength: cleanupBytes.byteLength,
-    mediaType: 'text/plain',
+    detectedMediaType: 'text/plain',
     custodyState: 'attested',
-    accessUntil: disposition === 'delete_candidate'
+    retentionState,
+    accessUntil: retentionState === 'cleanup_eligible'
       ? '2026-07-29T00:00:00.000Z'
       : '2026-07-31T00:00:00.000Z',
     ...overrides,
   }
 }
 
-const cleanupPlans = new Map([
-  [
-    cleanupCandidates.day89Retain.artifactId,
-    cleanupPlan(cleanupCandidates.day89Retain, 'retain'),
-  ],
-  [
-    cleanupCandidates.day91Delete.artifactId,
-    cleanupPlan(cleanupCandidates.day91Delete, 'delete_candidate'),
-  ],
-  [
-    cleanupCandidates.activeHoldPreserve.artifactId,
-    cleanupPlan(cleanupCandidates.activeHoldPreserve, 'preserve'),
-  ],
-  [
-    cleanupCandidates.removedDay91Delete.artifactId,
-    cleanupPlan(cleanupCandidates.removedDay91Delete, 'delete_candidate'),
-  ],
-  [
-    cleanupCandidates.removedHoldPreserve.artifactId,
-    cleanupPlan(cleanupCandidates.removedHoldPreserve, 'preserve'),
-  ],
-  [
-    cleanupCandidates.raceToHold.artifactId,
-    cleanupPlan(cleanupCandidates.raceToHold, 'delete_candidate'),
-  ],
-  [
-    cleanupCandidates.identityMismatch.artifactId,
-    cleanupPlan(cleanupCandidates.identityMismatch, 'delete_candidate'),
-  ],
-  [
-    cleanupCandidates.hashMismatch.artifactId,
-    cleanupPlan(cleanupCandidates.hashMismatch, 'delete_candidate', {
-      sha256: 'd'.repeat(64),
-    }),
-  ],
-  [
-    cleanupCandidates.byteMismatch.artifactId,
-    cleanupPlan(cleanupCandidates.byteMismatch, 'delete_candidate', {
-      byteLength: cleanupBytes.byteLength + 1,
-    }),
-  ],
-  [
-    cleanupCandidates.typeMismatch.artifactId,
-    cleanupPlan(cleanupCandidates.typeMismatch, 'delete_candidate'),
-  ],
-  [
-    cleanupCandidates.isolatedSuccess.artifactId,
-    cleanupPlan(cleanupCandidates.isolatedSuccess, 'delete_candidate'),
-  ],
-  ...[
-    'metadataRequestIdMismatch',
-    'metadataRevisionIdMismatch',
-    'metadataArtifactIdMismatch',
-    'metadataHashMismatch',
-    'metadataBytesMismatch',
-    'metadataMediaMismatch',
-    'metadataPolicyMismatch',
-    'metadataScannerMismatch',
-    'metadataCustodyMismatch',
-  ].map(name => [
-    cleanupCandidates[name].artifactId,
-    cleanupPlan(cleanupCandidates[name], 'delete_candidate'),
-  ]),
-])
+const cleanupAuthorities = new Map(Object.values(cleanupCandidates).map(candidate => [
+  candidate.artifactId,
+  cleanupAuthority(candidate, 'cleanup_eligible'),
+]))
+cleanupAuthorities.set(
+  crashCandidate.artifactId,
+  cleanupAuthority(crashCandidate, 'cleanup_eligible'),
+)
 
 const cleanupStorage = new IntegrationMemoryStorage()
 for (const [name, candidate] of Object.entries(cleanupCandidates)) {
-  if (['day89Retain', 'activeHoldPreserve', 'removedHoldPreserve'].includes(name)) {
+  if (name === 'preexistingMissing' || name === 'activeHold') {
     continue
   }
-  const plan = cleanupPlans.get(candidate.artifactId)
+  const authority = cleanupAuthorities.get(candidate.artifactId)
   const metadata = {
     policyVersion: 'request-delivery-passive-v1',
     scannerVersion: 'request-delivery-passive-v1',
     custodyState: 'staging',
-    requestId: plan.requestId,
-    deliveryRevisionId: plan.deliveryRevisionId,
-    artifactId: plan.artifactId,
-    sha256: plan.sha256,
-    byteLength: String(plan.byteLength),
-    mediaType: plan.mediaType,
+    requestId: authority.requestId,
+    deliveryRevisionId: authority.deliveryRevisionId,
+    artifactId: authority.artifactId,
+    sha256: authority.sha256,
+    byteLength: String(authority.byteLength),
+    mediaType: authority.detectedMediaType,
   }
-  if (name === 'metadataRequestIdMismatch') metadata.requestId = cleanupUuid(101)
-  if (name === 'metadataRevisionIdMismatch') metadata.deliveryRevisionId = cleanupUuid(102)
-  if (name === 'metadataArtifactIdMismatch') metadata.artifactId = cleanupUuid(103)
-  if (name === 'metadataHashMismatch') metadata.sha256 = 'e'.repeat(64)
-  if (name === 'metadataBytesMismatch') metadata.byteLength = String(plan.byteLength + 1)
-  if (name === 'metadataMediaMismatch') metadata.mediaType = 'application/json'
-  if (name === 'metadataPolicyMismatch') metadata.policyVersion = 'hostile-policy'
-  if (name === 'metadataScannerMismatch') metadata.scannerVersion = 'hostile-scanner'
-  if (name === 'metadataCustodyMismatch') metadata.custodyState = 'final'
-  cleanupStorage.objects.set(plan.objectIdentity, {
+  if (name === 'hostileMetadata') metadata.requestId = cleanupUuid(100)
+  cleanupStorage.objects.set(authority.objectIdentity, {
     bytes: cleanupBytes.slice(),
-    mediaType: name === 'typeMismatch' ? 'application/json' : 'text/plain',
+    mediaType: 'text/plain',
     metadata,
     createdAt: '2026-04-30T00:00:00.000Z',
   })
 }
 
-const cleanupItems = Object.values(cleanupCandidates)
-const enumerationCalls = []
+let cleanupItems = [
+  ...Object.values(cleanupCandidates).map(candidate => ({
+    category: 'artifact_cleanup',
+    ...candidate,
+  })),
+  { category: 'raw_text_purge', requestId: fixtureIds.request },
+  {
+    category: 'delivery_revision_retirement',
+    requestId: fixtureIds.request,
+    deliveryRevisionId: fixtureIds.delivery,
+    expectedVersion: 41,
+  },
+  { category: 'audit_tombstone_expiry', requestId: fixtureIds.request },
+  {
+    category: 'account_deidentification_receipt_expiry',
+    receiptId: cleanupUuid(90),
+  },
+]
 const cleanupResolveCounts = new Map()
-const cleanupConfirmations = []
-let rawAuthorityCleanupCalls = 0
-const cleanupAuthority = {
-  async enumerateEligible(input) {
-    enumerationCalls.push(input)
-    return {
-      items: cleanupItems,
-      nextCursor: 'opaque-next-page',
+const cleanupRpcCalls = []
+const claimKeyByArtifact = new Map()
+const claimIdByArtifact = new Map(Object.values(cleanupCandidates).map(
+  (candidate, index) => [candidate.artifactId, cleanupUuid(200 + index)],
+))
+claimIdByArtifact.set(crashCandidate.artifactId, cleanupUuid(207))
+let failCrashConfirmation = true
+const cleanupServiceRoleClient = {
+  async rpc(functionName, parameters) {
+    cleanupRpcCalls.push({ functionName, parameters: { ...parameters } })
+    if (functionName === 'list_build_request_maintenance_work_v1') {
+      return { data: { items: cleanupItems, nextCursor: null }, error: null }
     }
-  },
-  async resolveFresh(candidate) {
-    const prior = cleanupResolveCounts.get(candidate.artifactId) ?? 0
-    cleanupResolveCounts.set(candidate.artifactId, prior + 1)
-    if (candidate.artifactId === cleanupCandidates.raceToHold.artifactId && prior === 1) {
-      return cleanupPlan(candidate, 'preserve')
+    if (functionName === 'resolve_build_request_delivery_artifact_cleanup_v1') {
+      const prior = cleanupResolveCounts.get(parameters.p_artifact_id) ?? 0
+      cleanupResolveCounts.set(parameters.p_artifact_id, prior + 1)
+      const authority = structuredClone(cleanupAuthorities.get(parameters.p_artifact_id))
+      if (
+        parameters.p_artifact_id === cleanupCandidates.activeHold.artifactId
+      ) authority.retentionState = 'preserved_by_hold'
+      if (
+        parameters.p_artifact_id === cleanupCandidates.raceToRetention.artifactId
+        && prior > 0
+      ) authority.retentionState = 'retained'
+      return { data: authority, error: null }
     }
-    if (candidate.artifactId === cleanupCandidates.identityMismatch.artifactId && prior === 1) {
-      return cleanupPlan(candidate, 'delete_candidate', {
-        objectIdentity: `private/retention/rebound-${candidate.artifactId}`,
-      })
+    if (functionName === 'claim_build_request_delivery_artifact_cleanup_v1') {
+      claimKeyByArtifact.set(
+        parameters.p_artifact_id,
+        [
+          ...(claimKeyByArtifact.get(parameters.p_artifact_id) ?? []),
+          parameters.p_idempotency_key,
+        ],
+      )
+      return {
+        data: {
+          cleanupClaimId: claimIdByArtifact.get(parameters.p_artifact_id),
+          requestId: parameters.p_request_id,
+          deliveryRevisionId: parameters.p_delivery_revision_id,
+          artifactId: parameters.p_artifact_id,
+          claimVersion: parameters.p_artifact_id === cleanupCandidates.takeover.artifactId
+            || (
+              parameters.p_artifact_id === crashCandidate.artifactId
+              && !cleanupStorage.objects.has(
+                cleanupAuthorities.get(crashCandidate.artifactId).objectIdentity,
+              )
+            )
+            ? 2
+            : 1,
+          leaseUntil: '2026-07-30T12:05:00.000Z',
+          deletionStarted: parameters.p_artifact_id === cleanupCandidates.takeover.artifactId
+            || (
+              parameters.p_artifact_id === crashCandidate.artifactId
+              && !cleanupStorage.objects.has(
+                cleanupAuthorities.get(crashCandidate.artifactId).objectIdentity,
+              )
+            ),
+          replayed: false,
+        },
+        error: null,
+      }
     }
-    return structuredClone(cleanupPlans.get(candidate.artifactId))
-  },
-  async confirmRemoved(input) {
-    cleanupConfirmations.push(input)
-  },
-  async runIdempotentRawAuthorityCleanup() {
-    rawAuthorityCleanupCalls += 1
+    if (functionName === 'begin_build_request_delivery_artifact_cleanup_delete_v1') {
+      const artifactId = [...claimIdByArtifact.entries()]
+        .find(([, claimId]) => claimId === parameters.p_cleanup_claim_id)?.[0]
+      return {
+        data: {
+          cleanupClaimId: parameters.p_cleanup_claim_id,
+          requestId: fixtureIds.request,
+          deliveryRevisionId: fixtureIds.delivery,
+          artifactId,
+          claimVersion: parameters.p_claim_version,
+          deleteStartedAt: '2026-07-30T12:01:00.000Z',
+          replayed: false,
+        },
+        error: null,
+      }
+    }
+    if (functionName === 'abort_build_request_delivery_artifact_cleanup_v1') {
+      const artifactId = [...claimIdByArtifact.entries()]
+        .find(([, claimId]) => claimId === parameters.p_cleanup_claim_id)?.[0]
+      return {
+        data: {
+          cleanupClaimId: parameters.p_cleanup_claim_id,
+          requestId: fixtureIds.request,
+          deliveryRevisionId: fixtureIds.delivery,
+          artifactId,
+          claimVersion: parameters.p_claim_version,
+          replayed: false,
+          abortedAt: '2026-07-30T12:01:00.000Z',
+        },
+        error: null,
+      }
+    }
+    if (functionName === 'confirm_build_request_delivery_artifact_cleanup_v1') {
+      if (
+        parameters.p_artifact_id === crashCandidate.artifactId
+        && failCrashConfirmation
+      ) {
+        failCrashConfirmation = false
+        throw new Error('simulated confirmation transport failure')
+      }
+      const preexisting = parameters.p_artifact_id
+        === cleanupCandidates.preexistingMissing.artifactId
+      return {
+        data: {
+          cleanupReceiptId: cleanupUuid(300),
+          requestId: parameters.p_request_id,
+          deliveryRevisionId: parameters.p_delivery_revision_id,
+          artifactId: parameters.p_artifact_id,
+          cleanupClaimId: parameters.p_cleanup_claim_id,
+          claimVersion: parameters.p_claim_version,
+          cleanupDisposition: preexisting ? 'preexisting_missing' : 'worker_removed',
+          replayed: false,
+          cleanedAt: '2026-07-30T12:02:00.000Z',
+        },
+        error: null,
+      }
+    }
+    if (functionName === 'purge_build_request_raw_text_v1') {
+      return {
+        data: {
+          requestId: parameters.p_request_id,
+          purgedAt: '2026-07-30T12:00:00.000Z',
+          auditTombstoneUntil: '2027-09-03T12:00:00.000Z',
+          replayed: false,
+        },
+        error: null,
+      }
+    }
+    if (functionName === 'retire_build_request_delivery_revision_v1') {
+      return {
+        data: {
+          requestId: parameters.p_request_id,
+          deliveryRevisionId: parameters.p_delivery_revision_id,
+          revisionState: 'abandoned',
+          retiredAt: '2026-07-30T12:00:00.000Z',
+          replayed: false,
+        },
+        error: null,
+      }
+    }
+    if (functionName === 'expire_build_request_audit_tombstone_v1') {
+      return {
+        data: {
+          contractVersion: 1,
+          requestId: parameters.p_request_id,
+          cleaned: true,
+          replayed: false,
+          aggregateDigest: 'f'.repeat(64),
+          occurredAt: '2026-07-30T12:00:00.000Z',
+        },
+        error: null,
+      }
+    }
+    if (functionName === 'expire_build_request_account_deidentification_receipt_v1') {
+      return {
+        data: {
+          contractVersion: 1,
+          receiptId: parameters.p_receipt_id,
+          expired: true,
+          occurredAt: '2026-07-30T12:00:00.000Z',
+        },
+        error: null,
+      }
+    }
+    throw new Error(`Unexpected maintenance RPC: ${functionName}`)
   },
 }
-
-const cleanupResult = await runRequestDeliveryCleanupBatch({
-  limit: 20,
-  cursor: 'opaque-start-page',
-  authority: cleanupAuthority,
+const cleanupRunner = createRequestDeliveryMaintenanceRunner({
+  serviceRoleClient: cleanupServiceRoleClient,
   storage: cleanupStorage,
 })
-assert.deepEqual(enumerationCalls, [{
-  limit: 20,
-  cursor: 'opaque-start-page',
-}])
+const cleanupResult = await cleanupRunner.runBatch({ limit: 10 })
 assert.deepEqual(cleanupResult, {
-  examined: 20,
-  deleted: 3,
+  examined: 10,
+  artifactsDeleted: 2,
+  artifactsAlreadyMissing: 1,
+  rawTextPurged: 1,
+  revisionsRetired: 1,
+  auditTombstonesExpired: 1,
+  deidentificationReceiptsExpired: 1,
   retained: 1,
-  preserved: 3,
-  failed: 13,
-  authorityCleanup: 'completed',
-  hasMore: true,
+  preserved: 1,
+  failed: 1,
+  hasMore: false,
 })
-assert.equal(rawAuthorityCleanupCalls, 1)
-assert.equal(cleanupConfirmations.length, 3)
-assert.deepEqual(
-  cleanupConfirmations.map(({ candidate }) => candidate.artifactId).sort(),
-  [
-    cleanupCandidates.day91Delete.artifactId,
-    cleanupCandidates.removedDay91Delete.artifactId,
-    cleanupCandidates.isolatedSuccess.artifactId,
-  ].sort(),
-)
-for (const confirmation of cleanupConfirmations) {
-  assert.match(confirmation.idempotencyKey, /^cleanup:[a-f0-9]{64}$/)
-}
 assert.equal(
   cleanupStorage.removeCalls.includes(
-    cleanupPlans.get(cleanupCandidates.raceToHold.artifactId).objectIdentity,
+    cleanupAuthorities.get(cleanupCandidates.activeHold.artifactId).objectIdentity,
   ),
   false,
-  'fresh hold re-resolution prevents physical removal',
+  'an active hold prevents physical removal',
 )
-for (const name of [
-  'identityMismatch',
-  'hashMismatch',
-  'byteMismatch',
-  'typeMismatch',
-  'metadataRequestIdMismatch',
-  'metadataRevisionIdMismatch',
-  'metadataArtifactIdMismatch',
-  'metadataHashMismatch',
-  'metadataBytesMismatch',
-  'metadataMediaMismatch',
-  'metadataPolicyMismatch',
-  'metadataScannerMismatch',
-  'metadataCustodyMismatch',
-]) {
-  assert.equal(
-    cleanupConfirmations.some(
-      ({ candidate }) => candidate.artifactId === cleanupCandidates[name].artifactId,
-    ),
-    false,
-    `${name} never reaches authority confirmation`,
-  )
-}
+assert.equal(cleanupStorage.removeCalls.length, 2)
+assert.equal(
+  cleanupRpcCalls.filter(
+    ({ functionName }) =>
+      functionName === 'begin_build_request_delivery_artifact_cleanup_delete_v1',
+  ).length,
+  2,
+  'new and takeover claims both bind the current fenced version before removal',
+)
+assert.equal(
+  cleanupRpcCalls.some(
+    ({ functionName, parameters }) =>
+      functionName === 'begin_build_request_delivery_artifact_cleanup_delete_v1'
+      && parameters.p_cleanup_claim_id
+        === claimIdByArtifact.get(cleanupCandidates.preexistingMissing.artifactId),
+  ),
+  false,
+  'a preexisting-missing object confirms without claiming byte deletion',
+)
+assert.equal(
+  cleanupRpcCalls.some(
+    ({ functionName, parameters }) =>
+      functionName === 'abort_build_request_delivery_artifact_cleanup_v1'
+      && parameters.p_cleanup_claim_id
+        === claimIdByArtifact.get(cleanupCandidates.raceToRetention.artifactId),
+  ),
+  true,
+  'a pre-begin retention race aborts only after exact object proof',
+)
 assert.deepEqual(Object.keys(cleanupResult).sort(), [
-  'authorityCleanup',
-  'deleted',
+  'artifactsAlreadyMissing',
+  'artifactsDeleted',
+  'auditTombstonesExpired',
+  'deidentificationReceiptsExpired',
   'examined',
   'failed',
   'hasMore',
   'preserved',
+  'rawTextPurged',
   'retained',
+  'revisionsRetired',
 ].sort())
 const cleanupAggregate = JSON.stringify(cleanupResult)
 assert.doesNotMatch(cleanupAggregate, /[0-9a-f]{8}-[0-9a-f-]{27,}/i)
 assert.doesNotMatch(cleanupAggregate, /private\/retention/)
 
-const replayCandidate = cleanupCandidate(21)
-const replayPlan = cleanupPlan(replayCandidate, 'delete_candidate')
-const replayStorage = new IntegrationMemoryStorage()
-replayStorage.objects.set(replayPlan.objectIdentity, {
+const firstMissingClaimKey = claimKeyByArtifact.get(
+  cleanupCandidates.preexistingMissing.artifactId,
+)[0]
+cleanupItems = [{
+  category: 'artifact_cleanup',
+  ...cleanupCandidates.preexistingMissing,
+}]
+const secondAttempt = createRequestDeliveryMaintenanceRunner({
+  serviceRoleClient: cleanupServiceRoleClient,
+  storage: cleanupStorage,
+})
+const secondMissingResult = await secondAttempt.runBatch({ limit: 1 })
+assert.deepEqual(secondMissingResult, {
+  examined: 1,
+  artifactsDeleted: 0,
+  artifactsAlreadyMissing: 1,
+  rawTextPurged: 0,
+  revisionsRetired: 0,
+  auditTombstonesExpired: 0,
+  deidentificationReceiptsExpired: 0,
+  retained: 0,
+  preserved: 0,
+  failed: 0,
+  hasMore: false,
+})
+assert.notEqual(
+  claimKeyByArtifact.get(cleanupCandidates.preexistingMissing.artifactId)[1],
+  firstMissingClaimKey,
+  'each worker attempt uses a distinct server-held claim owner key',
+)
+
+const crashAuthority = cleanupAuthorities.get(crashCandidate.artifactId)
+cleanupStorage.objects.set(crashAuthority.objectIdentity, {
   bytes: cleanupBytes.slice(),
   mediaType: 'text/plain',
   metadata: {
     policyVersion: 'request-delivery-passive-v1',
     scannerVersion: 'request-delivery-passive-v1',
     custodyState: 'staging',
-    requestId: replayPlan.requestId,
-    deliveryRevisionId: replayPlan.deliveryRevisionId,
-    artifactId: replayPlan.artifactId,
-    sha256: replayPlan.sha256,
-    byteLength: String(replayPlan.byteLength),
-    mediaType: replayPlan.mediaType,
+    requestId: crashAuthority.requestId,
+    deliveryRevisionId: crashAuthority.deliveryRevisionId,
+    artifactId: crashAuthority.artifactId,
+    sha256: crashAuthority.sha256,
+    byteLength: String(crashAuthority.byteLength),
+    mediaType: crashAuthority.detectedMediaType,
   },
   createdAt: '2026-04-30T00:00:00.000Z',
 })
-const replayConfirmationAttempts = []
-let failFirstConfirmation = true
-const replayAuthority = {
-  async enumerateEligible() {
-    return { items: [replayCandidate], nextCursor: null }
-  },
-  async resolveFresh() {
-    return structuredClone(replayPlan)
-  },
-  async confirmRemoved(input) {
-    replayConfirmationAttempts.push(input)
-    if (failFirstConfirmation) {
-      failFirstConfirmation = false
-      throw new Error('simulated crash after physical deletion')
-    }
-  },
-  async runIdempotentRawAuthorityCleanup() {},
-}
-const crashedAfterDelete = await runRequestDeliveryCleanupBatch({
-  limit: 1,
-  authority: replayAuthority,
-  storage: replayStorage,
+cleanupItems = [{ category: 'artifact_cleanup', ...crashCandidate }]
+const crashRunner = createRequestDeliveryMaintenanceRunner({
+  serviceRoleClient: cleanupServiceRoleClient,
+  storage: cleanupStorage,
 })
-assert.deepEqual(crashedAfterDelete, {
-  examined: 1,
-  deleted: 0,
-  retained: 0,
-  preserved: 0,
-  failed: 1,
-  authorityCleanup: 'completed',
-  hasMore: false,
-})
-assert.equal(await replayStorage.read(replayPlan.objectIdentity), null)
-assert.equal(replayStorage.removeCalls.length, 1)
-
-const convergedMissingReplay = await runRequestDeliveryCleanupBatch({
-  limit: 1,
-  authority: replayAuthority,
-  storage: replayStorage,
-})
-assert.deepEqual(convergedMissingReplay, {
-  examined: 1,
-  deleted: 1,
-  retained: 0,
-  preserved: 0,
-  failed: 0,
-  authorityCleanup: 'completed',
-  hasMore: false,
-})
-assert.equal(replayStorage.removeCalls.length, 1, 'missing replay never repeats removal')
-assert.equal(replayConfirmationAttempts.length, 2)
+const failedConfirmationResult = await crashRunner.runBatch({ limit: 1 })
+assert.equal(failedConfirmationResult.failed, 1)
 assert.equal(
-  replayConfirmationAttempts[0].idempotencyKey,
-  replayConfirmationAttempts[1].idempotencyKey,
+  await cleanupStorage.read(crashAuthority.objectIdentity),
+  null,
+  'physical removal may finish before its authority confirmation',
+)
+const takeoverRunner = createRequestDeliveryMaintenanceRunner({
+  serviceRoleClient: cleanupServiceRoleClient,
+  storage: cleanupStorage,
+})
+const takeoverConfirmationResult = await takeoverRunner.runBatch({ limit: 1 })
+assert.equal(takeoverConfirmationResult.artifactsDeleted, 1)
+assert.equal(takeoverConfirmationResult.artifactsAlreadyMissing, 0)
+assert.equal(
+  cleanupStorage.removeCalls.filter(key => key === crashAuthority.objectIdentity).length,
+  1,
+  'deletion-start takeover confirms missing bytes without repeating removal',
+)
+assert.notEqual(
+  claimKeyByArtifact.get(crashCandidate.artifactId)[0],
+  claimKeyByArtifact.get(crashCandidate.artifactId)[1],
+  'takeover uses a new worker owner key and fenced claim version',
 )
 
-const missingRetainCandidate = cleanupCandidate(22)
-const missingPreserveCandidate = cleanupCandidate(23)
-let noneligibleConfirmations = 0
-const noneligibleMissingResult = await runRequestDeliveryCleanupBatch({
-  limit: 2,
-  authority: {
-    async enumerateEligible() {
-      return {
-        items: [missingRetainCandidate, missingPreserveCandidate],
-        nextCursor: null,
-      }
-    },
-    async resolveFresh(candidate) {
-      return cleanupPlan(
-        candidate,
-        candidate.artifactId === missingRetainCandidate.artifactId
-          ? 'retain'
-          : 'preserve',
-      )
-    },
-    async confirmRemoved() {
-      noneligibleConfirmations += 1
-    },
-    async runIdempotentRawAuthorityCleanup() {},
-  },
-  storage: new IntegrationMemoryStorage(),
-})
-assert.deepEqual(noneligibleMissingResult, {
-  examined: 2,
-  deleted: 0,
-  retained: 1,
-  preserved: 1,
-  failed: 0,
-  authorityCleanup: 'completed',
-  hasMore: false,
-})
-assert.equal(noneligibleConfirmations, 0)
-
-let invalidLimitEnumerated = false
 await assert.rejects(
-  runRequestDeliveryCleanupBatch({
-    limit: REQUEST_DELIVERY_CLEANUP_MAX_BATCH + 1,
-    authority: {
-      ...cleanupAuthority,
-      async enumerateEligible() {
-        invalidLimitEnumerated = true
-        return { items: [], nextCursor: null }
-      },
-    },
-    storage: cleanupStorage,
+  cleanupRunner.runBatch({
+    limit: REQUEST_DELIVERY_MAINTENANCE_MAX_BATCH + 1,
   }),
   /configuration_invalid/,
 )
-assert.equal(invalidLimitEnumerated, false)
-
-await assert.rejects(
-  runRequestDeliveryCleanupBatch({
-    limit: 1,
-    authority: {
-      ...cleanupAuthority,
-      async enumerateEligible() {
-        return { items: cleanupItems.slice(0, 2), nextCursor: null }
-      },
-    },
-    storage: cleanupStorage,
-  }),
-  /enumeration_invalid/,
-)
-
-const failedAuthorityCleanup = await runRequestDeliveryCleanupBatch({
-  limit: 1,
-  authority: {
-    async enumerateEligible() {
-      return { items: [], nextCursor: null }
-    },
-    async resolveFresh() {
-      throw new Error('must not resolve an empty batch')
-    },
-    async confirmRemoved() {
-      throw new Error('must not confirm an empty batch')
-    },
-    async runIdempotentRawAuthorityCleanup() {
-      throw new Error('bounded authority cleanup failure')
-    },
-  },
-  storage: cleanupStorage,
-})
-assert.equal(failedAuthorityCleanup.authorityCleanup, 'failed')
 
 const sourceFiles = {
   slot: readFileSync(path.join(
@@ -1547,7 +1537,7 @@ const cleanupHttpRoutes = apiRouteFiles.filter(file => {
   const routeSource = readFileSync(file, 'utf8')
   return (
     routeSource.includes('delivery-retention-runner')
-    || routeSource.includes('runRequestDeliveryCleanupBatch')
+    || routeSource.includes('createRequestDeliveryMaintenanceRunner')
   )
 })
 assert.deepEqual(cleanupHttpRoutes, [], 'V1 exposes no delivery cleanup or cron route')

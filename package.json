@@ -48,6 +48,8 @@
     "check:request-build-freeze": "node scripts/check-request-build-freeze.mjs",
     "check:request-authority-db": "node scripts/check-request-authority-db.mjs",
     "check:request-build-maintenance-http": "node scripts/check-request-build-maintenance-http.mjs",
+    "check:request-delivery-contract": "node scripts/check-request-delivery-contract.mjs",
+    "check:request-delivery-integration": "node scripts/check-request-delivery-integration.mjs",
     "check:activation-analytics": "node scripts/check-activation-analytics.mjs",
     "check:supabase-public-reads": "node scripts/check-supabase-public-read-resilience.mjs",
     "check:discovery-activity": "node scripts/check-discovery-activity.mjs",

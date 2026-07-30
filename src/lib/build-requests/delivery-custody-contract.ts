@@ -174,6 +174,8 @@ export interface DeliveryArtifactStorage {
     metadata: DeliveryArtifactObjectMetadata
   }): Promise<'created' | 'exists'>
   read(key: string): Promise<DeliveryArtifactStorageObject | null>
+  /** Server-maintenance only; callers must freshly resolve cleanup authority. */
+  remove?(key: string): Promise<void>
   list?(prefix: string): Promise<readonly { key: string; createdAt: string }[]>
 }
 

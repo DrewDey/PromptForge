@@ -37,8 +37,11 @@ DECLARE
   manifest_digest TEXT;
   first_manifest_digest TEXT;
   service_result JSONB;
+  preparation_replay_binding JSONB;
+  fresh_builder_detail JSONB;
   error_detail TEXT;
   request_version INTEGER;
+  preparation_expected_version INTEGER;
   event_count_before_delete INTEGER;
   review_count_before INTEGER;
   review_event_count_before INTEGER;
@@ -472,6 +475,7 @@ BEGIN
     jsonb_build_object('sub', builder, 'role', 'authenticated')::TEXT,
     TRUE
   );
+  preparation_expected_version := request_version;
   SELECT * INTO receipt FROM public.build_request_command_v1(
     1,
     request_id,
@@ -498,6 +502,181 @@ BEGIN
   INSERT INTO public.test_request_lifecycle_detail_snapshots
   VALUES ('builder_prepared', public.get_build_request_v1(1, request_id));
 
+  -- Two valid operator commands advance the case after preparation. Reload
+  -- recovery must resolve and replay the original immutable preparation
+  -- binding rather than guessing from the latest request version.
+  PERFORM set_config(
+    'request.jwt.claims',
+    jsonb_build_object('sub', triager, 'role', 'authenticated')::TEXT,
+    TRUE
+  );
+  SELECT * INTO receipt FROM public.build_request_command_v1(
+    1,
+    request_id,
+    request_version,
+    'prepare-recovery-hold-0001',
+    'place_moderation_hold',
+    jsonb_build_object(
+      'reason', 'Temporary authority recovery fixture hold.'
+    )
+  );
+  request_version := receipt.request_version;
+
+  PERFORM set_config(
+    'request.jwt.claims',
+    '{"role":"service_role"}',
+    TRUE
+  );
+  BEGIN
+    PERFORM public.resolve_build_request_delivery_preparation_replay_v1(
+      1,
+      builder,
+      request_id,
+      delivery_revision_id
+    );
+    RAISE EXCEPTION 'A held preparation replay binding was exposed.';
+  EXCEPTION WHEN SQLSTATE 'P0002' THEN NULL;
+  END;
+  BEGIN
+    PERFORM public.resolve_build_request_delivery_preparation_replay_v1(
+      1,
+      stranger,
+      request_id,
+      delivery_revision_id
+    );
+    RAISE EXCEPTION 'An unrelated actor resolved a preparation replay binding.';
+  EXCEPTION WHEN SQLSTATE 'P0002' THEN NULL;
+  END;
+
+  PERFORM set_config(
+    'request.jwt.claims',
+    jsonb_build_object('sub', triager, 'role', 'authenticated')::TEXT,
+    TRUE
+  );
+  SELECT * INTO receipt FROM public.build_request_command_v1(
+    1,
+    request_id,
+    request_version,
+    'prepare-recovery-release-0001',
+    'release_moderation_hold',
+    jsonb_build_object(
+      'resolution', 'Recovery fixture hold was resolved.'
+    )
+  );
+  request_version := receipt.request_version;
+
+  PERFORM set_config(
+    'request.jwt.claims',
+    '{"role":"service_role"}',
+    TRUE
+  );
+  SELECT public.resolve_build_request_delivery_preparation_replay_v1(
+    1,
+    builder,
+    request_id,
+    delivery_revision_id
+  ) INTO preparation_replay_binding;
+  IF preparation_replay_binding <> jsonb_build_object(
+    'requestId', request_id,
+    'deliveryRevisionId', delivery_revision_id,
+    'preparationReceiptId', preparation_receipt_id,
+    'expectedRequestVersion', preparation_expected_version,
+    'idempotencyKey', 'prepare-delivery-0001'
+  ) THEN
+    RAISE EXCEPTION
+      'Preparation replay resolver returned the wrong immutable binding: %.',
+      preparation_replay_binding;
+  END IF;
+
+  PERFORM set_config(
+    'request.jwt.claims',
+    jsonb_build_object('sub', builder, 'role', 'authenticated')::TEXT,
+    TRUE
+  );
+  SELECT * INTO replay FROM public.build_request_command_v1(
+    1,
+    request_id,
+    (preparation_replay_binding->>'expectedRequestVersion')::INTEGER,
+    preparation_replay_binding->>'idempotencyKey',
+    'prepare_delivery_revision',
+    jsonb_build_object(
+      'deliveryRevisionId', delivery_revision_id,
+      'acceptedBriefRevisionId', brief_revision_id,
+      'activeBuilderAssignmentId', builder_assignment_id,
+      'revisionLabel', 'First reviewed delivery',
+      'summary', 'A deterministic private fixture delivery.',
+      'builderEvidence', jsonb_build_array(jsonb_build_object(
+        'acceptanceCheckId', acceptance_check_id,
+        'result', 'pass',
+        'evidenceText', 'The fixture state rendered as required.',
+        'evidenceRef', 'fixture-evidence-1'
+      )),
+      'approvedPathForgeReference', NULL
+    )
+  );
+  IF NOT replay.replayed
+    OR replay.command_id IS DISTINCT FROM preparation_receipt_id
+    OR replay.request_version <> preparation_expected_version + 1 THEN
+    RAISE EXCEPTION
+      'Preparation replay did not return the original durable receipt.';
+  END IF;
+
+  SELECT public.get_build_request_v1(1, request_id)
+  INTO fresh_builder_detail;
+  IF (fresh_builder_detail->>'requestVersion')::INTEGER <> request_version
+    OR fresh_builder_detail->'builderWorkspace'->>'deliveryRevisionId'
+      <> delivery_revision_id::TEXT
+    OR fresh_builder_detail->'builderWorkspace'->>'revisionState'
+      <> 'prepared' THEN
+    RAISE EXCEPTION
+      'Fresh builder detail did not preserve the prepared workspace after interleaving.';
+  END IF;
+
+  PERFORM set_config(
+    'request.jwt.claims',
+    '{"role":"service_role"}',
+    TRUE
+  );
+  -- A removal transition must make the binding unavailable without leaving
+  -- destructive fixture state behind. The outer exception subtransaction
+  -- rolls the moderation command and its ledger writes back together.
+  BEGIN
+    PERFORM set_config(
+      'request.jwt.claims',
+      jsonb_build_object('sub', triager, 'role', 'authenticated')::TEXT,
+      TRUE
+    );
+    SELECT * INTO receipt FROM public.build_request_command_v1(
+      1,
+      request_id,
+      request_version,
+      'prepare-recovery-remove-0001',
+      'remove_for_moderation',
+      jsonb_build_object(
+        'reason', 'Temporary removal authority fixture.'
+      )
+    );
+    PERFORM set_config(
+      'request.jwt.claims',
+      '{"role":"service_role"}',
+      TRUE
+    );
+    BEGIN
+      PERFORM public.resolve_build_request_delivery_preparation_replay_v1(
+        1,
+        builder,
+        request_id,
+        delivery_revision_id
+      );
+      RAISE EXCEPTION 'A removed preparation replay binding was exposed.';
+    EXCEPTION WHEN SQLSTATE 'P0002' THEN NULL;
+    END;
+    RAISE EXCEPTION 'rollback removed preparation replay fixture';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM <> 'rollback removed preparation replay fixture' THEN
+      RAISE;
+    END IF;
+  END;
   PERFORM set_config(
     'request.jwt.claims',
     '{"role":"service_role"}',
@@ -567,6 +746,16 @@ BEGIN
   seal_receipt_id := (service_result->>'sealReceiptId')::UUID;
   manifest_digest := service_result->>'manifestDigest';
   first_manifest_digest := manifest_digest;
+  BEGIN
+    PERFORM public.resolve_build_request_delivery_preparation_replay_v1(
+      1,
+      builder,
+      request_id,
+      delivery_revision_id
+    );
+    RAISE EXCEPTION 'A sealed revision exposed a stale preparation binding.';
+  EXCEPTION WHEN SQLSTATE 'P0002' THEN NULL;
+  END;
   IF NOT EXISTS (
     SELECT 1
     FROM public.build_request_delivery_seals AS seal

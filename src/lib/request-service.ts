@@ -68,6 +68,8 @@ export const REQUEST_RPC = {
 
 export const REQUEST_SERVER_RPC = {
   resolveDeliveryArtifactObject: 'resolve_build_request_delivery_artifact_object_v1',
+  resolveDeliveryPreparationReplay:
+    'resolve_build_request_delivery_preparation_replay_v1',
   prepareStagedArtifactObject: 'prepare_build_request_delivery_artifact_object_v1',
   attestStagedArtifactObject: 'attest_build_request_delivery_artifact_object_v1',
   sealDeliveryRevision: 'seal_build_request_delivery_revision_v1',
@@ -495,6 +497,33 @@ export interface RequestDeliveryRevisionActionResolver {
   resolveDeliveryRevisionAction(
     input: ResolveDeliveryRevisionActionInputV1,
   ): Promise<RequestDeliveryRevisionActionBindingV1>
+}
+
+export type ResolveDeliveryPreparationReplayInputV1 = {
+  actorId: string
+  requestId: string
+  deliveryRevisionId: string
+}
+
+export type RequestDeliveryPreparationReplayBindingV1 = {
+  requestId: string
+  deliveryRevisionId: string
+  preparationReceiptId: string
+  expectedRequestVersion: number
+  idempotencyKey: string
+}
+
+/**
+ * A trusted service-role RPC client used only after the surrounding server
+ * action has independently authenticated its cookie/session actor.
+ */
+export type RequestDeliveryPreparationReplayServiceRoleRpcClient =
+  RequestRpcClient
+
+export interface RequestDeliveryPreparationReplayResolver {
+  resolveDeliveryPreparationReplay(
+    input: ResolveDeliveryPreparationReplayInputV1,
+  ): Promise<RequestDeliveryPreparationReplayBindingV1>
 }
 
 export type PrepareStagedArtifactObjectInputV1 = {
@@ -3341,6 +3370,80 @@ export function createRequestDeliveryRevisionActionResolver(
         result.action !== input.action
       ) {
         throw new RequestContractError('Delivery revision action binding is inconsistent.')
+      }
+      return result
+    },
+  }
+}
+
+export function parseRequestDeliveryPreparationReplayBindingV1(
+  value: unknown,
+): RequestDeliveryPreparationReplayBindingV1 {
+  const row = strictRecord(
+    value,
+    [
+      'requestId',
+      'deliveryRevisionId',
+      'preparationReceiptId',
+      'expectedRequestVersion',
+      'idempotencyKey',
+    ],
+    'Delivery preparation replay binding',
+  )
+  uuid(row.requestId, 'requestId')
+  uuid(row.deliveryRevisionId, 'deliveryRevisionId')
+  uuid(row.preparationReceiptId, 'preparationReceiptId')
+  boundedInteger(
+    row.expectedRequestVersion,
+    'expectedRequestVersion',
+    0,
+    10_000_000,
+  )
+  validateIdempotencyKey(row.idempotencyKey)
+  return row as unknown as RequestDeliveryPreparationReplayBindingV1
+}
+
+/**
+ * Server-action-only, service-role resolver. The calling server action MUST
+ * derive actorId from its authenticated cookie/session. The returned binding
+ * may be used only to replay the exact persisted prepare command and then seal
+ * the same prepared workspace; it must never enter browser props, form data,
+ * action results, URLs, logs, analytics, or participant read projections.
+ *
+ * No digest, storage identity, object identity, or byte-custody authority is
+ * returned. Seal and submit continue to reauthorize their own exact state.
+ */
+export function createRequestDeliveryPreparationReplayResolver(
+  serviceRoleClient: RequestDeliveryPreparationReplayServiceRoleRpcClient,
+): RequestDeliveryPreparationReplayResolver {
+  return {
+    async resolveDeliveryPreparationReplay(input) {
+      strictRecord(
+        input,
+        ['actorId', 'requestId', 'deliveryRevisionId'],
+        'Delivery preparation replay request',
+      )
+      validateUuid(input.actorId, 'Preparation actor id')
+      validateUuid(input.requestId, 'Request id')
+      validateUuid(input.deliveryRevisionId, 'Delivery revision id')
+      const result = await invokeRead(
+        serviceRoleClient,
+        REQUEST_SERVER_RPC.resolveDeliveryPreparationReplay,
+        {
+          p_contract_version: REQUEST_CONTRACT_VERSION,
+          p_actor_id: input.actorId,
+          p_request_id: input.requestId,
+          p_delivery_revision_id: input.deliveryRevisionId,
+        },
+        parseRequestDeliveryPreparationReplayBindingV1,
+      )
+      if (
+        result.requestId !== input.requestId ||
+        result.deliveryRevisionId !== input.deliveryRevisionId
+      ) {
+        throw new RequestContractError(
+          'Delivery preparation replay binding is inconsistent.',
+        )
       }
       return result
     },

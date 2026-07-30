@@ -56,6 +56,7 @@ export type RequestIntakeFormProps = {
   pending?: boolean
   serviceError?:
     | 'auth_required'
+    | 'not_admitted'
     | 'controls_off'
     | 'capacity_full'
     | 'unavailable'
@@ -82,8 +83,9 @@ const fieldTargets: Record<RequestIntakeField, string> = {
 
 const serviceErrorCopy: Record<Exclude<RequestIntakeFormProps['serviceError'], null | undefined>, string> = {
   auth_required: 'Your sign-in is no longer active. Sign in again before submitting; no private case was created.',
+  not_admitted: 'This account is not in the current pilot. No private case was created.',
   controls_off: 'Request intake closed before this brief was recorded. Your text remains on this page.',
-  capacity_full: 'The service reached its four-case capacity before this brief was recorded. Your text remains on this page.',
+  capacity_full: 'Assignment capacity changed before this brief was recorded. This does not reveal pilot eligibility; your text remains on this page.',
   unavailable: 'The service could not validate this brief. Your text remains on this page; try again when the secure connection recovers.',
   rate_limited: 'Too many intake attempts were received. Wait before trying again; another submit now will not create a case.',
   duplicate: 'This appears to match an existing request. Open the existing case instead of creating a second one.',

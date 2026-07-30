@@ -42,6 +42,7 @@ export const ACTIVATION_ACTIONS = [
   'model_compare',
   'client_validation',
   'auth_required',
+  'not_admitted',
   'controls_closed',
   'capacity_full',
   'rate_limited',

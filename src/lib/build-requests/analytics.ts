@@ -16,6 +16,7 @@ export const REQUEST_ANALYTICS_EVENT_NAMES = [
 export const REQUEST_ANALYTICS_FAILURE_REASONS = [
   'client_validation',
   'auth_required',
+  'not_admitted',
   'controls_closed',
   'capacity_full',
   'rate_limited',

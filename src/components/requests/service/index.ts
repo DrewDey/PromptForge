@@ -1,5 +1,6 @@
 export {
   RequestServiceOverview,
+  type RequestIntakeEligibility,
   type RequestServiceAvailability,
   type RequestServiceOverviewProps,
 } from './RequestServiceOverview'

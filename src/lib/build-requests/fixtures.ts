@@ -15,7 +15,10 @@ import type {
   MyForgeRequestLifecycle,
   MyForgeRequestsState,
 } from '@/components/requests/my-forge/MyForgeRequestsList'
-import type { RequestServiceAvailability } from '@/components/requests/service'
+import type {
+  RequestIntakeEligibility,
+  RequestServiceAvailability,
+} from '@/components/requests/service'
 import type {
   RequestIntakeError,
   RequestIntakeFormProps,
@@ -73,12 +76,17 @@ export const REQUEST_SERVICE_STATES = [
   'capacity_full',
   'available',
   'private',
+  'sign_in_required',
+  'not_admitted',
+  'already_active',
+  'controls_off',
 ] as const
 
 export const REQUEST_INTAKE_STATES = [
   'pristine',
   'errors',
   'unavailable',
+  'not_admitted',
   'rate_limited',
   'duplicate',
   'stale_version',
@@ -179,9 +187,24 @@ export function serviceAvailabilityFixture(
       return { status: 'capacity_full', activeCases: 4, maxActiveCases: 4 }
     case 'private':
       return { status: 'private', activeCases: 2, maxActiveCases: 4 }
+    case 'controls_off':
+      return { status: 'closed', activeCases: 1, maxActiveCases: 4 }
+    case 'sign_in_required':
+    case 'not_admitted':
+    case 'already_active':
     case 'available':
       return { status: 'available', activeCases: 2, maxActiveCases: 4 }
   }
+}
+
+export function serviceIntakeEligibilityFixture(
+  state: RequestServiceFixtureState,
+): RequestIntakeEligibility {
+  if (state === 'sign_in_required') return 'sign_in_required'
+  if (state === 'not_admitted') return 'not_admitted'
+  if (state === 'already_active') return 'already_active'
+  if (state === 'controls_off' || state === 'closed') return 'controls_off'
+  return 'available'
 }
 
 export function intakeFixture(
@@ -204,6 +227,7 @@ export function intakeFixture(
 
   const serviceError =
     state === 'unavailable' ||
+    state === 'not_admitted' ||
     state === 'rate_limited' ||
     state === 'duplicate' ||
     state === 'stale_version' ||

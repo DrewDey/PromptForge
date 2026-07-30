@@ -129,6 +129,27 @@ const SCENARIOS = [
     { surface: 'case', lifecycle: 'building', moderation },
     { caseOrder: true },
   )),
+  scenario(
+    'case-action-mismatched',
+    { surface: 'case', lifecycle: 'submitted', actor: 'requester', primary: 'mismatched' },
+    { caseOrder: true, expectedPrimaryCount: 0 },
+  ),
+  scenario(
+    'case-held-authorized-action',
+    { surface: 'case', lifecycle: 'building', actor: 'system', moderation: 'held' },
+    { caseOrder: true, expectedPrimaryCount: 1 },
+  ),
+  scenario(
+    'case-held-mismatched-action',
+    {
+      surface: 'case',
+      lifecycle: 'building',
+      actor: 'system',
+      moderation: 'held',
+      primary: 'mismatched',
+    },
+    { caseOrder: true, expectedPrimaryCount: 0 },
+  ),
   ...CLOSE_REASONS.map((closeReason) => scenario(
     `case-close-${closeReason}`,
     { surface: 'case', lifecycle: 'closed', closeReason },
@@ -337,6 +358,17 @@ const PAGE_SNAPSHOT = `(() => {
   ));
   const stickyActions=[...fixture.querySelectorAll('[data-request-case-primary-action]')]
     .filter(visible);
+  const primaryActionDetails=[...fixture.querySelectorAll('[data-request-case-primary-action]')]
+    .map((element)=>{
+      const rect=element.getBoundingClientRect();
+      const style=getComputedStyle(element);
+      return {
+        display:style.display,
+        visibility:style.visibility,
+        width:Math.round(rect.width),
+        height:Math.round(rect.height),
+      };
+    });
   const fixtureStyle=fixture ? getComputedStyle(fixture) : null;
   return {
     viewportWidth,
@@ -350,6 +382,7 @@ const PAGE_SNAPSHOT = `(() => {
     deliveryPlaceholders:fixture?.querySelectorAll('[data-request-delivery-placeholder]').length || 0,
     tooSmall,
     stickyActionCount:stickyActions.length,
+    primaryActionDetails,
     reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches,
     fixtureTransition:fixtureStyle?.transitionDuration || '',
   };
@@ -555,6 +588,14 @@ async function verifyViewport(client, options, viewport) {
         if (scenarioItem.caseOrder && !isRemovedCase) {
           await assertCaseMobileOrder(client, sessionId, label)
         }
+      }
+      if (
+        typeof scenarioItem.expectedPrimaryCount === 'number' &&
+        snapshot.primaryActionDetails.length !== scenarioItem.expectedPrimaryCount
+      ) {
+        throw new Error(
+          `${label} rendered ${snapshot.primaryActionDetails.length} primary actions; expected ${scenarioItem.expectedPrimaryCount}: ${JSON.stringify(snapshot.primaryActionDetails)}.`,
+        )
       }
       if (scenarioItem.expectFocusedAlert) {
         const focus = await waitForValue(

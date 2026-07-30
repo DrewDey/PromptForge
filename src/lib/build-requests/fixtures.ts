@@ -567,7 +567,7 @@ export function adminQueueFixture(
           label: `Participant-safe ${lifecycle.replaceAll('_', ' ')} fixture`,
           lifecycle,
           moderation: 'clear',
-          actorRole: scope === 'admin' ? 'system' : scope,
+          actorRole: scope === 'admin' ? 'triager' : scope,
           nextAction: `Continue ${scope} workflow`,
           unread: index === 0,
           updatedAt: new Date(Date.parse(REQUEST_FIXTURE_TIME) - index * 3_600_000).toISOString(),
@@ -591,7 +591,7 @@ export function adminDetailFixture(
   return {
     requestId: REQUEST_FIXTURE_ID,
     version: 9,
-    actorRole: reviewer ? 'reviewer' : builder ? 'builder' : triager ? 'triager' : 'system',
+    actorRole: reviewer ? 'reviewer' : builder ? 'builder' : 'triager',
     lifecycle: reviewer ? 'review_pending' : builder ? 'building' : 'triage',
     moderation: 'clear',
     capabilities: {
@@ -600,13 +600,35 @@ export function adminDetailFixture(
       canAcceptAndAssign: triager || admin,
       canStartBuild: builder,
       canAssignReviewer: triager || admin,
-      canModerate: admin,
-      canClose: triager || admin,
+      canPlaceModerationHold: admin,
+      canReleaseModerationHold: false,
+      canRemoveForModeration: admin,
     },
+    allowedCloseReasons: triager || admin
+      ? ['out_of_scope', 'capacity_unavailable', 'declined']
+      : [],
+    eligibleBuilders: triager || admin
+      ? [
+          {
+            accountId: '20000000-0000-4000-8000-000000000001',
+            displayName: 'Blake Builder',
+          },
+          {
+            accountId: '20000000-0000-4000-8000-000000000002',
+            displayName: 'Morgan Maker',
+          },
+        ]
+      : [],
+    eligibleReviewers: triager || admin
+      ? [
+          {
+            accountId: '30000000-0000-4000-8000-000000000001',
+            displayName: 'Riley Reviewer',
+          },
+        ]
+      : [],
     builderLabel: 'Blake Builder',
-    builderUserId: 'fixture-builder-user',
     reviewerLabel: reviewer ? 'Riley Reviewer' : null,
-    reviewerUserId: reviewer ? 'fixture-reviewer-user' : null,
     targetDate: '2026-08-05T17:00:00.000Z',
     idempotencyKeys: {
       existingResolution: 'fixture-existing-resolution-00000001',
@@ -615,7 +637,9 @@ export function adminDetailFixture(
       accept: 'fixture-accept-00000001',
       startBuild: 'fixture-start-build-00000001',
       assignReviewer: 'fixture-assign-reviewer-00000001',
-      moderation: 'fixture-moderation-00000001',
+      placeModerationHold: 'fixture-place-hold-00000001',
+      releaseModerationHold: 'fixture-release-hold-00000001',
+      removeForModeration: 'fixture-remove-moderation-00000001',
       close: 'fixture-close-00000001',
     },
     timeline: [

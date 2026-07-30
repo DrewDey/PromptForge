@@ -105,8 +105,9 @@ export interface RequestAdminCapabilities {
   canAcceptAndAssign: boolean
   canStartBuild: boolean
   canAssignReviewer: boolean
-  canModerate: boolean
-  canClose: boolean
+  canPlaceModerationHold: boolean
+  canReleaseModerationHold: boolean
+  canRemoveForModeration: boolean
 }
 
 export interface RequestAdminActions {
@@ -115,8 +116,17 @@ export interface RequestAdminActions {
   acceptAndAssign?: RequestFormAction
   startBuild?: RequestFormAction
   assignReviewer?: RequestFormAction
-  moderate?: RequestFormAction
+  placeModerationHold?: RequestFormAction
+  releaseModerationHold?: RequestFormAction
+  removeForModeration?: RequestFormAction
   close?: RequestFormAction
+}
+
+export interface RequestEligibleAssignee {
+  /** Opaque account identity from the admin-only application-service read. */
+  accountId: string
+  /** Safe display label only; never an email address. */
+  displayName: string
 }
 
 export interface RequestAuditEvent {
@@ -134,10 +144,11 @@ export interface RequestAdminDetailModel {
   lifecycle: RequestLifecycle
   moderation: RequestModeration
   capabilities: RequestAdminCapabilities
+  allowedCloseReasons: readonly RequestCloseReason[]
+  eligibleBuilders: readonly RequestEligibleAssignee[]
+  eligibleReviewers: readonly RequestEligibleAssignee[]
   builderLabel?: string | null
-  builderUserId?: string | null
   reviewerLabel?: string | null
-  reviewerUserId?: string | null
   targetDate?: string | null
   idempotencyKeys: {
     existingResolution: string
@@ -146,7 +157,9 @@ export interface RequestAdminDetailModel {
     accept: string
     startBuild: string
     assignReviewer: string
-    moderation: string
+    placeModerationHold: string
+    releaseModerationHold: string
+    removeForModeration: string
     close: string
   }
   timeline: readonly RequestAuditEvent[]

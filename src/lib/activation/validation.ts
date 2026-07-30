@@ -91,6 +91,75 @@ export function validateActivationEventPayload(value: unknown): ActivationEventP
   if (['source_run_submitted', 'community_project_submitted'].includes(payload.eventName) && !['fork', 'share'].includes(payload.action ?? '')) {
     throw new Error('Project submissions require a fork or share action.')
   }
+  if (
+    [
+      'intake_started',
+      'submitted',
+      'intake_failed',
+      'status_viewed',
+      'clarification_submitted',
+      'delivery_opened',
+      'usefulness_recorded',
+    ].includes(payload.eventName)
+  ) {
+    const canonicalRequestPaths = [
+      '/requests/new',
+      '/requests/[id]',
+      '/my-forge',
+      '/admin/build-requests/[id]',
+    ]
+    if (!canonicalRequestPaths.includes(payload.path)) {
+      throw new Error('Request analytics require a canonical private-safe path.')
+    }
+    if (!['requests', 'my_forge'].includes(payload.surface ?? '')) {
+      throw new Error('Request analytics require a Request-owned surface.')
+    }
+    if (payload.projectId || payload.projectTitle || payload.sourceRunId) {
+      throw new Error('Request analytics cannot include private identifiers.')
+    }
+  }
+  if (
+    payload.eventName === 'intake_failed' &&
+    ![
+      'client_validation',
+      'auth_required',
+      'controls_closed',
+      'capacity_full',
+      'rate_limited',
+      'duplicate',
+      'stale_version',
+      'forbidden_input',
+      'invalid_reference',
+      'service_unavailable',
+      'unknown',
+    ].includes(payload.action ?? '')
+  ) {
+    throw new Error('Request intake failures require a bounded reason.')
+  }
+  if (
+    payload.eventName === 'status_viewed' &&
+    ![
+      'submitted',
+      'triage',
+      'clarification_requested',
+      'accepted',
+      'building',
+      'review_pending',
+      'repair_required',
+      'delivery_ready',
+      'delivered',
+      'completed',
+      'closed',
+    ].includes(payload.action ?? '')
+  ) {
+    throw new Error('Request status views require a bounded lifecycle stage.')
+  }
+  if (
+    payload.eventName === 'usefulness_recorded' &&
+    !['helpful', 'not_helpful'].includes(payload.action ?? '')
+  ) {
+    throw new Error('Request usefulness requires a bounded outcome.')
+  }
 
   return payload
 }

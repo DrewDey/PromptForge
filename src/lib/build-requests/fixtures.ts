@@ -1,0 +1,605 @@
+import type {
+  RequestActorRole,
+  RequestCasePresentationModel,
+  RequestCloseReason,
+  RequestLifecycle,
+  RequestModeration,
+} from '@/components/requests/case'
+import type {
+  RequestAdminDetailModel,
+  RequestAvailability,
+  RequestQueueModel,
+  RequestQueueScope,
+} from '@/components/requests/admin'
+import type {
+  MyForgeRequestLifecycle,
+  MyForgeRequestsState,
+} from '@/components/requests/my-forge/MyForgeRequestsList'
+import type { RequestServiceAvailability } from '@/components/requests/service'
+import type {
+  RequestIntakeError,
+  RequestIntakeFormProps,
+  RequestIntakeValues,
+} from '@/components/requests/intake'
+
+export const REQUEST_FIXTURE_TIME = '2026-07-29T16:30:00.000Z'
+export const REQUEST_FIXTURE_ID =
+  '10000000-0000-4000-8000-requestbuildfixture-with-a-long-wrapping-suffix'
+
+export const REQUEST_LIFECYCLES = [
+  'submitted',
+  'triage',
+  'clarification_requested',
+  'accepted',
+  'building',
+  'review_pending',
+  'repair_required',
+  'delivery_ready',
+  'delivered',
+  'completed',
+  'closed',
+] as const satisfies readonly RequestLifecycle[]
+
+export const REQUEST_ACTOR_ROLES = [
+  'requester',
+  'triager',
+  'builder',
+  'reviewer',
+  'system',
+] as const satisfies readonly RequestActorRole[]
+
+export const REQUEST_MODERATION_STATES = [
+  'clear',
+  'held',
+  'removed',
+] as const satisfies readonly RequestModeration[]
+
+export const REQUEST_CLOSE_REASONS = [
+  'existing_resolution',
+  'duplicate',
+  'out_of_scope',
+  'capacity_unavailable',
+  'declined',
+  'withdrawn',
+  'expired',
+  'failed_review',
+  'safety_removed',
+  'no_response',
+] as const satisfies readonly RequestCloseReason[]
+
+export const REQUEST_SERVICE_STATES = [
+  'loading',
+  'unavailable',
+  'closed',
+  'capacity_full',
+  'available',
+  'private',
+] as const
+
+export const REQUEST_INTAKE_STATES = [
+  'pristine',
+  'errors',
+  'unavailable',
+  'rate_limited',
+  'duplicate',
+  'stale_version',
+  'forbidden_input',
+  'pending',
+  'project_reference',
+  'response_reference',
+] as const
+
+export const REQUEST_RECEIPT_STATES = ['recorded', 'replayed'] as const
+
+export const REQUEST_CASE_ERROR_STATES = [
+  'none',
+  'rate_limited',
+  'stale_version',
+  'idempotent_replay',
+  'missing_delivery',
+  'hash_mismatch',
+  'publication_blocked',
+] as const
+
+export const REQUEST_DELIVERY_STATES = [
+  'not_ready',
+  'missing',
+  'hash_mismatch',
+  'repair',
+  'ready',
+  'delivered',
+] as const
+
+export const REQUEST_MY_FORGE_STATES = [
+  'loading',
+  'unavailable',
+  'empty',
+  'ready',
+] as const
+
+export const REQUEST_ADMIN_QUEUE_STATES = [
+  'loading',
+  'unavailable',
+  'empty',
+  'open',
+  'controls_off',
+  'assignment_off',
+  'capacity_full',
+] as const
+
+export const REQUEST_ADMIN_SCOPES = [
+  'admin',
+  'triager',
+  'builder',
+  'reviewer',
+] as const satisfies readonly RequestQueueScope[]
+
+export const REQUEST_ADMIN_DETAIL_STATES = [
+  'triager',
+  'builder',
+  'reviewer',
+  'admin',
+  'none',
+] as const
+
+export type RequestServiceFixtureState = (typeof REQUEST_SERVICE_STATES)[number]
+export type RequestIntakeFixtureState = (typeof REQUEST_INTAKE_STATES)[number]
+export type RequestCaseErrorFixtureState = (typeof REQUEST_CASE_ERROR_STATES)[number]
+export type RequestDeliveryFixtureState = (typeof REQUEST_DELIVERY_STATES)[number]
+export type RequestMyForgeFixtureState = (typeof REQUEST_MY_FORGE_STATES)[number]
+export type RequestAdminQueueFixtureState = (typeof REQUEST_ADMIN_QUEUE_STATES)[number]
+export type RequestAdminDetailFixtureState = (typeof REQUEST_ADMIN_DETAIL_STATES)[number]
+
+const BASE_INTAKE_VALUES: RequestIntakeValues = {
+  title: 'Offline household outage checklist',
+  outcome:
+    'Create an offline checklist that a household can use to prepare for a short power outage.',
+  intendedUser: 'A household member using a phone',
+  mustWorkScenario:
+    'The user loses connectivity and must still open, complete, and reset the saved checklist.',
+  acceptanceChecks: [
+    'The checklist works after the page is reopened offline.',
+    'A completed item stays completed after a refresh.',
+    'Reset asks for confirmation before clearing progress.',
+  ],
+  constraints:
+    'Text-only intake. Support a 390px viewport and keyboard operation.',
+}
+
+export function serviceAvailabilityFixture(
+  state: RequestServiceFixtureState,
+): RequestServiceAvailability {
+  switch (state) {
+    case 'loading':
+      return { status: 'loading' }
+    case 'unavailable':
+      return { status: 'unavailable', retryHref: '/qa/request-build?surface=service&state=available' }
+    case 'closed':
+      return { status: 'closed', activeCases: 1, maxActiveCases: 4 }
+    case 'capacity_full':
+      return { status: 'capacity_full', activeCases: 4, maxActiveCases: 4 }
+    case 'private':
+      return { status: 'private', activeCases: 2, maxActiveCases: 4 }
+    case 'available':
+      return { status: 'available', activeCases: 2, maxActiveCases: 4 }
+  }
+}
+
+export function intakeFixture(
+  state: RequestIntakeFixtureState,
+): Pick<
+  RequestIntakeFormProps,
+  'defaultValues' | 'errors' | 'pending' | 'serviceError'
+> {
+  const errors: RequestIntakeError[] = state === 'errors'
+    ? [
+        { field: 'outcome', message: 'State one finite outcome.' },
+        { field: 'mustWorkScenario', message: 'Describe the must-work scenario.' },
+        { field: 'acceptanceChecks', message: 'Add one to three testable checks.' },
+        {
+          field: 'pathforgeIdentifier',
+          message: 'Use a server-validated PathForge identifier, not a URL.',
+        },
+      ]
+    : []
+
+  const serviceError =
+    state === 'unavailable' ||
+    state === 'rate_limited' ||
+    state === 'duplicate' ||
+    state === 'stale_version' ||
+    state === 'forbidden_input'
+      ? state
+      : null
+
+  let defaultValues: Partial<RequestIntakeValues> = BASE_INTAKE_VALUES
+  if (state === 'errors') {
+    defaultValues = {
+      title: '',
+      outcome: '',
+      intendedUser: 'Household member',
+      mustWorkScenario: '',
+      acceptanceChecks: [''],
+      constraints: '',
+    }
+  } else if (state === 'project_reference') {
+    defaultValues = {
+      ...BASE_INTAKE_VALUES,
+      pathforgeReference: {
+        kind: 'project',
+        projectId: 'prepared-offline-checklist-project',
+      },
+    }
+  } else if (state === 'response_reference') {
+    defaultValues = {
+      ...BASE_INTAKE_VALUES,
+      pathforgeReference: {
+        kind: 'response',
+        projectId: 'prepared-offline-checklist-project',
+        modelVariantId: 'chatgpt-gpt-5-6-sol-max',
+        responseStepNumber: 3,
+      },
+    }
+  }
+
+  return {
+    defaultValues,
+    errors,
+    pending: state === 'pending',
+    serviceError,
+  }
+}
+
+function lifecycleNextAction(lifecycle: RequestLifecycle, actorRole: RequestActorRole) {
+  if (lifecycle === 'clarification_requested' && actorRole === 'requester') {
+    return {
+      title: 'Answer one bounded clarification',
+      description: 'The triager needs one detail before deciding whether this case is testable.',
+    }
+  }
+  if (lifecycle === 'building' && actorRole === 'builder') {
+    return {
+      title: 'Continue the assigned build',
+      description: 'Record progress only after the agreed acceptance checks remain intact.',
+    }
+  }
+  if (lifecycle === 'review_pending' && actorRole === 'reviewer') {
+    return {
+      title: 'Review the exact delivery revision',
+      description: 'Approve or require repair. The credited builder cannot review their own work.',
+    }
+  }
+  if (lifecycle === 'delivery_ready' && actorRole === 'requester') {
+    return {
+      title: 'Open the private reviewed delivery',
+      description: 'The custody component must verify the exact revision before presenting evidence.',
+    }
+  }
+  if (lifecycle === 'closed' || lifecycle === 'completed') {
+    return {
+      title: 'No action required',
+      description: 'This case remains available as a private durable record.',
+    }
+  }
+  return {
+    title: 'Wait for the next service update',
+    description: `The current participant-safe projection is ${lifecycle.replaceAll('_', ' ')}.`,
+  }
+}
+
+function caseErrorSummary(state: RequestCaseErrorFixtureState) {
+  switch (state) {
+    case 'none':
+      return undefined
+    case 'rate_limited':
+      return {
+        title: 'That action is temporarily limited.',
+        messages: ['Wait before trying again. No duplicate command was recorded.'],
+      }
+    case 'stale_version':
+      return {
+        title: 'This case changed before the action completed.',
+        messages: ['Refresh the durable case and retry against its current version.'],
+      }
+    case 'idempotent_replay':
+      return {
+        title: 'The original durable result was replayed.',
+        messages: ['No duplicate lifecycle event or assignment was created.'],
+      }
+    case 'missing_delivery':
+      return {
+        title: 'Delivery is not available.',
+        messages: ['The custody boundary did not supply a participant-safe delivery projection.'],
+      }
+    case 'hash_mismatch':
+      return {
+        title: 'Delivery verification did not match.',
+        messages: ['The delivery stays blocked until the custody boundary verifies the exact revision.'],
+      }
+    case 'publication_blocked':
+      return {
+        title: 'Publication is not available.',
+        messages: ['V1 keeps this case private and exposes no publication transition.'],
+      }
+  }
+}
+
+export function caseFixture(options: {
+  lifecycle: RequestLifecycle
+  actorRole: RequestActorRole
+  moderation: RequestModeration
+  closeReason: RequestCloseReason | null
+  errorState: RequestCaseErrorFixtureState
+}): RequestCasePresentationModel {
+  const { lifecycle, actorRole, moderation, closeReason, errorState } = options
+  const builderAssigned = [
+    'accepted',
+    'building',
+    'review_pending',
+    'repair_required',
+    'delivery_ready',
+    'delivered',
+    'completed',
+  ].includes(lifecycle)
+  const reviewerAssigned = [
+    'review_pending',
+    'repair_required',
+    'delivery_ready',
+    'delivered',
+    'completed',
+  ].includes(lifecycle)
+  const canAct =
+    moderation === 'clear' &&
+    !['closed', 'completed'].includes(lifecycle) &&
+    actorRole !== 'system'
+
+  return {
+    requestLabel: `Private case ${REQUEST_FIXTURE_ID}`,
+    requestVersion: 17,
+    lifecycle,
+    moderation,
+    publication: 'private',
+    closeReason: lifecycle === 'closed' ? closeReason ?? 'declined' : null,
+    actorRole,
+    capabilities: canAct
+      ? [{ id: `fixture-${actorRole}-action`, label: `Authority-derived ${actorRole} action` }]
+      : [],
+    nextAction: lifecycleNextAction(lifecycle, actorRole),
+    brief: {
+      outcome: BASE_INTAKE_VALUES.outcome,
+      intendedUser: BASE_INTAKE_VALUES.intendedUser,
+      mustWorkScenario: BASE_INTAKE_VALUES.mustWorkScenario,
+      acceptanceChecks: [
+        BASE_INTAKE_VALUES.acceptanceChecks[0],
+        BASE_INTAKE_VALUES.acceptanceChecks[1],
+        BASE_INTAKE_VALUES.acceptanceChecks[2],
+      ],
+      constraints:
+        'Must work at exactly 390px without page overflow and remain keyboard operable with reduced motion.',
+      pathforgeReference: {
+        kind: 'project',
+        projectId: 'prepared-offline-checklist-project-with-a-long-wrapping-identifier',
+        label: 'Offline checklist prepared project',
+      },
+    },
+    clarification: lifecycle === 'clarification_requested'
+      ? {
+          state: 'requested',
+          summary: 'Should reset clear only completion state, or also custom checklist items?',
+          requestedAt: '2026-07-28T14:00:00.000Z',
+        }
+      : lifecycle === 'triage'
+        ? { state: 'submitted', summary: 'Requester confirmed the offline requirement.' }
+        : { state: 'none' },
+    assignments: [
+      {
+        role: 'triager',
+        displayName: 'Tara Triager',
+        status: 'Assigned',
+      },
+      ...(builderAssigned
+        ? [{
+            role: 'builder' as const,
+            displayName: 'Blake Builder',
+            status: lifecycle === 'building' ? 'Building' : 'Credited author',
+            targetDate: '2026-08-05T17:00:00.000Z',
+          }]
+        : []),
+      ...(reviewerAssigned
+        ? [{
+            role: 'reviewer' as const,
+            displayName: 'Riley Reviewer',
+            status: lifecycle === 'review_pending' ? 'Review pending' : 'Independent reviewer',
+          }]
+        : []),
+    ],
+    timeline: [
+      {
+        id: 'event-fixture-submitted',
+        label: 'Private brief recorded',
+        detail: 'Durable receipt version 1.',
+        occurredAt: '2026-07-27T13:00:00.000Z',
+        actorLabel: 'Requester',
+      },
+      {
+        id: 'event-fixture-current',
+        label: `Lifecycle projected as ${lifecycle.replaceAll('_', ' ')}`,
+        occurredAt: REQUEST_FIXTURE_TIME,
+        actorLabel: 'Request application service',
+      },
+    ],
+    retentionNotice:
+      'Participant-safe history is retained according to the private managed-service policy. This fixture does not prove database retention or artifact custody.',
+    errorSummary: caseErrorSummary(errorState),
+    statusMessage:
+      errorState === 'idempotent_replay'
+        ? 'Verified replay returned the existing durable receipt.'
+        : undefined,
+  }
+}
+
+export function myForgeFixture(state: RequestMyForgeFixtureState): MyForgeRequestsState {
+  if (state === 'loading') return { kind: 'loading' }
+  if (state === 'unavailable') {
+    return {
+      kind: 'unavailable',
+      retryHref: '/qa/request-build?surface=my-forge&state=ready',
+    }
+  }
+  if (state === 'empty') {
+    return {
+      kind: 'empty',
+      newRequestHref: '/requests/new',
+      existingPathHref: '/paths',
+    }
+  }
+  return {
+    kind: 'ready',
+    requests: REQUEST_LIFECYCLES.map((lifecycle, index) => ({
+      summaryLabel: `Fixture request ${index + 1}: ${lifecycle.replaceAll('_', ' ')}`,
+      lifecycle: lifecycle satisfies MyForgeRequestLifecycle,
+      moderation: lifecycle === 'closed' ? 'held' : 'clear',
+      publication: 'private',
+      statusLabel: lifecycle.replaceAll('_', ' '),
+      unread: index % 2 === 0,
+      nextAction:
+        lifecycle === 'clarification_requested'
+          ? 'Answer clarification'
+          : lifecycle === 'delivery_ready'
+            ? 'Open private delivery'
+            : lifecycle === 'closed' || lifecycle === 'completed'
+              ? 'No action required'
+              : 'View durable case',
+      updatedAt: new Date(Date.parse(REQUEST_FIXTURE_TIME) - index * 86_400_000).toISOString(),
+      continuationHref: `/requests/${REQUEST_FIXTURE_ID}-${index}`,
+    })),
+    nextPageHref: '/my-forge?tab=requests&cursor=fixture-older',
+  }
+}
+
+function adminAvailabilityFixture(
+  state: Exclude<RequestAdminQueueFixtureState, 'loading' | 'unavailable' | 'empty'>,
+): RequestAvailability {
+  switch (state) {
+    case 'open':
+      return {
+        state: 'open',
+        activeCount: 2,
+        maxActiveCases: 4,
+        acceptingRequests: true,
+        assignmentEnabled: true,
+      }
+    case 'controls_off':
+      return {
+        state: 'controls_off',
+        activeCount: 0,
+        maxActiveCases: 4,
+        acceptingRequests: false,
+        assignmentEnabled: false,
+      }
+    case 'assignment_off':
+      return {
+        state: 'assignment_off',
+        activeCount: 2,
+        maxActiveCases: 4,
+        acceptingRequests: true,
+        assignmentEnabled: false,
+      }
+    case 'capacity_full':
+      return {
+        state: 'capacity_full',
+        activeCount: 4,
+        maxActiveCases: 4,
+        acceptingRequests: true,
+        assignmentEnabled: true,
+      }
+  }
+}
+
+export function adminQueueFixture(
+  state: RequestAdminQueueFixtureState,
+  scope: RequestQueueScope,
+): RequestQueueModel {
+  if (state === 'loading') return { state: 'loading', scope }
+  if (state === 'unavailable') {
+    return {
+      state: 'unavailable',
+      scope,
+      message: 'The fixture secure read failed; no empty queue was inferred.',
+      retryHref: `/qa/request-build?surface=admin-queue&state=open&scope=${scope}`,
+    }
+  }
+  const availability = state === 'empty'
+    ? adminAvailabilityFixture('open')
+    : adminAvailabilityFixture(state)
+  return {
+    state: 'ready',
+    scope,
+    availability,
+    rows: state === 'empty'
+      ? []
+      : REQUEST_LIFECYCLES.slice(0, 4).map((lifecycle, index) => ({
+          requestId: `${REQUEST_FIXTURE_ID}-${index}`,
+          detailHref: `/admin/build-requests/${REQUEST_FIXTURE_ID}-${index}`,
+          version: index + 3,
+          label: `Participant-safe ${lifecycle.replaceAll('_', ' ')} fixture`,
+          lifecycle,
+          moderation: 'clear',
+          actorRole: scope === 'admin' ? 'system' : scope,
+          nextAction: `Continue ${scope} workflow`,
+          unread: index === 0,
+          updatedAt: new Date(Date.parse(REQUEST_FIXTURE_TIME) - index * 3_600_000).toISOString(),
+          targetDate: index > 1 ? '2026-08-05T17:00:00.000Z' : null,
+        })),
+    nextCursor: state === 'empty' ? null : 'fixture-next',
+    loadMoreHref:
+      state === 'empty'
+        ? undefined
+        : `/qa/request-build?surface=admin-queue&state=${state}&scope=${scope}&cursor=fixture-next`,
+  }
+}
+
+export function adminDetailFixture(
+  state: RequestAdminDetailFixtureState,
+): RequestAdminDetailModel {
+  const reviewer = state === 'reviewer'
+  const builder = state === 'builder'
+  const triager = state === 'triager'
+  const admin = state === 'admin'
+  return {
+    requestId: REQUEST_FIXTURE_ID,
+    version: 9,
+    actorRole: reviewer ? 'reviewer' : builder ? 'builder' : triager ? 'triager' : 'system',
+    lifecycle: reviewer ? 'review_pending' : builder ? 'building' : 'triage',
+    moderation: 'clear',
+    capabilities: {
+      canResolveExistingPath: triager || admin,
+      canRequestClarification: triager || admin,
+      canAcceptAndAssign: triager || admin,
+      canStartBuild: builder,
+      canAssignReviewer: triager || admin,
+      canModerate: admin,
+      canClose: triager || admin,
+    },
+    builderLabel: 'Blake Builder',
+    builderUserId: 'fixture-builder-user',
+    reviewerLabel: reviewer ? 'Riley Reviewer' : null,
+    reviewerUserId: reviewer ? 'fixture-reviewer-user' : null,
+    targetDate: '2026-08-05T17:00:00.000Z',
+    timeline: [
+      {
+        eventId: 'fixture-admin-event-1',
+        label: 'Private brief recorded',
+        detail: 'Fixture timeline event; not a transactional event.',
+        actorLabel: 'Requester',
+        occurredAt: '2026-07-27T13:00:00.000Z',
+      },
+      {
+        eventId: 'fixture-admin-event-2',
+        label: 'Triage started',
+        actorLabel: 'Tara Triager',
+        occurredAt: REQUEST_FIXTURE_TIME,
+      },
+    ],
+  }
+}

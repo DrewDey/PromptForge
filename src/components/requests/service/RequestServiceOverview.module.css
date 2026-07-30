@@ -1,0 +1,505 @@
+.page {
+  --request-ink: #18181b;
+  --request-muted: #62626b;
+  --request-line: #e4e4e7;
+  --request-soft: #f7f7f8;
+  --request-accent: #a8470d;
+  min-width: 0;
+  background: #fff;
+  color: var(--request-ink);
+}
+
+.page *,
+.page *::before,
+.page *::after {
+  box-sizing: border-box;
+}
+
+.page a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.page svg {
+  display: block;
+}
+
+.hero,
+.main {
+  width: min(100% - 48px, 1200px);
+  margin-inline: auto;
+}
+
+.hero {
+  padding: 48px 0 30px;
+  border-bottom: 1px solid var(--request-line);
+}
+
+.kicker,
+.sectionLabel,
+.availabilityCopy > span,
+.receiptStatus span {
+  color: var(--request-accent);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kicker svg {
+  width: 15px;
+  height: 15px;
+}
+
+.heroGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 32px;
+  align-items: end;
+  margin-top: 12px;
+}
+
+.hero h1 {
+  max-width: 820px;
+  margin: 0;
+  font-size: clamp(40px, 5vw, 60px);
+  font-weight: 900;
+  letter-spacing: -.052em;
+  line-height: 1;
+  text-wrap: balance;
+}
+
+.hero p {
+  max-width: 760px;
+  margin: 16px 0 0;
+  color: var(--request-muted);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.hero .pilotNotice {
+  margin-top: 10px;
+  color: #7c2d12;
+  font-weight: 800;
+}
+
+.searchAction,
+.primaryAction,
+.secondaryAction {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--request-line);
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 800;
+  transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
+}
+
+.searchAction:hover,
+.secondaryAction:hover {
+  border-color: var(--request-ink);
+}
+
+.searchAction:focus-visible,
+.primaryAction:focus-visible,
+.secondaryAction:focus-visible {
+  outline: 3px solid #3b8fe4;
+  outline-offset: 3px;
+}
+
+.searchAction svg,
+.primaryAction svg,
+.secondaryAction svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+}
+
+.primaryAction {
+  border-color: var(--request-ink);
+  background: var(--request-ink);
+  color: #fff;
+}
+
+.primaryAction:hover {
+  border-color: #9a3412;
+  background: #9a3412;
+}
+
+.main {
+  padding: 34px 0 76px;
+}
+
+.availability {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  border: 1px solid var(--request-line);
+  border-left: 4px solid #71717a;
+  padding: 20px;
+  background: var(--request-soft);
+}
+
+.availability[data-tone='available'] {
+  border-left-color: #28704a;
+  background: #f2faf5;
+}
+
+.availability[data-tone='warning'] {
+  border-left-color: #b45309;
+  background: #fffbeb;
+}
+
+.availability[data-tone='closed'] {
+  border-left-color: #706c64;
+  background: #f7f7f6;
+}
+
+.availabilityIcon {
+  display: flex;
+  width: 48px;
+  height: 48px;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  color: var(--request-ink);
+}
+
+.availabilityIcon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.availability[data-tone='neutral'] .availabilityIcon svg {
+  animation: request-spin 1.1s linear infinite;
+}
+
+.availabilityCopy {
+  min-width: 0;
+}
+
+.availabilityCopy h2 {
+  margin: 4px 0 0;
+  font-size: clamp(21px, 2.5vw, 28px);
+  font-weight: 900;
+  letter-spacing: -.035em;
+  line-height: 1.1;
+}
+
+.availabilityCopy p {
+  max-width: 720px;
+  margin: 7px 0 0;
+  color: var(--request-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.availabilityCopy strong {
+  display: block;
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.availabilityCopy .eligibilityNotice {
+  margin-top: 10px;
+  color: #3f3f46;
+  font-weight: 800;
+}
+
+.availabilityAction {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(300px, .75fr);
+  gap: clamp(30px, 5vw, 64px);
+  margin-top: 46px;
+}
+
+.process h2,
+.terms h2 {
+  max-width: 660px;
+  margin: 7px 0 0;
+  font-size: clamp(25px, 3vw, 36px);
+  font-weight: 900;
+  letter-spacing: -.04em;
+  line-height: 1.08;
+}
+
+.process ol {
+  margin: 25px 0 0;
+  padding: 0;
+  border-top: 1px solid var(--request-ink);
+  list-style: none;
+}
+
+.process li {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 16px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--request-line);
+}
+
+.process li > span {
+  color: var(--request-accent);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.process h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 850;
+}
+
+.process li p,
+.terms li,
+.terms > p {
+  margin: 6px 0 0;
+  color: var(--request-muted);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.terms {
+  align-self: start;
+  border-top: 3px solid var(--request-accent);
+  background: var(--request-soft);
+  padding: 22px;
+}
+
+.termsHeading {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.termsHeading > svg {
+  width: 19px;
+  height: 19px;
+  margin-top: 1px;
+  color: var(--request-accent);
+}
+
+.terms h2 {
+  font-size: 22px;
+}
+
+.terms ul {
+  margin: 20px 0 0;
+  padding: 0;
+  border-top: 1px solid var(--request-line);
+  list-style: none;
+}
+
+.terms li {
+  position: relative;
+  margin: 0;
+  padding: 11px 0 11px 18px;
+  border-bottom: 1px solid var(--request-line);
+}
+
+.terms li::before {
+  position: absolute;
+  top: 17px;
+  left: 1px;
+  width: 6px;
+  height: 6px;
+  background: var(--request-accent);
+  content: '';
+}
+
+.terms > p {
+  margin-top: 16px;
+  font-size: 11px;
+}
+
+.receipt {
+  width: min(100% - 32px, 900px);
+  margin: 36px auto 72px;
+  border: 1px solid #bbddc7;
+  border-top: 4px solid #28704a;
+  padding: 24px;
+  background: #f2faf5;
+}
+
+.receiptStatus {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.receiptStatus > svg {
+  width: 24px;
+  height: 24px;
+  margin-top: 2px;
+  color: #28704a;
+}
+
+.receiptStatus h2 {
+  margin: 4px 0 0;
+  font-size: clamp(23px, 3vw, 32px);
+  font-weight: 900;
+  letter-spacing: -.04em;
+}
+
+.receiptStatus p {
+  margin: 7px 0 0;
+  color: #3f5e49;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.receiptDetails {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 22px 0;
+  border-top: 1px solid #bbddc7;
+  border-left: 1px solid #bbddc7;
+}
+
+.receiptDetails > div {
+  min-width: 0;
+  padding: 12px;
+  border-right: 1px solid #bbddc7;
+  border-bottom: 1px solid #bbddc7;
+  background: #fff;
+}
+
+.receiptDetails dt {
+  color: #526d5a;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.receiptDetails dd {
+  overflow-wrap: anywhere;
+  margin: 5px 0 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.receiptEvent {
+  grid-column: span 3;
+}
+
+@keyframes request-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 800px) {
+  .heroGrid,
+  .detailGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .searchAction {
+    width: fit-content;
+  }
+
+  .availability {
+    grid-template-columns: 48px minmax(0, 1fr);
+  }
+
+  .availabilityAction {
+    grid-column: 1 / -1;
+    justify-content: stretch;
+  }
+
+  .availabilityAction a {
+    flex: 1 1 210px;
+  }
+}
+
+@media (max-width: 520px) {
+  .hero,
+  .main {
+    width: min(100% - 28px, 1200px);
+  }
+
+  .hero {
+    padding: 34px 0 24px;
+  }
+
+  .hero h1 {
+    font-size: clamp(36px, 11.5vw, 48px);
+  }
+
+  .searchAction,
+  .availabilityAction a,
+  .receipt > a {
+    width: 100%;
+  }
+
+  .main {
+    padding: 24px 0 56px;
+  }
+
+  .availability {
+    grid-template-columns: 1fr;
+    gap: 13px;
+    padding: 17px;
+  }
+
+  .availabilityAction {
+    grid-column: auto;
+  }
+
+  .detailGrid {
+    gap: 36px;
+    margin-top: 36px;
+  }
+
+  .terms {
+    padding: 18px;
+  }
+
+  .receipt {
+    width: min(100% - 28px, 900px);
+    padding: 18px;
+  }
+
+  .receiptDetails {
+    grid-template-columns: 1fr;
+  }
+
+  .receiptEvent {
+    grid-column: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .searchAction,
+  .primaryAction,
+  .secondaryAction {
+    transition: none;
+  }
+
+  .availability[data-tone='neutral'] .availabilityIcon svg {
+    animation: none;
+  }
+}

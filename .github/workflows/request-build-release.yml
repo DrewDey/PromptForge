@@ -1,0 +1,66 @@
+name: Request a Build release boundary
+
+on:
+  # Request authority depends on shared auth, analytics, public-truth, storage,
+  # and deployment boundaries. Run on every PR so a cross-cutting change cannot
+  # bypass the release check through an incomplete path list.
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: request-build-release-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  application-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Verify the complete Request application boundary
+        run: npm run check:request-build-release
+      - run: npm run typecheck
+      - run: npm run lint
+      - name: Build the production application
+        run: npm run build
+      - name: Verify rendered Request states at desktop and exact 390px
+        run: |
+          npm run dev -- --hostname 127.0.0.1 --port 3012 > /tmp/pathforge-request-build.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..60}; do
+            if curl --fail --silent --show-error \
+              'http://127.0.0.1:3012/qa/request-build?surface=service&state=available' > /dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          if ! curl --fail --silent --show-error \
+            'http://127.0.0.1:3012/qa/request-build?surface=service&state=available' > /dev/null; then
+            tail -n 200 /tmp/pathforge-request-build.log
+            exit 1
+          fi
+          npm run check:request-build-browser -- \
+            --base-url http://127.0.0.1:3012 \
+            --screenshot-dir "$RUNNER_TEMP/request-build-browser"
+
+  postgres-authority:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Verify the Request authority on disposable PostgreSQL 17
+        run: npm run check:request-authority-db

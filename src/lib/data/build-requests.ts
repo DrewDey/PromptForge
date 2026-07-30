@@ -1,7 +1,19 @@
 import type { BuildRequestWithRelations } from '../types'
-import { mockBuildRequests } from '../mock-data'
 import { getSiteUrl } from '../site-url'
 import { SUPABASE_CONFIGURED, SUPABASE_READ_TIMEOUT_MS } from './shared'
+
+export type PublicBuildRequestsReadResult =
+  | {
+      status: 'ready'
+      requests: BuildRequestWithRelations[]
+    }
+  | {
+      status: 'unavailable'
+      requests: null
+    }
+
+const LEGACY_BUILD_REQUESTS_FROZEN_MESSAGE =
+  'The legacy public Request board is read-only. Private managed-service intake is not accepting requests yet.'
 
 function sortBuildRequests<T extends BuildRequestWithRelations>(items: T[]) {
   return [...items].sort((a, b) => {
@@ -57,58 +69,49 @@ function normalizePathForgeBuildUrl(value: string) {
   return `${url.pathname}${url.search}${url.hash}`
 }
 
-async function readBuildRequestsWithFallback<T>(fallback: T, read: () => Promise<T>): Promise<T> {
-  if (!SUPABASE_CONFIGURED) return fallback
+export async function getPublicBuildRequests(): Promise<PublicBuildRequestsReadResult> {
+  if (!SUPABASE_CONFIGURED) {
+    return { status: 'unavailable', requests: null }
+  }
 
+  const controller = new AbortController()
+  let timeout: ReturnType<typeof setTimeout> | undefined
   try {
-    return await Promise.race([
-      read(),
-      new Promise<T>((resolve) => {
-        setTimeout(() => resolve(fallback), SUPABASE_READ_TIMEOUT_MS)
+    const requests = await Promise.race([
+      (async () => {
+        const { createClient } = await import('../supabase/server')
+        const supabase = await createClient()
+        const { data, error } = await supabase
+          .from('build_requests')
+          .select('*, author:profiles(*), responses:build_request_responses!build_request_responses_request_id_fkey(*)')
+          .order('updated_at', { ascending: false })
+          .abortSignal(controller.signal)
+
+        throwReadableBuildRequestError(error)
+        if (!Array.isArray(data)) {
+          throw new Error('The legacy Request board returned an invalid result.')
+        }
+        return normalizeBuildRequestRows(data as BuildRequestWithRelations[])
+      })(),
+      new Promise<never>((_, reject) => {
+        timeout = setTimeout(() => {
+          controller.abort()
+          reject(new Error('The legacy Request board read timed out.'))
+        }, SUPABASE_READ_TIMEOUT_MS)
       }),
     ])
+
+    return { status: 'ready', requests }
   } catch {
-    return fallback
+    return { status: 'unavailable', requests: null }
+  } finally {
+    if (timeout) clearTimeout(timeout)
   }
 }
 
-export async function getPublicBuildRequests(): Promise<BuildRequestWithRelations[]> {
-  return readBuildRequestsWithFallback(mockBuildRequests, async () => {
-    const { createClient } = await import('../supabase/server')
-    const supabase = await createClient()
-    const { data } = await supabase
-      .from('build_requests')
-      .select('*, author:profiles(*), responses:build_request_responses(*)')
-      .order('updated_at', { ascending: false })
-
-    return normalizeBuildRequestRows(data as BuildRequestWithRelations[])
-  })
-}
-
 export async function createBuildRequest(input: { title: string; body: string }) {
-  if (!SUPABASE_CONFIGURED) throw new Error('Build Requests require sign in.')
-
-  const { createClient } = await import('../supabase/server')
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Log in to request a build.')
-
-  const title = input.title.trim()
-  const body = input.body.trim()
-  if (title.length < 4) throw new Error('Add a clearer request title.')
-  if (title.length > 160) throw new Error('Keep the request title under 160 characters.')
-  if (body.length < 20) throw new Error('Add more detail so builders know what to make.')
-  if (body.length > 5000) throw new Error('Keep the request under 5,000 characters.')
-
-  const { error } = await supabase
-    .from('build_requests')
-    .insert({
-      title,
-      body,
-      author_id: user.id,
-    })
-
-  throwReadableBuildRequestError(error)
+  void input
+  throw new Error(LEGACY_BUILD_REQUESTS_FROZEN_MESSAGE)
 }
 
 export async function createBuildRequestResponse(input: {
@@ -116,80 +119,20 @@ export async function createBuildRequestResponse(input: {
   body: string
   url: string
 }) {
-  if (!SUPABASE_CONFIGURED) return
-
   const body = input.body.trim()
   const url = normalizePathForgeBuildUrl(input.url)
   if (!body && !url) throw new Error('Add a response or a link to a build.')
   if (body.length > 5000) throw new Error('Keep the response under 5,000 characters.')
 
-  const { createClient } = await import('../supabase/server')
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Log in to respond to a build request.')
-
-  const { error } = await supabase
-    .from('build_request_responses')
-    .insert({
-      request_id: input.requestId,
-      responder_id: user.id,
-      body: body || 'Shared a build link.',
-      url,
-    })
-
-  throwReadableBuildRequestError(error)
+  throw new Error(LEGACY_BUILD_REQUESTS_FROZEN_MESSAGE)
 }
 
 export async function getUserBuildRequestVotes(requestIds: string[]): Promise<Set<string>> {
-  if (!SUPABASE_CONFIGURED || requestIds.length === 0) return new Set()
-
-  const uniqueIds = [...new Set(requestIds.filter(Boolean))]
-  if (uniqueIds.length === 0) return new Set()
-
-  return readBuildRequestsWithFallback(new Set<string>(), async () => {
-    const { createClient } = await import('../supabase/server')
-    const supabase = await createClient()
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
-    if (userError || !user) return new Set()
-
-    const { data, error } = await supabase
-      .from('build_request_votes')
-      .select('request_id')
-      .eq('user_id', user.id)
-      .in('request_id', uniqueIds)
-
-    throwReadableBuildRequestError(error)
-    return new Set((data ?? []).map(v => v.request_id).filter(Boolean))
-  })
+  void requestIds
+  return new Set()
 }
 
 export async function toggleBuildRequestVote(requestId: string): Promise<{ voted: boolean; newCount: number }> {
-  if (!SUPABASE_CONFIGURED) return { voted: false, newCount: 0 }
-
-  const { createClient } = await import('../supabase/server')
-  const supabase = await createClient()
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-  if (userError || !user) throw new Error('Log in to vote.')
-
-  const { data: existing, error: existingError } = await supabase
-    .from('build_request_votes')
-    .select('id')
-    .eq('user_id', user.id)
-    .eq('request_id', requestId)
-    .maybeSingle()
-  throwReadableBuildRequestError(existingError)
-
-  if (existing) {
-    const { error } = await supabase.from('build_request_votes').delete().eq('id', existing.id)
-    throwReadableBuildRequestError(error)
-    const { data: updated, error: countError } = await supabase.from('build_requests').select('vote_count').eq('id', requestId).single()
-    throwReadableBuildRequestError(countError)
-    return { voted: false, newCount: updated?.vote_count ?? 0 }
-  }
-
-  const { error } = await supabase.from('build_request_votes').insert({ user_id: user.id, request_id: requestId })
-  throwReadableBuildRequestError(error)
-  const { data: updated, error: countError } = await supabase.from('build_requests').select('vote_count').eq('id', requestId).single()
-  throwReadableBuildRequestError(countError)
-  return { voted: true, newCount: updated?.vote_count ?? 0 }
+  void requestId
+  throw new Error(LEGACY_BUILD_REQUESTS_FROZEN_MESSAGE)
 }

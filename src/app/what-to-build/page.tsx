@@ -471,10 +471,10 @@ export default async function WhatToBuildPage({
             <h2>Describe the result you wish existed.</h2>
           </div>
           <p>
-            A Build Request gives the community a concrete finish line. Use it when the library genuinely does not have the project or fork you need.
+            Request a Build is a private, capacity-controlled invited pilot for a finite finish line. Search existing paths first, then check whether the managed service is accepting intake.
           </p>
           <Link href="/requests">
-            Open Build Requests
+            Check Request a Build
             <ArrowRight aria-hidden="true" />
           </Link>
         </div>

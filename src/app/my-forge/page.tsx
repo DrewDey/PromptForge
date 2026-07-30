@@ -34,6 +34,24 @@ import type {
 } from '@/lib/my-forge-types'
 import { buildProjectForkHref } from '@/lib/project-forks'
 import MyForgeActivationTracker from '@/components/analytics/MyForgeActivationTracker'
+import {
+  MyForgeRequestsList,
+  type MyForgeRequestsState,
+} from '@/components/requests/my-forge/MyForgeRequestsList'
+import { AssignedRequestWorkUnavailable } from '@/components/requests/my-forge/AssignedRequestWorkUnavailable'
+import {
+  AdminRequestQueue,
+  type RequestQueueModel,
+} from '@/components/requests/admin'
+import {
+  getRequestApplicationService,
+  getRequestViewerState,
+} from '@/lib/build-requests/server'
+import {
+  toAdminQueueModel,
+  toMyForgeRequestsState,
+} from '@/lib/build-requests/presentation'
+import type { RequestCursor } from '@/lib/request-lifecycle'
 
 export const metadata: Metadata = {
   title: 'My Forge | PathForge',
@@ -420,12 +438,113 @@ function queueItemForSaved(saved: MyForgeSavedProject): WorkQueueItem {
 export default async function MyForgePage({
   searchParams,
 }: {
-  searchParams: Promise<{ submitted?: string }>
+  searchParams: Promise<{
+    submitted?: string
+    tab?: string
+    cursor?: string
+    builderCursor?: string
+    reviewerCursor?: string
+  }>
 }) {
+  const query = await searchParams
+  if (query.tab === 'requests') {
+    const viewer = await getRequestViewerState().catch(() => ({ status: 'unavailable' as const }))
+    if (viewer.status === 'signed_out') return <LoggedOutForge />
+    if (viewer.status === 'unavailable') {
+      return (
+        <main className="min-h-[calc(100vh-3rem)] bg-surface-50 px-4 py-8 sm:px-6">
+          <div className="mx-auto max-w-6xl">
+            <MyForgeRequestsList
+              state={{
+                kind: 'unavailable',
+                retryHref: '/my-forge?tab=requests',
+                message: 'PathForge could not verify the current session. No signed-out or empty-list conclusion was made.',
+              }}
+            />
+          </div>
+        </main>
+      )
+    }
+    let requestState: MyForgeRequestsState
+    let assignedQueues: RequestQueueModel[] = []
+    let assignedQueueUnavailable = false
+    try {
+      const service = await getRequestApplicationService()
+      const availability = await service.getAvailability()
+      const [mine, builder, reviewer] = await Promise.allSettled([
+        service.listMyRequests({
+          cursor: query.cursor as RequestCursor | undefined,
+          limit: 20,
+        }),
+        service.listAssignedQueue({
+          scope: 'builder',
+          cursor: query.builderCursor as RequestCursor | undefined,
+          limit: 20,
+        }),
+        service.listAssignedQueue({
+          scope: 'reviewer',
+          cursor: query.reviewerCursor as RequestCursor | undefined,
+          limit: 20,
+        }),
+      ])
+      requestState = mine.status === 'fulfilled'
+        ? toMyForgeRequestsState(mine.value.items, mine.value.nextCursor)
+        : {
+            kind: 'unavailable',
+            retryHref: '/my-forge?tab=requests',
+          }
+      assignedQueueUnavailable =
+        builder.status === 'rejected' || reviewer.status === 'rejected'
+      assignedQueues = [
+        ...(builder.status === 'fulfilled' && builder.value.items.length > 0
+          ? [toAdminQueueModel({
+              scope: 'builder',
+              availability,
+              items: builder.value.items,
+              nextCursor: builder.value.nextCursor,
+              detailBaseHref: '/requests',
+              loadMoreHref: builder.value.nextCursor
+                ? `/my-forge?tab=requests&builderCursor=${encodeURIComponent(builder.value.nextCursor)}`
+                : undefined,
+            })]
+          : []),
+        ...(reviewer.status === 'fulfilled' && reviewer.value.items.length > 0
+          ? [toAdminQueueModel({
+              scope: 'reviewer',
+              availability,
+              items: reviewer.value.items,
+              nextCursor: reviewer.value.nextCursor,
+              detailBaseHref: '/requests',
+              loadMoreHref: reviewer.value.nextCursor
+                ? `/my-forge?tab=requests&reviewerCursor=${encodeURIComponent(reviewer.value.nextCursor)}`
+                : undefined,
+            })]
+          : []),
+      ]
+    } catch {
+      requestState = {
+        kind: 'unavailable',
+        retryHref: '/my-forge?tab=requests',
+      }
+    }
+    return (
+      <main className="min-h-[calc(100vh-3rem)] bg-surface-50 px-4 py-8 sm:px-6">
+        <div className="mx-auto max-w-6xl">
+          <MyForgeRequestsList state={requestState} />
+          {assignedQueueUnavailable ? <AssignedRequestWorkUnavailable /> : null}
+          {assignedQueues.map((queue) => (
+            <div className="mt-8" key={queue.scope}>
+              <AdminRequestQueue model={queue} />
+            </div>
+          ))}
+        </div>
+      </main>
+    )
+  }
   const dashboard = await getMyForgeDashboard()
   if (!dashboard) return <LoggedOutForge />
 
-  const { submitted } = await searchParams
+  const { submitted } = query
   const submittedRun = submitted
     ? dashboard.sourceRuns.find((run) => run.id === submitted)
     : null

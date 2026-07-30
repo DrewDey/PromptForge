@@ -1,0 +1,336 @@
+'use client'
+
+import { useState, type FormEvent } from 'react'
+import { useRouter } from 'next/navigation'
+import { FileUp } from 'lucide-react'
+import type {
+  RequestDeliveryAcceptanceCheck,
+  RequestDeliveryBuilderWorkspaceSummary,
+} from '@/lib/build-requests/delivery-view'
+import {
+  DeliveryUiError,
+  executeRequestDeliveryOneClickFlow,
+  requestDeliveryReceiptVersion,
+  REQUEST_DELIVERY_UPLOAD_ROUTE,
+  safeDeliveryError,
+  safeDeliveryJson,
+} from '@/lib/build-requests/builder-delivery-workflow'
+
+const MAX_FILES = 5
+const MAX_FILE_BYTES = 4_000_000
+const MAX_TOTAL_BYTES = 12_000_000
+
+export type BuilderDeliveryUploaderProps = {
+  requestId: string
+  expectedVersion: number
+  acceptanceChecks: readonly RequestDeliveryAcceptanceCheck[]
+  workspace: RequestDeliveryBuilderWorkspaceSummary | null
+  canStageArtifact: boolean
+  canAbandonArtifact: boolean
+  canContinue: boolean
+}
+
+export function BuilderDeliveryUploader({
+  requestId,
+  expectedVersion,
+  acceptanceChecks,
+  workspace,
+  canStageArtifact,
+  canAbandonArtifact,
+  canContinue,
+}: BuilderDeliveryUploaderProps) {
+  const router = useRouter()
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [progress, setProgress] = useState<string | null>(null)
+  const needsPreparation = workspace === null || workspace.revisionState === 'staging'
+  const canResume = workspace !== null
+
+  async function abandonArtifact(artifactId: string) {
+    if (busy || !workspace) return
+    setBusy(true)
+    setError(null)
+    setProgress('Removing the staged file from this revision…')
+    try {
+      const response = await fetch(REQUEST_DELIVERY_UPLOAD_ROUTE, {
+        method: 'DELETE',
+        credentials: 'same-origin',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          requestId,
+          deliveryRevisionId: workspace.deliveryRevisionId,
+          artifactId,
+          idempotencyKey: `delivery-abandon-${workspace.deliveryRevisionId}-${artifactId}`,
+        }),
+      })
+      const payload = await safeDeliveryJson(response)
+      if (!response.ok) {
+        throw new DeliveryUiError(safeDeliveryError(
+          payload,
+          'The staged file could not be removed.',
+        ))
+      }
+      requestDeliveryReceiptVersion(payload, { minimumVersion: expectedVersion })
+      setProgress('Staged file removed.')
+      router.refresh()
+    } catch (caught) {
+      setProgress(null)
+      setError(caught instanceof DeliveryUiError
+        ? caught.message
+        : 'The private delivery service is temporarily unavailable.')
+      router.refresh()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (busy || !canContinue) return
+    setBusy(true)
+    setError(null)
+
+    try {
+      const form = event.currentTarget
+      const data = new FormData(form)
+      const files = data.getAll('artifacts').filter((value): value is File => (
+        value instanceof File && value.size > 0
+      ))
+      const existingArtifactCount = workspace?.artifacts.length ?? 0
+
+      if (files.length + existingArtifactCount < 1 || files.length + existingArtifactCount > MAX_FILES) {
+        throw new DeliveryUiError('The canonical workspace must contain one to five builder-produced files.')
+      }
+      if (files.length > 0 && !canStageArtifact) {
+        throw new DeliveryUiError('The current authority does not allow another artifact to be staged.')
+      }
+      if (files.some(file => file.size > MAX_FILE_BYTES)) {
+        throw new DeliveryUiError('Each private delivery file must be between 1 byte and 4 MB.')
+      }
+      const existingBytes = workspace?.artifacts.reduce(
+        (total, artifact) => total + artifact.byteLength,
+        0,
+      ) ?? 0
+      if (existingBytes + files.reduce((total, file) => total + file.size, 0) > MAX_TOTAL_BYTES) {
+        throw new DeliveryUiError('The private delivery may contain at most 12 MB total.')
+      }
+
+      const deliveryRevisionId = workspace?.deliveryRevisionId ?? crypto.randomUUID()
+      const builderEvidence = needsPreparation
+        ? acceptanceChecks.map(check => ({
+          acceptanceCheckId: check.id,
+          result: data.get(`evidence_result_${check.id}`),
+          evidenceText: data.get(`evidence_${check.id}`),
+          evidenceRef: null,
+        }))
+        : null
+      const result = await executeRequestDeliveryOneClickFlow({
+        requestId,
+        deliveryRevisionId,
+        expectedVersion,
+        artifacts: files.map((file, index) => ({
+          artifactOrdinal: existingArtifactCount + index + 1,
+          clientFileId: crypto.randomUUID(),
+          file,
+        })),
+        preparation: needsPreparation
+          ? {
+              revisionLabel: data.get('revision_label'),
+              summary: data.get('summary'),
+              builderEvidence: builderEvidence ?? [],
+              builderAttestation: data.get('builder_attestation'),
+            }
+          : null,
+        onProgress: setProgress,
+      })
+      if (result.submissionStatus === 'sealed_waiting_for_reviewer') {
+        setProgress(
+          'Delivery secured. It will be ready to submit after an independent reviewer is assigned.',
+        )
+        router.refresh()
+        return
+      }
+      setProgress('Delivery secured and sent for independent review.')
+      form.reset()
+      router.refresh()
+    } catch (caught) {
+      setProgress(null)
+      setError(caught instanceof DeliveryUiError
+        ? caught.message
+        : 'The private delivery service is temporarily unavailable.')
+      // Any successful stage is canonical server state. Refresh instead of
+      // treating browser-local progress as the retry authority.
+      router.refresh()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <form onSubmit={submit} className="mt-4 space-y-4">
+      {canResume ? (
+        <div className="border border-accent-200 bg-accent-50 p-3 text-sm text-accent-900" role="status">
+          <p className="font-bold">Canonical workspace found</p>
+          <p className="mt-1 text-xs leading-5">
+            Resume from {workspace.revisionState}. {workspace.artifacts.length} secured
+            {workspace.artifacts.length === 1 ? ' file is' : ' files are'} recorded by the Request service.
+          </p>
+          {canAbandonArtifact
+          && workspace.revisionState === 'staging'
+          && workspace.artifacts.length > 0 ? (
+            <ul className="mt-3 space-y-2" aria-label="Staged files">
+              {workspace.artifacts.map(artifact => (
+                <li
+                  key={artifact.artifactId}
+                  className="flex flex-col gap-2 border border-accent-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <span className="break-words text-xs font-semibold text-surface-800">
+                    {artifact.label}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void abandonArtifact(artifact.artifactId)}
+                    className="min-h-11 border border-red-300 px-3 py-2 text-xs font-bold text-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Remove staged file
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
+
+      {needsPreparation ? (
+        <>
+          <div>
+            <label htmlFor="request-delivery-revision-label" className="block text-xs font-bold text-surface-700">
+              Revision label
+            </label>
+            <input
+              id="request-delivery-revision-label"
+              name="revision_label"
+              required
+              minLength={1}
+              maxLength={80}
+              placeholder="Initial delivery"
+              className="mt-2 min-h-11 w-full border border-surface-300 bg-white px-3 py-2 text-base text-surface-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue sm:text-sm"
+            />
+          </div>
+          <div>
+            <label htmlFor="request-delivery-summary" className="block text-xs font-bold text-surface-700">
+              What is included
+            </label>
+            <textarea
+              id="request-delivery-summary"
+              name="summary"
+              required
+              minLength={1}
+              maxLength={2_000}
+              rows={3}
+              className="mt-2 w-full border border-surface-300 bg-white px-3 py-2 text-base leading-6 text-surface-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue sm:text-sm"
+            />
+          </div>
+        </>
+      ) : (
+        <div className="border border-surface-200 bg-surface-50 p-3">
+          <p className="text-sm font-bold text-surface-900">
+            {workspace?.revisionLabel ?? 'Prepared private revision'}
+          </p>
+          {workspace?.summary ? (
+            <p className="mt-1 text-xs leading-5 text-surface-600">{workspace.summary}</p>
+          ) : null}
+        </div>
+      )}
+
+      {workspace?.revisionState !== 'sealed' && canStageArtifact ? (
+        <div>
+          <label htmlFor="request-delivery-artifacts" className="block text-xs font-bold text-surface-700">
+            Builder-produced files
+          </label>
+          <input
+            id="request-delivery-artifacts"
+            name="artifacts"
+            type="file"
+            required={(workspace?.artifacts.length ?? 0) === 0}
+            multiple
+            accept=".html,.htm,.txt,.md,.markdown,.json,.csv,.png,.jpg,.jpeg"
+            className="mt-2 block min-h-11 w-full border border-surface-300 bg-white px-3 py-2 text-sm text-surface-700 file:mr-3 file:border-0 file:bg-surface-900 file:px-3 file:py-2 file:text-xs file:font-bold file:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue"
+          />
+          <p className="mt-2 text-xs leading-5 text-surface-500">
+            Up to five static HTML, Markdown, plain-text, JSON, CSV, PNG, or JPEG files; 4 MB each and 12 MB total. Active content, archives, and requester attachments are not accepted.
+          </p>
+        </div>
+      ) : null}
+
+      {needsPreparation ? (
+        <>
+          <fieldset className="space-y-3">
+            <legend className="text-xs font-bold text-surface-700">Evidence for the accepted checks</legend>
+            {acceptanceChecks.map(check => (
+              <div key={check.id} className="border border-surface-200 bg-surface-50 p-3">
+                <p className="text-xs font-bold text-surface-700">{check.label}</p>
+                <label htmlFor={`request-delivery-evidence-result-${check.id}`} className="mt-3 block text-xs font-semibold text-surface-700">
+                  Result
+                </label>
+                <select
+                  id={`request-delivery-evidence-result-${check.id}`}
+                  name={`evidence_result_${check.id}`}
+                  required
+                  defaultValue="pass"
+                  className="mt-1 min-h-11 w-full border border-surface-300 bg-white px-3 py-2 text-base text-surface-900 sm:text-sm"
+                >
+                  <option value="pass">Pass</option>
+                  <option value="fail">Fail</option>
+                  <option value="not_run">Not run</option>
+                </select>
+                <label htmlFor={`request-delivery-evidence-${check.id}`} className="mt-3 block text-xs font-semibold text-surface-700">
+                  Evidence
+                </label>
+                <textarea
+                  id={`request-delivery-evidence-${check.id}`}
+                  name={`evidence_${check.id}`}
+                  rows={3}
+                  required
+                  minLength={1}
+                  maxLength={2_000}
+                  placeholder="Record the result and the evidence you checked."
+                  className="mt-1 w-full border border-surface-300 bg-white px-3 py-2 text-base leading-6 text-surface-900 placeholder:text-surface-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue sm:text-sm"
+                />
+              </div>
+            ))}
+          </fieldset>
+          <label className="flex items-start gap-3 border border-surface-200 bg-surface-50 p-3 text-sm leading-6 text-surface-700">
+            <input
+              type="checkbox"
+              name="builder_attestation"
+              value="confirmed"
+              required
+              className="mt-1 h-4 w-4 shrink-0 accent-surface-900"
+            />
+            <span>
+              I authored this revision, checked it against the accepted brief, and included no secrets or customer data.
+            </span>
+          </label>
+        </>
+      ) : null}
+
+      {error ? <p role="alert" className="text-sm font-semibold text-red-800">{error}</p> : null}
+      {progress ? <p role="status" className="text-sm text-surface-700">{progress}</p> : null}
+      {canContinue ? (
+        <button
+          type="submit"
+          disabled={busy}
+          className="inline-flex min-h-11 w-full items-center justify-center gap-2 bg-surface-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-surface-700 disabled:cursor-wait disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue sm:w-auto"
+        >
+          {busy ? 'Securing private revision…' : 'Continue exact revision workflow'}
+          <FileUp className="h-4 w-4" aria-hidden="true" />
+        </button>
+      ) : null}
+    </form>
+  )
+}

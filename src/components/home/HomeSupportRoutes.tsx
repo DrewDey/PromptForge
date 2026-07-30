@@ -13,9 +13,9 @@ const routes = [
   {
     href: '/requests',
     eyebrow: 'I need help making it',
-    title: 'Ask the community for a build.',
-    description: 'Post the outcome you want, add the constraints that matter, and let builders respond.',
-    action: 'Open Requests',
+    title: 'Check the private Request a Build pilot.',
+    description: 'Search existing paths first, then submit a finite outcome only when the invited, capacity-controlled service is available to your account.',
+    action: 'Check Request a Build',
     icon: MessageSquareText,
   },
 ] as const
@@ -27,7 +27,7 @@ export function HomeSupportRoutes() {
         <header className="home-support-heading">
           <p className="home-kicker">When the catalog does not have it yet</p>
           <h2 id="home-support-title">Two ways to make the missing path happen.</h2>
-          <p>Choose a sharper starting direction or put a concrete need on the community board. If you already made the result, share the complete run below.</p>
+          <p>Choose a sharper starting direction or check the private managed service. If you already made the result, share the complete run below.</p>
         </header>
 
         <div className="home-support-grid">

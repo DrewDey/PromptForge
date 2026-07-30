@@ -113,6 +113,9 @@ const SCENARIOS = [
   ),
   ...SERVICE_STATES.map((state) => scenario(`service-${state}`, { surface: 'service', state }, {
     screenshot: ['capacity_full', 'unavailable', 'not_admitted'].includes(state),
+    screenshotTarget: state === 'not_admitted'
+      ? '[data-request-intake-eligibility="not_admitted"]'
+      : undefined,
   })),
   ...INTAKE_STATES.map((state) => scenario(`intake-${state}`, { surface: 'intake', state }, {
     expectFocusedAlert: ['errors', 'unavailable', 'rate_limited', 'duplicate', 'stale_version', 'forbidden_input'].includes(state),
@@ -705,6 +708,25 @@ async function verifyViewport(client, options, viewport) {
           sessionId,
           path.join(options.screenshotDir, `${scenarioItem.name}-${viewport.name}.png`),
         )
+        if (viewport.mobile && scenarioItem.screenshotTarget) {
+          await evaluate(client, sessionId, `(() => {
+            const target=document.querySelector(${JSON.stringify(scenarioItem.screenshotTarget)});
+            target?.scrollIntoView({block:'center',inline:'nearest'});
+            return Boolean(target);
+          })()`)
+          await new Promise((resolve) => setTimeout(resolve, 250))
+          await evaluate(client, sessionId, `new Promise((resolve) => {
+            requestAnimationFrame(() => requestAnimationFrame(resolve));
+          })`)
+          await capture(
+            client,
+            sessionId,
+            path.join(
+              options.screenshotDir,
+              `${scenarioItem.name}-${viewport.name}-eligibility.png`,
+            ),
+          )
+        }
       }
     }
 

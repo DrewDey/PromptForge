@@ -4,7 +4,7 @@ export default function RequestServiceLoading() {
   return (
     <RequestServiceOverview
       availability={{ status: 'loading' }}
-      isSignedIn={false}
+      intakeEligibility="sign_in_required"
     />
   )
 }

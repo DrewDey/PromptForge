@@ -531,7 +531,13 @@ export function RequestCaseShell({
     ['release_moderation_hold', 'remove_for_moderation'].includes(primaryAction.capabilityId)
     ? primaryAction
     : undefined
-  const visiblePrimaryAction = model.moderation === 'held' ? heldAction : primaryAction
+  const capabilityAction = primaryAction &&
+    model.capabilities.some((capability) => capability.id === primaryAction.capabilityId)
+    ? primaryAction
+    : undefined
+  const visiblePrimaryAction = model.moderation === 'held'
+    ? capabilityAction && heldAction
+    : capabilityAction
   const visibleDeliverySlot = model.moderation === 'held'
     ? (
         <div className={styles.warningNotice} role="status">

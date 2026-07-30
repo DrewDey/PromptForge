@@ -9,6 +9,15 @@ const FIXTURE_MODELS = 'src/lib/build-requests/fixtures.ts'
 const route = readFileSync(FIXTURE_ROUTE, 'utf8')
 const models = readFileSync(FIXTURE_MODELS, 'utf8')
 const intake = readFileSync('src/components/requests/intake/RequestIntakeForm.tsx', 'utf8')
+const adminOperations = readFileSync(
+  'src/components/requests/admin/AdminRequestDetailOperations.tsx',
+  'utf8',
+)
+const caseShell = readFileSync(
+  'src/components/requests/case/RequestCaseShell.tsx',
+  'utf8',
+)
+const browserGuard = readFileSync('scripts/check-request-build-browser.mjs', 'utf8')
 
 assert.match(
   route,
@@ -20,6 +29,67 @@ assert.doesNotMatch(
   models,
   /actorRole !== 'system'/,
   'Fixtures must not grant a generic action to every non-system actor.',
+)
+
+assert.match(
+  adminOperations,
+  /name="referenceResponseStepNumber"[\s\S]{0,180}min=\{1\}[\s\S]{0,80}max=\{100\}/,
+  'Admin existing-resolution response step must match authority limits.',
+)
+assert.match(
+  adminOperations,
+  /approved published model-variant response evidence/,
+  'Admin existing-resolution copy must describe exact published evidence.',
+)
+assert.match(
+  adminOperations,
+  /Participant-facing resolution note[\s\S]{0,100}name="note"/,
+  'Existing-resolution form must collect the required participant-facing note.',
+)
+assert.doesNotMatch(
+  adminOperations,
+  /<input[^>]+name="(?:builderUserId|reviewerUserId)"/,
+  'Admin assignment must use the eligible-assignee projection, not raw ID entry.',
+)
+assert.doesNotMatch(
+  adminOperations,
+  /<select[^>]+name="moderation"/,
+  'Moderation must use exact commands, not a generic state setter.',
+)
+for (const command of [
+  'place_moderation_hold',
+  'remove_for_moderation',
+]) {
+  assert.match(
+    adminOperations,
+    new RegExp(`command="${command}"`),
+    `Admin moderation must render exact ${command} command shape.`,
+  )
+}
+assert.match(
+  adminOperations,
+  /name="command" value="release_moderation_hold"/,
+  'Admin moderation must render exact release_moderation_hold command shape.',
+)
+assert.match(
+  adminOperations,
+  /model\.allowedCloseReasons\.length > 0/,
+  'Admin close reasons must come from the authority projection.',
+)
+assert.match(
+  caseShell,
+  /model\.capabilities\.some\(\(capability\) => capability\.id === primaryAction\.capabilityId\)/,
+  'Case shell must reject a primary action absent from canonical capabilities.',
+)
+assert.match(
+  browserGuard,
+  /case-action-mismatched[\s\S]*expectedPrimaryCount: 0/,
+  'Browser guard must cover a mismatched primary action.',
+)
+assert.match(
+  browserGuard,
+  /case-held-authorized-action[\s\S]*expectedPrimaryCount: 1[\s\S]*case-held-mismatched-action[\s\S]*expectedPrimaryCount: 0/,
+  'Browser guard must distinguish authorized and mismatched held-state actions.',
 )
 
 for (const [field, minimum, maximum] of [

@@ -303,6 +303,9 @@ export default async function RequestBuildFixturePage({
       closeReason,
       errorState,
     })
+    const primaryCapabilityId = firstValue(query.primary) === 'mismatched'
+      ? 'approve_delivery'
+      : model.capabilities[0]?.id
     const state = [
       lifecycle,
       actorRole,
@@ -317,9 +320,9 @@ export default async function RequestBuildFixturePage({
           model={model}
           deliverySlot={<DeliveryPlaceholder state={deliveryState} />}
           primaryAction={
-            model.capabilities.length > 0
+            primaryCapabilityId
               ? {
-                  capabilityId: model.capabilities[0].id,
+                  capabilityId: primaryCapabilityId,
                   content: (
                     <form action={fixtureAction}>
                       <button
@@ -384,7 +387,9 @@ export default async function RequestBuildFixturePage({
     acceptAndAssign: fixtureAction,
     startBuild: fixtureAction,
     assignReviewer: fixtureAction,
-    moderate: fixtureAction,
+    placeModerationHold: fixtureAction,
+    releaseModerationHold: fixtureAction,
+    removeForModeration: fixtureAction,
     close: fixtureAction,
   }
   return (

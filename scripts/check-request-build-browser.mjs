@@ -729,6 +729,9 @@ async function verifyViewport(client, options, viewport) {
           !snapshot.fixtureText.includes(
             'This exact revision is sealed and waiting for an independent reviewer assignment.',
           ) ||
+          !snapshot.fixtureText.includes('Delivery sealed') ||
+          snapshot.fixtureText.includes('The assigned builder has not submitted') ||
+          snapshot.fixtureText.includes('Submit a private delivery revision') ||
           snapshot.fixtureText.includes('Continue exact revision workflow')
         )
       ) {

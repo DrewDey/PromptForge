@@ -67,6 +67,12 @@ const STATE_PRESENTATION: Record<
     label: 'Securing delivery',
     description: 'The exact submitted bytes are being finalized in private custody.',
   },
+  sealed_waiting: {
+    icon: Clock3,
+    tone: 'border-accent-200 bg-accent-50 text-accent-900',
+    label: 'Delivery sealed',
+    description: 'The exact private revision is sealed and waiting for an independent reviewer assignment.',
+  },
   quarantined: {
     icon: ShieldAlert,
     tone: 'border-amber-300 bg-amber-50 text-amber-950',
@@ -350,17 +356,27 @@ function BuilderSubmission({ model }: { model: RequestDeliverySlotModel }) {
   if (!canInteract && !model.builderWorkspace) return null
   const isRepair = model.commands.submitKind === 'resubmit_delivery'
     || model.state === 'repair_required'
+  const isSealedWaiting = (
+    model.builderWorkspace?.revisionState === 'sealed'
+    && model.commands.submitKind === null
+  )
 
   return (
     <section className="border-t border-surface-200 px-4 py-5 sm:px-6" aria-labelledby="builder-delivery-heading">
       <div className="flex items-center gap-2">
         <FileUp className="h-4 w-4 text-brand-orange-ink" aria-hidden="true" />
         <h3 id="builder-delivery-heading" className="text-sm font-black text-surface-900">
-          {isRepair ? 'Submit a repaired revision' : 'Submit a private delivery revision'}
+          {isSealedWaiting
+            ? 'Sealed revision waiting for review assignment'
+            : isRepair
+              ? 'Submit a repaired revision'
+              : 'Submit a private delivery revision'}
         </h3>
       </div>
       <p className="mt-2 text-xs leading-5 text-surface-600">
-        Builder-produced files only. Files are treated as untrusted, checked before access, and remain private to this case.
+        {isSealedWaiting
+          ? 'The exact builder revision remains private and no further builder action is available until an independent reviewer is assigned.'
+          : 'Builder-produced files only. Files are treated as untrusted, checked before access, and remain private to this case.'}
       </p>
 
       {canInteract ? (

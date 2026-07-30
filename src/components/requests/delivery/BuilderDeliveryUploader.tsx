@@ -7,25 +7,18 @@ import type {
   RequestDeliveryAcceptanceCheck,
   RequestDeliveryBuilderWorkspaceSummary,
 } from '@/lib/build-requests/delivery-view'
+import {
+  DeliveryUiError,
+  executeRequestDeliveryOneClickFlow,
+  requestDeliveryReceiptVersion,
+  REQUEST_DELIVERY_UPLOAD_ROUTE,
+  safeDeliveryError,
+  safeDeliveryJson,
+} from '@/lib/build-requests/builder-delivery-workflow'
 
 const MAX_FILES = 5
 const MAX_FILE_BYTES = 4_000_000
 const MAX_TOTAL_BYTES = 12_000_000
-const PREPARE_ROUTE = '/api/request-deliveries/prepare'
-const UPLOAD_ROUTE = '/api/request-deliveries/artifacts'
-const SUBMIT_ROUTE = '/api/request-deliveries/submit'
-const SAFE_ERROR_MESSAGES: Readonly<Record<string, string>> = {
-  auth_required: 'Sign in again before continuing this private delivery.',
-  forbidden: 'The current participant is not allowed to perform this delivery action.',
-  held: 'This case is held. Delivery work is unavailable.',
-  removed: 'This case was removed. Delivery work is unavailable.',
-  stale_version: 'The case changed. Reload and try the action again.',
-  rate_limited: 'Too many delivery attempts were made. Wait briefly and try again.',
-  artifact_staging_limit: 'This revision reached its lifetime staging limit. Begin a fresh authorized repair or revision path if one is available.',
-  invalid_upload: 'The file did not meet the private delivery requirements.',
-  integrity_failed: 'The file could not pass the private integrity check.',
-  unavailable: 'The private delivery service is temporarily unavailable.',
-}
 
 export type BuilderDeliveryUploaderProps = {
   requestId: string
@@ -35,48 +28,6 @@ export type BuilderDeliveryUploaderProps = {
   canStageArtifact: boolean
   canAbandonArtifact: boolean
   canContinue: boolean
-}
-
-class DeliveryUiError extends Error {}
-
-async function safeJson(response: Response) {
-  try {
-    return await response.json() as Record<string, unknown>
-  } catch {
-    return {}
-  }
-}
-
-function safeError(payload: Record<string, unknown>, fallback: string) {
-  return typeof payload.code === 'string'
-    ? SAFE_ERROR_MESSAGES[payload.code] ?? fallback
-    : fallback
-}
-
-function receiptVersion(
-  payload: Record<string, unknown>,
-  expected: {
-    minimumVersion: number
-    requireArtifactId?: boolean
-  },
-) {
-  if (
-    typeof payload.requestVersion !== 'number'
-    || !Number.isSafeInteger(payload.requestVersion)
-    || payload.requestVersion < expected.minimumVersion
-    || (
-      expected.requireArtifactId
-      && (
-        typeof payload.artifactId !== 'string'
-        || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-          payload.artifactId,
-        )
-      )
-    )
-  ) {
-    throw new DeliveryUiError('The delivery authority returned an inconsistent receipt.')
-  }
-  return payload.requestVersion
 }
 
 export function BuilderDeliveryUploader({
@@ -101,7 +52,7 @@ export function BuilderDeliveryUploader({
     setError(null)
     setProgress('Removing the staged file from this revision…')
     try {
-      const response = await fetch(UPLOAD_ROUTE, {
+      const response = await fetch(REQUEST_DELIVERY_UPLOAD_ROUTE, {
         method: 'DELETE',
         credentials: 'same-origin',
         headers: {
@@ -115,11 +66,14 @@ export function BuilderDeliveryUploader({
           idempotencyKey: `delivery-abandon-${workspace.deliveryRevisionId}-${artifactId}`,
         }),
       })
-      const payload = await safeJson(response)
+      const payload = await safeDeliveryJson(response)
       if (!response.ok) {
-        throw new DeliveryUiError(safeError(payload, 'The staged file could not be removed.'))
+        throw new DeliveryUiError(safeDeliveryError(
+          payload,
+          'The staged file could not be removed.',
+        ))
       }
-      receiptVersion(payload, { minimumVersion: expectedVersion })
+      requestDeliveryReceiptVersion(payload, { minimumVersion: expectedVersion })
       setProgress('Staged file removed.')
       router.refresh()
     } catch (caught) {
@@ -165,111 +119,39 @@ export function BuilderDeliveryUploader({
       }
 
       const deliveryRevisionId = workspace?.deliveryRevisionId ?? crypto.randomUUID()
-      let requestVersion = expectedVersion
-
-      // Frozen custody order: stage each exact file, let the authenticated
-      // route place it in custody, then prepare evidence, seal, and submit.
-      for (const [index, file] of files.entries()) {
-        const artifactOrdinal = existingArtifactCount + index + 1
-        const clientFileId = crypto.randomUUID()
-        setProgress(`Securing file ${index + 1} of ${files.length}…`)
-        const upload = new FormData()
-        upload.set('requestId', requestId)
-        upload.set('expectedVersion', String(requestVersion))
-        upload.set('deliveryRevisionId', deliveryRevisionId)
-        upload.set('artifactOrdinal', String(artifactOrdinal))
-        upload.set('clientFileId', clientFileId)
-        upload.set(
-          'idempotencyKey',
-          `delivery-stage-${deliveryRevisionId}-${artifactOrdinal}-${clientFileId}`,
-        )
-        upload.set('artifact', file)
-
-        const response = await fetch(UPLOAD_ROUTE, {
-          method: 'POST',
-          body: upload,
-          credentials: 'same-origin',
-          headers: { Accept: 'application/json' },
-        })
-        const payload = await safeJson(response)
-        if (!response.ok) {
-          throw new DeliveryUiError(safeError(payload, `File ${index + 1} could not be secured.`))
-        }
-        requestVersion = receiptVersion(payload, {
-          minimumVersion: requestVersion,
-          requireArtifactId: true,
-        })
-      }
-
-      if (needsPreparation) {
-        const builderEvidence = acceptanceChecks.map(check => ({
+      const builderEvidence = needsPreparation
+        ? acceptanceChecks.map(check => ({
           acceptanceCheckId: check.id,
           result: data.get(`evidence_result_${check.id}`),
           evidenceText: data.get(`evidence_${check.id}`),
           evidenceRef: null,
         }))
-        setProgress('Preparing the exact evidence and rights record…')
-        const preparationResponse = await fetch(PREPARE_ROUTE, {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            requestId,
-            expectedVersion: requestVersion,
-            deliveryRevisionId,
-            idempotencyKey: `delivery-prepare-${deliveryRevisionId}`,
-            revisionLabel: data.get('revision_label'),
-            summary: data.get('summary'),
-            builderEvidence,
-            builderAttestation: data.get('builder_attestation'),
-          }),
-        })
-        const preparationPayload = await safeJson(preparationResponse)
-        if (!preparationResponse.ok) {
-          throw new DeliveryUiError(safeError(
-            preparationPayload,
-            'The delivery revision could not be prepared.',
-          ))
-        }
-        requestVersion = receiptVersion(preparationPayload, {
-          minimumVersion: requestVersion,
-        })
-      }
-
-      setProgress('Sealing the exact revision for independent review…')
-      const response = await fetch(SUBMIT_ROUTE, {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          requestId,
-          expectedVersion: requestVersion,
-          deliveryRevisionId,
-          idempotencyKey: `delivery-seal-submit-${deliveryRevisionId}-${requestVersion}`,
-        }),
+        : null
+      const result = await executeRequestDeliveryOneClickFlow({
+        requestId,
+        deliveryRevisionId,
+        expectedVersion,
+        artifacts: files.map((file, index) => ({
+          artifactOrdinal: existingArtifactCount + index + 1,
+          clientFileId: crypto.randomUUID(),
+          file,
+        })),
+        preparation: needsPreparation
+          ? {
+              revisionLabel: data.get('revision_label'),
+              summary: data.get('summary'),
+              builderEvidence: builderEvidence ?? [],
+              builderAttestation: data.get('builder_attestation'),
+            }
+          : null,
+        onProgress: setProgress,
       })
-      const payload = await safeJson(response)
-      if (!response.ok) {
-        throw new DeliveryUiError(safeError(payload, 'The exact delivery revision could not be submitted.'))
-      }
-      receiptVersion(payload, {
-        minimumVersion: requestVersion,
-      })
-      if (payload.submissionStatus === 'sealed_waiting_for_reviewer') {
+      if (result.submissionStatus === 'sealed_waiting_for_reviewer') {
         setProgress(
           'Delivery secured. It will be ready to submit after an independent reviewer is assigned.',
         )
         router.refresh()
         return
-      }
-      if (payload.submissionStatus !== 'submitted') {
-        throw new DeliveryUiError('The delivery authority returned an inconsistent receipt.')
       }
       setProgress('Delivery secured and sent for independent review.')
       form.reset()

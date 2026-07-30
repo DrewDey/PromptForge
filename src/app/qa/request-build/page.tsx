@@ -191,7 +191,7 @@ function deliveryFixture(
     state: builderStaging
       ? 'staging'
       : state === 'sealed_waiting'
-        ? 'pending'
+        ? 'sealed_waiting'
       : state === 'not_ready'
         ? 'none'
         : state === 'repair'

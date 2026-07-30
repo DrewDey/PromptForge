@@ -1,6 +1,5 @@
 'use server'
 
-import { randomBytes } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import type {
@@ -16,6 +15,9 @@ import {
 import { RequestAuthorityError } from '@/lib/request-service'
 import { getRequestApplicationService } from '@/lib/build-requests/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import {
+  requestDeliveryReceiptEmissionKey,
+} from '@/lib/build-requests/delivery-receipt-analytics'
 
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -213,7 +215,7 @@ export async function recordRequestDeliveryOutcomeAction(
       error: null,
       replayed: receipt.replayed,
       outcome,
-      emissionKey: `delivery-outcome-event:${randomBytes(24).toString('base64url')}`,
+      emissionKey: requestDeliveryReceiptEmissionKey(receipt.commandId),
     }
   } catch (error) {
     return {

@@ -20,6 +20,7 @@ export const REQUEST_DELIVERY_SLOT_STATES = [
   'none',
   'pending',
   'staging',
+  'sealed_waiting',
   'quarantined',
   'available',
   'missing',
@@ -425,6 +426,7 @@ function deriveState(
   if (lifecycle === 'closed' && closeReason !== 'no_response') {
     return current || workspace ? 'missing' : 'none'
   }
+  if (workspace?.revisionState === 'sealed') return 'sealed_waiting'
   if (workspace || artifacts.some(artifact => (
     artifact.integrityStatus === 'pending' || artifact.scanState === 'pending'
   ))) return 'staging'

@@ -98,6 +98,12 @@ const {
   src,
   'lib/build-requests/delivery-route.ts',
 )).href)
+const {
+  executeRequestDeliveryOneClickFlow,
+} = await import(pathToFileURL(path.join(
+  src,
+  'lib/build-requests/builder-delivery-workflow.ts',
+)).href)
 
 const ids = {
   request: '10000000-0000-4000-a000-000000000001',
@@ -549,19 +555,77 @@ assert.doesNotMatch(
   /if\s*\(\s*!canPrepareRevision\s*\)/,
   'The client must not gate post-stage prepare on its stale render-time capability.',
 )
-assert.ok(
-  uploaderSource.indexOf('const response = await fetch(UPLOAD_ROUTE')
-  < uploaderSource.indexOf('const preparationResponse = await fetch(PREPARE_ROUTE'),
-)
 assert.match(
   uploaderSource,
   /sealed_waiting_for_reviewer/,
   'The one-click flow must render sealed reviewer-waiting as a bounded success.',
 )
-assert.ok(
-  uploaderSource.indexOf('const preparationResponse = await fetch(PREPARE_ROUTE')
-  < uploaderSource.indexOf('const response = await fetch(SUBMIT_ROUTE'),
+
+// Executable client workflow: one user submission with a real File produces
+// the exact stage -> prepare/seal -> fresh-authority submit request sequence.
+const clientFlowCalls = []
+const clientFlowProgress = []
+const clientFlowResponses = [
+  { artifactId: ids.artifact, requestVersion: 11 },
+  { requestVersion: 12 },
+  { requestVersion: 13, submissionStatus: 'submitted' },
+]
+const clientFlowResult = await executeRequestDeliveryOneClickFlow({
+  requestId: ids.request,
+  deliveryRevisionId: ids.revision,
+  expectedVersion: 10,
+  artifacts: [{
+    artifactOrdinal: 1,
+    clientFileId: ids.artifact,
+    file: new File(
+      ['private static evidence'],
+      'evidence.txt',
+      { type: 'text/plain' },
+    ),
+  }],
+  preparation: {
+    revisionLabel: preparationBody.revisionLabel,
+    summary: preparationBody.summary,
+    builderEvidence: evidence,
+    builderAttestation: 'confirmed',
+  },
+  onProgress(message) {
+    clientFlowProgress.push(message)
+  },
+  async fetcher(pathname, init) {
+    clientFlowCalls.push({ pathname, init })
+    return Response.json(clientFlowResponses[clientFlowCalls.length - 1])
+  },
+})
+assert.deepEqual(
+  clientFlowCalls.map(call => call.pathname),
+  [
+    '/api/request-deliveries/artifacts',
+    '/api/request-deliveries/prepare',
+    '/api/request-deliveries/submit',
+  ],
 )
+const stagedEnvelope = clientFlowCalls[0].init.body
+assert.ok(stagedEnvelope instanceof FormData)
+assert.equal(stagedEnvelope.get('artifact') instanceof File, true)
+assert.equal(stagedEnvelope.get('requestId'), ids.request)
+assert.equal(
+  JSON.parse(clientFlowCalls[1].init.body).expectedVersion,
+  11,
+)
+assert.equal(
+  JSON.parse(clientFlowCalls[2].init.body).expectedVersion,
+  12,
+)
+assert.deepEqual(clientFlowResult, {
+  requestVersion: 13,
+  submissionStatus: 'submitted',
+})
+assert.deepEqual(clientFlowProgress, [
+  'Securing file 1 of 1…',
+  'Preparing the exact evidence and rights record…',
+  'Sealing the exact revision for independent review…',
+])
 
 globalThis.__deliveryActionServiceFactoryCalls = 0
 globalThis.__deliveryActionAdminFactoryCalls = 0
@@ -574,6 +638,48 @@ const {
   src,
   'app/requests/[id]/delivery-actions.ts',
 )).href)
+const {
+  requestDeliveryReceiptEmissionKey,
+} = await import(pathToFileURL(path.join(
+  src,
+  'lib/build-requests/delivery-receipt-analytics.ts',
+)).href)
+const durableEmissionKey = requestDeliveryReceiptEmissionKey(ids.command)
+assert.match(
+  durableEmissionKey,
+  /^delivery-outcome-event:[A-Za-z0-9_-]{32}$/,
+)
+assert.equal(
+  requestDeliveryReceiptEmissionKey(ids.command),
+  durableEmissionKey,
+  'An exact durable receipt replay must retain one analytics emission identity.',
+)
+assert.notEqual(
+  requestDeliveryReceiptEmissionKey(ids.seal),
+  durableEmissionKey,
+)
+const emittedReceiptKeys = new Set()
+const emittedReceiptEvents = []
+for (const state of [
+  { submitted: false, emissionKey: null, replayed: false },
+  { submitted: true, emissionKey: durableEmissionKey, replayed: false },
+  { submitted: true, emissionKey: durableEmissionKey, replayed: true },
+  { submitted: true, emissionKey: durableEmissionKey, replayed: true },
+]) {
+  if (
+    state.submitted
+    && state.emissionKey
+    && !emittedReceiptKeys.has(state.emissionKey)
+  ) {
+    emittedReceiptKeys.add(state.emissionKey)
+    emittedReceiptEvents.push(state)
+  }
+}
+assert.deepEqual(
+  emittedReceiptEvents,
+  [{ submitted: true, emissionKey: durableEmissionKey, replayed: false }],
+  'fail -> success -> durable replay -> rerender must emit exactly once.',
+)
 
 function actionIdentityForm(command) {
   const form = new FormData()

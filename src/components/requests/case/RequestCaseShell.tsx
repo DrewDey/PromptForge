@@ -402,9 +402,9 @@ function Delivery({ children }: { children: ReactNode }) {
 
 function Assignments({ assignments }: { assignments: readonly RequestCaseAssignment[] }) {
   return (
-    <section className={styles.panel} aria-labelledby="request-case-assignments">
+    <section className={styles.historySubsection} aria-labelledby="request-case-assignments">
       <p className={styles.sectionKicker}>Assigned team</p>
-      <h2 id="request-case-assignments">Assignment summary</h2>
+      <h3 id="request-case-assignments">Assignment summary</h3>
       {assignments.length > 0 ? (
         <ul className={styles.assignmentList}>
           {assignments.map(assignment => (
@@ -435,9 +435,9 @@ function Progress({ lifecycle }: { lifecycle: RequestLifecycle }) {
   const activeIndex = lifecyclePhase[lifecycle]
 
   return (
-    <section className={styles.panel} aria-labelledby="request-case-progress">
+    <section className={styles.historySubsection} aria-labelledby="request-case-progress">
       <p className={styles.sectionKicker}>Lifecycle</p>
-      <h2 id="request-case-progress">Ordered progress</h2>
+      <h3 id="request-case-progress">Ordered progress</h3>
       <ol className={styles.progressList}>
         {progressPhases.map((phase, index) => (
           <li
@@ -469,14 +469,20 @@ function Progress({ lifecycle }: { lifecycle: RequestLifecycle }) {
 function History({
   timeline,
   retentionNotice,
+  assignments,
+  lifecycle,
 }: {
   timeline: readonly RequestCaseTimelineItem[]
   retentionNotice: string
+  assignments?: readonly RequestCaseAssignment[]
+  lifecycle?: RequestLifecycle
 }) {
   return (
     <section className={styles.panel} aria-labelledby="request-case-history">
       <p className={styles.sectionKicker}>Durable record</p>
       <h2 id="request-case-history">History and retention</h2>
+      {assignments ? <Assignments assignments={assignments} /> : null}
+      {lifecycle ? <Progress lifecycle={lifecycle} /> : null}
       {timeline.length > 0 ? (
         <ol className={styles.timeline}>
           {timeline.map(item => (
@@ -622,11 +628,11 @@ export function RequestCaseShell({
           <FinishLine brief={model.brief} />
           <Clarification clarification={model.clarification} />
           <Delivery>{visibleDeliverySlot}</Delivery>
-          <Assignments assignments={model.assignments} />
-          <Progress lifecycle={model.lifecycle} />
           <History
             timeline={model.timeline}
             retentionNotice={model.retentionNotice}
+            assignments={model.assignments}
+            lifecycle={model.lifecycle}
           />
         </div>
       </div>

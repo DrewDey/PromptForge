@@ -249,9 +249,6 @@ export function toRequestCasePresentation(
     }
   }
   const latestClarification = detail.clarifications.at(-1)
-  const participantsByRole = new Map(
-    detail.participants.map((participant) => [participant.role, participant]),
-  )
   const assignments = [
     ...detail.participants
       .filter((participant) => participant.role === 'triager')
@@ -262,13 +259,12 @@ export function toRequestCasePresentation(
       })),
     ...detail.assignments.map((assignment) => ({
       role: assignment.role,
-      displayName: assignment.active
-        ? participantsByRole.get(assignment.role)?.displayName
-          ?? (assignment.role === 'builder' ? 'Assigned builder' : 'Assigned reviewer')
-        : assignment.role === 'builder'
-          ? 'Former assigned builder'
-          : 'Former assigned reviewer',
-      status: assignment.active ? 'Active' : 'Ended',
+      displayName: assignment.assignee.displayName,
+      status: assignment.active
+        ? 'Active'
+        : assignment.assignee.deidentified
+          ? 'Ended · identity deidentified'
+          : 'Ended',
       targetDate:
         assignment.role === 'builder' && assignment.active
           ? detail.targetDate ?? undefined

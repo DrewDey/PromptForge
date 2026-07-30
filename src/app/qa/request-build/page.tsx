@@ -160,7 +160,10 @@ export default async function RequestBuildFixturePage({
 }: {
   searchParams: Promise<SearchParams>
 }) {
-  if (process.env.VERCEL_ENV === 'production') notFound()
+  if (
+    process.env.NODE_ENV === 'production' ||
+    process.env.VERCEL_ENV === 'production'
+  ) notFound()
 
   const query = await searchParams
   const surface = oneOf(
@@ -198,6 +201,7 @@ export default async function RequestBuildFixturePage({
       <FixtureFrame surface={surface} state={state}>
         <RequestIntakeForm
           action={fixtureAction}
+          idempotencyKey="fixture-intake-10000000-0000-4000-8000-000000000001"
           defaultValues={fixture.defaultValues}
           errors={fixture.errors}
           pending={fixture.pending}
@@ -218,9 +222,10 @@ export default async function RequestBuildFixturePage({
       <FixtureFrame surface={surface} state={state}>
         <RequestSubmissionReceipt
           receipt={{
+            commandId: '40000000-0000-4000-8000-000000000001',
             requestId: REQUEST_FIXTURE_ID,
             version: 1,
-            eventId: 'event-10000000-0000-4000-8000-request-build-fixture',
+            eventId: '50000000-0000-4000-8000-000000000001',
             occurredAt: REQUEST_FIXTURE_TIME,
             lifecycle: 'submitted',
             moderation: 'clear',
@@ -294,16 +299,19 @@ export default async function RequestBuildFixturePage({
           deliverySlot={<DeliveryPlaceholder state={deliveryState} />}
           primaryAction={
             model.capabilities.length > 0
-              ? (
-                  <form action={fixtureAction}>
-                    <button
-                      className="min-h-11 w-full bg-surface-900 px-4 py-3 font-bold text-white"
-                      type="submit"
-                    >
-                      {model.nextAction.title}
-                    </button>
-                  </form>
-                )
+              ? {
+                  capabilityId: model.capabilities[0].id,
+                  content: (
+                    <form action={fixtureAction}>
+                      <button
+                        className="min-h-11 w-full bg-surface-900 px-4 py-3 font-bold text-white"
+                        type="submit"
+                      >
+                        {model.nextAction.title}
+                      </button>
+                    </form>
+                  ),
+                }
               : undefined
           }
         />

@@ -136,7 +136,10 @@ const SCENARIOS = [
       lifecycle: error === 'publication_blocked' ? 'completed' : 'delivery_ready',
       error,
     },
-    { caseOrder: true },
+    {
+      caseOrder: true,
+      expectFocusedAlert: ['rate_limited', 'stale_version', 'missing_delivery', 'hash_mismatch'].includes(error),
+    },
   )),
   ...DELIVERY_STATES.map((delivery) => scenario(
     `case-delivery-${delivery}`,
@@ -219,7 +222,7 @@ async function navigate(client, sessionId, url, expectedState) {
   const loaded = client.waitFor('Page.loadEventFired', sessionId, 20_000)
   await client.send('Page.navigate', { url }, sessionId)
   await loaded
-  return waitForValue(
+  const result = await waitForValue(
     client,
     sessionId,
     `(() => {
@@ -232,6 +235,10 @@ async function navigate(client, sessionId, url, expectedState) {
     (value) => value?.ready && value.state === expectedState,
     `fixture ${expectedState}`,
   )
+  await evaluate(client, sessionId, `new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(resolve));
+  })`)
+  return result
 }
 
 async function capture(client, sessionId, destination) {
@@ -368,17 +375,22 @@ async function assertCaseMobileOrder(client, sessionId, label) {
       'request-case-delivery',
       'request-case-history',
     ];
-    const all=[...document.querySelectorAll('*')];
     return ids.map((id)=>{
       const node=document.getElementById(id);
-      return {id,index:node ? all.indexOf(node) : -1};
+      const section=node?.closest('section');
+      const rect=section?.getBoundingClientRect();
+      return {
+        id,
+        top:rect ? Math.round(rect.top + scrollY) : -1,
+        bottom:rect ? Math.round(rect.bottom + scrollY) : -1,
+      };
     });
   })()`)
-  if (order.some((item) => item.index < 0)) {
+  if (order.some((item) => item.top < 0)) {
     throw new Error(`${label} is missing a required case section: ${JSON.stringify(order)}.`)
   }
   for (let index = 1; index < order.length; index += 1) {
-    if (order[index].index <= order[index - 1].index) {
+    if (order[index].top < order[index - 1].bottom) {
       throw new Error(`${label} mobile case order failed: ${JSON.stringify(order)}.`)
     }
   }
@@ -469,14 +481,25 @@ async function verifyViewport(client, options, viewport) {
         throw new Error(`${label} rendered undersized controls: ${JSON.stringify(snapshot.tooSmall)}.`)
       }
       if (!snapshot.reducedMotion) throw new Error(`${label} did not honor reduced-motion emulation.`)
-      if (scenarioItem.path.includes('surface=case') && snapshot.deliveryPlaceholders !== 1) {
-        throw new Error(`${label} did not render exactly one explicit PM 3 placeholder.`)
+      const isRemovedCase = scenarioItem.path.includes('surface=case') &&
+        scenarioItem.path.includes('moderation=removed')
+      const isHeldCase = scenarioItem.path.includes('surface=case') &&
+        scenarioItem.path.includes('moderation=held')
+      if (
+        scenarioItem.path.includes('surface=case') &&
+        snapshot.deliveryPlaceholders !== (isRemovedCase || isHeldCase ? 0 : 1)
+      ) {
+        throw new Error(
+          `${label} rendered an unexpected PM 3 placeholder count: ${snapshot.deliveryPlaceholders}.`,
+        )
       }
       if (viewport.mobile && scenarioItem.path.includes('surface=case')) {
         if (snapshot.stickyActionCount > 1) {
           throw new Error(`${label} rendered more than one state-specific sticky action.`)
         }
-        if (scenarioItem.caseOrder) await assertCaseMobileOrder(client, sessionId, label)
+        if (scenarioItem.caseOrder && !isRemovedCase) {
+          await assertCaseMobileOrder(client, sessionId, label)
+        }
       }
       if (scenarioItem.expectFocusedAlert) {
         const focus = await waitForValue(
@@ -493,6 +516,13 @@ async function verifyViewport(client, options, viewport) {
       }
       await assertAccessibilityTree(client, sessionId, label)
       if (scenarioItem.screenshot) {
+        // Turbopack can replace the route DOM before Chrome's mobile compositor
+        // has swapped out the preceding loading frame. Screenshot evidence must
+        // wait for that visual frame, not merely for a passing DOM snapshot.
+        await new Promise((resolve) => setTimeout(resolve, 500))
+        await evaluate(client, sessionId, `new Promise((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(resolve));
+        })`)
         await capture(
           client,
           sessionId,

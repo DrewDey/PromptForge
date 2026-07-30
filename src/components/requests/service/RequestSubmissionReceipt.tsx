@@ -3,6 +3,7 @@ import { ArrowRight, CheckCircle2, CopyCheck } from 'lucide-react'
 import styles from './RequestServiceOverview.module.css'
 
 export type RequestSubmissionReceiptView = {
+  commandId: string
   requestId: string
   version: number
   eventId: string
@@ -52,6 +53,10 @@ export function RequestSubmissionReceipt({
         <div>
           <dt>Request</dt>
           <dd>{receipt.requestId}</dd>
+        </div>
+        <div>
+          <dt>Command</dt>
+          <dd>{receipt.commandId}</dd>
         </div>
         <div>
           <dt>Version</dt>

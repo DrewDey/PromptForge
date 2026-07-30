@@ -115,9 +115,15 @@ export default async function BuildRequestAdminDetailPage({
       <RequestCaseShell
         model={caseModel}
         deliverySlot={(
-          <p data-request-delivery-placeholder>
-            Protected delivery and review controls are awaiting the immutable custody component.
-          </p>
+          <section
+            aria-labelledby="request-case-delivery"
+            data-request-delivery-placeholder
+          >
+            <h2 id="request-case-delivery">Private delivery</h2>
+            <p>
+              Protected delivery and review controls are awaiting the immutable custody component.
+            </p>
+          </section>
         )}
       />
       <AdminRequestDetailOperations

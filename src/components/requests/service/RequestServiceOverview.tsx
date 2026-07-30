@@ -59,9 +59,9 @@ function availabilityCopy(availability: RequestServiceAvailability) {
     case 'private':
       return {
         eyebrow: 'Private managed service',
-        title: 'Request intake is available to signed-in members.',
-        body: 'Every brief, clarification, review, and delivery stays visible only to authorized participants.',
-        tone: 'available',
+        title: 'There is no public request board.',
+        body: 'Cases are visible only to authorized participants. Privacy alone does not mean intake controls or capacity are open.',
+        tone: 'neutral',
       } as const
     case 'available':
       return {
@@ -92,7 +92,7 @@ export function RequestServiceOverview({
 }: RequestServiceOverviewProps) {
   const copy = availabilityCopy(availability)
   const capacity = capacityLabel(availability)
-  const canStart = availability.status === 'available' || availability.status === 'private'
+  const canStart = availability.status === 'available'
 
   return (
     <div className={styles.page}>
@@ -127,7 +127,7 @@ export function RequestServiceOverview({
           <div className={styles.availabilityIcon} aria-hidden="true">
             {availability.status === 'loading'
               ? <RefreshCw />
-              : availability.status === 'available' || availability.status === 'private'
+              : availability.status === 'available'
                 ? <ShieldCheck />
                 : <Clock3 />}
           </div>

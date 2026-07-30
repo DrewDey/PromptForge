@@ -49,6 +49,8 @@ export type RequestIntakeValues = {
 export type RequestIntakeFormProps = {
   action?: string | ((formData: FormData) => void | Promise<void>)
   onSubmit?: FormEventHandler<HTMLFormElement>
+  onIntakeStarted?: () => void
+  idempotencyKey: string
   defaultValues?: Partial<RequestIntakeValues>
   errors?: RequestIntakeError[]
   pending?: boolean
@@ -98,6 +100,8 @@ function fieldError(errors: RequestIntakeError[], field: RequestIntakeField) {
 export function RequestIntakeForm({
   action,
   onSubmit,
+  onIntakeStarted,
+  idempotencyKey,
   defaultValues,
   errors = [],
   pending = false,
@@ -106,6 +110,7 @@ export function RequestIntakeForm({
 }: RequestIntakeFormProps) {
   const baseId = useId().replace(/:/g, '')
   const errorSummaryRef = useRef<HTMLDivElement>(null)
+  const intakeStartedRef = useRef(false)
   const [acceptanceChecks, setAcceptanceChecks] = useState(() => {
     const supplied = defaultValues?.acceptanceChecks?.slice(0, 3)
     return supplied?.length ? supplied : ['']
@@ -116,10 +121,19 @@ export function RequestIntakeForm({
   const visibleErrors = serviceError
     ? [{ field: 'form' as const, message: serviceErrorCopy[serviceError] }, ...errors]
     : errors
+  const errorSignature = visibleErrors
+    .map((error) => `${error.field}:${error.message}`)
+    .join('|')
 
   useEffect(() => {
     if (visibleErrors.length > 0) errorSummaryRef.current?.focus()
-  }, [serviceError, visibleErrors.length])
+  }, [errorSignature, visibleErrors.length])
+
+  function announceIntakeStarted() {
+    if (intakeStartedRef.current) return
+    intakeStartedRef.current = true
+    onIntakeStarted?.()
+  }
 
   function addAcceptanceCheck() {
     setAcceptanceChecks((checks) => checks.length < 3 ? [...checks, ''] : checks)
@@ -160,9 +174,12 @@ export function RequestIntakeForm({
           id="request-intake-form"
           action={action}
           onSubmit={onSubmit}
+          onFocusCapture={announceIntakeStarted}
+          onChangeCapture={announceIntakeStarted}
           className={styles.form}
           noValidate
         >
+          <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
           {visibleErrors.length > 0 && (
             <div
               ref={errorSummaryRef}

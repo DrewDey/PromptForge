@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { RequestCaseErrorFocus } from './RequestCaseErrorFocus'
 import styles from './RequestCaseShell.module.css'
 
 export type RequestLifecycle =
@@ -130,7 +131,10 @@ export interface RequestCaseShellProps {
    * A single authority-wired action. It is mounted once and becomes the mobile
    * sticky action; callers remain responsible for authorization and mutation.
    */
-  primaryAction?: ReactNode
+  primaryAction?: {
+    capabilityId: string
+    content: ReactNode
+  }
 }
 
 const lifecycleLabels: Record<RequestLifecycle, string> = {
@@ -252,8 +256,6 @@ function VisibilityAndStage({
           longer available.
         </div>
       ) : null}
-      <Assignments assignments={model.assignments} />
-      <Progress lifecycle={model.lifecycle} />
     </section>
   )
 }
@@ -263,7 +265,7 @@ function NextAction({
   primaryAction,
 }: {
   model: RequestCasePresentationModel
-  primaryAction?: ReactNode
+  primaryAction?: RequestCaseShellProps['primaryAction']
 }) {
   return (
     <section className={styles.nextActionSection} aria-labelledby="request-case-next-action">
@@ -287,7 +289,7 @@ function NextAction({
           className={styles.primaryAction}
           data-request-case-primary-action
         >
-          {primaryAction}
+          {primaryAction.content}
         </div>
       ) : null}
     </section>
@@ -506,6 +508,38 @@ export function RequestCaseShell({
   deliverySlot,
   primaryAction,
 }: RequestCaseShellProps) {
+  if (model.moderation === 'removed') {
+    return (
+      <article className={styles.caseShell} aria-labelledby="request-case-title">
+        <header className={styles.caseHeader}>
+          <p className={styles.overline}>Private Request a Build case</p>
+          <h1 id="request-case-title">Request unavailable</h1>
+        </header>
+        <section className={styles.dangerNotice} role="alert">
+          This case was removed for safety. Its brief, clarification, assignments,
+          delivery, and participant timeline are not available.
+        </section>
+        <section className={styles.panel} aria-labelledby="request-case-retention">
+          <h2 id="request-case-retention">Retention</h2>
+          <p>{model.retentionNotice}</p>
+        </section>
+      </article>
+    )
+  }
+
+  const heldAction = primaryAction &&
+    ['release_moderation_hold', 'remove_for_moderation'].includes(primaryAction.capabilityId)
+    ? primaryAction
+    : undefined
+  const visiblePrimaryAction = model.moderation === 'held' ? heldAction : primaryAction
+  const visibleDeliverySlot = model.moderation === 'held'
+    ? (
+        <div className={styles.warningNotice} role="status">
+          Delivery and review evidence are unavailable while this moderation hold is active.
+        </div>
+      )
+    : deliverySlot
+
   return (
     <article className={styles.caseShell} aria-labelledby="request-case-title">
       <header className={styles.caseHeader}>
@@ -516,20 +550,25 @@ export function RequestCaseShell({
       </header>
 
       {model.errorSummary ? (
-        <section
-          className={styles.errorSummary}
-          role="alert"
-          aria-labelledby="request-case-error-title"
-          tabIndex={-1}
-          data-request-case-error-summary
-        >
-          <h2 id="request-case-error-title">{model.errorSummary.title}</h2>
-          <ul>
-            {model.errorSummary.messages.map(message => (
-              <li key={message}>{message}</li>
-            ))}
-          </ul>
-        </section>
+        <>
+          <RequestCaseErrorFocus
+            focusKey={`${model.requestVersion}:${model.errorSummary.title}:${model.errorSummary.messages.join('|')}`}
+          />
+          <section
+            className={styles.errorSummary}
+            role="alert"
+            aria-labelledby="request-case-error-title"
+            tabIndex={-1}
+            data-request-case-error-summary
+          >
+            <h2 id="request-case-error-title">{model.errorSummary.title}</h2>
+            <ul>
+              {model.errorSummary.messages.map(message => (
+                <li key={message}>{message}</li>
+              ))}
+            </ul>
+          </section>
+        </>
       ) : null}
 
       {model.statusMessage ? (
@@ -541,13 +580,15 @@ export function RequestCaseShell({
       <div className={styles.caseGrid}>
         <aside className={styles.statusRail} aria-label="Case status and next action">
           <VisibilityAndStage model={model} />
-          <NextAction model={model} primaryAction={primaryAction} />
+          <NextAction model={model} primaryAction={visiblePrimaryAction} />
         </aside>
 
         <div className={styles.caseMain}>
           <FinishLine brief={model.brief} />
           <Clarification clarification={model.clarification} />
-          <Delivery>{deliverySlot}</Delivery>
+          <Delivery>{visibleDeliverySlot}</Delivery>
+          <Assignments assignments={model.assignments} />
+          <Progress lifecycle={model.lifecycle} />
           <History
             timeline={model.timeline}
             retentionNotice={model.retentionNotice}

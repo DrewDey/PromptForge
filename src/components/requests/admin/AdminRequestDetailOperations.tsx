@@ -21,14 +21,17 @@ const CLOSE_REASONS: readonly {
 function AuthorityFields({
   requestId,
   version,
+  idempotencyKey,
 }: {
   requestId: string
   version: number
+  idempotencyKey: string
 }) {
   return (
     <>
       <input type="hidden" name="requestId" value={requestId} />
       <input type="hidden" name="expectedVersion" value={version} />
+      <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
     </>
   )
 }
@@ -57,15 +60,19 @@ function ResolutionForms({
   action,
   requestId,
   version,
+  existingResolutionKey,
+  duplicateKey,
 }: {
   action: RequestFormAction
   requestId: string
   version: number
+  existingResolutionKey: string
+  duplicateKey: string
 }) {
   return (
     <div className={styles.detailStack}>
       <form action={action} className={styles.form}>
-        <AuthorityFields requestId={requestId} version={version} />
+        <AuthorityFields requestId={requestId} version={version} idempotencyKey={existingResolutionKey} />
         <input type="hidden" name="resolution" value="existing_resolution" />
         <fieldset>
           <legend>Validated existing PathForge resolution</legend>
@@ -103,7 +110,7 @@ function ResolutionForms({
         </button>
       </form>
       <form action={action} className={styles.form}>
-        <AuthorityFields requestId={requestId} version={version} />
+        <AuthorityFields requestId={requestId} version={version} idempotencyKey={duplicateKey} />
         <input type="hidden" name="resolution" value="duplicate" />
         <label>
           Duplicate note
@@ -124,14 +131,16 @@ function ClarificationForm({
   action,
   requestId,
   version,
+  idempotencyKey,
 }: {
   action: RequestFormAction
   requestId: string
   version: number
+  idempotencyKey: string
 }) {
   return (
     <form action={action} className={styles.form}>
-      <AuthorityFields requestId={requestId} version={version} />
+      <AuthorityFields requestId={requestId} version={version} idempotencyKey={idempotencyKey} />
       <label>
         Bounded clarification question
         <textarea
@@ -159,14 +168,16 @@ function AcceptAssignmentForm({
   action,
   requestId,
   version,
+  idempotencyKey,
 }: {
   action: RequestFormAction
   requestId: string
   version: number
+  idempotencyKey: string
 }) {
   return (
     <form action={action} className={styles.form}>
-      <AuthorityFields requestId={requestId} version={version} />
+      <AuthorityFields requestId={requestId} version={version} idempotencyKey={idempotencyKey} />
       <div className={styles.formGrid}>
         <label>
           Builder user identifier
@@ -192,14 +203,16 @@ function StartBuildForm({
   action,
   requestId,
   version,
+  idempotencyKey,
 }: {
   action: RequestFormAction
   requestId: string
   version: number
+  idempotencyKey: string
 }) {
   return (
     <form action={action} className={styles.form}>
-      <AuthorityFields requestId={requestId} version={version} />
+      <AuthorityFields requestId={requestId} version={version} idempotencyKey={idempotencyKey} />
       <input type="hidden" name="command" value="start_build" />
       <p className={styles.help}>
         Only the assigned builder can start work. Delivery submission and review handoff remain in the protected delivery slot.
@@ -216,15 +229,17 @@ function ReviewerAssignmentForm({
   requestId,
   version,
   builderUserId,
+  idempotencyKey,
 }: {
   action: RequestFormAction
   requestId: string
   version: number
   builderUserId?: string | null
+  idempotencyKey: string
 }) {
   return (
     <form action={action} className={styles.form}>
-      <AuthorityFields requestId={requestId} version={version} />
+      <AuthorityFields requestId={requestId} version={version} idempotencyKey={idempotencyKey} />
       <label>
         Independent reviewer user identifier
         <input
@@ -252,14 +267,16 @@ function ModerationForm({
   action,
   requestId,
   version,
+  idempotencyKey,
 }: {
   action: RequestFormAction
   requestId: string
   version: number
+  idempotencyKey: string
 }) {
   return (
     <form action={action} className={styles.form}>
-      <AuthorityFields requestId={requestId} version={version} />
+      <AuthorityFields requestId={requestId} version={version} idempotencyKey={idempotencyKey} />
       <label>
         Moderation state
         <select name="moderation" required defaultValue="">
@@ -286,14 +303,16 @@ function CloseForm({
   action,
   requestId,
   version,
+  idempotencyKey,
 }: {
   action: RequestFormAction
   requestId: string
   version: number
+  idempotencyKey: string
 }) {
   return (
     <form action={action} className={styles.form}>
-      <AuthorityFields requestId={requestId} version={version} />
+      <AuthorityFields requestId={requestId} version={version} idempotencyKey={idempotencyKey} />
       <label>
         Close reason
         <select name="closeReason" required defaultValue="">
@@ -395,6 +414,8 @@ export function AdminRequestDetailOperations({
               action={actions.resolveExistingPath}
               requestId={model.requestId}
               version={model.version}
+              existingResolutionKey={model.idempotencyKeys.existingResolution}
+              duplicateKey={model.idempotencyKeys.duplicate}
             />
           </OperationCard>
         ) : null}
@@ -409,6 +430,7 @@ export function AdminRequestDetailOperations({
               action={actions.requestClarification}
               requestId={model.requestId}
               version={model.version}
+              idempotencyKey={model.idempotencyKeys.clarification}
             />
           </OperationCard>
         ) : null}
@@ -422,6 +444,7 @@ export function AdminRequestDetailOperations({
               action={actions.acceptAndAssign}
               requestId={model.requestId}
               version={model.version}
+              idempotencyKey={model.idempotencyKeys.accept}
             />
           </OperationCard>
         ) : null}
@@ -436,6 +459,7 @@ export function AdminRequestDetailOperations({
               action={actions.startBuild}
               requestId={model.requestId}
               version={model.version}
+              idempotencyKey={model.idempotencyKeys.startBuild}
             />
           </OperationCard>
         ) : null}
@@ -450,6 +474,7 @@ export function AdminRequestDetailOperations({
               requestId={model.requestId}
               version={model.version}
               builderUserId={model.builderUserId}
+              idempotencyKey={model.idempotencyKeys.assignReviewer}
             />
           </OperationCard>
         ) : null}
@@ -463,6 +488,7 @@ export function AdminRequestDetailOperations({
               action={actions.moderate}
               requestId={model.requestId}
               version={model.version}
+              idempotencyKey={model.idempotencyKeys.moderation}
             />
           </OperationCard>
         ) : null}
@@ -476,6 +502,7 @@ export function AdminRequestDetailOperations({
               action={actions.close}
               requestId={model.requestId}
               version={model.version}
+              idempotencyKey={model.idempotencyKeys.close}
             />
           </OperationCard>
         ) : null}

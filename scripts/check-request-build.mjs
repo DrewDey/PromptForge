@@ -11,8 +11,33 @@ const models = readFileSync(FIXTURE_MODELS, 'utf8')
 
 assert.match(
   route,
-  /process\.env\.VERCEL_ENV === 'production'\) notFound\(\)/,
-  'Request fixture route must fail closed in production.',
+  /process\.env\.NODE_ENV === 'production'[\s\S]*process\.env\.VERCEL_ENV === 'production'[\s\S]*\) notFound\(\)/,
+  'Request fixture route must fail closed in every production runtime.',
+)
+
+assert.doesNotMatch(
+  models,
+  /actorRole !== 'system'/,
+  'Fixtures must not grant a generic action to every non-system actor.',
+)
+for (const exactCapability of [
+  'submit_clarification',
+  'withdraw',
+  'begin_triage',
+  'request_clarification',
+  'start_build',
+  'release_moderation_hold',
+]) {
+  assert.match(
+    models,
+    new RegExp(`['"]${exactCapability}['"]`),
+    `Fixture capability matrix must include ${exactCapability}.`,
+  )
+}
+assert.match(
+  models,
+  /PM 3 owns builder delivery, exact review, delivery open, and outcome actions/,
+  'Fixture capability matrix must leave custody and exact review actions to PM 3.',
 )
 
 for (const productionComponent of [

@@ -23,8 +23,7 @@ import type {
 } from '@/components/requests/intake'
 
 export const REQUEST_FIXTURE_TIME = '2026-07-29T16:30:00.000Z'
-export const REQUEST_FIXTURE_ID =
-  '10000000-0000-4000-8000-requestbuildfixture-with-a-long-wrapping-suffix'
+export const REQUEST_FIXTURE_ID = '10000000-0000-4000-8000-000000000001'
 
 export const REQUEST_LIFECYCLES = [
   'submitted',
@@ -227,7 +226,7 @@ export function intakeFixture(
       ...BASE_INTAKE_VALUES,
       pathforgeReference: {
         kind: 'project',
-        projectId: 'prepared-offline-checklist-project',
+        projectId: '20000000-0000-4000-8000-000000000001',
       },
     }
   } else if (state === 'response_reference') {
@@ -235,8 +234,8 @@ export function intakeFixture(
       ...BASE_INTAKE_VALUES,
       pathforgeReference: {
         kind: 'response',
-        projectId: 'prepared-offline-checklist-project',
-        modelVariantId: 'chatgpt-gpt-5-6-sol-max',
+        projectId: '20000000-0000-4000-8000-000000000001',
+        modelVariantId: '30000000-0000-4000-8000-000000000001',
         responseStepNumber: 3,
       },
     }
@@ -348,10 +347,35 @@ export function caseFixture(options: {
     'delivered',
     'completed',
   ].includes(lifecycle)
-  const canAct =
-    moderation === 'clear' &&
-    !['closed', 'completed'].includes(lifecycle) &&
-    actorRole !== 'system'
+  const capability = (() => {
+    if (moderation === 'removed') return null
+    if (moderation === 'held') {
+      return actorRole === 'system'
+        ? { id: 'release_moderation_hold', label: 'Release moderation hold' }
+        : null
+    }
+    if (actorRole === 'requester') {
+      if (lifecycle === 'clarification_requested') {
+        return { id: 'submit_clarification', label: 'Submit bounded clarification' }
+      }
+      if (['submitted', 'triage'].includes(lifecycle)) {
+        return { id: 'withdraw', label: 'Withdraw private request' }
+      }
+      return null
+    }
+    if (actorRole === 'triager') {
+      if (lifecycle === 'submitted') return { id: 'begin_triage', label: 'Begin triage' }
+      if (lifecycle === 'triage') {
+        return { id: 'request_clarification', label: 'Request bounded clarification' }
+      }
+      return null
+    }
+    if (actorRole === 'builder' && lifecycle === 'accepted') {
+      return { id: 'start_build', label: 'Start assigned build' }
+    }
+    // PM 3 owns builder delivery, exact review, delivery open, and outcome actions.
+    return null
+  })()
 
   return {
     requestLabel: `Private case ${REQUEST_FIXTURE_ID}`,
@@ -361,9 +385,7 @@ export function caseFixture(options: {
     publication: 'private',
     closeReason: lifecycle === 'closed' ? closeReason ?? 'declined' : null,
     actorRole,
-    capabilities: canAct
-      ? [{ id: `fixture-${actorRole}-action`, label: `Authority-derived ${actorRole} action` }]
-      : [],
+    capabilities: capability ? [capability] : [],
     nextAction: lifecycleNextAction(lifecycle, actorRole),
     brief: {
       outcome: BASE_INTAKE_VALUES.outcome,
@@ -378,7 +400,7 @@ export function caseFixture(options: {
         'Must work at exactly 390px without page overflow and remain keyboard operable with reduced motion.',
       pathforgeReference: {
         kind: 'project',
-        projectId: 'prepared-offline-checklist-project-with-a-long-wrapping-identifier',
+        projectId: '20000000-0000-4000-8000-000000000001',
         label: 'Offline checklist prepared project',
       },
     },
@@ -539,8 +561,8 @@ export function adminQueueFixture(
     rows: state === 'empty'
       ? []
       : REQUEST_LIFECYCLES.slice(0, 4).map((lifecycle, index) => ({
-          requestId: `${REQUEST_FIXTURE_ID}-${index}`,
-          detailHref: `/admin/build-requests/${REQUEST_FIXTURE_ID}-${index}`,
+          requestId: `10000000-0000-4000-8000-${String(index + 2).padStart(12, '0')}`,
+          detailHref: `/admin/build-requests/10000000-0000-4000-8000-${String(index + 2).padStart(12, '0')}`,
           version: index + 3,
           label: `Participant-safe ${lifecycle.replaceAll('_', ' ')} fixture`,
           lifecycle,
@@ -586,6 +608,16 @@ export function adminDetailFixture(
     reviewerLabel: reviewer ? 'Riley Reviewer' : null,
     reviewerUserId: reviewer ? 'fixture-reviewer-user' : null,
     targetDate: '2026-08-05T17:00:00.000Z',
+    idempotencyKeys: {
+      existingResolution: 'fixture-existing-resolution-00000001',
+      duplicate: 'fixture-duplicate-00000001',
+      clarification: 'fixture-clarification-00000001',
+      accept: 'fixture-accept-00000001',
+      startBuild: 'fixture-start-build-00000001',
+      assignReviewer: 'fixture-assign-reviewer-00000001',
+      moderation: 'fixture-moderation-00000001',
+      close: 'fixture-close-00000001',
+    },
     timeline: [
       {
         eventId: 'fixture-admin-event-1',

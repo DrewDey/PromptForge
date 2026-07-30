@@ -139,5 +139,15 @@ export interface RequestAdminDetailModel {
   reviewerLabel?: string | null
   reviewerUserId?: string | null
   targetDate?: string | null
+  idempotencyKeys: {
+    existingResolution: string
+    duplicate: string
+    clarification: string
+    accept: string
+    startBuild: string
+    assignReviewer: string
+    moderation: string
+    close: string
+  }
   timeline: readonly RequestAuditEvent[]
 }

@@ -235,6 +235,45 @@ assert.match(
   'Participant withdrawal must explain the terminal effect before submission.',
 )
 const adminQueuePage = readFileSync('src/app/admin/build-requests/page.tsx', 'utf8')
+const myForgePage = readFileSync('src/app/my-forge/page.tsx', 'utf8')
+const adminQueue = readFileSync(
+  'src/components/requests/admin/AdminRequestQueue.tsx',
+  'utf8',
+)
+const assignedWorkUnavailable = readFileSync(
+  'src/components/requests/my-forge/AssignedRequestWorkUnavailable.tsx',
+  'utf8',
+)
+assert.match(
+  myForgePage,
+  /assignedQueueUnavailable\s*=\s*[\s\S]{0,120}builder\.status === 'rejected' \|\| reviewer\.status === 'rejected'/,
+  'My Forge must distinguish a rejected assigned-work read from a fulfilled empty scope.',
+)
+assert.match(
+  myForgePage,
+  /assignedQueueUnavailable \? <AssignedRequestWorkUnavailable \/> : null/,
+  'My Forge must render one bounded assigned-work unavailable panel.',
+)
+assert.match(
+  assignedWorkUnavailable,
+  /Assigned Request work could not be verified[\s\S]*empty assigned queue is not being\s+claimed/,
+  'The assigned-work error must avoid a false empty or role conclusion.',
+)
+assert.match(
+  adminQueue,
+  /const headingId = `request-\$\{model\.scope\}-queue-heading`/,
+  'Each assigned queue must use a scope-specific heading ID.',
+)
+assert.match(
+  browserGuard,
+  /my-forge-assigned-builder-rejected[\s\S]*my-forge-assigned-reviewer-rejected[\s\S]*my-forge-assigned-dual-ready/,
+  'Browser fixtures must distinguish rejected and empty queues and cover dual assignments.',
+)
+assert.match(
+  browserGuard,
+  /duplicateIds[\s\S]*invalidAriaLabelledBy/,
+  'The browser guard must prove unique queue IDs and valid aria-labelledby references.',
+)
 for (const privateRoutePath of [
   'src/app/requests/new/page.tsx',
   'src/app/requests/[id]/page.tsx',

@@ -14,6 +14,7 @@ import {
 } from '@/components/requests/case'
 import { RequestIntakeForm } from '@/components/requests/intake'
 import { MyForgeRequestsList } from '@/components/requests/my-forge/MyForgeRequestsList'
+import { AssignedRequestWorkUnavailable } from '@/components/requests/my-forge/AssignedRequestWorkUnavailable'
 import {
   RequestServiceOverview,
   RequestSubmissionReceipt,
@@ -61,6 +62,7 @@ type FixtureSurface =
   | 'receipt'
   | 'case'
   | 'my-forge'
+  | 'my-forge-assigned'
   | 'admin-queue'
   | 'admin-detail'
   | 'analytics-transition'
@@ -178,6 +180,7 @@ export default async function RequestBuildFixturePage({
       'receipt',
       'case',
       'my-forge',
+      'my-forge-assigned',
       'admin-queue',
       'admin-detail',
       'analytics-transition',
@@ -353,6 +356,39 @@ export default async function RequestBuildFixturePage({
       <FixtureFrame surface={surface} state={state}>
         <div className="mx-auto max-w-[1180px]">
           <MyForgeRequestsList state={myForgeFixture(state)} />
+        </div>
+      </FixtureFrame>
+    )
+  }
+
+  if (surface === 'my-forge-assigned') {
+    const state = oneOf(
+      firstValue(query.state),
+      ['empty', 'builder_rejected', 'reviewer_rejected', 'dual_ready'] as const,
+      'empty',
+    )
+    const queueScopes: RequestQueueScope[] =
+      state === 'builder_rejected'
+        ? ['reviewer']
+        : state === 'reviewer_rejected'
+          ? ['builder']
+          : state === 'dual_ready'
+            ? ['builder', 'reviewer']
+            : []
+    return (
+      <FixtureFrame surface={surface} state={state}>
+        <div className="mx-auto max-w-[1180px]">
+          <MyForgeRequestsList state={myForgeFixture('ready')} />
+          {state === 'builder_rejected' || state === 'reviewer_rejected' ? (
+            <AssignedRequestWorkUnavailable
+              retryHref={`/qa/request-build?surface=my-forge-assigned&state=${state}`}
+            />
+          ) : null}
+          {queueScopes.map((scope) => (
+            <div className="mt-8" key={scope}>
+              <AdminRequestQueue model={adminQueueFixture('open', scope)} />
+            </div>
+          ))}
         </div>
       </FixtureFrame>
     )

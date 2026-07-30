@@ -80,13 +80,14 @@ function QueueSkeleton() {
 
 export function AdminRequestQueue({ model }: { model: RequestQueueModel }) {
   const heading = SCOPE_LABELS[model.scope]
+  const headingId = `request-${model.scope}-queue-heading`
 
   return (
-    <section className={styles.queue} aria-labelledby="request-queue-heading">
+    <section className={styles.queue} aria-labelledby={headingId}>
       <div className={styles.queueHeader}>
         <div>
           <p className={styles.eyebrow}>Private managed service</p>
-          <h2 id="request-queue-heading">{heading}</h2>
+          <h2 id={headingId}>{heading}</h2>
         </div>
         {model.state === 'ready' ? (
           <AvailabilityNotice availability={model.availability} />

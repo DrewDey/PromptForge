@@ -73,6 +73,12 @@ const STATE_PRESENTATION: Record<
     label: 'Delivery sealed',
     description: 'The exact private revision is sealed and waiting for an independent reviewer assignment.',
   },
+  sealed_ready: {
+    icon: FileCheck2,
+    tone: 'border-emerald-200 bg-emerald-50 text-emerald-950',
+    label: 'Ready to submit',
+    description: 'An independent reviewer is assigned. This exact sealed revision is ready to submit for review.',
+  },
   quarantined: {
     icon: ShieldAlert,
     tone: 'border-amber-300 bg-amber-50 text-amber-950',

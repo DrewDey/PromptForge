@@ -143,7 +143,7 @@ const expectedStates = {
   builderInitialNoWorkspace: 'none',
   builderPrepared: 'staging',
   builderPreparedResume: 'staging',
-  builderSealed: 'sealed_waiting',
+  builderSealed: 'sealed_ready',
   reviewerReviewPending: 'review_pending',
   repairRequired: 'repair_required',
   admin: 'none',
@@ -218,8 +218,16 @@ const sealedWaitingModel = toRequestDeliverySlotModel(
   sealedWaitingDetail.actor,
 )
 assert.equal(sealedWaitingModel.builderWorkspace?.revisionState, 'sealed')
+assert.equal(sealedWaitingModel.state, 'sealed_waiting')
 assert.equal(sealedWaitingModel.commands.submitKind, null)
 assert.equal(sealedWaitingModel.commands.canResumeRevision, false)
+const sealedReadyModel = toRequestDeliverySlotModel(
+  parsedFixtures.builderSealed,
+  parsedFixtures.builderSealed.actor,
+)
+assert.equal(sealedReadyModel.state, 'sealed_ready')
+assert.equal(sealedReadyModel.commands.submitKind, 'submit_delivery')
+assert.equal(sealedReadyModel.commands.canResumeRevision, true)
 assert.equal(
   toRequestDeliverySlotModel(
     parsedFixtures.builderInitialNoWorkspace,

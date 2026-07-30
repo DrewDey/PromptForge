@@ -152,12 +152,18 @@ function deliveryFixture(
     && actorRole === 'builder'
     && lifecycle === 'building'
   )
+  const builderReady = (
+    state === 'sealed_ready'
+    && actorRole === 'builder'
+    && lifecycle === 'building'
+  )
   const builderStaging = (
     actorRole === 'builder'
     && lifecycle === 'building'
     && !builderWaiting
+    && !builderReady
   )
-  const artifacts = hasRevision || builderStaging || builderWaiting
+  const artifacts = hasRevision || builderStaging || builderWaiting || builderReady
     ? [{
         artifactId: '10000000-0000-4000-8000-000000000012',
         artifactOrdinal: 1,
@@ -192,6 +198,8 @@ function deliveryFixture(
       ? 'staging'
       : state === 'sealed_waiting'
         ? 'sealed_waiting'
+      : state === 'sealed_ready'
+        ? 'sealed_ready'
       : state === 'not_ready'
         ? 'none'
         : state === 'repair'
@@ -257,13 +265,13 @@ function deliveryFixture(
       : state === 'missing'
         ? 'The recorded delivery object is unavailable.'
         : null,
-    builderWorkspace: builderStaging || builderWaiting
+    builderWorkspace: builderStaging || builderWaiting || builderReady
       ? {
           deliveryRevisionId: '10000000-0000-4000-8000-000000000013',
-          revisionState: builderWaiting ? 'sealed' : 'staging',
-          revisionLabel: builderWaiting ? 'Initial delivery' : null,
-          summary: builderWaiting ? 'A static offline checklist.' : null,
-          evidence: builderWaiting
+          revisionState: builderWaiting || builderReady ? 'sealed' : 'staging',
+          revisionLabel: builderWaiting || builderReady ? 'Initial delivery' : null,
+          summary: builderWaiting || builderReady ? 'A static offline checklist.' : null,
+          evidence: builderWaiting || builderReady
             ? [{
                 acceptanceCheckId: acceptanceChecks[0].id,
                 label: acceptanceChecks[0].label,
@@ -273,15 +281,15 @@ function deliveryFixture(
               }]
             : [],
           artifacts,
-          hasSealReceipt: builderWaiting,
+          hasSealReceipt: builderWaiting || builderReady,
         }
       : null,
     commands: {
       canStageArtifact: builderStaging,
       canAbandonArtifact: builderStaging,
       canPrepareRevision: builderStaging,
-      canResumeRevision: false,
-      submitKind: null,
+      canResumeRevision: builderReady,
+      submitKind: builderReady ? 'submit_delivery' : null,
       canReview: actorRole === 'reviewer' && lifecycle === 'review_pending',
       canRequestRepair: actorRole === 'reviewer' && lifecycle === 'review_pending',
       canAcknowledge: actorRole === 'requester' && lifecycle === 'delivery_ready',
@@ -430,16 +438,35 @@ export default async function RequestBuildFixturePage({
             ? 'delivered'
             : 'not_ready',
     ) as RequestDeliveryFixtureState
-    const model = caseFixture({
+    const baseModel = caseFixture({
       lifecycle,
       actorRole,
       moderation,
       closeReason,
       errorState,
     })
-    const primaryCapabilityId = firstValue(query.primary) === 'mismatched'
-      ? 'approve_delivery'
-      : model.capabilities[0]?.id
+    const model = (
+      deliveryState === 'sealed_ready'
+      && baseModel.visibility === 'full'
+    )
+      ? {
+          ...baseModel,
+          capabilities: [{
+            id: 'submit_delivery',
+            label: 'Submit sealed delivery for independent review',
+          }],
+          nextAction: {
+            title: 'Submit the sealed revision',
+            description:
+              'An independent reviewer is assigned and the exact sealed revision is ready for submission.',
+          },
+        }
+      : baseModel
+    const primaryCapabilityId = deliveryState === 'sealed_ready'
+      ? undefined
+      : firstValue(query.primary) === 'mismatched'
+        ? 'approve_delivery'
+        : model.capabilities[0]?.id
     const state = [
       lifecycle,
       actorRole,

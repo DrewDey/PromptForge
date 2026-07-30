@@ -543,8 +543,37 @@ export function RequestCaseShell({
         <div className={styles.warningNotice} role="status">
           Delivery and review evidence are unavailable while this moderation hold is active.
         </div>
-      )
+    )
     : deliverySlot
+
+  if (model.moderation === 'held') {
+    return (
+      <article className={styles.caseShell} aria-labelledby="request-case-title">
+        <header className={styles.caseHeader}>
+          <p className={styles.overline}>Private Request a Build case</p>
+          <h1 id="request-case-title" className={styles.breakable}>
+            {model.requestLabel}
+          </h1>
+        </header>
+        <div className={styles.caseGrid}>
+          <aside className={styles.statusRail} aria-label="Held case status and next action">
+            <VisibilityAndStage model={model} />
+            <NextAction model={model} primaryAction={visiblePrimaryAction} />
+          </aside>
+          <div className={styles.caseMain}>
+            <section className={styles.warningNotice} role="status">
+              This restricted view does not expose the brief, clarification,
+              assignments, or delivery while moderation hold authority is active.
+            </section>
+            <History
+              timeline={model.timeline}
+              retentionNotice={model.retentionNotice}
+            />
+          </div>
+        </div>
+      </article>
+    )
+  }
 
   return (
     <article className={styles.caseShell} aria-labelledby="request-case-title">

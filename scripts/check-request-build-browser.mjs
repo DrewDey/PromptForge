@@ -127,7 +127,10 @@ const SCENARIOS = [
   ...MODERATION.slice(1).map((moderation) => scenario(
     `case-moderation-${moderation}`,
     { surface: 'case', lifecycle: 'building', moderation },
-    { caseOrder: true },
+    {
+      caseOrder: moderation !== 'held' && moderation !== 'removed',
+      restrictedCase: moderation === 'held' || moderation === 'removed',
+    },
   )),
   scenario(
     'case-action-mismatched',
@@ -136,19 +139,19 @@ const SCENARIOS = [
   ),
   scenario(
     'case-held-authorized-action',
-    { surface: 'case', lifecycle: 'building', actor: 'system', moderation: 'held' },
-    { caseOrder: true, expectedPrimaryCount: 1 },
+    { surface: 'case', lifecycle: 'building', actor: 'triager', moderation: 'held' },
+    { expectedPrimaryCount: 1, restrictedCase: true },
   ),
   scenario(
     'case-held-mismatched-action',
     {
       surface: 'case',
       lifecycle: 'building',
-      actor: 'system',
+      actor: 'triager',
       moderation: 'held',
       primary: 'mismatched',
     },
-    { caseOrder: true, expectedPrimaryCount: 0 },
+    { expectedPrimaryCount: 0, restrictedCase: true },
   ),
   ...CLOSE_REASONS.map((closeReason) => scenario(
     `case-close-${closeReason}`,
@@ -370,6 +373,17 @@ const PAGE_SNAPSHOT = `(() => {
       };
     });
   const fixtureStyle=fixture ? getComputedStyle(fixture) : null;
+  const caseSectionIds=[
+    'request-case-status',
+    'request-case-next-action',
+    'request-case-finish-line',
+    'request-case-clarification',
+    'request-case-delivery',
+    'request-case-assignments',
+    'request-case-progress',
+    'request-case-history',
+    'request-case-retention',
+  ];
   return {
     viewportWidth,
     viewportHeight:root.clientHeight,
@@ -383,6 +397,9 @@ const PAGE_SNAPSHOT = `(() => {
     tooSmall,
     stickyActionCount:stickyActions.length,
     primaryActionDetails,
+    caseSections:Object.fromEntries(
+      caseSectionIds.map((id)=>[id,Boolean(fixture?.querySelector('#'+id))])
+    ),
     reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches,
     fixtureTransition:fixtureStyle?.transitionDuration || '',
   };
@@ -596,6 +613,30 @@ async function verifyViewport(client, options, viewport) {
         throw new Error(
           `${label} rendered ${snapshot.primaryActionDetails.length} primary actions; expected ${scenarioItem.expectedPrimaryCount}: ${JSON.stringify(snapshot.primaryActionDetails)}.`,
         )
+      }
+      if (scenarioItem.restrictedCase) {
+        const forbiddenRestrictedSections = [
+          'request-case-finish-line',
+          'request-case-clarification',
+          'request-case-delivery',
+          'request-case-assignments',
+          'request-case-progress',
+        ].filter((id) => snapshot.caseSections[id])
+        if (forbiddenRestrictedSections.length > 0) {
+          throw new Error(
+            `${label} exposed restricted case sections: ${forbiddenRestrictedSections.join(', ')}.`,
+          )
+        }
+        if (isHeldCase && (
+          !snapshot.caseSections['request-case-status'] ||
+          !snapshot.caseSections['request-case-next-action'] ||
+          !snapshot.caseSections['request-case-history']
+        )) {
+          throw new Error(`${label} omitted required held-case status, action, or safe history.`)
+        }
+        if (isRemovedCase && !snapshot.caseSections['request-case-retention']) {
+          throw new Error(`${label} omitted the minimum removed-case retention status.`)
+        }
       }
       if (scenarioItem.expectFocusedAlert) {
         const focus = await waitForValue(

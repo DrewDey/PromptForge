@@ -124,6 +124,12 @@ export function createDeliverySupabaseStorage(
       }
     },
 
+    async remove(key: string) {
+      const safeKey = requirePrivateObjectKey(key)
+      const { error } = await bucket.remove([safeKey])
+      if (error && !isMissingObject(error)) throw error
+    },
+
     async list(prefix: string) {
       const safePrefix = requirePrivateObjectKey(`${prefix.replace(/\/+$/, '')}/placeholder`)
         .slice(0, -'/placeholder'.length)

@@ -9,6 +9,7 @@ export type DeliveryUploadRequestErrorCode =
   | 'invalid_content_type'
   | 'invalid_content_length'
   | 'request_too_large'
+  | 'invalid_form_fields'
   | 'invalid_file_count'
   | 'invalid_file_size'
 

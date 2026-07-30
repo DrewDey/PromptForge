@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import ts from 'typescript'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const read = (relativePath) => fs.readFileSync(path.join(root, relativePath), 'utf8')
@@ -26,6 +27,39 @@ const activationValidation = read(activationValidationPath)
 const analyticsMigration = read(analyticsMigrationPath)
 const rootLayout = read('src/app/layout.tsx')
 const packageJson = JSON.parse(read('package.json'))
+
+const contractRuntime = ts.transpileModule(
+  activationContract,
+  { compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 } },
+).outputText
+const contractRuntimeUrl = `data:text/javascript;base64,${Buffer.from(contractRuntime).toString('base64')}`
+const validationRuntime = ts.transpileModule(
+  activationValidation,
+  { compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 } },
+).outputText.replace("from './contract'", `from '${contractRuntimeUrl}'`)
+const validationRuntimeUrl = `data:text/javascript;base64,${Buffer.from(validationRuntime).toString('base64')}`
+const { validateActivationEventPayload } = await import(validationRuntimeUrl)
+
+const notAdmittedPayload = {
+  eventId: '10000000-0000-4000-8000-000000000001',
+  eventName: 'intake_failed',
+  path: '/requests/new',
+  surface: 'requests',
+  action: 'not_admitted',
+  schemaVersion: 1,
+}
+try {
+  validateActivationEventPayload(notAdmittedPayload)
+} catch (error) {
+  failures.push(`real validator rejected not_admitted: ${error instanceof Error ? error.message : 'unknown'}`)
+}
+try {
+  validateActivationEventPayload({
+    ...notAdmittedPayload,
+    projectId: 'private-request-identifier',
+  })
+  failures.push('real validator accepted a private identifier on not_admitted')
+} catch {}
 
 for (const eventName of [
   'intake_started',

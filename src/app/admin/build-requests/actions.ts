@@ -22,38 +22,54 @@ function bool(formData: FormData, name: string) {
 }
 
 export async function updateRequestControlsAction(formData: FormData) {
-  const service = await getRequestApplicationService()
-  await service.updateControls({
-    expectedControlsVersion: Number(text(formData, 'expectedControlsVersion')),
-    idempotencyKey: text(formData, 'idempotencyKey'),
-    acceptingRequests: bool(formData, 'acceptingRequests'),
-    assigningRequests: bool(formData, 'assigningRequests'),
-    activeCaseCapacity: Number(text(formData, 'activeCaseCapacity')),
-  })
+  try {
+    const service = await getRequestApplicationService()
+    await service.updateControls({
+      expectedControlsVersion: Number(text(formData, 'expectedControlsVersion')),
+      idempotencyKey: text(formData, 'idempotencyKey'),
+      acceptingRequests: bool(formData, 'acceptingRequests'),
+      assigningRequests: bool(formData, 'assigningRequests'),
+      activeCaseCapacity: Number(text(formData, 'activeCaseCapacity')),
+    })
+  } catch (error) {
+    const code = requestAuthorityErrorCode(error)
+    const safeCode = code === 'stale_version' || code === 'rate_limited'
+      ? code
+      : 'unavailable'
+    redirect(`/admin/build-requests?scope=admin&actionError=${safeCode}`)
+  }
   revalidatePath('/requests')
   revalidatePath('/admin/build-requests')
 }
 
 export async function updatePilotAdmissionAction(formData: FormData) {
-  const service = await getRequestApplicationService()
-  const accountId = text(formData, 'accountId')
-  const candidates = await service.listPilotAdmissionCandidates({ limit: 50 })
-  const candidate = candidates.items.find((item) => item.accountId === accountId)
-  if (!candidate) throw new Error('The selected pilot candidate is no longer eligible.')
-  const base = {
-    accountId,
-    expectedAdmissionVersion: candidate.admissionVersion,
-    idempotencyKey: `request-admission-${accountId}-v${candidate.admissionVersion}`,
-    reason: text(formData, 'reason'),
-  }
-  if (text(formData, 'admissionAction') === 'invite') {
-    const rawExpiry = text(formData, 'expiresAt')
-    await service.inviteRequestPilotParticipant({
-      ...base,
-      expiresAt: rawExpiry ? new Date(rawExpiry).toISOString() : null,
-    })
-  } else {
-    await service.revokeRequestPilotParticipant(base)
+  try {
+    const service = await getRequestApplicationService()
+    const accountId = text(formData, 'accountId')
+    const candidates = await service.listPilotAdmissionCandidates({ limit: 50 })
+    const candidate = candidates.items.find((item) => item.accountId === accountId)
+    if (!candidate) redirect('/admin/build-requests?scope=admin&actionError=stale_version')
+    const base = {
+      accountId,
+      expectedAdmissionVersion: candidate.admissionVersion,
+      idempotencyKey: `request-admission-${accountId}-v${candidate.admissionVersion}`,
+      reason: text(formData, 'reason'),
+    }
+    if (text(formData, 'admissionAction') === 'invite') {
+      const rawExpiry = text(formData, 'expiresAt')
+      await service.inviteRequestPilotParticipant({
+        ...base,
+        expiresAt: rawExpiry ? new Date(rawExpiry).toISOString() : null,
+      })
+    } else {
+      await service.revokeRequestPilotParticipant(base)
+    }
+  } catch (error) {
+    const code = requestAuthorityErrorCode(error)
+    const safeCode = code === 'stale_version' || code === 'rate_limited'
+      ? code
+      : 'unavailable'
+    redirect(`/admin/build-requests?scope=admin&actionError=${safeCode}`)
   }
   revalidatePath('/requests')
   revalidatePath('/admin/build-requests')

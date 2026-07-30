@@ -5,7 +5,10 @@ import {
   type DeliveryCustodyScope,
 } from './delivery-custody-contract'
 
-const AUTHORITY_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+const AUTHORITY_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+// PM1 creates the final path segment with PostgreSQL gen_random_uuid(), which
+// is a version 4 UUID. It is not an actor-supplied authority identifier.
+const SERVER_OBJECT_NONCE = '[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
 
 export function assertDeliveryAuthorityId(value: string) {
   if (typeof value !== 'string' || !AUTHORITY_ID.test(value)) {
@@ -37,9 +40,8 @@ export function buildDeliveryObjectKeys(input: {
 }) {
   const scope = normalizeDeliveryCustodyScope(input.scope)
   const artifactId = assertDeliveryAuthorityId(input.artifactId)
-  const randomIdentity = '[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
   const expectedIdentity = new RegExp(
-    `^requests/${scope.requestId}/deliveries/${scope.deliveryRevisionId}/artifacts/${artifactId}/${randomIdentity}$`,
+    `^requests/${scope.requestId}/deliveries/${scope.deliveryRevisionId}/artifacts/${artifactId}/${SERVER_OBJECT_NONCE}$`,
     'i',
   )
   if (!expectedIdentity.test(input.stagingIdentity)) {

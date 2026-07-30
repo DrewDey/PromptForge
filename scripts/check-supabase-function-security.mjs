@@ -237,8 +237,6 @@ requireText(
 )
 
 for (const [file, signature] of [
-  ['supabase/build-requests.sql', 'touch_build_request_on_response()'],
-  ['supabase/build-requests.sql', 'update_build_request_vote_count()'],
   ['supabase/prompt-engagement.sql', 'update_prompt_bookmark_count()'],
   ['supabase/prompt-engagement.sql', 'update_prompt_vote_count()'],
   ['supabase/suggestion-box.sql', 'update_suggestion_vote_count()'],

@@ -69,7 +69,7 @@ function verifiedEmissionKey(
     && state.error === null
     && state.outcome === outcome
     && state.emissionKey !== null
-    && /^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$/.test(state.emissionKey)
+    && /^delivery-outcome-event:[A-Za-z0-9_-]{32}$/.test(state.emissionKey)
   ) ? state.emissionKey : null
 }
 

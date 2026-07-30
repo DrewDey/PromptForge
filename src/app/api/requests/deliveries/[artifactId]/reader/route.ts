@@ -24,3 +24,16 @@ export async function GET(request: Request, context: ReaderRouteContext) {
     disposition,
   })
 }
+
+/**
+ * Explicit interaction preflight. This intentionally executes the same
+ * participant, service-object, byte, and post-read authorization as GET, then
+ * omits the body. It is not a weaker metadata-only authority check.
+ */
+export async function HEAD(request: Request, context: ReaderRouteContext) {
+  const response = await GET(request, context)
+  return new Response(null, {
+    status: response.status,
+    headers: response.headers,
+  })
+}

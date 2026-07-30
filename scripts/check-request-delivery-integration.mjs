@@ -113,6 +113,7 @@ const {
 } = deliveryReaderAdapter
 const {
   GET: getRequestDeliveryArtifact,
+  HEAD: headRequestDeliveryArtifact,
 } = deliveryReaderRoute
 const { validateRequestCommandV1 } = requestLifecycle
 const {
@@ -886,6 +887,16 @@ assert.deepEqual(
   new Uint8Array(await adapterDownload.arrayBuffer()),
   adapterReaderBytes,
 )
+const adapterHead = await headRequestDeliveryArtifact(
+  new Request(
+    `https://pathforge.test/api/requests/deliveries/${fixtureIds.artifact}/reader`,
+    { method: 'HEAD' },
+  ),
+  { params: Promise.resolve({ artifactId: fixtureIds.artifact }) },
+)
+assert.equal(adapterHead.status, 200)
+assert.match(adapterHead.headers.get('Content-Disposition') ?? '', /^inline;/)
+assert.equal((await adapterHead.arrayBuffer()).byteLength, 0)
 
 adapterParticipantResult = { status: 'unavailable', reason: 'not_found' }
 const unavailableObjectCalls = adapterObjectCalls
@@ -1476,6 +1487,20 @@ for (const field of ['submitted', 'error', 'replayed', 'outcome', 'emissionKey']
 }
 assert.match(sourceFiles.outcomeForms, /outcome:\s*'helpful'/)
 assert.match(sourceFiles.outcomeForms, /outcome:\s*'not_helpful'/)
+assert.match(
+  sourceFiles.outcomeForms,
+  /\^delivery-outcome-event:\[A-Za-z0-9_-\]\{32\}\$/,
+)
+assert.equal(
+  /^delivery-outcome-event:[A-Za-z0-9_-]{32}$/.test(fixtureIds.request),
+  false,
+  'a request UUID cannot be used as an identifier-free receipt emission key',
+)
+assert.equal(
+  /^delivery-outcome-event:[A-Za-z0-9_-]{32}$/.test('a'.repeat(64)),
+  false,
+  'a manifest digest cannot be used as an identifier-free receipt emission key',
+)
 assert.doesNotMatch(
   sourceFiles.outcomeForms,
   /(?:manifestDigest|objectIdentity|stagingIdentity|acceptedBriefRevisionId|activeBuilderAssignmentId)/,
@@ -1492,6 +1517,13 @@ assert.match(
 assert.match(sourceFiles.artifactInteractions, /\{preview\.readerPath\s*\?\s*\(\s*<iframe/)
 assert.doesNotMatch(sourceFiles.slot, /<iframe/)
 assert.match(sourceFiles.artifactInteractions, /event:\s*'delivery_opened'/)
+assert.match(sourceFiles.artifactInteractions, /method:\s*'HEAD'/)
+assert.match(sourceFiles.artifactInteractions, /return response\.ok/)
+assert.doesNotMatch(
+  sourceFiles.artifactInteractions,
+  /onClick=\{\(\)\s*=>\s*emitInteraction/,
+)
+assert.match(sourceFiles.artifactInteractions, /onLoad=\{recordLoadedPreview\}/)
 assert.doesNotMatch(
   sourceFiles.artifactInteractions,
   /(?:requestId|artifactId|deliveryRevisionId|manifestDigest|objectIdentity)/,

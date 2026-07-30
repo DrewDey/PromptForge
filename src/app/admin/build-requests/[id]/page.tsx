@@ -149,8 +149,11 @@ export default async function BuildRequestAdminDetailPage({
           },
         }
       : caseModel
-    const heldPrimaryAction = detail.visibility === 'held'
+    const canReleaseHold = detail.visibility === 'held'
       && detail.actor.capabilities.includes('release_moderation_hold')
+    const canRemoveHeldCase = detail.visibility === 'held'
+      && detail.actor.capabilities.includes('remove_for_moderation')
+    const heldPrimaryAction = canReleaseHold
       ? {
           capabilityId: 'release_moderation_hold',
           content: (
@@ -159,8 +162,7 @@ export default async function BuildRequestAdminDetailPage({
             </a>
           ),
         }
-      : detail.visibility === 'held'
-        && detail.actor.capabilities.includes('remove_for_moderation')
+      : canRemoveHeldCase
         ? {
             capabilityId: 'remove_for_moderation',
             content: (
@@ -170,22 +172,23 @@ export default async function BuildRequestAdminDetailPage({
             ),
           }
         : undefined
-    const heldRestrictedAction = detail.visibility === 'held'
-      && detail.actor.capabilities.includes('release_moderation_hold')
+    const heldRestrictedAction = canReleaseHold || canRemoveHeldCase
       ? (
-          <HeldReleaseForm
-            requestId={detail.requestId}
-            requestVersion={detail.requestVersion}
-          />
+          <div className="space-y-6">
+            {canReleaseHold ? (
+              <HeldReleaseForm
+                requestId={detail.requestId}
+                requestVersion={detail.requestVersion}
+              />
+            ) : null}
+            {canRemoveHeldCase ? (
+              <HeldRemovalForm
+                requestId={detail.requestId}
+                requestVersion={detail.requestVersion}
+              />
+            ) : null}
+          </div>
         )
-      : detail.visibility === 'held'
-        && detail.actor.capabilities.includes('remove_for_moderation')
-        ? (
-            <HeldRemovalForm
-              requestId={detail.requestId}
-              requestVersion={detail.requestVersion}
-            />
-          )
         : undefined
     return (
       <main>

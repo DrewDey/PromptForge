@@ -558,6 +558,9 @@ const PAGE_SNAPSHOT = `(() => {
       '[data-request-case-primary-action] a[href="#request-case-held-operation"]'
     ).length || 0,
     heldOperationCount:fixture?.querySelectorAll('#request-case-held-operation').length || 0,
+    heldOperationFormCount:fixture?.querySelectorAll(
+      '#request-case-held-operation form'
+    ).length || 0,
     secondaryActionCount:fixture?.querySelectorAll(
       '[data-request-case-secondary-action]'
     ).length || 0,
@@ -950,11 +953,14 @@ async function verifyViewport(client, options, viewport) {
         (
           !snapshot.fixtureText.includes('Hold resolution') ||
           !snapshot.fixtureText.includes('Release moderation hold') ||
+          !snapshot.fixtureText.includes('Removal reason') ||
+          !snapshot.fixtureText.includes('Remove case for moderation') ||
           !snapshot.fixtureText.includes('Resolve the moderation hold') ||
           snapshot.fixtureText.includes('Wait for the next service update') ||
           snapshot.primaryActionDetails.length !== 1 ||
           snapshot.heldStickyAnchorCount !== 1 ||
           snapshot.heldOperationCount !== 1 ||
+          snapshot.heldOperationFormCount !== 2 ||
           snapshot.stickyFormCount !== 0 ||
           (
             viewport.mobile &&

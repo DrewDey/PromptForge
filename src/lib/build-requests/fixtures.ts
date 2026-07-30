@@ -429,7 +429,14 @@ export function caseFixture(options: {
       publication: 'private',
       closeReason: lifecycle === 'closed' ? closeReason ?? 'declined' : null,
       actorRole,
-      capabilities: capability ? [capability] : [],
+      capabilities: [
+        ...(capability ? [capability] : []),
+        ...(
+          moderation === 'held' && actorRole === 'triager'
+            ? [{ id: 'remove_for_moderation', label: 'Remove case for moderation' }]
+            : []
+        ),
+      ],
       nextAction: lifecycleNextAction(lifecycle, actorRole),
       timeline: [{
         id: 'event-fixture-restricted',

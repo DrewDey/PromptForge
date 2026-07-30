@@ -328,8 +328,8 @@ assert.match(
 )
 assert.match(
   adminDetailPage,
-  /capabilities\.includes\('remove_for_moderation'\)[\s\S]*HeldRemovalForm/,
-  'Held operator detail must preserve fail-closed removal fallback.',
+  /const canReleaseHold[\s\S]*const canRemoveHeldCase[\s\S]*canReleaseHold \|\| canRemoveHeldCase[\s\S]*canReleaseHold \?[\s\S]*HeldReleaseForm[\s\S]*canRemoveHeldCase \?[\s\S]*HeldRemovalForm/,
+  'Held operator detail must render every exact authority-projected hold operation in one restricted area.',
 )
 assert.match(
   deliverySlot,

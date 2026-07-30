@@ -124,6 +124,11 @@ const SCENARIOS = [
     expectFocusedAlert: ['errors', 'unavailable', 'not_admitted', 'already_active', 'expired_session', 'hostile_error', 'rate_limited', 'duplicate', 'stale_version', 'forbidden_input'].includes(state),
     screenshot: state === 'errors',
   })),
+  scenario(
+    'my-forge-empty-cta',
+    { surface: 'my-forge', state: 'empty' },
+    { myForgeEmptyCta: true },
+  ),
   ...['recorded', 'replayed'].map((state) => scenario(`receipt-${state}`, { surface: 'receipt', state })),
   ...LIFECYCLES.map((lifecycle) => scenario(
     `case-lifecycle-${lifecycle}`,
@@ -413,6 +418,10 @@ const PAGE_SNAPSHOT = `(() => {
     proofLabel:Boolean(fixture?.querySelector('[data-fixture-proof-label]')),
     fixtureText:(fixture?.innerText || '').replace(/\\s+/g,' ').trim(),
     deliveryPlaceholders:fixture?.querySelectorAll('[data-request-delivery-placeholder]').length || 0,
+    myForgeNewRequestLabels:[...fixture.querySelectorAll('[data-my-forge-new-request]')]
+      .map((element)=>(element.textContent || '').replace(/→/g,'').replace(/\\s+/g,' ').trim()),
+    myForgeNewRequestArrows:fixture?.querySelectorAll('[data-my-forge-new-request-arrow]').length || 0,
+    myForgeNewRequestSvgs:fixture?.querySelectorAll('[data-my-forge-new-request] svg').length || 0,
     tooSmall,
     stickyActionCount:stickyActions.length,
     primaryActionDetails,
@@ -696,6 +705,19 @@ async function verifyViewport(client, options, viewport) {
       }
       if (scenarioItem.analyticsTransition) {
         await assertAnalyticsTransition(client, sessionId, label)
+      }
+      if (scenarioItem.myForgeEmptyCta && (
+        JSON.stringify(snapshot.myForgeNewRequestLabels) !== JSON.stringify(['Request a build']) ||
+        snapshot.myForgeNewRequestArrows !== 1 ||
+        snapshot.myForgeNewRequestSvgs !== 0
+      )) {
+        throw new Error(
+          `${label} duplicated its Request a build label/icon: ${JSON.stringify({
+            labels: snapshot.myForgeNewRequestLabels,
+            arrows: snapshot.myForgeNewRequestArrows,
+            svgs: snapshot.myForgeNewRequestSvgs,
+          })}.`,
+        )
       }
       await assertAccessibilityTree(client, sessionId, label)
       if (scenarioItem.screenshot) {

@@ -29,6 +29,15 @@ function text(formData: FormData, name: string) {
 
 function valuesFromForm(formData: FormData): RequestIntakeValues {
   const referenceKind = text(formData, 'referenceKind')
+  if (
+    referenceKind !== '' &&
+    referenceKind !== 'project' &&
+    referenceKind !== 'response'
+  ) {
+    throw new RequestContractError(
+      'PathForge reference type must be empty, project, or response.',
+    )
+  }
   let pathforgeReference: PathForgeRequestReference | undefined
   if (referenceKind === 'project') {
     pathforgeReference = {
@@ -68,10 +77,18 @@ export const submitRequestAction: RequestIntakeWorkflowAction = async (
   previousState,
   formData,
 ) => {
-  let values = valuesFromForm(formData)
+  let values: RequestIntakeValues = {
+    title: text(formData, 'title'),
+    outcome: text(formData, 'outcome'),
+    intendedUser: text(formData, 'intendedUser'),
+    mustWorkScenario: text(formData, 'mustWorkScenario'),
+    acceptanceChecks: [],
+    constraints: text(formData, 'constraints'),
+  }
   const idempotencyKey = text(formData, 'idempotencyKey')
   const analyticsAttempt = previousState.analyticsAttempt + 1
   try {
+    values = valuesFromForm(formData)
     const acceptanceChecks = readRequestIntakeAcceptanceChecks(formData)
     values = { ...values, acceptanceChecks: [...acceptanceChecks] }
     const viewer = await getRequestViewerState()

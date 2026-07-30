@@ -62,6 +62,7 @@ const calls = {
   candidates: 0,
   invite: 0,
   revoke: 0,
+  execute: 0,
 }
 globalThis.__pilotAdmissionServiceFactoryCalls = 0
 globalThis.__pilotAdmissionService = {
@@ -75,11 +76,21 @@ globalThis.__pilotAdmissionService = {
   async revokeRequestPilotParticipant() {
     calls.revoke += 1
   },
+  async executeCommand() {
+    calls.execute += 1
+  },
 }
 
-const { updatePilotAdmissionAction } = await import(pathToFileURL(path.join(
+const {
+  adminRequestCommandAction,
+  updatePilotAdmissionAction,
+} = await import(pathToFileURL(path.join(
   src,
   'app/admin/build-requests/actions.ts',
+)).href)
+const { requestCaseCommandAction } = await import(pathToFileURL(path.join(
+  src,
+  'app/requests/[id]/actions.ts',
 )).href)
 
 for (const [label, admissionAction] of [
@@ -109,10 +120,89 @@ assert.equal(
 )
 assert.deepEqual(
   calls,
-  { candidates: 0, invite: 0, revoke: 0 },
+  { candidates: 0, invite: 0, revoke: 0, execute: 0 },
   'Missing or hostile admission discriminants must call no admission RPC.',
 )
 
+const staleCandidateForm = new FormData()
+staleCandidateForm.set(
+  'accountId',
+  '10000000-0000-4000-a000-000000000001',
+)
+staleCandidateForm.set('admissionAction', 'invite')
+staleCandidateForm.set('reason', 'Bounded pilot admission reason.')
+let staleDestination = null
+try {
+  await updatePilotAdmissionAction(staleCandidateForm)
+} catch (error) {
+  staleDestination = error?.destination ?? null
+}
+assert.equal(
+  staleDestination,
+  '/admin/build-requests?scope=admin&actionError=stale_version',
+  'A missing eligible candidate must preserve the truthful stale-version branch.',
+)
+assert.equal(globalThis.__pilotAdmissionServiceFactoryCalls, 1)
+assert.deepEqual(
+  calls,
+  { candidates: 1, invite: 0, revoke: 0, execute: 0 },
+  'A stale candidate may be re-read but must call neither admission mutation.',
+)
+
+const requestId = '10000000-0000-4000-a000-000000000010'
+const invalidParticipantForm = new FormData()
+invalidParticipantForm.set('requestId', requestId)
+invalidParticipantForm.set('expectedVersion', '3')
+invalidParticipantForm.set('idempotencyKey', 'participant-invalid-action')
+invalidParticipantForm.set('command', 'publish_private_case')
+const factoryBeforeParticipant = globalThis.__pilotAdmissionServiceFactoryCalls
+let participantDestination = null
+try {
+  await requestCaseCommandAction(invalidParticipantForm)
+} catch (error) {
+  participantDestination = error?.destination ?? null
+}
+assert.equal(
+  participantDestination,
+  `/requests/${requestId}?actionError=unavailable`,
+  'An unsupported participant command must take bounded recovery.',
+)
+assert.equal(
+  globalThis.__pilotAdmissionServiceFactoryCalls,
+  factoryBeforeParticipant,
+  'An unsupported participant command must not resolve the service.',
+)
+assert.equal(calls.execute, 0)
+
+const unconfirmedReassignment = new FormData()
+unconfirmedReassignment.set('requestId', requestId)
+unconfirmedReassignment.set('expectedVersion', '3')
+unconfirmedReassignment.set('idempotencyKey', 'admin-reassign-unconfirmed')
+unconfirmedReassignment.set('command', 'reassign_builder')
+unconfirmedReassignment.set(
+  'builderUserId',
+  '10000000-0000-4000-a000-000000000011',
+)
+unconfirmedReassignment.set('reason', 'Accountable recovery.')
+const factoryBeforeReassignment = globalThis.__pilotAdmissionServiceFactoryCalls
+let reassignmentDestination = null
+try {
+  await adminRequestCommandAction(unconfirmedReassignment)
+} catch (error) {
+  reassignmentDestination = error?.destination ?? null
+}
+assert.equal(
+  reassignmentDestination,
+  `/admin/build-requests/${requestId}?actionError=confirmation_required`,
+  'An unconfirmed reassignment must take bounded confirmation recovery.',
+)
+assert.equal(
+  globalThis.__pilotAdmissionServiceFactoryCalls,
+  factoryBeforeReassignment,
+  'An unconfirmed reassignment must not resolve the service.',
+)
+assert.equal(calls.execute, 0)
+
 console.log(
-  'Pilot admission Server Action checks passed: missing and hostile discriminants fail closed before every admission RPC.',
+  'Request command Server Action checks passed: admission, participant, and reassignment discriminants fail closed with zero unintended mutation.',
 )

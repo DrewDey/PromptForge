@@ -44,30 +44,42 @@ export async function updateRequestControlsAction(formData: FormData) {
 }
 
 export async function updatePilotAdmissionAction(formData: FormData) {
+  const admissionAction = text(formData, 'admissionAction')
+  if (admissionAction !== 'invite' && admissionAction !== 'revoke') {
+    redirect('/admin/build-requests?scope=admin&actionError=unavailable')
+  }
+  const accountId = text(formData, 'accountId')
+  let loaded
   try {
-    const admissionAction = text(formData, 'admissionAction')
-    if (admissionAction !== 'invite' && admissionAction !== 'revoke') {
-      throw new Error('Invalid pilot admission action.')
-    }
     const service = await getRequestApplicationService()
-    const accountId = text(formData, 'accountId')
     const candidates = await service.listPilotAdmissionCandidates({ limit: 50 })
     const candidate = candidates.items.find((item) => item.accountId === accountId)
-    if (!candidate) redirect('/admin/build-requests?scope=admin&actionError=stale_version')
+    loaded = { service, candidate }
+  } catch (error) {
+    const code = requestAuthorityErrorCode(error)
+    const safeCode = code === 'stale_version' || code === 'rate_limited'
+      ? code
+      : 'unavailable'
+    redirect(`/admin/build-requests?scope=admin&actionError=${safeCode}`)
+  }
+  if (!loaded.candidate) {
+    redirect('/admin/build-requests?scope=admin&actionError=stale_version')
+  }
+  try {
     const base = {
       accountId,
-      expectedAdmissionVersion: candidate.admissionVersion,
-      idempotencyKey: `request-admission-${accountId}-v${candidate.admissionVersion}`,
+      expectedAdmissionVersion: loaded.candidate.admissionVersion,
+      idempotencyKey: `request-admission-${accountId}-v${loaded.candidate.admissionVersion}`,
       reason: text(formData, 'reason'),
     }
     if (admissionAction === 'invite') {
       const rawExpiry = text(formData, 'expiresAt')
-      await service.inviteRequestPilotParticipant({
+      await loaded.service.inviteRequestPilotParticipant({
         ...base,
         expiresAt: parsePilotExpiryUtc(rawExpiry),
       })
     } else if (admissionAction === 'revoke') {
-      await service.revokeRequestPilotParticipant(base)
+      await loaded.service.revokeRequestPilotParticipant(base)
     }
   } catch (error) {
     const code = requestAuthorityErrorCode(error)
@@ -152,7 +164,9 @@ export async function adminRequestCommandAction(formData: FormData) {
     commandName === 'reassign_reviewer'
   ) {
     if (text(formData, 'confirmed') !== 'yes') {
-      throw new Error('Explicit reassignment confirmation is required.')
+      redirect(
+        `/admin/build-requests/${encodeURIComponent(requestId)}?actionError=confirmation_required`,
+      )
     }
     command = commandName === 'reassign_triager'
       ? {

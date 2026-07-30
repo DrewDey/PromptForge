@@ -90,7 +90,7 @@ const serviceErrorCopy: Record<Exclude<RequestIntakeFormProps['serviceError'], n
   capacity_full: 'Assignment capacity changed before this brief was recorded. This does not reveal pilot eligibility; your text remains on this page.',
   unavailable: 'The service could not validate this brief. Your text remains on this page; try again when the secure connection recovers.',
   rate_limited: 'Too many intake attempts were received. Wait before trying again; another submit now will not create a case.',
-  duplicate: 'This appears to match an existing request. Open the existing case instead of creating a second one.',
+  duplicate: 'This submission conflicts with an existing active request or prior submission attempt. Check My Forge before retrying.',
   stale_version: 'The service state changed while this brief was open. Review the current availability and submit again.',
   forbidden_input: 'The service rejected prohibited or sensitive input. Remove secrets, private data, external links, or confidential terms and review the guidance.',
   invalid_reference: 'The PathForge reference could not be verified. Check the project, model variant, and response step identifiers.',
@@ -204,7 +204,7 @@ export function RequestIntakeForm({
                     </li>
                   ))}
                 </ul>
-                {serviceError === 'already_active' ? (
+                {serviceError === 'already_active' || serviceError === 'duplicate' ? (
                   <Link href="/my-forge?tab=requests">
                     Open My Forge requests
                   </Link>

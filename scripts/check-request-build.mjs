@@ -31,6 +31,63 @@ assert.match(
 const browserGuard = readFileSync('scripts/check-request-build-browser.mjs', 'utf8')
 const intakeAction = readFileSync('src/app/requests/new/actions.ts', 'utf8')
 const intakePage = readFileSync('src/app/requests/new/page.tsx', 'utf8')
+const intakeEnvelopeSource = readFileSync(
+  'src/lib/build-requests/intake-envelope.ts',
+  'utf8',
+)
+const intakeEnvelopeModule = await import(
+  `data:text/javascript;base64,${Buffer.from(
+    ts.transpileModule(intakeEnvelopeSource, {
+      compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
+    }).outputText,
+  ).toString('base64')}`
+)
+function acceptanceEnvelope(values) {
+  const formData = new FormData()
+  values.forEach((value) => formData.append('acceptanceChecks', value))
+  return formData
+}
+assert.deepEqual(
+  intakeEnvelopeModule.readRequestIntakeAcceptanceChecks(
+    acceptanceEnvelope(['One exact check']),
+  ),
+  ['One exact check'],
+  'One submitted acceptance check must pass through exactly.',
+)
+assert.deepEqual(
+  intakeEnvelopeModule.readRequestIntakeAcceptanceChecks(
+    acceptanceEnvelope(['First exact check', 'Second exact check', 'Third exact check']),
+  ),
+  ['First exact check', 'Second exact check', 'Third exact check'],
+  'Three submitted acceptance checks must pass through exactly.',
+)
+for (const [label, formData] of [
+  ['zero checks', acceptanceEnvelope([])],
+  ['four checks', acceptanceEnvelope(['one', 'two', 'three', 'four'])],
+  [
+    'mixed File and text checks',
+    acceptanceEnvelope([
+      'one',
+      new File(['not text'], 'check.txt', { type: 'text/plain' }),
+    ]),
+  ],
+]) {
+  assert.throws(
+    () => intakeEnvelopeModule.readRequestIntakeAcceptanceChecks(formData),
+    /Acceptance checks must contain one to three text values\./,
+    `${label} must be rejected without silent filtering or truncation.`,
+  )
+}
+assert.match(
+  intakeAction,
+  /readRequestIntakeAcceptanceChecks\(formData\)[\s\S]*validateSubmitBuildRequestV1/,
+  'The intake Server Action must validate the exact acceptance-check envelope before authority validation.',
+)
+assert.doesNotMatch(
+  intakeAction,
+  /getAll\('acceptanceChecks'\)[\s\S]{0,120}\.(?:filter|slice)\(/,
+  'The intake Server Action must not filter or truncate submitted acceptance checks.',
+)
 const participantCaseAction = readFileSync('src/app/requests/[id]/actions.ts', 'utf8')
 const participantCasePage = readFileSync('src/app/requests/[id]/page.tsx', 'utf8')
 const presentation = readFileSync('src/lib/build-requests/presentation.ts', 'utf8')

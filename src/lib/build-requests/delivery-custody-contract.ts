@@ -131,12 +131,15 @@ export type DeliveryCustodyAuthority = {
     | 'repair_required'
     | 'delivery_ready'
     | 'delivered'
-      | 'completed'
-      | 'closed'
+    | 'completed'
+    | 'closed'
   /** Explicit authority projection for whether builder custody work is frozen. */
   workBlocked: boolean
-  /** Explicit preservation hold; independent from moderation removal. */
-  retentionHold: boolean
+  /**
+   * PM1-owned retention decision. PM3 must not derive this from a client clock,
+   * reconstruct terminalAt + policy duration, or infer it from moderation.
+   */
+  retentionState: 'retained' | 'preserved_by_hold' | 'cleanup_eligible'
   withdrawn: boolean
 }
 

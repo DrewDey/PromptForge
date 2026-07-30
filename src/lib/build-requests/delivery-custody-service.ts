@@ -283,7 +283,7 @@ export async function planDeliveryStagingOrphans(input: {
     throw new DeliveryCustodyError('invalid_input')
   }
   if (
-    input.authority.retentionHold
+    input.authority.retentionState === 'preserved_by_hold'
     || input.authority.moderation === 'held'
   ) return []
   const prefix = `requests/${input.requestId.toLowerCase()}/`
@@ -306,9 +306,13 @@ export async function planDeliveryStagingOrphans(input: {
 
 export function deliveryArtifactRetentionDisposition(input: {
   authority: DeliveryCustodyAuthority
-  terminalRetentionElapsed: boolean
 }) {
-  if (input.authority.retentionHold || input.authority.moderation === 'held') return 'hold'
+  if (
+    input.authority.retentionState === 'preserved_by_hold'
+    || input.authority.moderation === 'held'
+  ) return 'hold'
   if (!['completed', 'closed'].includes(input.authority.lifecycle)) return 'retain_active'
-  return input.terminalRetentionElapsed ? 'eligible_for_policy_cleanup' : 'retain_terminal'
+  return input.authority.retentionState === 'cleanup_eligible'
+    ? 'eligible_for_policy_cleanup'
+    : 'retain_terminal'
 }

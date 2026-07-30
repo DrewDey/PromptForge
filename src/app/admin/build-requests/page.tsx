@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { RequestCaseErrorFocus } from '@/components/requests/case/RequestCaseErrorFocus'
 import {
   AdminRequestQueue,
@@ -19,6 +20,10 @@ import {
 } from './actions'
 
 export const dynamic = 'force-dynamic'
+export const metadata: Metadata = {
+  title: 'Build request operations | PathForge',
+  robots: { index: false, follow: false },
+}
 
 const SCOPES = new Set<RequestQueueScope>(['admin', 'triager', 'builder', 'reviewer'])
 

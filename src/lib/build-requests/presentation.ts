@@ -262,9 +262,12 @@ export function toRequestCasePresentation(
       })),
     ...detail.assignments.map((assignment) => ({
       role: assignment.role,
-      displayName:
-        participantsByRole.get(assignment.role)?.displayName
-        ?? (assignment.role === 'builder' ? 'Assigned builder' : 'Assigned reviewer'),
+      displayName: assignment.active
+        ? participantsByRole.get(assignment.role)?.displayName
+          ?? (assignment.role === 'builder' ? 'Assigned builder' : 'Assigned reviewer')
+        : assignment.role === 'builder'
+          ? 'Former assigned builder'
+          : 'Former assigned reviewer',
       status: assignment.active ? 'Active' : 'Ended',
       targetDate:
         assignment.role === 'builder' && assignment.active
@@ -293,7 +296,8 @@ export function toRequestCasePresentation(
     clarification: latestClarification
       ? {
           state: latestClarification.answer === null ? 'requested' : 'submitted',
-          summary: latestClarification.answer ?? latestClarification.question,
+          question: latestClarification.question,
+          answer: latestClarification.answer,
           requestedAt: latestClarification.requestedAt,
           respondedAt: latestClarification.answeredAt ?? undefined,
         }
@@ -305,7 +309,7 @@ export function toRequestCasePresentation(
           resolutionHref,
           resolutionLabel: detail.resolutionReference
             ? detail.resolutionReference.kind === 'response'
-              ? `Open approved model variant ${detail.resolutionReference.modelVariantId}, response step ${detail.resolutionReference.responseStepNumber}`
+              ? `Open the PathForge project family at response step ${detail.resolutionReference.responseStepNumber} (select the referenced variant shown below)`
               : 'Open approved PathForge project resolution'
             : null,
           resolutionReference: detail.resolutionReference,

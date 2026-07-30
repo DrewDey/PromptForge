@@ -28,6 +28,14 @@ const LIFECYCLE_LABELS: Record<RequestLifecycle, string> = {
   closed: 'Closed',
 }
 
+function formatTargetDate(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return 'Date unavailable'
+  return new Intl.DateTimeFormat('en-US', {
+    dateStyle: 'medium',
+    timeZone: 'UTC',
+  }).format(new Date(`${value}T00:00:00.000Z`))
+}
+
 function AvailabilityNotice({
   availability,
 }: {
@@ -136,7 +144,7 @@ export function AdminRequestQueue({ model }: { model: RequestQueueModel }) {
                     </time>
                     {row.targetDate ? (
                       <time dateTime={row.targetDate}>
-                        Target {new Date(row.targetDate).toLocaleDateString()}
+                        Target {formatTargetDate(row.targetDate)}
                       </time>
                     ) : null}
                   </span>

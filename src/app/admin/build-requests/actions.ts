@@ -7,6 +7,7 @@ import {
   type PathForgeRequestReference,
   type RequestCommandV1,
 } from '@/lib/request-lifecycle'
+import { parsePilotExpiryUtc } from '@/lib/build-requests/pilot-expiry'
 import {
   getRequestApplicationService,
   requestAuthorityErrorCode,
@@ -59,7 +60,7 @@ export async function updatePilotAdmissionAction(formData: FormData) {
       const rawExpiry = text(formData, 'expiresAt')
       await service.inviteRequestPilotParticipant({
         ...base,
-        expiresAt: rawExpiry ? new Date(rawExpiry).toISOString() : null,
+        expiresAt: parsePilotExpiryUtc(rawExpiry),
       })
     } else {
       await service.revokeRequestPilotParticipant(base)

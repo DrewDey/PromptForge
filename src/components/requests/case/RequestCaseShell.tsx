@@ -51,6 +51,8 @@ export interface RequestCaseBrief {
 export interface RequestCaseClarification {
   state: 'none' | 'requested' | 'submitted' | 'resolved'
   summary?: string
+  question?: string
+  answer?: string | null
   requestedAt?: string
   respondedAt?: string
 }
@@ -194,6 +196,16 @@ function formatDate(value: string) {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(value))
+}
+
+function formatDateOnly(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return 'Target date unavailable'
+  const date = new Date(`${value}T00:00:00.000Z`)
+  if (Number.isNaN(date.valueOf())) return 'Target date unavailable'
+  return new Intl.DateTimeFormat('en-US', {
+    dateStyle: 'medium',
+    timeZone: 'UTC',
+  }).format(date)
 }
 
 function VisibilityAndStage({
@@ -394,6 +406,18 @@ function Clarification({
       <p className={styles.sectionKicker}>Clarification</p>
       <h2 id="request-case-clarification">{copy[clarification.state]}</h2>
       {clarification.summary ? <p>{clarification.summary}</p> : null}
+      {clarification.question ? (
+        <div className={styles.reference}>
+          <span>Question</span>
+          <strong>{clarification.question}</strong>
+        </div>
+      ) : null}
+      {clarification.answer ? (
+        <div className={styles.reference}>
+          <span>Requester answer</span>
+          <strong>{clarification.answer}</strong>
+        </div>
+      ) : null}
       {clarification.requestedAt || clarification.respondedAt ? (
         <dl className={styles.inlineFacts}>
           {clarification.requestedAt ? (
@@ -454,7 +478,7 @@ function Assignments({ assignments }: { assignments: readonly RequestCaseAssignm
                 <span>{assignment.status}</span>
                 {assignment.targetDate ? (
                   <time dateTime={assignment.targetDate}>
-                    Target {formatDate(assignment.targetDate)}
+                    Target {formatDateOnly(assignment.targetDate)}
                   </time>
                 ) : null}
               </div>

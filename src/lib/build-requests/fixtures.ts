@@ -87,6 +87,7 @@ export const REQUEST_INTAKE_STATES = [
   'pristine',
   'errors',
   'unavailable',
+  'capacity_full',
   'not_admitted',
   'already_active',
   'expired_session',
@@ -232,6 +233,7 @@ export function intakeFixture(
 
   const serviceError =
     state === 'unavailable' ||
+    state === 'capacity_full' ||
     state === 'not_admitted' ||
     state === 'already_active' ||
     state === 'rate_limited' ||
@@ -467,17 +469,22 @@ export function caseFixture(options: {
     clarification: lifecycle === 'clarification_requested'
       ? {
           state: 'requested',
-          summary: 'Should reset clear only completion state, or also custom checklist items?',
+          question: 'Should reset clear only completion state, or also custom checklist items?',
+          answer: null,
           requestedAt: '2026-07-28T14:00:00.000Z',
         }
       : lifecycle === 'triage'
-        ? { state: 'submitted', summary: 'Requester confirmed the offline requirement.' }
+        ? {
+            state: 'submitted',
+            question: 'Must the checklist remain usable without connectivity?',
+            answer: 'Yes. The requester confirmed the offline requirement.',
+          }
         : { state: 'none' },
     closure: lifecycle === 'closed' && closeReason === 'existing_resolution'
       ? {
           note: 'Use the approved response that already satisfies the finish line.',
           resolutionHref: '/paths/offline-checklist#step-3',
-          resolutionLabel: 'Open approved model variant 30000000-0000-4000-8000-000000000001, response step 3',
+          resolutionLabel: 'Open the PathForge project family at response step 3 (select the referenced variant shown below)',
           resolutionReference: {
             kind: 'response',
             projectId: '20000000-0000-4000-8000-000000000001',
@@ -504,7 +511,7 @@ export function caseFixture(options: {
             role: 'builder' as const,
             displayName: 'Blake Builder',
             status: lifecycle === 'building' ? 'Building' : 'Credited author',
-            targetDate: '2026-08-05T17:00:00.000Z',
+            targetDate: '2026-08-15',
           }]
         : []),
       ...(reviewerAssigned
@@ -727,7 +734,7 @@ export function adminDetailFixture(
       : [],
     builderLabel: 'Blake Builder',
     reviewerLabel: reviewer ? 'Riley Reviewer' : null,
-    targetDate: '2026-08-05T17:00:00.000Z',
+    targetDate: '2026-08-15',
     idempotencyKeys: {
       existingResolution: 'fixture-existing-resolution-00000001',
       duplicate: 'fixture-duplicate-00000001',

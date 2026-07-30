@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import type { Metadata } from 'next'
 import { RequestAnalytics } from '@/components/requests/RequestAnalytics'
 import {
   AdminRequestDetailOperations,
@@ -15,6 +16,10 @@ import {
 import { adminRequestCommandAction } from '../actions'
 
 export const dynamic = 'force-dynamic'
+export const metadata: Metadata = {
+  title: 'Private build request operations | PathForge',
+  robots: { index: false, follow: false },
+}
 
 export default async function BuildRequestAdminDetailPage({
   params,

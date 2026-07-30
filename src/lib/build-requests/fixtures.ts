@@ -350,7 +350,7 @@ export function caseFixture(options: {
   const capability = (() => {
     if (moderation === 'removed') return null
     if (moderation === 'held') {
-      return actorRole === 'system'
+      return actorRole === 'triager'
         ? { id: 'release_moderation_hold', label: 'Release moderation hold' }
         : null
     }

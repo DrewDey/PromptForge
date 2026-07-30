@@ -470,7 +470,7 @@ const writeAuthority = {
   moderation: 'clear',
   lifecycle: 'building',
   workBlocked: false,
-  retentionHold: false,
+  retentionState: 'retained',
   withdrawn: false,
 }
 const storage = new MemoryStorage()
@@ -570,7 +570,7 @@ await assert.doesNotReject(
   stageDeliveryArtifactSet({
     storage: new MemoryStorage(),
     scope,
-    authority: { ...writeAuthority, retentionHold: true },
+    authority: { ...writeAuthority, retentionState: 'preserved_by_hold' },
     authorityArtifacts,
     files: [artifact('readme.txt', 'text/plain')],
   }),
@@ -670,7 +670,7 @@ assert.deepEqual(
   await planDeliveryStagingOrphans({
     storage: orphanStorage,
     requestId: scope.requestId,
-    authority: { ...writeAuthority, retentionHold: true },
+    authority: { ...writeAuthority, retentionState: 'preserved_by_hold' },
     referencedObjectPrefixes: new Set([keys.objectPrefix]),
     olderThan: '2026-07-15T00:00:00.000Z',
   }),
@@ -694,7 +694,7 @@ assert.deepEqual(
     authority: {
       ...writeAuthority,
       moderation: 'removed',
-      retentionHold: true,
+      retentionState: 'preserved_by_hold',
     },
     referencedObjectPrefixes: new Set([keys.objectPrefix]),
     olderThan: '2026-07-15T00:00:00.000Z',
@@ -705,22 +705,45 @@ assert.deepEqual(
 
 assert.equal(
   deliveryArtifactRetentionDisposition({
-    authority: { ...writeAuthority, lifecycle: 'completed' },
-    terminalRetentionElapsed: true,
+    authority: {
+      ...writeAuthority,
+      lifecycle: 'completed',
+      retentionState: 'retained',
+    },
+  }),
+  'retain_terminal',
+  'a completed case at authority day 89 must remain retained',
+)
+assert.equal(
+  deliveryArtifactRetentionDisposition({
+    authority: {
+      ...writeAuthority,
+      lifecycle: 'completed',
+      retentionState: 'cleanup_eligible',
+    },
   }),
   'eligible_for_policy_cleanup',
+  'a completed case at authority day 91 may become cleanup eligible',
 )
 assert.equal(
   deliveryArtifactRetentionDisposition({
-    authority: { ...writeAuthority, lifecycle: 'completed', retentionHold: true },
-    terminalRetentionElapsed: true,
+    authority: {
+      ...writeAuthority,
+      lifecycle: 'completed',
+      retentionState: 'preserved_by_hold',
+    },
   }),
   'hold',
+  'an active hold must override elapsed terminal retention',
 )
 assert.equal(
   deliveryArtifactRetentionDisposition({
-    authority: { ...writeAuthority, lifecycle: 'completed', moderation: 'removed' },
-    terminalRetentionElapsed: true,
+    authority: {
+      ...writeAuthority,
+      lifecycle: 'completed',
+      moderation: 'removed',
+      retentionState: 'cleanup_eligible',
+    },
   }),
   'eligible_for_policy_cleanup',
 )
@@ -730,9 +753,8 @@ assert.equal(
       ...writeAuthority,
       lifecycle: 'completed',
       moderation: 'removed',
-      retentionHold: true,
+      retentionState: 'preserved_by_hold',
     },
-    terminalRetentionElapsed: true,
   }),
   'hold',
 )

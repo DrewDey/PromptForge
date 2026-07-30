@@ -209,25 +209,57 @@ function checkRequestSqlParserBridge(payload) {
           ],
         ),
       );
-      for (const [kind, lifecycleState, closeReasons] of [
-        ['triager_accepted', 'accepted', ['declined']],
-        ['triager_building', 'building', ['declined']],
-        ['triager_review_pending', 'review_pending', ['declined']],
-        ['triager_repair_required', 'repair_required', ['declined']],
-        ['triager_delivery_ready', 'delivery_ready', []],
-        ['triager_delivered', 'delivered', []],
+      for (const [kind, lifecycleState, closeReasons, targetDate] of [
+        ['triager_accepted', 'accepted', ['declined'], '2026-08-15'],
+        ['triager_building', 'building', ['declined'], '2026-08-15'],
+        ['triager_review_pending', 'review_pending', ['declined'], '2026-08-15'],
+        ['triager_repair_required', 'repair_required', ['declined'], '2026-08-15'],
+        ['triager_delivery_ready', 'delivery_ready', [], '2026-08-15'],
+        ['triager_delivered', 'delivered', [], '2026-08-15'],
       ]) {
         const snapshot = parsedSnapshots[kind];
         if (
           !snapshot
           || snapshot.visibility !== 'full'
           || snapshot.lifecycleState !== lifecycleState
+          || snapshot.targetDate !== targetDate
           || JSON.stringify(snapshot.actor.allowedCloseReasons)
             !== JSON.stringify(closeReasons)
         ) {
           throw new Error(
             'Triager lifecycle close-reason projection drifted for ' + kind + '.',
           );
+        }
+      }
+      for (const [kind, lifecycleState] of [
+        ['requester_submitted', 'submitted'],
+        ['triager_triage', 'triage'],
+      ]) {
+        const snapshot = parsedSnapshots[kind];
+        if (
+          !snapshot
+          || snapshot.visibility !== 'full'
+          || snapshot.lifecycleState !== lifecycleState
+          || snapshot.targetDate !== null
+        ) {
+          throw new Error(
+            'Pre-acceptance target-date projection drifted for ' + kind + '.',
+          );
+        }
+      }
+      for (const invalidDetail of [
+        { ...parsedSnapshots.requester_submitted, targetDate: '2026-08-15' },
+        { ...parsedSnapshots.triager_accepted, targetDate: null },
+        { ...parsedSnapshots.triager_accepted, targetDate: '2026-02-30' },
+      ]) {
+        let rejected = false;
+        try {
+          service.parseRequestCaseDetailResultV1(invalidDetail);
+        } catch {
+          rejected = true;
+        }
+        if (!rejected) {
+          throw new Error('Invalid full-detail target-date contract was accepted.');
         }
       }
       for (const state of ['staging', 'prepared', 'sealed']) {

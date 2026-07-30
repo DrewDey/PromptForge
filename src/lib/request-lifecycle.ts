@@ -596,6 +596,8 @@ export type RequestCaseNoticeV1 = {
 
 export type RequestCaseDetailV1 = RequestCaseSummary & {
   visibility: 'full'
+  /** Authority-owned managed-service target date set when the case is accepted. */
+  targetDate: string | null
   /**
    * Authority-projected safe closure text. After raw-text retention expires,
    * this may be server-generated generic text rather than the original human

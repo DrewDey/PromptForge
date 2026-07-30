@@ -199,6 +199,26 @@
   border-bottom: 1px solid var(--request-line);
 }
 
+.unavailableBoard {
+  border-bottom: 1px solid var(--request-line);
+  padding: 42px 0;
+}
+
+.unavailableBoard h3 {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 850;
+  letter-spacing: -.025em;
+}
+
+.unavailableBoard p {
+  max-width: 620px;
+  margin: 9px 0 0;
+  color: var(--request-muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
 .emptyLead {
   padding: 54px 0;
 }
@@ -247,6 +267,26 @@
   margin: 7px 0 0;
   color: var(--request-muted);
   font-size: 12px;
+  line-height: 1.55;
+}
+
+.availabilityNotice {
+  border-top: 1px solid var(--request-line);
+  border-bottom: 1px solid var(--request-line);
+  padding: 16px 0;
+}
+
+.availabilityNotice strong {
+  display: block;
+  color: #8a3510;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.availabilityNotice p {
+  margin: 5px 0 0;
+  color: var(--request-muted);
+  font-size: 11px;
   line-height: 1.55;
 }
 
@@ -484,6 +524,15 @@
 
 .requestByline strong {
   color: var(--request-ink);
+}
+
+.legacyVoteCount {
+  color: #777780;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 750;
+  letter-spacing: .08em;
+  text-transform: uppercase;
 }
 
 .voteButton,

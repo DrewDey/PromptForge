@@ -74,6 +74,16 @@ export const REQUEST_SERVER_RPC = {
   resolveDeliveryArtifactCustody: 'resolve_build_request_delivery_artifact_custody_v1',
   resolveDeliveryRevisionAction: 'resolve_build_request_delivery_revision_action_v1',
   resolveDeliveryArtifactCleanup: 'resolve_build_request_delivery_artifact_cleanup_v1',
+  listMaintenanceWork: 'list_build_request_maintenance_work_v1',
+  claimDeliveryArtifactCleanup:
+    'claim_build_request_delivery_artifact_cleanup_v1',
+  beginDeliveryArtifactCleanupDelete:
+    'begin_build_request_delivery_artifact_cleanup_delete_v1',
+  confirmDeliveryArtifactCleanup:
+    'confirm_build_request_delivery_artifact_cleanup_v1',
+  abortDeliveryArtifactCleanup:
+    'abort_build_request_delivery_artifact_cleanup_v1',
+  purgeRawText: 'purge_build_request_raw_text_v1',
   expireAuditTombstone: 'expire_build_request_audit_tombstone_v1',
   expireAccountDeidentificationReceipt:
     'expire_build_request_account_deidentification_receipt_v1',
@@ -95,6 +105,7 @@ export const REQUEST_AUTHORITY_ERROR_CODES = [
   'not_found',
   'invalid_transition',
   'delivery_revision_limit',
+  'artifact_staging_limit',
 ] as const
 export type RequestAuthorityErrorCode =
   | (typeof REQUEST_AUTHORITY_ERROR_CODES)[number]
@@ -137,6 +148,11 @@ export type RequestRpcClient = {
 export interface RequestApplicationService {
   getAvailability(): Promise<RequestAvailabilityV1>
   listMyRequests(query?: RequestListQueryV1): Promise<RequestPageV1<RequestCaseSummary>>
+  /**
+   * Self-scoped triager/builder/reviewer queries return an exact empty page
+   * when the actor has no active assignment. RPC/auth/transport failures still
+   * reject and must never be normalized to an empty page.
+   */
   listAssignedQueue(
     query: RequestAssignedQueueQueryV1,
   ): Promise<RequestPageV1<RequestQueueSummaryV1>>
@@ -234,6 +250,161 @@ export interface RequestDeliveryArtifactCleanupResolver {
   resolveDeliveryArtifactCleanup(
     input: ResolveDeliveryArtifactCleanupInputV1,
   ): Promise<RequestDeliveryArtifactCleanupAuthorityV1>
+}
+
+export type RequestMaintenanceWorkCategoryV1 =
+  | 'raw_text_purge'
+  | 'artifact_cleanup'
+  | 'audit_tombstone_expiry'
+  | 'account_deidentification_receipt_expiry'
+  | 'delivery_revision_retirement'
+
+export type RequestMaintenanceWorkItemV1 =
+  | {
+      category: 'raw_text_purge'
+      requestId: string
+    }
+  | {
+      category: 'artifact_cleanup'
+      requestId: string
+      deliveryRevisionId: string
+      artifactId: string
+    }
+  | {
+      category: 'audit_tombstone_expiry'
+      requestId: string
+    }
+  | {
+      category: 'account_deidentification_receipt_expiry'
+      receiptId: string
+    }
+  | {
+      category: 'delivery_revision_retirement'
+      requestId: string
+      deliveryRevisionId: string
+      expectedVersion: number
+    }
+
+export type ListRequestMaintenanceWorkInputV1 = {
+  cursor?: string
+  limit?: number
+}
+
+export type RequestMaintenanceWorkPageV1 = {
+  items: RequestMaintenanceWorkItemV1[]
+  nextCursor: string | null
+}
+
+export interface RequestMaintenanceWorkService {
+  listEligibleMaintenanceWork(
+    input?: ListRequestMaintenanceWorkInputV1,
+  ): Promise<RequestMaintenanceWorkPageV1>
+}
+
+export type PurgeBuildRequestRawTextInputV1 = {
+  requestId: string
+}
+
+export type PurgeBuildRequestRawTextReceiptV1 = {
+  requestId: string
+  purgedAt: string
+  auditTombstoneUntil: string
+  replayed: boolean
+}
+
+export interface RequestRawTextPurgeService {
+  purgeBuildRequestRawText(
+    input: PurgeBuildRequestRawTextInputV1,
+  ): Promise<PurgeBuildRequestRawTextReceiptV1>
+}
+
+export type ConfirmDeliveryArtifactCleanupInputV1 = {
+  requestId: string
+  deliveryRevisionId: string
+  artifactId: string
+  cleanupClaimId: string
+  claimVersion: number
+  idempotencyKey: string
+}
+
+export type ConfirmDeliveryArtifactCleanupReceiptV1 = {
+  cleanupReceiptId: string
+  requestId: string
+  deliveryRevisionId: string
+  artifactId: string
+  cleanupClaimId: string
+  claimVersion: number
+  cleanupDisposition: 'worker_removed' | 'preexisting_missing'
+  replayed: boolean
+  cleanedAt: string
+}
+
+export interface RequestDeliveryArtifactCleanupConfirmationService {
+  confirmDeliveryArtifactCleanup(
+    input: ConfirmDeliveryArtifactCleanupInputV1,
+  ): Promise<ConfirmDeliveryArtifactCleanupReceiptV1>
+}
+
+export type ClaimDeliveryArtifactCleanupInputV1 = {
+  requestId: string
+  deliveryRevisionId: string
+  artifactId: string
+  idempotencyKey: string
+}
+
+export type ClaimDeliveryArtifactCleanupReceiptV1 = {
+  cleanupClaimId: string
+  requestId: string
+  deliveryRevisionId: string
+  artifactId: string
+  claimVersion: number
+  leaseUntil: string
+  deletionStarted: boolean
+  replayed: boolean
+}
+
+export type AbortDeliveryArtifactCleanupInputV1 = {
+  cleanupClaimId: string
+  claimVersion: number
+  idempotencyKey: string
+}
+
+export type BeginDeliveryArtifactCleanupDeleteInputV1 = {
+  cleanupClaimId: string
+  claimVersion: number
+  idempotencyKey: string
+}
+
+export type BeginDeliveryArtifactCleanupDeleteReceiptV1 = {
+  cleanupClaimId: string
+  requestId: string
+  deliveryRevisionId: string
+  artifactId: string
+  claimVersion: number
+  deleteStartedAt: string
+  replayed: boolean
+}
+
+export type AbortDeliveryArtifactCleanupReceiptV1 = {
+  cleanupClaimId: string
+  requestId: string
+  deliveryRevisionId: string
+  artifactId: string
+  claimVersion: number
+  replayed: boolean
+  abortedAt: string
+}
+
+export interface RequestDeliveryArtifactCleanupClaimService {
+  claimDeliveryArtifactCleanup(
+    input: ClaimDeliveryArtifactCleanupInputV1,
+  ): Promise<ClaimDeliveryArtifactCleanupReceiptV1>
+  beginDeliveryArtifactCleanupDelete(
+    input: BeginDeliveryArtifactCleanupDeleteInputV1,
+  ): Promise<BeginDeliveryArtifactCleanupDeleteReceiptV1>
+  abortDeliveryArtifactCleanup(
+    input: AbortDeliveryArtifactCleanupInputV1,
+  ): Promise<AbortDeliveryArtifactCleanupReceiptV1>
 }
 
 export type ExpireBuildRequestAuditTombstoneInputV1 = {
@@ -642,6 +813,8 @@ const REQUEST_CURSOR_PATTERN =
   /^rq1_[A-Za-z0-9_-]{8,400}\.[A-Za-z0-9_-]{16,128}$/
 const REQUEST_EVENT_CURSOR_PATTERN =
   /^rqe1_[A-Za-z0-9_-]{8,400}\.[A-Za-z0-9_-]{16,128}$/
+const REQUEST_MAINTENANCE_CURSOR_PATTERN =
+  /^rqm1_[A-Za-z0-9_-]{8,400}\.[A-Za-z0-9_-]{16,128}$/
 const REQUEST_URL_LIKE =
   /\b(?:https?:\/\/|www\.|[a-z0-9-]+\.(?:com|net|org|io|dev|app)(?:\/|\b))/i
 const REQUEST_EMAIL_LIKE = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i
@@ -1991,7 +2164,7 @@ export function parseRequestCaseDetailV1(value: unknown): RequestCaseDetailV1 {
   assignments.forEach((item) => {
     const assignment = strictRecord(
       item,
-      ['assignmentId', 'role', 'active', 'assignedAt', 'endedAt'],
+      ['assignmentId', 'role', 'assignee', 'active', 'assignedAt', 'endedAt'],
       'Request assignment',
     )
     const assignmentId = uuid(assignment.assignmentId, 'assignmentId')
@@ -2001,6 +2174,7 @@ export function parseRequestCaseDetailV1(value: unknown): RequestCaseDetailV1 {
     if (typeof assignment.active !== 'boolean') {
       throw new RequestContractError('Request assignment active flag is invalid.')
     }
+    parseAttribution(assignment.assignee, 'Request assignment assignee')
     timestamp(assignment.assignedAt, 'assignedAt')
     if (assignment.endedAt !== null) timestamp(assignment.endedAt, 'endedAt')
     if (assignment.active && assignment.endedAt !== null) {
@@ -2170,7 +2344,7 @@ export function parseRequestCaseDetailV1(value: unknown): RequestCaseDetailV1 {
     }
   })
   parseRequestEventPageV1(row.events)
-  const notices = boundedArray(row.notices, 'Request notices', 2)
+  const notices = boundedArray(row.notices, 'Request notices', 4)
   const noticeKinds = new Set<string>()
   notices.forEach((item) => {
     const notice = strictRecord(
@@ -2179,7 +2353,12 @@ export function parseRequestCaseDetailV1(value: unknown): RequestCaseDetailV1 {
       'Request notice',
     )
     if (
-      !['retention', 'moderation_hold'].includes(notice.kind as string) ||
+      ![
+        'raw_content_retention',
+        'audit_retention',
+        'moderation_hold',
+        'preservation_hold',
+      ].includes(notice.kind as string) ||
       noticeKinds.has(notice.kind as string)
     ) {
       throw new RequestContractError('Request notice kind is invalid or duplicated.')
@@ -2219,6 +2398,20 @@ export function parseRequestCaseDetailV1(value: unknown): RequestCaseDetailV1 {
   }
   if (new Set(actorRoles).size !== actorRoles.length) {
     throw new RequestContractError('Request actor roles must be distinct.')
+  }
+  const currentReaderArtifacts = revisions
+    .filter((revision) => revision.isCurrent)
+    .flatMap((revision) => revision.artifacts)
+  const hasProjectedReader = currentReaderArtifacts.some(
+    (artifact) => artifact.readerHref !== undefined,
+  )
+  if (
+    row.lifecycleState === 'review_pending' &&
+    hasProjectedReader !== actorRoles.includes('reviewer')
+  ) {
+    throw new RequestContractError(
+      'Review-pending reader links require the exact active reviewer.',
+    )
   }
   if (actor.operatorAuthority !== 'none' && actor.operatorAuthority !== 'admin') {
     throw new RequestContractError('Request operator authority is invalid.')
@@ -2450,7 +2643,7 @@ export function parseRequestRestrictedCaseDetailV1(
   timestamp(row.submittedAt, 'submittedAt')
   timestamp(row.updatedAt, 'updatedAt')
   parseRequestEventPageV1(row.events)
-  const notices = boundedArray(row.notices, 'Restricted request notices', 2)
+  const notices = boundedArray(row.notices, 'Restricted request notices', 4)
   const noticeKinds = new Set<string>()
   notices.forEach((item) => {
     const notice = strictRecord(
@@ -2459,7 +2652,12 @@ export function parseRequestRestrictedCaseDetailV1(
       'Restricted request notice',
     )
     if (
-      !['retention', 'moderation_hold'].includes(notice.kind as string) ||
+      ![
+        'raw_content_retention',
+        'audit_retention',
+        'moderation_hold',
+        'preservation_hold',
+      ].includes(notice.kind as string) ||
       noticeKinds.has(notice.kind as string)
     ) {
       throw new RequestContractError('Restricted request notice is invalid.')
@@ -2614,7 +2812,13 @@ export function parseRequestDeliveryArtifactReaderResultV1(
     throw new RequestContractError('Artifact reader integrity status is invalid.')
   }
   if (
-    !['delivery_ready', 'delivered', 'completed', 'closed_no_response'].includes(
+    ![
+      'review_pending',
+      'delivery_ready',
+      'delivered',
+      'completed',
+      'closed_no_response',
+    ].includes(
       artifact.deliveryStatus as string,
     )
   ) {
@@ -3541,6 +3745,553 @@ export function createRequestDeliveryArtifactCleanupResolver(
       ) {
         throw new RequestContractError(
           'Delivery artifact cleanup binding is inconsistent.',
+        )
+      }
+      return result
+    },
+  }
+}
+
+export function parseRequestMaintenanceWorkPageV1(
+  value: unknown,
+): RequestMaintenanceWorkPageV1 {
+  const page = strictRecord(
+    value,
+    ['items', 'nextCursor'],
+    'Request maintenance work page',
+  )
+  const items = boundedArray(
+    page.items,
+    'Request maintenance work items',
+    100,
+  ).map((value, index) => {
+    const item = strictRecord(
+      value,
+      [
+        'category',
+        'requestId',
+        'deliveryRevisionId',
+        'artifactId',
+        'receiptId',
+        'expectedVersion',
+      ],
+      `Request maintenance work item ${index + 1}`,
+    )
+    if (
+      item.category !== 'raw_text_purge' &&
+      item.category !== 'artifact_cleanup' &&
+      item.category !== 'audit_tombstone_expiry' &&
+      item.category !== 'account_deidentification_receipt_expiry' &&
+      item.category !== 'delivery_revision_retirement'
+    ) {
+      throw new RequestContractError(
+        `Request maintenance work item ${index + 1} category is invalid.`,
+      )
+    }
+    if (item.category === 'account_deidentification_receipt_expiry') {
+      if (
+        !('receiptId' in item) ||
+        'requestId' in item ||
+        'deliveryRevisionId' in item ||
+        'artifactId' in item ||
+        'expectedVersion' in item
+      ) {
+        throw new RequestContractError(
+          `Request maintenance work item ${index + 1} receipt binding is invalid.`,
+        )
+      }
+      uuid(item.receiptId, `Request maintenance work item ${index + 1} receiptId`)
+    } else {
+      if (!('requestId' in item) || 'receiptId' in item) {
+        throw new RequestContractError(
+          `Request maintenance work item ${index + 1} request binding is invalid.`,
+        )
+      }
+      uuid(item.requestId, `Request maintenance work item ${index + 1} requestId`)
+    }
+    if (item.category === 'artifact_cleanup') {
+      if (
+        !('deliveryRevisionId' in item) ||
+        !('artifactId' in item) ||
+        'receiptId' in item
+        || 'expectedVersion' in item
+      ) {
+        throw new RequestContractError(
+          `Request maintenance work item ${index + 1} binding is incomplete.`,
+        )
+      }
+      uuid(
+        item.deliveryRevisionId,
+        `Request maintenance work item ${index + 1} deliveryRevisionId`,
+      )
+      uuid(
+        item.artifactId,
+        `Request maintenance work item ${index + 1} artifactId`,
+      )
+    } else if (item.category === 'delivery_revision_retirement') {
+      if (
+        !('deliveryRevisionId' in item) ||
+        !('expectedVersion' in item) ||
+        'artifactId' in item ||
+        'receiptId' in item
+      ) {
+        throw new RequestContractError(
+          `Request maintenance work item ${index + 1} retirement binding is incomplete.`,
+        )
+      }
+      uuid(
+        item.deliveryRevisionId,
+        `Request maintenance work item ${index + 1} deliveryRevisionId`,
+      )
+      boundedInteger(
+        item.expectedVersion,
+        `Request maintenance work item ${index + 1} expectedVersion`,
+        0,
+        10_000_000,
+      )
+    } else if (
+      item.category !== 'account_deidentification_receipt_expiry' &&
+      (
+        'deliveryRevisionId' in item ||
+        'artifactId' in item ||
+        'receiptId' in item ||
+        'expectedVersion' in item
+      )
+    ) {
+      throw new RequestContractError(
+        `Request maintenance work item ${index + 1} contains custody fields.`,
+      )
+    }
+    return item as RequestMaintenanceWorkItemV1
+  })
+  if (
+    page.nextCursor !== null &&
+    (
+      typeof page.nextCursor !== 'string' ||
+      !REQUEST_MAINTENANCE_CURSOR_PATTERN.test(page.nextCursor)
+    )
+  ) {
+    throw new RequestContractError(
+      'Request maintenance work cursor is invalid.',
+    )
+  }
+  return {
+    items,
+    nextCursor: page.nextCursor as string | null,
+  }
+}
+
+/**
+ * Service-role-only, bounded discovery of currently eligible maintenance
+ * work. The result contains logical identifiers only and never performs the
+ * maintenance action. Artifact workers must fresh-resolve each item through
+ * createRequestDeliveryArtifactCleanupResolver immediately before deletion.
+ */
+export function createRequestMaintenanceWorkService(
+  serviceRoleClient: RequestRpcClient,
+): RequestMaintenanceWorkService {
+  return {
+    async listEligibleMaintenanceWork(input = {}) {
+      strictRecord(
+        input,
+        ['cursor', 'limit'],
+        'Request maintenance work query',
+      )
+      if (
+        input.cursor !== undefined &&
+        (
+          typeof input.cursor !== 'string' ||
+          !REQUEST_MAINTENANCE_CURSOR_PATTERN.test(input.cursor)
+        )
+      ) {
+        throw new RequestContractError(
+          'Request maintenance work cursor is invalid.',
+        )
+      }
+      const limit = input.limit ?? 50
+      boundedInteger(limit, 'Request maintenance work limit', 1, 100)
+      return invokeRead(
+        serviceRoleClient,
+        REQUEST_SERVER_RPC.listMaintenanceWork,
+        {
+          p_contract_version: REQUEST_CONTRACT_VERSION,
+          p_cursor: input.cursor ?? null,
+          p_limit: limit,
+        },
+        parseRequestMaintenanceWorkPageV1,
+      )
+    },
+  }
+}
+
+function parsePurgeBuildRequestRawTextReceiptV1(
+  value: unknown,
+): PurgeBuildRequestRawTextReceiptV1 {
+  const row = strictRecord(
+    value,
+    ['requestId', 'purgedAt', 'auditTombstoneUntil', 'replayed'],
+    'Request raw-text purge receipt',
+  )
+  uuid(row.requestId, 'Request raw-text purge requestId')
+  timestamp(row.purgedAt, 'Request raw-text purge purgedAt')
+  timestamp(
+    row.auditTombstoneUntil,
+    'Request raw-text purge auditTombstoneUntil',
+  )
+  if (
+    Date.parse(row.auditTombstoneUntil as string) <=
+    Date.parse(row.purgedAt as string)
+  ) {
+    throw new RequestContractError(
+      'Request raw-text purge retention deadline is invalid.',
+    )
+  }
+  if (typeof row.replayed !== 'boolean') {
+    throw new RequestContractError(
+      'Request raw-text purge replay state is invalid.',
+    )
+  }
+  return row as unknown as PurgeBuildRequestRawTextReceiptV1
+}
+
+export function createRequestRawTextPurgeService(
+  serviceRoleClient: RequestRpcClient,
+): RequestRawTextPurgeService {
+  return {
+    async purgeBuildRequestRawText(input) {
+      strictRecord(input, ['requestId'], 'Request raw-text purge')
+      validateUuid(input.requestId, 'Request raw-text purge request id')
+      const result = await invokeRead(
+        serviceRoleClient,
+        REQUEST_SERVER_RPC.purgeRawText,
+        {
+          p_contract_version: REQUEST_CONTRACT_VERSION,
+          p_request_id: input.requestId,
+        },
+        parsePurgeBuildRequestRawTextReceiptV1,
+      )
+      if (result.requestId !== input.requestId) {
+        throw new RequestContractError(
+          'Request raw-text purge binding is inconsistent.',
+        )
+      }
+      return result
+    },
+  }
+}
+
+function parseClaimDeliveryArtifactCleanupReceiptV1(
+  value: unknown,
+): ClaimDeliveryArtifactCleanupReceiptV1 {
+  const row = strictRecord(
+    value,
+    [
+      'cleanupClaimId',
+      'requestId',
+      'deliveryRevisionId',
+      'artifactId',
+      'claimVersion',
+      'leaseUntil',
+      'deletionStarted',
+      'replayed',
+    ],
+    'Delivery artifact cleanup claim receipt',
+  )
+  uuid(row.cleanupClaimId, 'Artifact cleanup claim id')
+  uuid(row.requestId, 'Artifact cleanup claim request id')
+  uuid(row.deliveryRevisionId, 'Artifact cleanup claim delivery revision id')
+  uuid(row.artifactId, 'Artifact cleanup claim artifact id')
+  boundedInteger(row.claimVersion, 'Artifact cleanup claim version', 1, 1_000_000)
+  timestamp(row.leaseUntil, 'Artifact cleanup claim leaseUntil')
+  if (typeof row.deletionStarted !== 'boolean') {
+    throw new RequestContractError(
+      'Artifact cleanup claim deletion-start state is invalid.',
+    )
+  }
+  if (typeof row.replayed !== 'boolean') {
+    throw new RequestContractError('Artifact cleanup claim replay state is invalid.')
+  }
+  return row as unknown as ClaimDeliveryArtifactCleanupReceiptV1
+}
+
+function parseAbortDeliveryArtifactCleanupReceiptV1(
+  value: unknown,
+): AbortDeliveryArtifactCleanupReceiptV1 {
+  const row = strictRecord(
+    value,
+    [
+      'cleanupClaimId',
+      'requestId',
+      'deliveryRevisionId',
+      'artifactId',
+      'claimVersion',
+      'replayed',
+      'abortedAt',
+    ],
+    'Delivery artifact cleanup abort receipt',
+  )
+  uuid(row.cleanupClaimId, 'Artifact cleanup abort claim id')
+  uuid(row.requestId, 'Artifact cleanup abort request id')
+  uuid(row.deliveryRevisionId, 'Artifact cleanup abort delivery revision id')
+  uuid(row.artifactId, 'Artifact cleanup abort artifact id')
+  boundedInteger(row.claimVersion, 'Artifact cleanup abort claim version', 1, 1_000_000)
+  if (typeof row.replayed !== 'boolean') {
+    throw new RequestContractError('Artifact cleanup abort replay state is invalid.')
+  }
+  timestamp(row.abortedAt, 'Artifact cleanup abort abortedAt')
+  return row as unknown as AbortDeliveryArtifactCleanupReceiptV1
+}
+
+function parseBeginDeliveryArtifactCleanupDeleteReceiptV1(
+  value: unknown,
+): BeginDeliveryArtifactCleanupDeleteReceiptV1 {
+  const row = strictRecord(
+    value,
+    [
+      'cleanupClaimId',
+      'requestId',
+      'deliveryRevisionId',
+      'artifactId',
+      'claimVersion',
+      'deleteStartedAt',
+      'replayed',
+    ],
+    'Delivery artifact cleanup deletion-start receipt',
+  )
+  uuid(row.cleanupClaimId, 'Artifact cleanup deletion-start claim id')
+  uuid(row.requestId, 'Artifact cleanup deletion-start request id')
+  uuid(
+    row.deliveryRevisionId,
+    'Artifact cleanup deletion-start delivery revision id',
+  )
+  uuid(row.artifactId, 'Artifact cleanup deletion-start artifact id')
+  boundedInteger(
+    row.claimVersion,
+    'Artifact cleanup deletion-start claim version',
+    1,
+    1_000_000,
+  )
+  timestamp(row.deleteStartedAt, 'Artifact cleanup deletion-start timestamp')
+  if (typeof row.replayed !== 'boolean') {
+    throw new RequestContractError(
+      'Artifact cleanup deletion-start replay state is invalid.',
+    )
+  }
+  return row as unknown as BeginDeliveryArtifactCleanupDeleteReceiptV1
+}
+
+/**
+ * Opens the database-side preservation fence immediately before an external
+ * object delete. An unresolved claim blocks new moderation holds even after
+ * its worker lease expires. A takeover must either confirm a missing object or
+ * abort only after the exact object is proven to still exist.
+ */
+export function createRequestDeliveryArtifactCleanupClaimService(
+  serviceRoleClient: RequestRpcClient,
+): RequestDeliveryArtifactCleanupClaimService {
+  return {
+    async claimDeliveryArtifactCleanup(input) {
+      strictRecord(
+        input,
+        ['requestId', 'deliveryRevisionId', 'artifactId', 'idempotencyKey'],
+        'Delivery artifact cleanup claim',
+      )
+      validateUuid(input.requestId, 'Artifact cleanup claim request id')
+      validateUuid(
+        input.deliveryRevisionId,
+        'Artifact cleanup claim delivery revision id',
+      )
+      validateUuid(input.artifactId, 'Artifact cleanup claim artifact id')
+      validateIdempotencyKey(input.idempotencyKey)
+      const result = await invokeRead(
+        serviceRoleClient,
+        REQUEST_SERVER_RPC.claimDeliveryArtifactCleanup,
+        {
+          p_contract_version: REQUEST_CONTRACT_VERSION,
+          p_request_id: input.requestId,
+          p_delivery_revision_id: input.deliveryRevisionId,
+          p_artifact_id: input.artifactId,
+          p_idempotency_key: input.idempotencyKey,
+        },
+        parseClaimDeliveryArtifactCleanupReceiptV1,
+      )
+      if (
+        result.requestId !== input.requestId ||
+        result.deliveryRevisionId !== input.deliveryRevisionId ||
+        result.artifactId !== input.artifactId
+      ) {
+        throw new RequestContractError(
+          'Artifact cleanup claim binding is inconsistent.',
+        )
+      }
+      return result
+    },
+    async beginDeliveryArtifactCleanupDelete(input) {
+      strictRecord(
+        input,
+        ['cleanupClaimId', 'claimVersion', 'idempotencyKey'],
+        'Delivery artifact cleanup deletion start',
+      )
+      validateUuid(
+        input.cleanupClaimId,
+        'Artifact cleanup deletion-start claim id',
+      )
+      boundedInteger(
+        input.claimVersion,
+        'Artifact cleanup deletion-start claim version',
+        1,
+        1_000_000,
+      )
+      validateIdempotencyKey(input.idempotencyKey)
+      const result = await invokeRead(
+        serviceRoleClient,
+        REQUEST_SERVER_RPC.beginDeliveryArtifactCleanupDelete,
+        {
+          p_contract_version: REQUEST_CONTRACT_VERSION,
+          p_cleanup_claim_id: input.cleanupClaimId,
+          p_claim_version: input.claimVersion,
+          p_idempotency_key: input.idempotencyKey,
+        },
+        parseBeginDeliveryArtifactCleanupDeleteReceiptV1,
+      )
+      if (
+        result.cleanupClaimId !== input.cleanupClaimId ||
+        result.claimVersion !== input.claimVersion
+      ) {
+        throw new RequestContractError(
+          'Artifact cleanup deletion-start binding is inconsistent.',
+        )
+      }
+      return result
+    },
+    async abortDeliveryArtifactCleanup(input) {
+      strictRecord(
+        input,
+        ['cleanupClaimId', 'claimVersion', 'idempotencyKey'],
+        'Delivery artifact cleanup abort',
+      )
+      validateUuid(input.cleanupClaimId, 'Artifact cleanup abort claim id')
+      boundedInteger(input.claimVersion, 'Artifact cleanup abort claim version', 1, 1_000_000)
+      validateIdempotencyKey(input.idempotencyKey)
+      const result = await invokeRead(
+        serviceRoleClient,
+        REQUEST_SERVER_RPC.abortDeliveryArtifactCleanup,
+        {
+          p_contract_version: REQUEST_CONTRACT_VERSION,
+          p_cleanup_claim_id: input.cleanupClaimId,
+          p_claim_version: input.claimVersion,
+          p_idempotency_key: input.idempotencyKey,
+        },
+        parseAbortDeliveryArtifactCleanupReceiptV1,
+      )
+      if (
+        result.cleanupClaimId !== input.cleanupClaimId ||
+        result.claimVersion !== input.claimVersion
+      ) {
+        throw new RequestContractError(
+          'Artifact cleanup abort binding is inconsistent.',
+        )
+      }
+      return result
+    },
+  }
+}
+
+function parseConfirmDeliveryArtifactCleanupReceiptV1(
+  value: unknown,
+): ConfirmDeliveryArtifactCleanupReceiptV1 {
+  const row = strictRecord(
+    value,
+    [
+      'cleanupReceiptId',
+      'requestId',
+      'deliveryRevisionId',
+      'artifactId',
+      'cleanupClaimId',
+      'claimVersion',
+      'cleanupDisposition',
+      'replayed',
+      'cleanedAt',
+    ],
+    'Delivery artifact cleanup confirmation receipt',
+  )
+  uuid(row.cleanupReceiptId, 'Artifact cleanup receipt id')
+  uuid(row.requestId, 'Artifact cleanup request id')
+  uuid(row.deliveryRevisionId, 'Artifact cleanup delivery revision id')
+  uuid(row.artifactId, 'Artifact cleanup artifact id')
+  uuid(row.cleanupClaimId, 'Artifact cleanup claim id')
+  boundedInteger(row.claimVersion, 'Artifact cleanup claim version', 1, 1_000_000)
+  if (
+    row.cleanupDisposition !== 'worker_removed' &&
+    row.cleanupDisposition !== 'preexisting_missing'
+  ) {
+    throw new RequestContractError(
+      'Artifact cleanup disposition is invalid.',
+    )
+  }
+  if (typeof row.replayed !== 'boolean') {
+    throw new RequestContractError(
+      'Artifact cleanup confirmation replay state is invalid.',
+    )
+  }
+  timestamp(row.cleanedAt, 'Artifact cleanup cleanedAt')
+  return row as unknown as ConfirmDeliveryArtifactCleanupReceiptV1
+}
+
+/**
+ * Confirms that a trusted worker has removed the exact private object. The
+ * database rechecks terminal retention eligibility, holds, and physical
+ * storage absence before recording an immutable logical cleanup receipt.
+ */
+export function createRequestDeliveryArtifactCleanupConfirmationService(
+  serviceRoleClient: RequestRpcClient,
+): RequestDeliveryArtifactCleanupConfirmationService {
+  return {
+    async confirmDeliveryArtifactCleanup(input) {
+      strictRecord(
+        input,
+        [
+          'requestId',
+          'deliveryRevisionId',
+          'artifactId',
+          'cleanupClaimId',
+          'claimVersion',
+          'idempotencyKey',
+        ],
+        'Delivery artifact cleanup confirmation',
+      )
+      validateUuid(input.requestId, 'Artifact cleanup request id')
+      validateUuid(
+        input.deliveryRevisionId,
+        'Artifact cleanup delivery revision id',
+      )
+      validateUuid(input.artifactId, 'Artifact cleanup artifact id')
+      validateUuid(input.cleanupClaimId, 'Artifact cleanup claim id')
+      boundedInteger(input.claimVersion, 'Artifact cleanup claim version', 1, 1_000_000)
+      validateIdempotencyKey(input.idempotencyKey)
+      const result = await invokeRead(
+        serviceRoleClient,
+        REQUEST_SERVER_RPC.confirmDeliveryArtifactCleanup,
+        {
+          p_contract_version: REQUEST_CONTRACT_VERSION,
+          p_request_id: input.requestId,
+          p_delivery_revision_id: input.deliveryRevisionId,
+          p_artifact_id: input.artifactId,
+          p_cleanup_claim_id: input.cleanupClaimId,
+          p_claim_version: input.claimVersion,
+          p_idempotency_key: input.idempotencyKey,
+        },
+        parseConfirmDeliveryArtifactCleanupReceiptV1,
+      )
+      if (
+        result.requestId !== input.requestId ||
+        result.deliveryRevisionId !== input.deliveryRevisionId ||
+        result.artifactId !== input.artifactId ||
+        result.cleanupClaimId !== input.cleanupClaimId ||
+        result.claimVersion !== input.claimVersion
+      ) {
+        throw new RequestContractError(
+          'Artifact cleanup confirmation binding is inconsistent.',
         )
       }
       return result

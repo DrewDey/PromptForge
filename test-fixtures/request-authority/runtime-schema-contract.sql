@@ -138,10 +138,18 @@ DECLARE
   ];
   procedure_value RECORD;
   expected_service TEXT[] := ARRAY[
+    'abort_build_request_delivery_artifact_cleanup_v1',
     'attest_build_request_delivery_artifact_object_v1',
+    'begin_build_request_delivery_artifact_cleanup_delete_v1',
+    'claim_build_request_delivery_artifact_cleanup_v1',
+    'confirm_build_request_delivery_artifact_cleanup_v1',
+    'list_build_request_maintenance_work_v1',
     'prepare_build_request_delivery_artifact_object_v1',
+    'purge_build_request_raw_text_v1',
     'resolve_build_request_delivery_artifact_custody_v1',
+    'resolve_build_request_delivery_artifact_cleanup_v1',
     'resolve_build_request_delivery_artifact_object_v1',
+    'expire_build_request_audit_tombstone_v1',
     'seal_build_request_delivery_revision_v1'
   ];
 BEGIN

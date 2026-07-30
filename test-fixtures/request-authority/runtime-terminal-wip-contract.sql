@@ -244,8 +244,27 @@ BEGIN
     RAISE EXCEPTION
       'Declined WIP closure did not end assignments and preserve evidence.';
   END IF;
-
+  INSERT INTO public.build_request_retention_holds (
+    request_id, hold_kind, reason
+  ) VALUES (
+    request_id, 'legal',
+    'Preserve terminal WIP evidence while identity is deidentified.'
+  );
   PERFORM set_config('request.jwt.claims', '{"role":"service_role"}', TRUE);
+  IF NOT EXISTS (
+    SELECT 1
+    FROM jsonb_array_elements(
+      public.list_build_request_maintenance_work_v1(1, NULL, 100)->'items'
+    ) AS item
+    WHERE item->>'category' = 'delivery_revision_retirement'
+      AND item->>'requestId' = request_id::TEXT
+      AND item->>'deliveryRevisionId' = revision_id::TEXT
+      AND (item->>'expectedVersion')::INTEGER = request_version
+  ) THEN
+    RAISE EXCEPTION
+      'Held terminal WIP was not discoverable for logical retirement.';
+  END IF;
+
   BEGIN
     PERFORM public.retire_build_request_delivery_revision_v1(
       1,
@@ -296,6 +315,23 @@ BEGIN
     RAISE EXCEPTION
       'Terminal WIP retirement replay drifted or deleted evidence.';
   END IF;
+  PERFORM set_config(
+    'request.jwt.claims',
+    jsonb_build_object('sub', triager, 'role', 'authenticated')::TEXT,
+    TRUE
+  );
+  result := public.deidentify_build_request_account_v1(
+    1, builder, 'terminal-wip-deidentify-builder-0001'
+  );
+  IF result->>'affectedCaseCount' <> '1'
+    OR NOT EXISTS (
+      SELECT 1
+      FROM public.build_request_delivery_artifacts AS artifact
+      WHERE artifact.id = terminal_wip.artifact_id
+    ) THEN
+    RAISE EXCEPTION
+      'Held terminal WIP retirement did not unblock safe deidentification.';
+  END IF;
 
   SELECT version INTO request_version
   FROM public.build_requests
@@ -343,10 +379,10 @@ BEGIN
   result := public.resolve_build_request_delivery_artifact_cleanup_v1(
     1, request_id, revision_id, artifact_id
   );
-  IF result->>'retentionState' <> 'cleanup_eligible'
+  IF result->>'retentionState' <> 'preserved_by_hold'
     OR result->>'custodyState' <> 'staged' THEN
     RAISE EXCEPTION
-      'Retired staged artifact was not day-91 cleanup eligible.';
+      'Retired staged artifact did not remain preserved by the legal hold.';
   END IF;
 
   INSERT INTO public.test_request_terminal_wip_state (

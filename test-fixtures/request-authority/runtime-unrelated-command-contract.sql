@@ -3,13 +3,21 @@
 DO $test$
 <<unrelated_command>>
 DECLARE
-  stranger UUID := '82000000-0000-4000-8000-000000000006';
+  stranger UUID := '82000000-0000-4000-8000-000000000099';
+  tombstoned_actor UUID := '82000000-0000-4000-8000-000000000006';
   target RECORD;
   attempted_version INTEGER;
   attempt_number INTEGER := 0;
   error_state TEXT;
   error_message TEXT;
 BEGIN
+  INSERT INTO auth.users (id, email_confirmed_at)
+  VALUES (stranger, clock_timestamp());
+  INSERT INTO public.profiles (id, role, username, display_name)
+  VALUES (
+    stranger, 'user', 'fresh_unrelated_command_actor',
+    'Fresh Unrelated Command Actor'
+  );
   CREATE TEMP TABLE unrelated_targets (
     label TEXT PRIMARY KEY,
     request_id UUID NOT NULL,
@@ -109,6 +117,44 @@ BEGIN
           END IF;
       END;
     END LOOP;
+  END LOOP;
+
+  PERFORM set_config(
+    'request.jwt.claims',
+    jsonb_build_object(
+      'sub', tombstoned_actor, 'role', 'authenticated'
+    )::TEXT,
+    TRUE
+  );
+  FOR target IN
+    SELECT request_id, original_version
+    FROM unrelated_targets
+    WHERE label = 'clear'
+    UNION ALL
+    SELECT
+      '89999999-9999-4999-8999-999999999999'::UUID,
+      0
+  LOOP
+    BEGIN
+      PERFORM public.build_request_command_v1(
+        1, target.request_id, target.original_version,
+        'tombstoned-command-' || gen_random_uuid()::TEXT,
+        'withdraw',
+        jsonb_build_object('reason', 'Tombstoned actor command probe')
+      );
+      RAISE EXCEPTION 'A tombstoned actor command succeeded.';
+    EXCEPTION WHEN OTHERS THEN
+      GET STACKED DIAGNOSTICS
+        error_state = RETURNED_SQLSTATE,
+        error_message = MESSAGE_TEXT;
+      IF error_message = 'A tombstoned actor command succeeded.'
+        OR error_state <> '42501'
+        OR error_message <> 'Request actor is no longer available.' THEN
+        RAISE EXCEPTION
+          'Tombstoned actor target equality drifted: [%] %.',
+          error_state, error_message;
+      END IF;
+    END;
   END LOOP;
 
   IF EXISTS (

@@ -5,7 +5,8 @@ CREATE TABLE public.test_request_subject_fence_state (
   lock_announced BOOLEAN NOT NULL DEFAULT FALSE,
   accept_request_id UUID NOT NULL,
   reassign_builder_request_id UUID NOT NULL,
-  reassign_triager_request_id UUID NOT NULL
+  reassign_triager_request_id UUID NOT NULL,
+  stage_request_id UUID NOT NULL
 );
 
 DO $test$
@@ -53,7 +54,7 @@ BEGIN
     target_id, TRUE, NULL, 'Subject fence target admission', operator_id
   );
 
-  FOR ordinal IN 1..3 LOOP
+  FOR ordinal IN 1..4 LOOP
     requester_id := (
       '84000000-0000-4000-8000-' || lpad((100 + ordinal)::TEXT, 12, '0')
     )::UUID;
@@ -117,10 +118,33 @@ BEGIN
       'targetDate', '2026-08-31'
     )
   );
+  PERFORM public.build_request_command_v1(
+    1,
+    request_ids[4],
+    1,
+    'subject-fence-stage-builder',
+    'accept',
+    jsonb_build_object(
+      'builderId', target_id,
+      'targetDate', '2026-08-31'
+    )
+  );
+  PERFORM set_config(
+    'request.jwt.claims',
+    jsonb_build_object(
+      'sub', target_id, 'role', 'authenticated'
+    )::TEXT,
+    TRUE
+  );
+  PERFORM public.build_request_command_v1(
+    1, request_ids[4], 2, 'subject-fence-start-build',
+    'start_build', '{}'::JSONB
+  );
   INSERT INTO public.test_request_subject_fence_state (
     accept_request_id,
     reassign_builder_request_id,
-    reassign_triager_request_id
-  ) VALUES (request_ids[1], request_ids[2], request_ids[3]);
+    reassign_triager_request_id,
+    stage_request_id
+  ) VALUES (request_ids[1], request_ids[2], request_ids[3], request_ids[4]);
 END;
 $test$;

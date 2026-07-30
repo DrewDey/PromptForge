@@ -10,6 +10,9 @@ export const REQUEST_CONTRACT_VERSION = 1 as const
  * Active staging/prepared/sealed workspace does not consume this cap.
  */
 export const REQUEST_MAX_DELIVERY_REVISIONS = 2 as const
+export const REQUEST_MAX_ARTIFACT_STAGING_ATTEMPTS_PER_REVISION = 8 as const
+export const REQUEST_MAX_ATTEMPTED_ARTIFACT_BYTES_PER_REVISION =
+  24_000_000 as const
 export const REQUEST_MAX_ASSIGNMENT_HISTORY = 20 as const
 
 export const REQUEST_LIFECYCLE_STATES = [
@@ -364,6 +367,10 @@ export type RequestAssignmentV1 = {
    */
   assignmentId: string
   role: 'builder' | 'reviewer'
+  assignee: {
+    displayName: string
+    deidentified: boolean
+  }
   active: boolean
   assignedAt: string
   endedAt: string | null
@@ -498,7 +505,12 @@ export type RequestDeliveryArtifactReaderV1 = {
   byteLength: number
   sha256: string
   integrityStatus: 'verified'
-  deliveryStatus: 'delivery_ready' | 'delivered' | 'completed' | 'closed_no_response'
+  deliveryStatus:
+    | 'review_pending'
+    | 'delivery_ready'
+    | 'delivered'
+    | 'completed'
+    | 'closed_no_response'
   accessUntil: string | null
   readerHref: string
 }
@@ -589,7 +601,11 @@ export type RequestEventListQueryV1 = {
 }
 
 export type RequestCaseNoticeV1 = {
-  kind: 'retention' | 'moderation_hold'
+  kind:
+    | 'raw_content_retention'
+    | 'audit_retention'
+    | 'moderation_hold'
+    | 'preservation_hold'
   label: string
   effectiveUntil: string | null
 }

@@ -68,7 +68,11 @@ const {
   validateDeliveryArtifact,
   validateDeliveryArtifactSet,
 } = scanner
-const { buildDeliveryObjectKeys } = objectIdentityModule
+const {
+  assertDeliveryAuthorityId,
+  buildDeliveryObjectKeys,
+  normalizeDeliveryCustodyScope,
+} = objectIdentityModule
 const {
   deliveryArtifactRetentionDisposition,
   finalizeDeliveryArtifactSet,
@@ -421,6 +425,26 @@ assert.equal(
 )
 assert.equal(keys.objectIdentity.includes(textArtifact.safeName), false)
 assert.equal(keys.objectIdentity.includes('..'), false)
+const versionEightScope = {
+  ...scope,
+  deliveryRevisionId: '20000000-0000-8000-8000-000000000001',
+}
+assert.deepEqual(
+  normalizeDeliveryCustodyScope(versionEightScope),
+  versionEightScope,
+  'canonical UUID v8 delivery revisions remain valid custody authority',
+)
+for (const invalidAuthorityId of [
+  '20000000-0000-9000-8000-000000000001',
+  '20000000-0000-8000-c000-000000000001',
+  '20000000-0000-8000-8000-00000000001',
+  '20000000000080008000000000000001',
+]) {
+  assert.throws(
+    () => assertDeliveryAuthorityId(invalidAuthorityId),
+    (error) => error instanceof DeliveryCustodyError && error.code === 'invalid_input',
+  )
+}
 assert.throws(
   () => buildDeliveryObjectKeys({
     scope,
@@ -431,6 +455,23 @@ assert.throws(
     ),
   }),
   (error) => error instanceof DeliveryCustodyError && error.code === 'invalid_input',
+)
+assert.throws(
+  () => buildDeliveryObjectKeys({
+    scope: versionEightScope,
+    artifactId,
+    stagingIdentity: [
+      'requests',
+      versionEightScope.requestId,
+      'deliveries',
+      versionEightScope.deliveryRevisionId,
+      'artifacts',
+      artifactId,
+      '80000000-0000-8000-8000-000000000001',
+    ].join('/'),
+  }),
+  (error) => error instanceof DeliveryCustodyError && error.code === 'invalid_input',
+  'the authority-generated object nonce remains explicitly UUID v4',
 )
 
 const createdAt = '2026-07-29T12:00:00.000Z'

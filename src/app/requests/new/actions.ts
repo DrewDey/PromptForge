@@ -11,6 +11,10 @@ import {
   getRequestViewerState,
   requestAuthorityErrorCode,
 } from '@/lib/build-requests/server'
+import {
+  readRequestIntakeAcceptanceChecks,
+  RequestIntakeEnvelopeError,
+} from '@/lib/build-requests/intake-envelope'
 import type {
   RequestIntakeError,
   RequestIntakeValues,
@@ -44,9 +48,7 @@ function valuesFromForm(formData: FormData): RequestIntakeValues {
     outcome: text(formData, 'outcome'),
     intendedUser: text(formData, 'intendedUser'),
     mustWorkScenario: text(formData, 'mustWorkScenario'),
-    acceptanceChecks: formData
-      .getAll('acceptanceChecks')
-      .filter((value): value is string => typeof value === 'string'),
+    acceptanceChecks: [],
     constraints: text(formData, 'constraints'),
     pathforgeReference,
   }
@@ -55,7 +57,8 @@ function valuesFromForm(formData: FormData): RequestIntakeValues {
 function validationError(error: unknown): RequestIntakeError[] {
   return [{
     field: 'form',
-    message: error instanceof RequestContractError
+    message: error instanceof RequestContractError ||
+      error instanceof RequestIntakeEnvelopeError
       ? error.message
       : 'The brief did not match the authoritative Request contract.',
   }]
@@ -65,10 +68,12 @@ export const submitRequestAction: RequestIntakeWorkflowAction = async (
   previousState,
   formData,
 ) => {
-  const values = valuesFromForm(formData)
+  let values = valuesFromForm(formData)
   const idempotencyKey = text(formData, 'idempotencyKey')
   const analyticsAttempt = previousState.analyticsAttempt + 1
   try {
+    const acceptanceChecks = readRequestIntakeAcceptanceChecks(formData)
+    values = { ...values, acceptanceChecks: [...acceptanceChecks] }
     const viewer = await getRequestViewerState()
     if (viewer.status === 'signed_out') {
       return {
@@ -90,12 +95,6 @@ export const submitRequestAction: RequestIntakeWorkflowAction = async (
         serviceError: 'unavailable',
       }
     }
-    const checks = values.acceptanceChecks
-    const acceptanceChecks = checks.length === 1
-      ? [checks[0]] as const
-      : checks.length === 2
-        ? [checks[0], checks[1]] as const
-        : [checks[0], checks[1], checks[2]] as const
     const input = validateSubmitBuildRequestV1({
       contractVersion: REQUEST_CONTRACT_VERSION,
       idempotencyKey,
@@ -134,6 +133,7 @@ export const submitRequestAction: RequestIntakeWorkflowAction = async (
       code === 'stale_version'
       ? code
       : error instanceof RequestContractError
+        || error instanceof RequestIntakeEnvelopeError
         ? null
         : 'unavailable'
     return {

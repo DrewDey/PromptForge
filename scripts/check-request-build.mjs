@@ -214,6 +214,25 @@ assert.match(
   /Optional expiry \(UTC\)[\s\S]{0,180}data-request-expiry-time-zone="UTC"/,
   'Pilot admission must label datetime-local input as UTC.',
 )
+for (const name of ['acceptingRequests', 'assigningRequests']) {
+  assert.match(
+    adminControls,
+    new RegExp(
+      `type="hidden" name="${name}" value="no"[\\s\\S]{0,180}type="checkbox"[\\s\\S]{0,120}name="${name}"[\\s\\S]{0,80}value="yes"`,
+    ),
+    `${name} must use an unambiguous hidden no plus checkbox yes envelope.`,
+  )
+}
+assert.match(
+  adminActions,
+  /function controlFlag[\s\S]*values\.length === 1 && values\[0\] === 'no'[\s\S]*values\.length === 2 && values\[0\] === 'no' && values\[1\] === 'yes'[\s\S]*throw new Error/,
+  'Service control booleans must accept only exact no or no+yes envelopes.',
+)
+assert.ok(
+  adminActions.indexOf("controlFlag(formData, 'acceptingRequests')") <
+    adminActions.indexOf('getRequestApplicationService()'),
+  'Service control envelopes must be parsed before resolving the application service.',
+)
 assert.match(
   adminActions,
   /expiresAt: parsePilotExpiryUtc\(rawExpiry\)/,

@@ -18,18 +18,31 @@ function text(formData: FormData, name: string) {
   return typeof value === 'string' ? value : ''
 }
 
-function bool(formData: FormData, name: string) {
-  return formData.get(name) === 'yes'
+function controlFlag(formData: FormData, name: string) {
+  const values = formData.getAll(name)
+  if (values.length === 1 && values[0] === 'no') return false
+  if (values.length === 2 && values[0] === 'no' && values[1] === 'yes') {
+    return true
+  }
+  throw new Error('Invalid Request service control envelope.')
 }
 
 export async function updateRequestControlsAction(formData: FormData) {
+  let acceptingRequests: boolean
+  let assigningRequests: boolean
+  try {
+    acceptingRequests = controlFlag(formData, 'acceptingRequests')
+    assigningRequests = controlFlag(formData, 'assigningRequests')
+  } catch {
+    redirect('/admin/build-requests?scope=admin&actionError=unavailable')
+  }
   try {
     const service = await getRequestApplicationService()
     await service.updateControls({
       expectedControlsVersion: Number(text(formData, 'expectedControlsVersion')),
       idempotencyKey: text(formData, 'idempotencyKey'),
-      acceptingRequests: bool(formData, 'acceptingRequests'),
-      assigningRequests: bool(formData, 'assigningRequests'),
+      acceptingRequests,
+      assigningRequests,
       activeCaseCapacity: Number(text(formData, 'activeCaseCapacity')),
     })
   } catch (error) {

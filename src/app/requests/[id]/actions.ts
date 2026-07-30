@@ -94,7 +94,9 @@ export async function requestCaseCommandAction(formData: FormData) {
       payload: {},
     }
   } else {
-    throw new Error('This participant action is not supported by the shared case shell.')
+    redirect(
+      `/requests/${encodeURIComponent(base.requestId)}?actionError=unavailable`,
+    )
   }
   try {
     const service = await getRequestApplicationService()

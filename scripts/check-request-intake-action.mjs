@@ -21,6 +21,7 @@ registerHooks({
             return globalThis.__requestIntakeViewerState
           }
           export async function getRequestApplicationService() {
+            globalThis.__requestIntakeServiceFactoryCalls += 1
             return globalThis.__requestIntakeService
           }
           export function requestAuthorityErrorCode() {
@@ -73,6 +74,7 @@ globalThis.__requestIntakeViewerState = {
   status: 'signed_in',
   user: { id: '10000000-0000-4000-a000-000000000001' },
 }
+globalThis.__requestIntakeServiceFactoryCalls = 0
 globalThis.__requestIntakeService = {
   async createRequest(input) {
     createInputs.push(input)
@@ -140,6 +142,33 @@ for (const [label, form] of [
   )
 }
 
+const hostileReferenceForm = intakeForm(['The exact artifact opens.'])
+hostileReferenceForm.set('referenceKind', 'external_url')
+const createsBeforeHostileReference = createInputs.length
+const factoriesBeforeHostileReference =
+  globalThis.__requestIntakeServiceFactoryCalls
+const hostileReferenceResult = await submitRequestAction(
+  previousState,
+  hostileReferenceForm,
+)
+assert.equal(hostileReferenceResult.status, 'ready')
+assert.equal(hostileReferenceResult.serviceError, null)
+assert.equal(hostileReferenceResult.errors.length, 1)
+assert.match(
+  hostileReferenceResult.errors[0].message,
+  /reference type must be empty, project, or response/i,
+)
+assert.equal(
+  createInputs.length,
+  createsBeforeHostileReference,
+  'A hostile reference discriminant must not call createRequest.',
+)
+assert.equal(
+  globalThis.__requestIntakeServiceFactoryCalls,
+  factoriesBeforeHostileReference,
+  'A hostile reference discriminant must fail before resolving the service.',
+)
+
 console.log(
-  'Request intake Server Action checks passed: exact 1/3-check envelopes persist unchanged; 0/4/mixed values fail before createRequest.',
+  'Request intake Server Action checks passed: exact 1/3-check envelopes persist unchanged; 0/4/mixed/reference-discriminant values fail before createRequest.',
 )

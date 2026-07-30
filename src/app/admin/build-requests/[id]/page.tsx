@@ -44,11 +44,16 @@ export default async function BuildRequestAdminDetailPage({
         title: 'The case changed before this operation was recorded.',
         messages: ['Review the canonical stage and authorized operations, then retry.'],
       }
-    : query.actionError === 'rate_limited'
+      : query.actionError === 'rate_limited'
       ? {
           title: 'This operation is temporarily limited.',
           messages: ['Wait before retrying. No duplicate authority event is claimed.'],
         }
+      : query.actionError === 'confirmation_required'
+        ? {
+            title: 'This reassignment was not confirmed.',
+            messages: ['Confirm the accountable reassignment before submitting it again.'],
+          }
       : query.actionError
         ? {
             title: 'The authority could not verify this operation.',

@@ -88,6 +88,11 @@ assert.doesNotMatch(
   /getAll\('acceptanceChecks'\)[\s\S]{0,120}\.(?:filter|slice)\(/,
   'The intake Server Action must not filter or truncate submitted acceptance checks.',
 )
+assert.match(
+  intakeAction,
+  /referenceKind !== ''[\s\S]*referenceKind !== 'project'[\s\S]*referenceKind !== 'response'[\s\S]*throw new RequestContractError/,
+  'Intake must reject an unknown optional-reference discriminant.',
+)
 const participantCaseAction = readFileSync('src/app/requests/[id]/actions.ts', 'utf8')
 const participantCasePage = readFileSync('src/app/requests/[id]/page.tsx', 'utf8')
 const presentation = readFileSync('src/lib/build-requests/presentation.ts', 'utf8')
@@ -216,7 +221,7 @@ assert.match(
 )
 assert.match(
   adminActions,
-  /admissionAction !== 'invite' && admissionAction !== 'revoke'[\s\S]*throw new Error[\s\S]*getRequestApplicationService\(\)/,
+  /admissionAction !== 'invite' && admissionAction !== 'revoke'[\s\S]*actionError=unavailable[\s\S]*getRequestApplicationService\(\)/,
   'Pilot admission must reject an unknown discriminant before resolving its service.',
 )
 assert.doesNotMatch(
@@ -233,6 +238,16 @@ assert.match(
   participantCaseAction,
   /kind === 'withdraw'[\s\S]*text\(formData, 'confirmation'\) !== 'confirmed'[\s\S]*redirect\([\s\S]*confirmation_required[\s\S]*command =/,
   'Participant withdrawal must be rejected before command construction without explicit confirmation.',
+)
+assert.match(
+  participantCaseAction,
+  /\} else \{\s*redirect\([\s\S]*actionError=unavailable/,
+  'Unsupported participant commands must use bounded recovery.',
+)
+assert.match(
+  adminActions,
+  /text\(formData, 'confirmed'\) !== 'yes'[\s\S]*actionError=confirmation_required/,
+  'Unconfirmed reassignment must use bounded confirmation recovery.',
 )
 assert.match(
   participantCasePage,

@@ -50,11 +50,23 @@ const CLOSE_REASONS = [
   'safety_removed',
   'no_response',
 ]
-const SERVICE_STATES = ['loading', 'unavailable', 'closed', 'capacity_full', 'available', 'private']
+const SERVICE_STATES = [
+  'loading',
+  'unavailable',
+  'closed',
+  'capacity_full',
+  'available',
+  'private',
+  'sign_in_required',
+  'not_admitted',
+  'already_active',
+  'controls_off',
+]
 const INTAKE_STATES = [
   'pristine',
   'errors',
   'unavailable',
+  'not_admitted',
   'rate_limited',
   'duplicate',
   'stale_version',
@@ -100,7 +112,7 @@ const SCENARIOS = [
     { analyticsTransition: true },
   ),
   ...SERVICE_STATES.map((state) => scenario(`service-${state}`, { surface: 'service', state }, {
-    screenshot: ['capacity_full', 'unavailable'].includes(state),
+    screenshot: ['capacity_full', 'unavailable', 'not_admitted'].includes(state),
   })),
   ...INTAKE_STATES.map((state) => scenario(`intake-${state}`, { surface: 'intake', state }, {
     expectFocusedAlert: ['errors', 'unavailable', 'rate_limited', 'duplicate', 'stale_version', 'forbidden_input'].includes(state),
@@ -393,6 +405,7 @@ const PAGE_SNAPSHOT = `(() => {
     overlay,
     hasContent:Boolean(fixture && fixture.innerText.trim().length > 40),
     proofLabel:Boolean(fixture?.querySelector('[data-fixture-proof-label]')),
+    fixtureText:(fixture?.innerText || '').replace(/\\s+/g,' ').trim(),
     deliveryPlaceholders:fixture?.querySelectorAll('[data-request-delivery-placeholder]').length || 0,
     tooSmall,
     stickyActionCount:stickyActions.length,
@@ -588,6 +601,13 @@ async function verifyViewport(client, options, viewport) {
         throw new Error(`${label} rendered undersized controls: ${JSON.stringify(snapshot.tooSmall)}.`)
       }
       if (!snapshot.reducedMotion) throw new Error(`${label} did not honor reduced-motion emulation.`)
+      if (
+        scenarioItem.path.includes('surface=service') &&
+        scenarioItem.path.includes('state=not_admitted') &&
+        !snapshot.fixtureText.includes('This account is not in the current pilot.')
+      ) {
+        throw new Error(`${label} omitted the participant-safe pilot eligibility message.`)
+      }
       const isRemovedCase = scenarioItem.path.includes('surface=case') &&
         scenarioItem.path.includes('moderation=removed')
       const isHeldCase = scenarioItem.path.includes('surface=case') &&

@@ -46,6 +46,7 @@ const analyticsFailureReason: Record<
   RequestAnalyticsFailureReason
 > = {
   auth_required: 'auth_required',
+  not_admitted: 'not_admitted',
   controls_off: 'controls_closed',
   capacity_full: 'capacity_full',
   unavailable: 'service_unavailable',

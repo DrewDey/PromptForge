@@ -18,11 +18,20 @@ export type RequestServiceAvailability =
   | { status: 'available'; activeCases: number; maxActiveCases: number }
   | { status: 'private'; activeCases?: number; maxActiveCases: number }
 
+export type RequestIntakeEligibility =
+  | 'sign_in_required'
+  | 'not_admitted'
+  | 'already_active'
+  | 'controls_off'
+  | 'available'
+
 export type RequestServiceOverviewProps = {
   availability: RequestServiceAvailability
   isSignedIn: boolean
+  intakeEligibility?: RequestIntakeEligibility
   intakeHref?: string
   loginHref?: string
+  myForgeHref?: string
   searchHref?: string
 }
 
@@ -51,9 +60,9 @@ function availabilityCopy(availability: RequestServiceAvailability) {
       } as const
     case 'capacity_full':
       return {
-        eyebrow: 'At capacity',
+        eyebrow: 'Assignment capacity full',
         title: 'All managed build places are currently in use.',
-        body: 'New intake stays closed while the active-case limit is full. Search existing paths in the meantime.',
+        body: 'The active-case limit is full. This does not reveal pilot admission and does not replace the authoritative intake or assignment decision.',
         tone: 'closed',
       } as const
     case 'private':
@@ -86,13 +95,21 @@ function capacityLabel(availability: RequestServiceAvailability) {
 export function RequestServiceOverview({
   availability,
   isSignedIn,
+  intakeEligibility = isSignedIn ? 'available' : 'sign_in_required',
   intakeHref = '/requests/new',
   loginHref = '/auth/login?next=%2Frequests%2Fnew',
+  myForgeHref = '/my-forge?tab=requests',
   searchHref = '/paths?panel=open',
 }: RequestServiceOverviewProps) {
   const copy = availabilityCopy(availability)
   const capacity = capacityLabel(availability)
-  const canStart = availability.status === 'available'
+  const serviceCanOfferIntake =
+    availability.status === 'available' || availability.status === 'capacity_full'
+  const canStart = serviceCanOfferIntake && intakeEligibility === 'available'
+  const shouldSignIn =
+    serviceCanOfferIntake && intakeEligibility === 'sign_in_required'
+  const shouldContinue =
+    serviceCanOfferIntake && intakeEligibility === 'already_active'
 
   return (
     <div className={styles.page}>
@@ -108,6 +125,9 @@ export function RequestServiceOverview({
               Request a Build is a private, capacity-controlled service for a
               specific outcome that can be tested. It is not a public board,
               voting feed, or open-response marketplace.
+            </p>
+            <p className={styles.pilotNotice}>
+              Request a Build is in a small invited pilot.
             </p>
           </div>
           <Link href={searchHref} className={styles.searchAction}>
@@ -136,21 +156,48 @@ export function RequestServiceOverview({
             <h2>{copy.title}</h2>
             <p>{copy.body}</p>
             {capacity && <strong>{capacity}</strong>}
+            {serviceCanOfferIntake && intakeEligibility === 'not_admitted' ? (
+              <p className={styles.eligibilityNotice} role="status">
+                This account is not in the current pilot.
+              </p>
+            ) : null}
+            {serviceCanOfferIntake && intakeEligibility === 'already_active' ? (
+              <p className={styles.eligibilityNotice} role="status">
+                This account already has an active Request a Build case.
+              </p>
+            ) : null}
+            {intakeEligibility === 'controls_off' && availability.status !== 'unavailable' ? (
+              <p className={styles.eligibilityNotice} role="status">
+                Request intake controls are currently off.
+              </p>
+            ) : null}
           </div>
           <div className={styles.availabilityAction}>
             {canStart && (
-              <Link href={isSignedIn ? intakeHref : loginHref} className={styles.primaryAction}>
-                {isSignedIn ? 'Start a private brief' : 'Log in to request'}
+              <Link href={intakeHref} className={styles.primaryAction}>
+                Start a private brief
                 <ArrowRight aria-hidden="true" />
               </Link>
             )}
+            {shouldSignIn ? (
+              <Link href={loginHref} className={styles.primaryAction}>
+                Log in to check eligibility
+                <ArrowRight aria-hidden="true" />
+              </Link>
+            ) : null}
+            {shouldContinue ? (
+              <Link href={myForgeHref} className={styles.primaryAction}>
+                Continue your active case
+                <ArrowRight aria-hidden="true" />
+              </Link>
+            ) : null}
             {availability.status === 'unavailable' && availability.retryHref && (
               <Link href={availability.retryHref} className={styles.secondaryAction}>
                 <RefreshCw aria-hidden="true" />
                 Retry availability
               </Link>
             )}
-            {!canStart && availability.status !== 'unavailable' && (
+            {!canStart && !shouldSignIn && !shouldContinue && availability.status !== 'unavailable' && (
               <Link href={searchHref} className={styles.secondaryAction}>
                 <Search aria-hidden="true" />
                 Explore existing paths

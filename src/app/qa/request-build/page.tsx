@@ -40,6 +40,7 @@ import {
   intakeFixture,
   myForgeFixture,
   serviceAvailabilityFixture,
+  serviceIntakeEligibilityFixture,
   type RequestAdminDetailFixtureState,
   type RequestAdminQueueFixtureState,
   type RequestCaseErrorFixtureState,
@@ -201,7 +202,8 @@ export default async function RequestBuildFixturePage({
       <FixtureFrame surface={surface} state={state}>
         <RequestServiceOverview
           availability={serviceAvailabilityFixture(state)}
-          isSignedIn
+          isSignedIn={state !== 'sign_in_required'}
+          intakeEligibility={serviceIntakeEligibilityFixture(state)}
           intakeHref="/qa/request-build?surface=intake&state=pristine"
           searchHref="/paths"
         />

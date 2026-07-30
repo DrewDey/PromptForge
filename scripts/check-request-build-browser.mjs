@@ -94,6 +94,11 @@ function scenario(name, query, options = {}) {
 }
 
 const SCENARIOS = [
+  scenario(
+    'analytics-fail-then-submitted',
+    { surface: 'analytics-transition' },
+    { analyticsTransition: true },
+  ),
   ...SERVICE_STATES.map((state) => scenario(`service-${state}`, { surface: 'service', state }, {
     screenshot: ['capacity_full', 'unavailable'].includes(state),
   })),
@@ -275,7 +280,8 @@ function expectedFixtureState(scenarioItem) {
     return `${query.get('state') ?? 'open'}:${query.get('scope') ?? 'admin'}`
   }
   return query.get('state') ?? (
-    surface === 'service' ? 'available'
+    surface === 'analytics-transition' ? 'transition'
+      : surface === 'service' ? 'available'
       : surface === 'intake' ? 'pristine'
         : surface === 'receipt' ? 'recorded'
           : surface === 'my-forge' ? 'ready'
@@ -396,6 +402,55 @@ async function assertCaseMobileOrder(client, sessionId, label) {
   }
 }
 
+async function assertAnalyticsTransition(client, sessionId, label) {
+  const countsExpression = `(() => {
+    const fixture=document.querySelector('[data-request-analytics-transition]');
+    return {
+      failed:Number(fixture?.getAttribute('data-failed-count') || -1),
+      submitted:Number(fixture?.getAttribute('data-submitted-count') || -1),
+    };
+  })()`
+  await waitForValue(
+    client,
+    sessionId,
+    countsExpression,
+    (value) => value?.failed === 1 && value.submitted === 0,
+    `${label} initial failed event`,
+  )
+  await evaluate(client, sessionId, `(() => {
+    const button=document.querySelector('[data-analytics-rerender]');
+    button?.click();
+    button?.click();
+  })()`)
+  await new Promise((resolve) => setTimeout(resolve, 100))
+  let counts = await evaluate(client, sessionId, countsExpression)
+  if (counts.failed !== 1 || counts.submitted !== 0) {
+    throw new Error(`${label} duplicated its failed event: ${JSON.stringify(counts)}.`)
+  }
+  await evaluate(
+    client,
+    sessionId,
+    `document.querySelector('[data-analytics-submit]')?.click()`,
+  )
+  await waitForValue(
+    client,
+    sessionId,
+    countsExpression,
+    (value) => value?.failed === 1 && value.submitted === 1,
+    `${label} verified submitted event`,
+  )
+  await evaluate(client, sessionId, `(() => {
+    const button=document.querySelector('[data-analytics-rerender]');
+    button?.click();
+    button?.click();
+  })()`)
+  await new Promise((resolve) => setTimeout(resolve, 100))
+  counts = await evaluate(client, sessionId, countsExpression)
+  if (counts.failed !== 1 || counts.submitted !== 1) {
+    throw new Error(`${label} duplicated a rerendered event: ${JSON.stringify(counts)}.`)
+  }
+}
+
 async function verifyViewport(client, options, viewport) {
   const { targetId } = await client.send('Target.createTarget', { url: 'about:blank' })
   const { sessionId } = await client.send('Target.attachToTarget', { targetId, flatten: true })
@@ -513,6 +568,9 @@ async function verifyViewport(client, options, viewport) {
           `${label} focused error summary`,
         )
         if (focus.role !== 'alert') throw new Error(`${label} did not focus its error summary.`)
+      }
+      if (scenarioItem.analyticsTransition) {
+        await assertAnalyticsTransition(client, sessionId, label)
       }
       await assertAccessibilityTree(client, sessionId, label)
       if (scenarioItem.screenshot) {

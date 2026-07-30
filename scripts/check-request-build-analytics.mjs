@@ -66,8 +66,14 @@ requireText(
 requireText(analytics, "'/requests/[id]'", `${analyticsPath} canonical private requester path`)
 requireText(analytics, "'/admin/build-requests/[id]'", `${analyticsPath} canonical private admin path`)
 requireText(activationValidation, 'Request analytics cannot include private identifiers.', `${activationValidationPath} identifier rejection`)
-requireText(component, 'const sent = useRef(false)', `${componentPath} one-shot event emission`)
+requireText(component, 'const sentKeys = useRef(new Set<string>())', `${componentPath} keyed event emission`)
+requireText(component, 'sentKeys.current.has(emissionKey)', `${componentPath} stable rerender dedupe`)
 requireText(component, 'window.setTimeout(', `${componentPath} deferred route-owned emission`)
+requireText(
+  read('src/components/requests/RequestAnalyticsTransitionFixture.tsx'),
+  'data-request-analytics-transition',
+  'fail-to-submitted deterministic analytics fixture',
+)
 requireText(rootLayout, "import { Analytics } from '@vercel/analytics/next'", 'global Vercel Analytics preserved')
 requireText(rootLayout, "import { SpeedInsights } from '@vercel/speed-insights/next'", 'global Speed Insights preserved')
 requireText(rootLayout, '<Analytics />', 'global Vercel Analytics mount preserved')

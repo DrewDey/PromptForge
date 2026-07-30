@@ -23,6 +23,7 @@ export type RequestIntakeWorkflowState =
   | {
       status: 'ready'
       idempotencyKey: string
+      analyticsAttempt: number
       values?: Partial<RequestIntakeValues>
       errors?: readonly RequestIntakeError[]
       serviceError?: RequestIntakeServiceError | null
@@ -30,6 +31,7 @@ export type RequestIntakeWorkflowState =
   | {
       status: 'submitted'
       idempotencyKey: string
+      analyticsAttempt: number
       receipt: RequestSubmissionReceiptView
       requestHref: string
     }
@@ -68,6 +70,7 @@ export function RequestIntakeWorkflow({
     return (
       <>
         <RequestAnalytics
+          emissionKey={`intake:${state.analyticsAttempt}:submitted`}
           event={{
             eventName: 'submitted',
             surface: 'request_intake',
@@ -89,6 +92,7 @@ export function RequestIntakeWorkflow({
     <>
       {serviceError ? (
         <RequestAnalytics
+          emissionKey={`intake:${state.analyticsAttempt}:failed:${serviceError}`}
           event={{
             eventName: 'intake_failed',
             surface: 'request_intake',
@@ -97,6 +101,7 @@ export function RequestIntakeWorkflow({
         />
       ) : errors.length > 0 ? (
         <RequestAnalytics
+          emissionKey={`intake:${state.analyticsAttempt}:failed:client_validation`}
           event={{
             eventName: 'intake_failed',
             surface: 'request_intake',

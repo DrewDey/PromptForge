@@ -833,8 +833,8 @@ assert.doesNotMatch(
   'PathForge fixture references must not use URLs.',
 )
 
-assert.match(route, /data-request-delivery-placeholder/)
-assert.match(route, /Placeholder · not custody or hash evidence/)
+assert.match(route, /RequestCaseDeliverySlot/)
+assert.match(route, /type RequestDeliverySlotModel/)
 assert.match(route, /does not prove live[\s\S]*artifact custody[\s\S]*hash verification/)
 assert.doesNotMatch(
   route,

@@ -371,13 +371,13 @@ function BuilderSubmission({ model }: { model: RequestDeliverySlotModel }) {
           workspace={model.builderWorkspace}
           canStageArtifact={model.commands.canStageArtifact}
           canAbandonArtifact={model.commands.canAbandonArtifact}
-          canPrepareRevision={model.commands.canPrepareRevision}
           canContinue={canContinue}
-          submitKind={model.commands.submitKind}
         />
       ) : (
         <p className="mt-4 border border-surface-200 bg-surface-50 p-4 text-sm leading-6 text-surface-700" role="status">
-          This retained workspace is read-only and pending authority-owned retirement. No builder delivery command is currently available.
+          {model.builderWorkspace?.revisionState === 'sealed'
+            ? 'This exact revision is sealed and waiting for an independent reviewer assignment. No further builder action is needed yet.'
+            : 'This retained workspace is read-only and pending authority-owned retirement. No builder delivery command is currently available.'}
         </p>
       )}
     </section>
@@ -448,13 +448,13 @@ function ReviewerActions({
             <div className="mt-2 space-y-2">
               {checks.map((item) => (
                 <div key={item.id} className="border border-surface-200 bg-white p-3">
-                  <label className="flex items-start gap-3">
+                  <label className="flex min-h-11 items-center gap-3">
                     <input
                       type="checkbox"
                       name={`check_pass_${item.id}`}
                       value={item.id}
                       required
-                      className="mt-1 h-4 w-4 shrink-0 accent-surface-900"
+                      className="h-4 w-4 shrink-0 accent-surface-900"
                     />
                     <span className="block text-sm font-bold text-surface-900">{item.label}</span>
                   </label>

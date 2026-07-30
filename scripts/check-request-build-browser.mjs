@@ -87,7 +87,15 @@ const CASE_ERRORS = [
   'hash_mismatch',
   'publication_blocked',
 ]
-const DELIVERY_STATES = ['not_ready', 'missing', 'hash_mismatch', 'repair', 'ready', 'delivered']
+const DELIVERY_STATES = [
+  'not_ready',
+  'sealed_waiting',
+  'missing',
+  'hash_mismatch',
+  'repair',
+  'ready',
+  'delivered',
+]
 const MY_FORGE_STATES = ['loading', 'unavailable', 'empty', 'ready']
 const ADMIN_QUEUE_STATES = [
   'loading',
@@ -120,6 +128,7 @@ const SCENARIOS = [
     screenshotTarget: state === 'not_admitted'
       ? '[data-request-intake-eligibility="not_admitted"]'
       : undefined,
+    screenshotTargetSuffix: 'eligibility',
   })),
   ...INTAKE_STATES.map((state) => scenario(`intake-${state}`, { surface: 'intake', state }, {
     expectFocusedAlert: ['errors', 'unavailable', 'capacity_full', 'not_admitted', 'already_active', 'expired_session', 'hostile_error', 'rate_limited', 'duplicate', 'stale_version', 'forbidden_input'].includes(state),
@@ -157,6 +166,10 @@ const SCENARIOS = [
     {
       caseOrder: true,
       screenshot: ['clarification_requested', 'delivery_ready'].includes(lifecycle),
+      screenshotTarget: lifecycle === 'delivery_ready'
+        ? '[data-request-delivery-slot]'
+        : undefined,
+      screenshotTargetSuffix: 'delivery',
     },
   )),
   ...ACTORS.slice(1).map((actor) => scenario(
@@ -218,7 +231,9 @@ const SCENARIOS = [
     `case-delivery-${delivery}`,
     {
       surface: 'case',
-      lifecycle: delivery === 'repair'
+      lifecycle: delivery === 'sealed_waiting'
+        ? 'building'
+        : delivery === 'repair'
         ? 'repair_required'
         : delivery === 'ready'
           ? 'delivery_ready'
@@ -226,8 +241,16 @@ const SCENARIOS = [
             ? 'delivered'
             : 'review_pending',
       delivery,
+      ...(delivery === 'sealed_waiting' ? { actor: 'builder' } : {}),
     },
-    { caseOrder: true },
+    {
+      caseOrder: true,
+      screenshot: delivery === 'sealed_waiting',
+      screenshotTarget: delivery === 'sealed_waiting'
+        ? '[data-request-delivery-slot]'
+        : undefined,
+      screenshotTargetSuffix: 'delivery',
+    },
   )),
   ...MY_FORGE_STATES.map((state) => scenario(
     `my-forge-${state}`,
@@ -422,7 +445,7 @@ const PAGE_SNAPSHOT = `(() => {
     'request-case-next-action',
     'request-case-finish-line',
     'request-case-clarification',
-    'request-case-delivery',
+    'request-delivery-heading',
     'request-case-assignments',
     'request-case-progress',
     'request-case-history',
@@ -438,7 +461,7 @@ const PAGE_SNAPSHOT = `(() => {
     hasContent:Boolean(fixture && fixture.innerText.trim().length > 40),
     proofLabel:Boolean(fixture?.querySelector('[data-fixture-proof-label]')),
     fixtureText:(fixture?.innerText || '').replace(/\\s+/g,' ').trim(),
-    deliveryPlaceholders:fixture?.querySelectorAll('[data-request-delivery-placeholder]').length || 0,
+    deliveryPlaceholders:fixture?.querySelectorAll('[data-request-delivery-slot]').length || 0,
     intakeCtaCount:fixture?.querySelectorAll('[data-request-intake-cta]').length || 0,
     myForgeRequestContinuationCount:fixture?.querySelectorAll(
       'a[href="/my-forge?tab=requests"]'
@@ -470,7 +493,9 @@ const PAGE_SNAPSHOT = `(() => {
     tooSmall,
     stickyActionCount:stickyActions.length,
     primaryActionDetails,
-    caseHeadingOrder:[...fixture.querySelectorAll('h2[id^="request-case-"]:not(#request-case-error-title)')]
+    caseHeadingOrder:[...fixture.querySelectorAll(
+      'h2[id^="request-case-"]:not(#request-case-error-title), h2#request-delivery-heading'
+    )]
       .map((heading)=>heading.id),
     caseSections:Object.fromEntries(
       caseSectionIds.map((id)=>[id,Boolean(fixture?.querySelector('#'+id))])
@@ -503,7 +528,7 @@ async function assertCaseMobileOrder(client, sessionId, label) {
       'request-case-next-action',
       'request-case-finish-line',
       'request-case-clarification',
-      'request-case-delivery',
+      'request-delivery-heading',
       'request-case-history',
     ];
     return ids.map((id)=>{
@@ -698,6 +723,19 @@ async function verifyViewport(client, options, viewport) {
       ) {
         throw new Error(`${label} did not preserve the exact 2026-08-15 service target date.`)
       }
+      if (
+        scenarioItem.path.includes('delivery=sealed_waiting') &&
+        (
+          !snapshot.fixtureText.includes(
+            'This exact revision is sealed and waiting for an independent reviewer assignment.',
+          ) ||
+          snapshot.fixtureText.includes('Continue exact revision workflow')
+        )
+      ) {
+        throw new Error(
+          `${label} did not render sealed reviewer-waiting as a non-actionable success state.`,
+        )
+      }
       const isRemovedCase = scenarioItem.path.includes('surface=case') &&
         scenarioItem.path.includes('moderation=removed')
       const isHeldCase = scenarioItem.path.includes('surface=case') &&
@@ -707,7 +745,7 @@ async function verifyViewport(client, options, viewport) {
         snapshot.deliveryPlaceholders !== (isRemovedCase || isHeldCase ? 0 : 1)
       ) {
         throw new Error(
-          `${label} rendered an unexpected PM 3 placeholder count: ${snapshot.deliveryPlaceholders}.`,
+          `${label} rendered an unexpected private delivery slot count: ${snapshot.deliveryPlaceholders}.`,
         )
       }
       if (viewport.mobile && scenarioItem.path.includes('surface=case')) {
@@ -730,7 +768,7 @@ async function verifyViewport(client, options, viewport) {
         const forbiddenRestrictedSections = [
           'request-case-finish-line',
           'request-case-clarification',
-          'request-case-delivery',
+          'request-delivery-heading',
           'request-case-assignments',
           'request-case-progress',
         ].filter((id) => snapshot.caseSections[id])
@@ -756,7 +794,7 @@ async function verifyViewport(client, options, viewport) {
           'request-case-next-action',
           'request-case-finish-line',
           'request-case-clarification',
-          'request-case-delivery',
+          'request-delivery-heading',
           'request-case-history',
         ]
         if (JSON.stringify(snapshot.caseHeadingOrder) !== JSON.stringify(expectedCaseHeadingOrder)) {
@@ -839,7 +877,7 @@ async function verifyViewport(client, options, viewport) {
           sessionId,
           path.join(options.screenshotDir, `${scenarioItem.name}-${viewport.name}.png`),
         )
-        if (viewport.mobile && scenarioItem.screenshotTarget) {
+        if (scenarioItem.screenshotTarget) {
           await evaluate(client, sessionId, `(() => {
             const target=document.querySelector(${JSON.stringify(scenarioItem.screenshotTarget)});
             target?.scrollIntoView({block:'center',inline:'nearest'});
@@ -854,7 +892,7 @@ async function verifyViewport(client, options, viewport) {
             sessionId,
             path.join(
               options.screenshotDir,
-              `${scenarioItem.name}-${viewport.name}-eligibility.png`,
+              `${scenarioItem.name}-${viewport.name}-${scenarioItem.screenshotTargetSuffix ?? 'detail'}.png`,
             ),
           )
         }
@@ -945,7 +983,7 @@ async function main() {
       assertions += await verifyViewport(client, options, viewport)
     }
     console.log(
-      `Request a Build fixture browser guard passed ${assertions} rendered scenario/viewport checks across desktop and exact 390px: semantic content, focused errors, mobile order, reduced motion, 44px controls, overflow, framework/console/HTTP failures, and explicit PM 3 non-evidence slots.`,
+      `Request a Build fixture browser guard passed ${assertions} rendered scenario/viewport checks across desktop and exact 390px: semantic content, focused errors, mobile order, reduced motion, 44px controls, overflow, framework/console/HTTP failures, and participant-safe private delivery states.`,
     )
     console.log(`Fixture screenshots: ${options.screenshotDir}`)
   } finally {

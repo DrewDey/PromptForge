@@ -52,7 +52,7 @@
     "check:request-delivery-integration": "node scripts/check-request-delivery-integration.mjs",
     "check:activation-analytics": "node scripts/check-activation-analytics.mjs",
     "check:request-build-analytics": "node scripts/check-request-build-analytics.mjs",
-    "check:request-build": "node scripts/check-request-build.mjs && node scripts/check-request-intake-action.mjs && node scripts/check-request-pilot-admission-action.mjs",
+    "check:request-build": "node scripts/check-request-build.mjs && node scripts/check-request-intake-action.mjs && node scripts/check-request-pilot-admission-action.mjs && node scripts/check-request-delivery-routes.mjs",
     "check:request-build-release": "npm run check:request-build && npm run check:request-delivery-contract && npm run check:request-delivery-integration && npm run check:request-build-maintenance-http && npm run check:request-build-freeze && npm run check:request-build-analytics && npm run check:artifact-sandbox",
     "check:request-build-browser": "node scripts/check-request-build-browser.mjs",
     "check:supabase-public-reads": "node scripts/check-supabase-public-read-resilience.mjs",

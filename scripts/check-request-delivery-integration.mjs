@@ -210,6 +210,16 @@ for (const [name, state, hasSealReceipt] of [
   assert.equal(model.builderWorkspace?.revisionState, state)
   assert.equal(model.builderWorkspace?.hasSealReceipt, hasSealReceipt)
 }
+const sealedWaitingRaw = structuredClone(rawFixtures.builderSealed)
+sealedWaitingRaw.actor.capabilities = ['view_case']
+const sealedWaitingDetail = parseRequestCaseDetailResultV1(sealedWaitingRaw)
+const sealedWaitingModel = toRequestDeliverySlotModel(
+  sealedWaitingDetail,
+  sealedWaitingDetail.actor,
+)
+assert.equal(sealedWaitingModel.builderWorkspace?.revisionState, 'sealed')
+assert.equal(sealedWaitingModel.commands.submitKind, null)
+assert.equal(sealedWaitingModel.commands.canResumeRevision, false)
 assert.equal(
   toRequestDeliverySlotModel(
     parsedFixtures.builderInitialNoWorkspace,

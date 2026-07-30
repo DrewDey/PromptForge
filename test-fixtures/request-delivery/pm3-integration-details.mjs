@@ -28,6 +28,7 @@ const assignments = [
   {
     assignmentId: ids.builderAssignment,
     role: 'builder',
+    assignee: { displayName: 'Builder', deidentified: false },
     active: true,
     assignedAt: at,
     endedAt: null,
@@ -35,6 +36,7 @@ const assignments = [
   {
     assignmentId: ids.reviewerAssignment,
     role: 'reviewer',
+    assignee: { displayName: 'Reviewer', deidentified: false },
     active: true,
     assignedAt: at,
     endedAt: null,

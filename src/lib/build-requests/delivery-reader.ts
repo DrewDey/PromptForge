@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { createHash } from 'node:crypto'
+import { DELIVERY_ARTIFACT_POLICY_VERSION } from './delivery-custody-contract'
 
 /**
  * Protected Request-delivery reader core.
@@ -141,8 +142,16 @@ export interface RequestDeliveryResolvedArtifact {
 
 export interface RequestDeliveryResolvedObject<TObjectIdentity> {
   status: 'authorized'
+  requestId: string
   artifactId: string
   deliveryRevisionId: string
+  acceptedBriefRevisionId: string
+  builderAssignmentId: string
+  artifactOrdinal: number
+  sha256: string
+  byteLength: number
+  mediaType: RequestDeliveryReaderMediaType
+  scannerVersion: string
   manifestDigest: string
   objectIdentity: TObjectIdentity
 }
@@ -163,6 +172,7 @@ export interface RequestDeliveryPrivateObject {
    */
   mediaType?: string | null
   byteLength?: number | null
+  metadata: Readonly<Record<string, string>>
 }
 
 export type RequestDeliveryPrivateDownload =
@@ -174,6 +184,7 @@ export interface RequestDeliveryReaderDependencies<TObjectIdentity extends strin
     artifactId: string,
   ) => Promise<RequestDeliveryParticipantAuthorityResult>
   resolveObjectIdentity: (binding: {
+    requestId: string
     artifactId: string
     deliveryRevisionId: string
   }) => Promise<RequestDeliveryObjectAuthorityResult<TObjectIdentity>>
@@ -305,9 +316,41 @@ function objectBindingMatches<TObjectIdentity>(
   object: RequestDeliveryResolvedObject<TObjectIdentity>,
 ) {
   return (
-    object.artifactId === participant.artifactId
+    object.requestId === participant.requestId
+    && object.artifactId === participant.artifactId
     && object.deliveryRevisionId === participant.deliveryRevisionId
+    && validLogicalId(object.acceptedBriefRevisionId)
+    && validLogicalId(object.builderAssignmentId)
+    && Number.isSafeInteger(object.artifactOrdinal)
+    && object.artifactOrdinal >= 1
+    && object.artifactOrdinal <= 5
+    && normalizeDigest(object.sha256) === normalizeDigest(participant.sha256)
+    && object.byteLength === participant.byteLength
+    && object.mediaType === participant.mediaType
+    && object.scannerVersion === DELIVERY_ARTIFACT_POLICY_VERSION
     && normalizeDigest(object.manifestDigest) !== null
+  )
+}
+
+function storageMetadataMatches<TObjectIdentity>(
+  participant: RequestDeliveryResolvedArtifact,
+  object: RequestDeliveryResolvedObject<TObjectIdentity>,
+  metadata: Readonly<Record<string, string>>,
+) {
+  return (
+    metadata.policyVersion === DELIVERY_ARTIFACT_POLICY_VERSION
+    && metadata.scannerVersion === object.scannerVersion
+    && metadata.custodyState === 'staging'
+    && metadata.requestId === object.requestId
+    && metadata.deliveryRevisionId === object.deliveryRevisionId
+    && metadata.acceptedBriefRevisionId === object.acceptedBriefRevisionId
+    && metadata.builderAssignmentId === object.builderAssignmentId
+    && metadata.artifactId === object.artifactId
+    && metadata.artifactOrdinal === String(object.artifactOrdinal)
+    && metadata.safeName === participant.normalizedName
+    && normalizeDigest(metadata.sha256) === normalizeDigest(object.sha256)
+    && metadata.byteLength === String(object.byteLength)
+    && metadata.mediaType === object.mediaType
   )
 }
 
@@ -442,6 +485,7 @@ export async function readRequestDeliveryArtifact<TObjectIdentity extends string
   let resolvedObject: RequestDeliveryObjectAuthorityResult<TObjectIdentity>
   try {
     resolvedObject = await dependencies.resolveObjectIdentity({
+      requestId: resolved.requestId,
       artifactId: resolved.artifactId,
       deliveryRevisionId: resolved.deliveryRevisionId,
     })
@@ -467,6 +511,18 @@ export async function readRequestDeliveryArtifact<TObjectIdentity extends string
   const bytes = download.object.bytes instanceof Uint8Array
     ? download.object.bytes
     : new Uint8Array(download.object.bytes)
+
+  if (!storageMetadataMatches(
+    resolved,
+    resolvedObject,
+    download.object.metadata,
+  )) {
+    return failure(
+      'authority_binding_mismatch',
+      409,
+      'Private artifact metadata does not match.',
+    )
+  }
 
   if (bytes.byteLength === 0) return failure('empty', 409, 'Private artifact is empty.')
   if (bytes.byteLength > REQUEST_DELIVERY_MAX_ARTIFACT_BYTES) {
@@ -526,6 +582,7 @@ export async function readRequestDeliveryArtifact<TObjectIdentity extends string
   let currentObject: RequestDeliveryObjectAuthorityResult<TObjectIdentity>
   try {
     currentObject = await dependencies.resolveObjectIdentity({
+      requestId: currentParticipant.requestId,
       artifactId: currentParticipant.artifactId,
       deliveryRevisionId: currentParticipant.deliveryRevisionId,
     })

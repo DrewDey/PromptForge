@@ -10,9 +10,12 @@ export type RequestJsonRouteErrorCode =
   | 'unavailable'
 
 export class RequestJsonRouteError extends Error {
-  constructor(readonly code: RequestJsonRouteErrorCode) {
+  readonly code: RequestJsonRouteErrorCode
+
+  constructor(code: RequestJsonRouteErrorCode) {
     super(code)
     this.name = 'RequestJsonRouteError'
+    this.code = code
   }
 }
 

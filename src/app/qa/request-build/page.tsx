@@ -51,6 +51,11 @@ import {
   type RequestServiceFixtureState,
 } from '@/lib/build-requests/fixtures'
 import { RequestAnalyticsTransitionFixture } from '@/components/requests/RequestAnalyticsTransitionFixture'
+import {
+  RequestCaseDeliverySlot,
+  type RequestDeliveryReceiptActionState,
+  type RequestDeliverySlotModel,
+} from '@/components/requests/delivery'
 
 export const metadata = {
   robots: { index: false, follow: false },
@@ -86,6 +91,15 @@ async function fixtureAction(_formData: FormData) {
   void _formData
 }
 
+async function fixtureReceiptAction(
+  previous: RequestDeliveryReceiptActionState,
+  _formData: FormData,
+): Promise<RequestDeliveryReceiptActionState> {
+  'use server'
+  void _formData
+  return { ...previous, error: 'unavailable' }
+}
+
 function FixtureFrame({
   surface,
   state,
@@ -117,48 +131,163 @@ function FixtureFrame({
   )
 }
 
-function DeliveryPlaceholder({ state }: { state: RequestDeliveryFixtureState }) {
-  const copy: Record<RequestDeliveryFixtureState, { title: string; body: string }> = {
-    not_ready: {
-      title: 'Delivery is not ready.',
-      body: 'No custody projection is available at this lifecycle stage.',
+function deliveryFixture(
+  state: RequestDeliveryFixtureState,
+  lifecycle: RequestLifecycle,
+  actorRole: RequestActorRole,
+): RequestDeliverySlotModel {
+  const acceptanceChecks = [{
+    id: '10000000-0000-4000-8000-000000000011',
+    label: 'The offline checklist remains usable after a reload.',
+  }]
+  const artifactState = state === 'hash_mismatch'
+    ? 'failed'
+    : state === 'missing'
+      ? 'pending'
+      : 'verified'
+  const hasRevision = ['missing', 'hash_mismatch', 'repair', 'ready', 'delivered'].includes(state)
+  const available = state === 'delivered'
+  const builderWaiting = (
+    state === 'sealed_waiting'
+    && actorRole === 'builder'
+    && lifecycle === 'building'
+  )
+  const builderStaging = (
+    actorRole === 'builder'
+    && lifecycle === 'building'
+    && !builderWaiting
+  )
+  const artifacts = hasRevision || builderStaging || builderWaiting
+    ? [{
+        artifactId: '10000000-0000-4000-8000-000000000012',
+        artifactOrdinal: 1,
+        label: 'offline-checklist.html',
+        mediaType: 'text/html' as const,
+        mediaTypeLabel: 'Static HTML',
+        byteLength: 48_000,
+        integrityStatus: artifactState as 'pending' | 'verified' | 'failed',
+        scanState: 'complete' as const,
+        scanVerdict: 'clean' as const,
+        findingCount: 0,
+        reader: {
+          canOpen: available,
+          canDownload: available,
+          openPath: available
+            ? '/api/requests/deliveries/10000000-0000-4000-8000-000000000012/reader'
+            : null,
+          downloadPath: available
+            ? '/api/requests/deliveries/10000000-0000-4000-8000-000000000012/reader?download=1'
+            : null,
+        },
+      }]
+    : []
+  return {
+    visibility: 'full',
+    restrictedLabel: null,
+    requestId: REQUEST_FIXTURE_ID,
+    currentDeliveryRevisionId: hasRevision
+      ? '10000000-0000-4000-8000-000000000013'
+      : null,
+    state: builderStaging
+      ? 'staging'
+      : state === 'sealed_waiting'
+        ? 'pending'
+      : state === 'not_ready'
+        ? 'none'
+        : state === 'repair'
+          ? 'repair_required'
+          : state === 'ready'
+            ? 'reviewed'
+            : state === 'delivered'
+              ? 'available'
+              : state,
+    lifecycle,
+    moderation: 'clear',
+    publication: 'private',
+    actorRoles: [actorRole],
+    version: 7,
+    revisionNumber: hasRevision ? 1 : null,
+    revisionLabel: hasRevision ? 'Initial delivery' : null,
+    summary: hasRevision ? 'A static offline checklist with reset confirmation.' : null,
+    submittedAt: hasRevision ? REQUEST_FIXTURE_TIME : null,
+    authoredByDisplayName: hasRevision ? 'Assigned builder' : null,
+    authoredByDeidentified: false,
+    artifactCount: hasRevision ? artifacts.length : null,
+    totalBytes: hasRevision ? 48_000 : null,
+    formatLabels: artifacts.length ? ['Static HTML'] : [],
+    artifacts: hasRevision ? artifacts : [],
+    acceptanceChecks,
+    evidence: hasRevision
+      ? [{
+          acceptanceCheckId: acceptanceChecks[0].id,
+          label: acceptanceChecks[0].label,
+          result: 'pass',
+          evidenceText: 'Reloaded the local page and completed the checklist offline.',
+          evidenceRef: null,
+        }]
+      : [],
+    evidenceChecklistVersion: hasRevision ? 1 : null,
+    rightsSnapshotVersion: hasRevision ? 1 : null,
+    rightsSummary: hasRevision
+      ? 'The builder remains credited author. The requester receives non-exclusive use and download rights.'
+      : null,
+    review: {
+      status: state === 'ready' || state === 'delivered' ? 'approved' : 'not_started',
+      checklistVersion: hasRevision ? 1 : null,
+      safetyIntegrityResult: state === 'ready' || state === 'delivered' ? 'pass' : null,
+      verdict: state === 'ready' || state === 'delivered' ? 'approve' : null,
+      reviewerDisplayName: state === 'ready' || state === 'delivered'
+        ? 'Independent reviewer'
+        : null,
+      reviewerDeidentified: false,
+      reason: null,
+      reviewNotes: state === 'ready' || state === 'delivered'
+        ? 'The exact revision passed the accepted check.'
+        : null,
+      repairInstructions: null,
+      reviewedAt: state === 'ready' || state === 'delivered'
+        ? REQUEST_FIXTURE_TIME
+        : null,
+      checks: [],
     },
-    missing: {
-      title: 'Delivery projection missing.',
-      body: 'The shell fails closed because PM 3 supplied no participant-safe delivery projection.',
-    },
-    hash_mismatch: {
-      title: 'Delivery verification blocked.',
-      body: 'The fixture represents a hash-mismatch state without supplying bytes, a hash, or uploaded evidence.',
-    },
-    repair: {
-      title: 'Repair is required.',
-      body: 'Independent review returned the exact revision for repair. No artifact evidence is synthesized here.',
-    },
-    ready: {
-      title: 'Delivery-ready shell slot.',
-      body: 'PM 3 must replace this placeholder with the real protected custody and exact-review component.',
-    },
-    delivered: {
-      title: 'Delivered lifecycle shell slot.',
-      body: 'This fixture proves presentation only; it does not prove a download, artifact bytes, or custody receipt.',
+    repairHistory: [],
+    requesterOutcomes: [],
+    integrityMessage: state === 'hash_mismatch'
+      ? 'The protected object no longer matches its recorded bytes and cannot be served.'
+      : state === 'missing'
+        ? 'The recorded delivery object is unavailable.'
+        : null,
+    builderWorkspace: builderStaging || builderWaiting
+      ? {
+          deliveryRevisionId: '10000000-0000-4000-8000-000000000013',
+          revisionState: builderWaiting ? 'sealed' : 'staging',
+          revisionLabel: builderWaiting ? 'Initial delivery' : null,
+          summary: builderWaiting ? 'A static offline checklist.' : null,
+          evidence: builderWaiting
+            ? [{
+                acceptanceCheckId: acceptanceChecks[0].id,
+                label: acceptanceChecks[0].label,
+                result: 'pass',
+                evidenceText: 'Verified offline after a reload.',
+                evidenceRef: null,
+              }]
+            : [],
+          artifacts,
+          hasSealReceipt: builderWaiting,
+        }
+      : null,
+    commands: {
+      canStageArtifact: builderStaging,
+      canAbandonArtifact: builderStaging,
+      canPrepareRevision: builderStaging,
+      canResumeRevision: false,
+      submitKind: null,
+      canReview: actorRole === 'reviewer' && lifecycle === 'review_pending',
+      canRequestRepair: actorRole === 'reviewer' && lifecycle === 'review_pending',
+      canAcknowledge: actorRole === 'requester' && lifecycle === 'delivery_ready',
+      canRecordRequesterOutcome: actorRole === 'requester' && lifecycle === 'delivered',
     },
   }
-  return (
-    <section
-      className="min-w-0 border border-dashed border-surface-400 bg-surface-50 p-4"
-      data-request-delivery-placeholder
-      data-delivery-state={state}
-      role={state === 'missing' || state === 'hash_mismatch' ? 'alert' : 'status'}
-      aria-labelledby="request-case-delivery"
-    >
-      <h2 id="request-case-delivery">{copy[state].title}</h2>
-      <p className="mt-1 overflow-wrap-anywhere text-sm leading-6">{copy[state].body}</p>
-      <p className="mt-2 text-xs font-bold uppercase tracking-wide text-surface-600">
-        Placeholder · not custody or hash evidence
-      </p>
-    </section>
-  )
 }
 
 export default async function RequestBuildFixturePage({
@@ -323,7 +452,17 @@ export default async function RequestBuildFixturePage({
       <FixtureFrame surface={surface} state={state}>
         <RequestCaseShell
           model={model}
-          deliverySlot={<DeliveryPlaceholder state={deliveryState} />}
+          deliverySlot={moderation === 'clear' ? (
+            <RequestCaseDeliverySlot
+              model={deliveryFixture(deliveryState, lifecycle, actorRole)}
+              mode={actorRole === 'requester' ? 'participant' : 'admin'}
+              actions={{
+                review: fixtureAction,
+                requesterOutcome: fixtureReceiptAction,
+                acknowledge: fixtureAction,
+              }}
+            />
+          ) : null}
           primaryAction={
             primaryCapabilityId
               ? {

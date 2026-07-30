@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { RequestAnalytics } from '@/components/requests/RequestAnalytics'
+import { RequestDeliveryAnalyticsListener } from '@/components/requests/RequestDeliveryAnalyticsListener'
+import { RequestCaseDeliverySlot } from '@/components/requests/delivery'
 import {
   AdminRequestDetailOperations,
 } from '@/components/requests/admin'
@@ -13,7 +15,9 @@ import {
   toAdminDetailModel,
   toRequestCasePresentation,
 } from '@/lib/build-requests/presentation'
+import { toRequestDeliverySlotModel } from '@/lib/build-requests/delivery-view'
 import { adminRequestCommandAction } from '../actions'
+import { requestDeliveryReviewAction } from '@/app/requests/[id]/delivery-actions'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
@@ -109,6 +113,7 @@ export default async function BuildRequestAdminDetailPage({
 
   return (
     <main className="space-y-8">
+      <RequestDeliveryAnalyticsListener surface="admin_requests" />
       <RequestAnalytics
         emissionKey={`admin-status:${detail.requestVersion}:${detail.lifecycleState}`}
         event={{
@@ -120,15 +125,11 @@ export default async function BuildRequestAdminDetailPage({
       <RequestCaseShell
         model={caseModel}
         deliverySlot={(
-          <section
-            aria-labelledby="request-case-delivery"
-            data-request-delivery-placeholder
-          >
-            <h2 id="request-case-delivery">Private delivery</h2>
-            <p>
-              Protected delivery and review controls are awaiting the immutable custody component.
-            </p>
-          </section>
+          <RequestCaseDeliverySlot
+            model={toRequestDeliverySlotModel(detail, detail.actor)}
+            mode="admin"
+            actions={{ review: requestDeliveryReviewAction }}
+          />
         )}
       />
       <AdminRequestDetailOperations

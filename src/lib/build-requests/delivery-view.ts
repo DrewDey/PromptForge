@@ -374,7 +374,13 @@ function mapCommands(
       && ['building', 'repair_required'].includes(detail.lifecycleState)
       && detail.actor.roles.includes('builder')
       && detail.builderWorkspace !== null
-      && ['prepared', 'sealed'].includes(detail.builderWorkspace.revisionState)
+      && (
+        detail.builderWorkspace.revisionState === 'prepared'
+        || (
+          detail.builderWorkspace.revisionState === 'sealed'
+          && (canSubmit || canResubmit)
+        )
+      )
     ),
     submitKind: canSubmit ? 'submit_delivery' : canResubmit ? 'resubmit_delivery' : null,
     canReview: hasCapability(capabilities, 'approve_delivery'),

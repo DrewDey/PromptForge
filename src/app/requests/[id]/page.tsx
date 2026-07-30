@@ -3,17 +3,24 @@ import type { Metadata } from 'next'
 import { RequestAnalytics } from '@/components/requests/RequestAnalytics'
 import { RequestReadAcknowledger } from '@/components/requests/RequestReadAcknowledger'
 import { RequestClarificationAction } from '@/components/requests/RequestClarificationAction'
+import { RequestDeliveryAnalyticsListener } from '@/components/requests/RequestDeliveryAnalyticsListener'
+import { RequestCaseDeliverySlot } from '@/components/requests/delivery'
 import { RequestCaseShell } from '@/components/requests/case'
 import {
   getRequestApplicationService,
   requestAuthorityErrorCode,
 } from '@/lib/build-requests/server'
 import { toRequestCasePresentation } from '@/lib/build-requests/presentation'
+import { toRequestDeliverySlotModel } from '@/lib/build-requests/delivery-view'
 import {
   acknowledgeRequestRead,
   requestCaseCommandAction,
   submitClarificationAction,
 } from './actions'
+import {
+  acknowledgeRequestDeliveryAction,
+  recordRequestDeliveryOutcomeAction,
+} from './delivery-actions'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
@@ -130,9 +137,22 @@ export default async function RequestCasePage({
             ),
           }
       : undefined
+  const deliverySlot = detail.visibility === 'full'
+    ? (
+        <RequestCaseDeliverySlot
+          model={toRequestDeliverySlotModel(detail, detail.actor)}
+          mode="participant"
+          actions={{
+            requesterOutcome: recordRequestDeliveryOutcomeAction,
+            acknowledge: acknowledgeRequestDeliveryAction,
+          }}
+        />
+      )
+    : null
 
   return (
     <>
+      <RequestDeliveryAnalyticsListener surface="request_case" />
       <RequestAnalytics
         emissionKey={`status:${detail.requestVersion}:${detail.lifecycleState}`}
         event={{
@@ -151,17 +171,7 @@ export default async function RequestCasePage({
       ) : null}
       <RequestCaseShell
         model={model}
-        deliverySlot={(
-          <section
-            aria-labelledby="request-case-delivery"
-            data-request-delivery-placeholder
-          >
-            <h2 id="request-case-delivery">Private delivery</h2>
-            <p>
-              Protected reviewed delivery is not mounted until the custody component is integrated.
-            </p>
-          </section>
-        )}
+        deliverySlot={deliverySlot}
         primaryAction={primaryAction}
         clarificationAction={clarificationAction}
       />

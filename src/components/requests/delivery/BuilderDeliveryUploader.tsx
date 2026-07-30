@@ -34,9 +34,7 @@ export type BuilderDeliveryUploaderProps = {
   workspace: RequestDeliveryBuilderWorkspaceSummary | null
   canStageArtifact: boolean
   canAbandonArtifact: boolean
-  canPrepareRevision: boolean
   canContinue: boolean
-  submitKind: 'submit_delivery' | 'resubmit_delivery' | null
 }
 
 class DeliveryUiError extends Error {}
@@ -88,9 +86,7 @@ export function BuilderDeliveryUploader({
   workspace,
   canStageArtifact,
   canAbandonArtifact,
-  canPrepareRevision,
   canContinue,
-  submitKind,
 }: BuilderDeliveryUploaderProps) {
   const router = useRouter()
   const [busy, setBusy] = useState(false)
@@ -206,9 +202,6 @@ export function BuilderDeliveryUploader({
       }
 
       if (needsPreparation) {
-        if (!canPrepareRevision) {
-          throw new DeliveryUiError('The current authority does not allow this revision to be prepared.')
-        }
         const builderEvidence = acceptanceChecks.map(check => ({
           acceptanceCheckId: check.id,
           result: data.get(`evidence_result_${check.id}`),
@@ -259,7 +252,6 @@ export function BuilderDeliveryUploader({
           expectedVersion: requestVersion,
           deliveryRevisionId,
           idempotencyKey: `delivery-seal-submit-${deliveryRevisionId}-${requestVersion}`,
-          requestedCommand: submitKind,
         }),
       })
       const payload = await safeJson(response)
@@ -269,6 +261,16 @@ export function BuilderDeliveryUploader({
       receiptVersion(payload, {
         minimumVersion: requestVersion,
       })
+      if (payload.submissionStatus === 'sealed_waiting_for_reviewer') {
+        setProgress(
+          'Delivery secured. It will be ready to submit after an independent reviewer is assigned.',
+        )
+        router.refresh()
+        return
+      }
+      if (payload.submissionStatus !== 'submitted') {
+        throw new DeliveryUiError('The delivery authority returned an inconsistent receipt.')
+      }
       setProgress('Delivery secured and sent for independent review.')
       form.reset()
       router.refresh()

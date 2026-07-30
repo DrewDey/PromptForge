@@ -95,6 +95,14 @@ assert.match(
 )
 const participantCaseAction = readFileSync('src/app/requests/[id]/actions.ts', 'utf8')
 const participantCasePage = readFileSync('src/app/requests/[id]/page.tsx', 'utf8')
+const adminDetailPage = readFileSync(
+  'src/app/admin/build-requests/[id]/page.tsx',
+  'utf8',
+)
+const deliverySlot = readFileSync(
+  'src/components/requests/delivery/RequestDeliverySlot.tsx',
+  'utf8',
+)
 const presentation = readFileSync('src/lib/build-requests/presentation.ts', 'utf8')
 assert.match(
   presentation,
@@ -287,6 +295,46 @@ assert.match(
   participantCasePage,
   /I understand this permanently closes the private request\./,
   'Participant withdrawal must explain the terminal effect before submission.',
+)
+assert.match(
+  participantCasePage,
+  /commands\.canStageArtifact[\s\S]*commands\.canAbandonArtifact[\s\S]*commands\.canPrepareRevision[\s\S]*commands\.canResumeRevision[\s\S]*commands\.submitKind !== null[\s\S]*commands\.canReview[\s\S]*commands\.canRequestRepair[\s\S]*commands\.canAcknowledge[\s\S]*commands\.canRecordRequesterOutcome/,
+  'Participant delivery navigation must derive from the canonical delivery model.',
+)
+assert.match(
+  adminDetailPage,
+  /commands\.canStageArtifact[\s\S]*commands\.canAbandonArtifact[\s\S]*commands\.canPrepareRevision[\s\S]*commands\.canResumeRevision[\s\S]*commands\.submitKind !== null[\s\S]*commands\.canReview[\s\S]*commands\.canRequestRepair[\s\S]*commands\.canAcknowledge[\s\S]*commands\.canRecordRequesterOutcome/,
+  'Operator delivery navigation must derive from the canonical delivery model.',
+)
+for (const [label, source] of [
+  ['participant', participantCasePage],
+  ['operator', adminDetailPage],
+]) {
+  assert.match(
+    source,
+    /commands\.canResumeRevision[\s\S]{0,180}builderWorkspace\?\.revisionState === 'prepared'[\s\S]{0,180}commands\.submitKind === null/,
+    `${label} synthetic recovery copy must be restricted to a prepared, non-submit workspace.`,
+  )
+}
+assert.match(
+  participantCasePage,
+  /actor\.capabilities\.includes\('withdraw'\)[\s\S]*next\?\.kind !== 'withdraw'[\s\S]*secondaryAction=/,
+  'Clarification must retain a non-sticky confirmed withdrawal when exact authority permits it.',
+)
+assert.match(
+  adminDetailPage,
+  /visibility === 'held'[\s\S]*capabilities\.includes\('release_moderation_hold'\)[\s\S]*HeldReleaseForm/,
+  'Held operator detail must restore the exact release-hold action.',
+)
+assert.match(
+  adminDetailPage,
+  /capabilities\.includes\('remove_for_moderation'\)[\s\S]*HeldRemovalForm/,
+  'Held operator detail must preserve fail-closed removal fallback.',
+)
+assert.match(
+  deliverySlot,
+  /id="request-delivery-workflow"/,
+  'The custody slot must expose one stable same-page workflow target.',
 )
 const adminQueuePage = readFileSync('src/app/admin/build-requests/page.tsx', 'utf8')
 const myForgePage = readFileSync('src/app/my-forge/page.tsx', 'utf8')

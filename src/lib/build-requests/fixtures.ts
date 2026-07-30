@@ -115,6 +115,8 @@ export const REQUEST_CASE_ERROR_STATES = [
 
 export const REQUEST_DELIVERY_STATES = [
   'not_ready',
+  'staging',
+  'prepared_recovery',
   'sealed_waiting',
   'sealed_ready',
   'missing',
@@ -449,7 +451,15 @@ export function caseFixture(options: {
     publication: 'private',
     closeReason: lifecycle === 'closed' ? closeReason ?? 'declined' : null,
     actorRole,
-    capabilities: capability ? [capability] : [],
+    capabilities: [
+      ...(capability ? [capability] : []),
+      ...(
+        actorRole === 'requester'
+        && lifecycle === 'clarification_requested'
+        ? [{ id: 'withdraw', label: 'Withdraw private request' }]
+        : []
+      ),
+    ],
     nextAction: lifecycleNextAction(lifecycle, actorRole),
     brief: {
       outcome: BASE_INTAKE_VALUES.outcome,

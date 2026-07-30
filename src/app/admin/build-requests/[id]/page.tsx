@@ -25,6 +25,72 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
+function HeldReleaseForm({
+  requestId,
+  requestVersion,
+}: {
+  requestId: string
+  requestVersion: number
+}) {
+  return (
+    <form action={adminRequestCommandAction} className="space-y-3">
+      <input type="hidden" name="command" value="release_moderation_hold" />
+      <input type="hidden" name="requestId" value={requestId} />
+      <input type="hidden" name="expectedVersion" value={requestVersion} />
+      <input
+        type="hidden"
+        name="idempotencyKey"
+        value={`request-${requestId}-v${requestVersion}-release-hold`}
+      />
+      <label className="block text-sm font-semibold">
+        Hold resolution
+        <textarea
+          name="resolution"
+          required
+          minLength={4}
+          maxLength={500}
+          rows={3}
+          className="mt-2 min-h-11 w-full border border-surface-300 bg-white px-3 py-2 text-base"
+        />
+      </label>
+      <button type="submit">Release moderation hold</button>
+    </form>
+  )
+}
+
+function HeldRemovalForm({
+  requestId,
+  requestVersion,
+}: {
+  requestId: string
+  requestVersion: number
+}) {
+  return (
+    <form action={adminRequestCommandAction} className="space-y-3">
+      <input type="hidden" name="command" value="remove_for_moderation" />
+      <input type="hidden" name="requestId" value={requestId} />
+      <input type="hidden" name="expectedVersion" value={requestVersion} />
+      <input
+        type="hidden"
+        name="idempotencyKey"
+        value={`request-${requestId}-v${requestVersion}-remove`}
+      />
+      <label className="block text-sm font-semibold">
+        Removal reason
+        <textarea
+          name="reason"
+          required
+          minLength={4}
+          maxLength={500}
+          rows={3}
+          className="mt-2 min-h-11 w-full border border-surface-300 bg-white px-3 py-2 text-base"
+        />
+      </label>
+      <button type="submit">Remove case for moderation</button>
+    </form>
+  )
+}
+
 export default async function BuildRequestAdminDetailPage({
   params,
   searchParams,
@@ -69,11 +135,65 @@ export default async function BuildRequestAdminDetailPage({
     : mappedCaseModel
 
   if (detail.visibility !== 'full') {
+    const heldOperationAvailable = detail.visibility === 'held' && (
+      detail.actor.capabilities.includes('release_moderation_hold')
+      || detail.actor.capabilities.includes('remove_for_moderation')
+    )
+    const heldCaseModel = heldOperationAvailable
+      ? {
+          ...caseModel,
+          nextAction: {
+            title: 'Resolve the moderation hold',
+            description:
+              'Use only the restricted moderation operation authorized for this held case.',
+          },
+        }
+      : caseModel
+    const heldPrimaryAction = detail.visibility === 'held'
+      && detail.actor.capabilities.includes('release_moderation_hold')
+      ? {
+          capabilityId: 'release_moderation_hold',
+          content: (
+            <a href="#request-case-held-operation">
+              Resolve moderation hold
+            </a>
+          ),
+        }
+      : detail.visibility === 'held'
+        && detail.actor.capabilities.includes('remove_for_moderation')
+        ? {
+            capabilityId: 'remove_for_moderation',
+            content: (
+              <a href="#request-case-held-operation">
+                Resolve moderation hold
+              </a>
+            ),
+          }
+        : undefined
+    const heldRestrictedAction = detail.visibility === 'held'
+      && detail.actor.capabilities.includes('release_moderation_hold')
+      ? (
+          <HeldReleaseForm
+            requestId={detail.requestId}
+            requestVersion={detail.requestVersion}
+          />
+        )
+      : detail.visibility === 'held'
+        && detail.actor.capabilities.includes('remove_for_moderation')
+        ? (
+            <HeldRemovalForm
+              requestId={detail.requestId}
+              requestVersion={detail.requestVersion}
+            />
+          )
+        : undefined
     return (
       <main>
         <RequestCaseShell
-          model={caseModel}
+          model={heldCaseModel}
           deliverySlot={null}
+          primaryAction={heldPrimaryAction}
+          restrictedAction={heldRestrictedAction}
         />
       </main>
     )
@@ -110,6 +230,39 @@ export default async function BuildRequestAdminDetailPage({
     eligibleTriagers: triagers.items,
   })
   const action = adminRequestCommandAction
+  const deliveryModel = toRequestDeliverySlotModel(detail, detail.actor)
+  const deliveryWorkflowAvailable = (
+    deliveryModel.commands.canStageArtifact
+    || deliveryModel.commands.canAbandonArtifact
+    || deliveryModel.commands.canPrepareRevision
+    || deliveryModel.commands.canResumeRevision
+    || deliveryModel.commands.submitKind !== null
+    || deliveryModel.commands.canReview
+    || deliveryModel.commands.canRequestRepair
+    || deliveryModel.commands.canAcknowledge
+    || deliveryModel.commands.canRecordRequesterOutcome
+  )
+  const operationalCaseModel = (
+    deliveryModel.commands.canResumeRevision
+    && deliveryModel.builderWorkspace?.revisionState === 'prepared'
+    && deliveryModel.commands.submitKind === null
+  )
+    ? {
+        ...caseModel,
+        nextAction: {
+          title: 'Continue the exact delivery workflow',
+          description:
+            'The canonical builder workspace can resume through the private delivery area below.',
+        },
+      }
+    : caseModel
+  const workflowNavigation = deliveryWorkflowAvailable
+    ? (
+        <a href="#request-delivery-workflow">
+          Continue exact delivery workflow
+        </a>
+      )
+    : undefined
 
   return (
     <main className="space-y-8">
@@ -123,14 +276,15 @@ export default async function BuildRequestAdminDetailPage({
         }}
       />
       <RequestCaseShell
-        model={caseModel}
+        model={operationalCaseModel}
         deliverySlot={(
           <RequestCaseDeliverySlot
-            model={toRequestDeliverySlotModel(detail, detail.actor)}
+            model={deliveryModel}
             mode="admin"
             actions={{ review: requestDeliveryReviewAction }}
           />
         )}
+        workflowNavigation={workflowNavigation}
       />
       <AdminRequestDetailOperations
         model={operations}

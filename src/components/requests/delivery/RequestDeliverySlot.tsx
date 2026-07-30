@@ -762,6 +762,7 @@ export function RequestDeliverySlot({ model, mode, actions }: RequestDeliverySlo
   if (model.visibility !== 'full') {
     return (
       <section
+        id="request-delivery-workflow"
         className="w-full min-w-0 max-w-full overflow-hidden border border-surface-200 bg-white p-4 sm:p-6"
         aria-labelledby="request-delivery-heading"
         data-request-delivery-slot
@@ -779,6 +780,7 @@ export function RequestDeliverySlot({ model, mode, actions }: RequestDeliverySlo
 
   return (
     <section
+      id="request-delivery-workflow"
       className="w-full min-w-0 max-w-full overflow-hidden border border-surface-200 bg-white"
       aria-labelledby="request-delivery-heading"
       data-request-delivery-slot

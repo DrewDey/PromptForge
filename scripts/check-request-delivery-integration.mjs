@@ -713,10 +713,48 @@ const participantArtifact = {
 }
 const privateObject = {
   status: 'authorized',
+  requestId: fixtureIds.request,
   artifactId: fixtureIds.artifact,
   deliveryRevisionId: fixtureIds.delivery,
+  acceptedBriefRevisionId: fixtureIds.brief,
+  builderAssignmentId: fixtureIds.builderAssignment,
+  artifactOrdinal: 1,
+  sha256: readerDigest,
+  byteLength: readerBytes.byteLength,
+  mediaType: 'text/plain',
+  scannerVersion: 'request-delivery-passive-v1',
   manifestDigest: 'c'.repeat(64),
   objectIdentity: 'private/object/identity',
+}
+const readerStorageMetadata = {
+  policyVersion: 'request-delivery-passive-v1',
+  scannerVersion: 'request-delivery-passive-v1',
+  custodyState: 'staging',
+  requestId: fixtureIds.request,
+  deliveryRevisionId: fixtureIds.delivery,
+  acceptedBriefRevisionId: fixtureIds.brief,
+  builderAssignmentId: fixtureIds.builderAssignment,
+  artifactId: fixtureIds.artifact,
+  artifactOrdinal: '1',
+  safeName: 'delivery.txt',
+  sha256: readerDigest,
+  byteLength: String(readerBytes.byteLength),
+  mediaType: 'text/plain',
+}
+let adapterStorageMetadata = {
+  policyVersion: 'request-delivery-passive-v1',
+  scannerVersion: 'request-delivery-passive-v1',
+  custodyState: 'staging',
+  requestId: fixtureIds.request,
+  deliveryRevisionId: fixtureIds.delivery,
+  acceptedBriefRevisionId: fixtureIds.brief,
+  builderAssignmentId: fixtureIds.builderAssignment,
+  artifactId: fixtureIds.artifact,
+  artifactOrdinal: '1',
+  safeName: 'adapter-delivery.txt',
+  sha256: '',
+  byteLength: '',
+  mediaType: 'text/plain',
 }
 const readerDependencies = {
   async resolveParticipantArtifact() {
@@ -732,6 +770,7 @@ const readerDependencies = {
         bytes: readerBytes,
         mediaType: 'text/plain',
         byteLength: readerBytes.byteLength,
+        metadata: readerStorageMetadata,
       },
     }
   },
@@ -753,6 +792,11 @@ assert.match(downloadResponse.headers['Content-Security-Policy'], /frame-ancesto
 
 const adapterReaderBytes = new TextEncoder().encode('adapter-private-reviewed-artifact')
 const adapterReaderSha256 = createHash('sha256').update(adapterReaderBytes).digest('hex')
+adapterStorageMetadata = {
+  ...adapterStorageMetadata,
+  sha256: adapterReaderSha256,
+  byteLength: String(adapterReaderBytes.byteLength),
+}
 const adapterObjectIdentity = [
   'requests',
   fixtureIds.request,
@@ -780,6 +824,7 @@ let adapterParticipantResult = {
 }
 let adapterParticipantCalls = 0
 let adapterObjectCalls = 0
+let adapterCustodyCalls = 0
 let adapterDownloadCalls = 0
 
 globalThis.__pm3DeliveryReaderParticipantClient = {
@@ -801,18 +846,52 @@ globalThis.__pm3DeliveryReaderParticipantClient = {
 
 globalThis.__pm3DeliveryReaderAdminClient = {
   async rpc(functionName, parameters) {
-    assert.equal(functionName, 'resolve_build_request_delivery_artifact_object_v1')
+    if (functionName === 'resolve_build_request_delivery_artifact_object_v1') {
+      assert.deepEqual(
+        Object.keys(parameters).sort(),
+        ['p_artifact_id', 'p_contract_version', 'p_delivery_revision_id'],
+      )
+      adapterObjectCalls += 1
+      return {
+        data: {
+          artifactId: fixtureIds.artifact,
+          deliveryRevisionId: fixtureIds.delivery,
+          manifestDigest: 'f'.repeat(64),
+          objectIdentity: adapterObjectIdentity,
+          retentionState: 'retained',
+          accessUntil: null,
+        },
+        error: null,
+      }
+    }
+    assert.equal(functionName, 'resolve_build_request_delivery_artifact_custody_v1')
     assert.deepEqual(
       Object.keys(parameters).sort(),
-      ['p_artifact_id', 'p_contract_version', 'p_delivery_revision_id'],
+      [
+        'p_artifact_id',
+        'p_contract_version',
+        'p_delivery_revision_id',
+        'p_request_id',
+      ],
     )
-    adapterObjectCalls += 1
+    adapterCustodyCalls += 1
     return {
       data: {
-        artifactId: fixtureIds.artifact,
+        requestVersion: 41,
+        requestId: fixtureIds.request,
         deliveryRevisionId: fixtureIds.delivery,
-        manifestDigest: 'f'.repeat(64),
+        artifactId: fixtureIds.artifact,
+        stageReceiptId,
+        acceptedBriefRevisionId: fixtureIds.brief,
+        activeBuilderAssignmentId: fixtureIds.builderAssignment,
+        artifactOrdinal: 1,
+        sha256: adapterReaderSha256,
+        byteLength: adapterReaderBytes.byteLength,
+        detectedMediaType: 'text/plain',
+        scannerVersion: 'request-delivery-passive-v1',
         objectIdentity: adapterObjectIdentity,
+        attestationReceiptId,
+        attestationVersion: 1,
         retentionState: 'retained',
         accessUntil: null,
       },
@@ -828,7 +907,7 @@ globalThis.__pm3DeliveryReaderAdminClient = {
           return {
             data: {
               contentType: 'text/plain',
-              metadata: {},
+              metadata: { ...adapterStorageMetadata },
               createdAt: '2026-07-30T12:00:00.000Z',
             },
             error: null,
@@ -865,7 +944,21 @@ assert.deepEqual(
 )
 assert.equal(adapterParticipantCalls, 2, 'preview reauthorizes participant after byte read')
 assert.equal(adapterObjectCalls, 2, 'preview reauthorizes private object after byte read')
+assert.equal(adapterCustodyCalls, 2, 'preview reauthorizes exact custody metadata after byte read')
 assert.equal(adapterDownloadCalls, 1)
+
+const verifiedAdapterStorageMetadata = adapterStorageMetadata
+adapterStorageMetadata = {}
+const adapterMetadataMismatch = await handleRequestDeliveryArtifactReader({
+  artifactId: fixtureIds.artifact,
+  disposition: 'preview',
+})
+assert.equal(adapterMetadataMismatch.status, 409)
+assert.equal(
+  await adapterMetadataMismatch.text(),
+  'Private artifact metadata does not match.',
+)
+adapterStorageMetadata = verifiedAdapterStorageMetadata
 
 const adapterDownload = await getRequestDeliveryArtifact(
   new Request(
@@ -900,6 +993,7 @@ assert.equal((await adapterHead.arrayBuffer()).byteLength, 0)
 
 adapterParticipantResult = { status: 'unavailable', reason: 'not_found' }
 const unavailableObjectCalls = adapterObjectCalls
+const unavailableCustodyCalls = adapterCustodyCalls
 const adapterUnavailable = await getRequestDeliveryArtifact(
   new Request(
     `https://pathforge.test/api/requests/deliveries/${fixtureIds.artifact}/reader`,
@@ -921,6 +1015,7 @@ assert.equal(
   unavailableObjectCalls,
   'unavailable participant result never reaches service-only object resolution',
 )
+assert.equal(adapterCustodyCalls, unavailableCustodyCalls)
 adapterParticipantResult = {
   status: 'ready',
   artifact: {

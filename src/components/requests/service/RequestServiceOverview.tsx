@@ -27,7 +27,6 @@ export type RequestIntakeEligibility =
 
 export type RequestServiceOverviewProps = {
   availability: RequestServiceAvailability
-  isSignedIn: boolean
   intakeEligibility?: RequestIntakeEligibility
   intakeHref?: string
   loginHref?: string
@@ -74,8 +73,8 @@ function availabilityCopy(availability: RequestServiceAvailability) {
       } as const
     case 'available':
       return {
-        eyebrow: 'Intake available',
-        title: 'A managed build place is available.',
+        eyebrow: 'Pilot capacity',
+        title: 'A managed build place is currently available.',
         body: 'Submit a finite, testable outcome. PathForge will first look for an existing path, repair, fork, or model rerun.',
         tone: 'available',
       } as const
@@ -94,8 +93,7 @@ function capacityLabel(availability: RequestServiceAvailability) {
 
 export function RequestServiceOverview({
   availability,
-  isSignedIn,
-  intakeEligibility = isSignedIn ? 'available' : 'sign_in_required',
+  intakeEligibility = 'sign_in_required',
   intakeHref = '/requests/new',
   loginHref = '/auth/login?next=%2Frequests%2Fnew',
   myForgeHref = '/my-forge?tab=requests',
@@ -157,7 +155,11 @@ export function RequestServiceOverview({
             <p>{copy.body}</p>
             {capacity && <strong>{capacity}</strong>}
             {serviceCanOfferIntake && intakeEligibility === 'not_admitted' ? (
-              <p className={styles.eligibilityNotice} role="status">
+              <p
+                className={styles.eligibilityNotice}
+                role="status"
+                data-request-intake-eligibility="not_admitted"
+              >
                 This account is not in the current pilot.
               </p>
             ) : null}

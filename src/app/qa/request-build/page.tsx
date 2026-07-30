@@ -202,7 +202,6 @@ export default async function RequestBuildFixturePage({
       <FixtureFrame surface={surface} state={state}>
         <RequestServiceOverview
           availability={serviceAvailabilityFixture(state)}
-          isSignedIn={state !== 'sign_in_required'}
           intakeEligibility={serviceIntakeEligibilityFixture(state)}
           intakeHref="/qa/request-build?surface=intake&state=pristine"
           searchHref="/paths"

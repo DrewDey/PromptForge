@@ -38,7 +38,7 @@ BEGIN
   expected_hash := private.request_pseudonym_text_v1(
     jsonb_build_object('contract', 1, 'brief', brief_payload)::TEXT
   );
-  plain_hash := encode(public.digest(convert_to(
+  plain_hash := encode(extensions.digest(convert_to(
     jsonb_build_object('contract', 1, 'brief', brief_payload)::TEXT,
     'UTF8'
   ), 'sha256'), 'hex');
@@ -59,7 +59,7 @@ BEGIN
       'payload', command_payload
     )::TEXT
   );
-  plain_hash := encode(public.digest(convert_to(jsonb_build_object(
+  plain_hash := encode(extensions.digest(convert_to(jsonb_build_object(
     'contract', 1,
     'request_id', request_id,
     'expected_version', 0,
@@ -117,7 +117,7 @@ BEGIN
   );
   expected_hash :=
     private.request_pseudonym_text_v1(admission_payload::TEXT);
-  plain_hash := encode(public.digest(
+  plain_hash := encode(extensions.digest(
     convert_to(admission_payload::TEXT, 'UTF8'),
     'sha256'
   ), 'hex');

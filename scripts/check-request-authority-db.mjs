@@ -704,9 +704,24 @@ async function createDockerHarness(databaseUser = 'postgres') {
 
 const migration = findAuthorityMigration()
 const migrationSql = read(migration)
+const migrationPrerequisitesSql = read(
+  'test-fixtures/request-authority/migration-prerequisites.sql',
+)
 const preparationReplayMigration =
   'supabase/migrations/20260730093015_request_delivery_preparation_replay_binding_v1.sql'
 const preparationReplayMigrationSql = read(preparationReplayMigration)
+if (
+  /\bpublic\.(?:gen_random_bytes|digest|hmac)\s*\(/i.test(migrationSql)
+  || !migrationSql.includes("'extensions.gen_random_bytes(integer)'")
+  || !migrationSql.includes("'extensions.digest(bytea,text)'")
+  || !migrationSql.includes("'extensions.hmac(bytea,bytea,text)'")
+  || !/CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;/i
+    .test(migrationPrerequisitesSql)
+) {
+  throw new Error(
+    'Request authority must bind pgcrypto to the production extensions schema and preflight every required function.',
+  )
+}
 for (const [label, pattern] of [
   [
     'detail access ends at the 90-day boundary',

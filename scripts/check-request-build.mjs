@@ -68,6 +68,85 @@ for (const malformedExpiry of ['2026-02-30T12:00', '2026-08-15', 'not-a-date']) 
     `Malformed pilot expiry ${malformedExpiry} must take the bounded error path.`,
   )
 }
+const jsonRouteGuardSource = readFileSync(
+  'src/lib/build-requests/request-json-route.ts',
+  'utf8',
+).replace("import 'server-only'", '')
+const jsonRouteGuardModule = await import(
+  `data:text/javascript;base64,${Buffer.from(
+    ts.transpileModule(jsonRouteGuardSource, {
+      compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
+    }).outputText,
+  ).toString('base64')}`
+)
+function guardedJsonRequest(
+  bodyValue,
+  headers = {},
+) {
+  const body = JSON.stringify(bodyValue)
+  return new Request('https://pathforge.test/api/request-deliveries/prepare', {
+    method: 'POST',
+    headers: {
+      origin: 'https://pathforge.test',
+      'sec-fetch-site': 'same-origin',
+      'content-type': 'application/json',
+      'content-length': String(new TextEncoder().encode(body).byteLength),
+      ...headers,
+    },
+    body,
+  })
+}
+const guardedPayload = await jsonRouteGuardModule.parseSameOriginRequestJson(
+  guardedJsonRequest({ requestId: 'opaque' }),
+  { keys: ['requestId'], maxBytes: 128 },
+)
+assert.deepEqual(
+  guardedPayload,
+  { requestId: 'opaque' },
+  'Same-origin JSON guard must accept only the exact bounded payload.',
+)
+for (const [label, request, code] of [
+  [
+    'cross origin',
+    guardedJsonRequest(
+      { requestId: 'opaque' },
+      { origin: 'https://attacker.invalid', 'sec-fetch-site': 'cross-site' },
+    ),
+    'forbidden',
+  ],
+  [
+    'missing origin',
+    guardedJsonRequest({ requestId: 'opaque' }, { origin: '' }),
+    'forbidden',
+  ],
+  [
+    'wrong content type',
+    guardedJsonRequest(
+      { requestId: 'opaque' },
+      { 'content-type': 'text/plain' },
+    ),
+    'unsupported_media_type',
+  ],
+  [
+    'oversize',
+    guardedJsonRequest({ requestId: 'x'.repeat(140) }),
+    'payload_too_large',
+  ],
+  [
+    'extra field',
+    guardedJsonRequest({ requestId: 'opaque', privateCaseId: 'forbidden' }),
+    'invalid_fields',
+  ],
+]) {
+  await assert.rejects(
+    () => jsonRouteGuardModule.parseSameOriginRequestJson(
+      request,
+      { keys: ['requestId'], maxBytes: 128 },
+    ),
+    (error) => error?.code === code,
+    `${label} JSON request must fail with ${code}.`,
+  )
+}
 assert.match(
   adminControls,
   /Optional expiry \(UTC\)[\s\S]{0,180}data-request-expiry-time-zone="UTC"/,

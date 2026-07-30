@@ -37,6 +37,28 @@ BEGIN
         );
   END IF;
 
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_catalog.pg_extension AS extension_value
+    JOIN pg_catalog.pg_namespace AS extension_namespace
+      ON extension_namespace.oid = extension_value.extnamespace
+    WHERE extension_value.extname = 'pgcrypto'
+      AND extension_namespace.nspname = 'extensions'
+  )
+    OR pg_catalog.to_regprocedure(
+      'extensions.gen_random_bytes(integer)'
+    ) IS NULL
+    OR pg_catalog.to_regprocedure(
+      'extensions.digest(bytea,text)'
+    ) IS NULL
+    OR pg_catalog.to_regprocedure(
+      'extensions.hmac(bytea,bytea,text)'
+    ) IS NULL THEN
+    RAISE EXCEPTION USING
+      ERRCODE = '55000',
+      MESSAGE = 'Request authority requires pgcrypto in the extensions schema.';
+  END IF;
+
   WITH storage_relation AS (
     SELECT relation.oid, relation.relowner, relation.relacl,
       relation.relrowsecurity, relation.relforcerowsecurity,
@@ -846,7 +868,7 @@ CREATE TABLE private.request_cursor_keys (
   secret BYTEA NOT NULL CHECK (octet_length(secret) = 32)
 );
 INSERT INTO private.request_cursor_keys (singleton, secret)
-VALUES (TRUE, public.gen_random_bytes(32));
+VALUES (TRUE, extensions.gen_random_bytes(32));
 ALTER TABLE private.request_cursor_keys ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE private.request_cursor_keys
 FROM PUBLIC, anon, authenticated, service_role;
@@ -856,7 +878,7 @@ CREATE TABLE private.request_pseudonym_keys (
   secret BYTEA NOT NULL CHECK (octet_length(secret) = 32)
 );
 INSERT INTO private.request_pseudonym_keys (singleton, secret)
-VALUES (TRUE, public.gen_random_bytes(32));
+VALUES (TRUE, extensions.gen_random_bytes(32));
 ALTER TABLE private.request_pseudonym_keys ENABLE ROW LEVEL SECURITY;
 ALTER TABLE private.request_pseudonym_keys FORCE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE private.request_pseudonym_keys
@@ -1708,7 +1730,7 @@ AS $$
     AND current_setting(
       'request_authority.audit_cleanup_request_digest', TRUE
     ) = (
-      SELECT encode(public.hmac(
+      SELECT encode(extensions.hmac(
         convert_to(p_request_id::TEXT, 'UTF8'),
         pseudonym_key.secret,
         'sha256'
@@ -1973,7 +1995,7 @@ BEGIN
     NEW.redactable_reason_digest :=
       private.request_pseudonym_text_v1(NEW.redactable_reason);
   END IF;
-  NEW.event_digest := encode(public.digest(convert_to(jsonb_build_object(
+  NEW.event_digest := encode(extensions.digest(convert_to(jsonb_build_object(
     'request_id', NEW.request_id,
     'sequence', NEW.sequence,
     'event_kind', NEW.event_kind,
@@ -2262,7 +2284,7 @@ BEGIN
   ), E'\r', ''),
     '+/', '-_'
   ), '=');
-  v_signature := rtrim(translate(replace(replace(encode(public.hmac(
+  v_signature := rtrim(translate(replace(replace(encode(extensions.hmac(
     convert_to(p_prefix || '_' || v_body, 'UTF8'),
     v_secret,
     'sha256'
@@ -2280,7 +2302,7 @@ STABLE
 SECURITY DEFINER
 SET search_path = ''
 AS $$
-  SELECT encode(public.hmac(
+  SELECT encode(extensions.hmac(
     convert_to(p_value, 'UTF8'),
     pseudonym_key.secret,
     'sha256'
@@ -2367,13 +2389,15 @@ BEGIN
   SELECT cursor_key.secret INTO STRICT v_secret
   FROM private.request_cursor_keys AS cursor_key
   WHERE cursor_key.singleton;
-  v_expected := rtrim(translate(replace(replace(encode(public.hmac(
+  v_expected := rtrim(translate(replace(replace(encode(extensions.hmac(
     convert_to(p_prefix || '_' || v_body, 'UTF8'),
     v_secret,
     'sha256'
   ), 'base64'), E'\n', ''), E'\r', ''), '+/', '-_'), '=');
-  IF public.digest(convert_to(v_signature, 'UTF8'), 'sha256')
-    IS DISTINCT FROM public.digest(convert_to(v_expected, 'UTF8'), 'sha256') THEN
+  IF extensions.digest(convert_to(v_signature, 'UTF8'), 'sha256')
+    IS DISTINCT FROM extensions.digest(
+      convert_to(v_expected, 'UTF8'), 'sha256'
+    ) THEN
     RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'Cursor is invalid.';
   END IF;
   BEGIN
@@ -3445,7 +3469,7 @@ BEGIN
         MESSAGE = 'Accepted clarification set is invalid.',
         DETAIL = 'request_authority:invalid_transition';
     END IF;
-    v_accepted_clarification_digest := encode(public.digest(convert_to(
+    v_accepted_clarification_digest := encode(extensions.digest(convert_to(
       private.request_canonical_json_v1(v_accepted_clarifications),
       'UTF8'
     ), 'sha256'), 'hex');
@@ -4828,7 +4852,7 @@ BEGIN
   END IF;
   v_actor_digest := CASE
     WHEN v_service THEN (
-      SELECT encode(public.hmac(
+      SELECT encode(extensions.hmac(
         convert_to('service_role', 'UTF8'),
         pseudonym_key.secret,
         'sha256'
@@ -7493,7 +7517,7 @@ BEGIN
     );
   END IF;
   SELECT count(*)::INTEGER,
-    encode(public.digest(convert_to(COALESCE(string_agg(
+    encode(extensions.digest(convert_to(COALESCE(string_agg(
       event_value.event_digest, '' ORDER BY event_value.sequence
     ), ''), 'UTF8'), 'sha256'), 'hex')
   INTO v_event_count, v_event_aggregate_digest
@@ -7518,7 +7542,7 @@ BEGIN
     'eventAggregateDigest', v_event_aggregate_digest,
     'manifestDigests', v_manifest_digests
   );
-  v_aggregate_digest := encode(public.digest(
+  v_aggregate_digest := encode(extensions.digest(
     convert_to(v_aggregate_payload::TEXT, 'UTF8'), 'sha256'
   ), 'hex');
   IF v_request.terminal_at IS NULL
@@ -7778,7 +7802,7 @@ BEGIN
   INTO v_accepted_clarifications
   FROM public.build_request_clarifications AS clarification
   WHERE clarification.request_id = v_revision.request_id;
-  v_accepted_clarification_digest := encode(public.digest(convert_to(
+  v_accepted_clarification_digest := encode(extensions.digest(convert_to(
     private.request_canonical_json_v1(v_accepted_clarifications),
     'UTF8'
   ), 'sha256'), 'hex');
@@ -7984,7 +8008,7 @@ BEGIN
       WHERE evidence.delivery_revision_id = v_revision.id
     )
   );
-  v_digest := encode(public.digest(convert_to(
+  v_digest := encode(extensions.digest(convert_to(
     private.request_canonical_json_v1(v_manifest), 'UTF8'
   ), 'sha256'), 'hex');
   SELECT COALESCE(max(event_value.sequence) + 1, 1) INTO v_sequence

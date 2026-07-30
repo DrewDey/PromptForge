@@ -186,7 +186,7 @@ BEGIN
           WHERE clarification.request_id = raw_purge.request_id
         )
         AND accepted_scope.accepted_clarification_digest = encode(
-          public.digest(convert_to(
+          extensions.digest(convert_to(
             private.request_canonical_json_v1(
               accepted_scope.accepted_clarifications
             ),

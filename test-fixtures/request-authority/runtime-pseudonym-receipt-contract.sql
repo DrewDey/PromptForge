@@ -38,7 +38,7 @@ BEGIN
   END LOOP;
 
   keyed_digest := private.request_account_pseudonym_v1(subject_id);
-  plain_digest := encode(public.digest(
+  plain_digest := encode(extensions.digest(
     convert_to(subject_id::TEXT, 'UTF8'),
     'sha256'
   ), 'hex');

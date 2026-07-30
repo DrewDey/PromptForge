@@ -1674,7 +1674,19 @@ const cleanupHttpRoutes = apiRouteFiles.filter(file => {
     || routeSource.includes('createRequestDeliveryMaintenanceRunner')
   )
 })
-assert.deepEqual(cleanupHttpRoutes, [], 'V1 exposes no delivery cleanup or cron route')
+assert.deepEqual(
+  cleanupHttpRoutes.map(file => path.relative(src, file).split(path.sep).join('/')),
+  ['app/api/cron/request-build-maintenance/route.ts'],
+  'V1 exposes only the secret-first aggregate maintenance route',
+)
+const maintenanceRouteSource = readFileSync(cleanupHttpRoutes[0], 'utf8')
+assert.match(
+  maintenanceRouteSource,
+  /createRequestBuildMaintenanceHttpHandler/,
+)
+assert.match(maintenanceRouteSource, /readCronSecret:\s*\(\)\s*=>\s*process\.env\.CRON_SECRET/)
+assert.match(maintenanceRouteSource, /export const runtime = 'nodejs'/)
+assert.match(maintenanceRouteSource, /export const maxDuration = 60/)
 
 const uploadResultType = sourceFiles.orchestrator.match(
   /export type RequestDeliveryArtifactUploadResult = \{[\s\S]*?\n\}/,

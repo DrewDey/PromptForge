@@ -63,7 +63,9 @@ const calls = {
   invite: 0,
   revoke: 0,
   execute: 0,
+  controls: 0,
 }
+const controlInputs = []
 globalThis.__pilotAdmissionServiceFactoryCalls = 0
 globalThis.__pilotAdmissionService = {
   async listPilotAdmissionCandidates() {
@@ -79,11 +81,16 @@ globalThis.__pilotAdmissionService = {
   async executeCommand() {
     calls.execute += 1
   },
+  async updateControls(input) {
+    calls.controls += 1
+    controlInputs.push(input)
+  },
 }
 
 const {
   adminRequestCommandAction,
   updatePilotAdmissionAction,
+  updateRequestControlsAction,
 } = await import(pathToFileURL(path.join(
   src,
   'app/admin/build-requests/actions.ts',
@@ -120,7 +127,7 @@ assert.equal(
 )
 assert.deepEqual(
   calls,
-  { candidates: 0, invite: 0, revoke: 0, execute: 0 },
+  { candidates: 0, invite: 0, revoke: 0, execute: 0, controls: 0 },
   'Missing or hostile admission discriminants must call no admission RPC.',
 )
 
@@ -145,7 +152,7 @@ assert.equal(
 assert.equal(globalThis.__pilotAdmissionServiceFactoryCalls, 1)
 assert.deepEqual(
   calls,
-  { candidates: 1, invite: 0, revoke: 0, execute: 0 },
+  { candidates: 1, invite: 0, revoke: 0, execute: 0, controls: 0 },
   'A stale candidate may be re-read but must call neither admission mutation.',
 )
 
@@ -203,6 +210,63 @@ assert.equal(
 )
 assert.equal(calls.execute, 0)
 
+function controlsForm({
+  accepting = ['no'],
+  assigning = ['no'],
+} = {}) {
+  const formData = new FormData()
+  formData.set('expectedControlsVersion', '4')
+  formData.set('idempotencyKey', 'request-controls-v4')
+  formData.set('activeCaseCapacity', '4')
+  for (const value of accepting) formData.append('acceptingRequests', value)
+  for (const value of assigning) formData.append('assigningRequests', value)
+  return formData
+}
+
+for (const [label, formData] of [
+  ['missing sentinel', controlsForm({ accepting: [] })],
+  ['novel value', controlsForm({ accepting: ['no', 'maybe'] })],
+  ['duplicate checkbox value', controlsForm({ accepting: ['no', 'yes', 'yes'] })],
+  ['reordered values', controlsForm({ accepting: ['yes', 'no'] })],
+]) {
+  const factoryBefore = globalThis.__pilotAdmissionServiceFactoryCalls
+  const updatesBefore = calls.controls
+  let destination = null
+  try {
+    await updateRequestControlsAction(formData)
+  } catch (error) {
+    destination = error?.destination ?? null
+  }
+  assert.equal(
+    destination,
+    '/admin/build-requests?scope=admin&actionError=unavailable',
+    `${label} must take bounded controls recovery.`,
+  )
+  assert.equal(
+    globalThis.__pilotAdmissionServiceFactoryCalls,
+    factoryBefore,
+    `${label} must fail before resolving the service.`,
+  )
+  assert.equal(calls.controls, updatesBefore, `${label} must not update controls.`)
+}
+
+await updateRequestControlsAction(controlsForm())
+await updateRequestControlsAction(controlsForm({
+  accepting: ['no', 'yes'],
+  assigning: ['no', 'yes'],
+}))
+assert.deepEqual(
+  controlInputs.map((input) => ({
+    acceptingRequests: input.acceptingRequests,
+    assigningRequests: input.assigningRequests,
+  })),
+  [
+    { acceptingRequests: false, assigningRequests: false },
+    { acceptingRequests: true, assigningRequests: true },
+  ],
+  'Valid hidden-sentinel envelopes must preserve exact false and true values.',
+)
+
 console.log(
-  'Request command Server Action checks passed: admission, participant, and reassignment discriminants fail closed with zero unintended mutation.',
+  'Request command Server Action checks passed: admission, participant, reassignment, and service-control envelopes fail closed with zero unintended mutation.',
 )

@@ -33,6 +33,7 @@ export function RequestAdminServiceControls({
             value={`request-controls-v${availability.controlsVersion}`}
           />
           <label>
+            <input type="hidden" name="acceptingRequests" value="no" />
             <input
               type="checkbox"
               name="acceptingRequests"
@@ -42,6 +43,7 @@ export function RequestAdminServiceControls({
             Accepting requests
           </label>
           <label>
+            <input type="hidden" name="assigningRequests" value="no" />
             <input
               type="checkbox"
               name="assigningRequests"

@@ -1,0 +1,9 @@
+{
+  "schema": "pathforge-request-delivery-fixture-v1",
+  "checks": [
+    {
+      "name": "exact-brief",
+      "passed": true
+    }
+  ]
+}

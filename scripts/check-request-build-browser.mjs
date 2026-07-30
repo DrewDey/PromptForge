@@ -397,6 +397,8 @@ const PAGE_SNAPSHOT = `(() => {
     tooSmall,
     stickyActionCount:stickyActions.length,
     primaryActionDetails,
+    caseHeadingOrder:[...fixture.querySelectorAll('h2[id^="request-case-"]:not(#request-case-error-title)')]
+      .map((heading)=>heading.id),
     caseSections:Object.fromEntries(
       caseSectionIds.map((id)=>[id,Boolean(fixture?.querySelector('#'+id))])
     ),
@@ -636,6 +638,21 @@ async function verifyViewport(client, options, viewport) {
         }
         if (isRemovedCase && !snapshot.caseSections['request-case-retention']) {
           throw new Error(`${label} omitted the minimum removed-case retention status.`)
+        }
+      }
+      if (scenarioItem.caseOrder) {
+        const expectedCaseHeadingOrder = [
+          'request-case-status',
+          'request-case-next-action',
+          'request-case-finish-line',
+          'request-case-clarification',
+          'request-case-delivery',
+          'request-case-history',
+        ]
+        if (JSON.stringify(snapshot.caseHeadingOrder) !== JSON.stringify(expectedCaseHeadingOrder)) {
+          throw new Error(
+            `${label} case heading order was ${JSON.stringify(snapshot.caseHeadingOrder)}; expected ${JSON.stringify(expectedCaseHeadingOrder)}.`,
+          )
         }
       }
       if (scenarioItem.expectFocusedAlert) {

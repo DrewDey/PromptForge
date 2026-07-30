@@ -21,6 +21,7 @@ export const REQUEST_DELIVERY_SLOT_STATES = [
   'pending',
   'staging',
   'sealed_waiting',
+  'sealed_ready',
   'quarantined',
   'available',
   'missing',
@@ -417,6 +418,7 @@ function deriveState(
   closeReason: RequestCloseReason | null,
   current: RequestDeliveryRevisionV1 | undefined,
   workspace: RequestBuilderWorkspaceV1 | null,
+  submitKind: RequestDeliveryCommandAvailability['submitKind'],
 ): RequestDeliverySlotState {
   const artifacts = current?.artifacts ?? workspace?.artifacts ?? []
   if (artifacts.some(artifact => artifact.integrityStatus === 'failed')) return 'hash_mismatch'
@@ -426,7 +428,9 @@ function deriveState(
   if (lifecycle === 'closed' && closeReason !== 'no_response') {
     return current || workspace ? 'missing' : 'none'
   }
-  if (workspace?.revisionState === 'sealed') return 'sealed_waiting'
+  if (workspace?.revisionState === 'sealed') {
+    return submitKind === null ? 'sealed_waiting' : 'sealed_ready'
+  }
   if (workspace || artifacts.some(artifact => (
     artifact.integrityStatus === 'pending' || artifact.scanState === 'pending'
   ))) return 'staging'
@@ -506,6 +510,7 @@ export function toRequestDeliverySlotModel(
   const formatLabels = Array.from(new Set(
     artifacts.map(artifact => artifact.mediaTypeLabel),
   ))
+  const commands = mapCommands(detail.actor.capabilities, detail)
 
   return {
     visibility: 'full',
@@ -517,6 +522,7 @@ export function toRequestDeliverySlotModel(
       detail.closeReason,
       current,
       detail.builderWorkspace,
+      commands.submitKind,
     ),
     lifecycle: detail.lifecycleState,
     moderation: detail.moderationState,
@@ -545,6 +551,6 @@ export function toRequestDeliverySlotModel(
     requesterOutcomes: mapRequesterOutcomes(detail.requesterOutcomes, labels),
     integrityMessage: deriveIntegrityMessage(current?.artifacts ?? detail.builderWorkspace?.artifacts ?? []),
     builderWorkspace,
-    commands: mapCommands(detail.actor.capabilities, detail),
+    commands,
   }
 }

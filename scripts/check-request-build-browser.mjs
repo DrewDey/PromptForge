@@ -90,6 +90,7 @@ const CASE_ERRORS = [
 const DELIVERY_STATES = [
   'not_ready',
   'sealed_waiting',
+  'sealed_ready',
   'missing',
   'hash_mismatch',
   'repair',
@@ -231,7 +232,7 @@ const SCENARIOS = [
     `case-delivery-${delivery}`,
     {
       surface: 'case',
-      lifecycle: delivery === 'sealed_waiting'
+      lifecycle: delivery === 'sealed_waiting' || delivery === 'sealed_ready'
         ? 'building'
         : delivery === 'repair'
         ? 'repair_required'
@@ -241,12 +242,18 @@ const SCENARIOS = [
             ? 'delivered'
             : 'review_pending',
       delivery,
-      ...(delivery === 'sealed_waiting' ? { actor: 'builder' } : {}),
+      ...(
+        delivery === 'sealed_waiting' || delivery === 'sealed_ready'
+          ? { actor: 'builder' }
+          : {}
+      ),
     },
     {
       caseOrder: true,
-      screenshot: delivery === 'sealed_waiting',
-      screenshotTarget: delivery === 'sealed_waiting'
+      screenshot: delivery === 'sealed_waiting' || delivery === 'sealed_ready',
+      screenshotTarget: (
+        delivery === 'sealed_waiting' || delivery === 'sealed_ready'
+      )
         ? '[data-request-delivery-slot]'
         : undefined,
       screenshotTargetSuffix: 'delivery',
@@ -737,6 +744,22 @@ async function verifyViewport(client, options, viewport) {
       ) {
         throw new Error(
           `${label} did not render sealed reviewer-waiting as a non-actionable success state.`,
+        )
+      }
+      if (
+        scenarioItem.path.includes('delivery=sealed_ready') &&
+        (
+          !snapshot.fixtureText.includes('Ready to submit') ||
+          !snapshot.fixtureText.includes('Submit the sealed revision') ||
+          !snapshot.fixtureText.includes('Submit a private delivery revision') ||
+          !snapshot.fixtureText.includes('Continue exact revision workflow') ||
+          snapshot.fixtureText.includes('No case action is currently available') ||
+          snapshot.fixtureText.includes('waiting for an independent reviewer assignment') ||
+          snapshot.fixtureText.includes('waiting for review assignment')
+        )
+      ) {
+        throw new Error(
+          `${label} did not render reviewer-assigned sealed work as submit-ready.`,
         )
       }
       const isRemovedCase = scenarioItem.path.includes('surface=case') &&

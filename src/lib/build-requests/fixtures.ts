@@ -116,6 +116,7 @@ export const REQUEST_CASE_ERROR_STATES = [
 export const REQUEST_DELIVERY_STATES = [
   'not_ready',
   'sealed_waiting',
+  'sealed_ready',
   'missing',
   'hash_mismatch',
   'repair',

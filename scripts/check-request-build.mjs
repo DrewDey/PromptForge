@@ -18,6 +18,16 @@ const caseShell = readFileSync(
   'src/components/requests/case/RequestCaseShell.tsx',
   'utf8',
 )
+assert.doesNotMatch(
+  caseShell,
+  /function Delivery\(|aria-labelledby="request-case-delivery"|<h2 id="request-case-delivery"/,
+  'The shared case shell must leave the single semantic delivery section and heading to PM 3.',
+)
+assert.match(
+  caseShell,
+  /<div className=\{styles\.deliverySlot\}>\{deliverySlot\}<\/div>/,
+  'The shared case shell must keep only a layout wrapper around the delivery slot.',
+)
 const browserGuard = readFileSync('scripts/check-request-build-browser.mjs', 'utf8')
 const intakeAction = readFileSync('src/app/requests/new/actions.ts', 'utf8')
 const intakePage = readFileSync('src/app/requests/new/page.tsx', 'utf8')

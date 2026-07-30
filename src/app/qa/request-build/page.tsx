@@ -143,18 +143,19 @@ function DeliveryPlaceholder({ state }: { state: RequestDeliveryFixtureState }) 
     },
   }
   return (
-    <div
+    <section
       className="min-w-0 border border-dashed border-surface-400 bg-surface-50 p-4"
       data-request-delivery-placeholder
       data-delivery-state={state}
       role={state === 'missing' || state === 'hash_mismatch' ? 'alert' : 'status'}
+      aria-labelledby="request-case-delivery"
     >
-      <strong>{copy[state].title}</strong>
+      <h2 id="request-case-delivery">{copy[state].title}</h2>
       <p className="mt-1 overflow-wrap-anywhere text-sm leading-6">{copy[state].body}</p>
       <p className="mt-2 text-xs font-bold uppercase tracking-wide text-surface-600">
         Placeholder · not custody or hash evidence
       </p>
-    </div>
+    </section>
   )
 }
 

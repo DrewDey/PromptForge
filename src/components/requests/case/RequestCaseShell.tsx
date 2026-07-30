@@ -447,20 +447,6 @@ function Clarification({
   )
 }
 
-function Delivery({ children }: { children: ReactNode }) {
-  return (
-    <section className={styles.panel} aria-labelledby="request-case-delivery">
-      <p className={styles.sectionKicker}>Private delivery</p>
-      <h2 id="request-case-delivery">Delivery and review evidence</h2>
-      <p className={styles.privateReminder}>
-        Delivery stays private. Public attribution or publication requires a
-        separate future consent and publication process.
-      </p>
-      <div className={styles.deliverySlot}>{children}</div>
-    </section>
-  )
-}
-
 function Assignments({ assignments }: { assignments: readonly RequestCaseAssignment[] }) {
   return (
     <section className={styles.historySubsection} aria-labelledby="request-case-assignments">
@@ -688,7 +674,7 @@ export function RequestCaseShell({
             clarification={model.clarification}
             action={clarificationAction}
           />
-          <Delivery>{deliverySlot}</Delivery>
+          <div className={styles.deliverySlot}>{deliverySlot}</div>
           <History
             timeline={model.timeline}
             retentionNotice={model.retentionNotice}

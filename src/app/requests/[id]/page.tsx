@@ -147,9 +147,15 @@ export default async function RequestCasePage({
       <RequestCaseShell
         model={model}
         deliverySlot={(
-          <p data-request-delivery-placeholder>
-            Protected reviewed delivery is not mounted until the custody component is integrated.
-          </p>
+          <section
+            aria-labelledby="request-case-delivery"
+            data-request-delivery-placeholder
+          >
+            <h2 id="request-case-delivery">Private delivery</h2>
+            <p>
+              Protected reviewed delivery is not mounted until the custody component is integrated.
+            </p>
+          </section>
         )}
         primaryAction={primaryAction}
         clarificationAction={clarificationAction}

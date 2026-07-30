@@ -205,9 +205,13 @@ function EmptyState({
           <Link href={existingPathHref} className={styles.secondaryAction}>
             Search existing paths
           </Link>
-          <Link href={newRequestHref} className={styles.stateAction}>
+          <Link
+            href={newRequestHref}
+            className={styles.stateAction}
+            data-my-forge-new-request
+          >
             Request a build
-            <ArrowRight aria-hidden="true" />
+            <span aria-hidden="true" data-my-forge-new-request-arrow>→</span>
           </Link>
         </div>
       </div>

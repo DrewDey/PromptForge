@@ -89,6 +89,8 @@ const CASE_ERRORS = [
 ]
 const DELIVERY_STATES = [
   'not_ready',
+  'staging',
+  'prepared_recovery',
   'sealed_waiting',
   'sealed_ready',
   'missing',
@@ -166,11 +168,18 @@ const SCENARIOS = [
     { surface: 'case', lifecycle, actor: 'requester' },
     {
       caseOrder: true,
+      expectedDeliveryStickyAnchorCount: (
+        lifecycle === 'delivery_ready' || lifecycle === 'delivered'
+      ) ? 1 : lifecycle === 'completed' ? 0 : undefined,
       screenshot: ['clarification_requested', 'delivery_ready'].includes(lifecycle),
       screenshotTarget: lifecycle === 'delivery_ready'
         ? '[data-request-delivery-slot]'
-        : undefined,
-      screenshotTargetSuffix: 'delivery',
+        : lifecycle === 'clarification_requested'
+          ? '[data-request-case-secondary-action]'
+          : undefined,
+      screenshotTargetSuffix: lifecycle === 'clarification_requested'
+        ? 'actions'
+        : 'delivery',
     },
   )),
   ...ACTORS.slice(1).map((actor) => scenario(
@@ -180,7 +189,15 @@ const SCENARIOS = [
       lifecycle: actor === 'reviewer' ? 'review_pending' : actor === 'builder' ? 'building' : 'triage',
       actor,
     },
-    { caseOrder: true },
+    {
+      caseOrder: true,
+      screenshot: actor === 'reviewer',
+      screenshotTarget: actor === 'reviewer'
+        ? '[data-request-delivery-slot]'
+        : undefined,
+      screenshotTargetSuffix: 'delivery',
+      expectedDeliveryStickyAnchorCount: actor === 'reviewer' ? 1 : undefined,
+    },
   )),
   ...MODERATION.slice(1).map((moderation) => scenario(
     `case-moderation-${moderation}`,
@@ -198,7 +215,13 @@ const SCENARIOS = [
   scenario(
     'case-held-authorized-action',
     { surface: 'case', lifecycle: 'building', actor: 'triager', moderation: 'held' },
-    { expectedPrimaryCount: 1, restrictedCase: true },
+    {
+      expectedPrimaryCount: 1,
+      restrictedCase: true,
+      screenshot: true,
+      screenshotTarget: '#request-case-held-operation',
+      screenshotTargetSuffix: 'operation',
+    },
   ),
   scenario(
     'case-held-mismatched-action',
@@ -232,7 +255,12 @@ const SCENARIOS = [
     `case-delivery-${delivery}`,
     {
       surface: 'case',
-      lifecycle: delivery === 'sealed_waiting' || delivery === 'sealed_ready'
+      lifecycle: [
+        'staging',
+        'prepared_recovery',
+        'sealed_waiting',
+        'sealed_ready',
+      ].includes(delivery)
         ? 'building'
         : delivery === 'repair'
         ? 'repair_required'
@@ -243,16 +271,38 @@ const SCENARIOS = [
             : 'review_pending',
       delivery,
       ...(
-        delivery === 'sealed_waiting' || delivery === 'sealed_ready'
+        [
+          'staging',
+          'prepared_recovery',
+          'sealed_waiting',
+          'sealed_ready',
+        ].includes(delivery)
           ? { actor: 'builder' }
           : {}
       ),
     },
     {
       caseOrder: true,
-      screenshot: delivery === 'sealed_waiting' || delivery === 'sealed_ready',
+      screenshot: [
+        'staging',
+        'prepared_recovery',
+        'sealed_waiting',
+        'sealed_ready',
+      ].includes(delivery),
+      expectedDeliveryStickyAnchorCount: [
+        'staging',
+        'prepared_recovery',
+        'sealed_ready',
+        'ready',
+        'delivered',
+      ].includes(delivery) ? 1 : 0,
       screenshotTarget: (
-        delivery === 'sealed_waiting' || delivery === 'sealed_ready'
+        [
+          'staging',
+          'prepared_recovery',
+          'sealed_waiting',
+          'sealed_ready',
+        ].includes(delivery)
       )
         ? '[data-request-delivery-slot]'
         : undefined,
@@ -442,6 +492,7 @@ const PAGE_SNAPSHOT = `(() => {
       return {
         display:style.display,
         visibility:style.visibility,
+        position:style.position,
         width:Math.round(rect.width),
         height:Math.round(rect.height),
       };
@@ -500,6 +551,20 @@ const PAGE_SNAPSHOT = `(() => {
     tooSmall,
     stickyActionCount:stickyActions.length,
     primaryActionDetails,
+    stickyFormCount:fixture?.querySelectorAll(
+      '[data-request-case-primary-action] form'
+    ).length || 0,
+    heldStickyAnchorCount:fixture?.querySelectorAll(
+      '[data-request-case-primary-action] a[href="#request-case-held-operation"]'
+    ).length || 0,
+    heldOperationCount:fixture?.querySelectorAll('#request-case-held-operation').length || 0,
+    secondaryActionCount:fixture?.querySelectorAll(
+      '[data-request-case-secondary-action]'
+    ).length || 0,
+    deliveryStickyAnchorCount:fixture?.querySelectorAll(
+      '[data-request-case-primary-action] a[href="#request-delivery-workflow"]'
+    ).length || 0,
+    deliveryWorkflowCount:fixture?.querySelectorAll('#request-delivery-workflow').length || 0,
     caseHeadingOrder:[...fixture.querySelectorAll(
       'h2[id^="request-case-"]:not(#request-case-error-title), h2#request-delivery-heading'
     )]
@@ -731,13 +796,98 @@ async function verifyViewport(client, options, viewport) {
         throw new Error(`${label} did not preserve the exact 2026-08-15 service target date.`)
       }
       if (
+        scenarioItem.path.includes('surface=case') &&
+        snapshot.fixtureText.includes('ADMIN VIEW')
+      ) {
+        throw new Error(`${label} mislabeled a participant case as an admin delivery view.`)
+      }
+      if (
+        scenarioItem.path.includes('surface=case') &&
+        scenarioItem.path.includes('actor=reviewer') &&
+        (
+          !snapshot.fixtureText.includes('Approve exact revision') ||
+          !snapshot.fixtureText.includes('Request repair')
+        )
+      ) {
+        throw new Error(`${label} omitted the reviewer-owned delivery workflow.`)
+      }
+      if (
+        scenarioItem.path.includes('surface=case') &&
+        scenarioItem.path.includes('lifecycle=delivery_ready') &&
+        scenarioItem.path.includes('actor=requester') &&
+        !snapshot.fixtureText.includes('Acknowledge delivery')
+      ) {
+        throw new Error(`${label} omitted the requester delivery acknowledgment.`)
+      }
+      if (
+        scenarioItem.path.includes('surface=case') &&
+        scenarioItem.path.includes('lifecycle=delivered') &&
+        scenarioItem.path.includes('actor=requester') &&
+        (
+          !snapshot.fixtureText.includes('Mark useful') ||
+          !snapshot.fixtureText.includes('Report failed check')
+        )
+      ) {
+        throw new Error(`${label} omitted the requester delivery outcome workflow.`)
+      }
+      if (
+        scenarioItem.path.includes('surface=case') &&
+        scenarioItem.path.includes('lifecycle=clarification_requested') &&
+        scenarioItem.path.includes('actor=requester') &&
+        (
+          !snapshot.fixtureText.includes('Submit clarification') ||
+          !snapshot.fixtureText.includes('Confirm permanent withdrawal') ||
+          !snapshot.fixtureText.includes('Withdraw request') ||
+          snapshot.primaryActionDetails.length !== 1 ||
+          (
+            viewport.mobile &&
+            snapshot.primaryActionDetails[0]?.position !== 'fixed'
+          ) ||
+          snapshot.secondaryActionCount !== 1
+        )
+      ) {
+        throw new Error(
+          `${label} did not expose clarification plus one non-sticky confirmed withdrawal action: ${JSON.stringify({
+            hasSubmit: snapshot.fixtureText.includes('Submit clarification'),
+            hasConfirm: snapshot.fixtureText.includes('Confirm permanent withdrawal'),
+            hasWithdraw: snapshot.fixtureText.includes('Withdraw request'),
+            sticky: snapshot.stickyActionCount,
+            primary: snapshot.primaryActionDetails.length,
+            secondary: snapshot.secondaryActionCount,
+          })}.`,
+        )
+      }
+      if (
+        scenarioItem.path.includes('delivery=staging') &&
+        (
+          !snapshot.fixtureText.includes('Continue the staged delivery') ||
+          !snapshot.fixtureText.includes('Continue exact delivery workflow')
+        )
+      ) {
+        throw new Error(`${label} did not render staged delivery continuation.`)
+      }
+      if (
+        scenarioItem.path.includes('delivery=prepared_recovery') &&
+        (
+          !snapshot.fixtureText.includes('Resume the prepared delivery') ||
+          !snapshot.fixtureText.includes('Continue exact delivery workflow') ||
+          snapshot.fixtureText.includes('No case action is currently available')
+        )
+      ) {
+        throw new Error(`${label} did not render prepared-workspace recovery.`)
+      }
+      if (
         scenarioItem.path.includes('delivery=sealed_waiting') &&
         (
           !snapshot.fixtureText.includes(
             'This exact revision is sealed and waiting for an independent reviewer assignment.',
           ) ||
+          !snapshot.fixtureText.includes(
+            'Wait for an independent reviewer assignment',
+          ) ||
           !snapshot.fixtureText.includes('Delivery sealed') ||
           snapshot.fixtureText.includes('The assigned builder has not submitted') ||
+          snapshot.fixtureText.includes('Continue the assigned build') ||
           snapshot.fixtureText.includes('Submit a private delivery revision') ||
           snapshot.fixtureText.includes('Continue exact revision workflow')
         )
@@ -762,10 +912,69 @@ async function verifyViewport(client, options, viewport) {
           `${label} did not render reviewer-assigned sealed work as submit-ready.`,
         )
       }
+      if (
+        typeof scenarioItem.expectedDeliveryStickyAnchorCount === 'number' &&
+        (
+          snapshot.deliveryStickyAnchorCount !== scenarioItem.expectedDeliveryStickyAnchorCount ||
+          snapshot.deliveryWorkflowCount !== 1
+        )
+      ) {
+        throw new Error(
+          `${label} rendered an invalid delivery sticky-anchor contract: ${JSON.stringify({
+            anchors: snapshot.deliveryStickyAnchorCount,
+            workflows: snapshot.deliveryWorkflowCount,
+          })}.`,
+        )
+      }
+      if (
+        viewport.mobile &&
+        scenarioItem.expectedDeliveryStickyAnchorCount === 1 &&
+        (
+          snapshot.primaryActionDetails.length !== 1 ||
+          snapshot.primaryActionDetails[0].position !== 'fixed'
+        )
+      ) {
+        throw new Error(
+          `${label} did not render exactly one fixed mobile delivery workflow anchor: ${JSON.stringify(snapshot.primaryActionDetails)}.`,
+        )
+      }
       const isRemovedCase = scenarioItem.path.includes('surface=case') &&
         scenarioItem.path.includes('moderation=removed')
       const isHeldCase = scenarioItem.path.includes('surface=case') &&
         scenarioItem.path.includes('moderation=held')
+      const isHeldOperator = isHeldCase &&
+        scenarioItem.path.includes('actor=triager') &&
+        !scenarioItem.path.includes('primary=mismatched')
+      if (
+        isHeldOperator &&
+        (
+          !snapshot.fixtureText.includes('Hold resolution') ||
+          !snapshot.fixtureText.includes('Release moderation hold') ||
+          !snapshot.fixtureText.includes('Resolve the moderation hold') ||
+          snapshot.fixtureText.includes('Wait for the next service update') ||
+          snapshot.primaryActionDetails.length !== 1 ||
+          snapshot.heldStickyAnchorCount !== 1 ||
+          snapshot.heldOperationCount !== 1 ||
+          snapshot.stickyFormCount !== 0 ||
+          (
+            viewport.mobile &&
+            snapshot.primaryActionDetails[0]?.position !== 'fixed'
+          ) ||
+          snapshot.deliveryPlaceholders !== 0
+        )
+      ) {
+        throw new Error(`${label} did not render the exact restricted held-operator recovery form.`)
+      }
+      if (
+        isHeldCase &&
+        !isHeldOperator &&
+        (
+          snapshot.primaryActionDetails.length !== 0 ||
+          snapshot.heldOperationCount !== 0
+        )
+      ) {
+        throw new Error(`${label} exposed a held moderation action to a non-operator fixture.`)
+      }
       if (
         scenarioItem.path.includes('surface=case') &&
         snapshot.deliveryPlaceholders !== (isRemovedCase || isHeldCase ? 0 : 1)

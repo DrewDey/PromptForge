@@ -66,6 +66,7 @@ const calls = {
   controls: 0,
 }
 const controlInputs = []
+const executedCommands = []
 globalThis.__pilotAdmissionServiceFactoryCalls = 0
 globalThis.__pilotAdmissionService = {
   async listPilotAdmissionCandidates() {
@@ -78,8 +79,9 @@ globalThis.__pilotAdmissionService = {
   async revokeRequestPilotParticipant() {
     calls.revoke += 1
   },
-  async executeCommand() {
+  async executeCommand(command) {
     calls.execute += 1
+    executedCommands.push(command)
   },
   async updateControls(input) {
     calls.controls += 1
@@ -209,6 +211,104 @@ assert.equal(
   'An unconfirmed reassignment must not resolve the service.',
 )
 assert.equal(calls.execute, 0)
+
+const unconfirmedWithdrawal = new FormData()
+unconfirmedWithdrawal.set('requestId', requestId)
+unconfirmedWithdrawal.set('expectedVersion', '3')
+unconfirmedWithdrawal.set('idempotencyKey', 'participant-withdraw-unconfirmed')
+unconfirmedWithdrawal.set('command', 'withdraw')
+unconfirmedWithdrawal.set('reason', 'Requester withdrew this private case.')
+const factoryBeforeWithdrawal = globalThis.__pilotAdmissionServiceFactoryCalls
+let withdrawalDestination = null
+try {
+  await requestCaseCommandAction(unconfirmedWithdrawal)
+} catch (error) {
+  withdrawalDestination = error?.destination ?? null
+}
+assert.equal(
+  withdrawalDestination,
+  `/requests/${requestId}?actionError=confirmation_required`,
+  'An unconfirmed withdrawal must take bounded confirmation recovery.',
+)
+assert.equal(
+  globalThis.__pilotAdmissionServiceFactoryCalls,
+  factoryBeforeWithdrawal,
+  'An unconfirmed withdrawal must fail before resolving the service.',
+)
+assert.equal(calls.execute, 0)
+
+const confirmedWithdrawal = new FormData()
+for (const [name, value] of unconfirmedWithdrawal.entries()) {
+  confirmedWithdrawal.append(name, value)
+}
+confirmedWithdrawal.set('idempotencyKey', 'participant-withdraw-confirmed')
+confirmedWithdrawal.set('confirmation', 'confirmed')
+const executeBeforeConfirmedWithdrawal = calls.execute
+await requestCaseCommandAction(confirmedWithdrawal)
+assert.equal(
+  calls.execute,
+  executeBeforeConfirmedWithdrawal + 1,
+  'A confirmed withdrawal must reach exactly one executeCommand call.',
+)
+assert.equal(executedCommands.at(-1)?.kind, 'withdraw')
+assert.deepEqual(
+  executedCommands.at(-1)?.payload,
+  { reason: 'Requester withdrew this private case.' },
+  'Confirmed withdrawal must preserve the bounded reason.',
+)
+
+for (const [command, field, value] of [
+  ['release_moderation_hold', 'resolution', 'Safety review completed.'],
+  ['remove_for_moderation', 'reason', 'Safety review requires removal.'],
+]) {
+  const formData = new FormData()
+  formData.set('requestId', requestId)
+  formData.set('expectedVersion', '4')
+  formData.set('idempotencyKey', `admin-${command}`)
+  formData.set('command', command)
+  formData.set(field, value)
+  const executeBeforeHeldCommand = calls.execute
+  await adminRequestCommandAction(formData)
+  assert.equal(
+    calls.execute,
+    executeBeforeHeldCommand + 1,
+    `A valid ${command} envelope must reach exactly one executeCommand call.`,
+  )
+  assert.equal(
+    executedCommands.at(-1)?.kind,
+    command,
+    `Held operator action must serialize exact ${command}.`,
+  )
+  assert.deepEqual(executedCommands.at(-1)?.payload, { [field]: value })
+}
+
+const hostileHeldCommand = new FormData()
+hostileHeldCommand.set('requestId', requestId)
+hostileHeldCommand.set('expectedVersion', '4')
+hostileHeldCommand.set('idempotencyKey', 'admin-hostile-held-command')
+hostileHeldCommand.set('command', 'clear')
+const factoryBeforeHostileHeldCommand = globalThis.__pilotAdmissionServiceFactoryCalls
+const executeBeforeHostileHeldCommand = calls.execute
+let hostileHeldDestination = null
+try {
+  await adminRequestCommandAction(hostileHeldCommand)
+} catch (error) {
+  hostileHeldDestination = error?.destination ?? null
+}
+assert.equal(
+  hostileHeldDestination,
+  `/admin/build-requests/${requestId}?actionError=unavailable`,
+)
+assert.equal(
+  globalThis.__pilotAdmissionServiceFactoryCalls,
+  factoryBeforeHostileHeldCommand,
+  'An unsupported moderation setter must fail before resolving the service.',
+)
+assert.equal(
+  calls.execute,
+  executeBeforeHostileHeldCommand,
+  'An unsupported moderation setter must not execute a command.',
+)
 
 function controlsForm({
   accepting = ['no'],

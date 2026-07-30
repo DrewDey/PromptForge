@@ -158,12 +158,16 @@ function deliveryFixture(
     && lifecycle === 'building'
   )
   const builderStaging = (
-    actorRole === 'builder'
+    state === 'staging'
+    && actorRole === 'builder'
     && lifecycle === 'building'
-    && !builderWaiting
-    && !builderReady
   )
-  const artifacts = hasRevision || builderStaging || builderWaiting || builderReady
+  const builderPrepared = (
+    state === 'prepared_recovery'
+    && actorRole === 'builder'
+    && lifecycle === 'building'
+  )
+  const artifacts = hasRevision || builderStaging || builderPrepared || builderWaiting || builderReady
     ? [{
         artifactId: '10000000-0000-4000-8000-000000000012',
         artifactOrdinal: 1,
@@ -194,7 +198,7 @@ function deliveryFixture(
     currentDeliveryRevisionId: hasRevision
       ? '10000000-0000-4000-8000-000000000013'
       : null,
-    state: builderStaging
+    state: state === 'staging' || state === 'prepared_recovery'
       ? 'staging'
       : state === 'sealed_waiting'
         ? 'sealed_waiting'
@@ -265,13 +269,21 @@ function deliveryFixture(
       : state === 'missing'
         ? 'The recorded delivery object is unavailable.'
         : null,
-    builderWorkspace: builderStaging || builderWaiting || builderReady
+    builderWorkspace: builderStaging || builderPrepared || builderWaiting || builderReady
       ? {
           deliveryRevisionId: '10000000-0000-4000-8000-000000000013',
-          revisionState: builderWaiting || builderReady ? 'sealed' : 'staging',
-          revisionLabel: builderWaiting || builderReady ? 'Initial delivery' : null,
-          summary: builderWaiting || builderReady ? 'A static offline checklist.' : null,
-          evidence: builderWaiting || builderReady
+          revisionState: builderWaiting || builderReady
+            ? 'sealed'
+            : builderPrepared
+              ? 'prepared'
+              : 'staging',
+          revisionLabel: builderWaiting || builderReady || builderPrepared
+            ? 'Initial delivery'
+            : null,
+          summary: builderWaiting || builderReady || builderPrepared
+            ? 'A static offline checklist.'
+            : null,
+          evidence: builderWaiting || builderReady || builderPrepared
             ? [{
                 acceptanceCheckId: acceptanceChecks[0].id,
                 label: acceptanceChecks[0].label,
@@ -288,7 +300,7 @@ function deliveryFixture(
       canStageArtifact: builderStaging,
       canAbandonArtifact: builderStaging,
       canPrepareRevision: builderStaging,
-      canResumeRevision: builderReady,
+      canResumeRevision: builderReady || builderPrepared,
       submitKind: builderReady ? 'submit_delivery' : null,
       canReview: actorRole === 'reviewer' && lifecycle === 'review_pending',
       canRequestRepair: actorRole === 'reviewer' && lifecycle === 'review_pending',
@@ -445,7 +457,7 @@ export default async function RequestBuildFixturePage({
       closeReason,
       errorState,
     })
-    const model = (
+    const stateModel = (
       deliveryState === 'sealed_ready'
       && baseModel.visibility === 'full'
     )
@@ -460,13 +472,88 @@ export default async function RequestBuildFixturePage({
             description:
               'An independent reviewer is assigned and the exact sealed revision is ready for submission.',
           },
-        }
+          }
+      : deliveryState === 'staging'
+        && baseModel.visibility === 'full'
+        ? {
+            ...baseModel,
+            capabilities: [{
+              id: 'abandon_delivery_artifact',
+              label: 'Remove a staged artifact',
+            }],
+            nextAction: {
+              title: 'Continue the staged delivery',
+              description:
+                'The canonical staging workspace is ready to continue in the private delivery area.',
+            },
+          }
+      : deliveryState === 'prepared_recovery'
+        && baseModel.visibility === 'full'
+        ? {
+            ...baseModel,
+            capabilities: [],
+            nextAction: {
+              title: 'Resume the prepared delivery',
+              description:
+                'The canonical prepared workspace can be recovered and sealed in the private delivery area.',
+            },
+          }
+      : deliveryState === 'sealed_waiting'
+        && baseModel.visibility === 'full'
+        ? {
+            ...baseModel,
+            capabilities: [],
+            nextAction: {
+              title: 'Wait for an independent reviewer assignment',
+              description:
+                'The exact revision is sealed. No further builder action is available until an independent reviewer is assigned.',
+            },
+          }
       : baseModel
-    const primaryCapabilityId = deliveryState === 'sealed_ready'
+    const model = (
+      moderation === 'held'
+      && actorRole === 'triager'
+      && stateModel.capabilities.some(capability => (
+        capability.id === 'release_moderation_hold'
+        || capability.id === 'remove_for_moderation'
+      ))
+    )
+      ? {
+          ...stateModel,
+          nextAction: {
+            title: 'Resolve the moderation hold',
+            description:
+              'Use only the restricted moderation operation authorized for this held case.',
+          },
+        }
+      : stateModel
+    const deliveryModel = deliveryFixture(deliveryState, lifecycle, actorRole)
+    const deliveryWorkflowAvailable = deliveryModel.visibility === 'full' && (
+      deliveryModel.commands.canStageArtifact
+      || deliveryModel.commands.canAbandonArtifact
+      || deliveryModel.commands.canPrepareRevision
+      || deliveryModel.commands.canResumeRevision
+      || deliveryModel.commands.submitKind !== null
+      || deliveryModel.commands.canReview
+      || deliveryModel.commands.canRequestRepair
+      || deliveryModel.commands.canAcknowledge
+      || deliveryModel.commands.canRecordRequesterOutcome
+    )
+    const primaryCapabilityId = (
+      deliveryState === 'staging'
+      || deliveryState === 'prepared_recovery'
+      || deliveryState === 'sealed_waiting'
+      || deliveryState === 'sealed_ready'
+    )
       ? undefined
       : firstValue(query.primary) === 'mismatched'
         ? 'approve_delivery'
         : model.capabilities[0]?.id
+    const hasSecondaryWithdrawal = (
+      model.visibility === 'full'
+      && model.capabilities.some(capability => capability.id === 'withdraw')
+      && primaryCapabilityId !== 'withdraw'
+    )
     const state = [
       lifecycle,
       actorRole,
@@ -481,8 +568,8 @@ export default async function RequestBuildFixturePage({
           model={model}
           deliverySlot={moderation === 'clear' ? (
             <RequestCaseDeliverySlot
-              model={deliveryFixture(deliveryState, lifecycle, actorRole)}
-              mode={actorRole === 'requester' ? 'participant' : 'admin'}
+              model={deliveryModel}
+              mode="participant"
               actions={{
                 review: fixtureAction,
                 requesterOutcome: fixtureReceiptAction,
@@ -494,7 +581,14 @@ export default async function RequestBuildFixturePage({
             primaryCapabilityId
               ? {
                   capabilityId: primaryCapabilityId,
-                  content: (
+                  content: moderation === 'held'
+                    && primaryCapabilityId === 'release_moderation_hold'
+                    ? (
+                      <a href="#request-case-held-operation">
+                        Resolve moderation hold
+                      </a>
+                    )
+                    : (
                     <form action={fixtureAction}>
                       <button
                         className="min-h-11 w-full bg-surface-900 px-4 py-3 font-bold text-white"
@@ -503,10 +597,73 @@ export default async function RequestBuildFixturePage({
                         {model.nextAction.title}
                       </button>
                     </form>
-                  ),
+                    ),
                 }
               : undefined
           }
+          restrictedAction={
+            moderation === 'held'
+            && primaryCapabilityId === 'release_moderation_hold'
+              ? (
+                  <form action={fixtureAction} className="space-y-3">
+                    <input
+                      type="hidden"
+                      name="command"
+                      value="release_moderation_hold"
+                    />
+                    <label className="block text-sm font-semibold">
+                      Hold resolution
+                      <textarea
+                        name="resolution"
+                        required
+                        minLength={4}
+                        maxLength={500}
+                        rows={3}
+                        className="mt-2 min-h-11 w-full border border-surface-300 bg-white px-3 py-2 text-base"
+                      />
+                    </label>
+                    <button className="min-h-11 w-full" type="submit">
+                      Release moderation hold
+                    </button>
+                  </form>
+                )
+              : undefined
+          }
+          workflowNavigation={deliveryWorkflowAvailable ? (
+            <a href="#request-delivery-workflow">
+              Continue exact delivery workflow
+            </a>
+          ) : undefined}
+          clarificationAction={
+            lifecycle === 'clarification_requested' && actorRole === 'requester'
+              ? (
+                  <form action={fixtureAction}>
+                    <label>
+                      Clarification answer
+                      <textarea name="answer" required minLength={4} maxLength={2000} />
+                    </label>
+                    <button className="min-h-11" type="submit">
+                      Submit clarification
+                    </button>
+                  </form>
+                )
+              : undefined
+          }
+          secondaryAction={hasSecondaryWithdrawal ? (
+            <form action={fixtureAction}>
+              <input type="hidden" name="command" value="withdraw" />
+              <label>
+                Confirm permanent withdrawal
+                <select name="confirmation" required defaultValue="">
+                  <option value="" disabled>Choose confirmation</option>
+                  <option value="confirmed">
+                    I understand this permanently closes the private request.
+                  </option>
+                </select>
+              </label>
+              <button type="submit">Withdraw request</button>
+            </form>
+          ) : undefined}
         />
       </FixtureFrame>
     )

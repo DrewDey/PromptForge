@@ -137,7 +137,14 @@ export interface RequestCaseShellProps {
     capabilityId: string
     content: ReactNode
   }
+  /**
+   * Navigation-only continuation derived from the canonical delivery model.
+   * It grants no command authority and only moves focus to the custody slot.
+   */
+  workflowNavigation?: ReactNode
   clarificationAction?: ReactNode
+  secondaryAction?: ReactNode
+  restrictedAction?: ReactNode
 }
 
 const lifecycleLabels: Record<RequestLifecycle, string> = {
@@ -276,9 +283,11 @@ function VisibilityAndStage({
 function NextAction({
   model,
   primaryAction,
+  workflowNavigation,
 }: {
   model: RequestCasePresentationModel | RequestRestrictedCasePresentationModel
   primaryAction?: RequestCaseShellProps['primaryAction']
+  workflowNavigation?: ReactNode
 }) {
   return (
     <section className={styles.nextActionSection} aria-labelledby="request-case-next-action">
@@ -294,15 +303,15 @@ function NextAction({
             ))}
           </ul>
         </div>
-      ) : (
+      ) : workflowNavigation ? null : (
         <p className={styles.mutedText}>No case action is currently available to you.</p>
       )}
-      {primaryAction ? (
+      {primaryAction || workflowNavigation ? (
         <div
           className={styles.primaryAction}
           data-request-case-primary-action
         >
-          {primaryAction.content}
+          {primaryAction?.content ?? workflowNavigation}
         </div>
       ) : null}
     </section>
@@ -390,9 +399,11 @@ function Closure({
 function Clarification({
   clarification,
   action,
+  secondaryAction,
 }: {
   clarification: RequestCaseClarification
   action?: ReactNode
+  secondaryAction?: ReactNode
 }) {
   const copy: Record<RequestCaseClarification['state'], string> = {
     none: 'No clarification is currently needed.',
@@ -442,7 +453,16 @@ function Clarification({
           ) : null}
         </dl>
       ) : null}
-      {action}
+      {action ? (
+        <div className={styles.clarificationAction}>
+          {action}
+        </div>
+      ) : null}
+      {secondaryAction ? (
+        <div className={styles.secondaryAction} data-request-case-secondary-action>
+          {secondaryAction}
+        </div>
+      ) : null}
     </section>
   )
 }
@@ -560,7 +580,10 @@ export function RequestCaseShell({
   model,
   deliverySlot,
   primaryAction,
+  workflowNavigation,
   clarificationAction,
+  secondaryAction,
+  restrictedAction,
 }: RequestCaseShellProps) {
   if (model.visibility === 'removed') {
     return (
@@ -612,6 +635,21 @@ export function RequestCaseShell({
               This restricted view does not expose the brief, clarification,
               assignments, or delivery while moderation hold authority is active.
             </section>
+            {visiblePrimaryAction && restrictedAction ? (
+              <section
+                id="request-case-held-operation"
+                className={styles.panel}
+                aria-labelledby="request-case-held-operation-heading"
+              >
+                <p className={styles.sectionKicker}>Restricted operation</p>
+                <h2 id="request-case-held-operation-heading">
+                  Resolve moderation hold
+                </h2>
+                <div className={styles.restrictedAction}>
+                  {restrictedAction}
+                </div>
+              </section>
+            ) : null}
             <History
               timeline={model.timeline}
               retentionNotice={model.retentionNotice}
@@ -664,7 +702,11 @@ export function RequestCaseShell({
       <div className={styles.caseGrid}>
         <aside className={styles.statusRail} aria-label="Case status and next action">
           <VisibilityAndStage model={model} />
-          <NextAction model={model} primaryAction={visiblePrimaryAction} />
+          <NextAction
+            model={model}
+            primaryAction={visiblePrimaryAction}
+            workflowNavigation={workflowNavigation}
+          />
         </aside>
 
         <div className={styles.caseMain}>
@@ -673,6 +715,7 @@ export function RequestCaseShell({
           <Clarification
             clarification={model.clarification}
             action={clarificationAction}
+            secondaryAction={secondaryAction}
           />
           <div className={styles.deliverySlot}>{deliverySlot}</div>
           <History

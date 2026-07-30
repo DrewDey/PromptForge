@@ -28,6 +28,41 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
+function RequestWithdrawalForm({
+  requestId,
+  requestVersion,
+  idempotencyKey,
+}: {
+  requestId: string
+  requestVersion: number
+  idempotencyKey: string
+}) {
+  return (
+    <form action={requestCaseCommandAction} className="space-y-3">
+      <input type="hidden" name="command" value="withdraw" />
+      <input type="hidden" name="requestId" value={requestId} />
+      <input type="hidden" name="expectedVersion" value={requestVersion} />
+      <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
+      <input type="hidden" name="reason" value="Requester withdrew this private case." />
+      <label className="block text-sm font-semibold">
+        Confirm permanent withdrawal
+        <select
+          name="confirmation"
+          required
+          defaultValue=""
+          className="mt-2 min-h-11 w-full border border-surface-300 bg-white px-3 py-2 text-base"
+        >
+          <option value="" disabled>Choose confirmation</option>
+          <option value="confirmed">
+            I understand this permanently closes the private request.
+          </option>
+        </select>
+      </label>
+      <button type="submit">Withdraw request</button>
+    </form>
+  )
+}
+
 export default async function RequestCasePage({
   params,
   searchParams,
@@ -45,7 +80,36 @@ export default async function RequestCasePage({
     if (requestAuthorityErrorCode(error) === 'not_found') notFound()
     throw error
   }
+  const deliveryModel = detail.visibility === 'full'
+    ? toRequestDeliverySlotModel(detail, detail.actor)
+    : null
+  const deliveryWorkflowAvailable = deliveryModel?.visibility === 'full' && (
+    deliveryModel.commands.canStageArtifact
+    || deliveryModel.commands.canAbandonArtifact
+    || deliveryModel.commands.canPrepareRevision
+    || deliveryModel.commands.canResumeRevision
+    || deliveryModel.commands.submitKind !== null
+    || deliveryModel.commands.canReview
+    || deliveryModel.commands.canRequestRepair
+    || deliveryModel.commands.canAcknowledge
+    || deliveryModel.commands.canRecordRequesterOutcome
+  )
   const mappedModel = toRequestCasePresentation(detail)
+  const presentationModel = (
+    mappedModel.visibility === 'full'
+    && deliveryModel?.commands.canResumeRevision
+    && deliveryModel.builderWorkspace?.revisionState === 'prepared'
+    && deliveryModel.commands.submitKind === null
+  )
+    ? {
+        ...mappedModel,
+        nextAction: {
+          title: 'Continue the exact delivery workflow',
+          description:
+            'The canonical builder workspace can resume through the private delivery area below.',
+        },
+      }
+    : mappedModel
   const actionError = query.actionError === 'stale_version'
     ? {
         title: 'This case changed before the action was recorded.',
@@ -67,9 +131,9 @@ export default async function RequestCasePage({
             messages: ['No success is claimed. Review the current case before trying again.'],
           }
         : undefined
-  const model = mappedModel.visibility === 'full' && actionError
-    ? { ...mappedModel, errorSummary: actionError }
-    : mappedModel
+  const model = presentationModel.visibility === 'full' && actionError
+    ? { ...presentationModel, errorSummary: actionError }
+    : presentationModel
   const latestEventSequence = detail.unread.latestEventSequence
   const next = detail.visibility === 'full' ? detail.nextActions[0] : null
   const clarification = detail.visibility === 'full'
@@ -94,28 +158,11 @@ export default async function RequestCasePage({
     ? {
         capabilityId: 'withdraw',
         content: (
-          <form action={requestCaseCommandAction} className="space-y-3">
-            <input type="hidden" name="command" value="withdraw" />
-            <input type="hidden" name="requestId" value={detail.requestId} />
-            <input type="hidden" name="expectedVersion" value={detail.requestVersion} />
-            <input type="hidden" name="idempotencyKey" value={actionIntent('withdraw')} />
-            <input type="hidden" name="reason" value="Requester withdrew this private case." />
-            <label className="block text-sm font-semibold">
-              Confirm permanent withdrawal
-              <select
-                name="confirmation"
-                required
-                defaultValue=""
-                className="mt-2 min-h-11 w-full border border-surface-300 bg-white px-3 py-2 text-base"
-              >
-                <option value="" disabled>Choose confirmation</option>
-                <option value="confirmed">
-                  I understand this permanently closes the private request.
-                </option>
-              </select>
-            </label>
-            <button type="submit">Withdraw request</button>
-          </form>
+          <RequestWithdrawalForm
+            requestId={detail.requestId}
+            requestVersion={detail.requestVersion}
+            idempotencyKey={actionIntent('withdraw')}
+          />
         ),
       }
       : next?.kind === 'submit_clarification'
@@ -137,10 +184,30 @@ export default async function RequestCasePage({
             ),
           }
       : undefined
+  const secondaryAction = (
+    detail.visibility === 'full'
+    && detail.actor.capabilities.includes('withdraw')
+    && next?.kind !== 'withdraw'
+  )
+    ? (
+        <RequestWithdrawalForm
+          requestId={detail.requestId}
+          requestVersion={detail.requestVersion}
+          idempotencyKey={actionIntent('withdraw')}
+        />
+      )
+    : undefined
+  const workflowNavigation = deliveryWorkflowAvailable
+    ? (
+        <a href="#request-delivery-workflow">
+          Continue exact delivery workflow
+        </a>
+      )
+    : undefined
   const deliverySlot = detail.visibility === 'full'
     ? (
         <RequestCaseDeliverySlot
-          model={toRequestDeliverySlotModel(detail, detail.actor)}
+          model={deliveryModel!}
           mode="participant"
           actions={{
             requesterOutcome: recordRequestDeliveryOutcomeAction,
@@ -173,7 +240,9 @@ export default async function RequestCasePage({
         model={model}
         deliverySlot={deliverySlot}
         primaryAction={primaryAction}
+        workflowNavigation={workflowNavigation}
         clarificationAction={clarificationAction}
+        secondaryAction={secondaryAction}
       />
     </>
   )

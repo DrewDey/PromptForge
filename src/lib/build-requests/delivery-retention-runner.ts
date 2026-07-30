@@ -30,6 +30,7 @@ export type RequestDeliveryMaintenanceBatchResult = {
   revisionsRetired: number
   auditTombstonesExpired: number
   deidentificationReceiptsExpired: number
+  authorityNoOp: number
   retained: number
   preserved: number
   failed: number
@@ -63,17 +64,6 @@ function sameObjectBinding(
     && first.byteLength === second.byteLength
     && first.detectedMediaType === second.detectedMediaType
     && first.custodyState === second.custodyState
-  )
-}
-
-function sameCleanupAuthority(
-  first: RequestDeliveryArtifactCleanupAuthorityV1,
-  second: RequestDeliveryArtifactCleanupAuthorityV1,
-) {
-  return (
-    sameObjectBinding(first, second)
-    && first.retentionState === second.retentionState
-    && first.accessUntil === second.accessUntil
   )
 }
 
@@ -199,15 +189,6 @@ export function createRequestDeliveryMaintenanceRunner(
       deliveryRevisionId: item.deliveryRevisionId,
       artifactId: item.artifactId,
     }
-    const first = await cleanupResolver.resolveDeliveryArtifactCleanup(binding)
-    if (first.retentionState !== 'cleanup_eligible') {
-      classifyRetention(first, result)
-      return
-    }
-
-    const stored = await dependencies.storage.read(first.objectIdentity)
-    if (stored) verifyCleanupObject(first, stored)
-
     let claim: ClaimDeliveryArtifactCleanupReceiptV1 | null = null
     let deleteMayHaveStarted = false
     try {
@@ -221,32 +202,15 @@ export function createRequestDeliveryMaintenanceRunner(
       })
       deleteMayHaveStarted = claim.deletionStarted
 
+      // The claim is acquired before treating retention as a stop decision.
+      // PM1 may enumerate a held artifact only to let a new fenced owner
+      // converge an irreversible deletion that an earlier worker began.
+      const first = await cleanupResolver.resolveDeliveryArtifactCleanup(binding)
+      const stored = await dependencies.storage.read(first.objectIdentity)
+      if (stored) verifyCleanupObject(first, stored)
+
       const current = await cleanupResolver.resolveDeliveryArtifactCleanup(binding)
-      if (
-        current.retentionState !== 'cleanup_eligible'
-        || !sameCleanupAuthority(first, current)
-      ) {
-        if (
-          !claim.deletionStarted
-          && stored
-          && sameObjectBinding(first, current)
-        ) {
-          const proof = await dependencies.storage.read(first.objectIdentity)
-          verifyCleanupObject(first, proof)
-          await cleanupClaims.abortDeliveryArtifactCleanup({
-            cleanupClaimId: claim.cleanupClaimId,
-            claimVersion: claim.claimVersion,
-            idempotencyKey: privateKey(
-              attemptOwner,
-              'abort',
-              [claim.cleanupClaimId, claim.claimVersion],
-            ),
-          })
-        }
-        if (current.retentionState !== 'cleanup_eligible') {
-          classifyRetention(current, result)
-          return
-        }
+      if (!sameObjectBinding(first, current)) {
         throw new Error('private_delivery_cleanup_binding_changed')
       }
 
@@ -271,6 +235,25 @@ export function createRequestDeliveryMaintenanceRunner(
         } else {
           result.artifactsAlreadyMissing += 1
         }
+        return
+      }
+
+      if (
+        !claim.deletionStarted
+        && current.retentionState !== 'cleanup_eligible'
+      ) {
+        const proof = await dependencies.storage.read(current.objectIdentity)
+        verifyCleanupObject(current, proof)
+        await cleanupClaims.abortDeliveryArtifactCleanup({
+          cleanupClaimId: claim.cleanupClaimId,
+          claimVersion: claim.claimVersion,
+          idempotencyKey: privateKey(
+            attemptOwner,
+            'abort',
+            [claim.cleanupClaimId, claim.claimVersion],
+          ),
+        })
+        classifyRetention(current, result)
         return
       }
 
@@ -308,16 +291,13 @@ export function createRequestDeliveryMaintenanceRunner(
       }
       result.artifactsDeleted += 1
     } catch (error) {
-      if (claim && !deleteMayHaveStarted && stored) {
+      if (claim && !deleteMayHaveStarted) {
         try {
           const current = await cleanupResolver.resolveDeliveryArtifactCleanup(
             binding,
           )
-          const proof = await dependencies.storage.read(first.objectIdentity)
-          if (!sameObjectBinding(first, current)) {
-            throw new Error('private_delivery_cleanup_abort_binding_changed')
-          }
-          verifyCleanupObject(first, proof)
+          const proof = await dependencies.storage.read(current.objectIdentity)
+          verifyCleanupObject(current, proof)
           await cleanupClaims.abortDeliveryArtifactCleanup({
             cleanupClaimId: claim.cleanupClaimId,
             claimVersion: claim.claimVersion,
@@ -363,21 +343,21 @@ export function createRequestDeliveryMaintenanceRunner(
         result.revisionsRetired += 1
         return
       case 'audit_tombstone_expiry':
-        await audit.expireBuildRequestAuditTombstone({
+        if ((await audit.expireBuildRequestAuditTombstone({
           requestId: item.requestId,
           idempotencyKey: privateKey(
             attemptOwner,
             'audit',
             [itemIndex, item.requestId],
           ),
-        })
-        result.auditTombstonesExpired += 1
+        })).cleaned) result.auditTombstonesExpired += 1
+        else result.authorityNoOp += 1
         return
       case 'account_deidentification_receipt_expiry':
-        await deidentification.expireRequestAccountDeidentificationReceipt({
+        if ((await deidentification.expireRequestAccountDeidentificationReceipt({
           receiptId: item.receiptId,
-        })
-        result.deidentificationReceiptsExpired += 1
+        })).expired) result.deidentificationReceiptsExpired += 1
+        else result.authorityNoOp += 1
     }
   }
 
@@ -406,6 +386,7 @@ export function createRequestDeliveryMaintenanceRunner(
         revisionsRetired: 0,
         auditTombstonesExpired: 0,
         deidentificationReceiptsExpired: 0,
+        authorityNoOp: 0,
         retained: 0,
         preserved: 0,
         failed: 0,

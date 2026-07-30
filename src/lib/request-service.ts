@@ -696,6 +696,39 @@ function timestamp(value: unknown, label: string) {
   return value
 }
 
+function calendarDate(value: unknown, label: string) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    throw new RequestContractError(`${label} is invalid.`)
+  }
+  const [year, month, day] = value.split('-').map(Number)
+  const leapYear =
+    year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)
+  const daysInMonth = [
+    31,
+    leapYear ? 29 : 28,
+    31,
+    30,
+    31,
+    30,
+    31,
+    31,
+    30,
+    31,
+    30,
+    31,
+  ]
+  if (
+    year < 1 ||
+    month < 1 ||
+    month > 12 ||
+    day < 1 ||
+    day > daysInMonth[month - 1]
+  ) {
+    throw new RequestContractError(`${label} is invalid.`)
+  }
+  return value
+}
+
 function uuid(value: unknown, label: string) {
   if (typeof value !== 'string') throw new RequestContractError(`${label} is invalid.`)
   validateUuid(value, label)
@@ -1828,6 +1861,7 @@ export function parseRequestCaseDetailV1(value: unknown): RequestCaseDetailV1 {
   const detailKeys = [
     ...SUMMARY_KEYS,
     'visibility',
+    'targetDate',
     'closureNote',
     'briefRevisionId',
     'brief',
@@ -1846,6 +1880,35 @@ export function parseRequestCaseDetailV1(value: unknown): RequestCaseDetailV1 {
     throw new RequestContractError('Full request detail visibility is invalid.')
   }
   parseSummaryRecord(row, detailKeys)
+  if (row.targetDate !== null) {
+    calendarDate(row.targetDate, 'Request target date')
+  }
+  if (
+    ['submitted', 'triage', 'clarification_requested'].includes(
+      row.lifecycleState as string,
+    ) &&
+    row.targetDate !== null
+  ) {
+    throw new RequestContractError(
+      'A pre-acceptance request cannot have a target date.',
+    )
+  }
+  if (
+    [
+      'accepted',
+      'building',
+      'review_pending',
+      'delivery_ready',
+      'delivered',
+      'repair_required',
+      'completed',
+    ].includes(row.lifecycleState as string) &&
+    row.targetDate === null
+  ) {
+    throw new RequestContractError(
+      'An accepted request must have a target date.',
+    )
+  }
   const closureNoteReasons = [
     'existing_resolution',
     'duplicate',

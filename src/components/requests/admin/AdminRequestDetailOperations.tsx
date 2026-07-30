@@ -84,6 +84,7 @@ function ResolutionForms({
     <div className={styles.detailStack}>
       <form action={action} className={styles.form}>
         <AuthorityFields requestId={requestId} version={version} idempotencyKey={existingResolutionKey} />
+        <input type="hidden" name="command" value="close" />
         <input type="hidden" name="resolution" value="existing_resolution" />
         <fieldset>
           <legend>Validated existing PathForge resolution</legend>
@@ -127,6 +128,7 @@ function ResolutionForms({
       </form>
       <form action={action} className={styles.form}>
         <AuthorityFields requestId={requestId} version={version} idempotencyKey={duplicateKey} />
+        <input type="hidden" name="command" value="close" />
         <input type="hidden" name="resolution" value="duplicate" />
         <p className={styles.help}>
           Do not enter or reveal another private case identifier. No other
@@ -447,6 +449,7 @@ function CloseForm({
   return (
     <form action={action} className={styles.form}>
       <AuthorityFields requestId={requestId} version={version} idempotencyKey={idempotencyKey} />
+      <input type="hidden" name="command" value="close" />
       <label>
         Close reason
         <select name="closeReason" required defaultValue="">

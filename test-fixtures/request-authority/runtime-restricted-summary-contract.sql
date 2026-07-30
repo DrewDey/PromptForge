@@ -339,9 +339,17 @@ BEGIN
   ) <> 0 THEN
     RAISE EXCEPTION 'Unrelated actor enumerated restricted requests.';
   END IF;
+  IF jsonb_array_length(
+      public.list_build_request_queue_v1(1, 'builder', NULL, 50)->'items'
+    ) <> 0
+    OR jsonb_array_length(
+      public.list_build_request_queue_v1(1, 'reviewer', NULL, 50)->'items'
+    ) <> 0 THEN
+    RAISE EXCEPTION 'Unassigned self-scoped work queue was not truthfully empty.';
+  END IF;
   BEGIN
-    PERFORM public.list_build_request_queue_v1(1, 'builder', NULL, 50);
-    RAISE EXCEPTION 'Unassigned actor was allowed to open a builder queue.';
+    PERFORM public.list_build_request_queue_v1(1, 'admin', NULL, 50);
+    RAISE EXCEPTION 'Unassigned actor opened the restricted admin queue.';
   EXCEPTION
     WHEN insufficient_privilege THEN NULL;
   END;

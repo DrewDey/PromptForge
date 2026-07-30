@@ -2,14 +2,20 @@ import {
   createRequestApplicationService,
   createRequestAccountDeidentificationReceiptCleanupService,
   createRequestAuditTombstoneCleanupService,
+  createRequestDeliveryArtifactCleanupClaimService,
+  createRequestDeliveryArtifactCleanupConfirmationService,
   createRequestDeliveryArtifactObjectResolver,
   createRequestDeliveryRevisionRetirementService,
+  createRequestMaintenanceWorkService,
+  createRequestRawTextPurgeService,
   createRequestStagedArtifactCustodyService,
   parseRequestAuthorityErrorCode,
   parseRequestAvailabilityV1,
   parseRequestDeliveryManifestV1,
+  parseRequestMaintenanceWorkPageV1,
   parseRequestPilotAdmissionCandidatePageV1,
   type RequestRpcClient,
+  RequestAuthorityError,
 } from '../../src/lib/request-service'
 import {
   validateRequestDeliveryReviewV1,
@@ -31,6 +37,7 @@ const acceptanceCheckId = '85400000-0000-4000-8000-000000000002'
 const clarificationId = '85400000-0000-4000-8000-000000000003'
 const stageReceiptId = '85500000-0000-4000-8000-000000000001'
 const attestationReceiptId = '85600000-0000-4000-8000-000000000001'
+const cleanupClaimId = '85600000-0000-4000-8000-000000000002'
 const preparationReceiptId = '85700000-0000-4000-8000-000000000001'
 const sealReceiptId = '85800000-0000-4000-8000-000000000001'
 const approvedProjectId = '81200000-0000-4000-8000-000000000001'
@@ -48,6 +55,90 @@ function sameJson(actual: unknown, expected: unknown, label: string) {
   const actualJson = JSON.stringify(actual)
   const expectedJson = JSON.stringify(expected)
   assert(actualJson === expectedJson, `${label} mismatch.\nactual=${actualJson}\nexpected=${expectedJson}`)
+}
+
+function verifyMaintenanceWorkParser() {
+  const valid = parseRequestMaintenanceWorkPageV1({
+    items: [
+      { category: 'raw_text_purge', requestId },
+      {
+        category: 'artifact_cleanup',
+        requestId,
+        deliveryRevisionId,
+        artifactId,
+      },
+      { category: 'audit_tombstone_expiry', requestId },
+      {
+        category: 'account_deidentification_receipt_expiry',
+        receiptId: attestationReceiptId,
+      },
+      {
+        category: 'delivery_revision_retirement',
+        requestId,
+        deliveryRevisionId,
+        expectedVersion: 8,
+      },
+    ],
+    nextCursor: null,
+  })
+  assert(valid.items.length === 5, 'Maintenance work parser lost a valid item.')
+  for (const hostile of [
+    {
+      items: [{
+        category: 'artifact_cleanup',
+        requestId,
+        deliveryRevisionId,
+        artifactId,
+        objectIdentity,
+      }],
+      nextCursor: null,
+    },
+    {
+      items: [{
+        category: 'raw_text_purge',
+        requestId,
+        artifactId,
+      }],
+      nextCursor: null,
+    },
+    {
+      items: [{
+        category: 'unknown_cleanup',
+        requestId,
+      }],
+      nextCursor: null,
+    },
+    {
+      items: [{
+        category: 'account_deidentification_receipt_expiry',
+        requestId,
+        receiptId: attestationReceiptId,
+      }],
+      nextCursor: null,
+    },
+    {
+      items: [{
+        category: 'account_deidentification_receipt_expiry',
+      }],
+      nextCursor: null,
+    },
+    {
+      items: [{
+        category: 'delivery_revision_retirement',
+        requestId,
+        deliveryRevisionId,
+      }],
+      nextCursor: null,
+    },
+  ]) {
+    let rejected = false
+    try {
+      parseRequestMaintenanceWorkPageV1(hostile)
+    } catch {
+      rejected = true
+    }
+    assert(rejected, 'Maintenance work parser accepted an unsafe projection.')
+  }
 }
 
 function verifyCanonicalManifestClarificationProvenance() {
@@ -414,6 +505,12 @@ function verifyAuthorityErrorCodes() {
     ) === 'delivery_revision_limit',
     'PostgREST delivery-revision-limit detail was not classified.',
   )
+  assert(
+    parseRequestAuthorityErrorCode(
+      'request_authority:artifact_staging_limit',
+    ) === 'artifact_staging_limit',
+    'PostgREST artifact-staging-limit detail was not classified.',
+  )
   for (const unexpected of [
     'request_authority:internal_table_name',
     'request_authority:invalid_transition:private',
@@ -508,6 +605,114 @@ const client: RequestRpcClient = {
           replayed: false,
           aggregateDigest: 'd'.repeat(64),
           occurredAt,
+        },
+        error: null,
+      }
+    }
+    if (functionName === 'list_build_request_maintenance_work_v1') {
+      return {
+        data: {
+          items: [
+            { category: 'raw_text_purge', requestId },
+            {
+              category: 'artifact_cleanup',
+              requestId,
+              deliveryRevisionId,
+              artifactId,
+            },
+            { category: 'audit_tombstone_expiry', requestId },
+            {
+              category: 'account_deidentification_receipt_expiry',
+              receiptId: attestationReceiptId,
+            },
+            {
+              category: 'delivery_revision_retirement',
+              requestId,
+              deliveryRevisionId,
+              expectedVersion: 8,
+            },
+          ],
+          nextCursor: null,
+        },
+        error: null,
+      }
+    }
+    if (functionName === 'purge_build_request_raw_text_v1') {
+      return {
+        data: {
+          requestId: parameters.p_request_id,
+          purgedAt: occurredAt,
+          auditTombstoneUntil: '2027-09-03T12:00:00.000Z',
+          replayed: false,
+        },
+        error: null,
+      }
+    }
+    if (
+      functionName === 'claim_build_request_delivery_artifact_cleanup_v1'
+    ) {
+      return {
+        data: {
+          cleanupClaimId,
+          requestId: parameters.p_request_id,
+          deliveryRevisionId: parameters.p_delivery_revision_id,
+          artifactId: parameters.p_artifact_id,
+          claimVersion: 1,
+          leaseUntil: '2026-07-30T12:05:00.000Z',
+          deletionStarted: false,
+          replayed: false,
+        },
+        error: null,
+      }
+    }
+    if (
+      functionName ===
+      'begin_build_request_delivery_artifact_cleanup_delete_v1'
+    ) {
+      return {
+        data: {
+          cleanupClaimId: parameters.p_cleanup_claim_id,
+          requestId,
+          deliveryRevisionId,
+          artifactId,
+          claimVersion: parameters.p_claim_version,
+          deleteStartedAt: occurredAt,
+          replayed: false,
+        },
+        error: null,
+      }
+    }
+    if (
+      functionName ===
+      'confirm_build_request_delivery_artifact_cleanup_v1'
+    ) {
+      return {
+        data: {
+          cleanupReceiptId: attestationReceiptId,
+          requestId: parameters.p_request_id,
+          deliveryRevisionId: parameters.p_delivery_revision_id,
+          artifactId: parameters.p_artifact_id,
+          cleanupClaimId: parameters.p_cleanup_claim_id,
+          claimVersion: parameters.p_claim_version,
+          cleanupDisposition: 'worker_removed',
+          replayed: false,
+          cleanedAt: occurredAt,
+        },
+        error: null,
+      }
+    }
+    if (
+      functionName === 'abort_build_request_delivery_artifact_cleanup_v1'
+    ) {
+      return {
+        data: {
+          cleanupClaimId: parameters.p_cleanup_claim_id,
+          requestId,
+          deliveryRevisionId,
+          artifactId,
+          claimVersion: parameters.p_claim_version,
+          replayed: false,
+          abortedAt: occurredAt,
         },
         error: null,
       }
@@ -642,9 +847,16 @@ const deliveryRevisionRetirement =
   createRequestDeliveryRevisionRetirementService(client)
 const custody = createRequestStagedArtifactCustodyService(client)
 const objectResolver = createRequestDeliveryArtifactObjectResolver(client)
+const maintenanceWork = createRequestMaintenanceWorkService(client)
+const rawTextPurge = createRequestRawTextPurgeService(client)
+const artifactCleanupClaim =
+  createRequestDeliveryArtifactCleanupClaimService(client)
+const artifactCleanupConfirmation =
+  createRequestDeliveryArtifactCleanupConfirmationService(client)
 
 async function main() {
 verifyCanonicalManifestClarificationProvenance()
+verifyMaintenanceWorkParser()
 verifyAvailabilityContract()
 verifyPilotAdmissionCandidateParser()
 verifyAuthorityErrorCodes()
@@ -668,6 +880,28 @@ await application.listEligibleAssignees({
   query: '  Fixture Builder  ',
   limit: 10,
 })
+let unavailableQueueRejected = false
+try {
+  await createRequestApplicationService({
+    async rpc() {
+      return {
+        data: null,
+        error: {
+          code: 'PGRST500',
+          message: 'Backend unavailable.',
+          details: 'unsafe backend detail',
+        },
+      }
+    },
+  }).listAssignedQueue({ scope: 'builder' })
+} catch (error) {
+  unavailableQueueRejected =
+    error instanceof RequestAuthorityError && error.code === 'unknown'
+}
+assert(
+  unavailableQueueRejected,
+  'Assigned queue read failure was normalized to a false empty page.',
+)
 await application.deidentifyRequestAccount({
   accountId: builderAssignmentId,
   idempotencyKey: 'adapter-deidentify-account-0001',
@@ -676,6 +910,101 @@ await tombstoneCleanup.expireBuildRequestAuditTombstone({
   requestId,
   idempotencyKey: 'adapter-expire-tombstone-0001',
 })
+await maintenanceWork.listEligibleMaintenanceWork({ limit: 25 })
+await rawTextPurge.purgeBuildRequestRawText({ requestId })
+await artifactCleanupClaim.claimDeliveryArtifactCleanup({
+  requestId,
+  deliveryRevisionId,
+  artifactId,
+  idempotencyKey: 'adapter-claim-cleanup-0001',
+})
+await artifactCleanupClaim.beginDeliveryArtifactCleanupDelete({
+  cleanupClaimId,
+  claimVersion: 1,
+  idempotencyKey: 'adapter-begin-cleanup-delete-0001',
+})
+await artifactCleanupClaim.abortDeliveryArtifactCleanup({
+  cleanupClaimId,
+  claimVersion: 1,
+  idempotencyKey: 'adapter-abort-cleanup-0001',
+})
+await artifactCleanupConfirmation.confirmDeliveryArtifactCleanup({
+  requestId,
+  deliveryRevisionId,
+  artifactId,
+  cleanupClaimId,
+  claimVersion: 1,
+  idempotencyKey: 'adapter-confirm-cleanup-0001',
+})
+sameJson(
+  captures.filter(({ functionName }) => [
+    'list_build_request_maintenance_work_v1',
+    'purge_build_request_raw_text_v1',
+    'claim_build_request_delivery_artifact_cleanup_v1',
+    'begin_build_request_delivery_artifact_cleanup_delete_v1',
+    'abort_build_request_delivery_artifact_cleanup_v1',
+    'confirm_build_request_delivery_artifact_cleanup_v1',
+  ].includes(functionName)),
+  [
+    {
+      functionName: 'list_build_request_maintenance_work_v1',
+      parameters: {
+        p_contract_version: 1,
+        p_cursor: null,
+        p_limit: 25,
+      },
+    },
+    {
+      functionName: 'purge_build_request_raw_text_v1',
+      parameters: {
+        p_contract_version: 1,
+        p_request_id: requestId,
+      },
+    },
+    {
+      functionName: 'claim_build_request_delivery_artifact_cleanup_v1',
+      parameters: {
+        p_contract_version: 1,
+        p_request_id: requestId,
+        p_delivery_revision_id: deliveryRevisionId,
+        p_artifact_id: artifactId,
+        p_idempotency_key: 'adapter-claim-cleanup-0001',
+      },
+    },
+    {
+      functionName:
+        'begin_build_request_delivery_artifact_cleanup_delete_v1',
+      parameters: {
+        p_contract_version: 1,
+        p_cleanup_claim_id: cleanupClaimId,
+        p_claim_version: 1,
+        p_idempotency_key: 'adapter-begin-cleanup-delete-0001',
+      },
+    },
+    {
+      functionName: 'abort_build_request_delivery_artifact_cleanup_v1',
+      parameters: {
+        p_contract_version: 1,
+        p_cleanup_claim_id: cleanupClaimId,
+        p_claim_version: 1,
+        p_idempotency_key: 'adapter-abort-cleanup-0001',
+      },
+    },
+    {
+      functionName: 'confirm_build_request_delivery_artifact_cleanup_v1',
+      parameters: {
+        p_contract_version: 1,
+        p_request_id: requestId,
+        p_delivery_revision_id: deliveryRevisionId,
+        p_artifact_id: artifactId,
+        p_cleanup_claim_id: cleanupClaimId,
+        p_claim_version: 1,
+        p_idempotency_key: 'adapter-confirm-cleanup-0001',
+      },
+    },
+  ],
+  'maintenance RPC wire',
+)
 await deidentificationReceiptCleanup
   .expireRequestAccountDeidentificationReceipt({
     receiptId: stageReceiptId,
@@ -958,6 +1287,16 @@ sameJson(
       && functionName !== 'set_build_request_pilot_admission_v1'
       && functionName !== 'deidentify_build_request_account_v1'
       && functionName !== 'expire_build_request_audit_tombstone_v1'
+      && functionName !== 'list_build_request_maintenance_work_v1'
+      && functionName !== 'purge_build_request_raw_text_v1'
+      && functionName
+        !== 'claim_build_request_delivery_artifact_cleanup_v1'
+      && functionName
+        !== 'begin_build_request_delivery_artifact_cleanup_delete_v1'
+      && functionName
+        !== 'abort_build_request_delivery_artifact_cleanup_v1'
+      && functionName
+        !== 'confirm_build_request_delivery_artifact_cleanup_v1'
       && functionName
         !== 'expire_build_request_account_deidentification_receipt_v1'
       && functionName !== 'retire_build_request_delivery_revision_v1'

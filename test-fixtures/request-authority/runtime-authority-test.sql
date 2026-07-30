@@ -4,6 +4,10 @@ CREATE TABLE public.test_request_lifecycle_detail_snapshots (
   snapshot_kind TEXT PRIMARY KEY,
   payload JSONB NOT NULL
 );
+CREATE TABLE public.test_request_reader_snapshots (
+  snapshot_kind TEXT PRIMARY KEY,
+  payload JSONB NOT NULL
+);
 
 DO $test$
 <<runtime>>
@@ -77,6 +81,9 @@ BEGIN
     jsonb_build_object('sub', requester, 'role', 'authenticated')::TEXT,
     TRUE
   );
+  UPDATE public.profiles
+  SET role = 'user'
+  WHERE id = requester;
   BEGIN
     PERFORM public.submit_build_request_v1(
       1, 'controls-off-submit', brief
@@ -637,6 +644,100 @@ BEGIN
   );
   INSERT INTO public.test_request_lifecycle_detail_snapshots
   VALUES ('reviewer_submitted', public.get_build_request_v1(1, request_id));
+  IF NOT EXISTS (
+    SELECT 1
+    FROM jsonb_array_elements(
+      (
+        SELECT snapshot.payload->'deliveryRevisions'
+        FROM public.test_request_lifecycle_detail_snapshots AS snapshot
+        WHERE snapshot.snapshot_kind = 'reviewer_submitted'
+      )
+    ) AS submitted_revision
+    CROSS JOIN LATERAL jsonb_array_elements(
+      submitted_revision->'artifacts'
+    ) AS submitted_artifact
+    WHERE submitted_revision->>'deliveryRevisionId' =
+        delivery_revision_id::TEXT
+      AND submitted_artifact->>'artifactId' = artifact_id::TEXT
+      AND submitted_artifact->>'readerHref' =
+        '/api/requests/deliveries/' || artifact_id::TEXT || '/reader'
+  ) THEN
+    RAISE EXCEPTION
+      'Assigned reviewer detail did not expose the review-pending reader.';
+  END IF;
+  service_result := public.resolve_build_request_delivery_artifact_v1(
+    1, artifact_id
+  );
+  IF service_result->>'status' <> 'ready'
+    OR service_result->'artifact'->>'deliveryStatus' <> 'review_pending'
+    OR service_result->'artifact'->>'accessUntil' IS NOT NULL
+    OR (service_result->'artifact') ? 'manifestDigest'
+    OR (service_result->'artifact') ? 'objectIdentity' THEN
+    RAISE EXCEPTION
+      'Assigned reviewer review-pending reader binding drifted: %',
+      service_result;
+  END IF;
+  INSERT INTO public.test_request_reader_snapshots
+  VALUES ('reviewer_review_pending', service_result);
+
+  PERFORM set_config(
+    'request.jwt.claims',
+    jsonb_build_object('sub', requester, 'role', 'authenticated')::TEXT,
+    TRUE
+  );
+  INSERT INTO public.test_request_lifecycle_detail_snapshots
+  VALUES (
+    'requester_review_pending',
+    public.get_build_request_v1(1, request_id)
+  );
+  IF (
+    SELECT snapshot.payload->'deliveryRevisions'
+    FROM public.test_request_lifecycle_detail_snapshots AS snapshot
+    WHERE snapshot.snapshot_kind = 'requester_review_pending'
+  ) <> '[]'::JSONB THEN
+    RAISE EXCEPTION
+      'Requester detail exposed unreviewed delivery metadata.';
+  END IF;
+  service_result := public.resolve_build_request_delivery_artifact_v1(
+    1, artifact_id
+  );
+  IF service_result IS DISTINCT FROM jsonb_build_object(
+    'status', 'unavailable', 'reason', 'not_found'
+  ) THEN
+    RAISE EXCEPTION
+      'Requester resolved a review-pending reviewer artifact: %',
+      service_result;
+  END IF;
+  INSERT INTO public.test_request_reader_snapshots
+  VALUES ('requester_review_pending', service_result);
+  UPDATE public.profiles
+  SET role = 'admin'
+  WHERE id = requester;
+
+  PERFORM set_config(
+    'request.jwt.claims',
+    '{"role":"service_role"}',
+    TRUE
+  );
+  service_result :=
+    public.resolve_build_request_delivery_artifact_object_v1(
+      1, artifact_id, delivery_revision_id
+    );
+  IF service_result->>'artifactId' <> artifact_id::TEXT
+    OR service_result->>'deliveryRevisionId' <>
+      delivery_revision_id::TEXT
+    OR service_result->>'manifestDigest' <> manifest_digest
+    OR service_result->>'objectIdentity' <> staging_identity THEN
+    RAISE EXCEPTION
+      'Service review-pending object binding drifted: %',
+      service_result;
+  END IF;
+
+  PERFORM set_config(
+    'request.jwt.claims',
+    jsonb_build_object('sub', reviewer, 'role', 'authenticated')::TEXT,
+    TRUE
+  );
   SELECT count(*) INTO review_count_before
   FROM public.build_request_delivery_reviews AS review
   WHERE review.request_id = runtime.request_id;

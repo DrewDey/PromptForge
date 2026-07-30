@@ -51,7 +51,19 @@ BEGIN
   ) OR EXISTS (
     SELECT 1
     FROM public.build_request_pilot_admission_receipts AS receipt
-    WHERE receipt.idempotency_key = 'subject-fence-race-admission'
+    WHERE receipt.idempotency_key IN (
+      'subject-fence-race-admission',
+      'subject-fence-admission-actor-0001'
+    )
+  ) OR EXISTS (
+    SELECT 1
+    FROM public.build_request_controls_receipts AS receipt
+    WHERE receipt.idempotency_key = 'subject-fence-controls-actor-0001'
+  ) OR EXISTS (
+    SELECT 1
+    FROM public.build_request_update_acknowledgements AS acknowledgement
+    WHERE acknowledgement.idempotency_key =
+      'subject-fence-ack-actor-0001'
   ) THEN
     RAISE EXCEPTION 'A rejected subject-fence race persisted a receipt.';
   END IF;
@@ -135,6 +147,17 @@ BEGIN
     OR assignment_count_before <>
       (SELECT count(*) FROM public.build_request_assignments) THEN
     RAISE EXCEPTION 'Persistent tombstone rejection mutated case authority.';
+  END IF;
+  IF EXISTS (
+    SELECT 1
+    FROM public.build_request_delivery_revisions AS revision
+    JOIN public.test_request_subject_fence_state AS state
+      ON state.stage_request_id = revision.request_id
+    WHERE state.singleton
+      AND revision.revision_state IN ('staging', 'prepared', 'sealed')
+  ) THEN
+    RAISE EXCEPTION
+      'Deidentification-first race left an orphan active workspace.';
   END IF;
 END;
 $test$;

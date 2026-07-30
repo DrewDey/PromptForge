@@ -1,0 +1,1 @@
+[Open](//remote.invalid/path)

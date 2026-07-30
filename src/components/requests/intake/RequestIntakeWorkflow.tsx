@@ -18,6 +18,7 @@ import {
 } from './RequestIntakeForm'
 
 type RequestIntakeServiceError = NonNullable<RequestIntakeFormProps['serviceError']>
+type RequestIntakeFailureError = Exclude<RequestIntakeServiceError, 'already_active'>
 
 export type RequestIntakeWorkflowState =
   | {
@@ -42,7 +43,7 @@ export type RequestIntakeWorkflowAction = (
 ) => Promise<RequestIntakeWorkflowState>
 
 const analyticsFailureReason: Record<
-  RequestIntakeServiceError,
+  RequestIntakeFailureError,
   RequestAnalyticsFailureReason
 > = {
   auth_required: 'auth_required',
@@ -91,7 +92,7 @@ export function RequestIntakeWorkflow({
 
   return (
     <>
-      {serviceError ? (
+      {serviceError && serviceError !== 'already_active' ? (
         <RequestAnalytics
           emissionKey={`intake:${state.analyticsAttempt}:failed:${serviceError}`}
           event={{

@@ -1,6 +1,7 @@
 export { AdminRequestDetailOperations } from './AdminRequestDetailOperations'
 export { AdminRequestQueue } from './AdminRequestQueue'
 export { RequestAuditTimeline } from './RequestAuditTimeline'
+export { RequestAdminServiceControls } from './RequestAdminServiceControls'
 export type {
   RequestActorRole,
   RequestAdminActions,
@@ -10,6 +11,7 @@ export type {
   RequestAvailability,
   RequestCloseReason,
   RequestFormAction,
+  RequestEligibleAssignee,
   RequestLifecycle,
   RequestModeration,
   RequestQueueModel,

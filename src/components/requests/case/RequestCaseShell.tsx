@@ -1,45 +1,19 @@
 import type { ReactNode } from 'react'
+import Link from 'next/link'
+import type {
+  RequestActorRole,
+  RequestCloseReason,
+  RequestLifecycleState,
+  RequestModerationState,
+  RequestPublicationState,
+} from '@/lib/request-lifecycle'
 import { RequestCaseErrorFocus } from './RequestCaseErrorFocus'
 import styles from './RequestCaseShell.module.css'
 
-export type RequestLifecycle =
-  | 'submitted'
-  | 'triage'
-  | 'clarification_requested'
-  | 'accepted'
-  | 'building'
-  | 'review_pending'
-  | 'repair_required'
-  | 'delivery_ready'
-  | 'delivered'
-  | 'completed'
-  | 'closed'
-
-export type RequestModeration = 'clear' | 'held' | 'removed'
-export type RequestPublication =
-  | 'private'
-  | 'consent_pending'
-  | 'consented_pending_airlock'
-  | 'published'
-  | 'withdrawn'
-export type RequestActorRole =
-  | 'requester'
-  | 'triager'
-  | 'builder'
-  | 'reviewer'
-  | 'system'
-
-export type RequestCloseReason =
-  | 'existing_resolution'
-  | 'duplicate'
-  | 'out_of_scope'
-  | 'capacity_unavailable'
-  | 'declined'
-  | 'withdrawn'
-  | 'expired'
-  | 'failed_review'
-  | 'safety_removed'
-  | 'no_response'
+export type RequestLifecycle = RequestLifecycleState
+export type RequestModeration = RequestModerationState
+export type RequestPublication = RequestPublicationState
+export type { RequestActorRole, RequestCloseReason }
 
 export type RequestAcceptanceChecks =
   | readonly [string]
@@ -96,6 +70,7 @@ export interface RequestCaseTimelineItem {
 }
 
 export interface RequestCasePresentationModel {
+  visibility: 'full'
   requestLabel: string
   requestVersion: number
   lifecycle: RequestLifecycle
@@ -118,10 +93,33 @@ export interface RequestCasePresentationModel {
     messages: readonly string[]
   }
   statusMessage?: string
+  closure?: {
+    note: string | null
+    resolutionHref: string | null
+    resolutionLabel: string | null
+  }
+}
+
+export interface RequestRestrictedCasePresentationModel {
+  visibility: 'held' | 'removed'
+  requestLabel: string
+  requestVersion: number
+  lifecycle: RequestLifecycle
+  moderation: Extract<RequestModeration, 'held' | 'removed'>
+  publication: RequestPublication
+  closeReason: RequestCloseReason | null
+  actorRole: RequestActorRole
+  capabilities: readonly RequestCaseCapability[]
+  nextAction: {
+    title: string
+    description: string
+  }
+  timeline: readonly RequestCaseTimelineItem[]
+  retentionNotice: string
 }
 
 export interface RequestCaseShellProps {
-  model: RequestCasePresentationModel
+  model: RequestCasePresentationModel | RequestRestrictedCasePresentationModel
   /**
    * Participant-safe delivery/review content supplied by the custody boundary.
    * This shell neither infers nor reconstructs delivery state.
@@ -135,6 +133,7 @@ export interface RequestCaseShellProps {
     capabilityId: string
     content: ReactNode
   }
+  clarificationAction?: ReactNode
 }
 
 const lifecycleLabels: Record<RequestLifecycle, string> = {
@@ -198,7 +197,7 @@ function formatDate(value: string) {
 function VisibilityAndStage({
   model,
 }: {
-  model: RequestCasePresentationModel
+  model: RequestCasePresentationModel | RequestRestrictedCasePresentationModel
 }) {
   const isHeld = model.moderation === 'held'
   const isRemoved = model.moderation === 'removed'
@@ -264,7 +263,7 @@ function NextAction({
   model,
   primaryAction,
 }: {
-  model: RequestCasePresentationModel
+  model: RequestCasePresentationModel | RequestRestrictedCasePresentationModel
   primaryAction?: RequestCaseShellProps['primaryAction']
 }) {
   return (
@@ -345,7 +344,30 @@ function FinishLine({ brief }: { brief: RequestCaseBrief }) {
   )
 }
 
-function Clarification({ clarification }: { clarification: RequestCaseClarification }) {
+function Closure({
+  closure,
+}: {
+  closure: NonNullable<RequestCasePresentationModel['closure']>
+}) {
+  return (
+    <div className={styles.neutralNotice}>
+      {closure.note ? <p>{closure.note}</p> : null}
+      {closure.resolutionHref && closure.resolutionLabel ? (
+        <Link href={closure.resolutionHref}>
+          Open {closure.resolutionLabel}
+        </Link>
+      ) : null}
+    </div>
+  )
+}
+
+function Clarification({
+  clarification,
+  action,
+}: {
+  clarification: RequestCaseClarification
+  action?: ReactNode
+}) {
   const copy: Record<RequestCaseClarification['state'], string> = {
     none: 'No clarification is currently needed.',
     requested: 'A bounded clarification is waiting for the requester.',
@@ -382,6 +404,7 @@ function Clarification({ clarification }: { clarification: RequestCaseClarificat
           ) : null}
         </dl>
       ) : null}
+      {action}
     </section>
   )
 }
@@ -513,8 +536,9 @@ export function RequestCaseShell({
   model,
   deliverySlot,
   primaryAction,
+  clarificationAction,
 }: RequestCaseShellProps) {
-  if (model.moderation === 'removed') {
+  if (model.visibility === 'removed') {
     return (
       <article className={styles.caseShell} aria-labelledby="request-case-title">
         <header className={styles.caseHeader}>
@@ -541,18 +565,11 @@ export function RequestCaseShell({
     model.capabilities.some((capability) => capability.id === primaryAction.capabilityId)
     ? primaryAction
     : undefined
-  const visiblePrimaryAction = model.moderation === 'held'
+  const visiblePrimaryAction = model.visibility === 'held'
     ? capabilityAction && heldAction
     : capabilityAction
-  const visibleDeliverySlot = model.moderation === 'held'
-    ? (
-        <div className={styles.warningNotice} role="status">
-          Delivery and review evidence are unavailable while this moderation hold is active.
-        </div>
-    )
-    : deliverySlot
 
-  if (model.moderation === 'held') {
+  if (model.visibility === 'held') {
     return (
       <article className={styles.caseShell} aria-labelledby="request-case-title">
         <header className={styles.caseHeader}>
@@ -580,6 +597,8 @@ export function RequestCaseShell({
       </article>
     )
   }
+
+  if (model.visibility !== 'full') return null
 
   return (
     <article className={styles.caseShell} aria-labelledby="request-case-title">
@@ -626,8 +645,12 @@ export function RequestCaseShell({
 
         <div className={styles.caseMain}>
           <FinishLine brief={model.brief} />
-          <Clarification clarification={model.clarification} />
-          <Delivery>{visibleDeliverySlot}</Delivery>
+          {model.closure ? <Closure closure={model.closure} /> : null}
+          <Clarification
+            clarification={model.clarification}
+            action={clarificationAction}
+          />
+          <Delivery>{deliverySlot}</Delivery>
           <History
             timeline={model.timeline}
             retentionNotice={model.retentionNotice}

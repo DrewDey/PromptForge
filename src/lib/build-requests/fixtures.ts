@@ -1,6 +1,7 @@
 import type {
   RequestActorRole,
   RequestCasePresentationModel,
+  RequestRestrictedCasePresentationModel,
   RequestCloseReason,
   RequestLifecycle,
   RequestModeration,
@@ -87,6 +88,9 @@ export const REQUEST_INTAKE_STATES = [
   'errors',
   'unavailable',
   'not_admitted',
+  'already_active',
+  'expired_session',
+  'hostile_error',
   'rate_limited',
   'duplicate',
   'stale_version',
@@ -228,11 +232,16 @@ export function intakeFixture(
   const serviceError =
     state === 'unavailable' ||
     state === 'not_admitted' ||
+    state === 'already_active' ||
     state === 'rate_limited' ||
     state === 'duplicate' ||
     state === 'stale_version' ||
     state === 'forbidden_input'
       ? state
+      : state === 'expired_session'
+        ? 'auth_required'
+        : state === 'hostile_error'
+          ? 'unavailable'
       : null
 
   let defaultValues: Partial<RequestIntakeValues> = BASE_INTAKE_VALUES
@@ -353,7 +362,7 @@ export function caseFixture(options: {
   moderation: RequestModeration
   closeReason: RequestCloseReason | null
   errorState: RequestCaseErrorFixtureState
-}): RequestCasePresentationModel {
+}): RequestCasePresentationModel | RequestRestrictedCasePresentationModel {
   const { lifecycle, actorRole, moderation, closeReason, errorState } = options
   const builderAssigned = [
     'accepted',
@@ -401,7 +410,33 @@ export function caseFixture(options: {
     return null
   })()
 
+  if (moderation !== 'clear') {
+    return {
+      visibility: moderation,
+      requestLabel: moderation === 'removed'
+        ? 'Request unavailable'
+        : `Private case ${REQUEST_FIXTURE_ID}`,
+      requestVersion: 17,
+      lifecycle,
+      moderation,
+      publication: 'private',
+      closeReason: lifecycle === 'closed' ? closeReason ?? 'declined' : null,
+      actorRole,
+      capabilities: capability ? [capability] : [],
+      nextAction: lifecycleNextAction(lifecycle, actorRole),
+      timeline: [{
+        id: 'event-fixture-restricted',
+        label: moderation === 'held' ? 'Case placed on hold' : 'Case removed',
+        occurredAt: REQUEST_FIXTURE_TIME,
+        actorLabel: 'Request application service',
+      }],
+      retentionNotice:
+        'Only participant-safe status and retention information are available in this restricted fixture.',
+    }
+  }
+
   return {
+    visibility: 'full',
     requestLabel: `Private case ${REQUEST_FIXTURE_ID}`,
     requestVersion: 17,
     lifecycle,
@@ -619,6 +654,7 @@ export function adminDetailFixture(
     lifecycle: reviewer ? 'review_pending' : builder ? 'building' : 'triage',
     moderation: 'clear',
     capabilities: {
+      canBeginTriage: triager || admin,
       canResolveExistingPath: triager || admin,
       canRequestClarification: triager || admin,
       canAcceptAndAssign: triager || admin,
@@ -627,6 +663,9 @@ export function adminDetailFixture(
       canPlaceModerationHold: admin,
       canReleaseModerationHold: false,
       canRemoveForModeration: admin,
+      canReassignTriager: admin,
+      canReassignBuilder: admin,
+      canReassignReviewer: admin,
     },
     allowedCloseReasons: triager || admin
       ? ['out_of_scope', 'capacity_unavailable', 'declined']
@@ -651,6 +690,12 @@ export function adminDetailFixture(
           },
         ]
       : [],
+    eligibleTriagers: admin
+      ? [{
+          accountId: '40000000-0000-4000-8000-000000000001',
+          displayName: 'Taylor Triager',
+        }]
+      : [],
     builderLabel: 'Blake Builder',
     reviewerLabel: reviewer ? 'Riley Reviewer' : null,
     targetDate: '2026-08-05T17:00:00.000Z',
@@ -665,6 +710,10 @@ export function adminDetailFixture(
       releaseModerationHold: 'fixture-release-hold-00000001',
       removeForModeration: 'fixture-remove-moderation-00000001',
       close: 'fixture-close-00000001',
+      beginTriage: 'fixture-begin-triage-00000001',
+      reassignTriager: 'fixture-reassign-triager-00000001',
+      reassignBuilder: 'fixture-reassign-builder-00000001',
+      reassignReviewer: 'fixture-reassign-reviewer-00000001',
     },
     timeline: [
       {

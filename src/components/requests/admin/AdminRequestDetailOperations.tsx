@@ -120,10 +120,6 @@ function ResolutionForms({
       <form action={action} className={styles.form}>
         <AuthorityFields requestId={requestId} version={version} idempotencyKey={duplicateKey} />
         <input type="hidden" name="resolution" value="duplicate" />
-        <label>
-          Duplicate note
-          <textarea name="note" rows={3} minLength={4} maxLength={500} required />
-        </label>
         <p className={styles.help}>
           Do not enter or reveal another private case identifier. No other
           private case ID or link is accepted, stored through this form, or
@@ -134,6 +130,84 @@ function ResolutionForms({
         </button>
       </form>
     </div>
+  )
+}
+
+function SimpleCommandForm({
+  action,
+  requestId,
+  version,
+  idempotencyKey,
+  command,
+  buttonLabel,
+}: {
+  action: RequestFormAction
+  requestId: string
+  version: number
+  idempotencyKey: string
+  command: 'begin_triage'
+  buttonLabel: string
+}) {
+  return (
+    <form action={action} className={styles.form}>
+      <AuthorityFields requestId={requestId} version={version} idempotencyKey={idempotencyKey} />
+      <input type="hidden" name="command" value="request_clarification" />
+      <input type="hidden" name="command" value={command} />
+      <button className={styles.primaryButton} type="submit">{buttonLabel}</button>
+    </form>
+  )
+}
+
+function ReassignmentForm({
+  action,
+  requestId,
+  version,
+  idempotencyKey,
+  command,
+  candidates,
+  roleLabel,
+}: {
+  action: RequestFormAction
+  requestId: string
+  version: number
+  idempotencyKey: string
+  command: 'reassign_triager' | 'reassign_builder' | 'reassign_reviewer'
+  candidates: readonly RequestEligibleAssignee[]
+  roleLabel: string
+}) {
+  const fieldName = command === 'reassign_triager'
+    ? 'triagerUserId'
+    : command === 'reassign_builder'
+      ? 'builderUserId'
+      : 'reviewerUserId'
+  return (
+    <form action={action} className={styles.form}>
+      <AuthorityFields requestId={requestId} version={version} idempotencyKey={idempotencyKey} />
+      <input type="hidden" name="command" value="accept" />
+      <input type="hidden" name="command" value={command} />
+      <label>
+        Eligible {roleLabel}
+        <select name={fieldName} required defaultValue="">
+          <option value="" disabled>Select an eligible {roleLabel}</option>
+          {candidates.map((candidate) => (
+            <option key={candidate.accountId} value={candidate.accountId}>
+              {candidate.displayName}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label>
+        Recovery reason
+        <textarea name="reason" minLength={1} maxLength={500} rows={3} required />
+      </label>
+      <label>
+        <input type="checkbox" name="confirmed" value="yes" required />
+        Confirm this explicit accountable reassignment.
+      </label>
+      <button className={styles.dangerButton} type="submit">
+        Reassign {roleLabel}
+      </button>
+    </form>
   )
 }
 
@@ -151,6 +225,7 @@ function ClarificationForm({
   return (
     <form action={action} className={styles.form}>
       <AuthorityFields requestId={requestId} version={version} idempotencyKey={idempotencyKey} />
+      <input type="hidden" name="command" value="assign_reviewer" />
       <label>
         Bounded clarification question
         <textarea
@@ -397,6 +472,7 @@ export function AdminRequestDetailOperations({
 }) {
   const { capabilities } = model
   const hasOperations =
+    (capabilities.canBeginTriage && actions.beginTriage) ||
     (capabilities.canResolveExistingPath && actions.resolveExistingPath) ||
     (capabilities.canRequestClarification && actions.requestClarification) ||
     (capabilities.canAcceptAndAssign && actions.acceptAndAssign) ||
@@ -405,7 +481,10 @@ export function AdminRequestDetailOperations({
     (capabilities.canPlaceModerationHold && actions.placeModerationHold) ||
     (capabilities.canReleaseModerationHold && actions.releaseModerationHold) ||
     (capabilities.canRemoveForModeration && actions.removeForModeration) ||
-    (model.allowedCloseReasons.length > 0 && actions.close)
+    (model.allowedCloseReasons.length > 0 && actions.close) ||
+    (capabilities.canReassignTriager && actions.reassignTriager) ||
+    (capabilities.canReassignBuilder && actions.reassignBuilder) ||
+    (capabilities.canReassignReviewer && actions.reassignReviewer)
 
   return (
     <div className={styles.detailStack}>
@@ -458,6 +537,22 @@ export function AdminRequestDetailOperations({
       </section>
 
       <div className={styles.operationGrid}>
+        {capabilities.canBeginTriage && actions.beginTriage ? (
+          <OperationCard
+            title="Begin accountable triage"
+            description="Start triage and create the exact active triager assignment atomically."
+          >
+            <SimpleCommandForm
+              action={actions.beginTriage}
+              requestId={model.requestId}
+              version={model.version}
+              idempotencyKey={model.idempotencyKeys.beginTriage}
+              command="begin_triage"
+              buttonLabel="Begin triage"
+            />
+          </OperationCard>
+        ) : null}
+
         {capabilities.canResolveExistingPath && actions.resolveExistingPath ? (
           <OperationCard
             title="Resolve to existing work"
@@ -592,6 +687,57 @@ export function AdminRequestDetailOperations({
               version={model.version}
               idempotencyKey={model.idempotencyKeys.close}
               allowedReasons={model.allowedCloseReasons}
+            />
+          </OperationCard>
+        ) : null}
+
+        {capabilities.canReassignTriager && actions.reassignTriager ? (
+          <OperationCard
+            title="Recover accountable triager"
+            description="Explicitly replace the active triager; global admin status alone never grants case authority."
+          >
+            <ReassignmentForm
+              action={actions.reassignTriager}
+              requestId={model.requestId}
+              version={model.version}
+              idempotencyKey={model.idempotencyKeys.reassignTriager}
+              command="reassign_triager"
+              candidates={model.eligibleTriagers}
+              roleLabel="triager"
+            />
+          </OperationCard>
+        ) : null}
+
+        {capabilities.canReassignBuilder && actions.reassignBuilder ? (
+          <OperationCard
+            title="Recover assigned builder"
+            description="Available only when authority confirms there is no staging, prepared, or sealed builder workspace."
+          >
+            <ReassignmentForm
+              action={actions.reassignBuilder}
+              requestId={model.requestId}
+              version={model.version}
+              idempotencyKey={model.idempotencyKeys.reassignBuilder}
+              command="reassign_builder"
+              candidates={model.eligibleBuilders}
+              roleLabel="builder"
+            />
+          </OperationCard>
+        ) : null}
+
+        {capabilities.canReassignReviewer && actions.reassignReviewer ? (
+          <OperationCard
+            title="Recover independent reviewer"
+            description="Explicitly replace the reviewer while preserving builder/reviewer separation."
+          >
+            <ReassignmentForm
+              action={actions.reassignReviewer}
+              requestId={model.requestId}
+              version={model.version}
+              idempotencyKey={model.idempotencyKeys.reassignReviewer}
+              command="reassign_reviewer"
+              candidates={model.eligibleReviewers}
+              roleLabel="reviewer"
             />
           </OperationCard>
         ) : null}

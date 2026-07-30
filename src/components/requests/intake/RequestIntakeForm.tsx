@@ -8,6 +8,10 @@ import {
   type FormEventHandler,
 } from 'react'
 import Link from 'next/link'
+import type {
+  CreateRequestBriefInputV1,
+  PathForgeRequestReference,
+} from '@/lib/request-lifecycle'
 import {
   AlertTriangle,
   ArrowLeft,
@@ -34,16 +38,12 @@ export type RequestIntakeError = {
   message: string
 }
 
-export type RequestIntakeValues = {
-  title: string
-  outcome: string
-  intendedUser: string
-  mustWorkScenario: string
+export type RequestIntakeValues = Omit<
+  CreateRequestBriefInputV1,
+  'acceptanceChecks' | 'pathforgeReference'
+> & {
   acceptanceChecks: string[]
-  constraints: string
-  pathforgeReference?:
-    | { kind: 'project'; projectId: string }
-    | { kind: 'response'; projectId: string; modelVariantId: string; responseStepNumber: number }
+  pathforgeReference?: PathForgeRequestReference
 }
 
 export type RequestIntakeFormProps = {
@@ -57,6 +57,7 @@ export type RequestIntakeFormProps = {
   serviceError?:
     | 'auth_required'
     | 'not_admitted'
+    | 'already_active'
     | 'controls_off'
     | 'capacity_full'
     | 'unavailable'
@@ -84,6 +85,7 @@ const fieldTargets: Record<RequestIntakeField, string> = {
 const serviceErrorCopy: Record<Exclude<RequestIntakeFormProps['serviceError'], null | undefined>, string> = {
   auth_required: 'Your sign-in is no longer active. Sign in again before submitting; no private case was created.',
   not_admitted: 'This account is not in the current pilot. No private case was created.',
+  already_active: 'This account already has an active private request. Continue it in My Forge before starting another.',
   controls_off: 'Request intake closed before this brief was recorded. Your text remains on this page.',
   capacity_full: 'Assignment capacity changed before this brief was recorded. This does not reveal pilot eligibility; your text remains on this page.',
   unavailable: 'The service could not validate this brief. Your text remains on this page; try again when the secure connection recovers.',
@@ -202,6 +204,11 @@ export function RequestIntakeForm({
                     </li>
                   ))}
                 </ul>
+                {serviceError === 'already_active' ? (
+                  <Link href="/my-forge?tab=requests">
+                    Open My Forge requests
+                  </Link>
+                ) : null}
               </div>
             </div>
           )}

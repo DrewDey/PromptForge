@@ -67,6 +67,9 @@ const INTAKE_STATES = [
   'errors',
   'unavailable',
   'not_admitted',
+  'already_active',
+  'expired_session',
+  'hostile_error',
   'rate_limited',
   'duplicate',
   'stale_version',
@@ -118,7 +121,7 @@ const SCENARIOS = [
       : undefined,
   })),
   ...INTAKE_STATES.map((state) => scenario(`intake-${state}`, { surface: 'intake', state }, {
-    expectFocusedAlert: ['errors', 'unavailable', 'rate_limited', 'duplicate', 'stale_version', 'forbidden_input'].includes(state),
+    expectFocusedAlert: ['errors', 'unavailable', 'not_admitted', 'already_active', 'expired_session', 'hostile_error', 'rate_limited', 'duplicate', 'stale_version', 'forbidden_input'].includes(state),
     screenshot: state === 'errors',
   })),
   ...['recorded', 'replayed'].map((state) => scenario(`receipt-${state}`, { surface: 'receipt', state })),

@@ -2250,7 +2250,7 @@ DECLARE
   v_body TEXT;
   v_signature TEXT;
 BEGIN
-  IF p_prefix NOT IN ('rq1', 'rqe1')
+  IF p_prefix NOT IN ('rq1', 'rqe1', 'rqm1')
     OR jsonb_typeof(p_payload) <> 'object' THEN
     RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'Cursor payload is invalid.';
   END IF;
@@ -2301,6 +2301,37 @@ AS $$
   SELECT private.request_pseudonym_text_v1(p_account_id::TEXT)
 $$;
 
+CREATE OR REPLACE FUNCTION private.request_lock_available_actor_v1(
+  p_actor_id UUID
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+  IF p_actor_id IS NULL THEN
+    RAISE EXCEPTION USING ERRCODE = '42501',
+      MESSAGE = 'Request actor is not available.';
+  END IF;
+  PERFORM pg_advisory_xact_lock(hashtextextended(
+    'request-subject:' ||
+      private.request_account_pseudonym_v1(p_actor_id),
+    0
+  ));
+  IF EXISTS (
+    SELECT 1
+    FROM public.build_request_deidentified_accounts AS tombstone
+    WHERE tombstone.subject_digest =
+      private.request_account_pseudonym_v1(p_actor_id)
+  ) THEN
+    RAISE EXCEPTION USING ERRCODE = '42501',
+      MESSAGE = 'Request actor is no longer available.',
+      DETAIL = 'request_authority:unauthorized';
+  END IF;
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION private.request_cursor_decode_v1(
   p_prefix TEXT,
   p_cursor TEXT
@@ -2319,7 +2350,7 @@ DECLARE
   v_expected TEXT;
   v_payload JSONB;
 BEGIN
-  IF p_prefix NOT IN ('rq1', 'rqe1')
+  IF p_prefix NOT IN ('rq1', 'rqe1', 'rqm1')
     OR p_cursor IS NULL
     OR char_length(p_cursor) > 600
     OR p_cursor !~ ('^' || p_prefix || '_[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$') THEN
@@ -2365,7 +2396,8 @@ REVOKE ALL ON FUNCTION
   private.request_cursor_encode_v1(TEXT, JSONB),
   private.request_cursor_decode_v1(TEXT, TEXT),
   private.request_pseudonym_text_v1(TEXT),
-  private.request_account_pseudonym_v1(UUID)
+  private.request_account_pseudonym_v1(UUID),
+  private.request_lock_available_actor_v1(UUID)
 FROM PUBLIC, anon, authenticated, service_role;
 
 CREATE OR REPLACE FUNCTION private.request_assert_safe_text_v1(
@@ -3150,6 +3182,22 @@ BEGIN
     RETURN;
   END IF;
 
+  PERFORM pg_advisory_xact_lock(hashtextextended(
+    'request-subject:' ||
+      private.request_account_pseudonym_v1(v_actor_id),
+    0
+  ));
+  IF EXISTS (
+    SELECT 1
+    FROM public.build_request_deidentified_accounts AS tombstone
+    WHERE tombstone.subject_digest =
+      private.request_account_pseudonym_v1(v_actor_id)
+  ) THEN
+    RAISE EXCEPTION USING ERRCODE = '42501',
+      MESSAGE = 'Request actor is no longer available.',
+      DETAIL = 'request_authority:unauthorized';
+  END IF;
+
   BEGIN
     v_subject_target := CASE p_command
       WHEN 'accept' THEN (p_payload->>'builderId')::UUID
@@ -3874,7 +3922,24 @@ BEGIN
       AND staged_revision.authored_by = v_actor_id
       AND staged_revision.accepted_brief_revision_id = v_request.current_brief_revision_id
       AND staged_revision.builder_assignment_id = v_assignment.id;
-    IF NOT FOUND OR (
+    IF NOT FOUND THEN
+      RAISE EXCEPTION USING ERRCODE = '22023',
+        MESSAGE = 'Delivery revision staging is invalid.';
+    END IF;
+    IF (
+      SELECT count(*)
+      FROM public.build_request_delivery_artifacts AS attempted_artifact
+      WHERE attempted_artifact.delivery_revision_id = v_revision.id
+    ) >= 8 OR COALESCE((
+      SELECT sum(attempted_artifact.byte_length)
+      FROM public.build_request_delivery_artifacts AS attempted_artifact
+      WHERE attempted_artifact.delivery_revision_id = v_revision.id
+    ), 0) + (p_payload->>'byteLength')::BIGINT > 24000000 THEN
+      RAISE EXCEPTION USING ERRCODE = '55000',
+        MESSAGE = 'Delivery revision staging lifetime limit was reached.',
+        DETAIL = 'request_authority:artifact_staging_limit';
+    END IF;
+    IF (
       SELECT count(*) FROM public.build_request_delivery_artifacts AS staged_artifact
       WHERE staged_artifact.delivery_revision_id = v_revision.id
         AND staged_artifact.abandoned_at IS NULL
@@ -3884,7 +3949,8 @@ BEGIN
       WHERE staged_artifact.delivery_revision_id = v_revision.id
         AND staged_artifact.abandoned_at IS NULL
     ), 0) + (p_payload->>'byteLength')::BIGINT > 12000000 THEN
-      RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'Delivery revision staging is invalid or full.';
+      RAISE EXCEPTION USING ERRCODE = '22023',
+        MESSAGE = 'Delivery revision staging is invalid or full.';
     END IF;
     v_authority := jsonb_build_object(
       'deliveryRevisionId', v_revision.id,
@@ -4556,6 +4622,17 @@ BEGIN
         WHERE existing_hold.request_id = p_request_id
           AND existing_hold.hold_kind = 'moderation'
           AND existing_hold.released_at IS NULL
+      )
+      OR EXISTS (
+        SELECT 1
+        FROM public.build_request_artifact_cleanup_claims AS cleanup_claim
+        WHERE cleanup_claim.request_id = p_request_id
+          AND cleanup_claim.resolved_at IS NULL
+      )
+      OR EXISTS (
+        SELECT 1
+        FROM public.build_request_artifact_cleanup_receipts AS cleaned_artifact
+        WHERE cleaned_artifact.request_id = p_request_id
       ) THEN
       RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'Moderation hold is not allowed.';
     END IF;
@@ -5253,7 +5330,7 @@ BEGIN
     v_request.publication_state, v_request.close_reason,
     v_request.version, p_idempotency_key, v_command_id,
     v_command_id, v_command_id, TRUE,
-    jsonb_build_object('deliveryRevisionId', p_delivery_revision_id),
+    '{}'::JSONB,
     v_retired_at
   );
   INSERT INTO public.build_request_command_receipts (
@@ -5373,7 +5450,11 @@ BEGIN
       MESSAGE = 'Request update acknowledgement is invalid.';
   END IF;
   IF v_actor_id IS NULL
-    OR NOT private.request_has_scope_v1(p_request_id, v_actor_id) THEN
+    THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0002', MESSAGE = 'Request was not found.';
+  END IF;
+  PERFORM private.request_lock_available_actor_v1(v_actor_id);
+  IF NOT private.request_has_scope_v1(p_request_id, v_actor_id) THEN
     RAISE EXCEPTION USING ERRCODE = 'P0002', MESSAGE = 'Request was not found.';
   END IF;
   IF p_expected_event_sequence < 0
@@ -5538,6 +5619,91 @@ CREATE TABLE public.build_request_delivery_seals (
     ON DELETE CASCADE
 );
 
+CREATE TABLE public.build_request_artifact_cleanup_claims (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  request_id UUID NOT NULL,
+  delivery_revision_id UUID NOT NULL,
+  artifact_id UUID NOT NULL,
+  owner_request_hash TEXT NOT NULL CHECK (
+    owner_request_hash ~ '^[0-9a-f]{64}$'
+  ),
+  claim_version INTEGER NOT NULL DEFAULT 1 CHECK (claim_version >= 1),
+  claimed_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+  owner_lease_until TIMESTAMPTZ NOT NULL,
+  delete_started_at TIMESTAMPTZ,
+  delete_start_request_hash TEXT CHECK (
+    delete_start_request_hash IS NULL
+    OR delete_start_request_hash ~ '^[0-9a-f]{64}$'
+  ),
+  delete_start_receipt JSONB,
+  resolved_at TIMESTAMPTZ,
+  resolution TEXT CHECK (
+    resolution IN ('confirmed_removed', 'aborted_object_present')
+  ),
+  resolution_request_hash TEXT CHECK (
+    resolution_request_hash IS NULL
+    OR resolution_request_hash ~ '^[0-9a-f]{64}$'
+  ),
+  resolution_receipt JSONB,
+  CHECK (
+    (delete_started_at IS NULL
+      AND delete_start_request_hash IS NULL
+      AND delete_start_receipt IS NULL)
+    OR
+    (delete_started_at IS NOT NULL
+      AND delete_start_request_hash IS NOT NULL
+      AND delete_start_receipt IS NOT NULL)
+  ),
+  CHECK (
+    (resolved_at IS NULL
+      AND resolution IS NULL
+      AND resolution_request_hash IS NULL
+      AND resolution_receipt IS NULL)
+    OR
+    (resolved_at IS NOT NULL
+      AND resolution IS NOT NULL
+      AND resolution_request_hash IS NOT NULL
+      AND resolution_receipt IS NOT NULL)
+  ),
+  UNIQUE (request_id, delivery_revision_id, artifact_id, id),
+  FOREIGN KEY (request_id, delivery_revision_id, artifact_id)
+    REFERENCES public.build_request_delivery_artifacts(
+      request_id, delivery_revision_id, id
+    ) ON DELETE CASCADE
+);
+CREATE UNIQUE INDEX build_request_one_unresolved_artifact_cleanup_claim
+  ON public.build_request_artifact_cleanup_claims (
+    request_id, delivery_revision_id, artifact_id
+  )
+  WHERE resolved_at IS NULL;
+
+CREATE TABLE public.build_request_artifact_cleanup_receipts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  idempotency_key TEXT NOT NULL UNIQUE CHECK (
+    idempotency_key ~ '^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$'
+  ),
+  request_hash TEXT NOT NULL CHECK (request_hash ~ '^[0-9a-f]{64}$'),
+  request_id UUID NOT NULL,
+  delivery_revision_id UUID NOT NULL,
+  artifact_id UUID NOT NULL,
+  cleanup_claim_id UUID NOT NULL,
+  cleanup_claim_version INTEGER NOT NULL CHECK (cleanup_claim_version >= 1),
+  cleanup_disposition TEXT NOT NULL CHECK (
+    cleanup_disposition IN ('worker_removed', 'preexisting_missing')
+  ),
+  cleaned_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+  UNIQUE (cleanup_claim_id, cleanup_claim_version),
+  FOREIGN KEY (request_id, delivery_revision_id, artifact_id)
+    REFERENCES public.build_request_delivery_artifacts(
+      request_id, delivery_revision_id, id
+    ) ON DELETE CASCADE,
+  FOREIGN KEY (
+    request_id, delivery_revision_id, artifact_id, cleanup_claim_id
+  ) REFERENCES public.build_request_artifact_cleanup_claims(
+    request_id, delivery_revision_id, artifact_id, id
+  ) ON DELETE CASCADE
+);
+
 ALTER TABLE public.build_request_delivery_artifacts
   ADD CONSTRAINT build_request_delivery_artifacts_stage_receipt_fk
   FOREIGN KEY (request_id, stage_receipt_id)
@@ -5552,9 +5718,19 @@ ALTER TABLE public.build_request_delivery_revisions
 
 ALTER TABLE public.build_request_artifact_attestations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.build_request_delivery_seals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.build_request_artifact_cleanup_claims
+  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.build_request_artifact_cleanup_claims
+  FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.build_request_artifact_cleanup_receipts
+  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.build_request_artifact_cleanup_receipts
+  FORCE ROW LEVEL SECURITY;
 REVOKE ALL ON
   public.build_request_artifact_attestations,
-  public.build_request_delivery_seals
+  public.build_request_delivery_seals,
+  public.build_request_artifact_cleanup_claims,
+  public.build_request_artifact_cleanup_receipts
 FROM PUBLIC, anon, authenticated, service_role;
 CREATE TRIGGER build_request_artifact_attestations_append_only
   BEFORE UPDATE OR DELETE ON public.build_request_artifact_attestations
@@ -6076,7 +6252,7 @@ BEGIN
         AND active_hold.released_at IS NULL
     ) THEN 'preserved_by_hold'
     WHEN v_terminal_at IS NOT NULL
-      AND clock_timestamp() > v_terminal_at + INTERVAL '90 days'
+      AND clock_timestamp() >= v_terminal_at + INTERVAL '90 days'
       THEN 'cleanup_eligible'
     ELSE 'retained'
   END;
@@ -6189,7 +6365,7 @@ BEGIN
           AND active_hold.released_at IS NULL
       ) THEN 'preserved_by_hold'
     WHEN v_terminal_at IS NOT NULL
-      AND clock_timestamp() > v_terminal_at + INTERVAL '90 days'
+      AND clock_timestamp() >= v_terminal_at + INTERVAL '90 days'
       THEN 'cleanup_eligible'
     ELSE 'retained'
   END;
@@ -6208,6 +6384,866 @@ BEGIN
       ELSE v_terminal_at + INTERVAL '90 days'
     END
   );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.list_build_request_maintenance_work_v1(
+  p_contract_version INTEGER,
+  p_cursor TEXT DEFAULT NULL,
+  p_limit INTEGER DEFAULT 50
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_cursor JSONB;
+  v_cursor_work_key TEXT;
+  v_items JSONB;
+  v_next TEXT;
+BEGIN
+  PERFORM private.request_assert_contract_v1(p_contract_version);
+  IF COALESCE(auth.jwt()->>'role', '') <> 'service_role' THEN
+    RAISE EXCEPTION USING ERRCODE = '42501',
+      MESSAGE = 'Request maintenance enumeration is not allowed.';
+  END IF;
+  IF p_limit IS NULL
+    OR p_limit NOT BETWEEN 1 AND 100
+    OR char_length(COALESCE(p_cursor, '')) > 600 THEN
+    RAISE EXCEPTION USING ERRCODE = '22023',
+      MESSAGE = 'Request maintenance query is invalid.';
+  END IF;
+  IF p_cursor IS NOT NULL THEN
+    BEGIN
+      v_cursor := private.request_cursor_decode_v1('rqm1', p_cursor);
+      PERFORM private.request_assert_json_keys_v1(
+        v_cursor,
+        ARRAY['version', 'kind', 'workKey'],
+        'Request maintenance cursor'
+      );
+      IF v_cursor->>'version' <> '1'
+        OR v_cursor->>'kind' <> 'maintenance'
+        OR v_cursor->>'workKey' IS NULL
+        OR char_length(v_cursor->>'workKey') NOT BETWEEN 38 AND 112
+        OR v_cursor->>'workKey' !~
+          '^((1|3|4):[0-9a-f-]{36}|(2):[0-9a-f-]{36}:[0-9a-f-]{36}:[0-9a-f-]{36}|5:[0-9a-f-]{36}:[0-9a-f-]{36})$' THEN
+        RAISE EXCEPTION USING ERRCODE = '22023',
+          MESSAGE = 'Request maintenance cursor is invalid.';
+      END IF;
+      v_cursor_work_key := v_cursor->>'workKey';
+    EXCEPTION WHEN OTHERS THEN
+      RAISE EXCEPTION USING ERRCODE = '22023',
+        MESSAGE = 'Request maintenance cursor is invalid.';
+    END;
+  END IF;
+  WITH eligible_work AS (
+    SELECT
+      '1:' || request_case.id::TEXT AS work_key,
+      jsonb_build_object(
+        'category', 'raw_text_purge',
+        'requestId', request_case.id
+      ) AS item
+    FROM public.build_requests AS request_case
+    WHERE request_case.terminal_at IS NOT NULL
+      AND request_case.raw_text_purged_at IS NULL
+      AND request_case.moderation_state <> 'held'
+      AND request_case.terminal_at + INTERVAL '90 days' <= clock_timestamp()
+      AND NOT EXISTS (
+        SELECT 1
+        FROM public.build_request_retention_holds AS active_hold
+        WHERE active_hold.request_id = request_case.id
+          AND active_hold.released_at IS NULL
+      )
+    UNION ALL
+    SELECT
+      '2:' || artifact.request_id::TEXT || ':' ||
+        artifact.delivery_revision_id::TEXT || ':' || artifact.id::TEXT,
+      jsonb_build_object(
+        'category', 'artifact_cleanup',
+        'requestId', artifact.request_id,
+        'deliveryRevisionId', artifact.delivery_revision_id,
+        'artifactId', artifact.id
+      )
+    FROM public.build_request_delivery_artifacts AS artifact
+    JOIN public.build_requests AS request_case
+      ON request_case.id = artifact.request_id
+    WHERE request_case.terminal_at IS NOT NULL
+      AND request_case.terminal_at + INTERVAL '90 days' <= clock_timestamp()
+      AND (
+        (
+          request_case.moderation_state <> 'held'
+          AND NOT EXISTS (
+            SELECT 1
+            FROM public.build_request_retention_holds AS active_hold
+            WHERE active_hold.request_id = request_case.id
+              AND active_hold.released_at IS NULL
+          )
+        )
+        OR EXISTS (
+          SELECT 1
+          FROM public.build_request_artifact_cleanup_claims AS cleanup_claim
+          WHERE cleanup_claim.request_id = artifact.request_id
+            AND cleanup_claim.delivery_revision_id =
+              artifact.delivery_revision_id
+            AND cleanup_claim.artifact_id = artifact.id
+            AND cleanup_claim.resolved_at IS NULL
+            AND cleanup_claim.delete_started_at IS NOT NULL
+        )
+      )
+      AND (
+        NOT EXISTS (
+          SELECT 1
+          FROM public.build_request_artifact_cleanup_receipts AS cleanup_receipt
+          WHERE cleanup_receipt.request_id = artifact.request_id
+            AND cleanup_receipt.delivery_revision_id =
+              artifact.delivery_revision_id
+            AND cleanup_receipt.artifact_id = artifact.id
+        )
+        OR EXISTS (
+          SELECT 1
+          FROM storage.objects AS stored_object
+          WHERE stored_object.bucket_id = 'request-build-deliveries'
+            AND stored_object.name IN (
+              artifact.staging_identity, artifact.object_identity
+            )
+        )
+      )
+    UNION ALL
+    SELECT
+      '3:' || request_case.id::TEXT,
+      jsonb_build_object(
+        'category', 'audit_tombstone_expiry',
+        'requestId', request_case.id
+      )
+    FROM public.build_requests AS request_case
+    WHERE request_case.terminal_at IS NOT NULL
+      AND request_case.raw_text_purged_at IS NOT NULL
+      AND request_case.audit_tombstone_until IS NOT NULL
+      AND request_case.audit_tombstone_until <= clock_timestamp()
+      AND request_case.moderation_state <> 'held'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM public.build_request_retention_holds AS active_hold
+        WHERE active_hold.request_id = request_case.id
+          AND active_hold.released_at IS NULL
+      )
+      AND NOT EXISTS (
+        SELECT 1
+        FROM public.build_request_delivery_artifacts AS artifact
+        JOIN storage.objects AS stored_object
+          ON stored_object.bucket_id = 'request-build-deliveries'
+          AND stored_object.name IN (
+            artifact.staging_identity, artifact.object_identity
+        )
+        WHERE artifact.request_id = request_case.id
+      )
+      AND NOT EXISTS (
+        SELECT 1
+        FROM public.build_request_delivery_artifacts AS artifact
+        WHERE artifact.request_id = request_case.id
+          AND NOT EXISTS (
+            SELECT 1
+            FROM public.build_request_artifact_cleanup_receipts
+              AS cleanup_receipt
+            WHERE cleanup_receipt.request_id = artifact.request_id
+              AND cleanup_receipt.delivery_revision_id =
+                artifact.delivery_revision_id
+              AND cleanup_receipt.artifact_id = artifact.id
+          )
+      )
+      AND NOT EXISTS (
+        SELECT 1
+        FROM public.build_request_artifact_cleanup_claims AS cleanup_claim
+        WHERE cleanup_claim.request_id = request_case.id
+          AND cleanup_claim.resolved_at IS NULL
+      )
+      AND NOT EXISTS (
+        SELECT 1
+        FROM public.build_request_delivery_revisions AS active_workspace
+        WHERE active_workspace.request_id = request_case.id
+          AND active_workspace.revision_state IN (
+            'staging', 'prepared', 'sealed'
+          )
+      )
+    UNION ALL
+    SELECT
+      '4:' || receipt.id::TEXT,
+      jsonb_build_object(
+        'category', 'account_deidentification_receipt_expiry',
+        'receiptId', receipt.id
+      )
+    FROM public.build_request_account_deidentification_receipts AS receipt
+    WHERE receipt.expires_at <= clock_timestamp()
+    UNION ALL
+    SELECT
+      '5:' || revision.request_id::TEXT || ':' || revision.id::TEXT,
+      jsonb_build_object(
+        'category', 'delivery_revision_retirement',
+        'requestId', revision.request_id,
+        'deliveryRevisionId', revision.id,
+        'expectedVersion', request_case.version
+      )
+    FROM public.build_request_delivery_revisions AS revision
+    JOIN public.build_requests AS request_case
+      ON request_case.id = revision.request_id
+    WHERE request_case.lifecycle_state IN ('completed', 'closed')
+      AND revision.revision_state IN ('staging', 'prepared', 'sealed')
+      AND NOT EXISTS (
+        SELECT 1
+        FROM public.build_request_assignments AS active_assignment
+        WHERE active_assignment.request_id = request_case.id
+          AND active_assignment.active
+      )
+  ),
+  page AS (
+    SELECT eligible_work.work_key, eligible_work.item,
+      row_number() OVER (ORDER BY eligible_work.work_key) AS row_number
+    FROM eligible_work
+    WHERE p_cursor IS NULL
+      OR eligible_work.work_key > v_cursor_work_key
+    ORDER BY eligible_work.work_key
+    LIMIT p_limit + 1
+  )
+  SELECT COALESCE(jsonb_agg(
+      page.item ORDER BY page.work_key
+    ) FILTER (WHERE page.row_number <= p_limit), '[]'::JSONB),
+    CASE WHEN max(page.row_number) > p_limit THEN (
+      SELECT private.request_cursor_encode_v1('rqm1', jsonb_build_object(
+        'version', 1,
+        'kind', 'maintenance',
+        'workKey', boundary.work_key
+      ))
+      FROM page AS boundary
+      WHERE boundary.row_number = p_limit
+    ) END
+  INTO v_items, v_next
+  FROM page;
+  RETURN jsonb_build_object('items', v_items, 'nextCursor', v_next);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.claim_build_request_delivery_artifact_cleanup_v1(
+  p_contract_version INTEGER,
+  p_request_id UUID,
+  p_delivery_revision_id UUID,
+  p_artifact_id UUID,
+  p_idempotency_key TEXT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_request public.build_requests%ROWTYPE;
+  v_claim public.build_request_artifact_cleanup_claims%ROWTYPE;
+  v_owner_hash TEXT;
+  v_now TIMESTAMPTZ;
+  v_lease_until TIMESTAMPTZ;
+  v_replayed BOOLEAN := FALSE;
+BEGIN
+  PERFORM private.request_assert_contract_v1(p_contract_version);
+  IF COALESCE(auth.jwt()->>'role', '') <> 'service_role' THEN
+    RAISE EXCEPTION USING ERRCODE = '42501',
+      MESSAGE = 'Artifact cleanup claim is not allowed.';
+  END IF;
+  IF p_request_id IS NULL
+    OR p_delivery_revision_id IS NULL
+    OR p_artifact_id IS NULL
+    OR p_idempotency_key IS NULL
+    OR p_idempotency_key !~ '^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$' THEN
+    RAISE EXCEPTION USING ERRCODE = '22023',
+      MESSAGE = 'Artifact cleanup claim is invalid.';
+  END IF;
+  v_owner_hash := private.request_pseudonym_text_v1(
+    jsonb_build_object(
+      'operation', 'artifact_cleanup_claim',
+      'contract', p_contract_version,
+      'requestId', p_request_id,
+      'deliveryRevisionId', p_delivery_revision_id,
+      'artifactId', p_artifact_id,
+      'idempotencyKey', p_idempotency_key
+    )::TEXT
+  );
+  SELECT request_case.* INTO v_request
+  FROM public.build_requests AS request_case
+  WHERE request_case.id = p_request_id
+  FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0002',
+      MESSAGE = 'Artifact cleanup custody was not found.';
+  END IF;
+  PERFORM 1
+  FROM public.build_request_delivery_artifacts AS artifact
+  WHERE artifact.request_id = p_request_id
+    AND artifact.delivery_revision_id = p_delivery_revision_id
+    AND artifact.id = p_artifact_id
+  FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0002',
+      MESSAGE = 'Artifact cleanup custody was not found.';
+  END IF;
+  SELECT unresolved.* INTO v_claim
+  FROM public.build_request_artifact_cleanup_claims AS unresolved
+  WHERE unresolved.request_id = p_request_id
+    AND unresolved.delivery_revision_id = p_delivery_revision_id
+    AND unresolved.artifact_id = p_artifact_id
+    AND unresolved.resolved_at IS NULL
+  FOR UPDATE;
+  v_now := clock_timestamp();
+  v_lease_until := v_now + INTERVAL '5 minutes';
+  IF v_request.terminal_at IS NULL
+    OR v_request.terminal_at + INTERVAL '90 days' > v_now
+    OR (
+      (NOT FOUND OR v_claim.delete_started_at IS NULL)
+      AND (
+        v_request.moderation_state = 'held'
+        OR EXISTS (
+          SELECT 1
+          FROM public.build_request_retention_holds AS active_hold
+          WHERE active_hold.request_id = p_request_id
+            AND active_hold.released_at IS NULL
+        )
+      )
+    )
+    OR (
+      EXISTS (
+        SELECT 1
+        FROM public.build_request_artifact_cleanup_receipts AS cleaned
+        WHERE cleaned.request_id = p_request_id
+          AND cleaned.delivery_revision_id = p_delivery_revision_id
+          AND cleaned.artifact_id = p_artifact_id
+      )
+      AND NOT EXISTS (
+        SELECT 1
+        FROM public.build_request_delivery_artifacts AS artifact
+        JOIN storage.objects AS stored_object
+          ON stored_object.bucket_id = 'request-build-deliveries'
+          AND stored_object.name IN (
+            artifact.staging_identity, artifact.object_identity
+          )
+        WHERE artifact.request_id = p_request_id
+          AND artifact.delivery_revision_id = p_delivery_revision_id
+          AND artifact.id = p_artifact_id
+      )
+    ) THEN
+    RAISE EXCEPTION USING ERRCODE = '55000',
+      MESSAGE = 'Artifact cleanup is not eligible to be claimed.';
+  END IF;
+  IF FOUND THEN
+    IF v_claim.owner_request_hash = v_owner_hash
+      AND v_claim.owner_lease_until > v_now THEN
+      v_replayed := TRUE;
+    ELSIF v_claim.owner_request_hash <> v_owner_hash
+      AND v_claim.owner_lease_until > v_now THEN
+      RAISE EXCEPTION USING ERRCODE = '55000',
+        MESSAGE = 'Artifact cleanup is already claimed.';
+    ELSE
+      UPDATE public.build_request_artifact_cleanup_claims AS takeover
+      SET owner_request_hash = v_owner_hash,
+          claim_version = takeover.claim_version + 1,
+          claimed_at = v_now,
+          owner_lease_until = v_lease_until
+      WHERE takeover.id = v_claim.id
+      RETURNING takeover.* INTO v_claim;
+    END IF;
+  ELSE
+    INSERT INTO public.build_request_artifact_cleanup_claims (
+      request_id, delivery_revision_id, artifact_id,
+      owner_request_hash, claimed_at, owner_lease_until
+    ) VALUES (
+      p_request_id, p_delivery_revision_id, p_artifact_id,
+      v_owner_hash, v_now, v_lease_until
+    )
+    RETURNING * INTO v_claim;
+  END IF;
+  RETURN jsonb_build_object(
+    'cleanupClaimId', v_claim.id,
+    'requestId', v_claim.request_id,
+    'deliveryRevisionId', v_claim.delivery_revision_id,
+    'artifactId', v_claim.artifact_id,
+    'claimVersion', v_claim.claim_version,
+    'leaseUntil', v_claim.owner_lease_until,
+    'deletionStarted', v_claim.delete_started_at IS NOT NULL,
+    'replayed', v_replayed
+  );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.begin_build_request_delivery_artifact_cleanup_delete_v1(
+  p_contract_version INTEGER,
+  p_cleanup_claim_id UUID,
+  p_claim_version INTEGER,
+  p_idempotency_key TEXT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_claim public.build_request_artifact_cleanup_claims%ROWTYPE;
+  v_request public.build_requests%ROWTYPE;
+  v_start_hash TEXT;
+  v_started_at TIMESTAMPTZ;
+  v_receipt JSONB;
+BEGIN
+  PERFORM private.request_assert_contract_v1(p_contract_version);
+  IF COALESCE(auth.jwt()->>'role', '') <> 'service_role' THEN
+    RAISE EXCEPTION USING ERRCODE = '42501',
+      MESSAGE = 'Artifact cleanup deletion start is not allowed.';
+  END IF;
+  IF p_cleanup_claim_id IS NULL
+    OR p_claim_version IS NULL
+    OR p_claim_version < 1
+    OR p_idempotency_key IS NULL
+    OR p_idempotency_key !~ '^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$' THEN
+    RAISE EXCEPTION USING ERRCODE = '22023',
+      MESSAGE = 'Artifact cleanup deletion start is invalid.';
+  END IF;
+  v_start_hash := private.request_pseudonym_text_v1(
+    jsonb_build_object(
+      'operation', 'artifact_cleanup_delete_start',
+      'contract', p_contract_version,
+      'cleanupClaimId', p_cleanup_claim_id,
+      'claimVersion', p_claim_version,
+      'idempotencyKey', p_idempotency_key
+    )::TEXT
+  );
+  SELECT cleanup_claim.* INTO v_claim
+  FROM public.build_request_artifact_cleanup_claims AS cleanup_claim
+  WHERE cleanup_claim.id = p_cleanup_claim_id;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0002',
+      MESSAGE = 'Artifact cleanup claim was not found.';
+  END IF;
+  SELECT request_case.* INTO STRICT v_request
+  FROM public.build_requests AS request_case
+  WHERE request_case.id = v_claim.request_id
+  FOR UPDATE;
+  SELECT cleanup_claim.* INTO STRICT v_claim
+  FROM public.build_request_artifact_cleanup_claims AS cleanup_claim
+  WHERE cleanup_claim.id = p_cleanup_claim_id
+  FOR UPDATE;
+  v_started_at := clock_timestamp();
+  IF v_claim.resolved_at IS NOT NULL THEN
+    RAISE EXCEPTION USING ERRCODE = '55000',
+      MESSAGE = 'Artifact cleanup claim is already resolved.';
+  END IF;
+  IF v_claim.claim_version <> p_claim_version THEN
+    RAISE EXCEPTION USING ERRCODE = '55000',
+      MESSAGE = 'Artifact cleanup claim is stale.';
+  END IF;
+  IF v_claim.owner_lease_until <= v_started_at THEN
+    RAISE EXCEPTION USING ERRCODE = '55000',
+      MESSAGE = 'Artifact cleanup claim lease expired.';
+  END IF;
+  IF v_claim.delete_started_at IS NOT NULL THEN
+    RETURN jsonb_build_object(
+      'cleanupClaimId', v_claim.id,
+      'requestId', v_claim.request_id,
+      'deliveryRevisionId', v_claim.delivery_revision_id,
+      'artifactId', v_claim.artifact_id,
+      'claimVersion', v_claim.claim_version,
+      'deleteStartedAt', v_claim.delete_started_at,
+      'replayed', TRUE
+    );
+  END IF;
+  IF v_request.terminal_at IS NULL
+    OR v_request.moderation_state = 'held'
+    OR v_request.terminal_at + INTERVAL '90 days' > v_started_at
+    OR EXISTS (
+      SELECT 1
+      FROM public.build_request_retention_holds AS active_hold
+      WHERE active_hold.request_id = v_claim.request_id
+        AND active_hold.released_at IS NULL
+    )
+    OR NOT EXISTS (
+      SELECT 1
+      FROM public.build_request_delivery_artifacts AS artifact
+      JOIN storage.objects AS stored_object
+        ON stored_object.bucket_id = 'request-build-deliveries'
+        AND stored_object.name IN (
+          artifact.staging_identity, artifact.object_identity
+        )
+      WHERE artifact.request_id = v_claim.request_id
+        AND artifact.delivery_revision_id = v_claim.delivery_revision_id
+        AND artifact.id = v_claim.artifact_id
+    ) THEN
+    RAISE EXCEPTION USING ERRCODE = '55000',
+      MESSAGE = 'Artifact cleanup deletion cannot start.';
+  END IF;
+  v_receipt := jsonb_build_object(
+    'cleanupClaimId', v_claim.id,
+    'requestId', v_claim.request_id,
+    'deliveryRevisionId', v_claim.delivery_revision_id,
+    'artifactId', v_claim.artifact_id,
+    'claimVersion', v_claim.claim_version,
+    'deleteStartedAt', v_started_at
+  );
+  UPDATE public.build_request_artifact_cleanup_claims AS cleanup_claim
+  SET delete_started_at = v_started_at,
+      delete_start_request_hash = v_start_hash,
+      delete_start_receipt = v_receipt
+  WHERE cleanup_claim.id = v_claim.id;
+  RETURN v_receipt || jsonb_build_object('replayed', FALSE);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.confirm_build_request_delivery_artifact_cleanup_v1(
+  p_contract_version INTEGER,
+  p_request_id UUID,
+  p_delivery_revision_id UUID,
+  p_artifact_id UUID,
+  p_cleanup_claim_id UUID,
+  p_claim_version INTEGER,
+  p_idempotency_key TEXT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_artifact public.build_request_delivery_artifacts%ROWTYPE;
+  v_request public.build_requests%ROWTYPE;
+  v_claim public.build_request_artifact_cleanup_claims%ROWTYPE;
+  v_prior public.build_request_artifact_cleanup_receipts%ROWTYPE;
+  v_request_hash TEXT;
+  v_receipt_id UUID := gen_random_uuid();
+  v_cleaned_at TIMESTAMPTZ;
+  v_disposition TEXT;
+BEGIN
+  PERFORM private.request_assert_contract_v1(p_contract_version);
+  IF COALESCE(auth.jwt()->>'role', '') <> 'service_role' THEN
+    RAISE EXCEPTION USING ERRCODE = '42501',
+      MESSAGE = 'Artifact cleanup confirmation is not allowed.';
+  END IF;
+  IF p_request_id IS NULL
+    OR p_delivery_revision_id IS NULL
+    OR p_artifact_id IS NULL
+    OR p_cleanup_claim_id IS NULL
+    OR p_claim_version IS NULL
+    OR p_claim_version < 1
+    OR p_idempotency_key IS NULL
+    OR p_idempotency_key !~ '^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$' THEN
+    RAISE EXCEPTION USING ERRCODE = '22023',
+      MESSAGE = 'Artifact cleanup confirmation is invalid.';
+  END IF;
+  v_request_hash := private.request_pseudonym_text_v1(
+    jsonb_build_object(
+      'contract', p_contract_version,
+      'requestId', p_request_id,
+      'deliveryRevisionId', p_delivery_revision_id,
+      'artifactId', p_artifact_id,
+      'cleanupClaimId', p_cleanup_claim_id,
+      'claimVersion', p_claim_version
+    )::TEXT
+  );
+  PERFORM pg_advisory_xact_lock(hashtextextended(
+    'request-artifact-cleanup:' || p_idempotency_key, 0
+  ));
+  SELECT * INTO v_prior
+  FROM public.build_request_artifact_cleanup_receipts AS prior
+  WHERE prior.idempotency_key = p_idempotency_key;
+  IF FOUND THEN
+    IF v_prior.request_hash <> v_request_hash
+      OR v_prior.request_id <> p_request_id
+      OR v_prior.delivery_revision_id <> p_delivery_revision_id
+      OR v_prior.artifact_id <> p_artifact_id
+      OR v_prior.cleanup_claim_id <> p_cleanup_claim_id
+      OR v_prior.cleanup_claim_version <> p_claim_version THEN
+      RAISE EXCEPTION USING ERRCODE = '23505',
+        MESSAGE = 'Request authority rejected the operation.',
+        DETAIL = 'request_authority:duplicate';
+    END IF;
+    IF EXISTS (
+      SELECT 1
+      FROM public.build_request_delivery_artifacts AS artifact
+      JOIN storage.objects AS stored_object
+        ON stored_object.bucket_id = 'request-build-deliveries'
+        AND stored_object.name IN (
+          artifact.staging_identity, artifact.object_identity
+        )
+      WHERE artifact.request_id = v_prior.request_id
+        AND artifact.delivery_revision_id = v_prior.delivery_revision_id
+        AND artifact.id = v_prior.artifact_id
+    ) THEN
+      RAISE EXCEPTION USING ERRCODE = '55000',
+        MESSAGE = 'Confirmed artifact object exists.';
+    END IF;
+    RETURN jsonb_build_object(
+      'cleanupReceiptId', v_prior.id,
+      'requestId', v_prior.request_id,
+      'deliveryRevisionId', v_prior.delivery_revision_id,
+      'artifactId', v_prior.artifact_id,
+      'cleanupClaimId', v_prior.cleanup_claim_id,
+      'claimVersion', v_prior.cleanup_claim_version,
+      'cleanupDisposition', v_prior.cleanup_disposition,
+      'replayed', TRUE,
+      'cleanedAt', v_prior.cleaned_at
+    );
+  END IF;
+  SELECT request_case.* INTO STRICT v_request
+  FROM public.build_requests AS request_case
+  WHERE request_case.id = p_request_id
+  FOR UPDATE;
+  SELECT artifact.* INTO v_artifact
+  FROM public.build_request_delivery_artifacts AS artifact
+  WHERE artifact.request_id = p_request_id
+    AND artifact.delivery_revision_id = p_delivery_revision_id
+    AND artifact.id = p_artifact_id
+  FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0002',
+      MESSAGE = 'Artifact cleanup custody was not found.';
+  END IF;
+  SELECT cleanup_claim.* INTO v_claim
+  FROM public.build_request_artifact_cleanup_claims AS cleanup_claim
+  WHERE cleanup_claim.request_id = p_request_id
+    AND cleanup_claim.delivery_revision_id = p_delivery_revision_id
+    AND cleanup_claim.artifact_id = p_artifact_id
+    AND cleanup_claim.id = p_cleanup_claim_id
+  FOR UPDATE;
+  IF NOT FOUND OR v_claim.claim_version <> p_claim_version THEN
+    RAISE EXCEPTION USING ERRCODE = '55000',
+      MESSAGE = 'Artifact cleanup claim is stale.';
+  END IF;
+  IF v_claim.resolved_at IS NOT NULL THEN
+    IF v_claim.resolution = 'confirmed_removed'
+      AND v_claim.resolution_request_hash = v_request_hash THEN
+      IF EXISTS (
+        SELECT 1
+        FROM storage.objects AS stored_object
+        WHERE stored_object.bucket_id = 'request-build-deliveries'
+          AND stored_object.name IN (
+            v_artifact.staging_identity, v_artifact.object_identity
+          )
+      ) THEN
+        RAISE EXCEPTION USING ERRCODE = '55000',
+          MESSAGE = 'Confirmed artifact object exists.';
+      END IF;
+      RETURN v_claim.resolution_receipt ||
+        jsonb_build_object('replayed', TRUE);
+    END IF;
+    RAISE EXCEPTION USING ERRCODE = '55000',
+      MESSAGE = 'Artifact cleanup claim is already resolved.';
+  END IF;
+  v_cleaned_at := clock_timestamp();
+  IF v_claim.owner_lease_until <= v_cleaned_at THEN
+    RAISE EXCEPTION USING ERRCODE = '55000',
+      MESSAGE = 'Artifact cleanup claim lease expired.';
+  END IF;
+  IF v_request.terminal_at IS NULL
+    OR v_request.terminal_at + INTERVAL '90 days' > v_cleaned_at
+    OR (
+      v_claim.delete_started_at IS NULL
+      AND (
+        v_request.moderation_state = 'held'
+        OR EXISTS (
+          SELECT 1
+          FROM public.build_request_retention_holds AS active_hold
+          WHERE active_hold.request_id = p_request_id
+            AND active_hold.released_at IS NULL
+        )
+      )
+    ) THEN
+    RAISE EXCEPTION USING ERRCODE = '55000',
+      MESSAGE = 'Artifact cleanup is not eligible for confirmation.';
+  END IF;
+  IF EXISTS (
+    SELECT 1
+    FROM storage.objects AS stored_object
+    WHERE stored_object.bucket_id = 'request-build-deliveries'
+      AND stored_object.name IN (
+        v_artifact.staging_identity, v_artifact.object_identity
+      )
+  ) THEN
+    RAISE EXCEPTION USING ERRCODE = '55000',
+      MESSAGE = 'Artifact object still exists.';
+  END IF;
+  v_disposition := CASE
+    WHEN v_claim.delete_started_at IS NULL THEN 'preexisting_missing'
+    ELSE 'worker_removed'
+  END;
+  SELECT cleanup_receipt.* INTO v_prior
+  FROM public.build_request_artifact_cleanup_receipts AS cleanup_receipt
+  WHERE cleanup_receipt.cleanup_claim_id = p_cleanup_claim_id
+    AND cleanup_receipt.cleanup_claim_version = p_claim_version;
+  IF FOUND THEN
+    UPDATE public.build_request_artifact_cleanup_claims AS cleanup_claim
+    SET resolved_at = v_cleaned_at,
+        resolution = 'confirmed_removed',
+        resolution_request_hash = v_request_hash,
+        resolution_receipt = jsonb_build_object(
+          'cleanupReceiptId', v_prior.id,
+          'requestId', p_request_id,
+          'deliveryRevisionId', p_delivery_revision_id,
+          'artifactId', p_artifact_id,
+          'cleanupClaimId', p_cleanup_claim_id,
+          'claimVersion', p_claim_version,
+          'cleanupDisposition', v_prior.cleanup_disposition,
+          'cleanedAt', v_prior.cleaned_at
+        )
+    WHERE cleanup_claim.id = p_cleanup_claim_id;
+    RETURN jsonb_build_object(
+      'cleanupReceiptId', v_prior.id,
+      'requestId', p_request_id,
+      'deliveryRevisionId', p_delivery_revision_id,
+      'artifactId', p_artifact_id,
+      'cleanupClaimId', p_cleanup_claim_id,
+      'claimVersion', p_claim_version,
+      'cleanupDisposition', v_prior.cleanup_disposition,
+      'replayed', TRUE,
+      'cleanedAt', v_prior.cleaned_at
+    );
+  END IF;
+  INSERT INTO public.build_request_artifact_cleanup_receipts (
+    id, idempotency_key, request_hash, request_id,
+    delivery_revision_id, artifact_id, cleanup_claim_id,
+    cleanup_claim_version, cleanup_disposition, cleaned_at
+  ) VALUES (
+    v_receipt_id, p_idempotency_key, v_request_hash, p_request_id,
+    p_delivery_revision_id, p_artifact_id, p_cleanup_claim_id,
+    p_claim_version, v_disposition, v_cleaned_at
+  );
+  UPDATE public.build_request_artifact_cleanup_claims AS cleanup_claim
+  SET resolved_at = v_cleaned_at,
+      resolution = 'confirmed_removed',
+      resolution_request_hash = v_request_hash,
+      resolution_receipt = jsonb_build_object(
+        'cleanupReceiptId', v_receipt_id,
+        'requestId', p_request_id,
+        'deliveryRevisionId', p_delivery_revision_id,
+        'artifactId', p_artifact_id,
+        'cleanupClaimId', p_cleanup_claim_id,
+        'claimVersion', p_claim_version,
+        'cleanupDisposition', v_disposition,
+        'cleanedAt', v_cleaned_at
+      )
+  WHERE cleanup_claim.id = p_cleanup_claim_id;
+  RETURN jsonb_build_object(
+    'cleanupReceiptId', v_receipt_id,
+    'requestId', p_request_id,
+    'deliveryRevisionId', p_delivery_revision_id,
+    'artifactId', p_artifact_id,
+    'cleanupClaimId', p_cleanup_claim_id,
+    'claimVersion', p_claim_version,
+    'cleanupDisposition', v_disposition,
+    'replayed', FALSE,
+    'cleanedAt', v_cleaned_at
+  );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.abort_build_request_delivery_artifact_cleanup_v1(
+  p_contract_version INTEGER,
+  p_cleanup_claim_id UUID,
+  p_claim_version INTEGER,
+  p_idempotency_key TEXT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_claim public.build_request_artifact_cleanup_claims%ROWTYPE;
+  v_resolution_hash TEXT;
+  v_now TIMESTAMPTZ;
+  v_receipt JSONB;
+BEGIN
+  PERFORM private.request_assert_contract_v1(p_contract_version);
+  IF COALESCE(auth.jwt()->>'role', '') <> 'service_role' THEN
+    RAISE EXCEPTION USING ERRCODE = '42501',
+      MESSAGE = 'Artifact cleanup abort is not allowed.';
+  END IF;
+  IF p_cleanup_claim_id IS NULL
+    OR p_claim_version IS NULL
+    OR p_claim_version < 1
+    OR p_idempotency_key IS NULL
+    OR p_idempotency_key !~ '^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$' THEN
+    RAISE EXCEPTION USING ERRCODE = '22023',
+      MESSAGE = 'Artifact cleanup abort is invalid.';
+  END IF;
+  v_resolution_hash := private.request_pseudonym_text_v1(
+    jsonb_build_object(
+      'operation', 'artifact_cleanup_abort',
+      'contract', p_contract_version,
+      'cleanupClaimId', p_cleanup_claim_id,
+      'claimVersion', p_claim_version,
+      'idempotencyKey', p_idempotency_key
+    )::TEXT
+  );
+  SELECT cleanup_claim.* INTO v_claim
+  FROM public.build_request_artifact_cleanup_claims AS cleanup_claim
+  WHERE cleanup_claim.id = p_cleanup_claim_id;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0002',
+      MESSAGE = 'Artifact cleanup claim was not found.';
+  END IF;
+  PERFORM 1
+  FROM public.build_requests AS request_case
+  WHERE request_case.id = v_claim.request_id
+  FOR UPDATE;
+  SELECT cleanup_claim.* INTO STRICT v_claim
+  FROM public.build_request_artifact_cleanup_claims AS cleanup_claim
+  WHERE cleanup_claim.id = p_cleanup_claim_id
+  FOR UPDATE;
+  IF v_claim.resolved_at IS NOT NULL THEN
+    IF v_claim.resolution = 'aborted_object_present'
+      AND v_claim.resolution_request_hash = v_resolution_hash THEN
+      RETURN v_claim.resolution_receipt ||
+        jsonb_build_object('replayed', TRUE);
+    END IF;
+    RAISE EXCEPTION USING ERRCODE = '55000',
+      MESSAGE = 'Artifact cleanup claim is already resolved.';
+  END IF;
+  IF v_claim.claim_version <> p_claim_version THEN
+    RAISE EXCEPTION USING ERRCODE = '55000',
+      MESSAGE = 'Artifact cleanup claim is stale.';
+  END IF;
+  IF v_claim.delete_started_at IS NOT NULL THEN
+    RAISE EXCEPTION USING ERRCODE = '55000',
+      MESSAGE = 'Artifact cleanup claim cannot be aborted after deletion starts.';
+  END IF;
+  v_now := clock_timestamp();
+  IF v_claim.owner_lease_until <= v_now THEN
+    RAISE EXCEPTION USING ERRCODE = '55000',
+      MESSAGE = 'Artifact cleanup claim lease expired.';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.build_request_delivery_artifacts AS artifact
+    JOIN storage.objects AS stored_object
+      ON stored_object.bucket_id = 'request-build-deliveries'
+      AND stored_object.name IN (
+        artifact.staging_identity, artifact.object_identity
+      )
+    WHERE artifact.request_id = v_claim.request_id
+      AND artifact.delivery_revision_id = v_claim.delivery_revision_id
+      AND artifact.id = v_claim.artifact_id
+  ) THEN
+    RAISE EXCEPTION USING ERRCODE = '55000',
+      MESSAGE = 'Artifact cleanup claim cannot be aborted after object removal.';
+  END IF;
+  v_receipt := jsonb_build_object(
+    'cleanupClaimId', v_claim.id,
+    'requestId', v_claim.request_id,
+    'deliveryRevisionId', v_claim.delivery_revision_id,
+    'artifactId', v_claim.artifact_id,
+    'claimVersion', v_claim.claim_version,
+    'abortedAt', v_now
+  );
+  UPDATE public.build_request_artifact_cleanup_claims AS cleanup_claim
+  SET resolved_at = v_now,
+      resolution = 'aborted_object_present',
+      resolution_request_hash = v_resolution_hash,
+      resolution_receipt = v_receipt
+  WHERE cleanup_claim.id = v_claim.id;
+  RETURN v_receipt || jsonb_build_object('replayed', FALSE);
 END;
 $$;
 
@@ -6503,9 +7539,45 @@ BEGIN
         ON stored_object.bucket_id = 'request-build-deliveries'
         AND stored_object.name IN (
           artifact.staging_identity, artifact.object_identity
-        )
+      )
       WHERE artifact.request_id = p_request_id
+    )
+    OR EXISTS (
+      SELECT 1
+      FROM public.build_request_artifact_cleanup_claims AS cleanup_claim
+      WHERE cleanup_claim.request_id = p_request_id
+        AND cleanup_claim.resolved_at IS NULL
+    )
+    OR EXISTS (
+      SELECT 1
+      FROM public.build_request_delivery_revisions AS active_workspace
+      WHERE active_workspace.request_id = p_request_id
+        AND active_workspace.revision_state IN (
+          'staging', 'prepared', 'sealed'
+        )
     ) THEN
+    RETURN jsonb_build_object(
+      'contractVersion', 1,
+      'requestId', p_request_id,
+      'cleaned', FALSE,
+      'replayed', FALSE,
+      'aggregateDigest', v_aggregate_digest,
+      'occurredAt', v_now
+    );
+  END IF;
+  IF EXISTS (
+    SELECT 1
+    FROM public.build_request_delivery_artifacts AS artifact
+    WHERE artifact.request_id = p_request_id
+      AND NOT EXISTS (
+        SELECT 1
+        FROM public.build_request_artifact_cleanup_receipts AS cleanup_receipt
+        WHERE cleanup_receipt.request_id = artifact.request_id
+          AND cleanup_receipt.delivery_revision_id =
+            artifact.delivery_revision_id
+          AND cleanup_receipt.artifact_id = artifact.id
+      )
+  ) THEN
     RETURN jsonb_build_object(
       'contractVersion', 1,
       'requestId', p_request_id,
@@ -6986,6 +8058,19 @@ REVOKE ALL ON FUNCTION
   public.resolve_build_request_delivery_artifact_cleanup_v1(
     INTEGER, UUID, UUID, UUID
   ),
+  public.list_build_request_maintenance_work_v1(INTEGER, TEXT, INTEGER),
+  public.claim_build_request_delivery_artifact_cleanup_v1(
+    INTEGER, UUID, UUID, UUID, TEXT
+  ),
+  public.begin_build_request_delivery_artifact_cleanup_delete_v1(
+    INTEGER, UUID, INTEGER, TEXT
+  ),
+  public.confirm_build_request_delivery_artifact_cleanup_v1(
+    INTEGER, UUID, UUID, UUID, UUID, INTEGER, TEXT
+  ),
+  public.abort_build_request_delivery_artifact_cleanup_v1(
+    INTEGER, UUID, INTEGER, TEXT
+  ),
   public.purge_build_request_raw_text_v1(INTEGER, UUID),
   public.seal_build_request_delivery_revision_v1(
     INTEGER, TEXT, UUID, UUID, UUID, JSONB
@@ -7004,6 +8089,19 @@ GRANT EXECUTE ON FUNCTION
   ),
   public.resolve_build_request_delivery_artifact_cleanup_v1(
     INTEGER, UUID, UUID, UUID
+  ),
+  public.list_build_request_maintenance_work_v1(INTEGER, TEXT, INTEGER),
+  public.claim_build_request_delivery_artifact_cleanup_v1(
+    INTEGER, UUID, UUID, UUID, TEXT
+  ),
+  public.begin_build_request_delivery_artifact_cleanup_delete_v1(
+    INTEGER, UUID, INTEGER, TEXT
+  ),
+  public.confirm_build_request_delivery_artifact_cleanup_v1(
+    INTEGER, UUID, UUID, UUID, UUID, INTEGER, TEXT
+  ),
+  public.abort_build_request_delivery_artifact_cleanup_v1(
+    INTEGER, UUID, INTEGER, TEXT
   ),
   public.purge_build_request_raw_text_v1(INTEGER, UUID),
   public.seal_build_request_delivery_revision_v1(
@@ -7093,6 +8191,7 @@ BEGIN
       'occurredAt', v_prior.occurred_at
     );
   END IF;
+  PERFORM private.request_lock_available_actor_v1(v_actor_id);
   PERFORM pg_advisory_xact_lock(hashtextextended(
     'request-subject:' || private.request_account_pseudonym_v1(p_account_id),
     0
@@ -7223,6 +8322,7 @@ BEGIN
       TRUE, v_existing.occurred_at;
     RETURN;
   END IF;
+  PERFORM private.request_lock_available_actor_v1(v_actor_id);
   SELECT * INTO v_controls FROM public.build_request_controls
   WHERE singleton FOR UPDATE;
   IF v_controls.controls_version <> p_expected_controls_version THEN
@@ -7422,7 +8522,19 @@ BEGIN
     THEN
       capabilities := array_append(capabilities, 'reassign_triager');
     END IF;
-    capabilities := array_append(capabilities, 'place_moderation_hold');
+    IF NOT EXISTS (
+        SELECT 1
+        FROM public.build_request_artifact_cleanup_claims AS cleanup_claim
+        WHERE cleanup_claim.request_id = p_request_id
+          AND cleanup_claim.resolved_at IS NULL
+      )
+      AND NOT EXISTS (
+        SELECT 1
+        FROM public.build_request_artifact_cleanup_receipts AS cleaned_artifact
+        WHERE cleaned_artifact.request_id = p_request_id
+      ) THEN
+      capabilities := array_append(capabilities, 'place_moderation_hold');
+    END IF;
     capabilities := array_append(capabilities, 'remove_for_moderation');
   END IF;
   IF request_case.lifecycle_state IN ('completed', 'closed') THEN
@@ -7550,7 +8662,19 @@ BEGIN
         AND workspace_builder.active
       ORDER BY workspace.id
       LIMIT 1;
-      IF workspace_id IS NULL OR workspace_state = 'staging' THEN
+      IF workspace_id IS NULL OR (
+        workspace_state = 'staging'
+        AND (
+          SELECT count(*)
+          FROM public.build_request_delivery_artifacts AS attempted_artifact
+          WHERE attempted_artifact.delivery_revision_id = workspace_id
+        ) < 8
+        AND COALESCE((
+          SELECT sum(attempted_artifact.byte_length)
+          FROM public.build_request_delivery_artifacts AS attempted_artifact
+          WHERE attempted_artifact.delivery_revision_id = workspace_id
+        ), 0) < 24000000
+      ) THEN
         capabilities := array_append(
           capabilities, 'stage_delivery_artifact'
         );
@@ -7884,32 +9008,14 @@ DECLARE
 BEGIN
   PERFORM private.request_assert_contract_v1(p_contract_version);
   v_role := private.request_actor_role_v1(v_actor_id);
-  IF p_scope IS NULL
+  IF v_actor_id IS NULL
+    OR p_scope IS NULL
     OR p_scope NOT IN ('admin', 'triager', 'builder', 'reviewer')
     OR p_limit IS NULL
     OR p_limit NOT BETWEEN 1 AND 50
     OR char_length(COALESCE(p_cursor, '')) > 500
     OR (p_scope = 'admin' AND v_role <> 'admin')
-    OR (
-      p_scope = 'triager'
-      AND v_role <> 'admin'
-      AND NOT EXISTS (
-        SELECT 1
-        FROM public.build_request_participants AS scoped_triager
-        WHERE scoped_triager.account_id = v_actor_id
-          AND scoped_triager.actor_role = 'triager'
-          AND scoped_triager.active
-      )
-    )
-    OR (
-      p_scope IN ('builder', 'reviewer')
-      AND NOT EXISTS (
-        SELECT 1 FROM public.build_request_assignments AS scoped_assignment
-        WHERE scoped_assignment.account_id = v_actor_id
-          AND scoped_assignment.assignment_role = p_scope
-          AND scoped_assignment.active
-      )
-    ) THEN
+  THEN
     RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'Assigned queue scope is not allowed.';
   END IF;
   IF p_cursor IS NOT NULL THEN
@@ -8613,6 +9719,60 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION private.request_retention_notices_v1(
+  p_request_id UUID,
+  p_moderation_state TEXT,
+  p_terminal_at TIMESTAMPTZ
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_notices JSONB := '[]'::JSONB;
+BEGIN
+  IF p_terminal_at IS NOT NULL THEN
+    v_notices := v_notices || jsonb_build_array(
+      jsonb_build_object(
+        'kind', 'raw_content_retention',
+        'label',
+          'Participant access ends at this deadline; private raw content and hosted artifacts then become eligible for policy cleanup.',
+        'effectiveUntil', p_terminal_at + INTERVAL '90 days'
+      ),
+      jsonb_build_object(
+        'kind', 'audit_retention',
+        'label',
+          'This is the scheduled retention deadline for the deidentified case audit record unless an active preservation hold applies.',
+        'effectiveUntil', p_terminal_at + INTERVAL '400 days'
+      )
+    );
+  END IF;
+  IF p_moderation_state = 'held' THEN
+    v_notices := v_notices || jsonb_build_array(jsonb_build_object(
+      'kind', 'moderation_hold',
+      'label',
+        'This request is unavailable during moderation review; the hold preserves evidence but does not extend participant artifact access.',
+      'effectiveUntil', NULL
+    ));
+  ELSIF EXISTS (
+    SELECT 1
+    FROM public.build_request_retention_holds AS active_hold
+    WHERE active_hold.request_id = p_request_id
+      AND active_hold.released_at IS NULL
+  ) THEN
+    v_notices := v_notices || jsonb_build_array(jsonb_build_object(
+      'kind', 'preservation_hold',
+      'label',
+        'Authority is preserving retained evidence under an active hold; the hold does not extend participant artifact access.',
+      'effectiveUntil', NULL
+    ));
+  END IF;
+  RETURN v_notices;
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.get_build_request_v1(
   p_contract_version INTEGER,
   p_request_id UUID
@@ -8662,14 +9822,9 @@ BEGIN
       'events', jsonb_build_object(
         'items', '[]'::JSONB, 'nextCursor', NULL
       ),
-      'notices', CASE
-        WHEN v_request.terminal_at IS NULL THEN '[]'::JSONB
-        ELSE jsonb_build_array(jsonb_build_object(
-          'kind', 'retention',
-          'label', 'Case evidence remains under the private retention policy.',
-          'effectiveUntil', v_request.terminal_at + INTERVAL '400 days'
-        ))
-      END,
+      'notices', private.request_retention_notices_v1(
+        v_request.id, v_request.moderation_state, v_request.terminal_at
+      ),
       'actor', jsonb_build_object(
         'accountId', v_actor_id,
         'roles', COALESCE((
@@ -8724,11 +9879,9 @@ BEGIN
       'submittedAt', v_request.submitted_at,
       'updatedAt', v_request.updated_at,
       'events', private.request_held_event_page_json_v1(v_request.id),
-      'notices', jsonb_build_array(jsonb_build_object(
-        'kind', 'moderation_hold',
-        'label', 'This request is temporarily unavailable during moderation review.',
-        'effectiveUntil', NULL
-      )),
+      'notices', private.request_retention_notices_v1(
+        v_request.id, v_request.moderation_state, v_request.terminal_at
+      ),
       'actor', jsonb_build_object(
         'accountId', v_actor_id,
         'roles', COALESCE((
@@ -8821,8 +9974,12 @@ BEGIN
     'assignments', COALESCE((
       SELECT jsonb_agg(jsonb_build_object(
         'assignmentId', a.id, 'role', a.assignment_role,
+        'assignee', jsonb_build_object(
+          'displayName', a.display_name,
+          'deidentified', a.deidentified
+        ),
         'active', a.active, 'assignedAt', a.assigned_at, 'endedAt', a.ended_at
-      ) ORDER BY a.assigned_at)
+      ) ORDER BY a.assigned_at, a.id)
       FROM public.build_request_assignments AS a WHERE a.request_id = r.id
     ), '[]'::JSONB),
     'clarifications', COALESCE((
@@ -8898,28 +10055,46 @@ BEGIN
               AND r.moderation_state = 'clear'
               AND r.publication_state <> 'withdrawn'
               AND (
-                r.lifecycle_state IN ('delivery_ready', 'delivered')
-                OR (
-                  r.lifecycle_state IN ('completed', 'closed')
-                  AND r.terminal_at IS NOT NULL
-                  AND r.terminal_at + INTERVAL '90 days' > clock_timestamp()
-                  AND (
-                    r.lifecycle_state <> 'closed'
-                    OR r.close_reason = 'no_response'
+                (
+                  r.lifecycle_state = 'review_pending'
+                  AND d.revision_state = 'submitted'
+                  AND EXISTS (
+                    SELECT 1
+                    FROM public.build_request_assignments AS reader_reviewer
+                    WHERE reader_reviewer.request_id = r.id
+                      AND reader_reviewer.assignment_role = 'reviewer'
+                      AND reader_reviewer.account_id = v_actor_id
+                      AND reader_reviewer.active
                   )
+                )
+                OR (
+                  (
+                    r.lifecycle_state IN ('delivery_ready', 'delivered')
+                    OR (
+                      r.lifecycle_state IN ('completed', 'closed')
+                      AND r.terminal_at IS NOT NULL
+                      AND r.terminal_at + INTERVAL '90 days' >
+                        clock_timestamp()
+                      AND (
+                        r.lifecycle_state <> 'closed'
+                        OR r.close_reason = 'no_response'
+                      )
+                    )
+                  )
+                  AND (
+                    SELECT approved.verdict = 'approve'
+                      AND approved.manifest_digest =
+                        d.artifact_manifest_digest
+                    FROM public.build_request_delivery_reviews AS approved
+                    WHERE approved.delivery_revision_id = d.id
+                    ORDER BY approved.reviewed_at DESC, approved.id DESC
+                    LIMIT 1
+                  ) IS TRUE
                 )
               )
               AND da.integrity_status = 'verified'
               AND da.scan_state = 'complete'
               AND da.scan_verdict = 'clean'
-              AND (
-                SELECT approved.verdict = 'approve'
-                  AND approved.manifest_digest = d.artifact_manifest_digest
-                FROM public.build_request_delivery_reviews AS approved
-                WHERE approved.delivery_revision_id = d.id
-                ORDER BY approved.reviewed_at DESC, approved.id DESC
-                LIMIT 1
-              ) IS TRUE
               THEN '/api/requests/deliveries/' || da.id || '/reader'
             END
           )) ORDER BY da.artifact_ordinal, da.id)
@@ -8961,6 +10136,25 @@ BEGIN
       ) ORDER BY d.revision_number)
       FROM public.build_request_delivery_revisions AS d
       WHERE d.request_id = r.id AND d.revision_state = 'submitted'
+        AND (
+          private.request_actor_role_v1(v_actor_id) = 'admin'
+          OR EXISTS (
+            SELECT 1
+            FROM public.build_request_assignments AS delivery_scope
+            WHERE delivery_scope.request_id = r.id
+              AND delivery_scope.account_id = v_actor_id
+              AND delivery_scope.active
+              AND delivery_scope.assignment_role IN (
+                'triager', 'builder', 'reviewer'
+              )
+          )
+          OR EXISTS (
+            SELECT 1
+            FROM public.build_request_delivery_reviews AS approved_review
+            WHERE approved_review.delivery_revision_id = d.id
+              AND approved_review.verdict = 'approve'
+          )
+        )
     ), '[]'::JSONB),
     'builderWorkspace', CASE
       WHEN (
@@ -9043,22 +10237,9 @@ BEGIN
       )
     END,
     'events', private.request_event_page_json_v1(r.id, NULL, 20),
-    'notices', CASE
-      WHEN r.terminal_at IS NOT NULL OR EXISTS (
-        SELECT 1
-        FROM public.build_request_retention_holds AS retention_hold
-        WHERE retention_hold.request_id = r.id
-          AND retention_hold.released_at IS NULL
-      ) THEN jsonb_build_array(jsonb_build_object(
-        'kind', 'retention',
-        'label', 'Case evidence remains under the private retention policy.',
-        'effectiveUntil', CASE
-          WHEN r.terminal_at IS NULL THEN NULL
-          ELSE r.terminal_at + INTERVAL '400 days'
-        END
-      ))
-      ELSE '[]'::JSONB
-    END,
+    'notices', private.request_retention_notices_v1(
+      r.id, r.moderation_state, r.terminal_at
+    ),
     'actor', jsonb_build_object(
       'accountId', v_actor_id,
       'roles', COALESCE((
@@ -9122,6 +10303,7 @@ DECLARE
   v_artifact public.build_request_delivery_artifacts%ROWTYPE;
   v_request public.build_requests%ROWTYPE;
   v_revision public.build_request_delivery_revisions%ROWTYPE;
+  v_is_active_reviewer BOOLEAN := FALSE;
 BEGIN
   PERFORM private.request_assert_contract_v1(p_contract_version);
   IF p_delivery_artifact_id IS NULL THEN
@@ -9139,6 +10321,14 @@ BEGIN
   SELECT * INTO v_request FROM public.build_requests WHERE id = v_artifact.request_id;
   SELECT * INTO v_revision FROM public.build_request_delivery_revisions
   WHERE id = v_artifact.delivery_revision_id;
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.build_request_assignments AS reviewer_assignment
+    WHERE reviewer_assignment.request_id = v_artifact.request_id
+      AND reviewer_assignment.assignment_role = 'reviewer'
+      AND reviewer_assignment.account_id = v_actor_id
+      AND reviewer_assignment.active
+  ) INTO v_is_active_reviewer;
   IF v_request.moderation_state = 'held' THEN
     RETURN jsonb_build_object('status', 'unavailable', 'reason', 'held');
   ELSIF v_request.moderation_state = 'removed' THEN
@@ -9155,8 +10345,11 @@ BEGIN
     );
   ELSIF v_revision.id <> v_request.current_delivery_revision_id THEN
     RETURN jsonb_build_object('status', 'unavailable', 'reason', 'stale_revision');
+  ELSIF v_request.lifecycle_state = 'review_pending'
+    AND NOT v_is_active_reviewer THEN
+    RETURN jsonb_build_object('status', 'unavailable', 'reason', 'not_found');
   ELSIF v_request.lifecycle_state NOT IN (
-    'delivery_ready', 'delivered', 'completed', 'closed'
+    'review_pending', 'delivery_ready', 'delivered', 'completed', 'closed'
   ) OR (
     v_request.lifecycle_state = 'closed'
     AND v_request.close_reason <> 'no_response'
@@ -9165,11 +10358,15 @@ BEGIN
   ELSIF v_request.lifecycle_state IN ('completed', 'closed')
     AND (
       v_request.terminal_at IS NULL
-      OR clock_timestamp() > v_request.terminal_at + INTERVAL '90 days'
+      OR clock_timestamp() >= v_request.terminal_at + INTERVAL '90 days'
     ) THEN
     RETURN jsonb_build_object('status', 'unavailable', 'reason', 'closed');
-  ELSIF v_artifact.integrity_status <> 'verified' OR v_artifact.scan_verdict <> 'clean'
+  ELSIF v_artifact.integrity_status <> 'verified'
+    OR v_artifact.scan_state <> 'complete'
+    OR v_artifact.scan_verdict <> 'clean'
     OR (
+      v_request.lifecycle_state <> 'review_pending'
+      AND (
       SELECT approved_review.verdict = 'approve'
         AND approved_review.manifest_digest = v_revision.artifact_manifest_digest
       FROM public.build_request_delivery_reviews AS approved_review
@@ -9177,7 +10374,8 @@ BEGIN
         AND approved_review.delivery_revision_id = v_revision.id
       ORDER BY approved_review.reviewed_at DESC, approved_review.id DESC
       LIMIT 1
-    ) IS DISTINCT FROM TRUE THEN
+      ) IS DISTINCT FROM TRUE
+    ) THEN
     RETURN jsonb_build_object('status', 'unavailable', 'reason', 'not_found');
   END IF;
   RETURN jsonb_build_object(
@@ -9249,7 +10447,7 @@ BEGIN
     AND r.publication_state <> 'withdrawn'
     AND (
       r.lifecycle_state IN (
-        'delivery_ready', 'delivered', 'completed'
+        'review_pending', 'delivery_ready', 'delivered', 'completed'
       )
       OR (
         r.lifecycle_state = 'closed'
@@ -9257,10 +10455,10 @@ BEGIN
       )
     )
     AND (
-      r.lifecycle_state IN ('delivery_ready', 'delivered')
+      r.lifecycle_state IN ('review_pending', 'delivery_ready', 'delivered')
       OR (
         r.terminal_at IS NOT NULL
-        AND clock_timestamp() <= r.terminal_at + INTERVAL '90 days'
+        AND clock_timestamp() < r.terminal_at + INTERVAL '90 days'
       )
     )
     AND a.integrity_status = 'verified'
@@ -9276,14 +10474,17 @@ BEGIN
         AND seal.manifest_digest = d.artifact_manifest_digest
     )
     AND (
-      SELECT rv.verdict = 'approve'
-        AND rv.manifest_digest = d.artifact_manifest_digest
-      FROM public.build_request_delivery_reviews AS rv
-      WHERE rv.request_id = r.id
-        AND rv.delivery_revision_id = d.id
-      ORDER BY rv.reviewed_at DESC, rv.id DESC
-      LIMIT 1
-    ) IS TRUE;
+      r.lifecycle_state = 'review_pending'
+      OR (
+        SELECT rv.verdict = 'approve'
+          AND rv.manifest_digest = d.artifact_manifest_digest
+        FROM public.build_request_delivery_reviews AS rv
+        WHERE rv.request_id = r.id
+          AND rv.delivery_revision_id = d.id
+        ORDER BY rv.reviewed_at DESC, rv.id DESC
+        LIMIT 1
+      ) IS TRUE
+    );
   IF NOT FOUND THEN
     RAISE EXCEPTION USING ERRCODE = 'P0002',
       MESSAGE = 'Artifact object was not found.';
@@ -9305,7 +10506,7 @@ BEGIN
         AND active_hold.released_at IS NULL
     ) THEN 'preserved_by_hold'
     WHEN v_terminal_at IS NOT NULL
-      AND clock_timestamp() > v_terminal_at + INTERVAL '90 days'
+      AND clock_timestamp() >= v_terminal_at + INTERVAL '90 days'
       THEN 'cleanup_eligible'
     ELSE 'retained'
   END;
@@ -9325,6 +10526,7 @@ $$;
 
 REVOKE ALL ON FUNCTION
   private.request_summary_json_v1(UUID, UUID),
+  private.request_retention_notices_v1(UUID, TEXT, TIMESTAMPTZ),
   private.request_event_page_json_v1(UUID, TEXT, INTEGER),
   private.request_held_event_page_json_v1(UUID),
   public.get_build_request_availability_v1(INTEGER),
@@ -9373,6 +10575,7 @@ REVOKE ALL ON FUNCTION
   private.request_cursor_decode_v1(TEXT, TEXT),
   private.request_pseudonym_text_v1(TEXT),
   private.request_account_pseudonym_v1(UUID),
+  private.request_lock_available_actor_v1(UUID),
   private.request_event_digest_v1(),
   private.request_validate_pathforge_reference_v1(JSONB, BOOLEAN),
   private.request_allowed_close_reasons_v1(UUID, UUID),

@@ -174,6 +174,10 @@ SELECT jsonb_object_agg(snapshot_kind, payload)::TEXT
   AS lifecycle_snapshots
 FROM public.test_request_lifecycle_detail_snapshots
 \gset
+SELECT jsonb_object_agg(snapshot_kind, payload)::TEXT
+  AS reader_snapshots
+FROM public.test_request_reader_snapshots
+\gset
 
 SELECT jsonb_build_object(
   'availability', :'availability'::JSONB,
@@ -194,5 +198,6 @@ SELECT jsonb_build_object(
   'removedEvents', :'removed_events'::JSONB,
   'terminalWipDetail', :'terminal_wip_detail'::JSONB,
   'terminalWipEvents', :'terminal_wip_events'::JSONB,
-  'lifecycleSnapshots', :'lifecycle_snapshots'::JSONB
+  'lifecycleSnapshots', :'lifecycle_snapshots'::JSONB,
+  'readerSnapshots', :'reader_snapshots'::JSONB
 )::TEXT;

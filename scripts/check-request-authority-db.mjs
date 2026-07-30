@@ -209,6 +209,35 @@ function checkRequestSqlParserBridge(payload) {
           ],
         ),
       );
+      for (const kind of ['retention_day89', 'retention_day91']) {
+        const snapshot = parsedSnapshots[kind];
+        const noticeKinds = snapshot?.notices.map((notice) => notice.kind);
+        if (
+          snapshot?.visibility !== 'full'
+          || JSON.stringify(noticeKinds)
+            !== JSON.stringify([
+              'raw_content_retention',
+              'audit_retention',
+            ])
+          || snapshot.notices.some((notice) => notice.effectiveUntil === null)
+          || Date.parse(snapshot.notices[0].effectiveUntil)
+            >= Date.parse(snapshot.notices[1].effectiveUntil)
+        ) {
+          throw new Error(
+            'Split participant retention horizons drifted for ' + kind + '.',
+          );
+        }
+      }
+      if (
+        !parsedSnapshots.retention_day91_hold.notices.some(
+          (notice) => notice.kind === 'preservation_hold'
+        )
+        || !parsedSnapshots.retention_moderation_hold.notices.some(
+          (notice) => notice.kind === 'moderation_hold'
+        )
+      ) {
+        throw new Error('Retention-hold notice projection drifted.');
+      }
       for (const [kind, lifecycleState, closeReasons, targetDate] of [
         ['triager_accepted', 'accepted', ['declined'], '2026-08-15'],
         ['triager_building', 'building', ['declined'], '2026-08-15'],
@@ -275,12 +304,32 @@ function checkRequestSqlParserBridge(payload) {
         }
       }
       const reviewerSubmitted = parsedSnapshots.reviewer_submitted;
+      const requesterReviewPending = parsedSnapshots.requester_review_pending;
+      const reviewerReader =
+        service.parseRequestDeliveryArtifactReaderResultV1(
+          payload.readerSnapshots.reviewer_review_pending
+        );
+      const requesterReader =
+        service.parseRequestDeliveryArtifactReaderResultV1(
+          payload.readerSnapshots.requester_review_pending
+        );
       if (
         !reviewerSubmitted
         || reviewerSubmitted.lifecycleState !== 'review_pending'
         || !reviewerSubmitted.actor.roles.includes('reviewer')
+        || !reviewerSubmitted.deliveryRevisions.some(
+          (revision) => revision.artifacts.some(
+            (artifact) => typeof artifact.readerHref === 'string'
+          )
+        )
+        || !requesterReviewPending
+        || requesterReviewPending.deliveryRevisions.length !== 0
+        || reviewerReader.status !== 'ready'
+        || reviewerReader.artifact.deliveryStatus !== 'review_pending'
+        || requesterReader.status !== 'unavailable'
+        || requesterReader.reason !== 'not_found'
       ) {
-        throw new Error('Reviewer submitted-state projection drifted.');
+        throw new Error('Review-pending reader authority projection drifted.');
       }
       const receiptApplication = service.createRequestApplicationService({
         async rpc() {
@@ -310,6 +359,123 @@ function checkRequestSqlParserBridge(payload) {
         console.error(error);
         process.exitCode = 1;
       });
+    `
+    run('node', ['-e', bridgeScript], {
+      input: JSON.stringify(payload),
+    })
+  } finally {
+    rmSync(outputDirectory, { recursive: true, force: true })
+  }
+}
+
+function checkRequestAssignmentAttributionBridge(payload) {
+  const outputDirectory = mkdtempSync('/tmp/pathforge-request-assignment-parser-')
+  try {
+    run('npx', [
+      'tsc',
+      '--ignoreConfig',
+      'src/lib/request-lifecycle.ts',
+      'src/lib/request-service.ts',
+      '--target',
+      'ES2022',
+      '--module',
+      'NodeNext',
+      '--moduleResolution',
+      'NodeNext',
+      '--skipLibCheck',
+      '--noEmit',
+      'false',
+      '--outDir',
+      outputDirectory,
+      '--rootDir',
+      '.',
+    ])
+    const serviceModule = path.join(
+      outputDirectory,
+      'src/lib/request-service.js',
+    )
+    const bridgeScript = `
+      const fs = require('node:fs');
+      const service = require(${JSON.stringify(serviceModule)});
+      const payload = JSON.parse(fs.readFileSync(0, 'utf8'));
+      const before = service.parseRequestCaseDetailResultV1(payload.before);
+      const after = service.parseRequestCaseDetailResultV1(payload.after);
+      const beforeAssignments = before.assignments;
+      const afterAssignments = after.assignments;
+      if (
+        before.visibility !== 'full'
+        || after.visibility !== 'full'
+        || beforeAssignments.length !== 2
+        || afterAssignments.length !== 2
+        || beforeAssignments[0].assignee.displayName
+          !== 'Existing Subject Fence Builder'
+        || beforeAssignments[0].assignee.deidentified
+        || beforeAssignments[1].assignee.displayName
+          !== 'Subject Fence Target'
+        || beforeAssignments[1].assignee.deidentified
+        || afterAssignments[0].assignee.displayName !== 'Former participant'
+        || !afterAssignments[0].assignee.deidentified
+        || afterAssignments[1].assignee.displayName !== 'Subject Fence Target'
+        || afterAssignments[1].assignee.deidentified
+      ) {
+        throw new Error(
+          'Historical assignment attribution did not survive compiled parsing.',
+        );
+      }
+    `
+    run('node', ['-e', bridgeScript], {
+      input: JSON.stringify(payload),
+    })
+  } finally {
+    rmSync(outputDirectory, { recursive: true, force: true })
+  }
+}
+
+function checkRequestMaintenanceSqlBridge(payload) {
+  const outputDirectory = mkdtempSync('/tmp/pathforge-request-maintenance-parser-')
+  try {
+    run('npx', [
+      'tsc',
+      '--ignoreConfig',
+      'src/lib/request-lifecycle.ts',
+      'src/lib/request-service.ts',
+      '--target',
+      'ES2022',
+      '--module',
+      'NodeNext',
+      '--moduleResolution',
+      'NodeNext',
+      '--skipLibCheck',
+      '--noEmit',
+      'false',
+      '--outDir',
+      outputDirectory,
+      '--rootDir',
+      '.',
+    ])
+    const serviceModule = path.join(
+      outputDirectory,
+      'src/lib/request-service.js',
+    )
+    const bridgeScript = `
+      const fs = require('node:fs');
+      const service = require(${JSON.stringify(serviceModule)});
+      const payload = JSON.parse(fs.readFileSync(0, 'utf8'));
+      const page = service.parseRequestMaintenanceWorkPageV1(payload);
+      const categories = new Set(page.items.map((item) => item.category));
+      for (const required of [
+        'raw_text_purge',
+        'artifact_cleanup',
+        'audit_tombstone_expiry',
+        'account_deidentification_receipt_expiry',
+        'delivery_revision_retirement',
+      ]) {
+        if (!categories.has(required)) {
+          throw new Error(
+            'Real PostgreSQL maintenance page omitted ' + required + '.',
+          );
+        }
+      }
     `
     run('node', ['-e', bridgeScript], {
       input: JSON.stringify(payload),
@@ -538,6 +704,32 @@ async function createDockerHarness(databaseUser = 'postgres') {
 
 const migration = findAuthorityMigration()
 const migrationSql = read(migration)
+for (const [label, pattern] of [
+  [
+    'detail access ends at the 90-day boundary',
+    /r\.terminal_at \+ INTERVAL '90 days' >\s*clock_timestamp\(\)/,
+  ],
+  [
+    'participant resolver closes at the 90-day boundary',
+    /clock_timestamp\(\) >= v_request\.terminal_at \+ INTERVAL '90 days'/,
+  ],
+  [
+    'service reader object closes at the 90-day boundary',
+    /clock_timestamp\(\) < r\.terminal_at \+ INTERVAL '90 days'/,
+  ],
+  [
+    'maintenance enumeration starts at the 90-day boundary',
+    /request_case\.terminal_at \+ INTERVAL '90 days' <= clock_timestamp\(\)/,
+  ],
+  [
+    'cleanup claim starts at the 90-day boundary',
+    /v_request\.terminal_at \+ INTERVAL '90 days' > v_now/,
+  ],
+]) {
+  if (!pattern.test(migrationSql)) {
+    throw new Error(`Request authority lost the exact ${label} contract.`)
+  }
+}
 checkRequestServiceWire()
 const normalizedMigration = migrationSql
   .replace(/--.*$/gm, '')
@@ -1107,6 +1299,145 @@ try {
   actorRoleHarness.cleanup()
 }
 
+const maintenanceHarness = await createHarness()
+try {
+  assertPostgres17(maintenanceHarness)
+  maintenanceHarness.apply(read(`${fixtureRoot}/migration-prerequisites.sql`))
+  maintenanceHarness.apply(migrationSql)
+  maintenanceHarness.apply(read(`${fixtureRoot}/runtime-authority-test.sql`))
+  const maintenanceOutput = maintenanceHarness.apply(
+    read(`${fixtureRoot}/runtime-maintenance-work-contract.sql`),
+  )
+  const maintenanceJson = maintenanceOutput.stdout
+    .trim()
+    .split(/\r?\n/)
+    .findLast((line) => line.trim().startsWith('{'))
+  if (!maintenanceJson) {
+    throw new Error('PostgreSQL maintenance bridge did not emit JSON.')
+  }
+  checkRequestMaintenanceSqlBridge(JSON.parse(maintenanceJson))
+} finally {
+  maintenanceHarness.cleanup()
+}
+
+const cleanupClaimRaceHarness = await createHarness()
+try {
+  assertPostgres17(cleanupClaimRaceHarness)
+  cleanupClaimRaceHarness.apply(
+    read(`${fixtureRoot}/migration-prerequisites.sql`),
+  )
+  cleanupClaimRaceHarness.apply(migrationSql)
+  cleanupClaimRaceHarness.apply(
+    read(`${fixtureRoot}/runtime-authority-test.sql`),
+  )
+  cleanupClaimRaceHarness.apply(
+    read(`${fixtureRoot}/cleanup-claim-race-setup.sql`),
+  )
+  const cleanupClaimRaceResults =
+    await cleanupClaimRaceHarness.applyConcurrently([
+      read(`${fixtureRoot}/cleanup-claim-race-claim.sql`),
+      read(`${fixtureRoot}/cleanup-claim-race-hold.sql`),
+    ])
+  if (
+    cleanupClaimRaceResults[0].status !== 0
+    || cleanupClaimRaceResults[1].status === 0
+    || !/moderation hold is not allowed/i.test(
+      `${cleanupClaimRaceResults[1].stdout}\n`
+      + cleanupClaimRaceResults[1].stderr,
+    )
+  ) {
+    throw new Error(
+      'Cleanup claim and moderation hold were not mutually exclusive.\n'
+      + cleanupClaimRaceResults.map((result, index) => (
+        `worker ${index + 1} status=${result.status}\n`
+        + `${result.stdout}\n${result.stderr}`
+      )).join('\n'),
+    )
+  }
+  cleanupClaimRaceHarness.apply(
+    read(`${fixtureRoot}/cleanup-claim-race-verify.sql`),
+  )
+  cleanupClaimRaceHarness.apply(
+    read(`${fixtureRoot}/cleanup-lease-wait-setup.sql`),
+  )
+  const cleanupLeaseWaitResults =
+    await cleanupClaimRaceHarness.applyConcurrently([
+      read(`${fixtureRoot}/cleanup-lease-wait-lock.sql`),
+      read(`${fixtureRoot}/cleanup-lease-wait-abort.sql`),
+    ])
+  if (
+    cleanupLeaseWaitResults[0].status !== 0
+    || cleanupLeaseWaitResults[1].status === 0
+    || !/claim lease expired/i.test(
+      `${cleanupLeaseWaitResults[1].stdout}\n`
+      + cleanupLeaseWaitResults[1].stderr,
+    )
+  ) {
+    throw new Error(
+      'Cleanup abort authorized from a pre-lock lease timestamp.\n'
+      + cleanupLeaseWaitResults.map((result, index) => (
+        `worker ${index + 1} status=${result.status}\n`
+        + `${result.stdout}\n${result.stderr}`
+      )).join('\n'),
+    )
+  }
+  cleanupClaimRaceHarness.apply(
+    read(`${fixtureRoot}/cleanup-lease-wait-verify.sql`),
+  )
+  cleanupClaimRaceHarness.apply(
+    read(`${fixtureRoot}/cleanup-claim-wait-setup.sql`),
+  )
+  const cleanupClaimWaitResults =
+    await cleanupClaimRaceHarness.applyConcurrently([
+      read(`${fixtureRoot}/cleanup-claim-wait-lock.sql`),
+      read(`${fixtureRoot}/cleanup-claim-wait-takeover.sql`),
+    ])
+  if (
+    cleanupClaimWaitResults[0].status !== 0
+    || cleanupClaimWaitResults[1].status !== 0
+  ) {
+    throw new Error(
+      'Cleanup claim did not refresh its clock after a blocking wait.\n'
+      + cleanupClaimWaitResults.map((result, index) => (
+        `worker ${index + 1} status=${result.status}\n`
+        + `${result.stdout}\n${result.stderr}`
+      )).join('\n'),
+    )
+  }
+  cleanupClaimRaceHarness.apply(
+    read(`${fixtureRoot}/cleanup-claim-wait-verify.sql`),
+  )
+} finally {
+  cleanupClaimRaceHarness.cleanup()
+}
+
+const assignmentAttributionHarness = await createHarness()
+try {
+  assertPostgres17(assignmentAttributionHarness)
+  assignmentAttributionHarness.apply(
+    read(`${fixtureRoot}/migration-prerequisites.sql`),
+  )
+  assignmentAttributionHarness.apply(migrationSql)
+  assignmentAttributionHarness.apply(
+    read(`${fixtureRoot}/subject-fence-setup.sql`),
+  )
+  const assignmentOutput = assignmentAttributionHarness.apply(
+    read(`${fixtureRoot}/runtime-assignment-attribution-contract.sql`),
+  )
+  const assignmentJson = assignmentOutput.stdout
+    .trim()
+    .split(/\r?\n/)
+    .findLast((line) => line.trim().startsWith('{'))
+  if (!assignmentJson) {
+    throw new Error(
+      'PostgreSQL assignment-attribution bridge did not emit JSON.',
+    )
+  }
+  checkRequestAssignmentAttributionBridge(JSON.parse(assignmentJson))
+} finally {
+  assignmentAttributionHarness.cleanup()
+}
+
 const deidentifyPrefixHarness = await createHarness()
 try {
   assertPostgres17(deidentifyPrefixHarness)
@@ -1196,6 +1527,10 @@ try {
     read(`${fixtureRoot}/subject-fence-reassign-builder.sql`),
     read(`${fixtureRoot}/subject-fence-reassign-triager.sql`),
     read(`${fixtureRoot}/subject-fence-admission.sql`),
+    read(`${fixtureRoot}/subject-fence-stage.sql`),
+    read(`${fixtureRoot}/subject-fence-controls-actor.sql`),
+    read(`${fixtureRoot}/subject-fence-admission-actor.sql`),
+    read(`${fixtureRoot}/subject-fence-ack-actor.sql`),
   ])
   const [deidentificationResult, ...fencedResults] = subjectFenceResults
   if (
@@ -1215,7 +1550,7 @@ try {
   }
   for (const result of fencedResults) {
     if (
-      !/not admitted|not available|not allowed|invalid|stale/i.test(
+      !/not admitted|not available|no longer available|not allowed|not found|invalid|stale/i.test(
         `${result.stdout}\n${result.stderr}`,
       )
     ) {
@@ -1230,6 +1565,23 @@ try {
   )
 } finally {
   subjectFenceHarness.cleanup()
+}
+
+const subjectFenceStageFirstHarness = await createHarness()
+try {
+  assertPostgres17(subjectFenceStageFirstHarness)
+  subjectFenceStageFirstHarness.apply(
+    read(`${fixtureRoot}/migration-prerequisites.sql`),
+  )
+  subjectFenceStageFirstHarness.apply(migrationSql)
+  subjectFenceStageFirstHarness.apply(
+    read(`${fixtureRoot}/subject-fence-setup.sql`),
+  )
+  subjectFenceStageFirstHarness.apply(
+    read(`${fixtureRoot}/subject-fence-stage-first.sql`),
+  )
+} finally {
+  subjectFenceStageFirstHarness.cleanup()
 }
 
 if (localPostgresAvailable()) {

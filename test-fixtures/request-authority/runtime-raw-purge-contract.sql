@@ -33,6 +33,8 @@ DECLARE
   accepted_digest_before TEXT;
   seal_digests_before JSONB;
   acceptance_cutoff_before TIMESTAMPTZ;
+  artifact_row RECORD;
+  cleanup_claim JSONB;
 BEGIN
   IF terminal_mode NOT IN ('completed', 'no_response') THEN
     RAISE EXCEPTION 'Invalid raw-purge fixture terminal mode.';
@@ -636,6 +638,43 @@ BEGIN
     jsonb_build_object('resolution', 'Aggregate cleanup hold released')
   );
 
+  CREATE TEMP TABLE test_raw_purge_cleanup_claims (
+    artifact_id UUID PRIMARY KEY,
+    delivery_revision_id UUID NOT NULL,
+    cleanup_claim_id UUID NOT NULL,
+    claim_version INTEGER NOT NULL
+  ) ON COMMIT DROP;
+  PERFORM set_config('request.jwt.claims', '{"role":"service_role"}', TRUE);
+  FOR artifact_row IN
+    SELECT artifact.id, artifact.delivery_revision_id
+    FROM public.build_request_delivery_artifacts AS artifact
+    WHERE artifact.request_id = raw_purge.request_id
+  LOOP
+    cleanup_claim :=
+      public.claim_build_request_delivery_artifact_cleanup_v1(
+        1,
+        raw_purge.request_id,
+        artifact_row.delivery_revision_id,
+        artifact_row.id,
+        'raw-purge-artifact-claim-' || terminal_mode || '-' ||
+          artifact_row.id::TEXT
+      );
+    PERFORM public.begin_build_request_delivery_artifact_cleanup_delete_v1(
+      1,
+      (cleanup_claim->>'cleanupClaimId')::UUID,
+      (cleanup_claim->>'claimVersion')::INTEGER,
+      'raw-purge-artifact-delete-start-' || terminal_mode || '-' ||
+        artifact_row.id::TEXT
+    );
+    INSERT INTO test_raw_purge_cleanup_claims (
+      artifact_id, delivery_revision_id, cleanup_claim_id, claim_version
+    ) VALUES (
+      artifact_row.id,
+      artifact_row.delivery_revision_id,
+      (cleanup_claim->>'cleanupClaimId')::UUID,
+      (cleanup_claim->>'claimVersion')::INTEGER
+    );
+  END LOOP;
   DELETE FROM storage.objects AS stored_object
   USING public.build_request_delivery_artifacts AS artifact
   WHERE artifact.request_id = raw_purge.request_id
@@ -655,8 +694,18 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'Artifact object cleanup fixture left retained objects.';
   END IF;
+  PERFORM public.confirm_build_request_delivery_artifact_cleanup_v1(
+    1,
+    raw_purge.request_id,
+    artifact_claim.delivery_revision_id,
+    artifact_claim.artifact_id,
+    artifact_claim.cleanup_claim_id,
+    artifact_claim.claim_version,
+    'raw-purge-artifact-cleanup-' || terminal_mode || '-' ||
+      artifact_claim.artifact_id::TEXT
+  )
+  FROM test_raw_purge_cleanup_claims AS artifact_claim;
 
-  PERFORM set_config('request.jwt.claims', '{"role":"service_role"}', TRUE);
   BEGIN
     PERFORM public.expire_build_request_audit_tombstone_v1(
       1,

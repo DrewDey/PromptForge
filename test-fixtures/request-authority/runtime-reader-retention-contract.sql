@@ -75,6 +75,12 @@ BEGIN
     OR (result->'artifact') ? 'objectIdentity' THEN
     RAISE EXCEPTION 'Completed day-89 participant reader contract drifted.';
   END IF;
+  INSERT INTO public.test_request_lifecycle_detail_snapshots
+  VALUES (
+    'retention_day89',
+    public.get_build_request_v1(1, request_id)
+  )
+  ON CONFLICT (snapshot_kind) DO UPDATE SET payload = EXCLUDED.payload;
 
   terminal_at := clock_timestamp() - INTERVAL '91 days';
   UPDATE public.build_requests
@@ -86,6 +92,12 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'Completed day-91 participant reader remained available.';
   END IF;
+  INSERT INTO public.test_request_lifecycle_detail_snapshots
+  VALUES (
+    'retention_day91',
+    public.get_build_request_v1(1, request_id)
+  )
+  ON CONFLICT (snapshot_kind) DO UPDATE SET payload = EXCLUDED.payload;
 
   INSERT INTO public.build_request_retention_holds (
     request_id, hold_kind, reason, placed_by
@@ -98,6 +110,12 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'A retention hold incorrectly restored participant reader access.';
   END IF;
+  INSERT INTO public.test_request_lifecycle_detail_snapshots
+  VALUES (
+    'retention_day91_hold',
+    public.get_build_request_v1(1, request_id)
+  )
+  ON CONFLICT (snapshot_kind) DO UPDATE SET payload = EXCLUDED.payload;
 
   PERFORM set_config(
     'request.jwt.claims',
@@ -140,6 +158,12 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'Moderation-held participant reader did not fail closed.';
   END IF;
+  INSERT INTO public.test_request_lifecycle_detail_snapshots
+  VALUES (
+    'retention_moderation_hold',
+    public.get_build_request_v1(1, request_id)
+  )
+  ON CONFLICT (snapshot_kind) DO UPDATE SET payload = EXCLUDED.payload;
 
   UPDATE public.build_requests
   SET moderation_state = 'removed'

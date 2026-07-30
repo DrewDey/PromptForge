@@ -169,7 +169,7 @@ assert.match(
 )
 assert.match(
   participantCasePage,
-  /name="confirmation"[\s\S]{0,120}value="confirmed"[\s\S]{0,120}required/,
+  /<select[\s\S]{0,160}name="confirmation"[\s\S]{0,160}required[\s\S]{0,360}<option value="confirmed">/,
   'Participant withdrawal must serialize a required explicit confirmation.',
 )
 assert.match(

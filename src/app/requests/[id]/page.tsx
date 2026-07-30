@@ -87,20 +87,25 @@ export default async function RequestCasePage({
     ? {
         capabilityId: 'withdraw',
         content: (
-          <form action={requestCaseCommandAction}>
+          <form action={requestCaseCommandAction} className="space-y-3">
             <input type="hidden" name="command" value="withdraw" />
             <input type="hidden" name="requestId" value={detail.requestId} />
             <input type="hidden" name="expectedVersion" value={detail.requestVersion} />
             <input type="hidden" name="idempotencyKey" value={actionIntent('withdraw')} />
             <input type="hidden" name="reason" value="Requester withdrew this private case." />
-            <label>
-              <input
-                type="checkbox"
+            <label className="block text-sm font-semibold">
+              Confirm permanent withdrawal
+              <select
                 name="confirmation"
-                value="confirmed"
                 required
-              />{' '}
-              I understand this permanently closes the private request.
+                defaultValue=""
+                className="mt-2 min-h-11 w-full border border-surface-300 bg-white px-3 py-2 text-base"
+              >
+                <option value="" disabled>Choose confirmation</option>
+                <option value="confirmed">
+                  I understand this permanently closes the private request.
+                </option>
+              </select>
             </label>
             <button type="submit">Withdraw request</button>
           </form>

@@ -34,15 +34,17 @@ export default async function BuildRequestsAdminPage({
   let loaded
   let loadError: unknown
   try {
-    const [availability, queue, candidates] = await Promise.all([
+    const [availability, queue] = await Promise.all([
       service.getAvailability(),
       service.listAssignedQueue({
         scope,
         cursor: query.cursor as RequestCursor | undefined,
         limit: 25,
       }),
-      service.listPilotAdmissionCandidates({ limit: 50 }),
     ])
+    const candidates = scope === 'admin'
+      ? await service.listPilotAdmissionCandidates({ limit: 50 })
+      : { items: [], nextCursor: null }
     loaded = {
       availability,
       candidates,
@@ -103,12 +105,14 @@ export default async function BuildRequestsAdminPage({
           </nav>
         </header>
 
-        <RequestAdminServiceControls
-          availability={loaded.availability}
-          candidates={loaded.candidates.items}
-          updateControls={updateRequestControlsAction}
-          updateAdmission={updatePilotAdmissionAction}
-        />
+        {scope === 'admin' ? (
+          <RequestAdminServiceControls
+            availability={loaded.availability}
+            candidates={loaded.candidates.items}
+            updateControls={updateRequestControlsAction}
+            updateAdmission={updatePilotAdmissionAction}
+          />
+        ) : null}
         <AdminRequestQueue model={loaded.model} />
       </main>
   )

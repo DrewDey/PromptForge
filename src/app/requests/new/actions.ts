@@ -8,7 +8,7 @@ import {
 } from '@/lib/request-lifecycle'
 import {
   getRequestApplicationService,
-  getRequestViewer,
+  getRequestViewerState,
   requestAuthorityErrorCode,
 } from '@/lib/build-requests/server'
 import type {
@@ -69,8 +69,8 @@ export const submitRequestAction: RequestIntakeWorkflowAction = async (
   const idempotencyKey = text(formData, 'idempotencyKey')
   const analyticsAttempt = previousState.analyticsAttempt + 1
   try {
-    const viewer = await getRequestViewer()
-    if (!viewer) {
+    const viewer = await getRequestViewerState()
+    if (viewer.status === 'signed_out') {
       return {
         status: 'ready',
         idempotencyKey,
@@ -78,6 +78,16 @@ export const submitRequestAction: RequestIntakeWorkflowAction = async (
         values,
         errors: [],
         serviceError: 'auth_required',
+      }
+    }
+    if (viewer.status === 'unavailable') {
+      return {
+        status: 'ready',
+        idempotencyKey,
+        analyticsAttempt,
+        values,
+        errors: [],
+        serviceError: 'unavailable',
       }
     }
     const checks = values.acceptanceChecks

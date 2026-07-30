@@ -232,6 +232,9 @@ export function MyForgeRequestsList({
             {state.requests.length} {state.requests.length === 1 ? 'request' : 'requests'}
           </span>
         ) : null}
+        <Link href="/my-forge" className={styles.stateAction}>
+          Back to My Forge dashboard
+        </Link>
       </header>
 
       {state.kind === 'loading' ? <LoadingState label={state.label} /> : null}

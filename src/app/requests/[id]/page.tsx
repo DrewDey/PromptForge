@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { RequestAnalytics } from '@/components/requests/RequestAnalytics'
 import { RequestReadAcknowledger } from '@/components/requests/RequestReadAcknowledger'
+import { RequestClarificationAction } from '@/components/requests/RequestClarificationAction'
 import { RequestCaseShell } from '@/components/requests/case'
 import {
   getRequestApplicationService,
@@ -10,6 +11,7 @@ import { toRequestCasePresentation } from '@/lib/build-requests/presentation'
 import {
   acknowledgeRequestRead,
   requestCaseCommandAction,
+  submitClarificationAction,
 } from './actions'
 
 export const dynamic = 'force-dynamic'
@@ -62,18 +64,13 @@ export default async function RequestCasePage({
   const clarificationAction =
     next?.kind === 'submit_clarification' && clarification?.answer === null
       ? (
-          <form action={requestCaseCommandAction}>
-            <input type="hidden" name="command" value="submit_clarification" />
-            <input type="hidden" name="requestId" value={detail.requestId} />
-            <input type="hidden" name="expectedVersion" value={detail.requestVersion} />
-            <input type="hidden" name="idempotencyKey" value={actionIntent('clarification')} />
-            <input type="hidden" name="clarificationId" value={clarification.clarificationId} />
-            <label>
-              Clarification answer
-              <textarea name="answer" minLength={2} maxLength={2000} rows={4} required />
-            </label>
-            <button type="submit">Submit clarification</button>
-          </form>
+          <RequestClarificationAction
+            action={submitClarificationAction}
+            requestId={detail.requestId}
+            requestVersion={detail.requestVersion}
+            idempotencyKey={actionIntent('clarification')}
+            clarificationId={clarification.clarificationId}
+          />
         )
       : undefined
   const primaryAction = next?.kind === 'withdraw'
@@ -90,11 +87,24 @@ export default async function RequestCasePage({
           </form>
         ),
       }
-    : next?.kind === 'submit_clarification'
+      : next?.kind === 'submit_clarification'
       ? {
           capabilityId: 'submit_clarification',
           content: <a href="#request-case-clarification">Answer clarification</a>,
         }
+      : next?.kind === 'start_build'
+        ? {
+            capabilityId: 'start_build',
+            content: (
+              <form action={requestCaseCommandAction}>
+                <input type="hidden" name="command" value="start_build" />
+                <input type="hidden" name="requestId" value={detail.requestId} />
+                <input type="hidden" name="expectedVersion" value={detail.requestVersion} />
+                <input type="hidden" name="idempotencyKey" value={actionIntent('start-build')} />
+                <button type="submit">Start assigned build</button>
+              </form>
+            ),
+          }
       : undefined
 
   return (

@@ -84,7 +84,10 @@ function timeline(detail: RequestCaseDetailResultV1) {
 
 function referenceHref(reference: PathForgeRequestReference | null) {
   if (!reference) return null
-  return getProjectHref({ id: reference.projectId })
+  const projectHref = getProjectHref({ id: reference.projectId })
+  return reference.kind === 'response'
+    ? `${projectHref}#step-${reference.responseStepNumber}`
+    : projectHref
 }
 
 export function toRequestServiceAvailability(
@@ -175,14 +178,17 @@ export function toAdminQueueModel(input: {
   availability: RequestAvailabilityV1
   items: readonly RequestQueueSummaryV1[]
   nextCursor: string | null
+  detailBaseHref?: '/admin/build-requests' | '/requests'
+  loadMoreHref?: string
 }): RequestQueueModel {
+  const detailBaseHref = input.detailBaseHref ?? '/admin/build-requests'
   return {
     state: 'ready',
     scope: input.scope,
     availability: toAdminAvailability(input.availability),
     rows: input.items.map((row) => ({
       requestId: row.requestId,
-      detailHref: `/admin/build-requests/${encodeURIComponent(row.requestId)}`,
+      detailHref: `${detailBaseHref}/${encodeURIComponent(row.requestId)}`,
       version: row.requestVersion,
       label: row.title,
       lifecycle: row.lifecycleState,
@@ -195,7 +201,8 @@ export function toAdminQueueModel(input: {
     })),
     nextCursor: input.nextCursor,
     loadMoreHref: input.nextCursor
-      ? `/admin/build-requests?scope=${input.scope}&cursor=${encodeURIComponent(input.nextCursor)}`
+      ? input.loadMoreHref
+        ?? `/admin/build-requests?scope=${input.scope}&cursor=${encodeURIComponent(input.nextCursor)}`
       : undefined,
   }
 }
@@ -297,8 +304,11 @@ export function toRequestCasePresentation(
           note: detail.closureNote,
           resolutionHref,
           resolutionLabel: detail.resolutionReference
-            ? `PathForge ${detail.resolutionReference.kind} resolution`
+            ? detail.resolutionReference.kind === 'response'
+              ? `Open approved model variant ${detail.resolutionReference.modelVariantId}, response step ${detail.resolutionReference.responseStepNumber}`
+              : 'Open approved PathForge project resolution'
             : null,
+          resolutionReference: detail.resolutionReference,
         }
       : undefined,
   }
@@ -342,6 +352,7 @@ export function toAdminDetailModel(input: {
       canReassignTriager: capabilities.has('reassign_triager'),
       canReassignBuilder: capabilities.has('reassign_builder'),
       canReassignReviewer: capabilities.has('reassign_reviewer'),
+      canCloseNoResponse: capabilities.has('close_no_response'),
     },
     allowedCloseReasons: detail.actor.allowedCloseReasons.filter((reason) => (
       reason !== 'existing_resolution' && reason !== 'duplicate'
@@ -367,6 +378,7 @@ export function toAdminDetailModel(input: {
       reassignTriager: stableIntent(detail.requestId, detail.requestVersion, 'reassign-triager'),
       reassignBuilder: stableIntent(detail.requestId, detail.requestVersion, 'reassign-builder'),
       reassignReviewer: stableIntent(detail.requestId, detail.requestVersion, 'reassign-reviewer'),
+      closeNoResponse: stableIntent(detail.requestId, detail.requestVersion, 'close-no-response'),
     },
     timeline: detail.events.items.map((event) => ({
       eventId: event.eventId,

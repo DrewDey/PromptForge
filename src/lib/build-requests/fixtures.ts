@@ -150,6 +150,7 @@ export const REQUEST_ADMIN_DETAIL_STATES = [
   'builder',
   'reviewer',
   'admin',
+  'no_response_eligible',
   'none',
 ] as const
 
@@ -472,6 +473,26 @@ export function caseFixture(options: {
       : lifecycle === 'triage'
         ? { state: 'submitted', summary: 'Requester confirmed the offline requirement.' }
         : { state: 'none' },
+    closure: lifecycle === 'closed' && closeReason === 'existing_resolution'
+      ? {
+          note: 'Use the approved response that already satisfies the finish line.',
+          resolutionHref: '/paths/offline-checklist#step-3',
+          resolutionLabel: 'Open approved model variant 30000000-0000-4000-8000-000000000001, response step 3',
+          resolutionReference: {
+            kind: 'response',
+            projectId: '20000000-0000-4000-8000-000000000001',
+            modelVariantId: '30000000-0000-4000-8000-000000000001',
+            responseStepNumber: 3,
+          },
+        }
+      : lifecycle === 'closed'
+        ? {
+            note: 'This case closed with a bounded participant-facing note.',
+            resolutionHref: null,
+            resolutionLabel: null,
+            resolutionReference: null,
+          }
+        : undefined,
     assignments: [
       {
         role: 'triager',
@@ -647,11 +668,18 @@ export function adminDetailFixture(
   const builder = state === 'builder'
   const triager = state === 'triager'
   const admin = state === 'admin'
+  const noResponseEligible = state === 'no_response_eligible'
   return {
     requestId: REQUEST_FIXTURE_ID,
     version: 9,
     actorRole: reviewer ? 'reviewer' : builder ? 'builder' : 'triager',
-    lifecycle: reviewer ? 'review_pending' : builder ? 'building' : 'triage',
+    lifecycle: noResponseEligible
+      ? 'delivered'
+      : reviewer
+        ? 'review_pending'
+        : builder
+          ? 'building'
+          : 'triage',
     moderation: 'clear',
     capabilities: {
       canBeginTriage: triager || admin,
@@ -666,6 +694,7 @@ export function adminDetailFixture(
       canReassignTriager: admin,
       canReassignBuilder: admin,
       canReassignReviewer: admin,
+      canCloseNoResponse: noResponseEligible,
     },
     allowedCloseReasons: triager || admin
       ? ['out_of_scope', 'capacity_unavailable', 'declined']
@@ -714,6 +743,7 @@ export function adminDetailFixture(
       reassignTriager: 'fixture-reassign-triager-00000001',
       reassignBuilder: 'fixture-reassign-builder-00000001',
       reassignReviewer: 'fixture-reassign-reviewer-00000001',
+      closeNoResponse: 'fixture-close-no-response-00000001',
     },
     timeline: [
       {

@@ -3,7 +3,7 @@ import { RequestServiceOverview } from '@/components/requests/service'
 import { canonicalMetadata } from '@/lib/site-url'
 import {
   getRequestApplicationService,
-  getRequestViewer,
+  getRequestViewerState,
 } from '@/lib/build-requests/server'
 import {
   toRequestServiceAvailability,
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 }
 
 export default async function RequestsPage() {
-  const viewer = await getRequestViewer().catch(() => null)
+  const viewer = await getRequestViewerState().catch(() => ({ status: 'unavailable' as const }))
   let mapped = null
   try {
     const service = await getRequestApplicationService()
@@ -28,7 +28,7 @@ export default async function RequestsPage() {
   if (!mapped) {
     return <RequestServiceOverview
       availability={toUnavailableServiceAvailability()}
-      intakeEligibility={viewer ? 'controls_off' : 'sign_in_required'}
+      intakeEligibility={viewer.status === 'signed_out' ? 'sign_in_required' : 'controls_off'}
     />
   }
   return <RequestServiceOverview

@@ -21,7 +21,10 @@ export function RequestReadAcknowledger({
   useEffect(() => {
     if (sent.current) return
     sent.current = true
-    void action({ requestId, expectedEventSequence, idempotencyKey })
+    void action({ requestId, expectedEventSequence, idempotencyKey }).catch(() => {
+      // Best-effort acknowledgment never changes local unread truth. The
+      // authority will project unread again on the next participant-safe read.
+    })
   }, [action, expectedEventSequence, idempotencyKey, requestId])
   return null
 }

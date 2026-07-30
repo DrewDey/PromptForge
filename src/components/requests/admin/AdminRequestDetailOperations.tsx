@@ -145,13 +145,12 @@ function SimpleCommandForm({
   requestId: string
   version: number
   idempotencyKey: string
-  command: 'begin_triage'
+  command: 'begin_triage' | 'close_no_response'
   buttonLabel: string
 }) {
   return (
     <form action={action} className={styles.form}>
       <AuthorityFields requestId={requestId} version={version} idempotencyKey={idempotencyKey} />
-      <input type="hidden" name="command" value="request_clarification" />
       <input type="hidden" name="command" value={command} />
       <button className={styles.primaryButton} type="submit">{buttonLabel}</button>
     </form>
@@ -183,7 +182,6 @@ function ReassignmentForm({
   return (
     <form action={action} className={styles.form}>
       <AuthorityFields requestId={requestId} version={version} idempotencyKey={idempotencyKey} />
-      <input type="hidden" name="command" value="accept" />
       <input type="hidden" name="command" value={command} />
       <label>
         Eligible {roleLabel}
@@ -225,7 +223,7 @@ function ClarificationForm({
   return (
     <form action={action} className={styles.form}>
       <AuthorityFields requestId={requestId} version={version} idempotencyKey={idempotencyKey} />
-      <input type="hidden" name="command" value="assign_reviewer" />
+      <input type="hidden" name="command" value="request_clarification" />
       <label>
         Bounded clarification question
         <textarea
@@ -265,6 +263,7 @@ function AcceptAssignmentForm({
   return (
     <form action={action} className={styles.form}>
       <AuthorityFields requestId={requestId} version={version} idempotencyKey={idempotencyKey} />
+      <input type="hidden" name="command" value="accept" />
       <div className={styles.formGrid}>
         <label>
           Eligible builder
@@ -334,6 +333,7 @@ function ReviewerAssignmentForm({
   return (
     <form action={action} className={styles.form}>
       <AuthorityFields requestId={requestId} version={version} idempotencyKey={idempotencyKey} />
+      <input type="hidden" name="command" value="assign_reviewer" />
       <label>
         Eligible independent reviewer
         <select
@@ -484,7 +484,8 @@ export function AdminRequestDetailOperations({
     (model.allowedCloseReasons.length > 0 && actions.close) ||
     (capabilities.canReassignTriager && actions.reassignTriager) ||
     (capabilities.canReassignBuilder && actions.reassignBuilder) ||
-    (capabilities.canReassignReviewer && actions.reassignReviewer)
+    (capabilities.canReassignReviewer && actions.reassignReviewer) ||
+    (capabilities.canCloseNoResponse && actions.closeNoResponse)
 
   return (
     <div className={styles.detailStack}>
@@ -687,6 +688,22 @@ export function AdminRequestDetailOperations({
               version={model.version}
               idempotencyKey={model.idempotencyKeys.close}
               allowedReasons={model.allowedCloseReasons}
+            />
+          </OperationCard>
+        ) : null}
+
+        {capabilities.canCloseNoResponse && actions.closeNoResponse ? (
+          <OperationCard
+            title="Close after no requester response"
+            description="Authority exposes this only after the server-enforced 14-day response window. No client timing evidence or note is accepted."
+          >
+            <SimpleCommandForm
+              action={actions.closeNoResponse}
+              requestId={model.requestId}
+              version={model.version}
+              idempotencyKey={model.idempotencyKeys.closeNoResponse}
+              command="close_no_response"
+              buttonLabel="Close after no response"
             />
           </OperationCard>
         ) : null}

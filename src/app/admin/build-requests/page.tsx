@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { RequestCaseErrorFocus } from '@/components/requests/case/RequestCaseErrorFocus'
 import {
   AdminRequestQueue,
   RequestAdminServiceControls,
@@ -24,7 +25,7 @@ const SCOPES = new Set<RequestQueueScope>(['admin', 'triager', 'builder', 'revie
 export default async function BuildRequestsAdminPage({
   searchParams,
 }: {
-  searchParams: Promise<{ scope?: string; cursor?: string }>
+  searchParams: Promise<{ scope?: string; cursor?: string; actionError?: string }>
 }) {
   const query = await searchParams
   const scope = SCOPES.has(query.scope as RequestQueueScope)
@@ -104,6 +105,28 @@ export default async function BuildRequestsAdminPage({
             ))}
           </nav>
         </header>
+        {query.actionError ? (
+          <>
+            <RequestCaseErrorFocus focusKey={`admin-queue:${query.actionError}`} />
+            <section
+              role="alert"
+              tabIndex={-1}
+              data-request-case-error-summary
+              className="max-w-3xl border border-red-300 bg-red-50 p-5 text-surface-900"
+            >
+              <h2 className="text-lg font-black">
+                {query.actionError === 'stale_version'
+                  ? 'The operator state changed before this action was recorded.'
+                  : query.actionError === 'rate_limited'
+                    ? 'This operator action is temporarily limited.'
+                    : 'The authority could not verify this operator action.'}
+              </h2>
+              <p className="mt-2 text-sm">
+                No success is claimed. The controls and candidates below come from a fresh authority read.
+              </p>
+            </section>
+          </>
+        ) : null}
 
         {scope === 'admin' ? (
           <RequestAdminServiceControls

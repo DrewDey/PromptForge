@@ -123,6 +123,7 @@ export function validateActivationEventPayload(value: unknown): ActivationEventP
     ![
       'client_validation',
       'auth_required',
+      'not_admitted',
       'controls_closed',
       'capacity_full',
       'rate_limited',

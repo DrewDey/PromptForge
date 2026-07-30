@@ -22,6 +22,41 @@ const intakeAction = readFileSync('src/app/requests/new/actions.ts', 'utf8')
 const intakePage = readFileSync('src/app/requests/new/page.tsx', 'utf8')
 const presentation = readFileSync('src/lib/build-requests/presentation.ts', 'utf8')
 const serverAdapter = readFileSync('src/lib/build-requests/server.ts', 'utf8')
+const adminActions = readFileSync('src/app/admin/build-requests/actions.ts', 'utf8')
+const adminQueuePage = readFileSync('src/app/admin/build-requests/page.tsx', 'utf8')
+for (const errorPath of [
+  'src/app/admin/build-requests/error.tsx',
+  'src/app/admin/build-requests/[id]/error.tsx',
+]) {
+  assert.match(
+    readFileSync(errorPath, 'utf8'),
+    /<RequestRouteError/,
+    `${errorPath} must reuse the focused Request error boundary.`,
+  )
+}
+for (const actionName of [
+  'updateRequestControlsAction',
+  'updatePilotAdmissionAction',
+]) {
+  const start = adminActions.indexOf(`function ${actionName}`)
+  const next = adminActions.indexOf('export async function', start + 20)
+  const source = adminActions.slice(start, next === -1 ? undefined : next)
+  assert.match(
+    source,
+    /catch \(error\)[\s\S]*requestAuthorityErrorCode\(error\)[\s\S]*actionError=/,
+    `${actionName} must redirect failures to bounded operator recovery.`,
+  )
+  assert.doesNotMatch(
+    source,
+    /error\.message/,
+    `${actionName} must not expose raw error text.`,
+  )
+}
+assert.match(
+  adminQueuePage,
+  /query\.actionError[\s\S]*data-request-case-error-summary[\s\S]*No success is claimed\./,
+  'Admin queue must focus a bounded failure and re-read authority state.',
+)
 const whatToBuild = readFileSync('src/app/what-to-build/page.tsx', 'utf8')
 const homeSupport = readFileSync('src/components/home/HomeSupportRoutes.tsx', 'utf8')
 for (const [source, label] of [

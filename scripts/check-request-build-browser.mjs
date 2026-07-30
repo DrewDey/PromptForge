@@ -420,6 +420,9 @@ const PAGE_SNAPSHOT = `(() => {
     fixtureText:(fixture?.innerText || '').replace(/\\s+/g,' ').trim(),
     deliveryPlaceholders:fixture?.querySelectorAll('[data-request-delivery-placeholder]').length || 0,
     intakeCtaCount:fixture?.querySelectorAll('[data-request-intake-cta]').length || 0,
+    myForgeRequestContinuationCount:fixture?.querySelectorAll(
+      'a[href="/my-forge?tab=requests"]'
+    ).length || 0,
     myForgeNewRequestLabels:[...fixture.querySelectorAll('[data-my-forge-new-request]')]
       .map((element)=>(element.textContent || '').replace(/→/g,'').replace(/\\s+/g,' ').trim()),
     myForgeNewRequestArrows:fixture?.querySelectorAll('[data-my-forge-new-request-arrow]').length || 0,
@@ -624,6 +627,22 @@ async function verifyViewport(client, options, viewport) {
         !snapshot.fixtureText.includes('This account is not in the current pilot.')
       ) {
         throw new Error(`${label} omitted the participant-safe pilot eligibility message.`)
+      }
+      if (
+        scenarioItem.path.includes('surface=intake') &&
+        scenarioItem.path.includes('state=duplicate')
+      ) {
+        if (
+          !snapshot.fixtureText.includes(
+            'This submission conflicts with an existing active request or prior submission attempt.',
+          ) ||
+          snapshot.fixtureText.includes('appears to match an existing request') ||
+          snapshot.myForgeRequestContinuationCount !== 1
+        ) {
+          throw new Error(
+            `${label} overclaimed semantic duplicate detection or omitted its My Forge continuation.`,
+          )
+        }
       }
       if (
         scenarioItem.path.includes('surface=service') &&

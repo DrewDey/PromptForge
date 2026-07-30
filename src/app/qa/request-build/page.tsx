@@ -605,27 +605,50 @@ export default async function RequestBuildFixturePage({
             moderation === 'held'
             && primaryCapabilityId === 'release_moderation_hold'
               ? (
-                  <form action={fixtureAction} className="space-y-3">
-                    <input
-                      type="hidden"
-                      name="command"
-                      value="release_moderation_hold"
-                    />
-                    <label className="block text-sm font-semibold">
-                      Hold resolution
-                      <textarea
-                        name="resolution"
-                        required
-                        minLength={4}
-                        maxLength={500}
-                        rows={3}
-                        className="mt-2 min-h-11 w-full border border-surface-300 bg-white px-3 py-2 text-base"
+                  <div className="space-y-6">
+                    <form action={fixtureAction} className="space-y-3">
+                      <input
+                        type="hidden"
+                        name="command"
+                        value="release_moderation_hold"
                       />
-                    </label>
-                    <button className="min-h-11 w-full" type="submit">
-                      Release moderation hold
-                    </button>
-                  </form>
+                      <label className="block text-sm font-semibold">
+                        Hold resolution
+                        <textarea
+                          name="resolution"
+                          required
+                          minLength={4}
+                          maxLength={500}
+                          rows={3}
+                          className="mt-2 min-h-11 w-full border border-surface-300 bg-white px-3 py-2 text-base"
+                        />
+                      </label>
+                      <button className="min-h-11 w-full" type="submit">
+                        Release moderation hold
+                      </button>
+                    </form>
+                    <form action={fixtureAction} className="space-y-3">
+                      <input
+                        type="hidden"
+                        name="command"
+                        value="remove_for_moderation"
+                      />
+                      <label className="block text-sm font-semibold">
+                        Removal reason
+                        <textarea
+                          name="reason"
+                          required
+                          minLength={4}
+                          maxLength={500}
+                          rows={3}
+                          className="mt-2 min-h-11 w-full border border-surface-300 bg-white px-3 py-2 text-base"
+                        />
+                      </label>
+                      <button className="min-h-11 w-full" type="submit">
+                        Remove case for moderation
+                      </button>
+                    </form>
+                  </div>
                 )
               : undefined
           }

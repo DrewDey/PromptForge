@@ -45,6 +45,10 @@ export async function updateRequestControlsAction(formData: FormData) {
 
 export async function updatePilotAdmissionAction(formData: FormData) {
   try {
+    const admissionAction = text(formData, 'admissionAction')
+    if (admissionAction !== 'invite' && admissionAction !== 'revoke') {
+      throw new Error('Invalid pilot admission action.')
+    }
     const service = await getRequestApplicationService()
     const accountId = text(formData, 'accountId')
     const candidates = await service.listPilotAdmissionCandidates({ limit: 50 })
@@ -56,13 +60,13 @@ export async function updatePilotAdmissionAction(formData: FormData) {
       idempotencyKey: `request-admission-${accountId}-v${candidate.admissionVersion}`,
       reason: text(formData, 'reason'),
     }
-    if (text(formData, 'admissionAction') === 'invite') {
+    if (admissionAction === 'invite') {
       const rawExpiry = text(formData, 'expiresAt')
       await service.inviteRequestPilotParticipant({
         ...base,
         expiresAt: parsePilotExpiryUtc(rawExpiry),
       })
-    } else {
+    } else if (admissionAction === 'revoke') {
       await service.revokeRequestPilotParticipant(base)
     }
   } catch (error) {

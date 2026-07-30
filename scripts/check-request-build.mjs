@@ -214,6 +214,16 @@ assert.match(
   /expiresAt: parsePilotExpiryUtc\(rawExpiry\)/,
   'Pilot admission must use the deterministic validated UTC parser.',
 )
+assert.match(
+  adminActions,
+  /admissionAction !== 'invite' && admissionAction !== 'revoke'[\s\S]*throw new Error[\s\S]*getRequestApplicationService\(\)/,
+  'Pilot admission must reject an unknown discriminant before resolving its service.',
+)
+assert.doesNotMatch(
+  adminActions,
+  /if \(text\(formData, 'admissionAction'\) === 'invite'\)[\s\S]*\} else \{/,
+  'Pilot admission must not make revoke the default branch.',
+)
 assert.doesNotMatch(
   adminActions,
   /new Date\(rawExpiry\)/,

@@ -704,6 +704,9 @@ async function createDockerHarness(databaseUser = 'postgres') {
 
 const migration = findAuthorityMigration()
 const migrationSql = read(migration)
+const preparationReplayMigration =
+  'supabase/migrations/20260730093015_request_delivery_preparation_replay_binding_v1.sql'
+const preparationReplayMigrationSql = read(preparationReplayMigration)
 for (const [label, pattern] of [
   [
     'detail access ends at the 90-day boundary',
@@ -1238,6 +1241,7 @@ try {
   assertPostgres17(runtimeHarness)
   runtimeHarness.apply(read(`${fixtureRoot}/migration-prerequisites.sql`))
   runtimeHarness.apply(migrationSql)
+  runtimeHarness.apply(preparationReplayMigrationSql)
   runtimeHarness.apply(read(`${fixtureRoot}/runtime-schema-contract.sql`))
   runtimeHarness.apply(read(`${fixtureRoot}/runtime-grant-matrix-contract.sql`))
   runtimeHarness.apply(read(`${fixtureRoot}/runtime-authority-test.sql`))
@@ -1304,6 +1308,7 @@ try {
   assertPostgres17(maintenanceHarness)
   maintenanceHarness.apply(read(`${fixtureRoot}/migration-prerequisites.sql`))
   maintenanceHarness.apply(migrationSql)
+  maintenanceHarness.apply(preparationReplayMigrationSql)
   maintenanceHarness.apply(read(`${fixtureRoot}/runtime-authority-test.sql`))
   const maintenanceOutput = maintenanceHarness.apply(
     read(`${fixtureRoot}/runtime-maintenance-work-contract.sql`),
@@ -1327,6 +1332,7 @@ try {
     read(`${fixtureRoot}/migration-prerequisites.sql`),
   )
   cleanupClaimRaceHarness.apply(migrationSql)
+  cleanupClaimRaceHarness.apply(preparationReplayMigrationSql)
   cleanupClaimRaceHarness.apply(
     read(`${fixtureRoot}/runtime-authority-test.sql`),
   )
@@ -1457,6 +1463,7 @@ try {
   assertPostgres17(deidentifyHarness)
   deidentifyHarness.apply(read(`${fixtureRoot}/migration-prerequisites.sql`))
   deidentifyHarness.apply(migrationSql)
+  deidentifyHarness.apply(preparationReplayMigrationSql)
   deidentifyHarness.apply(read(`${fixtureRoot}/runtime-authority-test.sql`))
   deidentifyHarness.apply(
     read(`${fixtureRoot}/runtime-deep-deidentify-contract.sql`),
@@ -1471,6 +1478,7 @@ for (const terminalMode of ['completed', 'no_response']) {
     assertPostgres17(purgeHarness)
     purgeHarness.apply(read(`${fixtureRoot}/migration-prerequisites.sql`))
     purgeHarness.apply(migrationSql)
+    purgeHarness.apply(preparationReplayMigrationSql)
     purgeHarness.apply(read(`${fixtureRoot}/runtime-authority-test.sql`))
     purgeHarness.apply(
       read(`${fixtureRoot}/runtime-raw-purge-contract.sql`)

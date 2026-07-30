@@ -148,6 +148,7 @@ DECLARE
     'purge_build_request_raw_text_v1',
     'resolve_build_request_delivery_artifact_custody_v1',
     'resolve_build_request_delivery_artifact_cleanup_v1',
+    'resolve_build_request_delivery_preparation_replay_v1',
     'resolve_build_request_delivery_artifact_object_v1',
     'expire_build_request_audit_tombstone_v1',
     'seal_build_request_delivery_revision_v1'

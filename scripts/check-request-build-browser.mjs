@@ -66,6 +66,7 @@ const INTAKE_STATES = [
   'pristine',
   'errors',
   'unavailable',
+  'capacity_full',
   'not_admitted',
   'already_active',
   'expired_session',
@@ -121,7 +122,7 @@ const SCENARIOS = [
       : undefined,
   })),
   ...INTAKE_STATES.map((state) => scenario(`intake-${state}`, { surface: 'intake', state }, {
-    expectFocusedAlert: ['errors', 'unavailable', 'not_admitted', 'already_active', 'expired_session', 'hostile_error', 'rate_limited', 'duplicate', 'stale_version', 'forbidden_input'].includes(state),
+    expectFocusedAlert: ['errors', 'unavailable', 'capacity_full', 'not_admitted', 'already_active', 'expired_session', 'hostile_error', 'rate_limited', 'duplicate', 'stale_version', 'forbidden_input'].includes(state),
     screenshot: state === 'errors',
   })),
   scenario(
@@ -418,6 +419,7 @@ const PAGE_SNAPSHOT = `(() => {
     proofLabel:Boolean(fixture?.querySelector('[data-fixture-proof-label]')),
     fixtureText:(fixture?.innerText || '').replace(/\\s+/g,' ').trim(),
     deliveryPlaceholders:fixture?.querySelectorAll('[data-request-delivery-placeholder]').length || 0,
+    intakeCtaCount:fixture?.querySelectorAll('[data-request-intake-cta]').length || 0,
     myForgeNewRequestLabels:[...fixture.querySelectorAll('[data-my-forge-new-request]')]
       .map((element)=>(element.textContent || '').replace(/→/g,'').replace(/\\s+/g,' ').trim()),
     myForgeNewRequestArrows:fixture?.querySelectorAll('[data-my-forge-new-request-arrow]').length || 0,
@@ -622,6 +624,20 @@ async function verifyViewport(client, options, viewport) {
         !snapshot.fixtureText.includes('This account is not in the current pilot.')
       ) {
         throw new Error(`${label} omitted the participant-safe pilot eligibility message.`)
+      }
+      if (
+        scenarioItem.path.includes('surface=service') &&
+        scenarioItem.path.includes('state=capacity_full') &&
+        snapshot.intakeCtaCount !== 0
+      ) {
+        throw new Error(`${label} exposed ${snapshot.intakeCtaCount} intake CTAs at full capacity.`)
+      }
+      if (
+        scenarioItem.path.includes('surface=case') &&
+        scenarioItem.path.includes('lifecycle=accepted') &&
+        !snapshot.fixtureText.includes('Target Aug 15, 2026')
+      ) {
+        throw new Error(`${label} did not preserve the exact 2026-08-15 service target date.`)
       }
       const isRemovedCase = scenarioItem.path.includes('surface=case') &&
         scenarioItem.path.includes('moderation=removed')

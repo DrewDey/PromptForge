@@ -93,8 +93,12 @@ export function RequestAdminServiceControls({
             </select>
           </label>
           <label>
-            Optional expiry
-            <input type="datetime-local" name="expiresAt" />
+            Optional expiry (UTC)
+            <input
+              type="datetime-local"
+              name="expiresAt"
+              data-request-expiry-time-zone="UTC"
+            />
           </label>
           <label>
             Bounded reason

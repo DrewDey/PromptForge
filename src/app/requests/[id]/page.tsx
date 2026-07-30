@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import type { Metadata } from 'next'
 import { RequestAnalytics } from '@/components/requests/RequestAnalytics'
 import { RequestReadAcknowledger } from '@/components/requests/RequestReadAcknowledger'
 import { RequestClarificationAction } from '@/components/requests/RequestClarificationAction'
@@ -15,6 +16,10 @@ import {
 } from './actions'
 
 export const dynamic = 'force-dynamic'
+export const metadata: Metadata = {
+  title: 'Private build request | PathForge',
+  robots: { index: false, follow: false },
+}
 
 export default async function RequestCasePage({
   params,
@@ -39,11 +44,16 @@ export default async function RequestCasePage({
         title: 'This case changed before the action was recorded.',
         messages: ['Review the current stage and available actions, then try again.'],
       }
-    : query.actionError === 'rate_limited'
+      : query.actionError === 'rate_limited'
       ? {
           title: 'This action is temporarily limited.',
           messages: ['Wait before trying again. No duplicate command was recorded.'],
         }
+      : query.actionError === 'confirmation_required'
+        ? {
+            title: 'Withdrawal was not confirmed.',
+            messages: ['Confirm the terminal withdrawal before submitting it again.'],
+          }
       : query.actionError
         ? {
             title: 'The service could not verify this action.',
@@ -83,6 +93,15 @@ export default async function RequestCasePage({
             <input type="hidden" name="expectedVersion" value={detail.requestVersion} />
             <input type="hidden" name="idempotencyKey" value={actionIntent('withdraw')} />
             <input type="hidden" name="reason" value="Requester withdrew this private case." />
+            <label>
+              <input
+                type="checkbox"
+                name="confirmation"
+                value="confirmed"
+                required
+              />{' '}
+              I understand this permanently closes the private request.
+            </label>
             <button type="submit">Withdraw request</button>
           </form>
         ),

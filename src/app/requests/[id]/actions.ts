@@ -77,6 +77,11 @@ export async function requestCaseCommandAction(formData: FormData) {
       },
     }
   } else if (kind === 'withdraw') {
+    if (text(formData, 'confirmation') !== 'confirmed') {
+      redirect(
+        `/requests/${encodeURIComponent(base.requestId)}?actionError=confirmation_required`,
+      )
+    }
     command = {
       ...base,
       kind,

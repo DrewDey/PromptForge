@@ -2,6 +2,7 @@
 
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
+import ts from 'typescript'
 
 const FIXTURE_ROUTE = 'src/app/qa/request-build/page.tsx'
 const FIXTURE_MODELS = 'src/lib/build-requests/fixtures.ts'
@@ -20,10 +21,91 @@ const caseShell = readFileSync(
 const browserGuard = readFileSync('scripts/check-request-build-browser.mjs', 'utf8')
 const intakeAction = readFileSync('src/app/requests/new/actions.ts', 'utf8')
 const intakePage = readFileSync('src/app/requests/new/page.tsx', 'utf8')
+const participantCaseAction = readFileSync('src/app/requests/[id]/actions.ts', 'utf8')
+const participantCasePage = readFileSync('src/app/requests/[id]/page.tsx', 'utf8')
 const presentation = readFileSync('src/lib/build-requests/presentation.ts', 'utf8')
 const serverAdapter = readFileSync('src/lib/build-requests/server.ts', 'utf8')
 const adminActions = readFileSync('src/app/admin/build-requests/actions.ts', 'utf8')
+const adminControls = readFileSync(
+  'src/components/requests/admin/RequestAdminServiceControls.tsx',
+  'utf8',
+)
+const pilotExpirySource = readFileSync(
+  'src/lib/build-requests/pilot-expiry.ts',
+  'utf8',
+)
+const pilotExpiryModule = await import(
+  `data:text/javascript;base64,${Buffer.from(
+    ts.transpileModule(pilotExpirySource, {
+      compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
+    }).outputText,
+  ).toString('base64')}`
+)
+assert.equal(
+  pilotExpiryModule.parsePilotExpiryUtc('2026-08-15T14:30'),
+  '2026-08-15T14:30:00.000Z',
+  'Pilot admission expiry must preserve the exact UTC instant.',
+)
+assert.equal(
+  pilotExpiryModule.parsePilotExpiryUtc(''),
+  null,
+  'An omitted pilot expiry must remain absent.',
+)
+for (const malformedExpiry of ['2026-02-30T12:00', '2026-08-15', 'not-a-date']) {
+  assert.throws(
+    () => pilotExpiryModule.parsePilotExpiryUtc(malformedExpiry),
+    /invalid_pilot_expiry/,
+    `Malformed pilot expiry ${malformedExpiry} must take the bounded error path.`,
+  )
+}
+assert.match(
+  adminControls,
+  /Optional expiry \(UTC\)[\s\S]{0,180}data-request-expiry-time-zone="UTC"/,
+  'Pilot admission must label datetime-local input as UTC.',
+)
+assert.match(
+  adminActions,
+  /expiresAt: parsePilotExpiryUtc\(rawExpiry\)/,
+  'Pilot admission must use the deterministic validated UTC parser.',
+)
+assert.doesNotMatch(
+  adminActions,
+  /new Date\(rawExpiry\)/,
+  'Pilot expiry must not depend on the server local timezone.',
+)
+assert.match(
+  participantCaseAction,
+  /kind === 'withdraw'[\s\S]*text\(formData, 'confirmation'\) !== 'confirmed'[\s\S]*redirect\([\s\S]*confirmation_required[\s\S]*command =/,
+  'Participant withdrawal must be rejected before command construction without explicit confirmation.',
+)
+assert.match(
+  participantCasePage,
+  /name="confirmation"[\s\S]{0,120}value="confirmed"[\s\S]{0,120}required/,
+  'Participant withdrawal must serialize a required explicit confirmation.',
+)
+assert.match(
+  participantCasePage,
+  /I understand this permanently closes the private request\./,
+  'Participant withdrawal must explain the terminal effect before submission.',
+)
 const adminQueuePage = readFileSync('src/app/admin/build-requests/page.tsx', 'utf8')
+for (const privateRoutePath of [
+  'src/app/requests/new/page.tsx',
+  'src/app/requests/[id]/page.tsx',
+  'src/app/admin/build-requests/page.tsx',
+  'src/app/admin/build-requests/[id]/page.tsx',
+]) {
+  assert.match(
+    readFileSync(privateRoutePath, 'utf8'),
+    /robots:\s*\{\s*index: false,\s*follow: false\s*\}/,
+    `${privateRoutePath} must be noindex and nofollow.`,
+  )
+}
+assert.doesNotMatch(
+  readFileSync('src/app/requests/page.tsx', 'utf8'),
+  /index: false/,
+  'The truthful public Request service desk should remain indexable.',
+)
 for (const errorPath of [
   'src/app/admin/build-requests/error.tsx',
   'src/app/admin/build-requests/[id]/error.tsx',
@@ -197,6 +279,11 @@ assert.match(
   'Already-active intake must remain distinct from duplicate mutation errors.',
 )
 assert.match(
+  intakePage,
+  /availability\.unavailableReason === 'capacity_full'[\s\S]{0,80}\? 'capacity_full'/,
+  'Direct intake must block the form on authoritative full capacity.',
+)
+assert.match(
   intake,
   /already_active: 'This account already has an active private request\./,
   'Already-active intake must explain the distinct state.',
@@ -213,6 +300,11 @@ assert.match(
 )
 assert.match(
   presentation,
+  /question: latestClarification\.question,[\s\S]{0,100}answer: latestClarification\.answer/,
+  'Answered clarification must preserve both the durable question and answer.',
+)
+assert.match(
+  presentation,
   /assignment\.role === 'builder' && assignment\.active[\s\S]{0,120}detail\.targetDate/,
   'Full case presentation must project the canonical active-builder target date.',
 )
@@ -220,6 +312,16 @@ assert.match(
   presentation,
   /targetDate: detail\.targetDate/,
   'Admin detail must project the canonical service target date.',
+)
+assert.doesNotMatch(
+  presentation,
+  /Open approved model variant/,
+  'A DB modelVariantId must not be presented as a routable public variant locator.',
+)
+assert.match(
+  presentation,
+  /select the referenced variant shown below/,
+  'Response resolution must distinguish project-family navigation from the exact non-default variant identity.',
 )
 
 assert.match(

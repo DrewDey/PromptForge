@@ -21,6 +21,14 @@ const CLOSE_REASON_LABELS: Record<RequestCloseReason, string> = {
   no_response: 'No response',
 }
 
+function formatTargetDate(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return 'Date unavailable'
+  return new Intl.DateTimeFormat('en-US', {
+    dateStyle: 'medium',
+    timeZone: 'UTC',
+  }).format(new Date(`${value}T00:00:00.000Z`))
+}
+
 function AuthorityFields({
   requestId,
   version,
@@ -528,7 +536,7 @@ export function AdminRequestDetailOperations({
               <dt>Target</dt>
               <dd>
                 <time dateTime={model.targetDate}>
-                  {new Date(model.targetDate).toLocaleDateString()}
+                  {formatTargetDate(model.targetDate)}
                 </time>
               </dd>
             </div>

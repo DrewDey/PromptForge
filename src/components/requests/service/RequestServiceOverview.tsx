@@ -101,13 +101,14 @@ export function RequestServiceOverview({
 }: RequestServiceOverviewProps) {
   const copy = availabilityCopy(availability)
   const capacity = capacityLabel(availability)
-  const serviceCanOfferIntake =
+  const serviceCanOfferIntake = availability.status === 'available'
+  const serviceHasParticipantState =
     availability.status === 'available' || availability.status === 'capacity_full'
   const canStart = serviceCanOfferIntake && intakeEligibility === 'available'
   const shouldSignIn =
     serviceCanOfferIntake && intakeEligibility === 'sign_in_required'
   const shouldContinue =
-    serviceCanOfferIntake && intakeEligibility === 'already_active'
+    serviceHasParticipantState && intakeEligibility === 'already_active'
 
   return (
     <div className={styles.page}>
@@ -154,7 +155,7 @@ export function RequestServiceOverview({
             <h2>{copy.title}</h2>
             <p>{copy.body}</p>
             {capacity && <strong>{capacity}</strong>}
-            {serviceCanOfferIntake && intakeEligibility === 'not_admitted' ? (
+            {serviceHasParticipantState && intakeEligibility === 'not_admitted' ? (
               <p
                 className={styles.eligibilityNotice}
                 role="status"
@@ -163,7 +164,7 @@ export function RequestServiceOverview({
                 This account is not in the current pilot.
               </p>
             ) : null}
-            {serviceCanOfferIntake && intakeEligibility === 'already_active' ? (
+            {serviceHasParticipantState && intakeEligibility === 'already_active' ? (
               <p className={styles.eligibilityNotice} role="status">
                 This account already has an active Request a Build case.
               </p>
@@ -176,7 +177,11 @@ export function RequestServiceOverview({
           </div>
           <div className={styles.availabilityAction}>
             {canStart && (
-              <Link href={intakeHref} className={styles.primaryAction}>
+              <Link
+                href={intakeHref}
+                className={styles.primaryAction}
+                data-request-intake-cta
+              >
                 Start a private brief
                 <ArrowRight aria-hidden="true" />
               </Link>

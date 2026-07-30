@@ -8,6 +8,7 @@ const FIXTURE_MODELS = 'src/lib/build-requests/fixtures.ts'
 
 const route = readFileSync(FIXTURE_ROUTE, 'utf8')
 const models = readFileSync(FIXTURE_MODELS, 'utf8')
+const intake = readFileSync('src/components/requests/intake/RequestIntakeForm.tsx', 'utf8')
 
 assert.match(
   route,
@@ -19,6 +20,44 @@ assert.doesNotMatch(
   models,
   /actorRole !== 'system'/,
   'Fixtures must not grant a generic action to every non-system actor.',
+)
+
+for (const [field, minimum, maximum] of [
+  ['request-title', 4, 120],
+  ['request-outcome', 20, 4000],
+  ['request-intended-user', 2, 1000],
+  ['request-must-work-scenario', 10, 1000],
+]) {
+  assert.match(
+    intake,
+    new RegExp(`id="${field}"[\\s\\S]{0,320}minLength=\\{${minimum}\\}[\\s\\S]{0,120}maxLength=\\{${maximum}\\}`),
+    `${field} browser guidance must match authority limits.`,
+  )
+}
+assert.match(
+  intake,
+  /name="acceptanceChecks"[\s\S]{0,180}minLength=\{4\}[\s\S]{0,100}maxLength=\{500\}/,
+  'Acceptance-check browser guidance must match authority limits.',
+)
+assert.match(
+  intake,
+  /name="constraints"[\s\S]{0,120}maxLength=\{2000\}/,
+  'Constraint browser guidance must match authority limits.',
+)
+assert.match(
+  intake,
+  /name="referenceResponseStepNumber"[\s\S]{0,220}min=\{1\}[\s\S]{0,80}max=\{100\}/,
+  'Response-step browser guidance must match authority limits.',
+)
+assert.match(
+  intake,
+  /published model-variant response evidence/,
+  'Response-reference guidance must describe exact published evidence.',
+)
+assert.doesNotMatch(
+  intake,
+  /authoritative prompt count/,
+  'Response-reference guidance must not claim generic prompt-count validation.',
 )
 for (const exactCapability of [
   'submit_clarification',

@@ -237,7 +237,7 @@ export function RequestIntakeForm({
                 name="outcome"
                 required
                 minLength={20}
-                maxLength={1000}
+                maxLength={4000}
                 rows={4}
                 defaultValue={defaultValues?.outcome}
                 aria-describedby={`request-outcome-hint${fieldError(errors, 'outcome') ? ' request-outcome-error' : ''}`}
@@ -253,8 +253,8 @@ export function RequestIntakeForm({
                 id="request-intended-user"
                 name="intendedUser"
                 required
-                minLength={3}
-                maxLength={300}
+                minLength={2}
+                maxLength={1000}
                 defaultValue={defaultValues?.intendedUser}
                 aria-describedby={`request-intended-user-hint${fieldError(errors, 'intendedUser') ? ' request-intended-user-error' : ''}`}
                 aria-invalid={fieldError(errors, 'intendedUser') ? 'true' : undefined}
@@ -279,8 +279,8 @@ export function RequestIntakeForm({
                 id="request-must-work-scenario"
                 name="mustWorkScenario"
                 required
-                minLength={20}
-                maxLength={1200}
+                minLength={10}
+                maxLength={1000}
                 rows={4}
                 defaultValue={defaultValues?.mustWorkScenario}
                 aria-describedby={`request-must-work-scenario-hint${fieldError(errors, 'mustWorkScenario') ? ' request-must-work-scenario-error' : ''}`}
@@ -292,9 +292,12 @@ export function RequestIntakeForm({
             <fieldset
               id="request-acceptance-checks"
               className={styles.checks}
-              aria-describedby={fieldError(errors, 'acceptanceChecks') ? 'request-acceptance-checks-error' : undefined}
+              aria-describedby={`request-acceptance-checks-hint${fieldError(errors, 'acceptanceChecks') ? ' request-acceptance-checks-error' : ''}`}
             >
               <legend>Acceptance checks <span>1–3 required</span></legend>
+              <p id="request-acceptance-checks-hint">
+                Make every check distinct from the others and from the must-work scenario.
+              </p>
               {acceptanceChecks.map((check, index) => (
                 <div className={styles.checkRow} key={`${baseId}-check-${index}`}>
                   <label htmlFor={`${baseId}-acceptance-${index}`}>
@@ -305,8 +308,8 @@ export function RequestIntakeForm({
                       id={`${baseId}-acceptance-${index}`}
                       name="acceptanceChecks"
                       required
-                      minLength={5}
-                      maxLength={400}
+                      minLength={4}
+                      maxLength={500}
                       value={check}
                       onChange={(event) => updateAcceptanceCheck(index, event.target.value)}
                       aria-invalid={fieldError(errors, 'acceptanceChecks') ? 'true' : undefined}
@@ -348,7 +351,7 @@ export function RequestIntakeForm({
               <textarea
                 id="request-constraints"
                 name="constraints"
-                maxLength={1200}
+                maxLength={2000}
                 rows={4}
                 defaultValue={defaultValues?.constraints}
                 aria-describedby={`request-constraints-hint${fieldError(errors, 'constraints') ? ' request-constraints-error' : ''}`}
@@ -414,7 +417,8 @@ export function RequestIntakeForm({
                   <div className={styles.field}>
                     <label htmlFor="request-step-number">Response step number</label>
                     <p id="request-step-number-hint">
-                      Use the numbered response step. The service checks it against the project&apos;s authoritative prompt count.
+                      Use the numbered response step. The service verifies exact
+                      published model-variant response evidence for this project.
                     </p>
                     <input
                       id="request-step-number"
@@ -422,7 +426,7 @@ export function RequestIntakeForm({
                       type="number"
                       required
                       min={1}
-                      max={999}
+                      max={100}
                       inputMode="numeric"
                       defaultValue={defaultValues?.pathforgeReference?.kind === 'response'
                         ? defaultValues.pathforgeReference.responseStepNumber

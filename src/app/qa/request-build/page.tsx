@@ -48,6 +48,7 @@ import {
   type RequestMyForgeFixtureState,
   type RequestServiceFixtureState,
 } from '@/lib/build-requests/fixtures'
+import { RequestAnalyticsTransitionFixture } from '@/components/requests/RequestAnalyticsTransitionFixture'
 
 export const metadata = {
   robots: { index: false, follow: false },
@@ -61,6 +62,7 @@ type FixtureSurface =
   | 'my-forge'
   | 'admin-queue'
   | 'admin-detail'
+  | 'analytics-transition'
 
 type SearchParams = Record<string, string | string[] | undefined>
 
@@ -168,9 +170,26 @@ export default async function RequestBuildFixturePage({
   const query = await searchParams
   const surface = oneOf(
     firstValue(query.surface),
-    ['service', 'intake', 'receipt', 'case', 'my-forge', 'admin-queue', 'admin-detail'] as const,
+    [
+      'service',
+      'intake',
+      'receipt',
+      'case',
+      'my-forge',
+      'admin-queue',
+      'admin-detail',
+      'analytics-transition',
+    ] as const,
     'service',
   )
+
+  if (surface === 'analytics-transition') {
+    return (
+      <FixtureFrame surface={surface} state="transition">
+        <RequestAnalyticsTransitionFixture />
+      </FixtureFrame>
+    )
+  }
 
   if (surface === 'service') {
     const state = oneOf(

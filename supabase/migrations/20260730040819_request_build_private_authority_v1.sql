@@ -8776,6 +8776,7 @@ BEGIN
   END IF;
   SELECT private.request_summary_json_v1(r.id, v_actor_id) || jsonb_build_object(
     'visibility', 'full',
+    'targetDate', r.target_date,
     'closureNote', CASE
       WHEN r.close_reason IN (
         'existing_resolution', 'duplicate', 'out_of_scope',

@@ -1120,6 +1120,35 @@ assert.equal(reboundObjectResponse.internalState, 'authority_binding_mismatch')
 assert.equal(reboundObjectResponse.status, 409)
 assert.notDeepEqual(reboundObjectResponse.body, readerBytes)
 
+for (const [field, reboundValue] of [
+  ['acceptedBriefRevisionId', '30000000-0000-4000-8000-000000000002'],
+  ['builderAssignmentId', '40000000-0000-4000-8000-000000000002'],
+  ['artifactOrdinal', 2],
+]) {
+  let custodyResolutionCount = 0
+  const reboundCustodyResponse = await readRequestDeliveryArtifact(
+    readerInput,
+    readerDependencies({
+      resolveObjectIdentity: async () => {
+        custodyResolutionCount += 1
+        return custodyResolutionCount === 1
+          ? resolvedReaderObject
+          : {
+              ...resolvedReaderObject,
+              [field]: reboundValue,
+            }
+      },
+    }),
+  )
+  assert.equal(
+    reboundCustodyResponse.internalState,
+    'authority_binding_mismatch',
+    `post-read custody rebind of ${field} must fail closed`,
+  )
+  assert.equal(reboundCustodyResponse.status, 409)
+  assert.notDeepEqual(reboundCustodyResponse.body, readerBytes)
+}
+
 let digestResolutionCount = 0
 const reboundDigestResponse = await readRequestDeliveryArtifact(
   readerInput,

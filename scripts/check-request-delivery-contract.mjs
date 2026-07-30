@@ -851,10 +851,39 @@ const resolvedReaderArtifact = {
 }
 const resolvedReaderObject = {
   status: 'authorized',
+  requestId: scope.requestId,
   artifactId: readerInput.artifactId,
   deliveryRevisionId: scope.deliveryRevisionId,
+  acceptedBriefRevisionId: scope.acceptedBriefRevisionId,
+  builderAssignmentId: scope.builderAssignmentId,
+  artifactOrdinal: 1,
+  sha256: readerSha256,
+  byteLength: readerBytes.byteLength,
+  mediaType: 'text/html',
+  scannerVersion: 'request-delivery-passive-v1',
   manifestDigest: readerManifestDigest,
   objectIdentity: stagingIdentity,
+}
+
+function readerObjectMetadata(
+  participant = resolvedReaderArtifact,
+  object = resolvedReaderObject,
+) {
+  return {
+    policyVersion: 'request-delivery-passive-v1',
+    scannerVersion: object.scannerVersion,
+    custodyState: 'staging',
+    requestId: object.requestId,
+    deliveryRevisionId: object.deliveryRevisionId,
+    acceptedBriefRevisionId: object.acceptedBriefRevisionId,
+    builderAssignmentId: object.builderAssignmentId,
+    artifactId: object.artifactId,
+    artifactOrdinal: String(object.artifactOrdinal),
+    safeName: participant.normalizedName,
+    sha256: object.sha256,
+    byteLength: String(object.byteLength),
+    mediaType: object.mediaType,
+  }
 }
 
 function readerDependencies(overrides = {}) {
@@ -867,6 +896,7 @@ function readerDependencies(overrides = {}) {
         bytes: readerBytes,
         byteLength: readerBytes.byteLength,
         mediaType: 'text/html',
+        metadata: readerObjectMetadata(),
       },
     }),
     ...overrides,
@@ -892,6 +922,52 @@ assert.equal(
   'participant-safe reader metadata must not contain the sealed manifest digest',
 )
 
+for (const metadataField of Object.keys(readerObjectMetadata())) {
+  const hostileMetadata = readerObjectMetadata()
+  hostileMetadata[metadataField] = metadataField === 'artifactOrdinal'
+    ? '2'
+    : `rebound-${metadataField}`
+  const hostileMetadataResponse = await readRequestDeliveryArtifact(
+    readerInput,
+    readerDependencies({
+      downloadPrivateObject: async () => ({
+        status: 'available',
+        object: {
+          bytes: readerBytes,
+          byteLength: readerBytes.byteLength,
+          mediaType: 'text/html',
+          metadata: hostileMetadata,
+        },
+      }),
+    }),
+  )
+  assert.equal(
+    hostileMetadataResponse.internalState,
+    'authority_binding_mismatch',
+    `reader rejects rebound private object metadata field ${metadataField}`,
+  )
+  assert.equal(hostileMetadataResponse.status, 409)
+  assert.notDeepEqual(hostileMetadataResponse.body, readerBytes)
+}
+
+const missingStorageMetadataResponse = await readRequestDeliveryArtifact(
+  readerInput,
+  readerDependencies({
+    downloadPrivateObject: async () => ({
+      status: 'available',
+      object: {
+        bytes: readerBytes,
+        byteLength: readerBytes.byteLength,
+        mediaType: 'text/html',
+        metadata: {},
+      },
+    }),
+  }),
+)
+assert.equal(missingStorageMetadataResponse.internalState, 'authority_binding_mismatch')
+assert.equal(missingStorageMetadataResponse.status, 409)
+assert.notDeepEqual(missingStorageMetadataResponse.body, readerBytes)
+
 const serviceReaderBindings = []
 const serverDerivedDigestResponse = await readRequestDeliveryArtifact(
   readerInput,
@@ -907,8 +983,8 @@ assert.equal(serviceReaderBindings.length, 2)
 for (const binding of serviceReaderBindings) {
   assert.deepEqual(
     Object.keys(binding).sort(),
-    ['artifactId', 'deliveryRevisionId'],
-    'service object resolution must derive its digest without participant input',
+    ['artifactId', 'deliveryRevisionId', 'requestId'],
+    'service object resolution derives digest and custody metadata without browser input',
   )
 }
 
@@ -994,6 +1070,7 @@ for (const [reason, expectedStatus] of [
             bytes: readerBytes,
             byteLength: readerBytes.byteLength,
             mediaType: 'text/html',
+            metadata: readerObjectMetadata(),
           },
         }
       },
@@ -1031,6 +1108,7 @@ const reboundObjectResponse = await readRequestDeliveryArtifact(
           bytes: readerBytes,
           byteLength: readerBytes.byteLength,
           mediaType: 'text/html',
+          metadata: readerObjectMetadata(),
         },
       }
     },
@@ -1078,6 +1156,7 @@ for (const [label, object, expectedState] of [
       bytes: readerBytes,
       byteLength: readerBytes.byteLength + 1,
       mediaType: 'text/html',
+      metadata: readerObjectMetadata(),
     },
     'byte_mismatch',
   ],
@@ -1087,6 +1166,7 @@ for (const [label, object, expectedState] of [
       bytes: readerBytes,
       byteLength: readerBytes.byteLength,
       mediaType: 'image/png',
+      metadata: readerObjectMetadata(),
     },
     'type_mismatch',
   ],
@@ -1096,6 +1176,7 @@ for (const [label, object, expectedState] of [
       bytes: new Uint8Array(readerBytes).fill(32, 10, 11),
       byteLength: readerBytes.byteLength,
       mediaType: 'text/html',
+      metadata: readerObjectMetadata(),
     },
     'hash_mismatch',
   ],
@@ -1112,27 +1193,36 @@ for (const [label, object, expectedState] of [
 
 const textReaderBytes = new TextEncoder().encode('<script>must stay inert</script>')
 const textReaderSha256 = createHash('sha256').update(textReaderBytes).digest('hex')
+const textResolvedParticipant = {
+  ...resolvedReaderArtifact,
+  artifactId: 'artifact-02',
+  normalizedName: 'notes.txt',
+  mediaType: 'text/plain',
+  byteLength: textReaderBytes.byteLength,
+  sha256: textReaderSha256,
+}
+const textResolvedObject = {
+  ...resolvedReaderObject,
+  artifactId: 'artifact-02',
+  sha256: textReaderSha256,
+  byteLength: textReaderBytes.byteLength,
+  mediaType: 'text/plain',
+}
 const rawTextPreview = await readRequestDeliveryArtifact(
   { ...readerInput, artifactId: 'artifact-02' },
   readerDependencies({
-    resolveParticipantArtifact: async (artifactId) => ({
-      ...resolvedReaderArtifact,
-      artifactId,
-      normalizedName: 'notes.txt',
-      mediaType: 'text/plain',
-      byteLength: textReaderBytes.byteLength,
-      sha256: textReaderSha256,
-    }),
-    resolveObjectIdentity: async (binding) => ({
-      ...resolvedReaderObject,
-      ...binding,
-    }),
+    resolveParticipantArtifact: async () => textResolvedParticipant,
+    resolveObjectIdentity: async () => textResolvedObject,
     downloadPrivateObject: async () => ({
       status: 'available',
       object: {
         bytes: textReaderBytes,
         byteLength: textReaderBytes.byteLength,
         mediaType: 'text/plain',
+        metadata: readerObjectMetadata(
+          textResolvedParticipant,
+          textResolvedObject,
+        ),
       },
     }),
   }),
@@ -1172,25 +1262,31 @@ for (const format of ['html', 'text', 'png', 'jpeg']) {
   const maximum = maxReaderArtifact(format)
   const sha256 = createHash('sha256').update(maximum.bytes).digest('hex')
   const artifactIdForFormat = `maximum-${format}`
+  const maximumParticipant = {
+    ...resolvedReaderArtifact,
+    artifactId: artifactIdForFormat,
+    normalizedName: maximum.normalizedName,
+    mediaType: maximum.mediaType,
+    byteLength: maximum.bytes.byteLength,
+    sha256,
+  }
+  const maximumObject = {
+    ...resolvedReaderObject,
+    artifactId: artifactIdForFormat,
+    sha256,
+    byteLength: maximum.bytes.byteLength,
+    mediaType: maximum.mediaType,
+  }
   const maximumDependencies = readerDependencies({
-    resolveParticipantArtifact: async () => ({
-      ...resolvedReaderArtifact,
-      artifactId: artifactIdForFormat,
-      normalizedName: maximum.normalizedName,
-      mediaType: maximum.mediaType,
-      byteLength: maximum.bytes.byteLength,
-      sha256,
-    }),
-    resolveObjectIdentity: async (binding) => ({
-      ...resolvedReaderObject,
-      ...binding,
-    }),
+    resolveParticipantArtifact: async () => maximumParticipant,
+    resolveObjectIdentity: async () => maximumObject,
     downloadPrivateObject: async () => ({
       status: 'available',
       object: {
         bytes: maximum.bytes,
         byteLength: maximum.bytes.byteLength,
         mediaType: maximum.mediaType,
+        metadata: readerObjectMetadata(maximumParticipant, maximumObject),
       },
     }),
   })

@@ -3,8 +3,10 @@ import 'server-only'
 import {
   createRequestApplicationService,
   createRequestDeliveryArtifactObjectResolver,
+  createRequestStagedArtifactCustodyService,
   type RequestApplicationService,
   type RequestDeliveryArtifactObjectResolver,
+  type RequestStagedArtifactCustodyService,
 } from '@/lib/request-service'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
@@ -97,17 +99,39 @@ async function resolveParticipantArtifact(
 
 async function resolvePrivateObject(
   resolver: RequestDeliveryArtifactObjectResolver,
+  custody: RequestStagedArtifactCustodyService,
   binding: {
+    requestId: string
     artifactId: string
     deliveryRevisionId: string
   },
 ) {
-  const resolved = await resolver.resolveDeliveryArtifactObject(binding)
+  const [resolved, custodyBinding] = await Promise.all([
+    resolver.resolveDeliveryArtifactObject({
+      artifactId: binding.artifactId,
+      deliveryRevisionId: binding.deliveryRevisionId,
+    }),
+    custody.resolveDeliveryArtifactCustody(binding),
+  ])
+  if (
+    custodyBinding.requestId !== binding.requestId
+    || custodyBinding.deliveryRevisionId !== resolved.deliveryRevisionId
+    || custodyBinding.artifactId !== resolved.artifactId
+    || custodyBinding.objectIdentity !== resolved.objectIdentity
+  ) throw new Error('request_delivery_custody_binding_mismatch')
 
   return {
     status: 'authorized' as const,
+    requestId: custodyBinding.requestId,
     artifactId: resolved.artifactId,
     deliveryRevisionId: resolved.deliveryRevisionId,
+    acceptedBriefRevisionId: custodyBinding.acceptedBriefRevisionId,
+    builderAssignmentId: custodyBinding.activeBuilderAssignmentId,
+    artifactOrdinal: custodyBinding.artifactOrdinal,
+    sha256: custodyBinding.sha256,
+    byteLength: custodyBinding.byteLength,
+    mediaType: custodyBinding.detectedMediaType,
+    scannerVersion: custodyBinding.scannerVersion,
     manifestDigest: resolved.manifestDigest,
     objectIdentity: resolved.objectIdentity,
   }
@@ -128,13 +152,18 @@ export async function readRequestDeliveryArtifactForCurrentActor(
     const participantService = createRequestApplicationService(await createClient())
     const admin = createAdminClient()
     const objectResolver = createRequestDeliveryArtifactObjectResolver(admin)
+    const custody = createRequestStagedArtifactCustodyService(admin)
     const storage = createDeliverySupabaseStorage(admin)
 
     return await readRequestDeliveryArtifact(input, {
       resolveParticipantArtifact: (artifactId) => (
         resolveParticipantArtifact(participantService, artifactId)
       ),
-      resolveObjectIdentity: (binding) => resolvePrivateObject(objectResolver, binding),
+      resolveObjectIdentity: (binding) => resolvePrivateObject(
+        objectResolver,
+        custody,
+        binding,
+      ),
       async downloadPrivateObject(objectIdentity) {
         const object = await storage.read(objectIdentity)
         if (!object) return { status: 'missing' }
@@ -144,6 +173,7 @@ export async function readRequestDeliveryArtifactForCurrentActor(
             bytes: object.bytes,
             byteLength: object.bytes.byteLength,
             mediaType: object.mediaType,
+            metadata: object.metadata,
           },
         }
       },

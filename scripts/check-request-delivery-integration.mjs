@@ -991,7 +991,7 @@ cleanupAuthorities.set(
 
 const cleanupStorage = new IntegrationMemoryStorage()
 for (const [name, candidate] of Object.entries(cleanupCandidates)) {
-  if (name === 'preexistingMissing' || name === 'activeHold') {
+  if (name === 'preexistingMissing') {
     continue
   }
   const authority = cleanupAuthorities.get(candidate.artifactId)
@@ -1053,6 +1053,13 @@ const cleanupServiceRoleClient = {
       const authority = structuredClone(cleanupAuthorities.get(parameters.p_artifact_id))
       if (
         parameters.p_artifact_id === cleanupCandidates.activeHold.artifactId
+        || parameters.p_artifact_id === cleanupCandidates.takeover.artifactId
+        || (
+          parameters.p_artifact_id === crashCandidate.artifactId
+          && !cleanupStorage.objects.has(
+            cleanupAuthorities.get(crashCandidate.artifactId).objectIdentity,
+          )
+        )
       ) authority.retentionState = 'preserved_by_hold'
       if (
         parameters.p_artifact_id === cleanupCandidates.raceToRetention.artifactId
@@ -1181,7 +1188,7 @@ const cleanupServiceRoleClient = {
         data: {
           contractVersion: 1,
           requestId: parameters.p_request_id,
-          cleaned: true,
+          cleaned: false,
           replayed: false,
           aggregateDigest: 'f'.repeat(64),
           occurredAt: '2026-07-30T12:00:00.000Z',
@@ -1194,7 +1201,7 @@ const cleanupServiceRoleClient = {
         data: {
           contractVersion: 1,
           receiptId: parameters.p_receipt_id,
-          expired: true,
+          expired: false,
           occurredAt: '2026-07-30T12:00:00.000Z',
         },
         error: null,
@@ -1214,8 +1221,9 @@ assert.deepEqual(cleanupResult, {
   artifactsAlreadyMissing: 1,
   rawTextPurged: 1,
   revisionsRetired: 1,
-  auditTombstonesExpired: 1,
-  deidentificationReceiptsExpired: 1,
+  auditTombstonesExpired: 0,
+  deidentificationReceiptsExpired: 0,
+  authorityNoOp: 2,
   retained: 1,
   preserved: 1,
   failed: 1,
@@ -1227,6 +1235,13 @@ assert.equal(
   ),
   false,
   'an active hold prevents physical removal',
+)
+assert.equal(
+  cleanupStorage.removeCalls.includes(
+    cleanupAuthorities.get(cleanupCandidates.takeover.artifactId).objectIdentity,
+  ),
+  true,
+  'expired-lease takeover continues an already-started deletion through a late hold',
 )
 assert.equal(cleanupStorage.removeCalls.length, 2)
 assert.equal(
@@ -1257,10 +1272,28 @@ assert.equal(
   true,
   'a pre-begin retention race aborts only after exact object proof',
 )
+assert.equal(
+  cleanupRpcCalls.some(
+    ({ functionName, parameters }) =>
+      functionName === 'begin_build_request_delivery_artifact_cleanup_delete_v1'
+      && parameters.p_cleanup_claim_id
+        === claimIdByArtifact.get(cleanupCandidates.activeHold.artifactId),
+  ),
+  false,
+  'a pre-begin hold never crosses the irreversible deletion-start transition',
+)
+assert.equal(cleanupResult.auditTombstonesExpired, 0)
+assert.equal(cleanupResult.deidentificationReceiptsExpired, 0)
+assert.equal(
+  cleanupResult.authorityNoOp,
+  2,
+  'hold/concurrent completion false receipts remain categorical no-ops',
+)
 assert.deepEqual(Object.keys(cleanupResult).sort(), [
   'artifactsAlreadyMissing',
   'artifactsDeleted',
   'auditTombstonesExpired',
+  'authorityNoOp',
   'deidentificationReceiptsExpired',
   'examined',
   'failed',
@@ -1294,6 +1327,7 @@ assert.deepEqual(secondMissingResult, {
   revisionsRetired: 0,
   auditTombstonesExpired: 0,
   deidentificationReceiptsExpired: 0,
+  authorityNoOp: 0,
   retained: 0,
   preserved: 0,
   failed: 0,
@@ -1341,6 +1375,11 @@ const takeoverRunner = createRequestDeliveryMaintenanceRunner({
 const takeoverConfirmationResult = await takeoverRunner.runBatch({ limit: 1 })
 assert.equal(takeoverConfirmationResult.artifactsDeleted, 1)
 assert.equal(takeoverConfirmationResult.artifactsAlreadyMissing, 0)
+assert.equal(
+  cleanupResolveCounts.get(crashCandidate.artifactId) >= 4,
+  true,
+  'missing-object takeover re-resolves the late-hold authority before confirmation',
+)
 assert.equal(
   cleanupStorage.removeCalls.filter(key => key === crashAuthority.objectIdentity).length,
   1,

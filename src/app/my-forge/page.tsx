@@ -38,6 +38,7 @@ import {
   MyForgeRequestsList,
   type MyForgeRequestsState,
 } from '@/components/requests/my-forge/MyForgeRequestsList'
+import { AssignedRequestWorkUnavailable } from '@/components/requests/my-forge/AssignedRequestWorkUnavailable'
 import {
   AdminRequestQueue,
   type RequestQueueModel,
@@ -466,6 +467,7 @@ export default async function MyForgePage({
     }
     let requestState: MyForgeRequestsState
     let assignedQueues: RequestQueueModel[] = []
+    let assignedQueueUnavailable = false
     try {
       const service = await getRequestApplicationService()
       const availability = await service.getAvailability()
@@ -491,6 +493,8 @@ export default async function MyForgePage({
             kind: 'unavailable',
             retryHref: '/my-forge?tab=requests',
           }
+      assignedQueueUnavailable =
+        builder.status === 'rejected' || reviewer.status === 'rejected'
       assignedQueues = [
         ...(builder.status === 'fulfilled' && builder.value.items.length > 0
           ? [toAdminQueueModel({
@@ -527,6 +531,7 @@ export default async function MyForgePage({
       <main className="min-h-[calc(100vh-3rem)] bg-surface-50 px-4 py-8 sm:px-6">
         <div className="mx-auto max-w-6xl">
           <MyForgeRequestsList state={requestState} />
+          {assignedQueueUnavailable ? <AssignedRequestWorkUnavailable /> : null}
           {assignedQueues.map((queue) => (
             <div className="mt-8" key={queue.scope}>
               <AdminRequestQueue model={queue} />

@@ -130,6 +130,26 @@ const SCENARIOS = [
     { surface: 'my-forge', state: 'empty' },
     { myForgeEmptyCta: true },
   ),
+  scenario(
+    'my-forge-assigned-empty',
+    { surface: 'my-forge-assigned', state: 'empty' },
+    { assignedQueueExpectation: { unavailable: 0, scopes: [] } },
+  ),
+  scenario(
+    'my-forge-assigned-builder-rejected',
+    { surface: 'my-forge-assigned', state: 'builder_rejected' },
+    { assignedQueueExpectation: { unavailable: 1, scopes: ['reviewer'] } },
+  ),
+  scenario(
+    'my-forge-assigned-reviewer-rejected',
+    { surface: 'my-forge-assigned', state: 'reviewer_rejected' },
+    { assignedQueueExpectation: { unavailable: 1, scopes: ['builder'] } },
+  ),
+  scenario(
+    'my-forge-assigned-dual-ready',
+    { surface: 'my-forge-assigned', state: 'dual_ready' },
+    { assignedQueueExpectation: { unavailable: 0, scopes: ['builder', 'reviewer'] } },
+  ),
   ...['recorded', 'replayed'].map((state) => scenario(`receipt-${state}`, { surface: 'receipt', state })),
   ...LIFECYCLES.map((lifecycle) => scenario(
     `case-lifecycle-${lifecycle}`,
@@ -427,6 +447,26 @@ const PAGE_SNAPSHOT = `(() => {
       .map((element)=>(element.textContent || '').replace(/→/g,'').replace(/\\s+/g,' ').trim()),
     myForgeNewRequestArrows:fixture?.querySelectorAll('[data-my-forge-new-request-arrow]').length || 0,
     myForgeNewRequestSvgs:fixture?.querySelectorAll('[data-my-forge-new-request] svg').length || 0,
+    assignedQueueUnavailableCount:fixture?.querySelectorAll(
+      '[data-assigned-request-work-unavailable]'
+    ).length || 0,
+    requestQueueScopes:[...fixture.querySelectorAll(
+      'section[aria-labelledby^="request-"][aria-labelledby$="-queue-heading"]'
+    )].map((section)=>(
+      section.getAttribute('aria-labelledby') || ''
+    ).replace(/^request-|\\-queue-heading$/g,'')),
+    duplicateIds:[...fixture.querySelectorAll('[id]')]
+      .map((element)=>element.id)
+      .filter((id,index,ids)=>ids.indexOf(id)!==index)
+      .filter((id,index,ids)=>ids.indexOf(id)===index),
+    invalidAriaLabelledBy:[...fixture.querySelectorAll('[aria-labelledby]')]
+      .filter((element)=>{
+        const ids=(element.getAttribute('aria-labelledby') || '').trim().split(/\\s+/).filter(Boolean);
+        return ids.length===0 || ids.some(
+          (id)=>document.querySelectorAll('#'+CSS.escape(id)).length!==1
+        );
+      })
+      .map((element)=>element.getAttribute('aria-labelledby')),
     tooSmall,
     stickyActionCount:stickyActions.length,
     primaryActionDetails,
@@ -753,6 +793,37 @@ async function verifyViewport(client, options, viewport) {
             svgs: snapshot.myForgeNewRequestSvgs,
           })}.`,
         )
+      }
+      if (scenarioItem.assignedQueueExpectation) {
+        const expected = scenarioItem.assignedQueueExpectation
+        if (
+          snapshot.assignedQueueUnavailableCount !== expected.unavailable ||
+          JSON.stringify(snapshot.requestQueueScopes) !== JSON.stringify(expected.scopes)
+        ) {
+          throw new Error(
+            `${label} confused rejected and empty assigned queues: ${JSON.stringify({
+              unavailable: snapshot.assignedQueueUnavailableCount,
+              scopes: snapshot.requestQueueScopes,
+            })}.`,
+          )
+        }
+        if (
+          expected.unavailable > 0 &&
+          !snapshot.fixtureText.includes('Assigned Request work could not be verified')
+        ) {
+          throw new Error(`${label} omitted the bounded assigned-work unavailable notice.`)
+        }
+        if (
+          snapshot.duplicateIds.length > 0 ||
+          snapshot.invalidAriaLabelledBy.length > 0
+        ) {
+          throw new Error(
+            `${label} rendered duplicate IDs or invalid aria-labelledby references: ${JSON.stringify({
+              duplicateIds: snapshot.duplicateIds,
+              invalidAriaLabelledBy: snapshot.invalidAriaLabelledBy,
+            })}.`,
+          )
+        }
       }
       await assertAccessibilityTree(client, sessionId, label)
       if (scenarioItem.screenshot) {

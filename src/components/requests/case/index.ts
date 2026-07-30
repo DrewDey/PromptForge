@@ -7,6 +7,7 @@ export {
   type RequestCaseCapability,
   type RequestCaseClarification,
   type RequestCasePresentationModel,
+  type RequestRestrictedCasePresentationModel,
   type RequestCaseShellProps,
   type RequestCaseTimelineItem,
   type RequestCloseReason,

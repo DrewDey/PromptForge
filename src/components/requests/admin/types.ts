@@ -1,38 +1,18 @@
-export type RequestQueueScope = 'admin' | 'triager' | 'builder' | 'reviewer'
+import type {
+  RequestActorRole,
+  RequestCloseReason,
+  RequestLifecycleState,
+  RequestModerationState,
+  RequestQueueScope,
+} from '@/lib/request-lifecycle'
 
-export type RequestActorRole =
-  | 'requester'
-  | 'triager'
-  | 'builder'
-  | 'reviewer'
-  | 'system'
-
-export type RequestLifecycle =
-  | 'submitted'
-  | 'triage'
-  | 'clarification_requested'
-  | 'accepted'
-  | 'building'
-  | 'review_pending'
-  | 'repair_required'
-  | 'delivery_ready'
-  | 'delivered'
-  | 'completed'
-  | 'closed'
-
-export type RequestModeration = 'clear' | 'held' | 'removed'
-
-export type RequestCloseReason =
-  | 'existing_resolution'
-  | 'duplicate'
-  | 'out_of_scope'
-  | 'capacity_unavailable'
-  | 'declined'
-  | 'withdrawn'
-  | 'expired'
-  | 'failed_review'
-  | 'safety_removed'
-  | 'no_response'
+export type RequestLifecycle = RequestLifecycleState
+export type RequestModeration = RequestModerationState
+export type {
+  RequestActorRole,
+  RequestCloseReason,
+  RequestQueueScope,
+}
 
 export type RequestAvailability =
   | {
@@ -100,6 +80,7 @@ export type RequestFormAction = (
 ) => void | Promise<void>
 
 export interface RequestAdminCapabilities {
+  canBeginTriage: boolean
   canResolveExistingPath: boolean
   canRequestClarification: boolean
   canAcceptAndAssign: boolean
@@ -108,9 +89,13 @@ export interface RequestAdminCapabilities {
   canPlaceModerationHold: boolean
   canReleaseModerationHold: boolean
   canRemoveForModeration: boolean
+  canReassignTriager: boolean
+  canReassignBuilder: boolean
+  canReassignReviewer: boolean
 }
 
 export interface RequestAdminActions {
+  beginTriage?: RequestFormAction
   resolveExistingPath?: RequestFormAction
   requestClarification?: RequestFormAction
   acceptAndAssign?: RequestFormAction
@@ -120,6 +105,9 @@ export interface RequestAdminActions {
   releaseModerationHold?: RequestFormAction
   removeForModeration?: RequestFormAction
   close?: RequestFormAction
+  reassignTriager?: RequestFormAction
+  reassignBuilder?: RequestFormAction
+  reassignReviewer?: RequestFormAction
 }
 
 export interface RequestEligibleAssignee {
@@ -147,6 +135,7 @@ export interface RequestAdminDetailModel {
   allowedCloseReasons: readonly RequestCloseReason[]
   eligibleBuilders: readonly RequestEligibleAssignee[]
   eligibleReviewers: readonly RequestEligibleAssignee[]
+  eligibleTriagers: readonly RequestEligibleAssignee[]
   builderLabel?: string | null
   reviewerLabel?: string | null
   targetDate?: string | null
@@ -161,6 +150,10 @@ export interface RequestAdminDetailModel {
     releaseModerationHold: string
     removeForModeration: string
     close: string
+    beginTriage: string
+    reassignTriager: string
+    reassignBuilder: string
+    reassignReviewer: string
   }
   timeline: readonly RequestAuditEvent[]
 }

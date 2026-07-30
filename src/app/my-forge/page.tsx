@@ -34,6 +34,16 @@ import type {
 } from '@/lib/my-forge-types'
 import { buildProjectForkHref } from '@/lib/project-forks'
 import MyForgeActivationTracker from '@/components/analytics/MyForgeActivationTracker'
+import {
+  MyForgeRequestsList,
+  type MyForgeRequestsState,
+} from '@/components/requests/my-forge/MyForgeRequestsList'
+import {
+  getRequestApplicationService,
+  getRequestViewer,
+} from '@/lib/build-requests/server'
+import { toMyForgeRequestsState } from '@/lib/build-requests/presentation'
+import type { RequestCursor } from '@/lib/request-lifecycle'
 
 export const metadata: Metadata = {
   title: 'My Forge | PathForge',
@@ -420,12 +430,38 @@ function queueItemForSaved(saved: MyForgeSavedProject): WorkQueueItem {
 export default async function MyForgePage({
   searchParams,
 }: {
-  searchParams: Promise<{ submitted?: string }>
+  searchParams: Promise<{ submitted?: string; tab?: string; cursor?: string }>
 }) {
+  const query = await searchParams
+  if (query.tab === 'requests') {
+    const viewer = await getRequestViewer().catch(() => null)
+    if (!viewer) return <LoggedOutForge />
+    let requestState: MyForgeRequestsState
+    try {
+      const service = await getRequestApplicationService()
+      const page = await service.listMyRequests({
+        cursor: query.cursor as RequestCursor | undefined,
+        limit: 20,
+      })
+      requestState = toMyForgeRequestsState(page.items, page.nextCursor)
+    } catch {
+      requestState = {
+        kind: 'unavailable',
+        retryHref: '/my-forge?tab=requests',
+      }
+    }
+    return (
+      <main className="min-h-[calc(100vh-3rem)] bg-surface-50 px-4 py-8 sm:px-6">
+        <div className="mx-auto max-w-6xl">
+          <MyForgeRequestsList state={requestState} />
+        </div>
+      </main>
+    )
+  }
   const dashboard = await getMyForgeDashboard()
   if (!dashboard) return <LoggedOutForge />
 
-  const { submitted } = await searchParams
+  const { submitted } = query
   const submittedRun = submitted
     ? dashboard.sourceRuns.find((run) => run.id === submitted)
     : null

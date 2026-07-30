@@ -1,4 +1,8 @@
 import Link from 'next/link'
+import type {
+  RequestLifecycleState,
+  RequestModerationState,
+} from '@/lib/request-lifecycle'
 import {
   AlertCircle,
   ArrowRight,
@@ -13,20 +17,8 @@ import {
 } from 'lucide-react'
 import styles from './MyForgeRequestsList.module.css'
 
-export type MyForgeRequestLifecycle =
-  | 'submitted'
-  | 'triage'
-  | 'clarification_requested'
-  | 'accepted'
-  | 'building'
-  | 'review_pending'
-  | 'repair_required'
-  | 'delivery_ready'
-  | 'delivered'
-  | 'completed'
-  | 'closed'
-
-export type MyForgeRequestModeration = 'clear' | 'held' | 'removed'
+export type MyForgeRequestLifecycle = RequestLifecycleState
+export type MyForgeRequestModeration = RequestModerationState
 
 export interface MyForgeRequestSummary {
   /** A participant-safe label. Do not pass raw brief text. */

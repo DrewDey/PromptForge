@@ -18,6 +18,66 @@ const caseShell = readFileSync(
   'utf8',
 )
 const browserGuard = readFileSync('scripts/check-request-build-browser.mjs', 'utf8')
+const intakeAction = readFileSync('src/app/requests/new/actions.ts', 'utf8')
+const intakePage = readFileSync('src/app/requests/new/page.tsx', 'utf8')
+const presentation = readFileSync('src/lib/build-requests/presentation.ts', 'utf8')
+const serverAdapter = readFileSync('src/lib/build-requests/server.ts', 'utf8')
+
+assert.match(
+  serverAdapter,
+  /^import 'server-only'/,
+  'Request application-service adapter must be server-only.',
+)
+assert.match(
+  intakeAction,
+  /const viewer = await getRequestViewer\(\)[\s\S]{0,220}serviceError: 'auth_required'/,
+  'Mutation path must recheck an expired session and return auth_required.',
+)
+assert.match(
+  intakeAction,
+  /error instanceof RequestContractError[\s\S]{0,160}\? error\.message/,
+  'Only canonical contract errors may surface their message.',
+)
+assert.match(
+  intakeAction,
+  /error instanceof RequestContractError[\s\S]{0,220}: 'unavailable'/,
+  'Unknown provider, SQL, endpoint, or runtime errors must collapse to unavailable.',
+)
+assert.doesNotMatch(
+  intakeAction,
+  /message: error instanceof Error[\s\S]{0,80}error\.message/,
+  'Unknown runtime errors must never be returned as raw form copy.',
+)
+assert.match(
+  intakePage,
+  /availability\.intakeEligibility === 'already_active'[\s\S]{0,80}\? 'already_active'/,
+  'Already-active intake must remain distinct from duplicate mutation errors.',
+)
+assert.match(
+  intake,
+  /already_active: 'This account already has an active private request\./,
+  'Already-active intake must explain the distinct state.',
+)
+assert.match(
+  intake,
+  /serviceError === 'already_active'[\s\S]{0,180}Open My Forge requests/,
+  'Already-active intake must link to My Forge.',
+)
+assert.match(
+  presentation,
+  /function participantActorRole[\s\S]*function operatorActorRole[\s\S]*operatorAuthority === 'admin'[\s\S]*actorRole: operatorActorRole\(detail\.actor\)/,
+  'Participant and operator role precedence must be context-aware for dual-role accounts.',
+)
+assert.match(
+  presentation,
+  /assignment\.role === 'builder' && assignment\.active[\s\S]{0,120}detail\.targetDate/,
+  'Full case presentation must project the canonical active-builder target date.',
+)
+assert.match(
+  presentation,
+  /targetDate: detail\.targetDate/,
+  'Admin detail must project the canonical service target date.',
+)
 
 assert.match(
   route,

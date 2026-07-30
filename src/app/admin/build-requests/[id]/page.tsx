@@ -131,6 +131,7 @@ export default async function BuildRequestAdminDetailPage({
           reassignTriager: action,
           reassignBuilder: action,
           reassignReviewer: action,
+          closeNoResponse: action,
         }}
       />
     </main>

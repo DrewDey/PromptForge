@@ -93,7 +93,11 @@ export async function adminRequestCommandAction(formData: FormData) {
     }
   } else if (resolution === 'duplicate') {
     command = { ...base, kind: 'close', payload: { reason: 'duplicate' } }
-  } else if (commandName === 'begin_triage' || commandName === 'start_build') {
+  } else if (
+    commandName === 'begin_triage' ||
+    commandName === 'start_build' ||
+    commandName === 'close_no_response'
+  ) {
     command = { ...base, kind: commandName, payload: {} }
   } else if (commandName === 'request_clarification') {
     command = {

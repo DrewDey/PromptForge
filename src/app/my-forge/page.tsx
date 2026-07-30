@@ -39,10 +39,17 @@ import {
   type MyForgeRequestsState,
 } from '@/components/requests/my-forge/MyForgeRequestsList'
 import {
+  AdminRequestQueue,
+  type RequestQueueModel,
+} from '@/components/requests/admin'
+import {
   getRequestApplicationService,
-  getRequestViewer,
+  getRequestViewerState,
 } from '@/lib/build-requests/server'
-import { toMyForgeRequestsState } from '@/lib/build-requests/presentation'
+import {
+  toAdminQueueModel,
+  toMyForgeRequestsState,
+} from '@/lib/build-requests/presentation'
 import type { RequestCursor } from '@/lib/request-lifecycle'
 
 export const metadata: Metadata = {
@@ -430,20 +437,86 @@ function queueItemForSaved(saved: MyForgeSavedProject): WorkQueueItem {
 export default async function MyForgePage({
   searchParams,
 }: {
-  searchParams: Promise<{ submitted?: string; tab?: string; cursor?: string }>
+  searchParams: Promise<{
+    submitted?: string
+    tab?: string
+    cursor?: string
+    builderCursor?: string
+    reviewerCursor?: string
+  }>
 }) {
   const query = await searchParams
   if (query.tab === 'requests') {
-    const viewer = await getRequestViewer().catch(() => null)
-    if (!viewer) return <LoggedOutForge />
+    const viewer = await getRequestViewerState().catch(() => ({ status: 'unavailable' as const }))
+    if (viewer.status === 'signed_out') return <LoggedOutForge />
+    if (viewer.status === 'unavailable') {
+      return (
+        <main className="min-h-[calc(100vh-3rem)] bg-surface-50 px-4 py-8 sm:px-6">
+          <div className="mx-auto max-w-6xl">
+            <MyForgeRequestsList
+              state={{
+                kind: 'unavailable',
+                retryHref: '/my-forge?tab=requests',
+                message: 'PathForge could not verify the current session. No signed-out or empty-list conclusion was made.',
+              }}
+            />
+          </div>
+        </main>
+      )
+    }
     let requestState: MyForgeRequestsState
+    let assignedQueues: RequestQueueModel[] = []
     try {
       const service = await getRequestApplicationService()
-      const page = await service.listMyRequests({
-        cursor: query.cursor as RequestCursor | undefined,
-        limit: 20,
-      })
-      requestState = toMyForgeRequestsState(page.items, page.nextCursor)
+      const availability = await service.getAvailability()
+      const [mine, builder, reviewer] = await Promise.allSettled([
+        service.listMyRequests({
+          cursor: query.cursor as RequestCursor | undefined,
+          limit: 20,
+        }),
+        service.listAssignedQueue({
+          scope: 'builder',
+          cursor: query.builderCursor as RequestCursor | undefined,
+          limit: 20,
+        }),
+        service.listAssignedQueue({
+          scope: 'reviewer',
+          cursor: query.reviewerCursor as RequestCursor | undefined,
+          limit: 20,
+        }),
+      ])
+      requestState = mine.status === 'fulfilled'
+        ? toMyForgeRequestsState(mine.value.items, mine.value.nextCursor)
+        : {
+            kind: 'unavailable',
+            retryHref: '/my-forge?tab=requests',
+          }
+      assignedQueues = [
+        ...(builder.status === 'fulfilled' && builder.value.items.length > 0
+          ? [toAdminQueueModel({
+              scope: 'builder',
+              availability,
+              items: builder.value.items,
+              nextCursor: builder.value.nextCursor,
+              detailBaseHref: '/requests',
+              loadMoreHref: builder.value.nextCursor
+                ? `/my-forge?tab=requests&builderCursor=${encodeURIComponent(builder.value.nextCursor)}`
+                : undefined,
+            })]
+          : []),
+        ...(reviewer.status === 'fulfilled' && reviewer.value.items.length > 0
+          ? [toAdminQueueModel({
+              scope: 'reviewer',
+              availability,
+              items: reviewer.value.items,
+              nextCursor: reviewer.value.nextCursor,
+              detailBaseHref: '/requests',
+              loadMoreHref: reviewer.value.nextCursor
+                ? `/my-forge?tab=requests&reviewerCursor=${encodeURIComponent(reviewer.value.nextCursor)}`
+                : undefined,
+            })]
+          : []),
+      ]
     } catch {
       requestState = {
         kind: 'unavailable',
@@ -454,6 +527,11 @@ export default async function MyForgePage({
       <main className="min-h-[calc(100vh-3rem)] bg-surface-50 px-4 py-8 sm:px-6">
         <div className="mx-auto max-w-6xl">
           <MyForgeRequestsList state={requestState} />
+          {assignedQueues.map((queue) => (
+            <div className="mt-8" key={queue.scope}>
+              <AdminRequestQueue model={queue} />
+            </div>
+          ))}
         </div>
       </main>
     )

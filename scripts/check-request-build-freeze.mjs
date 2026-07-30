@@ -35,14 +35,24 @@ forbidText(dataPath, data, '.delete(', 'the legacy data module must not retain d
 
 const pagePath = 'src/app/requests/page.tsx'
 const page = read(pagePath)
-requireText(pagePath, page, "board.status === 'ready'", 'the page must distinguish verified reads from unavailable reads')
-requireText(pagePath, page, 'This is an unavailable state, not an empty-board result.', 'the page must label read failure truthfully')
-requireText(pagePath, page, 'Intake is currently off', 'private intake must render default-off')
-requireText(pagePath, page, 'Capacity is capped at four active cases', 'the page must disclose the pilot capacity')
-requireText(pagePath, page, 'A page URL or query string is never proof that a request was received.', 'the page must reject query-string receipts')
+const overviewPath = 'src/components/requests/service/RequestServiceOverview.tsx'
+const overview = read(overviewPath)
+requireText(pagePath, page, 'getRequestApplicationService()', 'the page must use the Request application service')
+requireText(pagePath, page, 'service.getAvailability()', 'the page must use the authority availability read')
+requireText(pagePath, page, 'toUnavailableServiceAvailability()', 'the page must distinguish unavailable reads')
+requireText(overviewPath, overview, 'Availability could not be confirmed.', 'the page must label read failure truthfully')
+requireText(overviewPath, overview, 'The service control is off.', 'private intake must render default-off')
+requireText(overviewPath, overview, 'availability.maxActiveCases', 'the page must disclose the authority-projected capacity')
+requireText(
+  'src/components/requests/service/RequestSubmissionReceipt.tsx',
+  read('src/components/requests/service/RequestSubmissionReceipt.tsx'),
+  'Durable receipt',
+  'only a durable authority receipt may prove submission',
+)
 forbidText(pagePath, page, 'BuildRequestSubmitForm', 'default-off intake must not render the legacy submit form')
 forbidText(pagePath, page, 'searchParams', 'query strings must not produce submission success')
 forbidText(pagePath, page, 'submittedBanner', 'query strings must not produce submission success')
+forbidText(pagePath, page, 'getBuildRequests(', 'the private service desk must not read the legacy public board')
 
 const cardPath = 'src/components/requests/BuildRequestCard.tsx'
 const card = read(cardPath)

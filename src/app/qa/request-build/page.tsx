@@ -392,6 +392,7 @@ export default async function RequestBuildFixturePage({
     releaseModerationHold: fixtureAction,
     removeForModeration: fixtureAction,
     close: fixtureAction,
+    closeNoResponse: fixtureAction,
   }
   return (
     <FixtureFrame surface={surface} state={state}>

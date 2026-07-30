@@ -92,6 +92,7 @@ export interface RequestAdminCapabilities {
   canReassignTriager: boolean
   canReassignBuilder: boolean
   canReassignReviewer: boolean
+  canCloseNoResponse: boolean
 }
 
 export interface RequestAdminActions {
@@ -108,6 +109,7 @@ export interface RequestAdminActions {
   reassignTriager?: RequestFormAction
   reassignBuilder?: RequestFormAction
   reassignReviewer?: RequestFormAction
+  closeNoResponse?: RequestFormAction
 }
 
 export interface RequestEligibleAssignee {
@@ -154,6 +156,7 @@ export interface RequestAdminDetailModel {
     reassignTriager: string
     reassignBuilder: string
     reassignReviewer: string
+    closeNoResponse: string
   }
   timeline: readonly RequestAuditEvent[]
 }

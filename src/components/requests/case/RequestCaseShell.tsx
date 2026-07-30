@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import type {
+  PathForgeRequestReference,
   RequestActorRole,
   RequestCloseReason,
   RequestLifecycleState,
@@ -97,6 +98,7 @@ export interface RequestCasePresentationModel {
     note: string | null
     resolutionHref: string | null
     resolutionLabel: string | null
+    resolutionReference: PathForgeRequestReference | null
   }
 }
 
@@ -354,8 +356,20 @@ function Closure({
       {closure.note ? <p>{closure.note}</p> : null}
       {closure.resolutionHref && closure.resolutionLabel ? (
         <Link href={closure.resolutionHref}>
-          Open {closure.resolutionLabel}
+          {closure.resolutionLabel}
         </Link>
+      ) : null}
+      {closure.resolutionReference?.kind === 'response' ? (
+        <dl className={styles.statusList}>
+          <div>
+            <dt>Approved model variant</dt>
+            <dd className={styles.breakable}>{closure.resolutionReference.modelVariantId}</dd>
+          </div>
+          <div>
+            <dt>Response step</dt>
+            <dd>{closure.resolutionReference.responseStepNumber}</dd>
+          </div>
+        </dl>
       ) : null}
     </div>
   )

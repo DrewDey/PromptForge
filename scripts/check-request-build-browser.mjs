@@ -98,7 +98,7 @@ const ADMIN_QUEUE_STATES = [
   'capacity_full',
 ]
 const ADMIN_SCOPES = ['admin', 'triager', 'builder', 'reviewer']
-const ADMIN_DETAIL_STATES = ['triager', 'builder', 'reviewer', 'admin', 'none']
+const ADMIN_DETAIL_STATES = ['triager', 'builder', 'reviewer', 'admin', 'no_response_eligible', 'none']
 
 function scenario(name, query, options = {}) {
   return {

@@ -31,7 +31,7 @@ type HeaderClientProps = {
 const navItems = [
   { href: '/paths', label: 'Explore' },
   { href: '/what-to-build', label: 'Ideas' },
-  { href: '/requests', label: 'Requests' },
+  { href: '/requests', label: 'Request a Build' },
   { href: '/guide', label: 'How it works' },
   { href: '/build', label: 'Share a build' },
 ] as const

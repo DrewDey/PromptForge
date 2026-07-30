@@ -7,7 +7,7 @@ const footerGroups = [
     links: [
       { href: '/paths', label: 'Explore build paths' },
       { href: '/what-to-build', label: 'Ideas' },
-      { href: '/requests', label: 'Build requests' },
+      { href: '/requests', label: 'Request a Build' },
       { href: '/paths?domain=games&panel=open', label: 'Games' },
     ],
   },

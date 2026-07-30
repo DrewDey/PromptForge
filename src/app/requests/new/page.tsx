@@ -3,15 +3,18 @@ import { redirect } from 'next/navigation'
 import { RequestIntakeWorkflow } from '@/components/requests/intake'
 import {
   getRequestApplicationService,
-  getRequestViewer,
+  getRequestViewerState,
 } from '@/lib/build-requests/server'
 import { submitRequestAction } from './actions'
 
 export const dynamic = 'force-dynamic'
 
 export default async function NewRequestPage() {
-  const viewer = await getRequestViewer()
-  if (!viewer) redirect('/auth/login?next=%2Frequests%2Fnew')
+  const viewer = await getRequestViewerState()
+  if (viewer.status === 'signed_out') redirect('/auth/login?next=%2Frequests%2Fnew')
+  if (viewer.status === 'unavailable') {
+    throw new Error('Request identity is temporarily unavailable.')
+  }
 
   const service = await getRequestApplicationService()
   const availability = await service.getAvailability()

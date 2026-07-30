@@ -22,6 +22,109 @@ const intakeAction = readFileSync('src/app/requests/new/actions.ts', 'utf8')
 const intakePage = readFileSync('src/app/requests/new/page.tsx', 'utf8')
 const presentation = readFileSync('src/lib/build-requests/presentation.ts', 'utf8')
 const serverAdapter = readFileSync('src/lib/build-requests/server.ts', 'utf8')
+const whatToBuild = readFileSync('src/app/what-to-build/page.tsx', 'utf8')
+const homeSupport = readFileSync('src/components/home/HomeSupportRoutes.tsx', 'utf8')
+for (const [source, label] of [
+  [whatToBuild, 'what-to-build'],
+  [homeSupport, 'home support'],
+]) {
+  assert.doesNotMatch(
+    source,
+    /(?:community board|community for a build|let builders respond|Open Build Requests)/i,
+    `${label} must not describe the retired public request board.`,
+  )
+  assert.match(
+    source,
+    /private[\s\S]{0,180}(?:capacity-controlled|managed service)/i,
+    `${label} must describe the private managed-service boundary.`,
+  )
+}
+const readAcknowledger = readFileSync(
+  'src/components/requests/RequestReadAcknowledger.tsx',
+  'utf8',
+)
+const clarificationAction = readFileSync(
+  'src/components/requests/RequestClarificationAction.tsx',
+  'utf8',
+)
+assert.match(
+  clarificationAction,
+  /state\.status === 'submitted'[\s\S]*eventName: 'clarification_submitted'[\s\S]*replayed: state\.replayed/,
+  'Clarification analytics must emit only after a verified receipt state.',
+)
+assert.ok(
+  clarificationAction.indexOf("if (state.status === 'submitted')") <
+    clarificationAction.indexOf("state.status === 'error' ?"),
+  'Clarification success analytics must remain inside the submitted receipt branch.',
+)
+
+assert.match(
+  readAcknowledger,
+  /action\(\{ requestId, expectedEventSequence, idempotencyKey \}\)\.catch\(\(\) => \{/,
+  'Rejected read acknowledgment must be absorbed without claiming local read state.',
+)
+assert.doesNotMatch(
+  readAcknowledger,
+  /set(?:Unread|Read)|useState/,
+  'Read acknowledgment must not create false browser-local read authority.',
+)
+
+function functionSource(name, nextName) {
+  const start = adminOperations.indexOf(`function ${name}(`)
+  const end = adminOperations.indexOf(`function ${nextName}(`, start + 1)
+  assert.notEqual(start, -1, `Missing ${name}.`)
+  assert.notEqual(end, -1, `Missing boundary after ${name}.`)
+  return adminOperations.slice(start, end)
+}
+
+for (const [name, nextName, expectedCommand, requiredFields] of [
+  ['ClarificationForm', 'AcceptAssignmentForm', 'request_clarification', ['question']],
+  ['AcceptAssignmentForm', 'StartBuildForm', 'accept', ['builderUserId', 'targetDate']],
+  ['ReviewerAssignmentForm', 'ModerationReasonForm', 'assign_reviewer', ['reviewerUserId']],
+]) {
+  const source = functionSource(name, nextName)
+  const commands = [...source.matchAll(/name="command" value="([^"]+)"/g)]
+    .map((match) => match[1])
+  const submitted = new FormData()
+  for (const command of commands) submitted.append('command', command)
+  assert.deepEqual(
+    submitted.getAll('command'),
+    [expectedCommand],
+    `${name} must submit exactly one ${expectedCommand} discriminant.`,
+  )
+  for (const field of requiredFields) {
+    assert.match(
+      source,
+      new RegExp(`name="${field}"`),
+      `${name} must submit ${field}.`,
+    )
+  }
+}
+
+for (const expectedCommand of [
+  'begin_triage',
+  'start_build',
+  'reassign_triager',
+  'reassign_builder',
+  'reassign_reviewer',
+  'close_no_response',
+]) {
+  assert.match(
+    adminOperations,
+    new RegExp(`(?:command="${expectedCommand}"|value="${expectedCommand}")`),
+    `Admin forms must expose the exact ${expectedCommand} discriminant.`,
+  )
+}
+assert.match(
+  adminOperations,
+  /capabilities\.canCloseNoResponse && actions\.closeNoResponse[\s\S]*No client timing evidence or note is accepted\.[\s\S]*command="close_no_response"/,
+  'No-response closure must be a dedicated authority-projected empty-payload command.',
+)
+assert.doesNotMatch(
+  functionSource('SimpleCommandForm', 'ReassignmentForm'),
+  /name="(?:note|closeReason|timing|elapsed)"/,
+  'Simple no-response closure must not accept client timing, note, or generic reason fields.',
+)
 
 assert.match(
   serverAdapter,
@@ -29,8 +132,13 @@ assert.match(
   'Request application-service adapter must be server-only.',
 )
 assert.match(
+  serverAdapter,
+  /isAuthSessionMissingError\(error\)[\s\S]{0,120}status: 'signed_out'[\s\S]{0,120}status: 'unavailable'/,
+  'Session-not-found must remain distinct from identity transport failure.',
+)
+assert.match(
   intakeAction,
-  /const viewer = await getRequestViewer\(\)[\s\S]{0,220}serviceError: 'auth_required'/,
+  /const viewer = await getRequestViewerState\(\)[\s\S]{0,260}viewer\.status === 'signed_out'[\s\S]{0,220}serviceError: 'auth_required'/,
   'Mutation path must recheck an expired session and return auth_required.',
 )
 assert.match(

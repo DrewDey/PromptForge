@@ -354,6 +354,26 @@ function storageMetadataMatches<TObjectIdentity>(
   )
 }
 
+function objectBindingsMatch<TObjectIdentity>(
+  first: RequestDeliveryResolvedObject<TObjectIdentity>,
+  second: RequestDeliveryResolvedObject<TObjectIdentity>,
+) {
+  return (
+    first.requestId === second.requestId
+    && first.artifactId === second.artifactId
+    && first.deliveryRevisionId === second.deliveryRevisionId
+    && first.acceptedBriefRevisionId === second.acceptedBriefRevisionId
+    && first.builderAssignmentId === second.builderAssignmentId
+    && first.artifactOrdinal === second.artifactOrdinal
+    && normalizeDigest(first.sha256) === normalizeDigest(second.sha256)
+    && first.byteLength === second.byteLength
+    && first.mediaType === second.mediaType
+    && first.scannerVersion === second.scannerVersion
+    && normalizeDigest(first.manifestDigest) === normalizeDigest(second.manifestDigest)
+    && first.objectIdentity === second.objectIdentity
+  )
+}
+
 function participantBindingsMatch(
   first: RequestDeliveryResolvedArtifact,
   second: RequestDeliveryResolvedArtifact,
@@ -592,9 +612,7 @@ export async function readRequestDeliveryArtifact<TObjectIdentity extends string
   if (currentObject.status === 'unavailable') return authorityFailure(currentObject)
   if (
     !objectBindingMatches(currentParticipant, currentObject)
-    || normalizeDigest(currentObject.manifestDigest)
-      !== normalizeDigest(resolvedObject.manifestDigest)
-    || currentObject.objectIdentity !== resolvedObject.objectIdentity
+    || !objectBindingsMatch(resolvedObject, currentObject)
   ) {
     return failure('authority_binding_mismatch', 409)
   }

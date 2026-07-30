@@ -191,6 +191,8 @@ BEGIN
   INTO brief_revision_id, request_version
   FROM public.build_requests AS request_value
   WHERE request_value.id = request_id;
+  INSERT INTO public.test_request_lifecycle_detail_snapshots
+  VALUES ('requester_submitted', public.get_build_request_v1(1, request_id));
   SELECT id INTO acceptance_check_id
   FROM public.build_request_acceptance_checks AS acceptance
   WHERE acceptance.request_id = runtime.request_id
@@ -214,6 +216,8 @@ BEGIN
     1, request_id, request_version, 'begin-triage-0001', 'begin_triage', '{}'::JSONB
   );
   request_version := receipt.request_version;
+  INSERT INTO public.test_request_lifecycle_detail_snapshots
+  VALUES ('triager_triage', public.get_build_request_v1(1, request_id));
   SELECT * INTO receipt FROM public.build_request_command_v1(
     1,
     request_id,

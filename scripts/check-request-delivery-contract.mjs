@@ -803,7 +803,6 @@ const resolvedReaderArtifact = {
   requestId: scope.requestId,
   deliveryRevisionId: scope.deliveryRevisionId,
   artifactId: readerInput.artifactId,
-  manifestDigest: readerManifestDigest,
   normalizedName: '../../private result.html',
   mediaType: 'text/html',
   byteLength: readerBytes.byteLength,
@@ -846,6 +845,31 @@ assert.equal(previewResponse.headers['Content-Type'], 'text/html; charset=utf-8'
 assert.match(previewResponse.headers['Content-Disposition'], /^inline; filename="private-result\.html"$/)
 assert.equal(Number(previewResponse.headers['Content-Length']), readerBytes.byteLength)
 assert.doesNotMatch(new TextDecoder().decode(previewResponse.body), /requests\/10000000-/)
+assert.equal(
+  Object.hasOwn(resolvedReaderArtifact, 'manifestDigest'),
+  false,
+  'participant-safe reader metadata must not contain the sealed manifest digest',
+)
+
+const serviceReaderBindings = []
+const serverDerivedDigestResponse = await readRequestDeliveryArtifact(
+  readerInput,
+  readerDependencies({
+    resolveObjectIdentity: async (binding) => {
+      serviceReaderBindings.push(binding)
+      return resolvedReaderObject
+    },
+  }),
+)
+assert.equal(serverDerivedDigestResponse.ok, true)
+assert.equal(serviceReaderBindings.length, 2)
+for (const binding of serviceReaderBindings) {
+  assert.deepEqual(
+    Object.keys(binding).sort(),
+    ['artifactId', 'deliveryRevisionId'],
+    'service object resolution must derive its digest without participant input',
+  )
+}
 
 const downloadResponse = await readRequestDeliveryArtifact(
   { ...readerInput, disposition: 'download' },
@@ -976,6 +1000,26 @@ assert.equal(reboundObjectResponse.ok, false)
 assert.equal(reboundObjectResponse.internalState, 'authority_binding_mismatch')
 assert.equal(reboundObjectResponse.status, 409)
 assert.notDeepEqual(reboundObjectResponse.body, readerBytes)
+
+let digestResolutionCount = 0
+const reboundDigestResponse = await readRequestDeliveryArtifact(
+  readerInput,
+  readerDependencies({
+    resolveObjectIdentity: async () => {
+      digestResolutionCount += 1
+      return digestResolutionCount === 1
+        ? resolvedReaderObject
+        : {
+            ...resolvedReaderObject,
+            manifestDigest: 'c'.repeat(64),
+          }
+    },
+  }),
+)
+assert.equal(reboundDigestResponse.ok, false)
+assert.equal(reboundDigestResponse.internalState, 'authority_binding_mismatch')
+assert.equal(reboundDigestResponse.status, 409)
+assert.notDeepEqual(reboundDigestResponse.body, readerBytes)
 
 const missingReader = await readRequestDeliveryArtifact(
   readerInput,

@@ -6,10 +6,9 @@ import { createHash } from 'node:crypto'
  * Protected Request-delivery reader core.
  *
  * This module is deliberately route and storage-provider agnostic. The caller
- * must inject an actor-derived authority resolver which re-checks the current
- * request/revision/moderation/digest state and returns the private object
- * identity only to server code. A client can never select or supply that
- * identity.
+ * must inject a participant resolver for safe artifact metadata and a separate
+ * service-only resolver which derives the sealed digest and private object
+ * identity internally. A client can never select or supply either value.
  */
 
 export const REQUEST_DELIVERY_MAX_ARTIFACT_BYTES = 4_000_000
@@ -134,7 +133,6 @@ export interface RequestDeliveryResolvedArtifact {
   requestId: string
   deliveryRevisionId: string
   artifactId: string
-  manifestDigest: string
   normalizedName: string
   mediaType: RequestDeliveryReaderMediaType
   byteLength: number
@@ -178,7 +176,6 @@ export interface RequestDeliveryReaderDependencies<TObjectIdentity extends strin
   resolveObjectIdentity: (binding: {
     artifactId: string
     deliveryRevisionId: string
-    manifestDigest: string
   }) => Promise<RequestDeliveryObjectAuthorityResult<TObjectIdentity>>
   downloadPrivateObject: (
     objectIdentity: TObjectIdentity,
@@ -289,14 +286,12 @@ function participantBindingIsValid(
   input: RequestDeliveryReaderInput,
   resolved: RequestDeliveryResolvedArtifact,
 ): boolean {
-  const resolvedManifestDigest = normalizeDigest(resolved.manifestDigest)
   const resolvedSha256 = normalizeDigest(resolved.sha256)
 
   return (
     resolved.artifactId === input.artifactId &&
     validLogicalId(resolved.requestId) &&
     validLogicalId(resolved.deliveryRevisionId) &&
-    resolvedManifestDigest !== null &&
     resolvedSha256 !== null &&
     ALLOWED_MEDIA_TYPES.has(resolved.mediaType) &&
     Number.isSafeInteger(resolved.byteLength) &&
@@ -312,7 +307,7 @@ function objectBindingMatches<TObjectIdentity>(
   return (
     object.artifactId === participant.artifactId
     && object.deliveryRevisionId === participant.deliveryRevisionId
-    && normalizeDigest(object.manifestDigest) === normalizeDigest(participant.manifestDigest)
+    && normalizeDigest(object.manifestDigest) !== null
   )
 }
 
@@ -324,7 +319,6 @@ function participantBindingsMatch(
     first.requestId === second.requestId
     && first.deliveryRevisionId === second.deliveryRevisionId
     && first.artifactId === second.artifactId
-    && normalizeDigest(first.manifestDigest) === normalizeDigest(second.manifestDigest)
     && first.normalizedName === second.normalizedName
     && first.mediaType === second.mediaType
     && first.byteLength === second.byteLength
@@ -450,7 +444,6 @@ export async function readRequestDeliveryArtifact<TObjectIdentity extends string
     resolvedObject = await dependencies.resolveObjectIdentity({
       artifactId: resolved.artifactId,
       deliveryRevisionId: resolved.deliveryRevisionId,
-      manifestDigest: resolved.manifestDigest,
     })
   } catch {
     return failure('authority_binding_mismatch', 503)
@@ -535,7 +528,6 @@ export async function readRequestDeliveryArtifact<TObjectIdentity extends string
     currentObject = await dependencies.resolveObjectIdentity({
       artifactId: currentParticipant.artifactId,
       deliveryRevisionId: currentParticipant.deliveryRevisionId,
-      manifestDigest: currentParticipant.manifestDigest,
     })
   } catch {
     return failure('authority_binding_mismatch', 503)
@@ -543,6 +535,8 @@ export async function readRequestDeliveryArtifact<TObjectIdentity extends string
   if (currentObject.status === 'unavailable') return authorityFailure(currentObject)
   if (
     !objectBindingMatches(currentParticipant, currentObject)
+    || normalizeDigest(currentObject.manifestDigest)
+      !== normalizeDigest(resolvedObject.manifestDigest)
     || currentObject.objectIdentity !== resolvedObject.objectIdentity
   ) {
     return failure('authority_binding_mismatch', 409)

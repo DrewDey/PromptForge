@@ -143,7 +143,7 @@ const expectedStates = {
   builderInitialNoWorkspace: 'none',
   builderPrepared: 'staging',
   builderPreparedResume: 'staging',
-  builderSealed: 'staging',
+  builderSealed: 'sealed_waiting',
   reviewerReviewPending: 'review_pending',
   repairRequired: 'repair_required',
   admin: 'none',
@@ -1512,6 +1512,10 @@ const sourceFiles = {
     src,
     'components/requests/delivery/BuilderDeliveryUploader.tsx',
   ), 'utf8'),
+  builderWorkflow: readFileSync(path.join(
+    src,
+    'lib/build-requests/builder-delivery-workflow.ts',
+  ), 'utf8'),
   outcomeForms: readFileSync(path.join(
     src,
     'components/requests/delivery/RequesterDeliveryOutcomeForms.tsx',
@@ -1567,7 +1571,7 @@ for (const forbidden of [
   assert.doesNotMatch(publicProps, new RegExp(forbidden), `public slot prop must hide ${forbidden}`)
 }
 
-const formFieldNames = [...`${sourceFiles.slot}\n${sourceFiles.uploader}`.matchAll(
+const formFieldNames = [...`${sourceFiles.slot}\n${sourceFiles.uploader}\n${sourceFiles.builderWorkflow}`.matchAll(
   /(?:name=|\.set\()\s*["'`]([^"'`]+)["'`]/g,
 )].map(match => match[1])
 for (const forbidden of [
@@ -1585,11 +1589,11 @@ for (const forbidden of [
   )
 }
 assert.doesNotMatch(sourceFiles.slot, /name=["']expectedVersion["']/)
-assert.doesNotMatch(sourceFiles.uploader, /\.set\(["'](?:manifestDigest|objectKey|objectIdentity|acceptedBriefRevisionId|activeBuilderAssignmentId|evidenceChecklistVersion)["']/)
-assert.doesNotMatch(sourceFiles.uploader, /payload\.error/)
-assert.match(sourceFiles.uploader, /SAFE_ERROR_MESSAGES/)
-assert.match(sourceFiles.uploader, /SAFE_ERROR_MESSAGES\[payload\.code\]\s*\?\?\s*fallback/)
-const safeErrorBlock = sourceFiles.uploader.match(
+assert.doesNotMatch(`${sourceFiles.uploader}\n${sourceFiles.builderWorkflow}`, /\.set\(["'](?:manifestDigest|objectKey|objectIdentity|acceptedBriefRevisionId|activeBuilderAssignmentId|evidenceChecklistVersion)["']/)
+assert.doesNotMatch(`${sourceFiles.uploader}\n${sourceFiles.builderWorkflow}`, /payload\.error/)
+assert.match(sourceFiles.builderWorkflow, /SAFE_ERROR_MESSAGES/)
+assert.match(sourceFiles.builderWorkflow, /SAFE_ERROR_MESSAGES\[payload\.code\]\s*\?\?\s*fallback/)
+const safeErrorBlock = sourceFiles.builderWorkflow.match(
   /const SAFE_ERROR_MESSAGES:[\s\S]*?= \{([\s\S]*?)\n\}/,
 )?.[1] ?? ''
 const safeErrorCategories = [...safeErrorBlock.matchAll(/^\s{2}([a-z_]+):/gm)]

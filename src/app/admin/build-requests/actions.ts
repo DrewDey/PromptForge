@@ -261,6 +261,59 @@ export async function updateRequestReportAction(formData: FormData) {
   revalidatePath('/admin/build-requests')
 }
 
+export async function reviewRequestPublicationAction(formData: FormData) {
+  const target =
+    /^([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}):([1-9][0-9]{0,6})$/i
+      .exec(text(formData, 'publicationReviewTarget'))
+  const verdict = text(formData, 'verdict')
+  const checkNames = [
+    'privateContentExcluded',
+    'claimsSupportedByDelivery',
+    'attributionMatchesConsent',
+    'reusePermissionMatchesConsent',
+    'publicTruthReady',
+  ] as const
+  let checks: Record<(typeof checkNames)[number], boolean>
+  try {
+    if (
+      !target ||
+      (verdict !== 'approve' && verdict !== 'changes_required') ||
+      !controlFlag(formData, 'reviewConfirmation')
+    ) {
+      throw new Error('Invalid publication review envelope.')
+    }
+    checks = Object.fromEntries(
+      checkNames.map((name) => [name, controlFlag(formData, name)]),
+    ) as Record<(typeof checkNames)[number], boolean>
+    if (
+      (verdict === 'approve' && Object.values(checks).some((value) => !value)) ||
+      (
+        verdict === 'changes_required' &&
+        Object.values(checks).every(Boolean)
+      )
+    ) {
+      throw new Error('Publication review verdict is inconsistent.')
+    }
+  } catch {
+    redirect('/admin/build-requests?scope=admin&actionError=unavailable')
+  }
+  try {
+    await (
+      await getRequestPublicApplicationService()
+    ).reviewPublication({
+      proposalId: target[1],
+      expectedProposalVersion: Number(target[2]),
+      verdict,
+      checks,
+      reviewNotes: text(formData, 'reviewNotes'),
+      idempotencyKey: text(formData, 'idempotencyKey'),
+    })
+  } catch (error) {
+    redirectPublicActionError(error)
+  }
+  revalidatePath('/admin/build-requests')
+}
+
 export async function updatePilotAdmissionAction(formData: FormData) {
   const admissionAction = text(formData, 'admissionAction')
   if (admissionAction !== 'invite' && admissionAction !== 'revoke') {

@@ -19,9 +19,12 @@ DECLARE
   v_decoy_report CONSTANT UUID :=
     '9a400000-0000-4000-8000-000000000010';
   v_request_id UUID;
+  v_replayed_request_id UUID;
   v_brief_id UUID;
   v_delivery_id UUID :=
     '9a200000-0000-4000-8000-000000000001';
+  v_artifact_id UUID :=
+    '9a200000-0000-4000-8000-000000000002';
   v_builder_assignment_id UUID :=
     '9a300000-0000-4000-8000-000000000001';
   v_reviewer_assignment_id UUID :=
@@ -34,12 +37,16 @@ DECLARE
     '9a400000-0000-4000-8000-000000000001';
   v_manifest CONSTANT TEXT := repeat('b', 64);
   v_grant_id UUID;
+  v_expired_grant_id UUID :=
+    '9a200000-0000-4000-8000-000000000020';
   v_capacity_grant_id UUID;
   v_report_id UUID;
   v_proposal_id UUID;
   v_public_slug TEXT;
   v_request_version INTEGER;
   v_controls JSONB;
+  v_public_brief JSONB;
+  v_public_attestation JSONB;
   v_result JSONB;
   v_replay JSONB;
   v_queue JSONB;
@@ -49,6 +56,7 @@ DECLARE
   v_blocked BOOLEAN;
   v_detail TEXT;
   v_count INTEGER;
+  v_expired_at TIMESTAMPTZ;
 BEGIN
   INSERT INTO public.profiles (id, role, username, display_name) VALUES
     (v_admin, 'admin', 'public-arch-admin', 'Public Architecture Admin'),
@@ -128,6 +136,16 @@ BEGIN
       'public.issue_build_request_intake_risk_grant_v1(integer,uuid,text,text,text)',
       'EXECUTE'
     )
+    OR NOT has_function_privilege(
+      'service_role',
+      'public.resolve_build_request_notification_send_v1(integer,uuid,uuid)',
+      'EXECUTE'
+    )
+    OR has_function_privilege(
+      'authenticated',
+      'public.resolve_build_request_notification_send_v1(integer,uuid,uuid)',
+      'EXECUTE'
+    )
   THEN
     RAISE EXCEPTION
       'Public-architecture RPC least privilege drifted.';
@@ -152,13 +170,14 @@ BEGIN
       'build_request_notification_deliveries',
       'build_request_publication_proposals',
       'build_request_publication_consent_receipts',
+      'build_request_publication_reviews',
       'build_request_publication_bridge_receipts',
       'build_request_public_outcomes'
     )
     AND relation.relrowsecurity;
-  IF v_count <> 16 THEN
+  IF v_count <> 17 THEN
     RAISE EXCEPTION
-      'Expected RLS on all 16 public-architecture relations; found %.',
+      'Expected RLS on all 17 public-architecture relations; found %.',
       v_count;
   END IF;
 
@@ -263,6 +282,70 @@ BEGIN
     'Counsel-reviewed Request terms and rights language.',
     'readiness-legal-v1'
   );
+  -- Reconstruct the exact legal receipt as historical evidence whose validity
+  -- elapsed while the active policy rotated. Receipt replay must be resolved
+  -- against its immutable policy snapshot before fresh-operation clock/policy
+  -- validation. The subtransaction leaves the active fixture unchanged.
+  v_expired_at := clock_timestamp() - INTERVAL '1 day';
+  BEGIN
+    SELECT jsonb_build_object(
+      'acceptableUse', control.acceptable_use_version,
+      'privacy', control.privacy_version,
+      'publicationTerms', control.publication_terms_version,
+      'requesterRights', control.requester_rights_version,
+      'terms', control.terms_version
+    )
+    INTO STRICT v_result
+    FROM public.build_request_controls AS control
+    WHERE control.singleton;
+    INSERT INTO public.build_request_readiness_receipts (
+      actor_id, gate_kind, evidence_version, evidence_state, valid_until,
+      policy_snapshot, idempotency_key, request_hash, occurred_at
+    ) VALUES (
+      v_admin,
+      'legal',
+      92,
+      'confirmed',
+      v_expired_at,
+      v_result,
+      'readiness-legal-expired-replay',
+      private.request_pseudonym_text_v1(
+        jsonb_build_object(
+          'gate', 'legal',
+          'expectedVersion', 91,
+          'state', 'confirmed',
+          'reference', 'fixture://legal-historical',
+          'validUntil', v_expired_at,
+          'note', 'Historical legal readiness replay fixture.',
+          'policySnapshot', v_result
+        )::TEXT
+      ),
+      v_expired_at - INTERVAL '1 day'
+    );
+    UPDATE public.build_request_controls
+    SET terms_version = 'request-terms-v2'
+    WHERE singleton;
+    v_replay := public.record_build_request_readiness_v1(
+      1, 'legal', 91, 'confirmed', 'fixture://legal-historical',
+      v_expired_at,
+      'Historical legal readiness replay fixture.',
+      'readiness-legal-expired-replay'
+    );
+    IF NOT (v_replay->>'replayed')::BOOLEAN
+      OR v_replay->>'evidenceVersion' <> '92'
+      OR (v_replay->>'validUntil')::TIMESTAMPTZ
+        IS DISTINCT FROM v_expired_at
+    THEN
+      RAISE EXCEPTION
+        'Expired, policy-rotated readiness receipt did not replay: %',
+        v_replay;
+    END IF;
+    RAISE EXCEPTION 'rollback-readiness-replay-fixture';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM <> 'rollback-readiness-replay-fixture' THEN
+      RAISE;
+    END IF;
+  END;
   PERFORM public.record_build_request_readiness_v1(
     1, 'incident_owner', 0, 'confirmed',
     'fixture://incident-owner-v1',
@@ -335,6 +418,53 @@ BEGIN
       'Public controls did not replay their original receipt: %',
       v_replay;
   END IF;
+  BEGIN
+    PERFORM public.set_build_request_public_controls_v1(
+      1,
+      2,
+      'public-controls-string-boolean',
+      jsonb_set(
+        v_controls,
+        '{accepting_requests}',
+        '"true"'::JSONB
+      )
+    );
+    RAISE EXCEPTION 'String-valued Request control was accepted.';
+  EXCEPTION WHEN SQLSTATE '22023' THEN
+    NULL;
+  END;
+  BEGIN
+    PERFORM public.set_build_request_public_controls_v1(
+      1,
+      2,
+      'public-controls-null-boolean',
+      jsonb_set(
+        v_controls,
+        '{publication_consent_enabled}',
+        'null'::JSONB
+      )
+    );
+    RAISE EXCEPTION 'JSON-null Request control was accepted.';
+  EXCEPTION WHEN SQLSTATE '22023' THEN
+    NULL;
+  END;
+  IF (
+      SELECT controls_version
+      FROM public.build_request_controls
+      WHERE singleton
+    ) <> 2
+    OR EXISTS (
+      SELECT 1
+      FROM public.build_request_public_control_receipts AS receipt
+      WHERE receipt.idempotency_key IN (
+        'public-controls-string-boolean',
+        'public-controls-null-boolean'
+      )
+    )
+  THEN
+    RAISE EXCEPTION
+      'Hostile Request controls mutated version or durable receipts.';
+  END IF;
   v_blocked := FALSE;
   BEGIN
     UPDATE public.build_request_controls
@@ -394,6 +524,34 @@ BEGIN
     RAISE EXCEPTION 'Initial risk grant failed: %', v_result;
   END IF;
   v_grant_id := (v_result->>'grantId')::UUID;
+  v_public_brief := jsonb_build_object(
+    'title', 'Public architecture operating fixture',
+    'outcome',
+      'Deliver a reviewed result that resolves the bounded fixture need.',
+    'intended_user', 'A confirmed PathForge requester',
+    'must_work_scenario',
+      'The requester can open and use the independently reviewed result.',
+    'acceptance_checks', jsonb_build_array(
+      'The exact approved result opens without an integrity error.',
+      'The independent reviewer records a passing verdict.'
+    ),
+    'constraints',
+      'Private case data must never become a public board entry.',
+    'pathforge_reference', jsonb_build_object(
+      'kind', 'project',
+      'project_id', v_project
+    )
+  );
+  v_public_attestation := jsonb_build_object(
+    'terms_accepted', TRUE,
+    'terms_version', 'request-terms-v1',
+    'privacy_acknowledged', TRUE,
+    'privacy_version', 'request-privacy-v1',
+    'acceptable_use_accepted', TRUE,
+    'acceptable_use_version', 'request-aup-v1',
+    'requester_rights_accepted', TRUE,
+    'requester_rights_version', 'request-rights-v1'
+  );
   v_replay := public.issue_build_request_intake_risk_grant_v1(
     1,
     v_requester,
@@ -406,6 +564,144 @@ BEGIN
   THEN
     RAISE EXCEPTION 'Risk grant replay drifted: %', v_replay;
   END IF;
+  -- Expire the stored grant and turn off both control/readiness authority in a
+  -- rollback-only historical reconstruction. The same screened operation must
+  -- still replay its original decision before mutable launch gates are read.
+  BEGIN
+    v_expired_at := clock_timestamp() - INTERVAL '1 day';
+    INSERT INTO public.build_request_intake_risk_grants (
+      id, actor_id, intake_idempotency_key, network_digest,
+      risk_engine_version, decision, issued_at, expires_at
+    ) VALUES (
+      v_expired_grant_id,
+      v_requester,
+      'public-intake-expired-replay',
+      repeat('9', 64),
+      'fixture-risk-v1',
+      'clear',
+      v_expired_at - INTERVAL '10 minutes',
+      v_expired_at
+    );
+    UPDATE public.build_request_controls
+    SET accepting_requests = FALSE,
+        assigning_requests = FALSE,
+        intake_audience = 'invited',
+        public_intake_risk_screening = FALSE
+    WHERE singleton;
+    UPDATE public.build_request_readiness_evidence
+    SET evidence_state = 'revoked'
+    WHERE gate_kind IN ('waf', 'attended_lifecycle')
+      AND evidence_state = 'confirmed';
+    v_replay := public.issue_build_request_intake_risk_grant_v1(
+      1,
+      v_requester,
+      'public-intake-expired-replay',
+      repeat('9', 64),
+      'fixture-risk-v1'
+    );
+    IF NOT (v_replay->>'replayed')::BOOLEAN
+      OR (v_replay->>'grantId')::UUID <> v_expired_grant_id
+      OR (v_replay->>'expiresAt')::TIMESTAMPTZ >= clock_timestamp()
+    THEN
+      RAISE EXCEPTION
+        'Expired risk grant did not replay through closed gates: %',
+        v_replay;
+    END IF;
+    RAISE EXCEPTION 'rollback-risk-replay-fixture';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM <> 'rollback-risk-replay-fixture' THEN
+      RAISE;
+    END IF;
+  END;
+
+  PERFORM set_config(
+    'request.jwt.claims',
+    jsonb_build_object(
+      'sub', v_requester,
+      'role', 'authenticated'
+    )::TEXT,
+    TRUE
+  );
+  -- The authenticated RPC is a public security boundary. JSON null, strings,
+  -- false values, non-string policy versions, and stale policy versions must
+  -- all fail before a case is created or the one-time risk grant is consumed.
+  FOR v_result IN
+    SELECT hostile.value
+    FROM jsonb_array_elements(jsonb_build_array(
+      jsonb_build_object(
+        'expectedState', '22023',
+        'attestation', jsonb_set(
+          v_public_attestation, '{terms_accepted}', 'null'::JSONB
+        )
+      ),
+      jsonb_build_object(
+        'expectedState', '22023',
+        'attestation', jsonb_set(
+          v_public_attestation, '{terms_accepted}', '"true"'::JSONB
+        )
+      ),
+      jsonb_build_object(
+        'expectedState', '22023',
+        'attestation', jsonb_set(
+          v_public_attestation, '{terms_accepted}', 'false'::JSONB
+        )
+      ),
+      jsonb_build_object(
+        'expectedState', '22023',
+        'attestation', jsonb_set(
+          v_public_attestation, '{privacy_version}', 'null'::JSONB
+        )
+      ),
+      jsonb_build_object(
+        'expectedState', '22023',
+        'attestation', jsonb_set(
+          v_public_attestation, '{privacy_version}', '7'::JSONB
+        )
+      ),
+      jsonb_build_object(
+        'expectedState', '40001',
+        'attestation', jsonb_set(
+          v_public_attestation,
+          '{privacy_version}',
+          '"request-privacy-stale"'::JSONB
+        )
+      )
+    )) AS hostile(value)
+  LOOP
+    v_blocked := FALSE;
+    BEGIN
+      PERFORM *
+      FROM public.submit_build_request_public_v1(
+        1,
+        'public-intake-requester-0001',
+        v_grant_id,
+        v_public_brief,
+        v_result->'attestation'
+      );
+    EXCEPTION WHEN OTHERS THEN
+      IF SQLSTATE <> v_result->>'expectedState' THEN
+        RAISE;
+      END IF;
+      v_blocked := TRUE;
+    END;
+    IF NOT v_blocked
+      OR EXISTS (
+        SELECT 1
+        FROM public.build_requests AS request_case
+        WHERE request_case.requester_id = v_requester
+      )
+      OR EXISTS (
+        SELECT 1
+        FROM public.build_request_intake_risk_grants AS grant_row
+        WHERE grant_row.id = v_grant_id
+          AND grant_row.consumed_at IS NOT NULL
+      )
+    THEN
+      RAISE EXCEPTION
+        'Hostile policy attestation created a request or consumed its risk grant: %',
+        v_result;
+    END IF;
+  END LOOP;
 
   PERFORM set_config(
     'request.jwt.claims',
@@ -421,34 +717,8 @@ BEGIN
     1,
     'public-intake-requester-0001',
     v_grant_id,
-    jsonb_build_object(
-      'title', 'Public architecture operating fixture',
-      'outcome',
-        'Deliver a reviewed result that resolves the bounded fixture need.',
-      'intended_user', 'A confirmed PathForge requester',
-      'must_work_scenario',
-        'The requester can open and use the independently reviewed result.',
-      'acceptance_checks', jsonb_build_array(
-        'The exact approved result opens without an integrity error.',
-        'The independent reviewer records a passing verdict.'
-      ),
-      'constraints',
-        'Private case data must never become a public board entry.',
-      'pathforge_reference', jsonb_build_object(
-        'kind', 'project',
-        'project_id', v_project
-      )
-    ),
-    jsonb_build_object(
-      'terms_accepted', TRUE,
-      'terms_version', 'request-terms-v1',
-      'privacy_acknowledged', TRUE,
-      'privacy_version', 'request-privacy-v1',
-      'acceptable_use_accepted', TRUE,
-      'acceptable_use_version', 'request-aup-v1',
-      'requester_rights_accepted', TRUE,
-      'requester_rights_version', 'request-rights-v1'
-    )
+    v_public_brief,
+    v_public_attestation
   ) AS receipt;
   IF v_request_id IS NULL OR v_blocked THEN
     RAISE EXCEPTION 'Attested public-ready intake did not create a case.';
@@ -458,38 +728,38 @@ BEGIN
     1,
     'public-intake-requester-0001',
     v_grant_id,
-    jsonb_build_object(
-      'title', 'Public architecture operating fixture',
-      'outcome',
-        'Deliver a reviewed result that resolves the bounded fixture need.',
-      'intended_user', 'A confirmed PathForge requester',
-      'must_work_scenario',
-        'The requester can open and use the independently reviewed result.',
-      'acceptance_checks', jsonb_build_array(
-        'The exact approved result opens without an integrity error.',
-        'The independent reviewer records a passing verdict.'
-      ),
-      'constraints',
-        'Private case data must never become a public board entry.',
-      'pathforge_reference', jsonb_build_object(
-        'kind', 'project',
-        'project_id', v_project
-      )
-    ),
-    jsonb_build_object(
-      'terms_accepted', TRUE,
-      'terms_version', 'request-terms-v1',
-      'privacy_acknowledged', TRUE,
-      'privacy_version', 'request-privacy-v1',
-      'acceptable_use_accepted', TRUE,
-      'acceptable_use_version', 'request-aup-v1',
-      'requester_rights_accepted', TRUE,
-      'requester_rights_version', 'request-rights-v1'
-    )
+    v_public_brief,
+    v_public_attestation
   ) AS receipt;
   IF NOT v_blocked THEN
     RAISE EXCEPTION 'Attested intake did not replay durably.';
   END IF;
+  -- Catalog publication state is mutable. Once the original submission has a
+  -- durable receipt, withdrawing its referenced project cannot make an exact
+  -- retry fail before that receipt is returned.
+  BEGIN
+    UPDATE public.prompts
+    SET status = 'pending'
+    WHERE id = v_project;
+    SELECT receipt.replayed, receipt.request_id
+    INTO v_blocked, v_replayed_request_id
+    FROM public.submit_build_request_public_v1(
+      1,
+      'public-intake-requester-0001',
+      v_grant_id,
+      v_public_brief,
+      v_public_attestation
+    ) AS receipt;
+    IF NOT v_blocked OR v_replayed_request_id <> v_request_id THEN
+      RAISE EXCEPTION
+        'Public intake replay was invalidated by catalog withdrawal.';
+    END IF;
+    RAISE EXCEPTION 'rollback-public-intake-replay-fixture';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM <> 'rollback-public-intake-replay-fixture' THEN
+      RAISE;
+    END IF;
+  END;
   IF NOT EXISTS (
       SELECT 1
       FROM public.build_request_intake_attestations AS attestation
@@ -931,7 +1201,7 @@ BEGIN
       v_claim;
   END IF;
   v_claim_item := v_claim->'items'->0;
-  IF v_claim_item->>'recipient' <> 'admin@example.test'
+  IF v_claim_item ? 'recipient'
     OR v_claim_item->>'templateKey' <> 'request_report_received'
     OR v_claim_item->>'requestPath'
       <> '/requests/' || v_request_id::TEXT
@@ -942,6 +1212,114 @@ BEGIN
     RAISE EXCEPTION
       'Notification claim exposed private content or wrong routing: %',
       v_claim_item;
+  END IF;
+  -- Every mutable authority is rechecked after claim and immediately before
+  -- transport. Each hostile interleaving suppresses without returning an
+  -- address; the subtransaction rollback then restores the original claim for
+  -- the positive send-binding proof.
+  BEGIN
+    UPDATE public.build_request_controls
+    SET transactional_notifications_enabled = FALSE
+    WHERE singleton;
+    v_result := public.resolve_build_request_notification_send_v1(
+      1,
+      (v_claim_item->>'deliveryId')::UUID,
+      (v_claim_item->>'claimToken')::UUID
+    );
+    IF v_result <> jsonb_build_object(
+      'status', 'suppressed', 'reason', 'control_off'
+    ) THEN
+      RAISE EXCEPTION 'Control shutdown did not suppress a claimed send: %',
+        v_result;
+    END IF;
+    RAISE EXCEPTION 'rollback-notification-control-fixture';
+  EXCEPTION WHEN SQLSTATE 'P0001' THEN
+    IF SQLERRM <> 'rollback-notification-control-fixture' THEN
+      RAISE;
+    END IF;
+  END;
+  BEGIN
+    UPDATE public.build_request_notification_preferences
+    SET transactional_email_enabled = FALSE
+    WHERE account_id = v_admin;
+    v_result := public.resolve_build_request_notification_send_v1(
+      1,
+      (v_claim_item->>'deliveryId')::UUID,
+      (v_claim_item->>'claimToken')::UUID
+    );
+    IF v_result <> jsonb_build_object(
+      'status', 'suppressed', 'reason', 'preference_off'
+    ) THEN
+      RAISE EXCEPTION 'Opt-out did not suppress a claimed send: %', v_result;
+    END IF;
+    RAISE EXCEPTION 'rollback-notification-preference-fixture';
+  EXCEPTION WHEN SQLSTATE 'P0001' THEN
+    IF SQLERRM <> 'rollback-notification-preference-fixture' THEN
+      RAISE;
+    END IF;
+  END;
+  BEGIN
+    UPDATE public.build_request_notification_deliveries
+    SET recipient_id = NULL, recipient_deidentified = TRUE
+    WHERE id = (v_claim_item->>'deliveryId')::UUID;
+    v_result := public.resolve_build_request_notification_send_v1(
+      1,
+      (v_claim_item->>'deliveryId')::UUID,
+      (v_claim_item->>'claimToken')::UUID
+    );
+    IF v_result <> jsonb_build_object(
+      'status', 'suppressed', 'reason', 'identity_unavailable'
+    ) THEN
+      RAISE EXCEPTION
+        'Deidentification did not suppress a claimed send: %', v_result;
+    END IF;
+    RAISE EXCEPTION 'rollback-notification-identity-fixture';
+  EXCEPTION WHEN SQLSTATE 'P0001' THEN
+    IF SQLERRM <> 'rollback-notification-identity-fixture' THEN
+      RAISE;
+    END IF;
+  END;
+  BEGIN
+    UPDATE public.build_request_reports
+    SET status = 'resolved',
+        resolution_note =
+          'The claimed-send authorization fixture resolved this report.',
+        resolution_note_digest = repeat('e', 64),
+        resolved_at = clock_timestamp()
+    WHERE id = v_report_id;
+    v_result := public.resolve_build_request_notification_send_v1(
+      1,
+      (v_claim_item->>'deliveryId')::UUID,
+      (v_claim_item->>'claimToken')::UUID
+    );
+    IF v_result <> jsonb_build_object(
+      'status', 'suppressed', 'reason', 'authorization_ended'
+    ) THEN
+      RAISE EXCEPTION
+        'Resolved report authority did not suppress a claimed send: %',
+        v_result;
+    END IF;
+    RAISE EXCEPTION 'rollback-notification-authorization-fixture';
+  EXCEPTION WHEN SQLSTATE 'P0001' THEN
+    IF SQLERRM <> 'rollback-notification-authorization-fixture' THEN
+      RAISE;
+    END IF;
+  END;
+  v_result := public.resolve_build_request_notification_send_v1(
+    1,
+    (v_claim_item->>'deliveryId')::UUID,
+    (v_claim_item->>'claimToken')::UUID
+  );
+  IF v_result->>'status' <> 'authorized'
+    OR v_result->>'recipient' <> 'admin@example.test'
+    OR v_result->>'deliveryId' <> v_claim_item->>'deliveryId'
+    OR v_result->>'claimToken' <> v_claim_item->>'claimToken'
+    OR v_result->>'templateKey' <> 'request_report_received'
+    OR v_result->>'requestPath'
+      <> '/requests/' || v_request_id::TEXT
+  THEN
+    RAISE EXCEPTION
+      'Immediate notification send authorization drifted: %', v_result;
   END IF;
   v_result := public.finish_build_request_notification_v1(
     1,
@@ -1132,6 +1510,25 @@ BEGIN
     ),
     v_builder, 'Public Architecture Builder', clock_timestamp()
   );
+  INSERT INTO public.build_request_delivery_artifacts (
+    id, request_id, delivery_revision_id, accepted_brief_revision_id,
+    builder_assignment_id, client_file_id, artifact_ordinal,
+    normalized_name, byte_length, sha256, detected_media_type,
+    scanner_version, staging_identity, object_identity,
+    integrity_status, scan_state, scan_verdict, finalized_at
+  ) VALUES (
+    v_artifact_id, v_request_id, v_delivery_id, v_brief_id,
+    v_builder_assignment_id, 'public-architecture-fixture', 1,
+    'reviewed-outcome.txt', 1024, repeat('a', 64), 'text/plain',
+    'fixture-scanner-v1',
+    'requests/' || v_request_id::TEXT || '/deliveries/' ||
+      v_delivery_id::TEXT || '/artifacts/' || v_artifact_id::TEXT ||
+      '/9a200000-0000-4000-8000-000000000003',
+    'requests/' || v_request_id::TEXT || '/deliveries/' ||
+      v_delivery_id::TEXT || '/artifacts/' || v_artifact_id::TEXT ||
+      '/9a200000-0000-4000-8000-000000000003',
+    'verified', 'complete', 'clean', clock_timestamp()
+  );
   INSERT INTO public.build_request_delivery_reviews (
     id, request_id, delivery_revision_id, brief_revision_id,
     manifest_digest, checklist_version, safety_integrity_result,
@@ -1259,25 +1656,49 @@ BEGIN
       v_result;
   END IF;
   v_claim := public.claim_build_request_notifications_v1(1, 100);
+  IF EXISTS (
+    SELECT 1
+    FROM jsonb_array_elements(v_claim->'items') AS claimed(item)
+    WHERE claimed.item ? 'recipient'
+  ) THEN
+    RAISE EXCEPTION
+      'A notification claim exposed a recipient before send authorization: %',
+      v_claim;
+  END IF;
+  v_public := '[]'::JSONB;
+  FOR v_claim_item IN
+    SELECT claimed.item
+    FROM jsonb_array_elements(v_claim->'items') AS claimed(item)
+  LOOP
+    v_result := public.resolve_build_request_notification_send_v1(
+      1,
+      (v_claim_item->>'deliveryId')::UUID,
+      (v_claim_item->>'claimToken')::UUID
+    );
+    v_public := v_public || jsonb_build_array(v_result);
+  END LOOP;
   IF NOT EXISTS (
       SELECT 1
-      FROM jsonb_array_elements(v_claim->'items') AS claimed(item)
-      WHERE claimed.item->>'recipient' = 'requester@example.test'
+      FROM jsonb_array_elements(v_public) AS resolved(item)
+      WHERE resolved.item->>'status' = 'authorized'
+        AND resolved.item->>'recipient' = 'requester@example.test'
     )
     OR NOT EXISTS (
       SELECT 1
-      FROM jsonb_array_elements(v_claim->'items') AS claimed(item)
-      WHERE claimed.item->>'recipient' = 'builder@example.test'
+      FROM jsonb_array_elements(v_public) AS resolved(item)
+      WHERE resolved.item->>'status' = 'authorized'
+        AND resolved.item->>'recipient' = 'builder@example.test'
     )
     OR NOT EXISTS (
       SELECT 1
-      FROM jsonb_array_elements(v_claim->'items') AS claimed(item)
-      WHERE claimed.item->>'recipient' = 'reviewer@example.test'
+      FROM jsonb_array_elements(v_public) AS resolved(item)
+      WHERE resolved.item->>'status' = 'authorized'
+        AND resolved.item->>'recipient' = 'reviewer@example.test'
     )
   THEN
     RAISE EXCEPTION
-      'Terminal notification claim lost a retained exact participant: %',
-      v_claim;
+      'Terminal notification send authorization lost an exact participant: %',
+      v_public;
   END IF;
 
   PERFORM set_config(
@@ -1441,6 +1862,98 @@ BEGIN
   SELECT request_case.version INTO v_request_version
   FROM public.build_requests AS request_case
   WHERE request_case.id = v_request_id;
+  SELECT count(*) INTO v_count
+  FROM public.build_request_events AS event_value
+  WHERE event_value.request_id = v_request_id;
+  BEGIN
+    PERFORM *
+    FROM public.build_request_publication_command_v1(
+      1, v_request_id, v_request_version, 1,
+      'publication-requester-consent-null-attribution',
+      'requester_consent',
+      jsonb_build_object(
+        'requester_attribution', 'null'::JSONB,
+        'publication_terms_version', 'request-publication-v1'
+      )
+    );
+    RAISE EXCEPTION 'JSON-null requester attribution was accepted.';
+  EXCEPTION WHEN SQLSTATE '22023' THEN
+    NULL;
+  END;
+  BEGIN
+    PERFORM *
+    FROM public.build_request_publication_command_v1(
+      1, v_request_id, v_request_version, 1,
+      'publication-requester-consent-null-terms',
+      'requester_consent',
+      jsonb_build_object(
+        'requester_attribution', 'anonymous',
+        'publication_terms_version', 'null'::JSONB
+      )
+    );
+    RAISE EXCEPTION 'JSON-null publication terms were accepted.';
+  EXCEPTION WHEN SQLSTATE '22023' THEN
+    NULL;
+  END;
+  BEGIN
+    PERFORM *
+    FROM public.build_request_publication_command_v1(
+      1, v_request_id, v_request_version, 1,
+      'publication-requester-consent-bad-attribution',
+      'requester_consent',
+      jsonb_build_object(
+        'requester_attribution', 'private-case-link',
+        'publication_terms_version', 'request-publication-v1'
+      )
+    );
+    RAISE EXCEPTION 'Unsupported requester attribution was accepted.';
+  EXCEPTION WHEN SQLSTATE '22023' THEN
+    NULL;
+  END;
+  BEGIN
+    PERFORM *
+    FROM public.build_request_publication_command_v1(
+      1, v_request_id, v_request_version, 1,
+      'publication-requester-consent-stale-terms',
+      'requester_consent',
+      jsonb_build_object(
+        'requester_attribution', 'anonymous',
+        'publication_terms_version', 'request-publication-stale'
+      )
+    );
+    RAISE EXCEPTION 'Stale publication terms were accepted.';
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    NULL;
+  END;
+  IF EXISTS (
+      SELECT 1
+      FROM public.build_request_publication_consent_receipts AS consent
+      WHERE consent.proposal_id = v_proposal_id
+    )
+    OR EXISTS (
+      SELECT 1
+      FROM public.build_request_command_receipts AS receipt
+      WHERE receipt.idempotency_key IN (
+        'publication-requester-consent-null-attribution',
+        'publication-requester-consent-null-terms',
+        'publication-requester-consent-bad-attribution',
+        'publication-requester-consent-stale-terms'
+      )
+    )
+    OR (
+      SELECT request_case.version
+      FROM public.build_requests AS request_case
+      WHERE request_case.id = v_request_id
+    ) <> v_request_version
+    OR (
+      SELECT count(*)
+      FROM public.build_request_events AS event_value
+      WHERE event_value.request_id = v_request_id
+    ) <> v_count
+  THEN
+    RAISE EXCEPTION
+      'Hostile requester publication consent mutated receipt, version, or event authority.';
+  END IF;
   PERFORM *
   FROM public.build_request_publication_command_v1(
     1,
@@ -1534,15 +2047,33 @@ BEGIN
       v_result;
   END IF;
   v_claim := public.claim_build_request_notifications_v1(1, 100);
+  v_public := '[]'::JSONB;
+  FOR v_claim_item IN
+    SELECT claimed.item
+    FROM jsonb_array_elements(v_claim->'items') AS claimed(item)
+  LOOP
+    IF v_claim_item ? 'recipient' THEN
+      RAISE EXCEPTION
+        'A publication notification claim exposed recipient identity: %',
+        v_claim_item;
+    END IF;
+    v_result := public.resolve_build_request_notification_send_v1(
+      1,
+      (v_claim_item->>'deliveryId')::UUID,
+      (v_claim_item->>'claimToken')::UUID
+    );
+    v_public := v_public || jsonb_build_array(v_result);
+  END LOOP;
   IF NOT EXISTS (
     SELECT 1
-    FROM jsonb_array_elements(v_claim->'items') AS claimed(item)
-    WHERE claimed.item->>'recipient' = 'builder@example.test'
-      AND claimed.item->>'templateKey' = 'request_status_changed'
+    FROM jsonb_array_elements(v_public) AS resolved(item)
+    WHERE resolved.item->>'status' = 'authorized'
+      AND resolved.item->>'recipient' = 'builder@example.test'
+      AND resolved.item->>'templateKey' = 'request_status_changed'
   ) THEN
     RAISE EXCEPTION
-      'The final builder publication notification failed reauthorization: %',
-      v_claim;
+      'The final builder publication send failed immediate reauthorization: %',
+      v_public;
   END IF;
   PERFORM set_config(
     'request.jwt.claims',
@@ -1552,6 +2083,75 @@ BEGIN
     )::TEXT,
     TRUE
   );
+  SELECT count(*) INTO v_count
+  FROM public.build_request_events AS event_value
+  WHERE event_value.request_id = v_request_id;
+  BEGIN
+    PERFORM *
+    FROM public.build_request_publication_command_v1(
+      1, v_request_id, v_request_version, 2,
+      'publication-builder-consent-null-reuse',
+      'builder_consent',
+      jsonb_build_object(
+        'reuse_permission', 'null'::JSONB,
+        'publication_terms_version', 'request-publication-v1'
+      )
+    );
+    RAISE EXCEPTION 'JSON-null reuse permission was accepted.';
+  EXCEPTION WHEN SQLSTATE '22023' THEN
+    NULL;
+  END;
+  BEGIN
+    PERFORM *
+    FROM public.build_request_publication_command_v1(
+      1, v_request_id, v_request_version, 2,
+      'publication-builder-consent-bad-reuse',
+      'builder_consent',
+      jsonb_build_object(
+        'reuse_permission', 'exclusive_ownership',
+        'publication_terms_version', 'request-publication-v1'
+      )
+    );
+    RAISE EXCEPTION 'Unsupported reuse permission was accepted.';
+  EXCEPTION WHEN SQLSTATE '22023' THEN
+    NULL;
+  END;
+  BEGIN
+    PERFORM *
+    FROM public.build_request_publication_command_v1(
+      1, v_request_id, v_request_version, 2,
+      'publication-builder-consent-stale-terms',
+      'builder_consent',
+      jsonb_build_object(
+        'reuse_permission', 'adapt_with_credit',
+        'publication_terms_version', 'request-publication-stale'
+      )
+    );
+    RAISE EXCEPTION 'Stale builder publication terms were accepted.';
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    NULL;
+  END;
+  IF EXISTS (
+      SELECT 1
+      FROM public.build_request_publication_consent_receipts AS consent
+      WHERE consent.proposal_id = v_proposal_id
+        AND consent.proposal_version = 2
+        AND consent.actor_role = 'builder'
+    )
+    OR (
+      SELECT request_case.version
+      FROM public.build_requests AS request_case
+      WHERE request_case.id = v_request_id
+    ) <> v_request_version
+    OR (
+      SELECT count(*)
+      FROM public.build_request_events AS event_value
+      WHERE event_value.request_id = v_request_id
+    ) <> v_count
+  THEN
+    RAISE EXCEPTION
+      'Hostile builder publication consent mutated receipt, version, or event authority.';
+  END IF;
   PERFORM *
   FROM public.build_request_publication_command_v1(
     1,
@@ -1600,9 +2200,205 @@ BEGIN
   v_result := public.get_build_request_publication_v1(
     1, v_request_id
   );
-  IF NOT (v_result->'capabilities' ? 'publish_outcome') THEN
+  IF NOT (v_result->'capabilities' ? 'review_airlock')
+    OR v_result->'capabilities' ? 'publish_outcome'
+    OR v_result->'proposal'->>'airlockReviewVerdict' IS NOT NULL
+  THEN
     RAISE EXCEPTION
-      'Airlock-ready proposal did not expose the exact admin bridge: %',
+      'Airlock submission bypassed independent exact-summary review: %',
+      v_result;
+  END IF;
+  PERFORM set_config(
+    'request.jwt.claims',
+    '{"role":"service_role"}',
+    TRUE
+  );
+  v_blocked := FALSE;
+  BEGIN
+    PERFORM public.publish_build_request_outcome_v1(
+      1,
+      v_proposal_id,
+      v_project,
+      'publication-bridge-before-review-0001'
+    );
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS v_detail = PG_EXCEPTION_DETAIL;
+    IF v_detail <> 'request_authority:publication_blocked' THEN
+      RAISE;
+    END IF;
+    v_blocked := TRUE;
+  END;
+  IF NOT v_blocked THEN
+    RAISE EXCEPTION
+      'Global airlock health allowed publication without an exact review.';
+  END IF;
+  PERFORM set_config(
+    'request.jwt.claims',
+    jsonb_build_object(
+      'sub', v_admin,
+      'role', 'authenticated'
+    )::TEXT,
+    TRUE
+  );
+  SELECT request_case.version, count(event_value.id)
+  INTO v_request_version, v_count
+  FROM public.build_requests AS request_case
+  LEFT JOIN public.build_request_events AS event_value
+    ON event_value.request_id = request_case.id
+  WHERE request_case.id = v_request_id
+  GROUP BY request_case.version;
+  BEGIN
+    PERFORM public.review_build_request_publication_v1(
+      1,
+      v_proposal_id,
+      2,
+      'approve',
+      jsonb_build_object(
+        'private_content_excluded', TRUE,
+        'claims_supported_by_delivery', TRUE,
+        'attribution_matches_consent', FALSE,
+        'reuse_permission_matches_consent', TRUE,
+        'public_truth_ready', TRUE
+      ),
+      'An approval with a failed exact check must never be accepted.',
+      'publication-review-inconsistent-approval'
+    );
+    RAISE EXCEPTION 'Inconsistent publication approval was accepted.';
+  EXCEPTION WHEN SQLSTATE '22023' THEN
+    NULL;
+  END;
+  BEGIN
+    PERFORM public.review_build_request_publication_v1(
+      1,
+      v_proposal_id,
+      2,
+      'changes_required',
+      jsonb_build_object(
+        'private_content_excluded', TRUE,
+        'claims_supported_by_delivery', TRUE,
+        'attribution_matches_consent', TRUE,
+        'reuse_permission_matches_consent', TRUE,
+        'public_truth_ready', TRUE
+      ),
+      'A repair verdict requires at least one exact failed review check.',
+      'publication-review-inconsistent-repair'
+    );
+    RAISE EXCEPTION 'All-passing publication repair verdict was accepted.';
+  EXCEPTION WHEN SQLSTATE '22023' THEN
+    NULL;
+  END;
+  BEGIN
+    UPDATE public.profiles
+    SET role = 'admin'
+    WHERE id = v_requester;
+    PERFORM set_config(
+      'request.jwt.claims',
+      jsonb_build_object(
+        'sub', v_requester,
+        'role', 'authenticated'
+      )::TEXT,
+      TRUE
+    );
+    PERFORM public.review_build_request_publication_v1(
+      1,
+      v_proposal_id,
+      2,
+      'approve',
+      jsonb_build_object(
+        'private_content_excluded', TRUE,
+        'claims_supported_by_delivery', TRUE,
+        'attribution_matches_consent', TRUE,
+        'reuse_permission_matches_consent', TRUE,
+        'public_truth_ready', TRUE
+      ),
+      'A requester may never serve as the independent airlock reviewer.',
+      'publication-review-requester-conflict'
+    );
+    RAISE EXCEPTION 'Requester reviewed their own publication proposal.';
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    NULL;
+  END;
+  IF EXISTS (
+      SELECT 1
+      FROM public.build_request_publication_reviews AS review
+      WHERE review.proposal_id = v_proposal_id
+    )
+    OR EXISTS (
+      SELECT 1
+      FROM public.build_request_command_receipts AS receipt
+      WHERE receipt.idempotency_key IN (
+        'publication-review-inconsistent-approval',
+        'publication-review-inconsistent-repair',
+        'publication-review-requester-conflict'
+      )
+    )
+    OR (
+      SELECT request_case.version
+      FROM public.build_requests AS request_case
+      WHERE request_case.id = v_request_id
+    ) <> v_request_version
+    OR (
+      SELECT count(*)
+      FROM public.build_request_events AS event_value
+      WHERE event_value.request_id = v_request_id
+    ) <> v_count
+  THEN
+    RAISE EXCEPTION
+      'Hostile publication review mutated review, receipt, version, or event authority.';
+  END IF;
+  v_result := public.review_build_request_publication_v1(
+    1,
+    v_proposal_id,
+    2,
+    'approve',
+    jsonb_build_object(
+      'private_content_excluded', TRUE,
+      'claims_supported_by_delivery', TRUE,
+      'attribution_matches_consent', TRUE,
+      'reuse_permission_matches_consent', TRUE,
+      'public_truth_ready', TRUE
+    ),
+    'The exact consented summary passed every independent public-truth check.',
+    'publication-airlock-review-0001'
+  );
+  IF v_result->>'verdict' <> 'approved'
+    OR (v_result->>'replayed')::BOOLEAN
+  THEN
+    RAISE EXCEPTION
+      'Independent exact-summary review did not produce a receipt: %',
+      v_result;
+  END IF;
+  v_replay := public.review_build_request_publication_v1(
+    1,
+    v_proposal_id,
+    2,
+    'approve',
+    jsonb_build_object(
+      'private_content_excluded', TRUE,
+      'claims_supported_by_delivery', TRUE,
+      'attribution_matches_consent', TRUE,
+      'reuse_permission_matches_consent', TRUE,
+      'public_truth_ready', TRUE
+    ),
+    'The exact consented summary passed every independent public-truth check.',
+    'publication-airlock-review-0001'
+  );
+  IF NOT (v_replay->>'replayed')::BOOLEAN
+    OR v_replay->>'verdict' <> 'approved'
+  THEN
+    RAISE EXCEPTION
+      'Independent publication review replay drifted: %',
+      v_replay;
+  END IF;
+  v_result := public.get_build_request_publication_v1(
+    1, v_request_id
+  );
+  IF NOT (v_result->'capabilities' ? 'publish_outcome')
+    OR v_result->'capabilities' ? 'review_airlock'
+    OR v_result->'proposal'->>'airlockReviewVerdict' <> 'approved'
+  THEN
+    RAISE EXCEPTION
+      'Reviewed airlock proposal did not expose the exact bridge: %',
       v_result;
   END IF;
 
@@ -1819,9 +2615,127 @@ BEGIN
       v_public;
   END IF;
 
+  -- Routine publication preservation is audit-only. At day 91 the private
+  -- brief and exact delivery bytes remain eligible for their ordinary purge;
+  -- consent, review, and bridge receipts remain intact without a generic
+  -- request-wide retention hold.
+  UPDATE public.build_requests
+  SET terminal_at = clock_timestamp() - INTERVAL '91 days',
+      audit_tombstone_until = NULL,
+      raw_text_purged_at = NULL
+  WHERE id = v_request_id;
+  IF NOT private.request_publication_preservation_active_v1(v_request_id)
+    OR EXISTS (
+      SELECT 1
+      FROM public.build_request_retention_holds AS hold
+      WHERE hold.request_id = v_request_id
+        AND hold.released_at IS NULL
+    )
+  THEN
+    RAISE EXCEPTION
+      'Publication preservation became a generic private-data hold.';
+  END IF;
+  PERFORM set_config(
+    'request.jwt.claims',
+    '{"role":"service_role"}',
+    TRUE
+  );
+  v_result := public.list_build_request_maintenance_work_v1(
+    1, NULL, 100
+  );
+  IF NOT EXISTS (
+      SELECT 1
+      FROM jsonb_array_elements(v_result->'items') AS work(item)
+      WHERE work.item->>'category' = 'raw_text_purge'
+        AND work.item->>'requestId' = v_request_id::TEXT
+    )
+    OR NOT EXISTS (
+      SELECT 1
+      FROM jsonb_array_elements(v_result->'items') AS work(item)
+      WHERE work.item->>'category' = 'artifact_cleanup'
+        AND work.item->>'requestId' = v_request_id::TEXT
+        AND work.item->>'artifactId' = v_artifact_id::TEXT
+    )
+    OR NOT EXISTS (
+      SELECT 1
+      FROM public.build_request_publication_consent_receipts AS consent
+      WHERE consent.proposal_id = v_proposal_id
+        AND consent.decision = 'consent'
+    )
+    OR NOT EXISTS (
+      SELECT 1
+      FROM public.build_request_publication_reviews AS review
+      WHERE review.proposal_id = v_proposal_id
+        AND review.verdict = 'approved'
+    )
+    OR NOT EXISTS (
+      SELECT 1
+      FROM public.build_request_publication_bridge_receipts AS bridge
+      WHERE bridge.proposal_id = v_proposal_id
+    )
+  THEN
+    RAISE EXCEPTION
+      'Day-91 publication preservation blocked private cleanup or lost exact public audit receipts: %',
+      v_result;
+  END IF;
+
+  -- Once the ordinary 400-day participant scope expires, the exact requester
+  -- and builder retain only the narrow ability to inspect and withdraw their
+  -- still-active publication. Full private case access remains unavailable.
+  UPDATE public.build_requests
+  SET terminal_at = clock_timestamp() - INTERVAL '401 days',
+      audit_tombstone_until = NULL
+  WHERE id = v_request_id;
+  IF private.request_has_scope_v1(v_request_id, v_requester)
+    OR private.request_has_scope_v1(v_request_id, v_builder)
+  THEN
+    RAISE EXCEPTION
+      'Expired private case scope survived the 400-day audit boundary.';
+  END IF;
   SELECT request_case.version INTO v_request_version
   FROM public.build_requests AS request_case
   WHERE request_case.id = v_request_id;
+  PERFORM set_config(
+    'request.jwt.claims',
+    jsonb_build_object(
+      'sub', v_requester,
+      'role', 'authenticated'
+    )::TEXT,
+    TRUE
+  );
+  v_result := public.get_build_request_publication_v1(1, v_request_id);
+  IF NOT (v_result->'capabilities' ? 'withdraw') THEN
+    RAISE EXCEPTION
+      'The requester lost narrow publication withdrawal after private scope expiry: %',
+      v_result;
+  END IF;
+  v_blocked := FALSE;
+  BEGIN
+    PERFORM public.get_build_request_v1(1, v_request_id);
+  EXCEPTION WHEN SQLSTATE 'P0002' THEN
+    v_blocked := TRUE;
+  END;
+  IF NOT v_blocked THEN
+    RAISE EXCEPTION
+      'Narrow publication continuation restored full private case access.';
+  END IF;
+  BEGIN
+    PERFORM *
+    FROM public.build_request_publication_command_v1(
+      1,
+      v_request_id,
+      v_request_version,
+      2,
+      'publication-requester-withdraw-expired-scope',
+      'withdraw',
+      '{}'::JSONB
+    );
+    RAISE EXCEPTION 'rollback-requester-withdraw-fixture';
+  EXCEPTION WHEN SQLSTATE 'P0001' THEN
+    IF SQLERRM <> 'rollback-requester-withdraw-fixture' THEN
+      RAISE;
+    END IF;
+  END;
   PERFORM set_config(
     'request.jwt.claims',
     jsonb_build_object(
@@ -1836,7 +2750,7 @@ BEGIN
     v_request_id,
     v_request_version,
     2,
-    'publication-withdraw-0001',
+    'publication-builder-withdraw-expired-scope',
     'withdraw',
     '{}'::JSONB
   );
@@ -1851,17 +2765,16 @@ BEGIN
       'Withdrawn consent remained publicly discoverable: %',
       v_public;
   END IF;
-  IF EXISTS (
-    SELECT 1
-    FROM public.build_request_retention_holds AS hold
-    WHERE hold.request_id = v_request_id
-      AND hold.hold_kind = 'legal'
-      AND hold.reason =
-        'Active public outcome consent and publication evidence.'
-      AND hold.released_at IS NULL
-  ) THEN
+  IF private.request_publication_preservation_active_v1(v_request_id)
+    OR EXISTS (
+      SELECT 1
+      FROM public.build_request_retention_holds AS hold
+      WHERE hold.request_id = v_request_id
+        AND hold.released_at IS NULL
+    )
+  THEN
     RAISE EXCEPTION
-      'Publication withdrawal did not release its narrow legal hold.';
+      'Publication withdrawal did not end scoped audit preservation.';
   END IF;
 
   PERFORM set_config(
@@ -2091,13 +3004,17 @@ BEGIN
   UPDATE public.build_requests
   SET publication_state = 'published'
   WHERE id = v_request_id;
-  INSERT INTO public.build_request_retention_holds (
-    request_id, hold_kind, reason
-  ) VALUES (
-    v_request_id,
-    'legal',
-    'Active public outcome consent and publication evidence.'
-  );
+  IF NOT private.request_publication_preservation_active_v1(v_request_id)
+    OR EXISTS (
+      SELECT 1
+      FROM public.build_request_retention_holds AS hold
+      WHERE hold.request_id = v_request_id
+        AND hold.released_at IS NULL
+    )
+  THEN
+    RAISE EXCEPTION
+      'Reactivated publication did not use scoped audit-only preservation.';
+  END IF;
   INSERT INTO public.build_request_deidentified_accounts (
     subject_digest
   ) VALUES (
@@ -2109,18 +3026,10 @@ BEGIN
       WHERE outcome.proposal_id = v_proposal_id
         AND outcome.withdrawn_at IS NULL
     )
-    OR EXISTS (
-      SELECT 1
-      FROM public.build_request_retention_holds AS hold
-      WHERE hold.request_id = v_request_id
-        AND hold.hold_kind = 'legal'
-        AND hold.reason =
-          'Active public outcome consent and publication evidence.'
-        AND hold.released_at IS NULL
-    )
+    OR private.request_publication_preservation_active_v1(v_request_id)
   THEN
     RAISE EXCEPTION
-      'Account deidentification did not withdraw publication and release its narrow hold.';
+      'Account deidentification did not withdraw publication and end scoped audit preservation.';
   END IF;
   IF (
     SELECT request_case.publication_state
@@ -2129,6 +3038,25 @@ BEGIN
   ) <> 'withdrawn' THEN
     RAISE EXCEPTION
       'Builder deidentification left the private case marked published.';
+  END IF;
+
+  -- One event can have several participant recipients. Deidentifying those
+  -- accounts sequentially must retain a distinct safe delivery tombstone for
+  -- each recipient instead of colliding after recipient_id becomes NULL.
+  INSERT INTO public.build_request_deidentified_accounts (
+    subject_digest
+  ) VALUES (
+    private.request_account_pseudonym_v1(v_reviewer)
+  );
+  SELECT count(*) INTO v_count
+  FROM public.build_request_notification_deliveries AS delivery
+  WHERE delivery.event_id = v_terminal_event_id
+    AND delivery.recipient_id IS NULL
+    AND delivery.recipient_deidentified;
+  IF v_count <> 2 THEN
+    RAISE EXCEPTION
+      'Sequential notification-recipient deidentification did not preserve distinct tombstones: %',
+      v_count;
   END IF;
 
   PERFORM set_config(

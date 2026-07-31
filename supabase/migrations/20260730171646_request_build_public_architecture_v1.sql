@@ -506,9 +506,6 @@ CREATE TABLE public.build_request_notification_deliveries (
   FOREIGN KEY (request_id, event_id)
     REFERENCES public.build_request_events(request_id, id)
     ON DELETE CASCADE,
-  UNIQUE NULLS NOT DISTINCT (
-    event_id, report_id, recipient_id, channel
-  ),
   CHECK ((event_id IS NOT NULL) <> (report_id IS NOT NULL)),
   CHECK (
     (delivery_state = 'claimed'
@@ -529,6 +526,21 @@ CREATE TABLE public.build_request_notification_deliveries (
     OR (recipient_id IS NULL AND recipient_deidentified)
   )
 );
+
+-- Projection idempotency applies while a recipient identity is live. After
+-- account deidentification, multiple participant deliveries for the same
+-- event/report must remain as distinct safe tombstones.
+CREATE UNIQUE INDEX build_request_notification_event_recipient_unique
+  ON public.build_request_notification_deliveries (
+    event_id, recipient_id, channel
+  )
+  WHERE event_id IS NOT NULL AND recipient_id IS NOT NULL;
+
+CREATE UNIQUE INDEX build_request_notification_report_recipient_unique
+  ON public.build_request_notification_deliveries (
+    report_id, recipient_id, channel
+  )
+  WHERE report_id IS NOT NULL AND recipient_id IS NOT NULL;
 
 CREATE INDEX build_request_notification_work
   ON public.build_request_notification_deliveries (
@@ -628,6 +640,49 @@ CREATE UNIQUE INDEX build_request_one_open_publication_proposal
   ON public.build_request_publication_proposals (request_id)
   WHERE proposal_status NOT IN ('declined', 'withdrawn', 'removed');
 
+CREATE OR REPLACE FUNCTION
+  private.request_publication_preservation_active_v1(
+    p_request_id UUID
+  )
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.build_request_publication_proposals AS proposal
+    WHERE proposal.request_id = p_request_id
+      AND proposal.proposal_status IN (
+        'fully_consented', 'in_airlock', 'published'
+      )
+  )
+$$;
+
+CREATE OR REPLACE FUNCTION
+  private.request_publication_actor_can_continue_v1(
+    p_request_id UUID,
+    p_actor_id UUID
+  )
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT p_actor_id IS NOT NULL
+    AND EXISTS (
+      SELECT 1
+      FROM public.build_request_publication_proposals AS proposal
+      WHERE proposal.request_id = p_request_id
+        AND proposal.proposal_status IN (
+          'fully_consented', 'in_airlock', 'published'
+        )
+        AND p_actor_id IN (proposal.requester_id, proposal.builder_id)
+    )
+$$;
+
 CREATE TABLE public.build_request_publication_consent_receipts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   proposal_id UUID NOT NULL
@@ -690,6 +745,71 @@ CREATE TABLE public.build_request_publication_consent_receipts (
     OR (actor_id IS NULL AND actor_deidentified)
   ),
   UNIQUE (actor_id, idempotency_key)
+);
+
+-- Independent review of the exact consented public summary. This is the
+-- Request-specific half of the publication airlock: global community health
+-- must also be green, but a heartbeat can never approve new summary bytes.
+CREATE TABLE public.build_request_publication_reviews (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  proposal_id UUID NOT NULL
+    REFERENCES public.build_request_publication_proposals(id)
+    ON DELETE CASCADE,
+  request_id UUID NOT NULL,
+  proposal_version INTEGER NOT NULL CHECK (proposal_version > 0),
+  content_digest TEXT NOT NULL CHECK (content_digest ~ '^[0-9a-f]{64}$'),
+  safe_title_snapshot TEXT NOT NULL
+    CHECK (char_length(btrim(safe_title_snapshot)) BETWEEN 4 AND 120),
+  safe_summary_snapshot TEXT NOT NULL
+    CHECK (char_length(btrim(safe_summary_snapshot)) BETWEEN 40 AND 1000),
+  actor_id UUID REFERENCES public.profiles(id) ON DELETE RESTRICT,
+  actor_deidentified BOOLEAN NOT NULL DEFAULT FALSE,
+  checklist_version TEXT NOT NULL DEFAULT 'request-publication-review-v1'
+    CHECK (checklist_version = 'request-publication-review-v1'),
+  private_content_excluded BOOLEAN NOT NULL,
+  claims_supported_by_delivery BOOLEAN NOT NULL,
+  attribution_matches_consent BOOLEAN NOT NULL,
+  reuse_permission_matches_consent BOOLEAN NOT NULL,
+  public_truth_ready BOOLEAN NOT NULL,
+  verdict TEXT NOT NULL CHECK (
+    verdict IN ('approved', 'changes_required')
+  ),
+  review_note TEXT NOT NULL
+    CHECK (char_length(btrim(review_note)) BETWEEN 20 AND 1000),
+  idempotency_key TEXT NOT NULL CHECK (
+    idempotency_key ~ '^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$'
+  ),
+  request_hash TEXT NOT NULL CHECK (request_hash ~ '^[0-9a-f]{64}$'),
+  occurred_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+  FOREIGN KEY (request_id, proposal_id)
+    REFERENCES public.build_request_publication_proposals(request_id, id)
+    ON DELETE CASCADE,
+  CHECK (
+    (actor_id IS NOT NULL AND NOT actor_deidentified)
+    OR (actor_id IS NULL AND actor_deidentified)
+  ),
+  CHECK (
+    (
+      verdict = 'approved'
+      AND private_content_excluded
+      AND claims_supported_by_delivery
+      AND attribution_matches_consent
+      AND reuse_permission_matches_consent
+      AND public_truth_ready
+    )
+    OR (
+      verdict = 'changes_required'
+      AND NOT (
+        private_content_excluded
+        AND claims_supported_by_delivery
+        AND attribution_matches_consent
+        AND reuse_permission_matches_consent
+        AND public_truth_ready
+      )
+    )
+  ),
+  UNIQUE (actor_id, idempotency_key),
+  UNIQUE (proposal_id, proposal_version, content_digest)
 );
 
 CREATE TABLE public.build_request_publication_bridge_receipts (
@@ -769,6 +889,7 @@ ALTER TABLE public.build_request_notification_preference_receipts ENABLE ROW LEV
 ALTER TABLE public.build_request_notification_deliveries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.build_request_publication_proposals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.build_request_publication_consent_receipts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.build_request_publication_reviews ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.build_request_publication_bridge_receipts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.build_request_public_outcomes ENABLE ROW LEVEL SECURITY;
 
@@ -787,6 +908,7 @@ REVOKE ALL ON TABLE
   public.build_request_notification_deliveries,
   public.build_request_publication_proposals,
   public.build_request_publication_consent_receipts,
+  public.build_request_publication_reviews,
   public.build_request_publication_bridge_receipts,
   public.build_request_public_outcomes
 FROM PUBLIC, anon, authenticated, service_role;
@@ -817,7 +939,8 @@ BEGIN
       'build_request_readiness_receipts',
       'build_request_public_control_receipts',
       'build_request_report_receipts',
-      'build_request_publication_consent_receipts'
+      'build_request_publication_consent_receipts',
+      'build_request_publication_reviews'
     )
       AND v_old->>'actor_id' IS NOT NULL
       AND v_new->>'actor_id' IS NULL
@@ -926,6 +1049,10 @@ CREATE TRIGGER build_request_notification_preference_receipts_append_only
 CREATE TRIGGER build_request_publication_consent_append_only
   BEFORE UPDATE OR DELETE
   ON public.build_request_publication_consent_receipts
+  FOR EACH ROW EXECUTE FUNCTION private.request_public_append_only_v1();
+CREATE TRIGGER build_request_publication_reviews_append_only
+  BEFORE UPDATE OR DELETE
+  ON public.build_request_publication_reviews
   FOR EACH ROW EXECUTE FUNCTION private.request_public_append_only_v1();
 CREATE TRIGGER build_request_publication_bridge_append_only
   BEFORE UPDATE OR DELETE
@@ -1643,33 +1770,10 @@ BEGIN
   SET actor_id = NULL, actor_deidentified = TRUE
   WHERE actor_id IS NOT NULL
     AND private.request_account_pseudonym_v1(actor_id) = NEW.subject_digest;
-  UPDATE public.build_request_retention_holds AS publication_hold
-  SET released_at = v_at,
-      release_resolution =
-        'Public outcome consent ended when a participant account was deidentified.'
-  WHERE publication_hold.hold_kind = 'legal'
-    AND publication_hold.reason =
-      'Active public outcome consent and publication evidence.'
-    AND publication_hold.released_at IS NULL
-    AND EXISTS (
-      SELECT 1
-      FROM public.build_request_publication_proposals AS proposal
-      WHERE proposal.request_id = publication_hold.request_id
-        AND (
-          (
-            proposal.requester_id IS NOT NULL
-            AND private.request_account_pseudonym_v1(
-              proposal.requester_id
-            ) = NEW.subject_digest
-          )
-          OR (
-            proposal.builder_id IS NOT NULL
-            AND private.request_account_pseudonym_v1(
-              proposal.builder_id
-            ) = NEW.subject_digest
-          )
-        )
-    );
+  UPDATE public.build_request_publication_reviews
+  SET actor_id = NULL, actor_deidentified = TRUE
+  WHERE actor_id IS NOT NULL
+    AND private.request_account_pseudonym_v1(actor_id) = NEW.subject_digest;
   UPDATE public.build_request_publication_proposals
   SET requester_id = CASE
         WHEN requester_id IS NOT NULL
@@ -2317,11 +2421,6 @@ BEGIN
     OR p_expected_evidence_version IS NULL
     OR p_expected_evidence_version < 0
     OR p_evidence_state NOT IN ('confirmed', 'revoked')
-    OR (
-      p_evidence_state = 'confirmed'
-      AND p_valid_until IS NOT NULL
-      AND p_valid_until <= v_at
-    )
     OR p_idempotency_key IS NULL
     OR p_idempotency_key
       !~ '^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$'
@@ -2335,6 +2434,46 @@ BEGIN
   v_note := private.request_assert_safe_text_v1(
     p_note, 'readinessNote', 1, 500, TRUE
   );
+  PERFORM pg_advisory_xact_lock(hashtextextended(
+    v_actor_id::TEXT || ':' || p_idempotency_key, 0
+  ));
+  SELECT receipt.* INTO v_prior
+  FROM public.build_request_readiness_receipts AS receipt
+  WHERE receipt.actor_id = v_actor_id
+    AND receipt.idempotency_key = p_idempotency_key;
+  IF FOUND THEN
+    v_hash := private.request_pseudonym_text_v1(jsonb_build_object(
+      'gate', p_gate_kind,
+      'expectedVersion', p_expected_evidence_version,
+      'state', p_evidence_state,
+      'reference', v_reference,
+      'validUntil', p_valid_until,
+      'note', v_note,
+      'policySnapshot', CASE
+        WHEN p_gate_kind = 'legal' THEN v_prior.policy_snapshot
+      END
+    )::TEXT);
+    IF v_prior.request_hash <> v_hash THEN
+      RAISE EXCEPTION USING ERRCODE = '23505',
+        MESSAGE = 'Request authority rejected the operation.',
+        DETAIL = 'request_authority:duplicate';
+    END IF;
+    RETURN jsonb_build_object(
+      'gate', v_prior.gate_kind,
+      'evidenceVersion', v_prior.evidence_version,
+      'state', v_prior.evidence_state,
+      'validUntil', v_prior.valid_until,
+      'replayed', TRUE,
+      'occurredAt', v_prior.occurred_at
+    );
+  END IF;
+  IF p_evidence_state = 'confirmed'
+    AND p_valid_until IS NOT NULL
+    AND p_valid_until <= v_at
+  THEN
+    RAISE EXCEPTION USING ERRCODE = '22023',
+      MESSAGE = 'Readiness evidence input is invalid.';
+  END IF;
   SELECT jsonb_build_object(
     'acceptableUse', control.acceptable_use_version,
     'privacy', control.privacy_version,
@@ -2356,28 +2495,6 @@ BEGIN
       WHEN p_gate_kind = 'legal' THEN v_policy_snapshot
     END
   )::TEXT);
-  PERFORM pg_advisory_xact_lock(hashtextextended(
-    v_actor_id::TEXT || ':' || p_idempotency_key, 0
-  ));
-  SELECT receipt.* INTO v_prior
-  FROM public.build_request_readiness_receipts AS receipt
-  WHERE receipt.actor_id = v_actor_id
-    AND receipt.idempotency_key = p_idempotency_key;
-  IF FOUND THEN
-    IF v_prior.request_hash <> v_hash THEN
-      RAISE EXCEPTION USING ERRCODE = '23505',
-        MESSAGE = 'Request authority rejected the operation.',
-        DETAIL = 'request_authority:duplicate';
-    END IF;
-    RETURN jsonb_build_object(
-      'gate', v_prior.gate_kind,
-      'evidenceVersion', v_prior.evidence_version,
-      'state', v_prior.evidence_state,
-      'validUntil', v_prior.valid_until,
-      'replayed', TRUE,
-      'occurredAt', v_prior.occurred_at
-    );
-  END IF;
   PERFORM private.request_lock_available_actor_v1(v_actor_id);
   PERFORM pg_advisory_xact_lock(hashtextextended(
     'request-readiness:' || p_gate_kind, 0
@@ -2512,6 +2629,27 @@ BEGIN
     ],
     'Public Request controls'
   );
+  IF jsonb_typeof(p_controls->'accepting_requests')
+      IS DISTINCT FROM 'boolean'
+    OR jsonb_typeof(p_controls->'assigning_requests')
+      IS DISTINCT FROM 'boolean'
+    OR jsonb_typeof(p_controls->'operator_roster_required')
+      IS DISTINCT FROM 'boolean'
+    OR jsonb_typeof(p_controls->'public_intake_risk_screening')
+      IS DISTINCT FROM 'boolean'
+    OR jsonb_typeof(
+      p_controls->'transactional_notifications_enabled'
+    ) IS DISTINCT FROM 'boolean'
+    OR jsonb_typeof(p_controls->'publication_consent_enabled')
+      IS DISTINCT FROM 'boolean'
+    OR jsonb_typeof(p_controls->'publication_airlock_enabled')
+      IS DISTINCT FROM 'boolean'
+    OR jsonb_typeof(p_controls->'public_outcomes_enabled')
+      IS DISTINCT FROM 'boolean'
+  THEN
+    RAISE EXCEPTION USING ERRCODE = '22023',
+      MESSAGE = 'Request controls input is invalid.';
+  END IF;
   BEGIN
     v_accepting := (p_controls->>'accepting_requests')::BOOLEAN;
     v_assigning := (p_controls->>'assigning_requests')::BOOLEAN;
@@ -2772,12 +2910,44 @@ BEGIN
     RAISE EXCEPTION USING ERRCODE = '42501',
       MESSAGE = 'Request intake risk screening is not available.';
   END IF;
+  v_network_digest := p_network_digest;
+  PERFORM pg_advisory_xact_lock(hashtextextended(
+    'request-risk-replay:' || p_actor_id::TEXT || ':' ||
+      p_intake_idempotency_key,
+    0
+  ));
+  SELECT grant_row.* INTO v_existing
+  FROM public.build_request_intake_risk_grants AS grant_row
+  WHERE grant_row.actor_id = p_actor_id
+    AND grant_row.intake_idempotency_key = p_intake_idempotency_key;
+  IF FOUND THEN
+    IF v_existing.network_digest <> v_network_digest
+      OR v_existing.risk_engine_version <> p_risk_engine_version
+    THEN
+      RAISE EXCEPTION USING ERRCODE = '23505',
+        MESSAGE = 'Request authority rejected the operation.',
+        DETAIL = 'request_authority:duplicate';
+    END IF;
+    RETURN jsonb_build_object(
+      'status', CASE
+        WHEN v_existing.decision = 'clear' THEN 'clear'
+        ELSE 'denied'
+      END,
+      'grantId', CASE
+        WHEN v_existing.decision = 'clear' THEN v_existing.id
+      END,
+      'expiresAt', CASE
+        WHEN v_existing.decision = 'clear' THEN v_existing.expires_at
+      END,
+      'reason', v_existing.denial_reason,
+      'replayed', TRUE
+    );
+  END IF;
   IF NOT private.request_public_actor_is_confirmed_v1(p_actor_id) THEN
     RAISE EXCEPTION USING ERRCODE = '28000',
       MESSAGE = 'Authentication is required.';
   END IF;
   PERFORM private.request_lock_available_actor_v1(p_actor_id);
-  v_network_digest := p_network_digest;
   PERFORM pg_advisory_xact_lock(hashtextextended(
     'request-risk-actor:' || p_actor_id::TEXT, 0
   ));
@@ -2809,34 +2979,6 @@ BEGIN
       MESSAGE = 'Public Request intake readiness is incomplete.',
       DETAIL = 'request_authority:readiness_incomplete';
   END IF;
-  SELECT grant_row.* INTO v_existing
-  FROM public.build_request_intake_risk_grants AS grant_row
-  WHERE grant_row.actor_id = p_actor_id
-    AND grant_row.intake_idempotency_key = p_intake_idempotency_key;
-  IF FOUND THEN
-    IF v_existing.network_digest <> v_network_digest
-      OR v_existing.risk_engine_version <> p_risk_engine_version
-    THEN
-      RAISE EXCEPTION USING ERRCODE = '23505',
-        MESSAGE = 'Request authority rejected the operation.',
-        DETAIL = 'request_authority:duplicate';
-    END IF;
-    RETURN jsonb_build_object(
-      'status', CASE
-        WHEN v_existing.decision = 'clear' THEN 'clear'
-        ELSE 'denied'
-      END,
-      'grantId', CASE
-        WHEN v_existing.decision = 'clear' THEN v_existing.id
-      END,
-      'expiresAt', CASE
-        WHEN v_existing.decision = 'clear' THEN v_existing.expires_at
-      END,
-      'reason', v_existing.denial_reason,
-      'replayed', TRUE
-    );
-  END IF;
-
   IF (
     SELECT count(*)
     FROM public.build_request_intake_risk_grants AS actor_grant
@@ -2952,6 +3094,22 @@ BEGIN
     OR jsonb_typeof(p_brief) <> 'object'
     OR p_attestation IS NULL
     OR jsonb_typeof(p_attestation) <> 'object'
+    OR jsonb_typeof(p_attestation->'terms_accepted')
+      IS DISTINCT FROM 'boolean'
+    OR jsonb_typeof(p_attestation->'privacy_acknowledged')
+      IS DISTINCT FROM 'boolean'
+    OR jsonb_typeof(p_attestation->'acceptable_use_accepted')
+      IS DISTINCT FROM 'boolean'
+    OR jsonb_typeof(p_attestation->'requester_rights_accepted')
+      IS DISTINCT FROM 'boolean'
+    OR jsonb_typeof(p_attestation->'terms_version')
+      IS DISTINCT FROM 'string'
+    OR jsonb_typeof(p_attestation->'privacy_version')
+      IS DISTINCT FROM 'string'
+    OR jsonb_typeof(p_attestation->'acceptable_use_version')
+      IS DISTINCT FROM 'string'
+    OR jsonb_typeof(p_attestation->'requester_rights_version')
+      IS DISTINCT FROM 'string'
   THEN
     RAISE EXCEPTION USING ERRCODE = '22023',
       MESSAGE = 'Public Request submission is invalid.';
@@ -2993,9 +3151,6 @@ BEGIN
     2000,
     TRUE
   );
-  v_reference := private.request_validate_pathforge_reference_v1(
-    p_brief->'pathforge_reference'
-  );
   v_checks := p_brief->'acceptance_checks';
   IF jsonb_typeof(v_checks) <> 'array'
     OR jsonb_array_length(v_checks) NOT BETWEEN 1 AND 3
@@ -3003,10 +3158,13 @@ BEGIN
     RAISE EXCEPTION USING ERRCODE = '22023',
       MESSAGE = 'acceptanceChecks must contain 1-3 checks.';
   END IF;
-  IF p_attestation->>'terms_accepted' <> 'true'
-    OR p_attestation->>'privacy_acknowledged' <> 'true'
-    OR p_attestation->>'acceptable_use_accepted' <> 'true'
-    OR p_attestation->>'requester_rights_accepted' <> 'true'
+  IF p_attestation->'terms_accepted' IS DISTINCT FROM 'true'::JSONB
+    OR p_attestation->'privacy_acknowledged'
+      IS DISTINCT FROM 'true'::JSONB
+    OR p_attestation->'acceptable_use_accepted'
+      IS DISTINCT FROM 'true'::JSONB
+    OR p_attestation->'requester_rights_accepted'
+      IS DISTINCT FROM 'true'::JSONB
   THEN
     RAISE EXCEPTION USING ERRCODE = '22023',
       MESSAGE = 'Every Request intake attestation must be accepted.';
@@ -3048,6 +3206,12 @@ BEGIN
     RETURN;
   END IF;
 
+  -- Mutable catalog authority is evaluated only for a fresh submission. An
+  -- exact durable replay must remain replayable if its referenced project or
+  -- response is later withdrawn.
+  v_reference := private.request_validate_pathforge_reference_v1(
+    p_brief->'pathforge_reference'
+  );
   PERFORM pg_advisory_xact_lock(hashtextextended(
     'request-subject:' || private.request_account_pseudonym_v1(v_actor_id),
     0
@@ -3066,12 +3230,14 @@ BEGIN
       MESSAGE = 'Request intake is not available.',
       DETAIL = 'request_authority:controls_off';
   END IF;
-  IF p_attestation->>'terms_version' <> v_controls.terms_version
-    OR p_attestation->>'privacy_version' <> v_controls.privacy_version
+  IF p_attestation->>'terms_version'
+      IS DISTINCT FROM v_controls.terms_version
+    OR p_attestation->>'privacy_version'
+      IS DISTINCT FROM v_controls.privacy_version
     OR p_attestation->>'acceptable_use_version'
-      <> v_controls.acceptable_use_version
+      IS DISTINCT FROM v_controls.acceptable_use_version
     OR p_attestation->>'requester_rights_version'
-      <> v_controls.requester_rights_version
+      IS DISTINCT FROM v_controls.requester_rights_version
   THEN
     RAISE EXCEPTION USING ERRCODE = '40001',
       MESSAGE = 'Request policy versions changed.',
@@ -4177,9 +4343,7 @@ BEGIN
     END,
     'pending', clock_timestamp()
   FROM new_recipients AS recipient
-  ON CONFLICT (
-    event_id, report_id, recipient_id, channel
-  ) DO NOTHING;
+  ON CONFLICT DO NOTHING;
   GET DIAGNOSTICS v_events = ROW_COUNT;
 
   WITH candidate_reports AS (
@@ -4220,9 +4384,7 @@ BEGIN
     'transactional_email', 'request_report_received',
     'pending', clock_timestamp()
   FROM new_report_recipients AS report
-  ON CONFLICT (
-    event_id, report_id, recipient_id, channel
-  ) DO NOTHING;
+  ON CONFLICT DO NOTHING;
   GET DIAGNOSTICS v_reports = ROW_COUNT;
   RETURN jsonb_build_object(
     'eventsProjected', v_events,
@@ -4390,15 +4552,140 @@ BEGIN
   SELECT COALESCE(jsonb_agg(jsonb_build_object(
     'deliveryId', claimed.id,
     'claimToken', claimed.claim_token,
-    'recipient', auth_user.email,
     'templateKey', claimed.template_key,
     'requestPath', '/requests/' || claimed.request_id::TEXT,
     'attempt', claimed.attempts
   ) ORDER BY claimed.created_at, claimed.id), '[]'::JSONB)
   INTO v_items
-  FROM claimed
-  JOIN auth.users AS auth_user ON auth_user.id = claimed.recipient_id;
+  FROM claimed;
   RETURN jsonb_build_object('items', v_items);
+END;
+$$;
+
+-- A claim intentionally carries no recipient identity. The worker resolves an
+-- exact send binding immediately before the external transport call so a
+-- post-claim opt-out, deidentification, moderation change, report resolution,
+-- or control shutdown suppresses the delivery without disclosing an address.
+CREATE OR REPLACE FUNCTION
+  public.resolve_build_request_notification_send_v1(
+    p_contract_version INTEGER,
+    p_delivery_id UUID,
+    p_claim_token UUID
+  )
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_service BOOLEAN :=
+    COALESCE(auth.jwt()->>'role', '') = 'service_role';
+  v_delivery public.build_request_notification_deliveries%ROWTYPE;
+  v_enabled BOOLEAN;
+  v_reason TEXT;
+  v_recipient TEXT;
+  v_at TIMESTAMPTZ := clock_timestamp();
+BEGIN
+  PERFORM private.request_assert_contract_v1(p_contract_version);
+  IF NOT v_service
+    OR p_delivery_id IS NULL
+    OR p_claim_token IS NULL
+  THEN
+    RAISE EXCEPTION USING ERRCODE = '42501',
+      MESSAGE = 'Request notification send is not available.';
+  END IF;
+  SELECT delivery.* INTO v_delivery
+  FROM public.build_request_notification_deliveries AS delivery
+  WHERE delivery.id = p_delivery_id
+  FOR UPDATE;
+  IF NOT FOUND
+    OR v_delivery.delivery_state <> 'claimed'
+    OR v_delivery.claim_token IS DISTINCT FROM p_claim_token
+    OR v_delivery.claim_expires_at <= v_at
+  THEN
+    RAISE EXCEPTION USING ERRCODE = '40001',
+      MESSAGE = 'Request notification claim changed.',
+      DETAIL = 'request_authority:stale_version';
+  END IF;
+
+  SELECT control.transactional_notifications_enabled
+    AND private.request_public_readiness_gate_v1(
+      'notification_transport'
+    )
+  INTO STRICT v_enabled
+  FROM public.build_request_controls AS control
+  WHERE control.singleton;
+  IF NOT v_enabled THEN
+    v_reason := 'control_off';
+  ELSIF v_delivery.recipient_id IS NULL
+    OR v_delivery.recipient_deidentified
+  THEN
+    v_reason := 'identity_unavailable';
+  ELSIF (
+      v_delivery.event_id IS NOT NULL
+      AND NOT private.request_notification_event_recipient_v1(
+        v_delivery.request_id,
+        v_delivery.event_id,
+        v_delivery.recipient_id
+      )
+    )
+    OR (
+      v_delivery.report_id IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1
+        FROM public.build_request_reports AS report
+        JOIN public.profiles AS profile
+          ON profile.id = v_delivery.recipient_id
+          AND profile.role = 'admin'
+        WHERE report.id = v_delivery.report_id
+          AND report.request_id = v_delivery.request_id
+          AND report.status IN ('open', 'reviewing')
+      )
+    )
+  THEN
+    v_reason := 'authorization_ended';
+  ELSIF NOT EXISTS (
+    SELECT 1
+    FROM public.build_request_notification_preferences AS preference
+    WHERE preference.account_id = v_delivery.recipient_id
+      AND preference.transactional_email_enabled
+  ) THEN
+    v_reason := 'preference_off';
+  ELSE
+    SELECT auth_user.email INTO v_recipient
+    FROM auth.users AS auth_user
+    WHERE auth_user.id = v_delivery.recipient_id
+      AND auth_user.email_confirmed_at IS NOT NULL
+      AND auth_user.email IS NOT NULL
+      AND char_length(auth_user.email) BETWEEN 3 AND 320
+      AND auth_user.email ~
+        '^[^[:space:]@<>,]+@[^[:space:]@<>,]+\.[^[:space:]@<>,]+$';
+    IF NOT FOUND THEN
+      v_reason := 'identity_unavailable';
+    END IF;
+  END IF;
+
+  IF v_reason IS NOT NULL THEN
+    UPDATE public.build_request_notification_deliveries
+    SET delivery_state = 'suppressed',
+        suppression_reason = v_reason,
+        claim_token = NULL,
+        claim_expires_at = NULL,
+        updated_at = v_at
+    WHERE id = v_delivery.id;
+    RETURN jsonb_build_object(
+      'status', 'suppressed',
+      'reason', v_reason
+    );
+  END IF;
+  RETURN jsonb_build_object(
+    'status', 'authorized',
+    'deliveryId', v_delivery.id,
+    'claimToken', v_delivery.claim_token,
+    'recipient', v_recipient,
+    'templateKey', v_delivery.template_key,
+    'requestPath', '/requests/' || v_delivery.request_id::TEXT
+  );
 END;
 $$;
 
@@ -4505,6 +4792,7 @@ DECLARE
   v_actor_id UUID := auth.uid();
   v_request public.build_requests%ROWTYPE;
   v_proposal public.build_request_publication_proposals%ROWTYPE;
+  v_review public.build_request_publication_reviews%ROWTYPE;
   v_is_requester BOOLEAN;
   v_is_builder BOOLEAN;
   v_is_admin BOOLEAN;
@@ -4514,7 +4802,13 @@ BEGIN
   PERFORM private.request_assert_contract_v1(p_contract_version);
   IF v_actor_id IS NULL
     OR p_request_id IS NULL
-    OR NOT private.request_has_scope_v1(p_request_id, v_actor_id)
+    OR NOT (
+      private.request_has_scope_v1(p_request_id, v_actor_id)
+      OR private.request_publication_actor_can_continue_v1(
+        p_request_id,
+        v_actor_id
+      )
+    )
   THEN
     RAISE EXCEPTION USING ERRCODE = 'P0002',
       MESSAGE = 'Request was not found.',
@@ -4537,6 +4831,15 @@ BEGIN
   ORDER BY proposal.proposal_version DESC
   LIMIT 1;
   v_is_builder := FOUND AND v_proposal.builder_id = v_actor_id;
+  IF v_proposal.id IS NOT NULL THEN
+    SELECT review.* INTO v_review
+    FROM public.build_request_publication_reviews AS review
+    WHERE review.proposal_id = v_proposal.id
+      AND review.proposal_version = v_proposal.proposal_version
+      AND review.content_digest = v_proposal.content_digest
+    ORDER BY review.occurred_at DESC
+    LIMIT 1;
+  END IF;
   IF v_request.moderation_state <> 'clear' THEN
     RETURN jsonb_build_object(
       'visibility', 'restricted',
@@ -4566,6 +4869,9 @@ BEGIN
           v_proposal.requester_consented_at IS NOT NULL,
         'builderConsented',
           v_proposal.builder_consented_at IS NOT NULL,
+        'airlockReviewVerdict', v_review.verdict,
+        'airlockReviewedAt', v_review.occurred_at,
+        'airlockReviewNote', v_review.review_note,
         'publishedAt', v_proposal.published_at,
         'updatedAt', v_proposal.updated_at
       )
@@ -4625,10 +4931,22 @@ BEGIN
       CASE
         WHEN v_is_admin
           AND v_consent_ready
+          AND v_controls.publication_airlock_enabled
+          AND v_proposal.proposal_status = 'in_airlock'
+          AND private.request_public_community_airlock_ready_v1()
+          AND v_review.id IS NULL
+          THEN 'review_airlock'
+      END,
+      CASE
+        WHEN v_is_admin
+          AND v_consent_ready
           AND v_controls.public_outcomes_enabled
           AND v_controls.publication_airlock_enabled
           AND v_proposal.proposal_status = 'in_airlock'
           AND private.request_public_community_airlock_ready_v1()
+          AND v_review.verdict = 'approved'
+          AND v_review.proposal_version = v_proposal.proposal_version
+          AND v_review.content_digest = v_proposal.content_digest
           THEN 'publish_outcome'
       END
     ]::TEXT[], NULL))
@@ -4723,11 +5041,17 @@ BEGIN
       ARRAY['publication_terms_version', 'requester_attribution'],
       'Requester publication consent'
     );
-    IF p_payload->>'requester_attribution'
+    IF jsonb_typeof(p_payload->'requester_attribution')
+        IS DISTINCT FROM 'string'
+      OR jsonb_typeof(p_payload->'publication_terms_version')
+        IS DISTINCT FROM 'string'
+      OR p_payload->>'requester_attribution'
         NOT IN ('anonymous', 'credited')
+      OR p_payload->>'publication_terms_version'
+        !~ '^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$'
     THEN
       RAISE EXCEPTION USING ERRCODE = '22023',
-        MESSAGE = 'Requester attribution choice is invalid.';
+        MESSAGE = 'Requester publication consent is invalid.';
     END IF;
   ELSIF p_command = 'builder_consent' THEN
     PERFORM private.request_assert_json_keys_v1(
@@ -4735,11 +5059,17 @@ BEGIN
       ARRAY['publication_terms_version', 'reuse_permission'],
       'Builder publication consent'
     );
-    IF p_payload->>'reuse_permission'
+    IF jsonb_typeof(p_payload->'reuse_permission')
+        IS DISTINCT FROM 'string'
+      OR jsonb_typeof(p_payload->'publication_terms_version')
+        IS DISTINCT FROM 'string'
+      OR p_payload->>'reuse_permission'
         NOT IN ('view_only', 'adapt_with_credit')
+      OR p_payload->>'publication_terms_version'
+        !~ '^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$'
     THEN
       RAISE EXCEPTION USING ERRCODE = '22023',
-        MESSAGE = 'Builder reuse permission is invalid.';
+        MESSAGE = 'Builder publication consent is invalid.';
     END IF;
   ELSE
     PERFORM private.request_assert_json_keys_v1(
@@ -4809,7 +5139,16 @@ BEGIN
   WHERE request_case.id = p_request_id
   FOR UPDATE;
   IF NOT FOUND
-    OR NOT private.request_has_scope_v1(p_request_id, v_actor_id)
+    OR NOT (
+      private.request_has_scope_v1(p_request_id, v_actor_id)
+      OR (
+        p_command = 'withdraw'
+        AND private.request_publication_actor_can_continue_v1(
+          p_request_id,
+          v_actor_id
+        )
+      )
+    )
   THEN
     RAISE EXCEPTION USING ERRCODE = 'P0002',
       MESSAGE = 'Request was not found.',
@@ -4956,7 +5295,7 @@ BEGIN
       OR v_proposal.proposal_status NOT IN ('draft', 'consent_pending')
       OR v_proposal.requester_consented_at IS NOT NULL
       OR p_payload->>'publication_terms_version'
-        <> v_controls.publication_terms_version
+        IS DISTINCT FROM v_controls.publication_terms_version
     THEN
       RAISE EXCEPTION USING ERRCODE = '42501',
         MESSAGE = 'Requester publication consent is not available.',
@@ -4995,7 +5334,7 @@ BEGIN
       OR v_proposal.proposal_status NOT IN ('draft', 'consent_pending')
       OR v_proposal.builder_consented_at IS NOT NULL
       OR p_payload->>'publication_terms_version'
-        <> v_controls.publication_terms_version
+        IS DISTINCT FROM v_controls.publication_terms_version
     THEN
       RAISE EXCEPTION USING ERRCODE = '42501',
         MESSAGE = 'Builder publication consent is not available.',
@@ -5099,16 +5438,6 @@ BEGIN
     SET withdrawn_at = COALESCE(withdrawn_at, v_at)
     WHERE proposal_id = v_proposal.id
       AND removed_at IS NULL;
-    UPDATE public.build_request_retention_holds AS publication_hold
-    SET released_by = v_actor_id,
-        released_at = v_at,
-        release_resolution =
-          'Public outcome consent was withdrawn; standard retention resumes.'
-    WHERE publication_hold.request_id = v_request.id
-      AND publication_hold.hold_kind = 'legal'
-      AND publication_hold.reason =
-        'Active public outcome consent and publication evidence.'
-      AND publication_hold.released_at IS NULL;
     v_status := 'withdrawn';
   ELSE
     IF private.request_actor_role_v1(v_actor_id) <> 'admin'
@@ -5197,6 +5526,341 @@ BEGIN
     SELECT * FROM private.request_receipt_v1(
       v_command_id, v_request.id, v_event_id, FALSE, v_at, v_authority
     );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.review_build_request_publication_v1(
+  p_contract_version INTEGER,
+  p_proposal_id UUID,
+  p_expected_proposal_version INTEGER,
+  p_verdict TEXT,
+  p_checks JSONB,
+  p_review_notes TEXT,
+  p_idempotency_key TEXT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_actor_id UUID := auth.uid();
+  v_controls public.build_request_controls%ROWTYPE;
+  v_proposal public.build_request_publication_proposals%ROWTYPE;
+  v_request public.build_requests%ROWTYPE;
+  v_before public.build_requests%ROWTYPE;
+  v_existing public.build_request_command_receipts%ROWTYPE;
+  v_review public.build_request_publication_reviews%ROWTYPE;
+  v_private_content BOOLEAN;
+  v_claims_supported BOOLEAN;
+  v_attribution BOOLEAN;
+  v_reuse_permission BOOLEAN;
+  v_public_truth BOOLEAN;
+  v_note TEXT;
+  v_stored_verdict TEXT;
+  v_hash TEXT;
+  v_event_id UUID := gen_random_uuid();
+  v_command_id UUID := gen_random_uuid();
+  v_sequence INTEGER;
+  v_at TIMESTAMPTZ := clock_timestamp();
+  v_authority JSONB;
+BEGIN
+  PERFORM private.request_assert_contract_v1(p_contract_version);
+  IF v_actor_id IS NULL
+    OR private.request_actor_role_v1(v_actor_id) <> 'admin'
+  THEN
+    RAISE EXCEPTION USING ERRCODE = '42501',
+      MESSAGE = 'Request publication review is not available.';
+  END IF;
+  IF p_proposal_id IS NULL
+    OR p_expected_proposal_version IS NULL
+    OR p_expected_proposal_version < 1
+    OR p_verdict NOT IN ('approve', 'changes_required')
+    OR p_checks IS NULL
+    OR jsonb_typeof(p_checks) <> 'object'
+    OR p_idempotency_key IS NULL
+    OR p_idempotency_key
+      !~ '^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$'
+  THEN
+    RAISE EXCEPTION USING ERRCODE = '22023',
+      MESSAGE = 'Request publication review is invalid.';
+  END IF;
+  PERFORM private.request_assert_json_keys_v1(
+    p_checks,
+    ARRAY[
+      'attribution_matches_consent',
+      'claims_supported_by_delivery',
+      'private_content_excluded',
+      'public_truth_ready',
+      'reuse_permission_matches_consent'
+    ],
+    'Request publication review checks'
+  );
+  IF jsonb_typeof(p_checks->'private_content_excluded')
+      IS DISTINCT FROM 'boolean'
+    OR jsonb_typeof(p_checks->'claims_supported_by_delivery')
+      IS DISTINCT FROM 'boolean'
+    OR jsonb_typeof(p_checks->'attribution_matches_consent')
+      IS DISTINCT FROM 'boolean'
+    OR jsonb_typeof(p_checks->'reuse_permission_matches_consent')
+      IS DISTINCT FROM 'boolean'
+    OR jsonb_typeof(p_checks->'public_truth_ready')
+      IS DISTINCT FROM 'boolean'
+  THEN
+    RAISE EXCEPTION USING ERRCODE = '22023',
+      MESSAGE = 'Request publication review checks are invalid.';
+  END IF;
+  v_private_content :=
+    (p_checks->>'private_content_excluded')::BOOLEAN;
+  v_claims_supported :=
+    (p_checks->>'claims_supported_by_delivery')::BOOLEAN;
+  v_attribution :=
+    (p_checks->>'attribution_matches_consent')::BOOLEAN;
+  v_reuse_permission :=
+    (p_checks->>'reuse_permission_matches_consent')::BOOLEAN;
+  v_public_truth := (p_checks->>'public_truth_ready')::BOOLEAN;
+  IF (
+      p_verdict = 'approve'
+      AND NOT (
+        v_private_content
+        AND v_claims_supported
+        AND v_attribution
+        AND v_reuse_permission
+        AND v_public_truth
+      )
+    )
+    OR (
+      p_verdict = 'changes_required'
+      AND v_private_content
+      AND v_claims_supported
+      AND v_attribution
+      AND v_reuse_permission
+      AND v_public_truth
+    )
+  THEN
+    RAISE EXCEPTION USING ERRCODE = '22023',
+      MESSAGE = 'Request publication review verdict is inconsistent.';
+  END IF;
+  v_note := private.request_assert_safe_text_v1(
+    p_review_notes, 'publicationReviewNote', 20, 1000, TRUE
+  );
+  v_stored_verdict := CASE
+    WHEN p_verdict = 'approve' THEN 'approved'
+    ELSE 'changes_required'
+  END;
+  v_hash := private.request_pseudonym_text_v1(jsonb_build_object(
+    'proposalId', p_proposal_id,
+    'expectedProposalVersion', p_expected_proposal_version,
+    'verdict', p_verdict,
+    'checks', p_checks,
+    'reviewNote', v_note
+  )::TEXT);
+  PERFORM pg_advisory_xact_lock(hashtextextended(
+    v_actor_id::TEXT || ':' || p_idempotency_key, 0
+  ));
+  SELECT receipt.* INTO v_existing
+  FROM public.build_request_command_receipts AS receipt
+  WHERE receipt.actor_id = v_actor_id
+    AND receipt.idempotency_key = p_idempotency_key;
+  IF FOUND THEN
+    IF v_existing.command_kind <> 'publication_airlock_review'
+      OR v_existing.request_hash <> v_hash
+    THEN
+      RAISE EXCEPTION USING ERRCODE = '23505',
+        MESSAGE = 'Request authority rejected the operation.',
+        DETAIL = 'request_authority:duplicate';
+    END IF;
+    v_authority := COALESCE(
+      v_existing.receipt->'authority_result',
+      '{}'::JSONB
+    );
+    RETURN jsonb_build_object(
+      'proposalId', v_authority->>'proposalId',
+      'proposalVersion',
+        (v_authority->>'proposalVersion')::INTEGER,
+      'verdict', v_authority->>'verdict',
+      'replayed', TRUE,
+      'occurredAt', v_existing.created_at
+    );
+  END IF;
+
+  PERFORM private.request_lock_available_actor_v1(v_actor_id);
+  SELECT * INTO STRICT v_controls
+  FROM public.build_request_controls
+  WHERE singleton
+  FOR UPDATE;
+  IF NOT v_controls.publication_consent_enabled
+    OR NOT v_controls.publication_airlock_enabled
+    OR NOT private.request_public_readiness_gate_v1('legal')
+    OR NOT private.request_public_community_airlock_ready_v1()
+  THEN
+    RAISE EXCEPTION USING ERRCODE = '42501',
+      MESSAGE = 'Request publication review is blocked.',
+      DETAIL = 'request_authority:publication_blocked';
+  END IF;
+  SELECT proposal.* INTO v_proposal
+  FROM public.build_request_publication_proposals AS proposal
+  WHERE proposal.id = p_proposal_id
+  FOR UPDATE;
+  IF NOT FOUND
+    OR v_proposal.proposal_version <> p_expected_proposal_version
+    OR v_proposal.proposal_status <> 'in_airlock'
+    OR v_proposal.requester_id IS NULL
+    OR v_proposal.builder_id IS NULL
+    OR v_actor_id IN (v_proposal.requester_id, v_proposal.builder_id)
+    OR v_proposal.requester_consented_at IS NULL
+    OR v_proposal.builder_consented_at IS NULL
+    OR EXISTS (
+      SELECT 1
+      FROM public.build_request_publication_reviews AS prior_review
+      WHERE prior_review.proposal_id = v_proposal.id
+        AND prior_review.proposal_version = v_proposal.proposal_version
+        AND prior_review.content_digest = v_proposal.content_digest
+    )
+  THEN
+    RAISE EXCEPTION USING ERRCODE = '42501',
+      MESSAGE = 'Request publication proposal is not reviewable.',
+      DETAIL = 'request_authority:publication_blocked';
+  END IF;
+  SELECT request_case.* INTO STRICT v_request
+  FROM public.build_requests AS request_case
+  WHERE request_case.id = v_proposal.request_id
+  FOR UPDATE;
+  IF v_request.lifecycle_state <> 'completed'
+    OR v_request.moderation_state <> 'clear'
+    OR v_request.publication_state <> 'consented_pending_airlock'
+    OR v_request.requester_id <> v_proposal.requester_id
+    OR NOT EXISTS (
+      SELECT 1
+      FROM public.build_request_publication_consent_receipts AS consent
+      WHERE consent.proposal_id = v_proposal.id
+        AND consent.request_id = v_proposal.request_id
+        AND consent.proposal_version = v_proposal.proposal_version
+        AND consent.content_digest = v_proposal.content_digest
+        AND consent.safe_title_snapshot = v_proposal.safe_title
+        AND consent.safe_summary_snapshot = v_proposal.safe_summary
+        AND consent.actor_role = 'requester'
+        AND consent.decision = 'consent'
+        AND consent.actor_id = v_proposal.requester_id
+    )
+    OR NOT EXISTS (
+      SELECT 1
+      FROM public.build_request_publication_consent_receipts AS consent
+      WHERE consent.proposal_id = v_proposal.id
+        AND consent.request_id = v_proposal.request_id
+        AND consent.proposal_version = v_proposal.proposal_version
+        AND consent.content_digest = v_proposal.content_digest
+        AND consent.safe_title_snapshot = v_proposal.safe_title
+        AND consent.safe_summary_snapshot = v_proposal.safe_summary
+        AND consent.actor_role = 'builder'
+        AND consent.decision = 'consent'
+        AND consent.actor_id = v_proposal.builder_id
+    )
+  THEN
+    RAISE EXCEPTION USING ERRCODE = '42501',
+      MESSAGE = 'Request publication truth changed before review.',
+      DETAIL = 'request_authority:publication_blocked';
+  END IF;
+
+  v_before := v_request;
+  INSERT INTO public.build_request_publication_reviews (
+    proposal_id, request_id, proposal_version, content_digest,
+    safe_title_snapshot, safe_summary_snapshot,
+    actor_id, checklist_version,
+    private_content_excluded, claims_supported_by_delivery,
+    attribution_matches_consent, reuse_permission_matches_consent,
+    public_truth_ready, verdict, review_note,
+    idempotency_key, request_hash, occurred_at
+  ) VALUES (
+    v_proposal.id, v_proposal.request_id, v_proposal.proposal_version,
+    v_proposal.content_digest, v_proposal.safe_title,
+    v_proposal.safe_summary, v_actor_id,
+    'request-publication-review-v1',
+    v_private_content, v_claims_supported, v_attribution,
+    v_reuse_permission, v_public_truth, v_stored_verdict, v_note,
+    p_idempotency_key, v_hash, v_at
+  ) RETURNING * INTO v_review;
+  UPDATE public.build_request_publication_proposals
+  SET proposal_status = CASE
+        WHEN v_stored_verdict = 'approved' THEN 'in_airlock'
+        ELSE 'consent_pending'
+      END,
+      requester_consented_at = CASE
+        WHEN v_stored_verdict = 'approved' THEN requester_consented_at
+      END,
+      builder_consented_at = CASE
+        WHEN v_stored_verdict = 'approved' THEN builder_consented_at
+      END,
+      submitted_to_airlock_at = CASE
+        WHEN v_stored_verdict = 'approved' THEN submitted_to_airlock_at
+      END,
+      updated_at = v_at
+  WHERE id = v_proposal.id;
+  UPDATE public.build_requests
+  SET publication_state = CASE
+        WHEN v_stored_verdict = 'approved'
+          THEN 'consented_pending_airlock'
+        ELSE 'consent_pending'
+      END,
+      version = version + 1,
+      updated_at = v_at
+  WHERE id = v_request.id
+  RETURNING * INTO v_request;
+  SELECT COALESCE(max(event_value.sequence) + 1, 1)
+  INTO v_sequence
+  FROM public.build_request_events AS event_value
+  WHERE event_value.request_id = v_request.id;
+  v_authority := jsonb_build_object(
+    'proposalId', v_proposal.id,
+    'proposalVersion', v_proposal.proposal_version,
+    'verdict', v_stored_verdict
+  );
+  INSERT INTO public.build_request_events (
+    id, request_id, sequence, event_kind, actor_id, actor_role,
+    old_lifecycle_state, old_moderation_state, old_publication_state,
+    old_close_reason, new_lifecycle_state, new_moderation_state,
+    new_publication_state, new_close_reason, resulting_request_version,
+    correlation_id, command_id, command_receipt_id, outbox_id,
+    participant_visible, safe_metadata, occurred_at
+  ) VALUES (
+    v_event_id, v_request.id, v_sequence,
+    'publication_airlock_review', v_actor_id, 'operator',
+    v_before.lifecycle_state, v_before.moderation_state,
+    v_before.publication_state, v_before.close_reason,
+    v_request.lifecycle_state, v_request.moderation_state,
+    v_request.publication_state, v_request.close_reason,
+    v_request.version, p_idempotency_key, v_command_id,
+    v_command_id, v_command_id, TRUE, v_authority, v_at
+  );
+  INSERT INTO public.build_request_command_receipts (
+    id, actor_id, idempotency_key, request_id, command_kind,
+    request_hash, request_version, lifecycle_state, moderation_state,
+    publication_state, close_reason, event_id, receipt, created_at
+  ) VALUES (
+    v_command_id, v_actor_id, p_idempotency_key, v_request.id,
+    'publication_airlock_review', v_hash, v_request.version,
+    v_request.lifecycle_state, v_request.moderation_state,
+    v_request.publication_state, v_request.close_reason,
+    v_event_id, jsonb_build_object('authority_result', v_authority), v_at
+  );
+  INSERT INTO public.build_request_outbox (
+    id, request_id, event_id, topic, payload, available_at
+  ) VALUES (
+    v_command_id, v_request.id, v_event_id, 'request_event_v1',
+    jsonb_build_object(
+      'request_id', v_request.id,
+      'event_id', v_event_id,
+      'kind', 'publication_airlock_review'
+    ),
+    v_at
+  );
+  RETURN jsonb_build_object(
+    'proposalId', v_review.proposal_id,
+    'proposalVersion', v_review.proposal_version,
+    'verdict', v_review.verdict,
+    'replayed', FALSE,
+    'occurredAt', v_review.occurred_at
+  );
 END;
 $$;
 
@@ -5342,6 +6006,26 @@ BEGIN
         AND review.verdict = 'approve'
         AND review.safety_integrity_result = 'pass'
     )
+    OR NOT EXISTS (
+      SELECT 1
+      FROM public.build_request_publication_reviews AS publication_review
+      WHERE publication_review.proposal_id = v_proposal.id
+        AND publication_review.request_id = v_proposal.request_id
+        AND publication_review.proposal_version =
+          v_proposal.proposal_version
+        AND publication_review.content_digest = v_proposal.content_digest
+        AND publication_review.safe_title_snapshot = v_proposal.safe_title
+        AND publication_review.safe_summary_snapshot =
+          v_proposal.safe_summary
+        AND publication_review.checklist_version =
+          'request-publication-review-v1'
+        AND publication_review.verdict = 'approved'
+        AND publication_review.private_content_excluded
+        AND publication_review.claims_supported_by_delivery
+        AND publication_review.attribution_matches_consent
+        AND publication_review.reuse_permission_matches_consent
+        AND publication_review.public_truth_ready
+    )
   THEN
     RAISE EXCEPTION USING ERRCODE = '42501',
       MESSAGE = 'Request outcome public truth no longer matches.',
@@ -5383,20 +6067,6 @@ BEGIN
     END,
     v_proposal.reuse_permission, p_published_project_id, v_at
   ) RETURNING * INTO v_outcome;
-  INSERT INTO public.build_request_retention_holds (
-    request_id, hold_kind, reason, placed_at
-  )
-  SELECT v_request.id, 'legal',
-    'Active public outcome consent and publication evidence.', v_at
-  WHERE NOT EXISTS (
-    SELECT 1
-    FROM public.build_request_retention_holds AS active_hold
-    WHERE active_hold.request_id = v_request.id
-      AND active_hold.hold_kind = 'legal'
-      AND active_hold.reason =
-        'Active public outcome consent and publication evidence.'
-      AND active_hold.released_at IS NULL
-  );
   UPDATE public.build_request_publication_proposals
   SET proposal_status = 'published',
       published_at = v_at,
@@ -5690,15 +6360,30 @@ BEGIN
     'builderConsented', proposal.builder_consented_at IS NOT NULL,
     'requesterAttribution', proposal.requester_attribution,
     'reusePermission', proposal.reuse_permission,
+    'airlockReviewVerdict', proposal.airlock_review_verdict,
+    'airlockReviewedAt', proposal.airlock_reviewed_at,
+    'airlockReviewNote', proposal.airlock_review_note,
     'updatedAt', proposal.updated_at,
     'publishedAt', proposal.published_at
   ) ORDER BY proposal.updated_at, proposal.id), '[]'::JSONB)
   INTO v_items
   FROM (
-    SELECT queued.*
+    SELECT queued.*,
+      airlock_review.verdict AS airlock_review_verdict,
+      airlock_review.occurred_at AS airlock_reviewed_at,
+      airlock_review.review_note AS airlock_review_note
     FROM public.build_request_publication_proposals AS queued
     JOIN public.build_requests AS request_case
       ON request_case.id = queued.request_id
+    LEFT JOIN LATERAL (
+      SELECT review.verdict, review.occurred_at, review.review_note
+      FROM public.build_request_publication_reviews AS review
+      WHERE review.proposal_id = queued.id
+        AND review.proposal_version = queued.proposal_version
+        AND review.content_digest = queued.content_digest
+      ORDER BY review.occurred_at DESC
+      LIMIT 1
+    ) AS airlock_review ON TRUE
     WHERE request_case.moderation_state = 'clear'
       AND (
         (p_status = 'active' AND queued.proposal_status IN (
@@ -6113,6 +6798,8 @@ $$;
 
 REVOKE ALL ON FUNCTION
   private.request_has_scope_v1(UUID, UUID),
+  private.request_publication_preservation_active_v1(UUID),
+  private.request_publication_actor_can_continue_v1(UUID, UUID),
   private.request_public_append_only_v1(),
   private.request_public_actor_is_confirmed_v1(UUID),
   private.request_public_operator_is_rostered_v1(UUID, TEXT),
@@ -6171,12 +6858,18 @@ REVOKE ALL ON FUNCTION
   ),
   public.project_build_request_notifications_v1(INTEGER, INTEGER),
   public.claim_build_request_notifications_v1(INTEGER, INTEGER),
+  public.resolve_build_request_notification_send_v1(
+    INTEGER, UUID, UUID
+  ),
   public.finish_build_request_notification_v1(
     INTEGER, UUID, UUID, BOOLEAN, TEXT
   ),
   public.get_build_request_publication_v1(INTEGER, UUID),
   public.build_request_publication_command_v1(
     INTEGER, UUID, INTEGER, INTEGER, TEXT, TEXT, JSONB
+  ),
+  public.review_build_request_publication_v1(
+    INTEGER, UUID, INTEGER, TEXT, JSONB, TEXT, TEXT
   ),
   public.publish_build_request_outcome_v1(
     INTEGER, UUID, UUID, TEXT
@@ -6249,6 +6942,9 @@ GRANT EXECUTE ON FUNCTION
   public.build_request_publication_command_v1(
     INTEGER, UUID, INTEGER, INTEGER, TEXT, TEXT, JSONB
   ),
+  public.review_build_request_publication_v1(
+    INTEGER, UUID, INTEGER, TEXT, JSONB, TEXT, TEXT
+  ),
   public.list_build_request_publication_queue_v1(
     INTEGER, TEXT, INTEGER
   ),
@@ -6263,6 +6959,9 @@ GRANT EXECUTE ON FUNCTION
   ),
   public.project_build_request_notifications_v1(INTEGER, INTEGER),
   public.claim_build_request_notifications_v1(INTEGER, INTEGER),
+  public.resolve_build_request_notification_send_v1(
+    INTEGER, UUID, UUID
+  ),
   public.finish_build_request_notification_v1(
     INTEGER, UUID, UUID, BOOLEAN, TEXT
   ),
@@ -6408,6 +7107,8 @@ BEGIN
         WHEN 'publication_withdraw' THEN 'publication_withdrawn'
         WHEN 'publication_submit_airlock'
           THEN 'publication_airlock_submitted'
+        WHEN 'publication_airlock_review'
+          THEN 'publication_airlock_reviewed'
         WHEN 'publication_published' THEN 'publication_published'
       END,
       'label', replace(

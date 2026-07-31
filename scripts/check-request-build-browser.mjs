@@ -375,10 +375,10 @@ const SCENARIOS = [
       screenshot: ['off', 'report', 'publication'].includes(state),
       screenshotTarget: state === 'off'
         ? 'input[name="controlConfirmation"][value="yes"]'
-        : state === 'report'
-          ? 'select[name="nextStatus"]'
+          : state === 'report'
+            ? 'select[name="nextStatus"]'
           : state === 'publication'
-            ? 'a[href^="/admin/build-requests/"]'
+            ? 'input[name="reviewConfirmation"][value="yes"]'
             : undefined,
       screenshotTargetSuffix: state === 'off'
         ? 'controls'
@@ -660,6 +660,15 @@ const PAGE_SNAPSHOT = `(() => {
     publicControlConfirmationCount:fixture?.querySelectorAll(
       'input[name="controlConfirmation"][value="yes"][required]'
     ).length || 0,
+    publicationReviewConfirmationCount:fixture?.querySelectorAll(
+      'input[name="reviewConfirmation"][value="yes"][required]'
+    ).length || 0,
+    publicationReviewCheckNames:[...fixture.querySelectorAll(
+      'input[type="checkbox"][name$="Excluded"],' +
+      'input[type="checkbox"][name$="Delivery"],' +
+      'input[type="checkbox"][name$="Consent"],' +
+      'input[type="checkbox"][name="publicTruthReady"]'
+    )].map((element)=>element.getAttribute('name') || ''),
     hiddenPublicControlDenials:[...fixture.querySelectorAll(
       '[data-request-public-operations] input[type="hidden"][value="no"]'
     )].map((element)=>element.getAttribute('name') || ''),
@@ -1022,11 +1031,21 @@ async function verifyViewport(client, options, viewport) {
           scenarioItem.path.includes('state=publication') &&
           (
             !snapshot.fixtureTextLower.includes('offline neighborhood readiness checklist') ||
-            !snapshot.fixtureTextLower.includes('fully_consented') ||
-            !snapshot.fixtureTextLower.includes('review private authority')
+            !snapshot.fixtureTextLower.includes('in_airlock') ||
+            !snapshot.fixtureTextLower.includes('review these exact title and summary bytes independently') ||
+            !snapshot.fixtureTextLower.includes('record independent review') ||
+            !snapshot.fixtureTextLower.includes('review private authority') ||
+            snapshot.publicationReviewConfirmationCount !== 1 ||
+            JSON.stringify(snapshot.publicationReviewCheckNames) !== JSON.stringify([
+              'privateContentExcluded',
+              'claimsSupportedByDelivery',
+              'attributionMatchesConsent',
+              'reusePermissionMatchesConsent',
+              'publicTruthReady',
+            ])
           )
         ) {
-          throw new Error(`${label} omitted the safe-summary publication airlock queue.`)
+          throw new Error(`${label} omitted the exact-summary independent-review airlock.`)
         }
       }
       if (scenarioItem.path.includes('surface=public-outcomes')) {

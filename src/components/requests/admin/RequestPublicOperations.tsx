@@ -46,6 +46,7 @@ export function RequestPublicOperations({
   updateOperator,
   updateReadiness,
   updateReport,
+  reviewPublication,
 }: {
   operations: RequestPublicOperationsV1
   operators: readonly RequestOperatorCandidateV1[]
@@ -63,6 +64,7 @@ export function RequestPublicOperations({
   updateOperator: FormAction
   updateReadiness: FormAction
   updateReport: FormAction
+  reviewPublication: FormAction
 }) {
   return (
     <div className="space-y-6" data-request-public-operations>
@@ -590,6 +592,87 @@ export function RequestPublicOperations({
               <p className="mt-2 font-mono text-[10px] uppercase tracking-wide">
                 {proposal.status} · requester {proposal.requesterConsented ? 'consented' : 'pending'} · builder {proposal.builderConsented ? 'consented' : 'pending'}
               </p>
+              {proposal.airlockReviewVerdict ? (
+                <div className="mt-3 border border-surface-200 bg-surface-50 p-3 text-sm">
+                  <strong>
+                    Exact-summary review: {proposal.airlockReviewVerdict.replaceAll('_', ' ')}
+                  </strong>
+                  {proposal.airlockReviewNote ? (
+                    <p className="mt-1 text-surface-600">
+                      {proposal.airlockReviewNote}
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+              {proposal.status === 'in_airlock' &&
+              proposal.airlockReviewVerdict === null ? (
+                <form
+                  action={reviewPublication}
+                  className="mt-4 grid gap-3 border border-brand-orange bg-brand-orange-soft p-4"
+                >
+                  <input
+                    type="hidden"
+                    name="publicationReviewTarget"
+                    value={`${proposal.proposalId}:${proposal.proposalVersion}`}
+                  />
+                  <input
+                    type="hidden"
+                    name="idempotencyKey"
+                    value={`request-publication-review-${proposal.proposalId}-v${proposal.proposalVersion}-${mutationNonce}`}
+                  />
+                  <p className="text-xs font-bold text-surface-700">
+                    Review these exact title and summary bytes independently.
+                    Global community health alone does not approve this proposal.
+                  </p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {flag('privateContentExcluded', true)}
+                    {flag('claimsSupportedByDelivery', true)}
+                    {flag('attributionMatchesConsent', true)}
+                    {flag('reusePermissionMatchesConsent', true)}
+                    {flag('publicTruthReady', true)}
+                  </div>
+                  <label className="text-xs font-bold">
+                    Verdict
+                    <select
+                      name="verdict"
+                      className="mt-1 min-h-11 w-full border border-surface-300 px-3"
+                    >
+                      <option value="approve">Approve exact summary</option>
+                      <option value="changes_required">Require changes</option>
+                    </select>
+                  </label>
+                  <label className="text-xs font-bold">
+                    Participant-safe review note
+                    <textarea
+                      name="reviewNotes"
+                      minLength={20}
+                      maxLength={1000}
+                      required
+                      rows={3}
+                      className="mt-1 w-full border border-surface-300 px-3 py-2 font-normal"
+                    />
+                  </label>
+                  <label className="flex min-h-11 items-start gap-3 border border-surface-300 bg-white px-3 py-3 text-xs font-bold">
+                    <input
+                      type="hidden"
+                      name="reviewConfirmation"
+                      value="no"
+                    />
+                    <input
+                      type="checkbox"
+                      name="reviewConfirmation"
+                      value="yes"
+                      required
+                      className="mt-0.5 h-5 w-5 shrink-0"
+                    />
+                    I reviewed the exact proposed public bytes and the five
+                    recorded checks. I am not the requester or builder.
+                  </label>
+                  <button className="min-h-11 justify-self-start bg-surface-900 px-5 py-2 text-sm font-black text-white">
+                    Record independent review
+                  </button>
+                </form>
+              ) : null}
               <Link
                 href={`/admin/build-requests/${encodeURIComponent(proposal.requestId)}`}
                 className="mt-3 inline-flex min-h-11 items-center font-bold underline"

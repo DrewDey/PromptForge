@@ -282,6 +282,10 @@ const client: RequestRpcClient = {
               reusePermission: 'adapt_with_credit',
               requesterConsented: true,
               builderConsented: true,
+              airlockReviewVerdict: 'approved',
+              airlockReviewedAt: occurredAt,
+              airlockReviewNote:
+                'The exact proposal passed every independent airlock check.',
               publishedAt: null,
               updatedAt: occurredAt,
             },
@@ -295,6 +299,17 @@ const client: RequestRpcClient = {
             proposalVersion: 1,
             proposalStatus: 'consent_pending',
           }),
+          error: null,
+        }
+      case 'review_build_request_publication_v1':
+        return {
+          data: {
+            proposalId,
+            proposalVersion: 1,
+            verdict: 'approved',
+            replayed: false,
+            occurredAt,
+          },
           error: null,
         }
       case 'list_build_request_publication_queue_v1':
@@ -311,6 +326,10 @@ const client: RequestRpcClient = {
               builderConsented: true,
               requesterAttribution: 'anonymous',
               reusePermission: 'adapt_with_credit',
+              airlockReviewVerdict: 'approved',
+              airlockReviewedAt: occurredAt,
+              airlockReviewNote:
+                'The exact proposal passed every independent airlock check.',
               updatedAt: occurredAt,
               publishedAt: null,
             }],
@@ -358,11 +377,22 @@ const client: RequestRpcClient = {
             items: [{
               deliveryId,
               claimToken,
-              recipient: 'fixture@example.test',
               templateKey: 'request_action_needed',
               requestPath: `/requests/${requestId}`,
               attempt: 1,
             }],
+          },
+          error: null,
+        }
+      case 'resolve_build_request_notification_send_v1':
+        return {
+          data: {
+            status: 'authorized',
+            deliveryId,
+            claimToken,
+            recipient: 'fixture@example.test',
+            templateKey: 'request_action_needed',
+            requestPath: `/requests/${requestId}`,
           },
           error: null,
         }
@@ -645,6 +675,38 @@ sameJson(
   'Publication proposal serialization',
 )
 assert(
+  (await application.reviewPublication({
+    proposalId,
+    expectedProposalVersion: 1,
+    verdict: 'approve',
+    checks: {
+      privateContentExcluded: true,
+      claimsSupportedByDelivery: true,
+      attributionMatchesConsent: true,
+      reusePermissionMatchesConsent: true,
+      publicTruthReady: true,
+    },
+    reviewNotes:
+      'The exact proposed summary passed every independent airlock check.',
+    idempotencyKey: 'wire-publication-review',
+  })).verdict === 'approved',
+  'Publication review receipt parser failed.',
+)
+const publicationReviewCall = rpcCalls.find(
+  (call) => call.name === 'review_build_request_publication_v1',
+)
+sameJson(
+  publicationReviewCall?.parameters.p_checks,
+  {
+    private_content_excluded: true,
+    claims_supported_by_delivery: true,
+    attribution_matches_consent: true,
+    reuse_permission_matches_consent: true,
+    public_truth_ready: true,
+  },
+  'Publication review checklist serialization',
+)
+assert(
   (await application.listPublicationQueue()).items[0]?.status ===
     'in_airlock',
   'Publication queue parser lost airlock state.',
@@ -703,6 +765,13 @@ assert(
   'Notification claim parser lost its safe request route.',
 )
 assert(
+  (await server.resolveNotificationSend({
+    deliveryId,
+    claimToken,
+  })).status === 'authorized',
+  'Immediate notification send resolver parser failed.',
+)
+assert(
   (await server.finishNotification({
     deliveryId,
     claimToken,
@@ -724,28 +793,162 @@ assert(
   'Public maintenance parser failed.',
 )
 
+const hostileControlsInput = {
+  expectedControlsVersion: 3,
+  idempotencyKey: 'wire-controls-hostile',
+  acceptingRequests: true,
+  assigningRequests: true,
+  intakeAudience: 'authenticated',
+  activeCaseCapacity: 20,
+  fulfillmentCaseCapacity: 4,
+  operatorRosterRequired: true,
+  publicIntakeRiskScreening: true,
+  transactionalNotificationsEnabled: true,
+  publicationConsentEnabled: true,
+  publicationAirlockEnabled: true,
+  publicOutcomesEnabled: true,
+  actorHourlyIntakeLimit: 5,
+  networkHourlyIntakeLimit: 12,
+  globalDailyIntakeLimit: 250,
+  policyVersions: controls.policyVersions,
+} as const
+const hostilePublicationBase = {
+  requestId,
+  expectedRequestVersion: 4,
+  expectedProposalVersion: 1,
+  idempotencyKey: 'wire-publication-hostile',
+} as const
+const passingPublicationChecks = {
+  privateContentExcluded: true,
+  claimsSupportedByDelivery: true,
+  attributionMatchesConsent: true,
+  reusePermissionMatchesConsent: true,
+  publicTruthReady: true,
+} as const
+
 for (const [label, action] of [
   [
     'unknown controls field',
     () => application.setControls({
-      expectedControlsVersion: 3,
-      idempotencyKey: 'wire-controls-hostile',
-      acceptingRequests: true,
-      assigningRequests: true,
-      intakeAudience: 'authenticated',
-      activeCaseCapacity: 20,
-      fulfillmentCaseCapacity: 4,
-      operatorRosterRequired: true,
-      publicIntakeRiskScreening: true,
-      transactionalNotificationsEnabled: true,
-      publicationConsentEnabled: true,
-      publicationAirlockEnabled: true,
-      publicOutcomesEnabled: true,
-      actorHourlyIntakeLimit: 5,
-      networkHourlyIntakeLimit: 12,
-      globalDailyIntakeLimit: 250,
-      policyVersions: controls.policyVersions,
+      ...hostileControlsInput,
       unexpected: true,
+    } as never),
+  ],
+  [
+    'string controls boolean',
+    () => application.setControls({
+      ...hostileControlsInput,
+      acceptingRequests: 'true',
+    } as never),
+  ],
+  [
+    'null controls boolean',
+    () => application.setControls({
+      ...hostileControlsInput,
+      publicationConsentEnabled: null,
+    } as never),
+  ],
+  [
+    'invalid requester attribution',
+    () => application.executePublication({
+      ...hostilePublicationBase,
+      kind: 'requester_consent',
+      payload: {
+        requesterAttribution: 'public',
+        publicationTermsVersion: 'request-publication-v1',
+      },
+    } as never),
+  ],
+  [
+    'null requester publication terms',
+    () => application.executePublication({
+      ...hostilePublicationBase,
+      kind: 'requester_consent',
+      payload: {
+        requesterAttribution: 'anonymous',
+        publicationTermsVersion: null,
+      },
+    } as never),
+  ],
+  [
+    'invalid builder reuse permission',
+    () => application.executePublication({
+      ...hostilePublicationBase,
+      kind: 'builder_consent',
+      payload: {
+        reusePermission: 'unrestricted',
+        publicationTermsVersion: 'request-publication-v1',
+      },
+    } as never),
+  ],
+  [
+    'publication command extra field',
+    () => application.executePublication({
+      ...hostilePublicationBase,
+      kind: 'withdraw',
+      payload: {},
+      privateRequestId: requestId,
+    } as never),
+  ],
+  [
+    'nonempty decline payload',
+    () => application.executePublication({
+      ...hostilePublicationBase,
+      kind: 'decline',
+      payload: { reason: 'No longer wanted.' },
+    } as never),
+  ],
+  [
+    'new proposal with prior version',
+    () => application.executePublication({
+      ...hostilePublicationBase,
+      kind: 'propose',
+      payload: {
+        safeTitle: outcome.title,
+        safeSummary: outcome.summary,
+      },
+    } as never),
+  ],
+  [
+    'approved review with failed check',
+    () => application.reviewPublication({
+      proposalId,
+      expectedProposalVersion: 1,
+      verdict: 'approve',
+      checks: {
+        ...passingPublicationChecks,
+        publicTruthReady: false,
+      },
+      reviewNotes:
+        'The proposal cannot be approved with a failed public-truth check.',
+      idempotencyKey: 'wire-review-failed-check',
+    }),
+  ],
+  [
+    'changes-required review with all checks passing',
+    () => application.reviewPublication({
+      proposalId,
+      expectedProposalVersion: 1,
+      verdict: 'changes_required',
+      checks: passingPublicationChecks,
+      reviewNotes:
+        'Changes required must identify at least one exact failed check.',
+      idempotencyKey: 'wire-review-no-failed-check',
+    }),
+  ],
+  [
+    'nonboolean publication review check',
+    () => application.reviewPublication({
+      proposalId,
+      expectedProposalVersion: 1,
+      verdict: 'approve',
+      checks: {
+        ...passingPublicationChecks,
+        privateContentExcluded: 'yes',
+      },
+      reviewNotes:
+        'The exact review checklist cannot accept string-shaped booleans.',
+      idempotencyKey: 'wire-review-string-check',
     } as never),
   ],
   [
@@ -826,7 +1029,36 @@ try {
 }
 assert(
   unsafeRecipientRejected,
-  'Notification claims must reject malformed recipient identities.',
+  'Notification claims must reject any premature recipient identity.',
+)
+
+const mismatchedNotificationBinding = createRequestPublicServerService({
+  async rpc() {
+    return {
+      data: {
+        status: 'authorized',
+        deliveryId: '9b100000-0000-4000-8000-000000000099',
+        claimToken,
+        recipient: 'fixture@example.test',
+        templateKey: 'request_action_needed',
+        requestPath: `/requests/${requestId}`,
+      },
+      error: null,
+    }
+  },
+})
+let mismatchedNotificationBindingRejected = false
+try {
+  await mismatchedNotificationBinding.resolveNotificationSend({
+    deliveryId,
+    claimToken,
+  })
+} catch {
+  mismatchedNotificationBindingRejected = true
+}
+assert(
+  mismatchedNotificationBindingRejected,
+  'Notification send resolution must preserve the exact claim binding.',
 )
 
 console.log(

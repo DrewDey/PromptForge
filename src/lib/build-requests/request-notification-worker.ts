@@ -14,6 +14,7 @@ export type RequestNotificationWorkerResult = {
   reportsProjected: number
   claimed: number
   delivered: number
+  suppressed: number
   retried: number
   dead: number
   failed: number
@@ -108,6 +109,7 @@ export function createRequestNotificationWorker(dependencies: {
         reportsProjected: projection.reportsProjected,
         claimed: 0,
         delivered: 0,
+        suppressed: 0,
         retried: 0,
         dead: 0,
         failed: 0,
@@ -121,22 +123,42 @@ export function createRequestNotificationWorker(dependencies: {
       for (let index = 0; index < claims.items.length; index += concurrency) {
         await Promise.all(
           claims.items.slice(index, index + concurrency).map(async (claim) => {
-            const template = copy[claim.templateKey]
+            let sendBinding: Awaited<
+              ReturnType<RequestPublicServerService['resolveNotificationSend']>
+            >
+            try {
+              sendBinding =
+                await dependencies.service.resolveNotificationSend({
+                  deliveryId: claim.deliveryId,
+                  claimToken: claim.claimToken,
+                })
+            } catch {
+              result.failed += 1
+              return
+            }
+            if (sendBinding.status === 'suppressed') {
+              result.suppressed += 1
+              return
+            }
+            const template = copy[sendBinding.templateKey]
             let sent: Awaited<ReturnType<RequestNotificationTransport['send']>>
             try {
+              // The authority resolver runs immediately before the external
+              // transport call. No database transaction can cover a remote
+              // provider send; provider idempotency closes retry ambiguity.
               sent = await dependencies.transport.send({
-                idempotencyKey: claim.deliveryId,
-                recipient: claim.recipient,
+                idempotencyKey: sendBinding.deliveryId,
+                recipient: sendBinding.recipient,
                 subject: template.subject,
-                text: `${template.message}\n\nOpen the private case: ${getAbsoluteSiteUrl(claim.requestPath)}\n\nThis message contains no brief or delivery content.`,
+                text: `${template.message}\n\nOpen the private case: ${getAbsoluteSiteUrl(sendBinding.requestPath)}\n\nThis message contains no brief or delivery content.`,
               })
             } catch {
               sent = { ok: false, code: 'transport_failed' }
             }
             try {
               const finish = await dependencies.service.finishNotification({
-                deliveryId: claim.deliveryId,
-                claimToken: claim.claimToken,
+                deliveryId: sendBinding.deliveryId,
+                claimToken: sendBinding.claimToken,
                 succeeded: sent.ok,
                 errorCode: sent.ok
                   ? null

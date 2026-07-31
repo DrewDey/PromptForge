@@ -27,6 +27,7 @@ import {
   type RequestNotificationPreferenceReceiptV1,
   type RequestNotificationPreferenceV1,
   type RequestNotificationProjectionV1,
+  type RequestNotificationSendResolutionV1,
   type RequestOperatorCandidateV1,
   type RequestOperatorMembershipInputV1,
   type RequestOperatorMembershipReceiptV1,
@@ -40,6 +41,8 @@ import {
   type RequestPublicOutcomeV1,
   type RequestPublicationCommandV1,
   type RequestPublicationQueueV1,
+  type RequestPublicationReviewInputV1,
+  type RequestPublicationReviewReceiptV1,
   type RequestPublicationViewV1,
   type RequestReadinessEvidenceInputV1,
   type RequestReadinessEvidenceReceiptV1,
@@ -66,9 +69,11 @@ const RPC = {
   setNotificationPreference: 'set_build_request_notification_preference_v1',
   projectNotifications: 'project_build_request_notifications_v1',
   claimNotifications: 'claim_build_request_notifications_v1',
+  resolveNotificationSend: 'resolve_build_request_notification_send_v1',
   finishNotification: 'finish_build_request_notification_v1',
   publication: 'get_build_request_publication_v1',
   publicationCommand: 'build_request_publication_command_v1',
+  publicationReview: 'review_build_request_publication_v1',
   publicationQueue: 'list_build_request_publication_queue_v1',
   publishOutcome: 'publish_build_request_outcome_v1',
   publicOutcomes: 'list_public_build_request_outcomes_v1',
@@ -95,6 +100,7 @@ const PUBLICATION_CAPABILITIES = [
   'decline',
   'withdraw',
   'submit_airlock',
+  'review_airlock',
   'publish_outcome',
 ] as const
 
@@ -641,6 +647,9 @@ function parsePublication(value: unknown): RequestPublicationViewV1 {
         'reusePermission',
         'requesterConsented',
         'builderConsented',
+        'airlockReviewVerdict',
+        'airlockReviewedAt',
+        'airlockReviewNote',
         'publishedAt',
         'updatedAt',
       ],
@@ -690,6 +699,23 @@ function parsePublication(value: unknown): RequestPublicationViewV1 {
       builderConsented: requestPublicValidation.bool(
         candidate.builderConsented,
         'Builder consent',
+      ),
+      airlockReviewVerdict: candidate.airlockReviewVerdict === null
+        ? null
+        : requestPublicValidation.oneOf(
+            candidate.airlockReviewVerdict,
+            ['approved', 'changes_required'] as const,
+            'Airlock review verdict',
+          ),
+      airlockReviewedAt: requestPublicValidation.nullableTimestamp(
+        candidate.airlockReviewedAt,
+        'Airlock review occurrence',
+      ),
+      airlockReviewNote: requestPublicValidation.nullableString(
+        candidate.airlockReviewNote,
+        'Airlock review note',
+        20,
+        1_000,
       ),
       publishedAt: requestPublicValidation.nullableTimestamp(
         candidate.publishedAt,
@@ -881,6 +907,9 @@ function parsePublicationQueue(value: unknown): RequestPublicationQueueV1 {
           'builderConsented',
           'requesterAttribution',
           'reusePermission',
+          'airlockReviewVerdict',
+          'airlockReviewedAt',
+          'airlockReviewNote',
           'updatedAt',
           'publishedAt',
         ],
@@ -932,6 +961,23 @@ function parsePublicationQueue(value: unknown): RequestPublicationQueueV1 {
           ['view_only', 'adapt_with_credit'] as const,
           'Reuse permission',
         ),
+        airlockReviewVerdict: item.airlockReviewVerdict === null
+          ? null
+          : requestPublicValidation.oneOf(
+              item.airlockReviewVerdict,
+              ['approved', 'changes_required'] as const,
+              'Airlock review verdict',
+            ),
+        airlockReviewedAt: requestPublicValidation.nullableTimestamp(
+          item.airlockReviewedAt,
+          'Airlock review occurrence',
+        ),
+        airlockReviewNote: requestPublicValidation.nullableString(
+          item.airlockReviewNote,
+          'Airlock review note',
+          20,
+          1_000,
+        ),
         updatedAt: requestPublicValidation.timestamp(
           item.updatedAt,
           'Proposal update',
@@ -957,7 +1003,41 @@ function serializeReference(
         project_id: reference.projectId,
         model_variant_id: reference.modelVariantId,
         response_step_number: reference.responseStepNumber,
-      }
+  }
+}
+
+function parsePublicationReviewReceipt(
+  value: unknown,
+): RequestPublicationReviewReceiptV1 {
+  const item = exactRow(value, 'Request publication review receipt', [
+    'proposalId',
+    'proposalVersion',
+    'verdict',
+    'replayed',
+    'occurredAt',
+  ])
+  return {
+    proposalId: requestPublicValidation.uuid(
+      item.proposalId,
+      'Publication proposal id',
+    ),
+    proposalVersion: requestPublicValidation.integer(
+      item.proposalVersion,
+      'Publication proposal version',
+      1,
+      10_000_000,
+    ),
+    verdict: requestPublicValidation.oneOf(
+      item.verdict,
+      ['approved', 'changes_required'] as const,
+      'Publication review verdict',
+    ),
+    replayed: requestPublicValidation.bool(item.replayed, 'Replay state'),
+    occurredAt: requestPublicValidation.timestamp(
+      item.occurredAt,
+      'Publication review occurrence',
+    ),
+  }
 }
 
 function validateOperatorInput(input: RequestOperatorMembershipInputV1) {
@@ -1007,38 +1087,129 @@ function validateOperatorInput(input: RequestOperatorMembershipInputV1) {
 }
 
 function validatePublicationCommand(input: RequestPublicationCommandV1) {
-  requestPublicValidation.uuid(input.requestId, 'Request id')
+  const item = requestPublicValidation.record(
+    input,
+    'Request publication command',
+  )
+  requestPublicValidation.exact(
+    item,
+    [
+      'requestId',
+      'expectedRequestVersion',
+      'expectedProposalVersion',
+      'idempotencyKey',
+      'kind',
+      'payload',
+    ],
+    'Request publication command',
+  )
+  const kind = requestPublicValidation.oneOf(
+    item.kind,
+    [
+      'propose',
+      'replace_proposal',
+      'requester_consent',
+      'builder_consent',
+      'decline',
+      'withdraw',
+      'submit_airlock',
+    ] as const,
+    'Publication command',
+  )
+  requestPublicValidation.uuid(item.requestId, 'Request id')
   requestPublicValidation.integer(
-    input.expectedRequestVersion,
+    item.expectedRequestVersion,
     'Expected Request version',
     0,
     10_000_000,
   )
-  if (input.kind === 'propose') {
-    if (input.expectedProposalVersion !== null) {
+  if (kind === 'propose') {
+    if (item.expectedProposalVersion !== null) {
       throw new RequestContractError('A new proposal cannot name a prior version.')
     }
   } else {
     requestPublicValidation.integer(
-      input.expectedProposalVersion,
+      item.expectedProposalVersion,
       'Expected proposal version',
       1,
       10_000_000,
     )
   }
-  requestPublicValidation.key(input.idempotencyKey)
-  if (input.kind === 'propose' || input.kind === 'replace_proposal') {
+  requestPublicValidation.key(
     requestPublicValidation.string(
-      input.payload.safeTitle,
+      item.idempotencyKey,
+      'Publication idempotency key',
+      8,
+      128,
+    ),
+  )
+  const payload = requestPublicValidation.record(
+    item.payload,
+    'Publication command payload',
+  )
+  if (kind === 'propose' || kind === 'replace_proposal') {
+    requestPublicValidation.exact(
+      payload,
+      ['safeTitle', 'safeSummary'],
+      'Publication command payload',
+    )
+    requestPublicValidation.string(
+      payload.safeTitle,
       'Publication title',
       4,
       120,
     )
     requestPublicValidation.string(
-      input.payload.safeSummary,
+      payload.safeSummary,
       'Publication summary',
       40,
       1_000,
+    )
+  } else if (kind === 'requester_consent') {
+    requestPublicValidation.exact(
+      payload,
+      ['requesterAttribution', 'publicationTermsVersion'],
+      'Requester publication consent',
+    )
+    requestPublicValidation.oneOf(
+      payload.requesterAttribution,
+      ['anonymous', 'credited'] as const,
+      'Requester attribution',
+    )
+    const version = requestPublicValidation.string(
+      payload.publicationTermsVersion,
+      'Publication terms version',
+      1,
+      64,
+    )
+    if (!requestPublicPatterns.version.test(version)) {
+      throw new RequestContractError('Publication terms version is invalid.')
+    }
+  } else if (kind === 'builder_consent') {
+    requestPublicValidation.exact(
+      payload,
+      ['reusePermission', 'publicationTermsVersion'],
+      'Builder publication consent',
+    )
+    requestPublicValidation.oneOf(
+      payload.reusePermission,
+      ['view_only', 'adapt_with_credit'] as const,
+      'Builder reuse permission',
+    )
+    const version = requestPublicValidation.string(
+      payload.publicationTermsVersion,
+      'Publication terms version',
+      1,
+      64,
+    )
+    if (!requestPublicPatterns.version.test(version)) {
+      throw new RequestContractError('Publication terms version is invalid.')
+    }
+  } else {
+    requestPublicValidation.exact(
+      payload,
+      [],
+      'Publication command payload',
     )
   }
   return input
@@ -1083,6 +1254,9 @@ export interface RequestPublicApplicationService {
   executePublication(
     input: RequestPublicationCommandV1,
   ): Promise<RequestCommandReceipt>
+  reviewPublication(
+    input: RequestPublicationReviewInputV1,
+  ): Promise<RequestPublicationReviewReceiptV1>
   listPublicationQueue(query?: {
     status?:
       | 'active'
@@ -1471,6 +1645,115 @@ export function createRequestPublicApplicationService(
         parseRequestCommandReceiptV1,
       )
     },
+    reviewPublication(input) {
+      const item = requestPublicValidation.record(
+        input,
+        'Request publication review',
+      )
+      requestPublicValidation.exact(
+        item,
+        [
+          'proposalId',
+          'expectedProposalVersion',
+          'verdict',
+          'checks',
+          'reviewNotes',
+          'idempotencyKey',
+        ],
+        'Request publication review',
+      )
+      const proposalId = requestPublicValidation.uuid(
+        item.proposalId,
+        'Publication proposal id',
+      )
+      const expectedProposalVersion = requestPublicValidation.integer(
+        item.expectedProposalVersion,
+        'Expected publication proposal version',
+        1,
+        10_000_000,
+      )
+      const verdict = requestPublicValidation.oneOf(
+        item.verdict,
+        ['approve', 'changes_required'] as const,
+        'Publication review verdict',
+      )
+      const checks = exactRecord(
+        item.checks,
+        'Publication review checks',
+        [
+          'privateContentExcluded',
+          'claimsSupportedByDelivery',
+          'attributionMatchesConsent',
+          'reusePermissionMatchesConsent',
+          'publicTruthReady',
+        ],
+      )
+      const normalizedChecks = {
+        private_content_excluded: requestPublicValidation.bool(
+          checks.privateContentExcluded,
+          'Private-content review check',
+        ),
+        claims_supported_by_delivery: requestPublicValidation.bool(
+          checks.claimsSupportedByDelivery,
+          'Delivery-support review check',
+        ),
+        attribution_matches_consent: requestPublicValidation.bool(
+          checks.attributionMatchesConsent,
+          'Attribution review check',
+        ),
+        reuse_permission_matches_consent: requestPublicValidation.bool(
+          checks.reusePermissionMatchesConsent,
+          'Reuse-permission review check',
+        ),
+        public_truth_ready: requestPublicValidation.bool(
+          checks.publicTruthReady,
+          'Public-truth review check',
+        ),
+      }
+      if (
+        verdict === 'approve' &&
+        Object.values(normalizedChecks).some((value) => !value)
+      ) {
+        throw new RequestContractError(
+          'An approved publication review requires every check.',
+        )
+      }
+      if (
+        verdict === 'changes_required' &&
+        Object.values(normalizedChecks).every(Boolean)
+      ) {
+        throw new RequestContractError(
+          'A changes-required review must identify a failed check.',
+        )
+      }
+      const reviewNotes = requestPublicValidation.string(
+        item.reviewNotes,
+        'Publication review notes',
+        20,
+        4_000,
+      )
+      const idempotencyKey = requestPublicValidation.string(
+        item.idempotencyKey,
+        'Publication review idempotency key',
+        8,
+        128,
+      )
+      requestPublicValidation.key(idempotencyKey)
+      return read(
+        client,
+        RPC.publicationReview,
+        {
+          p_contract_version: REQUEST_CONTRACT_VERSION,
+          p_proposal_id: proposalId,
+          p_expected_proposal_version: expectedProposalVersion,
+          p_verdict: verdict,
+          p_checks: normalizedChecks,
+          p_review_notes: reviewNotes.trim(),
+          p_idempotency_key: idempotencyKey,
+        },
+        parsePublicationReviewReceipt,
+      )
+    },
     listPublicationQueue(query = {}) {
       const status = query.status ?? 'active'
       const limit = query.limit ?? 50
@@ -1544,6 +1827,10 @@ export interface RequestPublicServerService {
   ): Promise<RequestIntakeRiskGrantV1>
   projectNotifications(limit?: number): Promise<RequestNotificationProjectionV1>
   claimNotifications(limit?: number): Promise<RequestNotificationClaimV1>
+  resolveNotificationSend(input: {
+    deliveryId: string
+    claimToken: string
+  }): Promise<RequestNotificationSendResolutionV1>
   finishNotification(input: {
     deliveryId: string
     claimToken: string
@@ -1637,7 +1924,6 @@ export function createRequestPublicServerService(
                 [
                   'deliveryId',
                   'claimToken',
-                  'recipient',
                   'templateKey',
                   'requestPath',
                   'attempt',
@@ -1654,19 +1940,6 @@ export function createRequestPublicServerService(
                   'Notification Request path is invalid.',
                 )
               }
-              const recipient = requestPublicValidation.string(
-                item.recipient,
-                'Notification recipient',
-                3,
-                320,
-              )
-              if (
-                !/^[^\s@<>,]+@[^\s@<>,]+\.[^\s@<>,]+$/.test(recipient)
-              ) {
-                throw new RequestContractError(
-                  'Notification recipient is invalid.',
-                )
-              }
               return {
                 deliveryId: requestPublicValidation.uuid(
                   item.deliveryId,
@@ -1676,7 +1949,6 @@ export function createRequestPublicServerService(
                   item.claimToken,
                   'Notification claim token',
                 ),
-                recipient,
                 templateKey: requestPublicValidation.oneOf(
                   item.templateKey,
                   NOTIFICATION_TEMPLATES,
@@ -1691,6 +1963,120 @@ export function createRequestPublicServerService(
                 ),
               }
             }),
+          }
+        },
+      )
+    },
+    resolveNotificationSend(input) {
+      requestPublicValidation.uuid(
+        input.deliveryId,
+        'Notification delivery id',
+      )
+      requestPublicValidation.uuid(
+        input.claimToken,
+        'Notification claim token',
+      )
+      return read(
+        serviceRoleClient,
+        RPC.resolveNotificationSend,
+        {
+          p_contract_version: REQUEST_CONTRACT_VERSION,
+          p_delivery_id: input.deliveryId,
+          p_claim_token: input.claimToken,
+        },
+        (value): RequestNotificationSendResolutionV1 => {
+          const base = requestPublicValidation.record(
+            value,
+            'Notification send resolution',
+          )
+          const status = requestPublicValidation.oneOf(
+            base.status,
+            ['authorized', 'suppressed'] as const,
+            'Notification send status',
+          )
+          if (status === 'suppressed') {
+            const item = exactRecord(
+              value,
+              'Suppressed notification send',
+              ['status', 'reason'],
+            )
+            return {
+              status,
+              reason: requestPublicValidation.oneOf(
+                item.reason,
+                [
+                  'control_off',
+                  'preference_off',
+                  'identity_unavailable',
+                  'authorization_ended',
+                ] as const,
+                'Notification suppression reason',
+              ),
+            }
+          }
+          const item = exactRecord(
+            value,
+            'Authorized notification send',
+            [
+              'status',
+              'deliveryId',
+              'claimToken',
+              'recipient',
+              'templateKey',
+              'requestPath',
+            ],
+          )
+          const recipient = requestPublicValidation.string(
+            item.recipient,
+            'Notification recipient',
+            3,
+            320,
+          )
+          if (
+            !/^[^\s@<>,]+@[^\s@<>,]+\.[^\s@<>,]+$/.test(recipient)
+          ) {
+            throw new RequestContractError(
+              'Notification recipient is invalid.',
+            )
+          }
+          const requestPath = requestPublicValidation.string(
+            item.requestPath,
+            'Notification Request path',
+            46,
+            46,
+          )
+          if (!/^\/requests\/[0-9a-f-]{36}$/i.test(requestPath)) {
+            throw new RequestContractError(
+              'Notification Request path is invalid.',
+            )
+          }
+          const deliveryId = requestPublicValidation.uuid(
+            item.deliveryId,
+            'Notification delivery id',
+          )
+          const claimToken = requestPublicValidation.uuid(
+            item.claimToken,
+            'Notification claim token',
+          )
+          if (
+            deliveryId !== input.deliveryId ||
+            claimToken !== input.claimToken
+          ) {
+            throw new RequestContractError(
+              'Notification send binding changed.',
+            )
+          }
+          return {
+            status,
+            deliveryId,
+            claimToken,
+            recipient,
+            templateKey: requestPublicValidation.oneOf(
+              item.templateKey,
+              NOTIFICATION_TEMPLATES,
+              'Notification template',
+            ),
+            requestPath,
           }
         },
       )

@@ -19,6 +19,7 @@ import {
 import type { RequestCursor } from '@/lib/request-lifecycle'
 import {
   updatePilotAdmissionAction,
+  reviewRequestPublicationAction,
   updateRequestOperatorAction,
   updateRequestPublicControlsAction,
   updateRequestReadinessAction,
@@ -209,6 +210,7 @@ export default async function BuildRequestsAdminPage({
                 updateOperator={updateRequestOperatorAction}
                 updateReadiness={updateRequestReadinessAction}
                 updateReport={updateRequestReportAction}
+                reviewPublication={reviewRequestPublicationAction}
               />
             ) : (
               <section

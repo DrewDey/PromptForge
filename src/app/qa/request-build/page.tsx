@@ -279,7 +279,7 @@ function publicOperationsFixture(
             proposalId: PUBLIC_FIXTURE_PROPOSAL_ID,
             requestId: PUBLIC_FIXTURE_REQUEST_ID,
             proposalVersion: 4,
-            status: 'fully_consented',
+            status: 'in_airlock',
             safeTitle: 'Offline neighborhood readiness checklist',
             safeSummary:
               'A separately consented summary of an independently reviewed offline checklist linked to an approved PathForge project.',
@@ -287,6 +287,9 @@ function publicOperationsFixture(
             builderConsented: true,
             requesterAttribution: 'anonymous',
             reusePermission: 'adapt_with_credit',
+            airlockReviewVerdict: null,
+            airlockReviewedAt: null,
+            airlockReviewNote: null,
             updatedAt: PUBLIC_FIXTURE_TIME,
             publishedAt: null,
           }]
@@ -330,6 +333,11 @@ function participantPublicationFixture(
         reusePermission: 'adapt_with_credit' as const,
         requesterConsented: state !== 'requester_consent',
         builderConsented: state !== 'builder_consent',
+        airlockReviewVerdict: state === 'publish' ? 'approved' as const : null,
+        airlockReviewedAt: state === 'publish' ? PUBLIC_FIXTURE_TIME : null,
+        airlockReviewNote: state === 'publish'
+          ? 'The exact public summary passed every independent airlock check.'
+          : null,
         publishedAt: state === 'withdraw' ? PUBLIC_FIXTURE_TIME : null,
         updatedAt: PUBLIC_FIXTURE_TIME,
       }
@@ -1122,13 +1130,14 @@ export default async function RequestBuildFixturePage({
             publications={fixture.publications}
             operatorQuery={state === 'ready' ? 'Fixture operator' : ''}
             publicationStatus={state === 'publication'
-              ? 'fully_consented'
+              ? 'in_airlock'
               : 'active'}
             mutationNonce="fixture-public-operations"
             updateControls={fixtureAction}
             updateOperator={fixtureAction}
             updateReadiness={fixtureAction}
             updateReport={fixtureAction}
+            reviewPublication={fixtureAction}
           />
         </div>
       </FixtureFrame>

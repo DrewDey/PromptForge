@@ -72,7 +72,6 @@ const claims = [
   {
     deliveryId: '9c100000-0000-4000-8000-000000000002',
     claimToken: '9c100000-0000-4000-8000-000000000003',
-    recipient: 'one@example.test',
     templateKey: 'request_action_needed',
     requestPath: `/requests/${requestId}`,
     attempt: 1,
@@ -80,7 +79,6 @@ const claims = [
   {
     deliveryId: '9c100000-0000-4000-8000-000000000004',
     claimToken: '9c100000-0000-4000-8000-000000000005',
-    recipient: 'two@example.test',
     templateKey: 'request_delivery_ready',
     requestPath: `/requests/${requestId}`,
     attempt: 2,
@@ -88,12 +86,16 @@ const claims = [
   {
     deliveryId: '9c100000-0000-4000-8000-000000000006',
     claimToken: '9c100000-0000-4000-8000-000000000007',
-    recipient: 'three@example.test',
     templateKey: 'request_report_received',
     requestPath: `/requests/${requestId}`,
     attempt: 1,
   },
 ]
+const claimRecipients = new Map([
+  [claims[0].deliveryId, 'one@example.test'],
+  [claims[1].deliveryId, 'two@example.test'],
+  [claims[2].deliveryId, 'three@example.test'],
+])
 
 let claimCalls = 0
 let transportCalls = 0
@@ -125,6 +127,7 @@ assert.deepEqual(await controlOffWorker.run(Number.NaN), {
   reportsProjected: 0,
   claimed: 0,
   delivered: 0,
+  suppressed: 0,
   retried: 0,
   dead: 0,
   failed: 0,
@@ -151,11 +154,26 @@ const worker = createRequestNotificationWorker({
       assert.equal(limit, 3)
       return { items: claims }
     },
+    async resolveNotificationSend(input) {
+      const claim = claims.find(
+        (candidate) => candidate.deliveryId === input.deliveryId,
+      )
+      assert(claim)
+      assert.equal(input.claimToken, claim.claimToken)
+      if (input.deliveryId === claims[2].deliveryId) {
+        return { status: 'suppressed', reason: 'preference_off' }
+      }
+      return {
+        status: 'authorized',
+        deliveryId: claim.deliveryId,
+        claimToken: claim.claimToken,
+        recipient: claimRecipients.get(claim.deliveryId),
+        templateKey: claim.templateKey,
+        requestPath: claim.requestPath,
+      }
+    },
     async finishNotification(input) {
       finishes.push(input)
-      if (input.deliveryId === claims[2].deliveryId) {
-        throw new Error('private-provider-state')
-      }
       return {
         deliveryState: input.succeeded ? 'delivered' : 'retry',
         attempts: input.succeeded ? 1 : 2,
@@ -182,12 +200,14 @@ assert.deepEqual(await worker.run(3), {
   reportsProjected: 1,
   claimed: 3,
   delivered: 1,
+  suppressed: 1,
   retried: 1,
   dead: 0,
-  failed: 1,
+  failed: 0,
 })
 assert.equal(maximumActiveSends, 2)
-assert.equal(finishes.length, 3)
+assert.equal(finishes.length, 2)
+assert.equal(messages.length, 2)
 for (const message of messages) {
   assert.match(message.text, /https:\/\/pathforge\.test\/requests\//)
   assert.match(message.text, /contains no brief or delivery content/i)
@@ -195,9 +215,10 @@ for (const message of messages) {
     message.text,
     /manifest|artifact sha|acceptance check|private-provider-state/i,
   )
-  assert.equal(message.idempotencyKey, claims.find(
-    (claim) => claim.recipient === message.recipient,
-  ).deliveryId)
+  assert.equal(
+    claimRecipients.get(message.idempotencyKey),
+    message.recipient,
+  )
 }
 
 const originalFetch = globalThis.fetch
@@ -213,7 +234,7 @@ try {
   )
   assert.deepEqual(await unconfigured.send({
     idempotencyKey: claims[0].deliveryId,
-    recipient: claims[0].recipient,
+    recipient: claimRecipients.get(claims[0].deliveryId),
     subject: 'Fixture',
     text: 'Fixture',
   }), { ok: false, code: 'transport_unconfigured' })
@@ -224,7 +245,7 @@ try {
   )
   assert.deepEqual(await hostileSender.send({
     idempotencyKey: claims[0].deliveryId,
-    recipient: claims[0].recipient,
+    recipient: claimRecipients.get(claims[0].deliveryId),
     subject: 'Fixture',
     text: 'Fixture',
   }), { ok: false, code: 'transport_unconfigured' })
@@ -236,7 +257,7 @@ try {
   )
   assert.deepEqual(await resend.send({
     idempotencyKey: claims[0].deliveryId,
-    recipient: claims[0].recipient,
+    recipient: claimRecipients.get(claims[0].deliveryId),
     subject: 'Fixture subject',
     text: 'Fixture text',
   }), { ok: true })
@@ -300,6 +321,7 @@ const notificationHandler = createRequestNotificationHttpHandler({
         reportsProjected: 0,
         claimed: 0,
         delivered: 0,
+        suppressed: 0,
         retried: 0,
         dead: 0,
         failed: 0,
@@ -322,6 +344,7 @@ assert.deepEqual(await notificationResponse.json(), {
   reportsProjected: 0,
   claimed: 0,
   delivered: 0,
+  suppressed: 0,
   retried: 0,
   dead: 0,
   failed: 0,
@@ -343,6 +366,7 @@ for (const failureState of [
             reportsProjected: 0,
             claimed: 1,
             delivered: 0,
+            suppressed: 0,
             ...failureState,
           }
         },
@@ -365,6 +389,7 @@ const leakingNotificationHandler = createRequestNotificationHttpHandler({
         reportsProjected: 0,
         claimed: 0,
         delivered: 0,
+        suppressed: 0,
         retried: 0,
         dead: 0,
         failed: 0,

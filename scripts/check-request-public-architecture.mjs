@@ -10,6 +10,9 @@ function read(path) {
 const migration = read(
   'supabase/migrations/20260730171646_request_build_public_architecture_v1.sql',
 )
+const foundationMigration = read(
+  'supabase/migrations/20260730040819_request_build_private_authority_v1.sql',
+)
 const contracts = read('src/lib/request-public-architecture.ts')
 const service = read('src/lib/request-public-service.ts')
 const server = read('src/lib/build-requests/server.ts')
@@ -121,8 +124,28 @@ for (const [label, pattern] of [
     /NOT v_controls\.publication_consent_enabled[\s\n]+OR NOT private\.request_public_readiness_gate_v1\('legal'\)/,
   ],
   [
-    'account deidentification publication hold release',
-    /Public outcome consent ended when a participant account was deidentified\./,
+    'scoped publication audit preservation',
+    /request_publication_preservation_active_v1[\s\S]*proposal_status IN \([\s\n]+'fully_consented', 'in_airlock', 'published'/,
+  ],
+  [
+    'long-lived narrow participant withdrawal',
+    /request_publication_actor_can_continue_v1[\s\S]*proposal\.requester_id, proposal\.builder_id/,
+  ],
+  [
+    'notification claim identity exclusion',
+    /jsonb_build_object\([\s\n]+'deliveryId', claimed\.id,[\s\n]+'claimToken', claimed\.claim_token,[\s\n]+'templateKey'/,
+  ],
+  [
+    'immediate notification send reauthorization',
+    /resolve_build_request_notification_send_v1[\s\S]*delivery_state <> 'claimed'[\s\S]*request_notification_event_recipient_v1[\s\S]*transactional_email_enabled[\s\S]*auth_user\.email_confirmed_at/,
+  ],
+  [
+    'independent publication airlock review authority',
+    /CREATE TABLE public\.build_request_publication_reviews[\s\S]*review_build_request_publication_v1/,
+  ],
+  [
+    'publish binds exact approved airlock review',
+    /publish_build_request_outcome_v1[\s\S]*build_request_publication_reviews AS publication_review[\s\S]*publication_review\.verdict = 'approved'/,
   ],
   [
     'builder deidentification publication-state alignment',
@@ -157,6 +180,14 @@ for (const [label, pattern] of [
     /new_recipients[\s\S]*NOT EXISTS[\s\S]*build_request_notification_deliveries/,
   ],
   [
+    'event notification deidentification-safe idempotency',
+    /CREATE UNIQUE INDEX build_request_notification_event_recipient_unique[\s\S]*WHERE event_id IS NOT NULL AND recipient_id IS NOT NULL/,
+  ],
+  [
+    'report notification deidentification-safe idempotency',
+    /CREATE UNIQUE INDEX build_request_notification_report_recipient_unique[\s\S]*WHERE report_id IS NOT NULL AND recipient_id IS NOT NULL/,
+  ],
+  [
     'publication participant notification reauthorization',
     /event_value\.event_kind LIKE 'publication_%'[\s\S]*proposal\.requester_id, proposal\.builder_id/,
   ],
@@ -180,9 +211,56 @@ for (const [label, pattern] of [
     'bounded network-digest retention',
     /risk_grant_id UUID,[\s\S]*risk_screening_verified_at TIMESTAMPTZ[\s\S]*WHERE grant_row\.issued_at[\s\n]+<= clock_timestamp\(\) - INTERVAL '30 days'/,
   ],
+  [
+    'strict policy acknowledgement JSON authority',
+    /jsonb_typeof\(p_attestation->'terms_accepted'\)[\s\n]+IS DISTINCT FROM 'boolean'[\s\S]*p_attestation->'terms_accepted' IS DISTINCT FROM 'true'::JSONB/,
+  ],
+  [
+    'null-safe policy version equality',
+    /p_attestation->>'terms_version'[\s\n]+IS DISTINCT FROM v_controls\.terms_version/,
+  ],
 ]) {
   assert.match(migration, pattern, `Missing ${label}.`)
 }
+
+assert.match(
+  foundationMigration,
+  /request_publication_preservation_active_v1\([\s\S]*SELECT FALSE/,
+  'The private authority must remain standalone with publication preservation off by default.',
+)
+assert.match(
+  foundationMigration,
+  /'category', 'audit_tombstone_expiry'[\s\S]*NOT private\.request_publication_preservation_active_v1/,
+  'Scoped publication preservation must fence only audit-root expiry.',
+)
+const rawCleanupStart = foundationMigration.indexOf(
+  "'category', 'raw_text_purge'",
+)
+const auditCleanupStart = foundationMigration.indexOf(
+  "'category', 'audit_tombstone_expiry'",
+)
+assert.doesNotMatch(
+  foundationMigration.slice(rawCleanupStart, auditCleanupStart),
+  /request_publication_preservation_active_v1/,
+  'Publication preservation must not retain raw text or artifact bytes.',
+)
+const claimFunctionStart = migration.indexOf(
+  'CREATE OR REPLACE FUNCTION public.claim_build_request_notifications_v1',
+)
+const sendResolverStart = migration.indexOf(
+  'public.resolve_build_request_notification_send_v1',
+  claimFunctionStart,
+)
+assert.doesNotMatch(
+  migration.slice(claimFunctionStart, sendResolverStart),
+  /'recipient'/,
+  'Notification claims must not contain a recipient identity.',
+)
+assert.match(
+  notificationWorker,
+  /resolveNotificationSend\([\s\S]*transport\.send/,
+  'The worker must resolve current send authority immediately before transport.',
+)
 
 const rosterReadyStart = migration.indexOf(
   'CREATE OR REPLACE FUNCTION private.request_public_roster_ready_v1()',

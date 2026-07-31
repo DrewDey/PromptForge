@@ -33,6 +33,7 @@ function safeResult(result: RequestNotificationWorkerResult) {
     'reportsProjected',
     'claimed',
     'delivered',
+    'suppressed',
     'retried',
     'dead',
     'failed',
@@ -54,6 +55,7 @@ function safeResult(result: RequestNotificationWorkerResult) {
     'reportsProjected',
     'claimed',
     'delivered',
+    'suppressed',
     'retried',
     'dead',
     'failed',
@@ -67,7 +69,8 @@ function safeResult(result: RequestNotificationWorkerResult) {
     }
   }
   if (
-    result.delivered + result.retried + result.dead + result.failed !==
+    result.delivered + result.suppressed + result.retried +
+      result.dead + result.failed !==
     result.claimed
   ) {
     throw new Error('request_notification_result_invalid')
@@ -78,6 +81,7 @@ function safeResult(result: RequestNotificationWorkerResult) {
     reportsProjected: result.reportsProjected,
     claimed: result.claimed,
     delivered: result.delivered,
+    suppressed: result.suppressed,
     retried: result.retried,
     dead: result.dead,
     failed: result.failed,

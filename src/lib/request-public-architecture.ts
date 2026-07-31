@@ -335,6 +335,7 @@ export type RequestPublicationCapabilityV1 =
   | 'decline'
   | 'withdraw'
   | 'submit_airlock'
+  | 'review_airlock'
   | 'publish_outcome'
 
 export type RequestPublicationViewV1 =
@@ -358,6 +359,9 @@ export type RequestPublicationViewV1 =
         reusePermission: 'view_only' | 'adapt_with_credit'
         requesterConsented: boolean
         builderConsented: boolean
+        airlockReviewVerdict: 'approved' | 'changes_required' | null
+        airlockReviewedAt: string | null
+        airlockReviewNote: string | null
         publishedAt: string | null
         updatedAt: string
       } | null
@@ -427,6 +431,9 @@ export type RequestPublicationQueueItemV1 = {
   builderConsented: boolean
   requesterAttribution: 'anonymous' | 'credited'
   reusePermission: 'view_only' | 'adapt_with_credit'
+  airlockReviewVerdict: 'approved' | 'changes_required' | null
+  airlockReviewedAt: string | null
+  airlockReviewNote: string | null
   updatedAt: string
   publishedAt: string | null
 }
@@ -449,6 +456,29 @@ export type PublishRequestOutcomeInputV1 = {
   idempotencyKey: string
 }
 
+export type RequestPublicationReviewInputV1 = {
+  proposalId: string
+  expectedProposalVersion: number
+  verdict: 'approve' | 'changes_required'
+  checks: {
+    privateContentExcluded: boolean
+    claimsSupportedByDelivery: boolean
+    attributionMatchesConsent: boolean
+    reusePermissionMatchesConsent: boolean
+    publicTruthReady: boolean
+  }
+  reviewNotes: string
+  idempotencyKey: string
+}
+
+export type RequestPublicationReviewReceiptV1 = {
+  proposalId: string
+  proposalVersion: number
+  verdict: 'approved' | 'changes_required'
+  replayed: boolean
+  occurredAt: string
+}
+
 export type RequestNotificationProjectionV1 = {
   eventsProjected: number
   reportsProjected: number
@@ -458,7 +488,6 @@ export type RequestNotificationProjectionV1 = {
 export type RequestNotificationDeliveryV1 = {
   deliveryId: string
   claimToken: string
-  recipient: string
   templateKey:
     | 'request_submitted'
     | 'request_action_needed'
@@ -472,6 +501,24 @@ export type RequestNotificationDeliveryV1 = {
 export type RequestNotificationClaimV1 = {
   items: RequestNotificationDeliveryV1[]
 }
+
+export type RequestNotificationSendResolutionV1 =
+  | {
+      status: 'authorized'
+      deliveryId: string
+      claimToken: string
+      recipient: string
+      templateKey: RequestNotificationDeliveryV1['templateKey']
+      requestPath: string
+    }
+  | {
+      status: 'suppressed'
+      reason:
+        | 'control_off'
+        | 'preference_off'
+        | 'identity_unavailable'
+        | 'authorization_ended'
+    }
 
 export type RequestNotificationFinishV1 = {
   deliveryState: 'delivered' | 'retry' | 'dead'
@@ -945,6 +992,17 @@ export function validateRequestPublicControlsInputV1(
   integer(value.networkHourlyIntakeLimit, 'Network intake limit', 1, 100)
   integer(value.globalDailyIntakeLimit, 'Global intake limit', 1, 10_000)
   oneOf(value.intakeAudience, REQUEST_INTAKE_AUDIENCES, 'Intake audience')
+  bool(value.acceptingRequests, 'Accepting Requests control')
+  bool(value.assigningRequests, 'Assigning Requests control')
+  bool(value.operatorRosterRequired, 'Operator roster control')
+  bool(value.publicIntakeRiskScreening, 'Public intake screening control')
+  bool(
+    value.transactionalNotificationsEnabled,
+    'Transactional notifications control',
+  )
+  bool(value.publicationConsentEnabled, 'Publication consent control')
+  bool(value.publicationAirlockEnabled, 'Publication airlock control')
+  bool(value.publicOutcomesEnabled, 'Public outcomes control')
   policyVersions(value.policyVersions)
   return value
 }

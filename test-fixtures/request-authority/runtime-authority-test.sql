@@ -1050,6 +1050,74 @@ BEGIN
   ) VALUES (
     request_id, 'triager', requester, 'Fixture Requester'
   );
+  SELECT count(*) INTO review_event_count_before
+  FROM public.build_request_events
+  WHERE build_request_events.request_id = runtime.request_id;
+  BEGIN
+    PERFORM *
+    FROM public.build_request_command_v1(
+      1, request_id, request_version, 'acknowledge-delivery-null',
+      'acknowledge_delivery',
+      jsonb_build_object('deliveryRevisionId', 'null'::JSONB)
+    );
+    RAISE EXCEPTION 'JSON-null delivery acknowledgement was accepted.';
+  EXCEPTION WHEN SQLSTATE '22023' THEN
+    NULL;
+  END;
+  BEGIN
+    PERFORM *
+    FROM public.build_request_command_v1(
+      1, request_id, request_version, 'acknowledge-delivery-malformed',
+      'acknowledge_delivery',
+      jsonb_build_object('deliveryRevisionId', 'not-a-uuid')
+    );
+    RAISE EXCEPTION 'Malformed delivery acknowledgement was accepted.';
+  EXCEPTION WHEN SQLSTATE '22023' THEN
+    NULL;
+  END;
+  BEGIN
+    PERFORM *
+    FROM public.build_request_command_v1(
+      1, request_id, request_version, 'acknowledge-delivery-wrong',
+      'acknowledge_delivery',
+      jsonb_build_object(
+        'deliveryRevisionId',
+        '82100000-0000-4000-8000-000000000099'
+      )
+    );
+    RAISE EXCEPTION 'Wrong-revision delivery acknowledgement was accepted.';
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    NULL;
+  END;
+  IF EXISTS (
+      SELECT 1
+      FROM public.build_request_command_receipts AS hostile_receipt
+      WHERE hostile_receipt.actor_id = requester
+        AND hostile_receipt.idempotency_key IN (
+          'acknowledge-delivery-null',
+          'acknowledge-delivery-malformed',
+          'acknowledge-delivery-wrong'
+        )
+    )
+    OR (
+      SELECT count(*)
+      FROM public.build_request_events
+      WHERE build_request_events.request_id = runtime.request_id
+    ) <> review_event_count_before
+    OR (
+      SELECT version
+      FROM public.build_requests
+      WHERE id = runtime.request_id
+    ) <> request_version
+    OR (
+      SELECT lifecycle_state
+      FROM public.build_requests
+      WHERE id = runtime.request_id
+    ) <> 'delivered'
+  THEN
+    RAISE EXCEPTION
+      'A hostile delivery acknowledgement mutated state, version, event, or receipt authority.';
+  END IF;
   SELECT * INTO receipt FROM public.build_request_command_v1(
     1,
     request_id,

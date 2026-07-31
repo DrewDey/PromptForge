@@ -21,8 +21,12 @@ const publicFixture =
   'test-fixtures/request-public-architecture/prerequisites.sql'
 const publicMigration =
   'supabase/migrations/20260730171646_request_build_public_architecture_v1.sql'
+const repairMigration =
+  'supabase/migrations/20260731032731_request_build_command_provenance_repair_v1.sql'
 const runtimeFixture =
   'test-fixtures/request-public-architecture/runtime-contract.sql'
+const productionUpgradeFixture =
+  'test-fixtures/request-public-architecture/production-upgrade-contract.sql'
 
 function read(relativePath) {
   return readFileSync(path.join(root, relativePath), 'utf8')
@@ -303,6 +307,7 @@ function applyFoundation(harness) {
 }
 
 const migrationSql = read(publicMigration)
+const repairMigrationSql = read(repairMigration)
 for (const [label, pattern] of [
   [
     'transactional Supabase CLI apply contract',
@@ -321,6 +326,36 @@ for (const [label, pattern] of [
     throw new Error(`Public architecture lost ${label}.`)
   }
 }
+for (const [label, pattern] of [
+  [
+    'transactional forward-only repair apply contract',
+    /Forward-only repair[\s\S]*APPLY CONTRACT:[\s\S]*Supabase CLI transactional[\s\S]*Direct SQL-editor autocommit is unsupported/,
+  ],
+  [
+    'stage accepted-brief provenance repair',
+    /request_command_provenance_v1: stage accepted brief validation[\s\S]*request_command_provenance_v1: stage accepted brief binding/,
+  ],
+  [
+    'requester outcome provenance repair',
+    /request_command_provenance_v1: requester outcome revision validation[\s\S]*request_command_provenance_v1: requester outcome revision binding/,
+  ],
+  [
+    'delivery acknowledgement provenance repair',
+    /request_command_provenance_v1: acknowledgement revision validation[\s\S]*request_command_provenance_v1: acknowledgement revision binding/,
+  ],
+  [
+    'publication audit-preservation repair',
+    /request_publication_preservation_v1: maintenance enumeration fence[\s\S]*request_publication_preservation_v1: audit expiry fence/,
+  ],
+  [
+    'pilot admission durable replay repair',
+    /request_pilot_admission_replay_v1: replay precedes mutable subject validation/,
+  ],
+]) {
+  if (!pattern.test(repairMigrationSql)) {
+    throw new Error(`Request production upgrade lost ${label}.`)
+  }
+}
 if (
   /\bGRANT\s+(?:SELECT|INSERT|UPDATE|DELETE|ALL)\s+ON\s+(?:TABLE\s+)?public\.build_request_(?:operator|intake|readiness|public_control|reports|report_receipts|notification|publication|public_outcomes)/i
     .test(migrationSql)
@@ -328,6 +363,15 @@ if (
 ) {
   throw new Error(
     'Public architecture must remain RPC-only and forward-safe.',
+  )
+}
+if (
+  /\bCREATE\s+(?:TABLE|TYPE)\b/i.test(repairMigrationSql)
+  || /\bALTER\s+TABLE\b/i.test(repairMigrationSql)
+  || /\bDROP\b/i.test(repairMigrationSql)
+) {
+  throw new Error(
+    'Request production upgrade must replace only bounded RPC authority.',
   )
 }
 
@@ -374,6 +418,7 @@ try {
   assertPostgres17(operatorRaceHarness)
   applyFoundation(operatorRaceHarness)
   operatorRaceHarness.apply(migrationSql, { singleTransaction: true })
+  operatorRaceHarness.apply(repairMigrationSql, { singleTransaction: true })
   operatorRaceHarness.apply(`
     INSERT INTO public.profiles (id, role, username, display_name) VALUES
       (
@@ -621,9 +666,156 @@ try {
   assertPostgres17(runtimeHarness)
   applyFoundation(runtimeHarness)
   runtimeHarness.apply(migrationSql, { singleTransaction: true })
+  runtimeHarness.apply(repairMigrationSql, { singleTransaction: true })
   runtimeHarness.apply(read(runtimeFixture))
 } finally {
   runtimeHarness.cleanup()
+}
+
+const repairRollbackHarness = await createHarness()
+try {
+  assertPostgres17(repairRollbackHarness)
+  applyFoundation(repairRollbackHarness)
+  repairRollbackHarness.apply(migrationSql, { singleTransaction: true })
+  const failed = repairRollbackHarness.apply(
+    `${repairMigrationSql}
+SELECT public.request_upgrade_forced_late_failure();`,
+    { allowFailure: true, singleTransaction: true },
+  )
+  if (failed.status === 0) {
+    throw new Error(
+      'Injected late Request production-upgrade failure unexpectedly succeeded.',
+    )
+  }
+  repairRollbackHarness.apply(`
+    DO $assert_request_upgrade_rollback$
+    DECLARE
+      v_command TEXT := pg_catalog.pg_get_functiondef(
+        'public.build_request_command_v1(integer,uuid,integer,text,text,jsonb)'::REGPROCEDURE
+      );
+      v_maintenance TEXT := pg_catalog.pg_get_functiondef(
+        'public.list_build_request_maintenance_work_v1(integer,text,integer)'::REGPROCEDURE
+      );
+      v_admission TEXT := pg_catalog.pg_get_functiondef(
+        'public.set_build_request_pilot_admission_v1(integer,uuid,integer,text,boolean,text,timestamp with time zone)'::REGPROCEDURE
+      );
+    BEGIN
+      IF position('request_command_provenance_v1:' IN v_command) > 0
+        OR position(
+          'request_publication_preservation_v1: maintenance enumeration fence'
+            IN v_maintenance
+        ) > 0
+        OR position(
+          'request_pilot_admission_replay_v1:' IN v_admission
+        ) > 0
+      THEN
+        RAISE EXCEPTION
+          'Failed Request production upgrade left partial authority.';
+      END IF;
+    END;
+    $assert_request_upgrade_rollback$;
+  `)
+} finally {
+  repairRollbackHarness.cleanup()
+}
+
+const productionUpgradeHarness = await createHarness()
+try {
+  assertPostgres17(productionUpgradeHarness)
+  applyFoundation(productionUpgradeHarness)
+  productionUpgradeHarness.apply(migrationSql, { singleTransaction: true })
+  productionUpgradeHarness.apply(`
+    DO $assert_pre_upgrade_catalog$
+    DECLARE
+      v_command TEXT := pg_catalog.pg_get_functiondef(
+        'public.build_request_command_v1(integer,uuid,integer,text,text,jsonb)'::REGPROCEDURE
+      );
+      v_maintenance TEXT := pg_catalog.pg_get_functiondef(
+        'public.list_build_request_maintenance_work_v1(integer,text,integer)'::REGPROCEDURE
+      );
+      v_admission TEXT := pg_catalog.pg_get_functiondef(
+        'public.set_build_request_pilot_admission_v1(integer,uuid,integer,text,boolean,text,timestamp with time zone)'::REGPROCEDURE
+      );
+    BEGIN
+      IF position('request_command_provenance_v1:' IN v_command) > 0
+        OR position(
+          'request_publication_preservation_v1: maintenance enumeration fence'
+            IN v_maintenance
+        ) > 0
+        OR position(
+          'request_pilot_admission_replay_v1:' IN v_admission
+        ) > 0
+      THEN
+        RAISE EXCEPTION
+          'Historical Request baseline already contains forward repair markers.';
+      END IF;
+    END;
+    $assert_pre_upgrade_catalog$;
+  `)
+  productionUpgradeHarness.apply(
+    repairMigrationSql,
+    { singleTransaction: true },
+  )
+  productionUpgradeHarness.apply(
+    repairMigrationSql,
+    { singleTransaction: true },
+  )
+  productionUpgradeHarness.apply(read(productionUpgradeFixture))
+  productionUpgradeHarness.apply(`
+    DO $inject_partial_request_upgrade_drift$
+    DECLARE
+      v_definition TEXT := pg_catalog.pg_get_functiondef(
+        'public.build_request_command_v1(integer,uuid,integer,text,text,jsonb)'::REGPROCEDURE
+      );
+    BEGIN
+      v_definition := replace(
+        v_definition,
+        'request_command_provenance_v1: requester outcome revision binding',
+        'request_command_provenance_v1: requester outcome revision drift'
+      );
+      EXECUTE v_definition;
+    END;
+    $inject_partial_request_upgrade_drift$;
+  `)
+  const partial = productionUpgradeHarness.apply(
+    repairMigrationSql,
+    { allowFailure: true, singleTransaction: true },
+  )
+  const partialOutput = `${partial.stdout}\n${partial.stderr}`
+  if (
+    partial.status === 0
+    || !partialOutput.includes(
+      'Request command provenance authority is partially drifted.',
+    )
+  ) {
+    throw new Error(
+      'Partially drifted Request production authority did not fail closed.',
+    )
+  }
+  productionUpgradeHarness.apply(`
+    DO $assert_partial_request_upgrade_rollback$
+    DECLARE
+      v_definition TEXT := pg_catalog.pg_get_functiondef(
+        'public.build_request_command_v1(integer,uuid,integer,text,text,jsonb)'::REGPROCEDURE
+      );
+    BEGIN
+      IF position(
+          'request_command_provenance_v1: requester outcome revision drift'
+            IN v_definition
+        ) = 0
+        OR position(
+          'request_command_provenance_v1: requester outcome revision binding'
+            IN v_definition
+        ) > 0
+      THEN
+        RAISE EXCEPTION
+          'Rejected partial Request repair did not roll back cleanly.';
+      END IF;
+    END;
+    $assert_partial_request_upgrade_rollback$;
+  `)
+} finally {
+  productionUpgradeHarness.cleanup()
 }
 
 const outputDirectory = mkdtempSync(

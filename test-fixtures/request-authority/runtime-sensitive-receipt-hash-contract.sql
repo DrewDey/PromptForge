@@ -5,7 +5,6 @@ DO $test$
 DECLARE
   administrator UUID := '82000000-0000-4000-8000-000000000007';
   target UUID := '8e000000-0000-4000-8000-000000000001';
-  expired_target UUID := '8e000000-0000-4000-8000-000000000002';
   request_id UUID;
   brief_payload JSONB;
   command_payload JSONB := '{}'::JSONB;
@@ -15,7 +14,6 @@ DECLARE
   stored_hash TEXT;
   first_result JSONB;
   replay_result JSONB;
-  historical_expires_at TIMESTAMPTZ;
 BEGIN
   SELECT receipt.request_id INTO STRICT request_id
   FROM public.build_request_command_receipts AS receipt
@@ -77,23 +75,14 @@ BEGIN
   END IF;
 
   INSERT INTO auth.users (id, email_confirmed_at)
-  VALUES
-    (target, clock_timestamp()),
-    (expired_target, clock_timestamp());
+  VALUES (target, clock_timestamp());
   INSERT INTO public.profiles (id, role, username, display_name)
-  VALUES
-    (
-      target,
-      'user',
-      'receipt_hash_target',
-      'Receipt Hash Target'
-    ),
-    (
-      expired_target,
-      'user',
-      'expired_receipt_hash_target',
-      'Expired Receipt Hash Target'
-    );
+  VALUES (
+    target,
+    'user',
+    'receipt_hash_target',
+    'Receipt Hash Target'
+  );
   admission_payload := jsonb_build_object(
     'accountId', target,
     'expectedVersion', 0,
@@ -141,56 +130,6 @@ BEGIN
       <> replay_result THEN
     RAISE EXCEPTION
       'Admission receipt HMAC or replay equality drifted.';
-  END IF;
-
-  -- Reconstruct the same durable receipt as a historical admission whose
-  -- expiry has passed. Exact replay must return that original receipt before
-  -- applying fresh-operation expiry or participant-eligibility checks.
-  historical_expires_at := clock_timestamp() - INTERVAL '1 day';
-  admission_payload := jsonb_build_object(
-    'accountId', expired_target,
-    'expectedVersion', 0,
-    'admitted', TRUE,
-    'reason', 'Receipt HMAC fixture admission',
-    'expiresAt', historical_expires_at
-  );
-  INSERT INTO public.build_request_pilot_admissions (
-    account_id, admission_version, admitted, expires_at,
-    reason, changed_by, changed_at
-  ) VALUES (
-    expired_target, 1, TRUE, historical_expires_at,
-    'Receipt HMAC fixture admission', administrator,
-    historical_expires_at - INTERVAL '1 hour'
-  );
-  INSERT INTO public.build_request_pilot_admission_receipts (
-    actor_id, account_id, idempotency_key, request_hash,
-    admission_version, admitted, expires_at, occurred_at
-  ) VALUES (
-    administrator,
-    expired_target,
-    'receipt-hash-expired-admission',
-    private.request_pseudonym_text_v1(admission_payload::TEXT),
-    1,
-    TRUE,
-    historical_expires_at,
-    historical_expires_at - INTERVAL '1 hour'
-  );
-  replay_result := public.set_build_request_pilot_admission_v1(
-    1,
-    expired_target,
-    0,
-    'receipt-hash-expired-admission',
-    TRUE,
-    'Receipt HMAC fixture admission',
-    historical_expires_at
-  );
-  IF NOT (replay_result->>'replayed')::BOOLEAN
-    OR (replay_result->>'expiresAt')::TIMESTAMPTZ
-      IS DISTINCT FROM historical_expires_at
-  THEN
-    RAISE EXCEPTION
-      'Expired pilot admission did not preserve its durable replay: %',
-      replay_result;
   END IF;
 END;
 $test$;

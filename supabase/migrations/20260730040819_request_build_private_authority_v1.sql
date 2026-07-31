@@ -2354,22 +2354,6 @@ BEGIN
 END;
 $$;
 
--- Extension seam for a later publication layer. The private authority remains
--- standalone and defaults to no scoped preservation. A publication migration
--- may replace this helper without turning its preservation into a generic
--- hold that blocks raw-text or artifact cleanup.
-CREATE OR REPLACE FUNCTION private.request_publication_preservation_active_v1(
-  p_request_id UUID
-)
-RETURNS BOOLEAN
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-  SELECT FALSE
-$$;
-
 CREATE OR REPLACE FUNCTION private.request_cursor_decode_v1(
   p_prefix TEXT,
   p_cursor TEXT
@@ -2437,8 +2421,7 @@ REVOKE ALL ON FUNCTION
   private.request_cursor_decode_v1(TEXT, TEXT),
   private.request_pseudonym_text_v1(TEXT),
   private.request_account_pseudonym_v1(UUID),
-  private.request_lock_available_actor_v1(UUID),
-  private.request_publication_preservation_active_v1(UUID)
+  private.request_lock_available_actor_v1(UUID)
 FROM PUBLIC, anon, authenticated, service_role;
 
 CREATE OR REPLACE FUNCTION private.request_assert_safe_text_v1(
@@ -3138,14 +3121,6 @@ BEGIN
           'detectedMediaType', 'scannerVersion'
         ], 'Command payload'
       );
-      IF jsonb_typeof(p_payload->'acceptedBriefRevisionId')
-          IS DISTINCT FROM 'string'
-        OR p_payload->>'acceptedBriefRevisionId'
-          !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
-      THEN
-        RAISE EXCEPTION USING ERRCODE = '22023',
-          MESSAGE = 'Accepted brief revision id is invalid.';
-      END IF;
     WHEN 'abandon_delivery_artifact' THEN
       PERFORM private.request_assert_json_keys_v1(
         p_payload, ARRAY['deliveryRevisionId', 'artifactId'], 'Command payload'
@@ -3180,26 +3155,10 @@ BEGIN
         END,
         'Command payload'
       );
-      IF jsonb_typeof(p_payload->'deliveryRevisionId')
-          IS DISTINCT FROM 'string'
-        OR p_payload->>'deliveryRevisionId'
-          !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
-      THEN
-        RAISE EXCEPTION USING ERRCODE = '22023',
-          MESSAGE = 'Delivery revision id is invalid.';
-      END IF;
     WHEN 'acknowledge_delivery' THEN
       PERFORM private.request_assert_json_keys_v1(
         p_payload, ARRAY['deliveryRevisionId'], 'Command payload'
       );
-      IF jsonb_typeof(p_payload->'deliveryRevisionId')
-          IS DISTINCT FROM 'string'
-        OR p_payload->>'deliveryRevisionId'
-          !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
-      THEN
-        RAISE EXCEPTION USING ERRCODE = '22023',
-          MESSAGE = 'Delivery revision id is invalid.';
-      END IF;
     WHEN 'close' THEN
       PERFORM private.request_assert_json_keys_v1(
         p_payload,
@@ -3945,8 +3904,7 @@ BEGIN
       AND staged_builder.assignment_role = 'builder'
       AND staged_builder.active AND staged_builder.account_id = v_actor_id;
     IF NOT FOUND OR v_request.lifecycle_state NOT IN ('building', 'repair_required')
-      OR (p_payload->>'acceptedBriefRevisionId')::UUID
-        IS DISTINCT FROM v_request.current_brief_revision_id THEN
+      OR (p_payload->>'acceptedBriefRevisionId')::UUID <> v_request.current_brief_revision_id THEN
       RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'Artifact staging is not allowed.';
     END IF;
     IF EXISTS (
@@ -4426,8 +4384,7 @@ BEGIN
   ELSIF p_command = 'acknowledge_delivery' THEN
     IF v_request.requester_id <> v_actor_id
       OR v_request.lifecycle_state <> 'delivery_ready'
-      OR (p_payload->>'deliveryRevisionId')::UUID
-        IS DISTINCT FROM v_request.current_delivery_revision_id THEN
+      OR (p_payload->>'deliveryRevisionId')::UUID <> v_request.current_delivery_revision_id THEN
       RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'Delivery acknowledgement is not allowed.';
     END IF;
     UPDATE public.build_requests
@@ -4443,8 +4400,7 @@ BEGIN
     END IF;
     IF v_request.requester_id <> v_actor_id
       OR v_request.lifecycle_state NOT IN ('delivery_ready', 'delivered')
-      OR (p_payload->>'deliveryRevisionId')::UUID
-        IS DISTINCT FROM v_request.current_delivery_revision_id
+      OR (p_payload->>'deliveryRevisionId')::UUID <> v_request.current_delivery_revision_id
       OR NOT EXISTS (
         SELECT 1 FROM public.build_request_delivery_revisions AS outcome_revision
         WHERE outcome_revision.id = v_request.current_delivery_revision_id
@@ -6591,9 +6547,6 @@ BEGIN
       AND request_case.audit_tombstone_until IS NOT NULL
       AND request_case.audit_tombstone_until <= clock_timestamp()
       AND request_case.moderation_state <> 'held'
-      AND NOT private.request_publication_preservation_active_v1(
-        request_case.id
-      )
       AND NOT EXISTS (
         SELECT 1
         FROM public.build_request_retention_holds AS active_hold
@@ -7597,7 +7550,6 @@ BEGIN
     OR v_request.audit_tombstone_until IS NULL
     OR v_request.audit_tombstone_until > v_now
     OR v_request.moderation_state = 'held'
-    OR private.request_publication_preservation_active_v1(p_request_id)
     OR EXISTS (
       SELECT 1
       FROM public.build_request_retention_holds AS active_hold
@@ -8221,6 +8173,21 @@ BEGIN
   PERFORM private.request_assert_safe_text_v1(
     p_reason, 'reason', 1, 500, TRUE
   );
+  IF (p_admitted AND p_expires_at IS NOT NULL AND p_expires_at <= v_at)
+    OR (NOT p_admitted AND p_expires_at IS NOT NULL) THEN
+    RAISE EXCEPTION USING ERRCODE = '22023',
+      MESSAGE = 'Request pilot admission expiry is invalid.';
+  END IF;
+  IF p_admitted AND NOT EXISTS (
+    SELECT 1
+    FROM public.profiles AS target_profile
+    JOIN auth.users AS target_user ON target_user.id = target_profile.id
+    WHERE target_profile.id = p_account_id
+      AND target_user.email_confirmed_at IS NOT NULL
+  ) THEN
+    RAISE EXCEPTION USING ERRCODE = '22023',
+      MESSAGE = 'Request pilot participant is invalid.';
+  END IF;
   v_hash := private.request_pseudonym_text_v1(jsonb_build_object(
     'accountId', p_account_id, 'expectedVersion', p_expected_admission_version,
     'admitted', p_admitted,
@@ -8247,21 +8214,6 @@ BEGIN
       'replayed', TRUE,
       'occurredAt', v_prior.occurred_at
     );
-  END IF;
-  IF (p_admitted AND p_expires_at IS NOT NULL AND p_expires_at <= v_at)
-    OR (NOT p_admitted AND p_expires_at IS NOT NULL) THEN
-    RAISE EXCEPTION USING ERRCODE = '22023',
-      MESSAGE = 'Request pilot admission expiry is invalid.';
-  END IF;
-  IF p_admitted AND NOT EXISTS (
-    SELECT 1
-    FROM public.profiles AS target_profile
-    JOIN auth.users AS target_user ON target_user.id = target_profile.id
-    WHERE target_profile.id = p_account_id
-      AND target_user.email_confirmed_at IS NOT NULL
-  ) THEN
-    RAISE EXCEPTION USING ERRCODE = '22023',
-      MESSAGE = 'Request pilot participant is invalid.';
   END IF;
   PERFORM private.request_lock_available_actor_v1(v_actor_id);
   PERFORM pg_advisory_xact_lock(hashtextextended(

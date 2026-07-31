@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 
 function read(path) {
@@ -12,6 +13,9 @@ const migration = read(
 )
 const foundationMigration = read(
   'supabase/migrations/20260730040819_request_build_private_authority_v1.sql',
+)
+const repairMigration = read(
+  'supabase/migrations/20260731032731_request_build_command_provenance_repair_v1.sql',
 )
 const contracts = read('src/lib/request-public-architecture.ts')
 const service = read('src/lib/request-public-service.ts')
@@ -247,36 +251,66 @@ for (const [label, pattern] of [
   assert.match(migration, pattern, `Missing ${label}.`)
 }
 
-assert.match(
+assert.equal(
+  createHash('sha256').update(foundationMigration).digest('hex'),
+  '76738ecd6f21641b2c90f7d29469ecec91ad1f130c89635eab846fc2e7479d03',
+  'The already-applied private authority migration must remain byte-identical.',
+)
+assert.equal(
+  createHash('sha256').update(repairMigration).digest('hex'),
+  'f8dcf692c30f8861ba0844a400a380c46a6fec7e69034b2b27a3fe70d94c47bb',
+  'The reviewed forward-only Request production repair must remain byte-identical.',
+)
+assert.doesNotMatch(
   foundationMigration,
-  /request_publication_preservation_active_v1\([\s\S]*SELECT FALSE/,
-  'The private authority must remain standalone with publication preservation off by default.',
+  /request_command_provenance_v1|request_publication_preservation_v1|request_pilot_admission_replay_v1/,
+  'Forward repairs must not be hidden in the already-applied private migration.',
 )
 assert.match(
-  foundationMigration,
-  /jsonb_typeof\(p_payload->'acceptedBriefRevisionId'\)[\s\n]+IS DISTINCT FROM 'string'[\s\S]*acceptedBriefRevisionId'\)::UUID[\s\n]+IS DISTINCT FROM v_request\.current_brief_revision_id/,
+  repairMigration,
+  /request_command_provenance_v1: stage accepted brief validation[\s\S]*jsonb_typeof\(p_payload->'acceptedBriefRevisionId'\)[\s\n]+IS DISTINCT FROM 'string'[\s\S]*request_command_provenance_v1: stage accepted brief binding[\s\S]*acceptedBriefRevisionId'\)::UUID[\s\n]+IS DISTINCT FROM v_request\.current_brief_revision_id/,
   'Artifact staging must reject JSON-null/malformed brief provenance and compare the exact accepted revision null-safely.',
 )
 assert.match(
-  foundationMigration,
-  /jsonb_typeof\(p_payload->'deliveryRevisionId'\)[\s\n]+IS DISTINCT FROM 'string'[\s\S]*requester_delivery_outcome[\s\S]*deliveryRevisionId'\)::UUID[\s\n]+IS DISTINCT FROM v_request\.current_delivery_revision_id/,
+  repairMigration,
+  /request_command_provenance_v1: requester outcome revision validation[\s\S]*jsonb_typeof\(p_payload->'deliveryRevisionId'\)[\s\n]+IS DISTINCT FROM 'string'[\s\S]*request_command_provenance_v1: requester outcome revision binding[\s\S]*deliveryRevisionId'\)::UUID[\s\n]+IS DISTINCT FROM v_request\.current_delivery_revision_id/,
   'Requester outcomes must reject JSON-null/malformed delivery provenance and compare the exact revision null-safely.',
 )
 assert.match(
-  foundationMigration,
-  /'category', 'audit_tombstone_expiry'[\s\S]*NOT private\.request_publication_preservation_active_v1/,
+  repairMigration,
+  /request_command_provenance_v1: acknowledgement revision validation[\s\S]*jsonb_typeof\(p_payload->'deliveryRevisionId'\)[\s\n]+IS DISTINCT FROM 'string'[\s\S]*request_command_provenance_v1: acknowledgement revision binding[\s\S]*deliveryRevisionId'\)::UUID[\s\n]+IS DISTINCT FROM v_request\.current_delivery_revision_id/,
+  'Delivery acknowledgement must reject JSON-null/malformed provenance and compare the exact revision null-safely.',
+)
+assert.match(
+  repairMigration,
+  /'category', 'audit_tombstone_expiry'[\s\S]*request_publication_preservation_v1: maintenance enumeration fence[\s\S]*NOT private\.request_publication_preservation_active_v1/,
   'Scoped publication preservation must fence only audit-root expiry.',
 )
-const rawCleanupStart = foundationMigration.indexOf(
+assert.match(
+  repairMigration,
+  /request_publication_preservation_v1: audit expiry fence[\s\S]*OR private\.request_publication_preservation_active_v1\(p_request_id\)/,
+  'Scoped publication preservation must also fence direct audit expiry.',
+)
+assert.match(
+  repairMigration,
+  /request_pilot_admission_replay_v1: replay precedes mutable subject validation[\s\S]*IF FOUND THEN[\s\S]*IF \(p_admitted AND p_expires_at/,
+  'Pilot admission replay must precede fresh-operation expiry and subject validation.',
+)
+const rawCleanupStart = repairMigration.indexOf(
   "'category', 'raw_text_purge'",
 )
-const auditCleanupStart = foundationMigration.indexOf(
+const auditCleanupStart = repairMigration.indexOf(
   "'category', 'audit_tombstone_expiry'",
 )
 assert.doesNotMatch(
-  foundationMigration.slice(rawCleanupStart, auditCleanupStart),
+  repairMigration.slice(rawCleanupStart, auditCleanupStart),
   /request_publication_preservation_active_v1/,
   'Publication preservation must not retain raw text or artifact bytes.',
+)
+assert.doesNotMatch(
+  repairMigration,
+  /\bCREATE\s+(?:TABLE|TYPE)\b|\bALTER\s+TABLE\b|\bDROP\b/i,
+  'The production repair must remain a bounded forward-only RPC replacement.',
 )
 const claimFunctionStart = migration.indexOf(
   'CREATE OR REPLACE FUNCTION public.claim_build_request_notifications_v1',

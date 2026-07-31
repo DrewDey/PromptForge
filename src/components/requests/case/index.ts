@@ -16,3 +16,6 @@ export {
   type RequestPublication,
 } from './RequestCaseShell'
 export { RequestParticipantTrustTools } from './RequestParticipantTrustTools'
+export {
+  RequestPublicationContinuation,
+} from './RequestPublicationContinuation'

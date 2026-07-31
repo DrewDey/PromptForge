@@ -189,6 +189,11 @@ async function createDockerHarness() {
   ])
   try {
     for (let attempt = 0; attempt < 60; attempt += 1) {
+      const logs = run('docker', ['logs', container], {
+        allowFailure: true,
+      })
+      const initialized = `${logs.stdout}\n${logs.stderr}`
+        .includes('PostgreSQL init process complete; ready for start up.')
       const probe = run('docker', [
         'exec',
         container,
@@ -202,7 +207,11 @@ async function createDockerHarness() {
         '--command',
         'select 1',
       ], { allowFailure: true })
-      if (probe.status === 0 && probe.stdout.trim() === '1') {
+      if (
+        initialized &&
+        probe.status === 0 &&
+        probe.stdout.trim() === '1'
+      ) {
         const baseArgs = [
           'exec',
           '-i',
@@ -295,6 +304,10 @@ function applyFoundation(harness) {
 
 const migrationSql = read(publicMigration)
 for (const [label, pattern] of [
+  [
+    'transactional Supabase CLI apply contract',
+    /APPLY CONTRACT:[\s\S]*Supabase CLI transactional[\s\S]*Direct[\s\n]+-- psql\/SQL-editor autocommit execution is unsupported/,
+  ],
   ['default-off transactional notifications', /transactional_notifications_enabled BOOLEAN NOT NULL DEFAULT FALSE/],
   ['default-off publication consent', /publication_consent_enabled BOOLEAN NOT NULL DEFAULT FALSE/],
   ['default-off publication airlock', /publication_airlock_enabled BOOLEAN NOT NULL DEFAULT FALSE/],

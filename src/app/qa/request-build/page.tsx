@@ -9,6 +9,7 @@ import {
 import {
   RequestCaseShell,
   RequestParticipantTrustTools,
+  RequestPublicationContinuation,
   type RequestActorRole,
   type RequestCloseReason,
   type RequestLifecycle,
@@ -306,6 +307,7 @@ function participantPublicationFixture(
     | 'builder_consent'
     | 'withdraw'
     | 'publish'
+    | 'changes_required'
     | 'restricted',
 ): RequestPublicationViewV1 {
   if (state === 'restricted') {
@@ -331,13 +333,25 @@ function participantPublicationFixture(
           'A separately written public-safe summary of the reviewed result, with no private brief, clarification, artifact, or case identifier.',
         requesterAttribution: 'anonymous' as const,
         reusePermission: 'adapt_with_credit' as const,
-        requesterConsented: state !== 'requester_consent',
-        builderConsented: state !== 'builder_consent',
-        airlockReviewVerdict: state === 'publish' ? 'approved' as const : null,
-        airlockReviewedAt: state === 'publish' ? PUBLIC_FIXTURE_TIME : null,
+        requesterConsented:
+          state !== 'requester_consent' && state !== 'changes_required',
+        builderConsented:
+          state !== 'builder_consent' && state !== 'changes_required',
+        airlockReviewVerdict:
+          state === 'publish'
+            ? 'approved' as const
+            : state === 'changes_required'
+              ? 'changes_required' as const
+              : null,
+        airlockReviewedAt:
+          state === 'publish' || state === 'changes_required'
+            ? PUBLIC_FIXTURE_TIME
+            : null,
         airlockReviewNote: state === 'publish'
           ? 'The exact public summary passed every independent airlock check.'
-          : null,
+          : state === 'changes_required'
+            ? 'Replace the summary because one public claim is broader than the reviewed delivery evidence.'
+            : null,
         publishedAt: state === 'withdraw' ? PUBLIC_FIXTURE_TIME : null,
         updatedAt: PUBLIC_FIXTURE_TIME,
       }
@@ -349,9 +363,12 @@ function participantPublicationFixture(
         ? ['builder_consent'] as const
         : state === 'withdraw'
           ? ['withdraw'] as const
-          : ['publish_outcome'] as const
+          : state === 'changes_required'
+            ? ['replace_proposal'] as const
+            : ['publish_outcome'] as const
   return {
     visibility: 'full',
+    requestVersion: 12,
     publicationState: state === 'withdraw' ? 'published' : 'consent_pending',
     consentEnabled: true,
     proposal,
@@ -1072,11 +1089,46 @@ export default async function RequestBuildFixturePage({
         'builder_consent',
         'withdraw',
         'publish',
+        'changes_required',
+        'continuation_expired',
+        'continuation_held',
         'restricted',
         'reports',
       ] as const,
       'proposal',
     )
+    if (state === 'continuation_expired' || state === 'continuation_held') {
+      const publication: Extract<
+        RequestPublicationViewV1,
+        { visibility: 'withdrawal_only' }
+      > = {
+        visibility: 'withdrawal_only',
+        requestVersion: 23,
+        publicationState: 'published',
+        status: state === 'continuation_held'
+          ? 'held'
+          : 'private_scope_expired',
+        proposal: {
+          proposalId: PUBLIC_FIXTURE_PROPOSAL_ID,
+          proposalVersion: 4,
+          status: 'published',
+          safeTitle: 'Offline neighborhood readiness checklist',
+          safeSummary:
+            'A separately written public-safe summary of the reviewed result, with no private brief, clarification, artifact, or case identifier.',
+        },
+        capabilities: ['withdraw'],
+      }
+      return (
+        <FixtureFrame surface={surface} state={state}>
+          <RequestPublicationContinuation
+            requestId={PUBLIC_FIXTURE_REQUEST_ID}
+            publication={publication}
+            mutationNonce="fixture-publication-continuation"
+            publicationAction={fixtureAction}
+          />
+        </FixtureFrame>
+      )
+    }
     const publicationState = state === 'reports' ? 'proposal' : state
     return (
       <FixtureFrame surface={surface} state={state}>

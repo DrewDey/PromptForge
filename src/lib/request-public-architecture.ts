@@ -338,6 +338,28 @@ export type RequestPublicationCapabilityV1 =
   | 'review_airlock'
   | 'publish_outcome'
 
+export type RequestPublicationProposalViewV1 = {
+  proposalId: string
+  proposalVersion: number
+  status: RequestPublicationProposalStatusV1
+  safeTitle: string
+  safeSummary: string
+  requesterAttribution: 'anonymous' | 'credited'
+  reusePermission: 'view_only' | 'adapt_with_credit'
+  requesterConsented: boolean
+  builderConsented: boolean
+  airlockReviewVerdict: 'approved' | 'changes_required' | null
+  airlockReviewedAt: string | null
+  airlockReviewNote: string | null
+  publishedAt: string | null
+  updatedAt: string
+}
+
+export type RequestPublicationWithdrawalProposalV1 = Pick<
+  RequestPublicationProposalViewV1,
+  'proposalId' | 'proposalVersion' | 'status' | 'safeTitle' | 'safeSummary'
+>
+
 export type RequestPublicationViewV1 =
   | {
       visibility: 'restricted'
@@ -346,25 +368,19 @@ export type RequestPublicationViewV1 =
       capabilities: []
     }
   | {
+      visibility: 'withdrawal_only'
+      requestVersion: number
+      publicationState: string
+      status: 'held' | 'private_scope_expired'
+      proposal: RequestPublicationWithdrawalProposalV1
+      capabilities: ['withdraw']
+    }
+  | {
       visibility: 'full'
+      requestVersion: number
       publicationState: string
       consentEnabled: boolean
-      proposal: {
-        proposalId: string
-        proposalVersion: number
-        status: RequestPublicationProposalStatusV1
-        safeTitle: string
-        safeSummary: string
-        requesterAttribution: 'anonymous' | 'credited'
-        reusePermission: 'view_only' | 'adapt_with_credit'
-        requesterConsented: boolean
-        builderConsented: boolean
-        airlockReviewVerdict: 'approved' | 'changes_required' | null
-        airlockReviewedAt: string | null
-        airlockReviewNote: string | null
-        publishedAt: string | null
-        updatedAt: string
-      } | null
+      proposal: RequestPublicationProposalViewV1 | null
       capabilities: RequestPublicationCapabilityV1[]
     }
 
@@ -476,6 +492,12 @@ export type RequestPublicationReviewReceiptV1 = {
   proposalVersion: number
   verdict: 'approved' | 'changes_required'
   replayed: boolean
+  occurredAt: string
+}
+
+export type RequestPublicationWithdrawalReceiptV1 = {
+  requestId: string
+  commandId: string
   occurredAt: string
 }
 

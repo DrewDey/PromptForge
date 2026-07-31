@@ -21,6 +21,14 @@ const participantAction = read('src/app/requests/[id]/actions.ts')
 const participantTools = read(
   'src/components/requests/case/RequestParticipantTrustTools.tsx',
 )
+const participantPage = read('src/app/requests/[id]/page.tsx')
+const publicationContinuation = read(
+  'src/components/requests/case/RequestPublicationContinuation.tsx',
+)
+const publicationWithdrawalReceiptPage = read(
+  'src/app/requests/[id]/publication-withdrawn/page.tsx',
+)
+const adminAction = read('src/app/admin/build-requests/actions.ts')
 const adminOperations = read(
   'src/components/requests/admin/RequestPublicOperations.tsx',
 )
@@ -63,6 +71,10 @@ const policyPublication = read(
 const environmentExample = read('.env.local.example')
 
 for (const [label, pattern] of [
+  [
+    'transactional migration apply contract',
+    /APPLY CONTRACT:[\s\S]*Supabase CLI transactional[\s\S]*psql\/SQL-editor autocommit execution is unsupported/,
+  ],
   [
     'transactional notifications default off',
     /transactional_notifications_enabled BOOLEAN NOT NULL DEFAULT FALSE/,
@@ -130,6 +142,18 @@ for (const [label, pattern] of [
   [
     'long-lived narrow participant withdrawal',
     /request_publication_actor_can_continue_v1[\s\S]*proposal\.requester_id, proposal\.builder_id/,
+  ],
+  [
+    'held participant withdrawal exception',
+    /v_request\.moderation_state = 'held'[\s\n]+AND p_command = 'withdraw'[\s\S]*v_actor_id IN \(v_proposal\.requester_id, v_proposal\.builder_id\)/,
+  ],
+  [
+    'actor-verified withdrawal receipt',
+    /get_build_request_publication_withdrawal_receipt_v1[\s\S]*receipt\.actor_id = v_actor_id[\s\S]*receipt\.command_kind = 'publication_withdraw'/,
+  ],
+  [
+    'review-rejected consent block',
+    /blocked_review\.verdict = 'changes_required'/,
   ],
   [
     'notification claim identity exclusion',
@@ -227,6 +251,16 @@ assert.match(
   foundationMigration,
   /request_publication_preservation_active_v1\([\s\S]*SELECT FALSE/,
   'The private authority must remain standalone with publication preservation off by default.',
+)
+assert.match(
+  foundationMigration,
+  /jsonb_typeof\(p_payload->'acceptedBriefRevisionId'\)[\s\n]+IS DISTINCT FROM 'string'[\s\S]*acceptedBriefRevisionId'\)::UUID[\s\n]+IS DISTINCT FROM v_request\.current_brief_revision_id/,
+  'Artifact staging must reject JSON-null/malformed brief provenance and compare the exact accepted revision null-safely.',
+)
+assert.match(
+  foundationMigration,
+  /jsonb_typeof\(p_payload->'deliveryRevisionId'\)[\s\n]+IS DISTINCT FROM 'string'[\s\S]*requester_delivery_outcome[\s\S]*deliveryRevisionId'\)::UUID[\s\n]+IS DISTINCT FROM v_request\.current_delivery_revision_id/,
+  'Requester outcomes must reject JSON-null/malformed delivery provenance and compare the exact revision null-safely.',
 )
 assert.match(
   foundationMigration,
@@ -334,6 +368,9 @@ for (const [path, source] of [
   ['intake action', intakeAction],
   ['participant action', participantAction],
   ['participant tools', participantTools],
+  ['participant page', participantPage],
+  ['publication continuation', publicationContinuation],
+  ['withdrawal receipt', publicationWithdrawalReceiptPage],
   ['admin page', adminPage],
   ['public outcome list', publicListPage],
   ['public outcome detail', publicDetailPage],
@@ -515,6 +552,69 @@ assert.match(
   participantAction,
   /command === 'withdraw'[\s\S]*formData\.getAll\('publicationWithdrawal'\)[\s\S]*confirmation_required[\s\S]*getRequestPublicApplicationService\(\)/,
   'Withdrawal confirmation must fail before resolving publication authority.',
+)
+const privateCaseRead = participantPage.indexOf('detail = await service.getRequest(id)')
+const continuationRead = participantPage.indexOf(
+  'getPublicationForContinuation(id, true)',
+)
+const continuationRender = participantPage.indexOf(
+  '<RequestPublicationContinuation',
+)
+assert.ok(
+  privateCaseRead >= 0 &&
+    continuationRead > privateCaseRead &&
+    continuationRender > continuationRead,
+  'The participant route must fall back from expired private scope to actor-scoped publication withdrawal.',
+)
+assert.match(
+  participantPage,
+  /!publication \|\| publication\.visibility !== 'withdrawal_only'\) notFound\(\)/,
+  'The participant route must reject every non-withdrawal continuation shape.',
+)
+assert.match(
+  participantPage,
+  /detail\?\.visibility === 'held'[\s\S]*getPublicationForContinuation\(id, false\)[\s\S]*publication\?\.visibility === 'withdrawal_only'[\s\S]*publication\.status === 'held'[\s\S]*continuation = publication[\s\S]*<RequestPublicationContinuation/,
+  'A held participant must retain the sole safe publication-withdrawal exception without mounting private sections.',
+)
+assert.match(
+  participantPage,
+  /async function getPublicationForContinuation[\s\S]*getRequestPublicApplicationService\(\)[\s\S]*publicService\.getPublication\(requestId\)[\s\S]*requestAuthorityErrorCode\(error\) !== 'not_found'[\s\S]*missingIsNotFound\) notFound\(\)/,
+  'The continuation helper must remain actor-derived, non-enumerating, and truthful on unavailable reads.',
+)
+assert.match(
+  participantAction,
+  /const receipt = await service\.executePublication\(input\)[\s\S]*command === 'withdraw'[\s\S]*publication-withdrawn\?receipt=/,
+  'A successful publication withdrawal must redirect with its durable command receipt.',
+)
+assert.match(
+  publicationWithdrawalReceiptPage,
+  /getPublicationWithdrawalReceipt\(\{[\s\n]+requestId: id,[\s\n]+commandId,[\s\n]+\}\)[\s\S]*Public consent withdrawn/,
+  'The post-withdrawal page must verify the actor-owned durable receipt before claiming success.',
+)
+assert.match(
+  publicationContinuation,
+  /data-request-publication-continuation[\s\S]*name="command" value="withdraw"[\s\S]*name="publicationWithdrawal"[\s\S]*Withdraw public consent/,
+  'The scoped continuation must expose only an explicitly confirmed withdrawal.',
+)
+assert.doesNotMatch(
+  publicationContinuation,
+  /reportAction|notificationAction|requester_consent|builder_consent|publish_outcome/,
+  'The scoped continuation must not regain private trust or publication-expansion actions.',
+)
+assert.match(
+  participantTools,
+  /data-request-publication-review-result[\s\S]*proposal\.airlockReviewNote/,
+  'Participants must see the safe independent-review verdict and repair note.',
+)
+assert.match(
+  adminOperations,
+  /flag\('privateContentExcluded', false\)[\s\S]*flag\('publicTruthReady', false\)/,
+  'Independent publication checks must start unchecked.',
+)
+assert.match(
+  adminAction,
+  /reviewNotes\.length < 20[\s\S]*reviewNotes\.length > 1_000[\s\S]*requestPublicPatterns\.key\.test\(idempotencyKey\)[\s\S]*getRequestPublicApplicationService\(\)/,
+  'Publication review notes and idempotency identity must fail before service resolution.',
 )
 assert.match(
   adminOperations,

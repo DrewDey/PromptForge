@@ -16,6 +16,7 @@ import {
 import {
   REQUEST_INTAKE_AUDIENCES,
   REQUEST_READINESS_GATES,
+  requestPublicPatterns,
   type RequestOperatorMembershipStateV1,
   type RequestOperatorRoleV1,
   type RequestReadinessGate,
@@ -266,6 +267,8 @@ export async function reviewRequestPublicationAction(formData: FormData) {
     /^([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}):([1-9][0-9]{0,6})$/i
       .exec(text(formData, 'publicationReviewTarget'))
   const verdict = text(formData, 'verdict')
+  const reviewNotes = text(formData, 'reviewNotes').trim()
+  const idempotencyKey = text(formData, 'idempotencyKey')
   const checkNames = [
     'privateContentExcluded',
     'claimsSupportedByDelivery',
@@ -278,6 +281,9 @@ export async function reviewRequestPublicationAction(formData: FormData) {
     if (
       !target ||
       (verdict !== 'approve' && verdict !== 'changes_required') ||
+      reviewNotes.length < 20 ||
+      reviewNotes.length > 1_000 ||
+      !requestPublicPatterns.key.test(idempotencyKey) ||
       !controlFlag(formData, 'reviewConfirmation')
     ) {
       throw new Error('Invalid publication review envelope.')
@@ -305,8 +311,8 @@ export async function reviewRequestPublicationAction(formData: FormData) {
       expectedProposalVersion: Number(target[2]),
       verdict,
       checks,
-      reviewNotes: text(formData, 'reviewNotes'),
-      idempotencyKey: text(formData, 'idempotencyKey'),
+      reviewNotes,
+      idempotencyKey,
     })
   } catch (error) {
     redirectPublicActionError(error)

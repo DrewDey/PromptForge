@@ -44,6 +44,7 @@ import {
   type RequestPublicationReviewInputV1,
   type RequestPublicationReviewReceiptV1,
   type RequestPublicationViewV1,
+  type RequestPublicationWithdrawalReceiptV1,
   type RequestReadinessEvidenceInputV1,
   type RequestReadinessEvidenceReceiptV1,
   type RequestReportPageV1,
@@ -72,6 +73,8 @@ const RPC = {
   resolveNotificationSend: 'resolve_build_request_notification_send_v1',
   finishNotification: 'finish_build_request_notification_v1',
   publication: 'get_build_request_publication_v1',
+  publicationWithdrawalReceipt:
+    'get_build_request_publication_withdrawal_receipt_v1',
   publicationCommand: 'build_request_publication_command_v1',
   publicationReview: 'review_build_request_publication_v1',
   publicationQueue: 'list_build_request_publication_queue_v1',
@@ -583,7 +586,7 @@ function parsePublication(value: unknown): RequestPublicationViewV1 {
   const item = row(value, 'Request publication')
   const visibility = requestPublicValidation.oneOf(
     item.visibility,
-    ['restricted', 'full'] as const,
+    ['restricted', 'withdrawal_only', 'full'] as const,
     'Publication visibility',
   )
   if (!Array.isArray(item.capabilities)) {
@@ -614,10 +617,94 @@ function parsePublication(value: unknown): RequestPublicationViewV1 {
       capabilities: [],
     }
   }
+  if (visibility === 'withdrawal_only') {
+    requestPublicValidation.exact(
+      item,
+      [
+        'visibility',
+        'requestVersion',
+        'publicationState',
+        'status',
+        'proposal',
+        'capabilities',
+      ],
+      'Request publication',
+    )
+    if (
+      item.capabilities.length !== 1 ||
+      item.capabilities[0] !== 'withdraw'
+    ) {
+      throw new RequestContractError(
+        'Withdrawal-only publication capabilities are invalid.',
+      )
+    }
+    const proposal = exactRecord(
+      item.proposal,
+      'Withdrawal publication proposal',
+      [
+        'proposalId',
+        'proposalVersion',
+        'status',
+        'safeTitle',
+        'safeSummary',
+      ],
+    )
+    return {
+      visibility,
+      requestVersion: requestPublicValidation.integer(
+        item.requestVersion,
+        'Request version',
+        1,
+        10_000_000,
+      ),
+      publicationState: requestPublicValidation.string(
+        item.publicationState,
+        'Publication state',
+        1,
+        40,
+      ),
+      status: requestPublicValidation.oneOf(
+        item.status,
+        ['held', 'private_scope_expired'] as const,
+        'Publication withdrawal status',
+      ),
+      proposal: {
+        proposalId: requestPublicValidation.uuid(
+          proposal.proposalId,
+          'Proposal id',
+        ),
+        proposalVersion: requestPublicValidation.integer(
+          proposal.proposalVersion,
+          'Proposal version',
+          1,
+          10_000_000,
+        ),
+        status: requestPublicValidation.oneOf(
+          proposal.status,
+          PUBLICATION_STATUSES,
+          'Proposal status',
+        ),
+        safeTitle: requestPublicValidation.string(
+          proposal.safeTitle,
+          'Publication title',
+          4,
+          120,
+        ),
+        safeSummary: requestPublicValidation.string(
+          proposal.safeSummary,
+          'Publication summary',
+          40,
+          1_000,
+        ),
+      },
+      capabilities: ['withdraw'],
+    }
+  }
   requestPublicValidation.exact(
     item,
     [
       'visibility',
+      'requestVersion',
       'publicationState',
       'consentEnabled',
       'proposal',
@@ -729,6 +816,12 @@ function parsePublication(value: unknown): RequestPublicationViewV1 {
   }
   return {
     visibility,
+    requestVersion: requestPublicValidation.integer(
+      item.requestVersion,
+      'Request version',
+      1,
+      10_000_000,
+    ),
     publicationState: requestPublicValidation.string(
       item.publicationState,
       'Publication state',
@@ -741,6 +834,27 @@ function parsePublication(value: unknown): RequestPublicationViewV1 {
     ),
     proposal,
     capabilities,
+  }
+}
+
+function parsePublicationWithdrawalReceipt(
+  value: unknown,
+): RequestPublicationWithdrawalReceiptV1 {
+  const item = exactRecord(
+    value,
+    'Request publication withdrawal receipt',
+    ['requestId', 'commandId', 'occurredAt'],
+  )
+  return {
+    requestId: requestPublicValidation.uuid(item.requestId, 'Request id'),
+    commandId: requestPublicValidation.uuid(
+      item.commandId,
+      'Publication withdrawal command id',
+    ),
+    occurredAt: requestPublicValidation.timestamp(
+      item.occurredAt,
+      'Publication withdrawal occurrence',
+    ),
   }
 }
 
@@ -1251,6 +1365,10 @@ export interface RequestPublicApplicationService {
     input: SetRequestNotificationPreferenceInputV1,
   ): Promise<RequestNotificationPreferenceReceiptV1>
   getPublication(requestId: string): Promise<RequestPublicationViewV1>
+  getPublicationWithdrawalReceipt(input: {
+    requestId: string
+    commandId: string
+  }): Promise<RequestPublicationWithdrawalReceiptV1>
   executePublication(
     input: RequestPublicationCommandV1,
   ): Promise<RequestCommandReceipt>
@@ -1609,6 +1727,31 @@ export function createRequestPublicApplicationService(
         parsePublication,
       )
     },
+    getPublicationWithdrawalReceipt(input) {
+      const item = exactRecord(
+        input,
+        'Request publication withdrawal receipt lookup',
+        ['requestId', 'commandId'],
+      )
+      const requestId = requestPublicValidation.uuid(
+        item.requestId,
+        'Request id',
+      )
+      const commandId = requestPublicValidation.uuid(
+        item.commandId,
+        'Publication withdrawal command id',
+      )
+      return read(
+        client,
+        RPC.publicationWithdrawalReceipt,
+        {
+          p_contract_version: REQUEST_CONTRACT_VERSION,
+          p_request_id: requestId,
+          p_command_id: commandId,
+        },
+        parsePublicationWithdrawalReceipt,
+      )
+    },
     executePublication(input) {
       const valid = validatePublicationCommand(input)
       const payload =
@@ -1730,7 +1873,7 @@ export function createRequestPublicApplicationService(
         item.reviewNotes,
         'Publication review notes',
         20,
-        4_000,
+        1_000,
       )
       const idempotencyKey = requestPublicValidation.string(
         item.idempotencyKey,

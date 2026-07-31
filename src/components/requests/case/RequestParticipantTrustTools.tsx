@@ -66,6 +66,10 @@ export function RequestParticipantTrustTools({
     publication.visibility === 'full' ? publication.proposal : null
   const capabilities =
     publication.visibility === 'full' ? publication.capabilities : []
+  const publicationRequestVersion =
+    publication.visibility === 'full'
+      ? publication.requestVersion
+      : requestVersion
 
   return (
     <div className="mt-6 grid gap-5" data-request-participant-trust-tools>
@@ -210,6 +214,24 @@ export function RequestParticipantTrustTools({
                 <p className="mt-2 font-mono text-[10px] uppercase tracking-wide">
                   {proposal.status} · requester {proposal.requesterConsented ? 'consented' : 'pending'} · builder {proposal.builderConsented ? 'consented' : 'pending'}
                 </p>
+                {proposal.airlockReviewVerdict ? (
+                  <div
+                    className="mt-3 border border-brand-orange bg-brand-orange-soft p-3 text-sm"
+                    data-request-publication-review-result
+                  >
+                    <strong>
+                      Independent review:{' '}
+                      {proposal.airlockReviewVerdict === 'changes_required'
+                        ? 'changes required'
+                        : 'approved'}
+                    </strong>
+                    {proposal.airlockReviewNote ? (
+                      <p className="mt-1 whitespace-pre-wrap leading-6">
+                        {proposal.airlockReviewNote}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
             ) : null}
 
@@ -218,7 +240,7 @@ export function RequestParticipantTrustTools({
               <form action={publicationAction} className="mt-3 grid gap-3">
                 <HiddenCommand
                   requestId={requestId}
-                  requestVersion={requestVersion}
+                  requestVersion={publicationRequestVersion}
                   proposalVersion={proposal?.proposalVersion ?? null}
                   command={proposal ? 'replace_proposal' : 'propose'}
                   idempotencyKey={`request-publication-copy-${mutationNonce}`}
@@ -256,7 +278,7 @@ export function RequestParticipantTrustTools({
               <form action={publicationAction} className="mt-3 grid gap-3 border border-surface-200 p-4">
                 <HiddenCommand
                   requestId={requestId}
-                  requestVersion={requestVersion}
+                  requestVersion={publicationRequestVersion}
                   proposalVersion={proposal?.proposalVersion ?? null}
                   command="requester_consent"
                   idempotencyKey={`request-publication-requester-${mutationNonce}`}
@@ -301,7 +323,7 @@ export function RequestParticipantTrustTools({
               <form action={publicationAction} className="mt-3 grid gap-3 border border-surface-200 p-4">
                 <HiddenCommand
                   requestId={requestId}
-                  requestVersion={requestVersion}
+                  requestVersion={publicationRequestVersion}
                   proposalVersion={proposal?.proposalVersion ?? null}
                   command="builder_consent"
                   idempotencyKey={`request-publication-builder-${mutationNonce}`}
@@ -351,7 +373,7 @@ export function RequestParticipantTrustTools({
                   <form action={publicationAction} key={capability}>
                     <HiddenCommand
                       requestId={requestId}
-                      requestVersion={requestVersion}
+                      requestVersion={publicationRequestVersion}
                       proposalVersion={proposal?.proposalVersion ?? null}
                       command={capability}
                       idempotencyKey={`request-publication-${capability}-${mutationNonce}`}

@@ -7,6 +7,11 @@
 --
 -- Every expansion control defaults off. Applying this migration does not open
 -- intake, enable assignment, send a notification, or publish an outcome.
+--
+-- APPLY CONTRACT: this file must be applied by the Supabase CLI transactional
+-- migration runner (or inside one explicit caller-owned transaction). Direct
+-- psql/SQL-editor autocommit execution is unsupported because the migration is
+-- intentionally one forward-only release unit.
 
 DO $request_public_preflight$
 BEGIN
@@ -4798,17 +4803,20 @@ DECLARE
   v_is_admin BOOLEAN;
   v_controls public.build_request_controls%ROWTYPE;
   v_consent_ready BOOLEAN;
+  v_has_private_scope BOOLEAN;
+  v_can_continue BOOLEAN;
 BEGIN
   PERFORM private.request_assert_contract_v1(p_contract_version);
+  v_has_private_scope :=
+    private.request_has_scope_v1(p_request_id, v_actor_id);
+  v_can_continue :=
+    private.request_publication_actor_can_continue_v1(
+      p_request_id,
+      v_actor_id
+    );
   IF v_actor_id IS NULL
     OR p_request_id IS NULL
-    OR NOT (
-      private.request_has_scope_v1(p_request_id, v_actor_id)
-      OR private.request_publication_actor_can_continue_v1(
-        p_request_id,
-        v_actor_id
-      )
-    )
+    OR NOT (v_has_private_scope OR v_can_continue)
   THEN
     RAISE EXCEPTION USING ERRCODE = 'P0002',
       MESSAGE = 'Request was not found.',
@@ -4840,20 +4848,63 @@ BEGIN
     ORDER BY review.occurred_at DESC
     LIMIT 1;
   END IF;
-  IF v_request.moderation_state <> 'clear' THEN
+  IF v_request.moderation_state = 'removed' THEN
     RETURN jsonb_build_object(
       'visibility', 'restricted',
       'publicationState', v_request.publication_state,
-      'status', CASE
-        WHEN v_request.moderation_state = 'removed'
-          THEN 'removed'
-        ELSE 'held'
-      END,
+      'status', 'removed',
       'capabilities', '[]'::JSONB
+    );
+  END IF;
+  IF v_request.moderation_state = 'held' THEN
+    IF v_proposal.id IS NOT NULL
+      AND (v_is_requester OR v_is_builder)
+      AND v_proposal.proposal_status IN (
+        'draft', 'consent_pending', 'fully_consented',
+        'in_airlock', 'published'
+      )
+    THEN
+      RETURN jsonb_build_object(
+        'visibility', 'withdrawal_only',
+        'requestVersion', v_request.version,
+        'publicationState', v_request.publication_state,
+        'status', 'held',
+        'proposal', jsonb_build_object(
+          'proposalId', v_proposal.id,
+          'proposalVersion', v_proposal.proposal_version,
+          'status', v_proposal.proposal_status,
+          'safeTitle', v_proposal.safe_title,
+          'safeSummary', v_proposal.safe_summary
+        ),
+        'capabilities', jsonb_build_array('withdraw')
+      );
+    END IF;
+    RETURN jsonb_build_object(
+      'visibility', 'restricted',
+      'publicationState', v_request.publication_state,
+      'status', 'held',
+      'capabilities', '[]'::JSONB
+    );
+  END IF;
+  IF NOT v_has_private_scope THEN
+    RETURN jsonb_build_object(
+      'visibility', 'withdrawal_only',
+      'requestVersion', v_request.version,
+      'publicationState', v_request.publication_state,
+      'status', 'private_scope_expired',
+      'proposal', jsonb_build_object(
+        'proposalId', v_proposal.id,
+        'proposalVersion', v_proposal.proposal_version,
+        'status', v_proposal.proposal_status,
+        'safeTitle', v_proposal.safe_title,
+        'safeSummary', v_proposal.safe_summary
+      ),
+      'capabilities', jsonb_build_array('withdraw')
     );
   END IF;
   RETURN jsonb_build_object(
     'visibility', 'full',
+    'requestVersion', v_request.version,
     'publicationState', v_request.publication_state,
     'consentEnabled', v_consent_ready,
     'proposal', CASE WHEN v_proposal.id IS NULL THEN NULL
@@ -4899,18 +4950,21 @@ BEGIN
         WHEN v_consent_ready AND v_is_requester
           AND v_proposal.proposal_status IN ('draft', 'consent_pending')
           AND v_proposal.requester_consented_at IS NULL
+          AND v_review.verdict IS DISTINCT FROM 'changes_required'
           THEN 'requester_consent'
       END,
       CASE
         WHEN v_consent_ready AND v_is_builder
           AND v_proposal.proposal_status IN ('draft', 'consent_pending')
           AND v_proposal.builder_consented_at IS NULL
+          AND v_review.verdict IS DISTINCT FROM 'changes_required'
           THEN 'builder_consent'
       END,
       CASE
         WHEN v_consent_ready
           AND (v_is_requester OR v_is_builder)
           AND v_proposal.proposal_status IN ('draft', 'consent_pending')
+          AND v_review.verdict IS DISTINCT FROM 'changes_required'
           THEN 'decline'
       END,
       CASE
@@ -5159,14 +5213,6 @@ BEGIN
       MESSAGE = 'Request authority rejected the operation.',
       DETAIL = 'request_authority:stale_version';
   END IF;
-  IF v_request.moderation_state <> 'clear' THEN
-    RAISE EXCEPTION USING ERRCODE = '42501',
-      MESSAGE = 'Request publication is unavailable while restricted.',
-      DETAIL = CASE v_request.moderation_state
-        WHEN 'held' THEN 'request_authority:held'
-        ELSE 'request_authority:removed'
-      END;
-  END IF;
   v_before := v_request;
   SELECT proposal.* INTO v_proposal
   FROM public.build_request_publication_proposals AS proposal
@@ -5183,6 +5229,25 @@ BEGIN
     RAISE EXCEPTION USING ERRCODE = '40001',
       MESSAGE = 'Request authority rejected the operation.',
       DETAIL = 'request_authority:stale_version';
+  END IF;
+  IF v_request.moderation_state <> 'clear'
+    AND NOT (
+      v_request.moderation_state = 'held'
+      AND p_command = 'withdraw'
+      AND v_proposal.id IS NOT NULL
+      AND v_actor_id IN (v_proposal.requester_id, v_proposal.builder_id)
+      AND v_proposal.proposal_status IN (
+        'draft', 'consent_pending', 'fully_consented',
+        'in_airlock', 'published'
+      )
+    )
+  THEN
+    RAISE EXCEPTION USING ERRCODE = '42501',
+      MESSAGE = 'Request publication is unavailable while restricted.',
+      DETAIL = CASE v_request.moderation_state
+        WHEN 'held' THEN 'request_authority:held'
+        ELSE 'request_authority:removed'
+      END;
   END IF;
 
   IF p_command = 'propose' THEN
@@ -5294,6 +5359,14 @@ BEGIN
       OR v_request.requester_id <> v_actor_id
       OR v_proposal.proposal_status NOT IN ('draft', 'consent_pending')
       OR v_proposal.requester_consented_at IS NOT NULL
+      OR EXISTS (
+        SELECT 1
+        FROM public.build_request_publication_reviews AS blocked_review
+        WHERE blocked_review.proposal_id = v_proposal.id
+          AND blocked_review.proposal_version = v_proposal.proposal_version
+          AND blocked_review.content_digest = v_proposal.content_digest
+          AND blocked_review.verdict = 'changes_required'
+      )
       OR p_payload->>'publication_terms_version'
         IS DISTINCT FROM v_controls.publication_terms_version
     THEN
@@ -5333,6 +5406,14 @@ BEGIN
       OR v_proposal.builder_id <> v_actor_id
       OR v_proposal.proposal_status NOT IN ('draft', 'consent_pending')
       OR v_proposal.builder_consented_at IS NOT NULL
+      OR EXISTS (
+        SELECT 1
+        FROM public.build_request_publication_reviews AS blocked_review
+        WHERE blocked_review.proposal_id = v_proposal.id
+          AND blocked_review.proposal_version = v_proposal.proposal_version
+          AND blocked_review.content_digest = v_proposal.content_digest
+          AND blocked_review.verdict = 'changes_required'
+      )
       OR p_payload->>'publication_terms_version'
         IS DISTINCT FROM v_controls.publication_terms_version
     THEN
@@ -5369,6 +5450,14 @@ BEGIN
     v_actor_role := 'builder';
   ELSIF p_command = 'decline' THEN
     IF v_proposal.proposal_status NOT IN ('draft', 'consent_pending')
+      OR EXISTS (
+        SELECT 1
+        FROM public.build_request_publication_reviews AS blocked_review
+        WHERE blocked_review.proposal_id = v_proposal.id
+          AND blocked_review.proposal_version = v_proposal.proposal_version
+          AND blocked_review.content_digest = v_proposal.content_digest
+          AND blocked_review.verdict = 'changes_required'
+      )
       OR (
         v_request.requester_id <> v_actor_id
         AND v_proposal.builder_id <> v_actor_id
@@ -5401,7 +5490,8 @@ BEGIN
     v_status := 'declined';
   ELSIF p_command = 'withdraw' THEN
     IF v_proposal.proposal_status NOT IN (
-        'fully_consented', 'in_airlock', 'published'
+        'draft', 'consent_pending', 'fully_consented',
+        'in_airlock', 'published'
       )
       OR (
         v_request.requester_id <> v_actor_id
@@ -5526,6 +5616,50 @@ BEGIN
     SELECT * FROM private.request_receipt_v1(
       v_command_id, v_request.id, v_event_id, FALSE, v_at, v_authority
     );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION
+  public.get_build_request_publication_withdrawal_receipt_v1(
+    p_contract_version INTEGER,
+    p_request_id UUID,
+    p_command_id UUID
+  )
+RETURNS JSONB
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_actor_id UUID := auth.uid();
+  v_receipt public.build_request_command_receipts%ROWTYPE;
+BEGIN
+  PERFORM private.request_assert_contract_v1(p_contract_version);
+  IF v_actor_id IS NULL
+    OR p_request_id IS NULL
+    OR p_command_id IS NULL
+  THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0002',
+      MESSAGE = 'Publication withdrawal receipt was not found.',
+      DETAIL = 'request_authority:not_found';
+  END IF;
+  SELECT receipt.* INTO v_receipt
+  FROM public.build_request_command_receipts AS receipt
+  WHERE receipt.id = p_command_id
+    AND receipt.request_id = p_request_id
+    AND receipt.actor_id = v_actor_id
+    AND receipt.command_kind = 'publication_withdraw';
+  IF NOT FOUND THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0002',
+      MESSAGE = 'Publication withdrawal receipt was not found.',
+      DETAIL = 'request_authority:not_found';
+  END IF;
+  RETURN jsonb_build_object(
+    'requestId', v_receipt.request_id,
+    'commandId', v_receipt.id,
+    'occurredAt', v_receipt.created_at
+  );
 END;
 $$;
 
@@ -6865,6 +6999,9 @@ REVOKE ALL ON FUNCTION
     INTEGER, UUID, UUID, BOOLEAN, TEXT
   ),
   public.get_build_request_publication_v1(INTEGER, UUID),
+  public.get_build_request_publication_withdrawal_receipt_v1(
+    INTEGER, UUID, UUID
+  ),
   public.build_request_publication_command_v1(
     INTEGER, UUID, INTEGER, INTEGER, TEXT, TEXT, JSONB
   ),
@@ -6939,6 +7076,9 @@ GRANT EXECUTE ON FUNCTION
     INTEGER, INTEGER, BOOLEAN, TEXT
   ),
   public.get_build_request_publication_v1(INTEGER, UUID),
+  public.get_build_request_publication_withdrawal_receipt_v1(
+    INTEGER, UUID, UUID
+  ),
   public.build_request_publication_command_v1(
     INTEGER, UUID, INTEGER, INTEGER, TEXT, TEXT, JSONB
   ),

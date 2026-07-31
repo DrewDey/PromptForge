@@ -88,6 +88,7 @@ const rpcCalls: Array<{
   name: string
   parameters: Record<string, unknown>
 }> = []
+let publicationFixtureMode: 'full' | 'withdrawal_only' = 'full'
 
 function commandReceipt(authorityResult: Record<string, unknown> = {}) {
   return [{
@@ -268,8 +269,24 @@ const client: RequestRpcClient = {
         }
       case 'get_build_request_publication_v1':
         return {
-          data: {
+          data: publicationFixtureMode === 'withdrawal_only'
+            ? {
+                visibility: 'withdrawal_only',
+                requestVersion: 8,
+                publicationState: 'published',
+                status: 'private_scope_expired',
+                proposal: {
+                  proposalId,
+                  proposalVersion: 1,
+                  status: 'published',
+                  safeTitle: outcome.title,
+                  safeSummary: outcome.summary,
+                },
+                capabilities: ['withdraw'],
+              }
+            : {
             visibility: 'full',
+            requestVersion: 4,
             publicationState: 'consented_pending_airlock',
             consentEnabled: true,
             proposal: {
@@ -290,6 +307,15 @@ const client: RequestRpcClient = {
               updatedAt: occurredAt,
             },
             capabilities: ['publish_outcome'],
+          },
+          error: null,
+        }
+      case 'get_build_request_publication_withdrawal_receipt_v1':
+        return {
+          data: {
+            requestId,
+            commandId,
+            occurredAt,
           },
           error: null,
         }
@@ -650,6 +676,22 @@ assert(
     publication.capabilities.includes('publish_outcome'),
   'Publication parser lost the exact admin bridge capability.',
 )
+publicationFixtureMode = 'withdrawal_only'
+const withdrawalOnlyPublication = await application.getPublication(requestId)
+assert(
+  withdrawalOnlyPublication.visibility === 'withdrawal_only' &&
+    withdrawalOnlyPublication.requestVersion === 8 &&
+    withdrawalOnlyPublication.capabilities[0] === 'withdraw',
+  'Publication parser lost scoped post-retention withdrawal authority.',
+)
+publicationFixtureMode = 'full'
+assert(
+  (await application.getPublicationWithdrawalReceipt({
+    requestId,
+    commandId,
+  })).commandId === commandId,
+  'Publication withdrawal receipt parser failed.',
+)
 await application.executePublication({
   kind: 'propose',
   requestId,
@@ -958,6 +1000,17 @@ for (const [label, action] of [
       claimToken,
       succeeded: true,
       errorCode: 'provider_error',
+    }),
+  ],
+  [
+    'oversized publication review note',
+    () => application.reviewPublication({
+      proposalId,
+      expectedProposalVersion: 1,
+      verdict: 'approve',
+      checks: passingPublicationChecks,
+      reviewNotes: 'x'.repeat(1_001),
+      idempotencyKey: 'wire-review-oversized-note',
     }),
   ],
   [

@@ -117,6 +117,9 @@ const PARTICIPANT_TRUST_STATES = [
   'builder_consent',
   'withdraw',
   'publish',
+  'changes_required',
+  'continuation_expired',
+  'continuation_held',
   'restricted',
   'reports',
 ]
@@ -349,11 +352,26 @@ const SCENARIOS = [
     `participant-trust-${state}`,
     { surface: 'participant-trust', state },
     {
-      readySelector: '[data-request-participant-trust-tools]',
-      readyText: 'Optional outcome publication',
-      screenshot: ['publish', 'restricted', 'reports'].includes(state),
+      readySelector: state.startsWith('continuation_')
+        ? '[data-request-publication-continuation]'
+        : '[data-request-participant-trust-tools]',
+      readyText: state.startsWith('continuation_')
+        ? 'Public consent remains yours to withdraw'
+        : 'Optional outcome publication',
+      screenshot: [
+        'publish',
+        'changes_required',
+        'continuation_expired',
+        'continuation_held',
+        'restricted',
+        'reports',
+      ].includes(state),
       screenshotTarget: state === 'publish'
         ? 'input[name="publicationRelease"][value="yes"]'
+        : state.startsWith('continuation_')
+          ? 'input[name="publicationWithdrawal"][value="yes"]'
+          : state === 'changes_required'
+            ? '[data-request-publication-review-result]'
         : state === 'restricted'
           ? '#request-case-publication'
           : state === 'reports'
@@ -361,6 +379,10 @@ const SCENARIOS = [
             : undefined,
       screenshotTargetSuffix: state === 'publish'
         ? 'release'
+        : state.startsWith('continuation_')
+          ? 'withdrawal'
+          : state === 'changes_required'
+            ? 'review-repair'
         : state === 'restricted'
           ? 'publication'
           : 'history',
@@ -645,6 +667,15 @@ const PAGE_SNAPSHOT = `(() => {
     participantTrustToolCount:fixture?.querySelectorAll(
       '[data-request-participant-trust-tools]'
     ).length || 0,
+    publicationContinuationCount:fixture?.querySelectorAll(
+      '[data-request-publication-continuation]'
+    ).length || 0,
+    publicationReviewResultCount:fixture?.querySelectorAll(
+      '[data-request-publication-review-result]'
+    ).length || 0,
+    publicationWithdrawalConfirmationCount:fixture?.querySelectorAll(
+      'input[name="publicationWithdrawal"][value="yes"][required]'
+    ).length || 0,
     publicOutcomeCatalogCount:fixture?.querySelectorAll(
       '[data-request-public-outcome-catalog]'
     ).length || 0,
@@ -668,6 +699,12 @@ const PAGE_SNAPSHOT = `(() => {
       'input[type="checkbox"][name$="Delivery"],' +
       'input[type="checkbox"][name$="Consent"],' +
       'input[type="checkbox"][name="publicTruthReady"]'
+    )].map((element)=>element.getAttribute('name') || ''),
+    publicationReviewCheckedNames:[...fixture.querySelectorAll(
+      'input[type="checkbox"][name$="Excluded"]:checked,' +
+      'input[type="checkbox"][name$="Delivery"]:checked,' +
+      'input[type="checkbox"][name$="Consent"]:checked,' +
+      'input[type="checkbox"][name="publicTruthReady"]:checked'
     )].map((element)=>element.getAttribute('name') || ''),
     hiddenPublicControlDenials:[...fixture.querySelectorAll(
       '[data-request-public-operations] input[type="hidden"][value="no"]'
@@ -946,8 +983,32 @@ async function verifyViewport(client, options, viewport) {
         throw new Error(`${label} exposed ${snapshot.intakeCtaCount} intake CTAs at full capacity.`)
       }
       if (scenarioItem.path.includes('surface=participant-trust')) {
-        if (
+        const isContinuation =
+          scenarioItem.path.includes('state=continuation_')
+        if (isContinuation) {
+          if (
+            snapshot.publicationContinuationCount !== 1 ||
+            snapshot.participantTrustToolCount !== 0 ||
+            snapshot.publicationWithdrawalConfirmationCount !== 1 ||
+            !snapshot.fixtureText.includes(
+              'Public consent remains yours to withdraw',
+            ) ||
+            !snapshot.fixtureText.includes('Withdraw public consent') ||
+            snapshot.fixtureText.includes(
+              'Report a privacy, safety, rights, or service concern',
+            ) ||
+            snapshot.fixtureText.includes('Transactional email') ||
+            snapshot.fixtureText.includes('Give requester consent') ||
+            snapshot.fixtureText.includes('Give builder consent') ||
+            snapshot.fixtureText.includes('Publish safe outcome projection')
+          ) {
+            throw new Error(
+              `${label} did not preserve the narrow withdrawal-only boundary.`,
+            )
+          }
+        } else if (
           snapshot.participantTrustToolCount !== 1 ||
+          snapshot.publicationContinuationCount !== 0 ||
           !snapshot.fixtureText.includes('Report a privacy, safety, rights, or service concern') ||
           !snapshot.fixtureText.includes('Transactional email') ||
           !snapshot.fixtureText.includes('Optional outcome publication')
@@ -963,6 +1024,26 @@ async function verifyViewport(client, options, viewport) {
           )
         ) {
           throw new Error(`${label} omitted the attended final-publication confirmation.`)
+        }
+        if (
+          scenarioItem.path.includes('state=changes_required') &&
+          (
+            snapshot.publicationReviewResultCount !== 1 ||
+            !snapshot.fixtureText.includes(
+              'Independent review: changes required',
+            ) ||
+            !snapshot.fixtureText.includes(
+              'Replace the summary because one public claim is broader than the reviewed delivery evidence.',
+            ) ||
+            !snapshot.fixtureText.includes('Replace and reset consent') ||
+            snapshot.fixtureText.includes('Give requester consent') ||
+            snapshot.fixtureText.includes('Give builder consent') ||
+            snapshot.fixtureText.includes('Decline publication')
+          )
+        ) {
+          throw new Error(
+            `${label} did not stop review-rejected bytes at replacement.`,
+          )
         }
         if (
           scenarioItem.path.includes('state=restricted') &&
@@ -1036,6 +1117,7 @@ async function verifyViewport(client, options, viewport) {
             !snapshot.fixtureTextLower.includes('record independent review') ||
             !snapshot.fixtureTextLower.includes('review private authority') ||
             snapshot.publicationReviewConfirmationCount !== 1 ||
+            snapshot.publicationReviewCheckedNames.length !== 0 ||
             JSON.stringify(snapshot.publicationReviewCheckNames) !== JSON.stringify([
               'privateContentExcluded',
               'claimsSupportedByDelivery',

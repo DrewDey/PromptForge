@@ -341,8 +341,10 @@ export async function requestPublicationAction(formData: FormData) {
       `/requests/${encodeURIComponent(requestId)}?actionError=stale_version`,
     )
   }
+  let commandId = ''
   try {
-    await service.executePublication(input)
+    const receipt = await service.executePublication(input)
+    commandId = receipt.commandId
   } catch (error) {
     publicActionFailure(requestId, error)
   }
@@ -350,6 +352,11 @@ export async function requestPublicationAction(formData: FormData) {
   revalidatePath(`/admin/build-requests/${requestId}`)
   revalidatePath('/admin/build-requests')
   revalidatePath('/requests/outcomes')
+  if (command === 'withdraw') {
+    redirect(
+      `/requests/${encodeURIComponent(requestId)}/publication-withdrawn?receipt=${encodeURIComponent(commandId)}`,
+    )
+  }
 }
 
 export async function publishRequestOutcomeAction(formData: FormData) {

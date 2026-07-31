@@ -625,11 +625,11 @@ export function RequestPublicOperations({
                     Global community health alone does not approve this proposal.
                   </p>
                   <div className="grid gap-2 sm:grid-cols-2">
-                    {flag('privateContentExcluded', true)}
-                    {flag('claimsSupportedByDelivery', true)}
-                    {flag('attributionMatchesConsent', true)}
-                    {flag('reusePermissionMatchesConsent', true)}
-                    {flag('publicTruthReady', true)}
+                    {flag('privateContentExcluded', false)}
+                    {flag('claimsSupportedByDelivery', false)}
+                    {flag('attributionMatchesConsent', false)}
+                    {flag('reusePermissionMatchesConsent', false)}
+                    {flag('publicTruthReady', false)}
                   </div>
                   <label className="text-xs font-bold">
                     Verdict

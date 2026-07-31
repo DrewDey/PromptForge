@@ -9,6 +9,7 @@ import { RequestCaseDeliverySlot } from '@/components/requests/delivery'
 import {
   RequestCaseShell,
   RequestParticipantTrustTools,
+  RequestPublicationContinuation,
 } from '@/components/requests/case'
 import {
   getRequestApplicationService,
@@ -40,6 +41,7 @@ import type {
   RequestPublicationViewV1,
   RequestReportPageV1,
 } from '@/lib/request-public-architecture'
+import type { RequestCaseDetailResultV1 } from '@/lib/request-lifecycle'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
@@ -82,6 +84,20 @@ function RequestWithdrawalForm({
   )
 }
 
+async function getPublicationForContinuation(
+  requestId: string,
+  missingIsNotFound: boolean,
+): Promise<RequestPublicationViewV1 | null> {
+  try {
+    const publicService = await getRequestPublicApplicationService()
+    return await publicService.getPublication(requestId)
+  } catch (error) {
+    if (requestAuthorityErrorCode(error) !== 'not_found') throw error
+    if (missingIsNotFound) notFound()
+    return null
+  }
+}
+
 export default async function RequestCasePage({
   params,
   searchParams,
@@ -92,14 +108,46 @@ export default async function RequestCasePage({
   const { id } = await params
   const query = await searchParams
   const reportCursor = decodeRequestReportCursor(query.reportCursor)
-  let detail
+  let detail: RequestCaseDetailResultV1 | null = null
+  let continuation: Extract<
+    RequestPublicationViewV1,
+    { visibility: 'withdrawal_only' }
+  > | null = null
   try {
     const service = await getRequestApplicationService()
     detail = await service.getRequest(id)
   } catch (error) {
-    if (requestAuthorityErrorCode(error) === 'not_found') notFound()
-    throw error
+    if (requestAuthorityErrorCode(error) === 'not_found') {
+      const publication = await getPublicationForContinuation(id, true)
+      if (!publication || publication.visibility !== 'withdrawal_only') notFound()
+      continuation = publication
+    } else {
+      throw error
+    }
   }
+  if (detail?.visibility === 'held') {
+    const publication = await getPublicationForContinuation(id, false)
+    if (
+      publication?.visibility === 'withdrawal_only' &&
+      publication.status === 'held'
+    ) {
+      continuation = publication
+    }
+  }
+  if (continuation) {
+    return (
+      <main className="min-h-screen bg-surface-50 px-4 py-8 sm:px-6 sm:py-12">
+        <RequestPublicationContinuation
+          requestId={id}
+          publication={continuation}
+          mutationNonce={randomUUID()}
+          publicationAction={requestPublicationAction}
+          actionError={Boolean(query.actionError)}
+        />
+      </main>
+    )
+  }
+  if (!detail) notFound()
   const deliveryModel = detail.visibility === 'full'
     ? toRequestDeliverySlotModel(detail, detail.actor)
     : null

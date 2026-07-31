@@ -3138,6 +3138,14 @@ BEGIN
           'detectedMediaType', 'scannerVersion'
         ], 'Command payload'
       );
+      IF jsonb_typeof(p_payload->'acceptedBriefRevisionId')
+          IS DISTINCT FROM 'string'
+        OR p_payload->>'acceptedBriefRevisionId'
+          !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+      THEN
+        RAISE EXCEPTION USING ERRCODE = '22023',
+          MESSAGE = 'Accepted brief revision id is invalid.';
+      END IF;
     WHEN 'abandon_delivery_artifact' THEN
       PERFORM private.request_assert_json_keys_v1(
         p_payload, ARRAY['deliveryRevisionId', 'artifactId'], 'Command payload'
@@ -3172,6 +3180,14 @@ BEGIN
         END,
         'Command payload'
       );
+      IF jsonb_typeof(p_payload->'deliveryRevisionId')
+          IS DISTINCT FROM 'string'
+        OR p_payload->>'deliveryRevisionId'
+          !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+      THEN
+        RAISE EXCEPTION USING ERRCODE = '22023',
+          MESSAGE = 'Delivery revision id is invalid.';
+      END IF;
     WHEN 'acknowledge_delivery' THEN
       PERFORM private.request_assert_json_keys_v1(
         p_payload, ARRAY['deliveryRevisionId'], 'Command payload'
@@ -3929,7 +3945,8 @@ BEGIN
       AND staged_builder.assignment_role = 'builder'
       AND staged_builder.active AND staged_builder.account_id = v_actor_id;
     IF NOT FOUND OR v_request.lifecycle_state NOT IN ('building', 'repair_required')
-      OR (p_payload->>'acceptedBriefRevisionId')::UUID <> v_request.current_brief_revision_id THEN
+      OR (p_payload->>'acceptedBriefRevisionId')::UUID
+        IS DISTINCT FROM v_request.current_brief_revision_id THEN
       RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'Artifact staging is not allowed.';
     END IF;
     IF EXISTS (
@@ -4426,7 +4443,8 @@ BEGIN
     END IF;
     IF v_request.requester_id <> v_actor_id
       OR v_request.lifecycle_state NOT IN ('delivery_ready', 'delivered')
-      OR (p_payload->>'deliveryRevisionId')::UUID <> v_request.current_delivery_revision_id
+      OR (p_payload->>'deliveryRevisionId')::UUID
+        IS DISTINCT FROM v_request.current_delivery_revision_id
       OR NOT EXISTS (
         SELECT 1 FROM public.build_request_delivery_revisions AS outcome_revision
         WHERE outcome_revision.id = v_request.current_delivery_revision_id

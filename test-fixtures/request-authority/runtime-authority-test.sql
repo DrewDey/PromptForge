@@ -45,6 +45,10 @@ DECLARE
   event_count_before_delete INTEGER;
   review_count_before INTEGER;
   review_event_count_before INTEGER;
+  hostile_revision_count INTEGER;
+  hostile_artifact_count INTEGER;
+  hostile_outcome_count INTEGER;
+  hostile_receipt_count INTEGER;
   brief JSONB := jsonb_build_object(
     'title', 'Deterministic private request',
     'outcome', 'Create a deterministic artifact that proves the accepted lifecycle.',
@@ -409,6 +413,124 @@ BEGIN
     jsonb_build_object('sub', builder, 'role', 'authenticated')::TEXT,
     TRUE
   );
+
+  SELECT count(*) INTO hostile_revision_count
+  FROM public.build_request_delivery_revisions AS revision
+  WHERE revision.request_id = runtime.request_id;
+  SELECT count(*) INTO hostile_artifact_count
+  FROM public.build_request_delivery_artifacts AS artifact
+  WHERE artifact.request_id = runtime.request_id;
+  SELECT count(*) INTO review_event_count_before
+  FROM public.build_request_events AS event_value
+  WHERE event_value.request_id = runtime.request_id;
+  SELECT count(*) INTO hostile_receipt_count
+  FROM public.build_request_command_receipts AS command_receipt
+  WHERE command_receipt.request_id = runtime.request_id;
+  BEGIN
+    PERFORM *
+    FROM public.build_request_command_v1(
+      1,
+      request_id,
+      request_version,
+      'stage-artifact-null-brief',
+      'stage_delivery_artifact',
+      jsonb_build_object(
+        'deliveryRevisionId', delivery_revision_id,
+        'acceptedBriefRevisionId', 'null'::JSONB,
+        'activeBuilderAssignmentId', builder_assignment_id,
+        'artifactOrdinal', 1,
+        'clientFileId', 'hostile-null-brief',
+        'normalizedName', 'fixture.html',
+        'byteLength', 100,
+        'sha256', repeat('a', 64),
+        'detectedMediaType', 'text/html',
+        'scannerVersion', 'fixture-scanner-v1'
+      )
+    );
+    RAISE EXCEPTION 'JSON-null accepted brief revision was accepted.';
+  EXCEPTION WHEN SQLSTATE '22023' THEN
+    NULL;
+  END;
+  BEGIN
+    PERFORM *
+    FROM public.build_request_command_v1(
+      1,
+      request_id,
+      request_version,
+      'stage-artifact-malformed-brief',
+      'stage_delivery_artifact',
+      jsonb_build_object(
+        'deliveryRevisionId', delivery_revision_id,
+        'acceptedBriefRevisionId', 'not-a-uuid',
+        'activeBuilderAssignmentId', builder_assignment_id,
+        'artifactOrdinal', 1,
+        'clientFileId', 'hostile-malformed-brief',
+        'normalizedName', 'fixture.html',
+        'byteLength', 100,
+        'sha256', repeat('a', 64),
+        'detectedMediaType', 'text/html',
+        'scannerVersion', 'fixture-scanner-v1'
+      )
+    );
+    RAISE EXCEPTION 'Malformed accepted brief revision was accepted.';
+  EXCEPTION WHEN SQLSTATE '22023' THEN
+    NULL;
+  END;
+  BEGIN
+    PERFORM *
+    FROM public.build_request_command_v1(
+      1,
+      request_id,
+      request_version,
+      'stage-artifact-wrong-brief',
+      'stage_delivery_artifact',
+      jsonb_build_object(
+        'deliveryRevisionId', delivery_revision_id,
+        'acceptedBriefRevisionId',
+          '82100000-0000-4000-8000-000000000099',
+        'activeBuilderAssignmentId', builder_assignment_id,
+        'artifactOrdinal', 1,
+        'clientFileId', 'hostile-wrong-brief',
+        'normalizedName', 'fixture.html',
+        'byteLength', 100,
+        'sha256', repeat('a', 64),
+        'detectedMediaType', 'text/html',
+        'scannerVersion', 'fixture-scanner-v1'
+      )
+    );
+    RAISE EXCEPTION 'Wrong accepted brief revision was accepted.';
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    NULL;
+  END;
+  IF hostile_revision_count <> (
+      SELECT count(*)
+      FROM public.build_request_delivery_revisions AS revision
+      WHERE revision.request_id = runtime.request_id
+    )
+    OR hostile_artifact_count <> (
+      SELECT count(*)
+      FROM public.build_request_delivery_artifacts AS artifact
+      WHERE artifact.request_id = runtime.request_id
+    )
+    OR review_event_count_before <> (
+      SELECT count(*)
+      FROM public.build_request_events AS event_value
+      WHERE event_value.request_id = runtime.request_id
+    )
+    OR hostile_receipt_count <> (
+      SELECT count(*)
+      FROM public.build_request_command_receipts AS command_receipt
+      WHERE command_receipt.request_id = runtime.request_id
+    )
+    OR (
+      SELECT version
+      FROM public.build_requests
+      WHERE id = runtime.request_id
+    ) <> request_version
+  THEN
+    RAISE EXCEPTION
+      'Hostile accepted-brief staging mutated revision, artifact, event, receipt, or version authority.';
+  END IF;
 
   SELECT * INTO receipt FROM public.build_request_command_v1(
     1,
@@ -1117,6 +1239,99 @@ BEGIN
   THEN
     RAISE EXCEPTION
       'A hostile delivery acknowledgement mutated state, version, event, or receipt authority.';
+  END IF;
+  SELECT count(*) INTO hostile_outcome_count
+  FROM public.build_request_requester_outcomes AS requester_outcome
+  WHERE requester_outcome.request_id = runtime.request_id;
+  SELECT count(*) INTO review_event_count_before
+  FROM public.build_request_events AS event_value
+  WHERE event_value.request_id = runtime.request_id;
+  SELECT count(*) INTO hostile_receipt_count
+  FROM public.build_request_command_receipts AS command_receipt
+  WHERE command_receipt.request_id = runtime.request_id;
+  BEGIN
+    PERFORM *
+    FROM public.build_request_command_v1(
+      1,
+      request_id,
+      request_version,
+      'delivery-outcome-null-revision',
+      'requester_delivery_outcome',
+      jsonb_build_object(
+        'deliveryRevisionId', 'null'::JSONB,
+        'manifestDigest', manifest_digest,
+        'outcome', 'useful'
+      )
+    );
+    RAISE EXCEPTION 'JSON-null requester outcome revision was accepted.';
+  EXCEPTION WHEN SQLSTATE '22023' THEN
+    NULL;
+  END;
+  BEGIN
+    PERFORM *
+    FROM public.build_request_command_v1(
+      1,
+      request_id,
+      request_version,
+      'delivery-outcome-malformed-revision',
+      'requester_delivery_outcome',
+      jsonb_build_object(
+        'deliveryRevisionId', 'not-a-uuid',
+        'manifestDigest', manifest_digest,
+        'outcome', 'useful'
+      )
+    );
+    RAISE EXCEPTION 'Malformed requester outcome revision was accepted.';
+  EXCEPTION WHEN SQLSTATE '22023' THEN
+    NULL;
+  END;
+  BEGIN
+    PERFORM *
+    FROM public.build_request_command_v1(
+      1,
+      request_id,
+      request_version,
+      'delivery-outcome-wrong-revision',
+      'requester_delivery_outcome',
+      jsonb_build_object(
+        'deliveryRevisionId',
+          '82100000-0000-4000-8000-000000000099',
+        'manifestDigest', manifest_digest,
+        'outcome', 'useful'
+      )
+    );
+    RAISE EXCEPTION 'Wrong requester outcome revision was accepted.';
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    NULL;
+  END;
+  IF hostile_outcome_count <> (
+      SELECT count(*)
+      FROM public.build_request_requester_outcomes AS requester_outcome
+      WHERE requester_outcome.request_id = runtime.request_id
+    )
+    OR review_event_count_before <> (
+      SELECT count(*)
+      FROM public.build_request_events AS event_value
+      WHERE event_value.request_id = runtime.request_id
+    )
+    OR hostile_receipt_count <> (
+      SELECT count(*)
+      FROM public.build_request_command_receipts AS command_receipt
+      WHERE command_receipt.request_id = runtime.request_id
+    )
+    OR (
+      SELECT version
+      FROM public.build_requests
+      WHERE id = runtime.request_id
+    ) <> request_version
+    OR (
+      SELECT lifecycle_state
+      FROM public.build_requests
+      WHERE id = runtime.request_id
+    ) <> 'delivered'
+  THEN
+    RAISE EXCEPTION
+      'Hostile requester outcome mutated outcome, event, receipt, version, or lifecycle authority.';
   END IF;
   SELECT * INTO receipt FROM public.build_request_command_v1(
     1,

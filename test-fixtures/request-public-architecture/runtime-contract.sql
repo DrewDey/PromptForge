@@ -146,6 +146,21 @@ BEGIN
       'public.resolve_build_request_notification_send_v1(integer,uuid,uuid)',
       'EXECUTE'
     )
+    OR NOT has_function_privilege(
+      'authenticated',
+      'public.get_build_request_publication_withdrawal_receipt_v1(integer,uuid,uuid)',
+      'EXECUTE'
+    )
+    OR has_function_privilege(
+      'anon',
+      'public.get_build_request_publication_withdrawal_receipt_v1(integer,uuid,uuid)',
+      'EXECUTE'
+    )
+    OR has_function_privilege(
+      'service_role',
+      'public.get_build_request_publication_withdrawal_receipt_v1(integer,uuid,uuid)',
+      'EXECUTE'
+    )
   THEN
     RAISE EXCEPTION
       'Public-architecture RPC least privilege drifted.';
@@ -2350,6 +2365,144 @@ BEGIN
     1,
     v_proposal_id,
     2,
+    'changes_required',
+    jsonb_build_object(
+      'private_content_excluded', TRUE,
+      'claims_supported_by_delivery', FALSE,
+      'attribution_matches_consent', TRUE,
+      'reuse_permission_matches_consent', TRUE,
+      'public_truth_ready', TRUE
+    ),
+    'Replace the summary because one public claim is broader than the reviewed delivery evidence.',
+    'publication-airlock-review-changes-0001'
+  );
+  IF v_result->>'verdict' <> 'changes_required'
+    OR (v_result->>'replayed')::BOOLEAN
+  THEN
+    RAISE EXCEPTION
+      'Independent changes-required review did not produce a receipt: %',
+      v_result;
+  END IF;
+  SELECT request_case.version INTO v_request_version
+  FROM public.build_requests AS request_case
+  WHERE request_case.id = v_request_id;
+  PERFORM set_config(
+    'request.jwt.claims',
+    jsonb_build_object(
+      'sub', v_requester,
+      'role', 'authenticated'
+    )::TEXT,
+    TRUE
+  );
+  v_result := public.get_build_request_publication_v1(1, v_request_id);
+  IF v_result->'proposal'->>'airlockReviewVerdict'
+      <> 'changes_required'
+    OR v_result->'proposal'->>'airlockReviewNote'
+      <> 'Replace the summary because one public claim is broader than the reviewed delivery evidence.'
+    OR NOT (v_result->'capabilities' ? 'replace_proposal')
+    OR v_result->'capabilities' ? 'requester_consent'
+    OR v_result->'capabilities' ? 'builder_consent'
+    OR v_result->'capabilities' ? 'decline'
+  THEN
+    RAISE EXCEPTION
+      'Changes-required review did not expose a safe repair-only continuation: %',
+      v_result;
+  END IF;
+  v_blocked := FALSE;
+  BEGIN
+    PERFORM *
+    FROM public.build_request_publication_command_v1(
+      1, v_request_id, v_request_version, 2,
+      'publication-requester-reconsent-blocked',
+      'requester_consent',
+      jsonb_build_object(
+        'requester_attribution', 'anonymous',
+        'publication_terms_version', 'request-publication-v1'
+      )
+    );
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_blocked := TRUE;
+  END;
+  IF NOT v_blocked THEN
+    RAISE EXCEPTION
+      'A requester re-consented to unchanged review-rejected bytes.';
+  END IF;
+  PERFORM *
+  FROM public.build_request_publication_command_v1(
+    1, v_request_id, v_request_version, 2,
+    'publication-replace-after-review-0001',
+    'replace_proposal',
+    jsonb_build_object(
+      'safe_title', 'A corrected reviewed Request outcome',
+      'safe_summary',
+        'A corrected public-safe summary now describes only the exact independently reviewed delivery evidence and excludes every private case detail.'
+    )
+  );
+  SELECT request_case.version INTO v_request_version
+  FROM public.build_requests AS request_case
+  WHERE request_case.id = v_request_id;
+  PERFORM *
+  FROM public.build_request_publication_command_v1(
+    1, v_request_id, v_request_version, 3,
+    'publication-requester-consent-0003',
+    'requester_consent',
+    jsonb_build_object(
+      'requester_attribution', 'anonymous',
+      'publication_terms_version', 'request-publication-v1'
+    )
+  );
+  SELECT request_case.version INTO v_request_version
+  FROM public.build_requests AS request_case
+  WHERE request_case.id = v_request_id;
+  PERFORM set_config(
+    'request.jwt.claims',
+    jsonb_build_object(
+      'sub', v_builder,
+      'role', 'authenticated'
+    )::TEXT,
+    TRUE
+  );
+  PERFORM *
+  FROM public.build_request_publication_command_v1(
+    1, v_request_id, v_request_version, 3,
+    'publication-builder-consent-0003',
+    'builder_consent',
+    jsonb_build_object(
+      'reuse_permission', 'adapt_with_credit',
+      'publication_terms_version', 'request-publication-v1'
+    )
+  );
+  SELECT request_case.version INTO v_request_version
+  FROM public.build_requests AS request_case
+  WHERE request_case.id = v_request_id;
+  PERFORM set_config(
+    'request.jwt.claims',
+    jsonb_build_object(
+      'sub', v_admin,
+      'role', 'authenticated'
+    )::TEXT,
+    TRUE
+  );
+  PERFORM *
+  FROM public.build_request_publication_command_v1(
+    1, v_request_id, v_request_version, 3,
+    'publication-airlock-0003',
+    'submit_airlock',
+    '{}'::JSONB
+  );
+  UPDATE public.profiles SET role = 'admin' WHERE id = v_reviewer;
+  PERFORM set_config(
+    'request.jwt.claims',
+    jsonb_build_object(
+      'sub', v_reviewer,
+      'role', 'authenticated'
+    )::TEXT,
+    TRUE
+  );
+  v_result := public.review_build_request_publication_v1(
+    1,
+    v_proposal_id,
+    3,
     'approve',
     jsonb_build_object(
       'private_content_excluded', TRUE,
@@ -2358,20 +2511,20 @@ BEGIN
       'reuse_permission_matches_consent', TRUE,
       'public_truth_ready', TRUE
     ),
-    'The exact consented summary passed every independent public-truth check.',
-    'publication-airlock-review-0001'
+    'The corrected exact summary passed every independent public-truth check.',
+    'publication-airlock-review-0003'
   );
   IF v_result->>'verdict' <> 'approved'
     OR (v_result->>'replayed')::BOOLEAN
   THEN
     RAISE EXCEPTION
-      'Independent exact-summary review did not produce a receipt: %',
+      'The replacement proposal did not receive a fresh independent review: %',
       v_result;
   END IF;
   v_replay := public.review_build_request_publication_v1(
     1,
     v_proposal_id,
-    2,
+    3,
     'approve',
     jsonb_build_object(
       'private_content_excluded', TRUE,
@@ -2380,14 +2533,14 @@ BEGIN
       'reuse_permission_matches_consent', TRUE,
       'public_truth_ready', TRUE
     ),
-    'The exact consented summary passed every independent public-truth check.',
-    'publication-airlock-review-0001'
+    'The corrected exact summary passed every independent public-truth check.',
+    'publication-airlock-review-0003'
   );
   IF NOT (v_replay->>'replayed')::BOOLEAN
     OR v_replay->>'verdict' <> 'approved'
   THEN
     RAISE EXCEPTION
-      'Independent publication review replay drifted: %',
+      'Replacement publication review replay drifted: %',
       v_replay;
   END IF;
   v_result := public.get_build_request_publication_v1(
@@ -2549,6 +2702,98 @@ BEGIN
   UPDATE public.build_requests
   SET moderation_state = 'held'
   WHERE id = v_request_id;
+  BEGIN
+    PERFORM set_config(
+      'request.jwt.claims',
+      jsonb_build_object(
+        'sub', v_requester,
+        'role', 'authenticated'
+      )::TEXT,
+      TRUE
+    );
+    v_result := public.get_build_request_publication_v1(
+      1, v_request_id
+    );
+    IF v_result->>'visibility' <> 'withdrawal_only'
+      OR v_result->>'status' <> 'held'
+      OR v_result->>'requestVersion' IS NULL
+      OR v_result->'capabilities' <> '["withdraw"]'::JSONB
+      OR v_result ? 'consentEnabled'
+      OR v_result->'proposal' ? 'requesterAttribution'
+      OR v_result->'proposal' ? 'reusePermission'
+      OR v_result->'proposal' ? 'airlockReviewNote'
+    THEN
+      RAISE EXCEPTION
+        'A held publication exposed more than safe withdrawal authority: %',
+        v_result;
+    END IF;
+    SELECT to_jsonb(receipt) INTO v_result
+    FROM public.build_request_publication_command_v1(
+      1,
+      v_request_id,
+      (v_result->>'requestVersion')::INTEGER,
+      (v_result->'proposal'->>'proposalVersion')::INTEGER,
+      'publication-held-withdraw-0001',
+      'withdraw',
+      '{}'::JSONB
+    ) AS receipt;
+    v_replay :=
+      public.get_build_request_publication_withdrawal_receipt_v1(
+        1,
+        v_request_id,
+        (v_result->>'command_id')::UUID
+      );
+    IF v_replay->>'requestId' <> v_request_id::TEXT
+      OR v_replay->>'commandId' <> v_result->>'command_id'
+      OR v_replay->>'occurredAt' IS NULL
+    THEN
+      RAISE EXCEPTION
+        'Held withdrawal did not produce an actor-verifiable receipt: %',
+        v_replay;
+    END IF;
+    PERFORM set_config(
+      'request.jwt.claims',
+      jsonb_build_object(
+        'sub', v_extra,
+        'role', 'authenticated'
+      )::TEXT,
+      TRUE
+    );
+    v_blocked := FALSE;
+    BEGIN
+      PERFORM
+        public.get_build_request_publication_withdrawal_receipt_v1(
+          1,
+          v_request_id,
+          (v_result->>'command_id')::UUID
+        );
+    EXCEPTION WHEN SQLSTATE 'P0002' THEN
+      v_blocked := TRUE;
+    END;
+    IF NOT v_blocked THEN
+      RAISE EXCEPTION
+        'An unrelated actor enumerated a publication withdrawal receipt.';
+    END IF;
+    UPDATE public.build_requests
+    SET moderation_state = 'clear'
+    WHERE id = v_request_id;
+    PERFORM set_config(
+      'request.jwt.claims',
+      '{"role":"anon"}',
+      TRUE
+    );
+    v_public := public.list_public_build_request_outcomes_v1(1, 24);
+    IF jsonb_array_length(v_public->'items') <> 0 THEN
+      RAISE EXCEPTION
+        'A withdrawn held outcome reappeared after hold release: %',
+        v_public;
+    END IF;
+    RAISE EXCEPTION 'rollback-held-withdraw-fixture';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM <> 'rollback-held-withdraw-fixture' THEN
+      RAISE;
+    END IF;
+  END;
   v_public := public.list_public_build_request_outcomes_v1(1, 24);
   IF jsonb_array_length(v_public->'items') <> 0 THEN
     RAISE EXCEPTION
@@ -2704,7 +2949,13 @@ BEGIN
     TRUE
   );
   v_result := public.get_build_request_publication_v1(1, v_request_id);
-  IF NOT (v_result->'capabilities' ? 'withdraw') THEN
+  IF v_result->>'visibility' <> 'withdrawal_only'
+    OR v_result->>'status' <> 'private_scope_expired'
+    OR (v_result->>'requestVersion')::INTEGER <> v_request_version
+    OR v_result->'capabilities' <> '["withdraw"]'::JSONB
+    OR v_result ? 'consentEnabled'
+    OR v_result->'proposal' ? 'airlockReviewNote'
+  THEN
     RAISE EXCEPTION
       'The requester lost narrow publication withdrawal after private scope expiry: %',
       v_result;
@@ -2725,7 +2976,7 @@ BEGIN
       1,
       v_request_id,
       v_request_version,
-      2,
+      3,
       'publication-requester-withdraw-expired-scope',
       'withdraw',
       '{}'::JSONB
@@ -2749,7 +3000,7 @@ BEGIN
     1,
     v_request_id,
     v_request_version,
-    2,
+    3,
     'publication-builder-withdraw-expired-scope',
     'withdraw',
     '{}'::JSONB

@@ -84,6 +84,7 @@ globalThis.__requestPublicActionFactoryCalls = 0
 globalThis.__requestPublicServerFactoryCalls = 0
 
 const publicationCommands = []
+const publicationReviews = []
 const publicationBridgeCommands = []
 const operatorCommands = []
 const controlCommands = []
@@ -99,7 +100,10 @@ globalThis.__requestPublicActionService = {
   },
   async executePublication(input) {
     publicationCommands.push(input)
-    return { replayed: false }
+    return {
+      commandId: '9d100000-0000-4000-8000-000000000005',
+      replayed: false,
+    }
   },
   async getOperations() {
     return {}
@@ -127,6 +131,10 @@ globalThis.__requestPublicActionService = {
     controlCommands.push(input)
     return { replayed: false }
   },
+  async reviewPublication(input) {
+    publicationReviews.push(input)
+    return { replayed: false }
+  },
 }
 globalThis.__requestPublicServerService = {
   async publishOutcome(input) {
@@ -143,6 +151,7 @@ const {
   'app/requests/[id]/actions.ts',
 )).href)
 const {
+  reviewRequestPublicationAction,
   updateRequestOperatorAction,
   updateRequestPublicControlsAction,
 } = await import(pathToFileURL(path.join(
@@ -302,12 +311,86 @@ for (const [label, values] of [
     `${label} must not withdraw publication authority.`,
   )
 }
-await requestPublicationAction(withdrawalForm(['no', 'yes']))
+await assert.rejects(
+  requestPublicationAction(withdrawalForm(['no', 'yes'])),
+  (error) => {
+    assert.ok(error instanceof RedirectSignal)
+    assert.equal(
+      error.location,
+      `/requests/${requestId}/publication-withdrawn?receipt=9d100000-0000-4000-8000-000000000005`,
+    )
+    return true
+  },
+)
 assert.equal(
   publicationCommands.at(-1)?.kind,
   'withdraw',
   'An exact visible withdrawal confirmation must preserve the withdrawal command.',
 )
+
+function publicationReviewForm() {
+  const form = new FormData()
+  form.set(
+    'publicationReviewTarget',
+    '9d100000-0000-4000-8000-000000000003:4',
+  )
+  form.set('verdict', 'approve')
+  form.set(
+    'reviewNotes',
+    'The exact public summary passed the independent review.',
+  )
+  form.set('idempotencyKey', 'publication-review-fixture')
+  for (const name of [
+    'privateContentExcluded',
+    'claimsSupportedByDelivery',
+    'attributionMatchesConsent',
+    'reusePermissionMatchesConsent',
+    'publicTruthReady',
+    'reviewConfirmation',
+  ]) {
+    form.append(name, 'no')
+    form.append(name, 'yes')
+  }
+  return form
+}
+
+for (const [label, mutate] of [
+  ['oversized review note', (form) => {
+    form.set('reviewNotes', 'x'.repeat(1_001))
+  }],
+  ['malformed review idempotency key', (form) => {
+    form.set('idempotencyKey', 'bad key')
+  }],
+]) {
+  const form = publicationReviewForm()
+  mutate(form)
+  const beforeFactories = globalThis.__requestPublicActionFactoryCalls
+  const beforeReviews = publicationReviews.length
+  await assert.rejects(
+    reviewRequestPublicationAction(form),
+    (error) => {
+      assert.ok(error instanceof RedirectSignal, `${label} must redirect.`)
+      assert.equal(
+        error.location,
+        '/admin/build-requests?scope=admin&actionError=unavailable',
+      )
+      return true
+    },
+  )
+  assert.equal(
+    globalThis.__requestPublicActionFactoryCalls,
+    beforeFactories,
+    `${label} must fail before resolving the application service.`,
+  )
+  assert.equal(
+    publicationReviews.length,
+    beforeReviews,
+    `${label} must not reach publication review authority.`,
+  )
+}
+await reviewRequestPublicationAction(publicationReviewForm())
+assert.equal(publicationReviews.length, 1)
+assert.equal(publicationReviews[0].reviewNotes.length, 55)
 
 function releaseForm(values = []) {
   const form = new FormData()

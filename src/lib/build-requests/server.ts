@@ -5,6 +5,13 @@ import {
   type User,
 } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import {
+  createRequestPublicApplicationService,
+  createRequestPublicServerService,
+  type RequestPublicApplicationService,
+  type RequestPublicServerService,
+} from '@/lib/request-public-service'
 import {
   createRequestApplicationService,
   RequestAuthorityError,
@@ -13,6 +20,14 @@ import {
 
 export async function getRequestApplicationService(): Promise<RequestApplicationService> {
   return createRequestApplicationService(await createClient())
+}
+
+export async function getRequestPublicApplicationService(): Promise<RequestPublicApplicationService> {
+  return createRequestPublicApplicationService(await createClient())
+}
+
+export function getRequestPublicServerService(): RequestPublicServerService {
+  return createRequestPublicServerService(createAdminClient())
 }
 
 export type RequestViewerState =

@@ -21,8 +21,9 @@ authorize the pilot to accept work.
   non-exclusive private use and download rights.
 - Confidential, exclusive, work-for-hire, repository, provider-account,
   customer-data, and secret-bearing requests are out of scope.
-- Request state never publishes a case or artifact. Publication requires a
-  separate future consent and airlock release that is not present in V1.
+- Request state never publishes a case or artifact. The separately controlled
+  consent and public-outcome airlock are installed for future use, but every
+  publication gate remains off and outside the private pilot authorization.
 
 ## Activation gate
 
@@ -41,6 +42,11 @@ following are true:
 6. Desktop and exact 390 px participant/operator checks pass against the
    deployed version.
 7. No community-publication control has been enabled as a side effect.
+
+The database requires a ready operator roster plus current legal,
+incident-owner, and responsive-QA evidence before even invited intake can be
+enabled. Submission repeats those checks so expiry closes intake without
+depending on an operator to notice and flip the control.
 
 Admit confirmed accounts explicitly. Admission is self-scoped and does not
 promise capacity. Once staffing and the four-case capacity are real, enable
@@ -88,11 +94,14 @@ The canonical states are:
 
 The project already uses both Vercel Hobby cron slots. Request maintenance is
 therefore invoked once daily by its dedicated GitHub Actions workflow using
-the existing production origin variable and cron secret. The route must return
-404 before constructing a service-role client when the secret is absent,
-short, or incorrect. A failed item or remaining page returns a non-2xx status
-so the scheduled workflow fails visibly and can be retried without erasing
-authority evidence.
+the existing production origin variable and cron secret. That workflow calls
+both private artifact/raw-data retention and the separate report, publication,
+risk-grant, notification, and readiness-evidence retention endpoint.
+Transactional notification delivery has its own bounded 15-minute GitHub
+Actions worker. Both route families must return 404 before constructing a
+service-role client when the secret is absent, short, or incorrect. A failed
+item or remaining page returns a non-2xx status so the scheduled workflow fails
+visibly and can be retried without erasing authority evidence.
 
 ## Stop and recovery
 

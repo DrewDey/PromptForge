@@ -64,3 +64,5 @@ jobs:
       - run: npm ci
       - name: Verify the Request authority on disposable PostgreSQL 17
         run: npm run check:request-authority-db
+      - name: Verify the gated public-ready architecture on PostgreSQL 17
+        run: npm run check:request-public-architecture-db

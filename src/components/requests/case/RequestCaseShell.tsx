@@ -145,6 +145,7 @@ export interface RequestCaseShellProps {
   clarificationAction?: ReactNode
   secondaryAction?: ReactNode
   restrictedAction?: ReactNode
+  recordTools?: ReactNode
 }
 
 const lifecycleLabels: Record<RequestLifecycle, string> = {
@@ -538,11 +539,13 @@ function History({
   retentionNotice,
   assignments,
   lifecycle,
+  recordTools,
 }: {
   timeline: readonly RequestCaseTimelineItem[]
   retentionNotice: string
   assignments?: readonly RequestCaseAssignment[]
   lifecycle?: RequestLifecycle
+  recordTools?: ReactNode
 }) {
   return (
     <section className={styles.panel} aria-labelledby="request-case-history">
@@ -572,6 +575,7 @@ function History({
         <strong>Retention</strong>
         <p>{retentionNotice}</p>
       </div>
+      {recordTools}
     </section>
   )
 }
@@ -584,6 +588,7 @@ export function RequestCaseShell({
   clarificationAction,
   secondaryAction,
   restrictedAction,
+  recordTools,
 }: RequestCaseShellProps) {
   if (model.visibility === 'removed') {
     return (
@@ -723,6 +728,7 @@ export function RequestCaseShell({
             retentionNotice={model.retentionNotice}
             assignments={model.assignments}
             lifecycle={model.lifecycle}
+            recordTools={recordTools}
           />
         </div>
       </div>

@@ -111,6 +111,26 @@ const ADMIN_QUEUE_STATES = [
 ]
 const ADMIN_SCOPES = ['admin', 'triager', 'builder', 'reviewer']
 const ADMIN_DETAIL_STATES = ['triager', 'builder', 'reviewer', 'admin', 'no_response_eligible', 'none']
+const PARTICIPANT_TRUST_STATES = [
+  'proposal',
+  'requester_consent',
+  'builder_consent',
+  'withdraw',
+  'publish',
+  'changes_required',
+  'continuation_expired',
+  'continuation_held',
+  'restricted',
+  'reports',
+]
+const PUBLIC_OPERATION_STATES = ['off', 'ready', 'report', 'publication']
+const PUBLIC_OUTCOME_STATES = [
+  'unavailable',
+  'off',
+  'empty',
+  'published',
+  'paginated',
+]
 
 function scenario(name, query, options = {}) {
   return {
@@ -328,12 +348,107 @@ const SCENARIOS = [
     { surface: 'admin-detail', state },
     { screenshot: state === 'reviewer' },
   )),
+  ...PARTICIPANT_TRUST_STATES.map((state) => scenario(
+    `participant-trust-${state}`,
+    { surface: 'participant-trust', state },
+    {
+      readySelector: state.startsWith('continuation_')
+        ? '[data-request-publication-continuation]'
+        : '[data-request-participant-trust-tools]',
+      readyText: state.startsWith('continuation_')
+        ? 'Public consent remains yours to withdraw'
+        : 'Optional outcome publication',
+      screenshot: [
+        'publish',
+        'changes_required',
+        'continuation_expired',
+        'continuation_held',
+        'restricted',
+        'reports',
+      ].includes(state),
+      screenshotTarget: state === 'publish'
+        ? 'input[name="publicationRelease"][value="yes"]'
+        : state.startsWith('continuation_')
+          ? 'input[name="publicationWithdrawal"][value="yes"]'
+          : state === 'changes_required'
+            ? '[data-request-publication-review-result]'
+        : state === 'restricted'
+          ? '#request-case-publication'
+          : state === 'reports'
+            ? 'a[href*="cursor=older"]'
+            : undefined,
+      screenshotTargetSuffix: state === 'publish'
+        ? 'release'
+        : state.startsWith('continuation_')
+          ? 'withdrawal'
+          : state === 'changes_required'
+            ? 'review-repair'
+        : state === 'restricted'
+          ? 'publication'
+          : 'history',
+    },
+  )),
+  ...PUBLIC_OPERATION_STATES.map((state) => scenario(
+    `public-operations-${state}`,
+    { surface: 'public-operations', state },
+    {
+      readySelector: '[data-request-public-operations]',
+      readyText: 'Scale and release controls',
+      screenshot: ['off', 'report', 'publication'].includes(state),
+      screenshotTarget: state === 'off'
+        ? 'input[name="controlConfirmation"][value="yes"]'
+          : state === 'report'
+            ? 'select[name="nextStatus"]'
+          : state === 'publication'
+            ? 'input[name="reviewConfirmation"][value="yes"]'
+            : undefined,
+      screenshotTargetSuffix: state === 'off'
+        ? 'controls'
+        : state === 'report'
+          ? 'report'
+          : 'airlock',
+    },
+  )),
+  ...PUBLIC_OUTCOME_STATES.map((state) => scenario(
+    `public-outcomes-${state}`,
+    { surface: 'public-outcomes', state },
+    {
+      readySelector: '[data-request-public-outcome-catalog]',
+      readyText: 'Consented outcomes, never raw requests.',
+      screenshot: ['off', 'paginated'].includes(state),
+      screenshotTarget: state === 'off'
+        ? '[data-request-public-outcome-catalog] section'
+        : state === 'paginated'
+          ? 'a[href^="/requests/outcomes?cursor="]'
+          : undefined,
+      screenshotTargetSuffix: state === 'off' ? 'gate' : 'pagination',
+    },
+  )),
+  scenario(
+    'public-outcome-published',
+    { surface: 'public-outcome' },
+    {
+      readySelector: '[data-request-public-outcome-detail]',
+      readyText: 'Requester attribution',
+      screenshot: true,
+    },
+  ),
+  scenario(
+    'request-policy-publication',
+    { surface: 'request-policy' },
+    {
+      readySelector: '[data-policy-page]',
+      readyText: 'Version and activation',
+      screenshot: true,
+    },
+  ),
 ]
 
 function parseArgs(argv) {
   const options = {
     baseUrl: 'http://127.0.0.1:3012',
     screenshotDir: path.resolve('artifacts/request-build-browser'),
+    scenarioPattern: null,
   }
   for (let index = 0; index < argv.length; index += 1) {
     const key = argv[index]
@@ -341,10 +456,17 @@ function parseArgs(argv) {
     if (!value) throw new Error(`Missing value after ${key}.`)
     if (key === '--base-url') options.baseUrl = new URL(value).origin
     else if (key === '--screenshot-dir') options.screenshotDir = path.resolve(value)
+    else if (key === '--scenario') options.scenarioPattern = value
     else throw new Error(`Unknown argument: ${key}`)
     index += 1
   }
   mkdirSync(options.screenshotDir, { recursive: true })
+  options.scenarios = options.scenarioPattern
+    ? SCENARIOS.filter((item) => item.name.includes(options.scenarioPattern))
+    : SCENARIOS
+  if (options.scenarios.length === 0) {
+    throw new Error(`No Request browser scenario matched ${options.scenarioPattern}.`)
+  }
   return options
 }
 
@@ -433,6 +555,8 @@ function expectedFixtureState(scenarioItem) {
       : surface === 'intake' ? 'pristine'
         : surface === 'receipt' ? 'recorded'
           : surface === 'my-forge' ? 'ready'
+            : surface === 'public-outcome' ? 'published'
+              : surface === 'request-policy' ? 'publication'
             : 'triager'
   )
 }
@@ -519,6 +643,7 @@ const PAGE_SNAPSHOT = `(() => {
     hasContent:Boolean(fixture && fixture.innerText.trim().length > 40),
     proofLabel:Boolean(fixture?.querySelector('[data-fixture-proof-label]')),
     fixtureText:(fixture?.innerText || '').replace(/\\s+/g,' ').trim(),
+    fixtureTextLower:(fixture?.innerText || '').replace(/\\s+/g,' ').trim().toLowerCase(),
     deliveryPlaceholders:fixture?.querySelectorAll('[data-request-delivery-slot]').length || 0,
     intakeCtaCount:fixture?.querySelectorAll('[data-request-intake-cta]').length || 0,
     myForgeRequestContinuationCount:fixture?.querySelectorAll(
@@ -536,6 +661,54 @@ const PAGE_SNAPSHOT = `(() => {
     )].map((section)=>(
       section.getAttribute('aria-labelledby') || ''
     ).replace(/^request-|\\-queue-heading$/g,'')),
+    publicOperationCount:fixture?.querySelectorAll(
+      '[data-request-public-operations]'
+    ).length || 0,
+    participantTrustToolCount:fixture?.querySelectorAll(
+      '[data-request-participant-trust-tools]'
+    ).length || 0,
+    publicationContinuationCount:fixture?.querySelectorAll(
+      '[data-request-publication-continuation]'
+    ).length || 0,
+    publicationReviewResultCount:fixture?.querySelectorAll(
+      '[data-request-publication-review-result]'
+    ).length || 0,
+    publicationWithdrawalConfirmationCount:fixture?.querySelectorAll(
+      'input[name="publicationWithdrawal"][value="yes"][required]'
+    ).length || 0,
+    publicOutcomeCatalogCount:fixture?.querySelectorAll(
+      '[data-request-public-outcome-catalog]'
+    ).length || 0,
+    publicOutcomeDetailCount:fixture?.querySelectorAll(
+      '[data-request-public-outcome-detail]'
+    ).length || 0,
+    publicationReleaseConfirmationCount:fixture?.querySelectorAll(
+      'input[name="publicationRelease"][value="yes"][required]'
+    ).length || 0,
+    outcomePaginationCount:fixture?.querySelectorAll(
+      'a[href^="/requests/outcomes?cursor="]'
+    ).length || 0,
+    publicControlConfirmationCount:fixture?.querySelectorAll(
+      'input[name="controlConfirmation"][value="yes"][required]'
+    ).length || 0,
+    publicationReviewConfirmationCount:fixture?.querySelectorAll(
+      'input[name="reviewConfirmation"][value="yes"][required]'
+    ).length || 0,
+    publicationReviewCheckNames:[...fixture.querySelectorAll(
+      'input[type="checkbox"][name$="Excluded"],' +
+      'input[type="checkbox"][name$="Delivery"],' +
+      'input[type="checkbox"][name$="Consent"],' +
+      'input[type="checkbox"][name="publicTruthReady"]'
+    )].map((element)=>element.getAttribute('name') || ''),
+    publicationReviewCheckedNames:[...fixture.querySelectorAll(
+      'input[type="checkbox"][name$="Excluded"]:checked,' +
+      'input[type="checkbox"][name$="Delivery"]:checked,' +
+      'input[type="checkbox"][name$="Consent"]:checked,' +
+      'input[type="checkbox"][name="publicTruthReady"]:checked'
+    )].map((element)=>element.getAttribute('name') || ''),
+    hiddenPublicControlDenials:[...fixture.querySelectorAll(
+      '[data-request-public-operations] input[type="hidden"][value="no"]'
+    )].map((element)=>element.getAttribute('name') || ''),
     duplicateIds:[...fixture.querySelectorAll('[id]')]
       .map((element)=>element.id)
       .filter((id,index,ids)=>ids.indexOf(id)!==index)
@@ -728,7 +901,7 @@ async function verifyViewport(client, options, viewport) {
       }, sessionId),
     ])
 
-    for (const scenarioItem of SCENARIOS) {
+    for (const scenarioItem of options.scenarios) {
       const expectedState = expectedFixtureState(scenarioItem)
       await navigate(
         client,
@@ -736,6 +909,24 @@ async function verifyViewport(client, options, viewport) {
         `${options.baseUrl}${scenarioItem.path}`,
         expectedState,
       )
+      if (scenarioItem.readySelector) {
+        await waitForValue(
+          client,
+          sessionId,
+          `(() => {
+            const target=document.querySelector(${JSON.stringify(scenarioItem.readySelector)});
+            return Boolean(
+              target && (
+                ${JSON.stringify(scenarioItem.readyText ?? '')} === '' ||
+                target.textContent?.includes(${JSON.stringify(scenarioItem.readyText ?? '')})
+              )
+            );
+          })()`,
+          Boolean,
+          `${viewport.name}/${scenarioItem.name} production component`,
+        )
+      }
+      await evaluate(client, sessionId, 'window.scrollTo(0, 0)')
       await new Promise((resolve) => setTimeout(resolve, 80))
       const snapshot = await evaluate(client, sessionId, PAGE_SNAPSHOT)
       const label = `${viewport.name}/${scenarioItem.name}`
@@ -790,6 +981,230 @@ async function verifyViewport(client, options, viewport) {
         snapshot.intakeCtaCount !== 0
       ) {
         throw new Error(`${label} exposed ${snapshot.intakeCtaCount} intake CTAs at full capacity.`)
+      }
+      if (scenarioItem.path.includes('surface=participant-trust')) {
+        const isContinuation =
+          scenarioItem.path.includes('state=continuation_')
+        if (isContinuation) {
+          if (
+            snapshot.publicationContinuationCount !== 1 ||
+            snapshot.participantTrustToolCount !== 0 ||
+            snapshot.publicationWithdrawalConfirmationCount !== 1 ||
+            !snapshot.fixtureText.includes(
+              'Public consent remains yours to withdraw',
+            ) ||
+            !snapshot.fixtureText.includes('Withdraw public consent') ||
+            snapshot.fixtureText.includes(
+              'Report a privacy, safety, rights, or service concern',
+            ) ||
+            snapshot.fixtureText.includes('Transactional email') ||
+            snapshot.fixtureText.includes('Give requester consent') ||
+            snapshot.fixtureText.includes('Give builder consent') ||
+            snapshot.fixtureText.includes('Publish safe outcome projection')
+          ) {
+            throw new Error(
+              `${label} did not preserve the narrow withdrawal-only boundary.`,
+            )
+          }
+        } else if (
+          snapshot.participantTrustToolCount !== 1 ||
+          snapshot.publicationContinuationCount !== 0 ||
+          !snapshot.fixtureText.includes('Report a privacy, safety, rights, or service concern') ||
+          !snapshot.fixtureText.includes('Transactional email') ||
+          !snapshot.fixtureText.includes('Optional outcome publication')
+        ) {
+          throw new Error(`${label} omitted a participant-safe trust surface.`)
+        }
+        if (
+          scenarioItem.path.includes('state=publish') &&
+          (
+            snapshot.publicationReleaseConfirmationCount !== 1 ||
+            !snapshot.fixtureText.includes('Publish safe outcome projection') ||
+            !snapshot.fixtureText.includes('Already-approved PathForge project identifier')
+          )
+        ) {
+          throw new Error(`${label} omitted the attended final-publication confirmation.`)
+        }
+        if (
+          scenarioItem.path.includes('state=changes_required') &&
+          (
+            snapshot.publicationReviewResultCount !== 1 ||
+            !snapshot.fixtureText.includes(
+              'Independent review: changes required',
+            ) ||
+            !snapshot.fixtureText.includes(
+              'Replace the summary because one public claim is broader than the reviewed delivery evidence.',
+            ) ||
+            !snapshot.fixtureText.includes('Replace and reset consent') ||
+            snapshot.fixtureText.includes('Give requester consent') ||
+            snapshot.fixtureText.includes('Give builder consent') ||
+            snapshot.fixtureText.includes('Decline publication')
+          )
+        ) {
+          throw new Error(
+            `${label} did not stop review-rejected bytes at replacement.`,
+          )
+        }
+        if (
+          scenarioItem.path.includes('state=restricted') &&
+          (
+            !snapshot.fixtureText.includes(
+              'Publication controls are unavailable while this case is restricted.',
+            ) ||
+            snapshot.fixtureText.includes('Propose safe summary') ||
+            snapshot.fixtureText.includes('Give requester consent') ||
+            snapshot.fixtureText.includes('Give builder consent') ||
+            snapshot.fixtureText.includes('Publish safe outcome projection')
+          )
+        ) {
+          throw new Error(`${label} exposed publication authority for a restricted case.`)
+        }
+        if (
+          scenarioItem.path.includes('state=reports') &&
+          (
+            !snapshot.fixtureText.includes('The status projection was corrected.') ||
+            !snapshot.fixtureText.includes('Older report history')
+          )
+        ) {
+          throw new Error(`${label} omitted participant-safe report history pagination.`)
+        }
+      }
+      if (scenarioItem.path.includes('surface=public-operations')) {
+        const requiredDenials = [
+          'acceptingRequests',
+          'assigningRequests',
+          'operatorRosterRequired',
+          'publicIntakeRiskScreening',
+          'transactionalNotificationsEnabled',
+          'publicationConsentEnabled',
+          'publicationAirlockEnabled',
+          'publicOutcomesEnabled',
+          'controlConfirmation',
+        ]
+        if (
+          snapshot.publicOperationCount !== 1 ||
+          snapshot.publicControlConfirmationCount !== 1 ||
+          requiredDenials.some(
+            (name) => !snapshot.hiddenPublicControlDenials.includes(name),
+          )
+        ) {
+          throw new Error(`${label} omitted a default-deny public control envelope.`)
+        }
+        if (
+          scenarioItem.path.includes('state=off') &&
+          (
+            !snapshot.fixtureText.includes('0/7') ||
+            !snapshot.fixtureText.includes('Every switch is independently default-off')
+          )
+        ) {
+          throw new Error(`${label} did not truthfully render the default-off release posture.`)
+        }
+        if (
+          scenarioItem.path.includes('state=report') &&
+          (
+            !snapshot.fixtureTextLower.includes('privacy · open') ||
+            !snapshot.fixtureTextLower.includes('open private case')
+          )
+        ) {
+          throw new Error(`${label} omitted the private report queue.`)
+        }
+        if (
+          scenarioItem.path.includes('state=publication') &&
+          (
+            !snapshot.fixtureTextLower.includes('offline neighborhood readiness checklist') ||
+            !snapshot.fixtureTextLower.includes('in_airlock') ||
+            !snapshot.fixtureTextLower.includes('review these exact title and summary bytes independently') ||
+            !snapshot.fixtureTextLower.includes('record independent review') ||
+            !snapshot.fixtureTextLower.includes('review private authority') ||
+            snapshot.publicationReviewConfirmationCount !== 1 ||
+            snapshot.publicationReviewCheckedNames.length !== 0 ||
+            JSON.stringify(snapshot.publicationReviewCheckNames) !== JSON.stringify([
+              'privateContentExcluded',
+              'claimsSupportedByDelivery',
+              'attributionMatchesConsent',
+              'reusePermissionMatchesConsent',
+              'publicTruthReady',
+            ])
+          )
+        ) {
+          throw new Error(`${label} omitted the exact-summary independent-review airlock.`)
+        }
+      }
+      if (scenarioItem.path.includes('surface=public-outcomes')) {
+        if (snapshot.publicOutcomeCatalogCount !== 1) {
+          throw new Error(`${label} did not mount the production public outcome catalog.`)
+        }
+        if (
+          scenarioItem.path.includes('state=unavailable') &&
+          !snapshot.fixtureText.includes('No empty or enabled publication state is inferred')
+        ) {
+          throw new Error(`${label} collapsed outcome read failure into an empty state.`)
+        }
+        if (
+          scenarioItem.path.includes('state=off') &&
+          !snapshot.fixtureText.includes('Public outcomes are off.')
+        ) {
+          throw new Error(`${label} did not render the independent outcomes gate as off.`)
+        }
+        if (
+          scenarioItem.path.includes('state=empty') &&
+          !snapshot.fixtureText.includes('does not expose or summarize private demand')
+        ) {
+          throw new Error(`${label} overclaimed an empty public outcome projection.`)
+        }
+        if (
+          scenarioItem.path.includes('state=paginated') &&
+          (
+            snapshot.outcomePaginationCount !== 1 ||
+            !snapshot.fixtureText.includes('Older outcomes')
+          )
+        ) {
+          throw new Error(`${label} omitted stable public outcome pagination.`)
+        }
+      }
+      if (
+        /[?&]surface=public-outcome(?:&|$)/.test(scenarioItem.path) &&
+        (
+          snapshot.publicOutcomeDetailCount !== 1 ||
+          !snapshot.fixtureTextLower.includes(
+            'dual consent · independent review · publication airlock',
+          ) ||
+          !snapshot.fixtureTextLower.includes('requester attribution') ||
+          !snapshot.fixtureTextLower.includes('not published') ||
+          !snapshot.fixtureText.includes('Open the approved PathForge project') ||
+          snapshot.fixtureText.includes('71000000-0000-4000-8000-000000000001')
+        )
+      ) {
+        throw new Error(
+          `${label} exposed an invalid public outcome detail: ${JSON.stringify({
+            detailCount: snapshot.publicOutcomeDetailCount,
+            hasAuthorityLabel: snapshot.fixtureTextLower.includes(
+              'dual consent · independent review · publication airlock',
+            ),
+            hasRequesterState: snapshot.fixtureTextLower.includes(
+              'requester attribution',
+            ) && snapshot.fixtureTextLower.includes(
+              'not published',
+            ),
+            hasApprovedProject: snapshot.fixtureText.includes(
+              'Open the approved PathForge project',
+            ),
+            leakedRequestId: snapshot.fixtureText.includes(
+              '71000000-0000-4000-8000-000000000001',
+            ),
+          })}.`,
+        )
+      }
+      if (
+        scenarioItem.path.includes('surface=request-policy') &&
+        (
+          !snapshot.fixtureTextLower.includes('request a build policy · request-publication-v1') ||
+          !snapshot.fixtureTextLower.includes(
+            'deploying this page does not open intake, enable email, or authorize publication.',
+          )
+        )
+      ) {
+        throw new Error(`${label} omitted versioned policy activation boundaries.`)
       }
       if (
         scenarioItem.path.includes('surface=case') &&
@@ -1119,11 +1534,16 @@ async function verifyViewport(client, options, viewport) {
           path.join(options.screenshotDir, `${scenarioItem.name}-${viewport.name}.png`),
         )
         if (scenarioItem.screenshotTarget) {
-          await evaluate(client, sessionId, `(() => {
+          const foundScreenshotTarget = await evaluate(client, sessionId, `(() => {
             const target=document.querySelector(${JSON.stringify(scenarioItem.screenshotTarget)});
             target?.scrollIntoView({block:'center',inline:'nearest'});
             return Boolean(target);
           })()`)
+          if (!foundScreenshotTarget) {
+            throw new Error(
+              `${label} did not render screenshot target ${scenarioItem.screenshotTarget}.`,
+            )
+          }
           await new Promise((resolve) => setTimeout(resolve, 250))
           await evaluate(client, sessionId, `new Promise((resolve) => {
             requestAnimationFrame(() => requestAnimationFrame(resolve));
@@ -1146,7 +1566,7 @@ async function verifyViewport(client, options, viewport) {
     if (httpFailures.length > 0) {
       throw new Error(`${viewport.name} received failed HTTP responses: ${[...new Set(httpFailures)].join(' | ')}`)
     }
-    return SCENARIOS.length
+    return options.scenarios.length
   } finally {
     client.listeners.delete(listener)
     await client.send('Target.closeTarget', { targetId }).catch(() => {})
@@ -1224,7 +1644,7 @@ async function main() {
       assertions += await verifyViewport(client, options, viewport)
     }
     console.log(
-      `Request a Build fixture browser guard passed ${assertions} rendered scenario/viewport checks across desktop and exact 390px: semantic content, focused errors, mobile order, reduced motion, 44px controls, overflow, framework/console/HTTP failures, and participant-safe private delivery states.`,
+      `Request a Build fixture browser guard passed ${assertions} rendered scenario/viewport checks across desktop and exact 390px: semantic content, focused errors, mobile order, reduced motion, 44px controls, overflow, framework/console/HTTP failures, private delivery, roster/report/notification/consent, versioned policy, and public-safe outcome states.`,
     )
     console.log(`Fixture screenshots: ${options.screenshotDir}`)
   } finally {

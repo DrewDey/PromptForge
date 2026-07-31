@@ -16,6 +16,7 @@ import {
   type RequestIntakeFormProps,
   type RequestIntakeValues,
 } from './RequestIntakeForm'
+import type { RequestPublicPolicyVersionsV1 } from '@/lib/request-public-architecture'
 
 type RequestIntakeServiceError = NonNullable<RequestIntakeFormProps['serviceError']>
 type RequestIntakeFailureError = Exclude<RequestIntakeServiceError, 'already_active'>
@@ -28,6 +29,7 @@ export type RequestIntakeWorkflowState =
       values?: Partial<RequestIntakeValues>
       errors?: readonly RequestIntakeError[]
       serviceError?: RequestIntakeServiceError | null
+      policyVersions?: RequestPublicPolicyVersionsV1
     }
   | {
       status: 'submitted'
@@ -54,6 +56,8 @@ const analyticsFailureReason: Record<
   rate_limited: 'rate_limited',
   duplicate: 'duplicate',
   stale_version: 'stale_version',
+  readiness_incomplete: 'service_unavailable',
+  risk_grant_required: 'service_unavailable',
   forbidden_input: 'forbidden_input',
   invalid_reference: 'invalid_reference',
   unknown: 'unknown',
@@ -62,9 +66,11 @@ const analyticsFailureReason: Record<
 export function RequestIntakeWorkflow({
   action,
   initialState,
+  policyVersions,
 }: {
   action: RequestIntakeWorkflowAction
   initialState: RequestIntakeWorkflowState
+  policyVersions: RequestPublicPolicyVersionsV1
 }) {
   const [state, formAction, pending] = useActionState(action, initialState)
 
@@ -118,6 +124,7 @@ export function RequestIntakeWorkflow({
         errors={errors}
         pending={pending}
         serviceError={serviceError}
+        policyVersions={state.policyVersions ?? policyVersions}
         onIntakeStarted={() => {
           void trackRequestAnalytics({
             eventName: 'intake_started',

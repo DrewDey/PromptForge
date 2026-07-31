@@ -1012,8 +1012,8 @@ async function verifyViewport(client, options, viewport) {
         if (
           scenarioItem.path.includes('state=report') &&
           (
-            !snapshot.fixtureText.includes('privacy · open') ||
-            !snapshot.fixtureText.includes('Open private case')
+            !snapshot.fixtureTextLower.includes('privacy · open') ||
+            !snapshot.fixtureTextLower.includes('open private case')
           )
         ) {
           throw new Error(`${label} omitted the private report queue.`)
@@ -1021,9 +1021,9 @@ async function verifyViewport(client, options, viewport) {
         if (
           scenarioItem.path.includes('state=publication') &&
           (
-            !snapshot.fixtureText.includes('Offline neighborhood readiness checklist') ||
-            !snapshot.fixtureText.includes('fully_consented') ||
-            !snapshot.fixtureText.includes('Review private authority')
+            !snapshot.fixtureTextLower.includes('offline neighborhood readiness checklist') ||
+            !snapshot.fixtureTextLower.includes('fully_consented') ||
+            !snapshot.fixtureTextLower.includes('review private authority')
           )
         ) {
           throw new Error(`${label} omitted the safe-summary publication airlock queue.`)

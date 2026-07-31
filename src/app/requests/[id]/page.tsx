@@ -1,26 +1,45 @@
 import { notFound } from 'next/navigation'
+import { randomUUID } from 'node:crypto'
 import type { Metadata } from 'next'
 import { RequestAnalytics } from '@/components/requests/RequestAnalytics'
 import { RequestReadAcknowledger } from '@/components/requests/RequestReadAcknowledger'
 import { RequestClarificationAction } from '@/components/requests/RequestClarificationAction'
 import { RequestDeliveryAnalyticsListener } from '@/components/requests/RequestDeliveryAnalyticsListener'
 import { RequestCaseDeliverySlot } from '@/components/requests/delivery'
-import { RequestCaseShell } from '@/components/requests/case'
+import {
+  RequestCaseShell,
+  RequestParticipantTrustTools,
+} from '@/components/requests/case'
 import {
   getRequestApplicationService,
+  getRequestPublicApplicationService,
   requestAuthorityErrorCode,
 } from '@/lib/build-requests/server'
 import { toRequestCasePresentation } from '@/lib/build-requests/presentation'
 import { toRequestDeliverySlotModel } from '@/lib/build-requests/delivery-view'
 import {
+  decodeRequestReportCursor,
+  encodeRequestReportCursor,
+} from '@/lib/build-requests/report-cursor'
+import {
   acknowledgeRequestRead,
+  publishRequestOutcomeAction,
+  reportRequestAction,
   requestCaseCommandAction,
+  requestPublicationAction,
+  setRequestNotificationPreferenceAction,
   submitClarificationAction,
 } from './actions'
 import {
   acknowledgeRequestDeliveryAction,
   recordRequestDeliveryOutcomeAction,
 } from './delivery-actions'
+import type {
+  RequestNotificationPreferenceV1,
+  RequestPublicAvailabilityV1,
+  RequestPublicationViewV1,
+  RequestReportPageV1,
+} from '@/lib/request-public-architecture'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
@@ -68,10 +87,11 @@ export default async function RequestCasePage({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ actionError?: string }>
+  searchParams: Promise<{ actionError?: string; reportCursor?: string }>
 }) {
   const { id } = await params
   const query = await searchParams
+  const reportCursor = decodeRequestReportCursor(query.reportCursor)
   let detail
   try {
     const service = await getRequestApplicationService()
@@ -83,6 +103,72 @@ export default async function RequestCasePage({
   const deliveryModel = detail.visibility === 'full'
     ? toRequestDeliverySlotModel(detail, detail.actor)
     : null
+  let trustData: {
+    availability: RequestPublicAvailabilityV1
+    publication: RequestPublicationViewV1
+    notificationPreference: RequestNotificationPreferenceV1
+    reports: RequestReportPageV1
+  } | null = null
+  if (detail.visibility === 'full') {
+    try {
+      const publicService = await getRequestPublicApplicationService()
+      const [availability, publication, notificationPreference, reports] =
+        await Promise.all([
+          publicService.getAvailability(),
+          publicService.getPublication(detail.requestId),
+          publicService.getNotificationPreference(),
+          publicService.listReports({
+            scope: 'mine',
+            requestId: detail.requestId,
+            cursor: reportCursor,
+            limit: 50,
+          }),
+        ])
+      trustData = {
+        availability,
+        publication,
+        notificationPreference,
+        reports,
+      }
+    } catch {}
+  }
+  const trustTools = detail.visibility !== 'full'
+    ? null
+    : trustData
+      ? (
+          <RequestParticipantTrustTools
+            requestId={detail.requestId}
+            requestVersion={detail.requestVersion}
+            publication={trustData.publication}
+            publicationTermsVersion={
+              trustData.availability.policyVersions.publicationTerms
+            }
+            notificationPreference={trustData.notificationPreference}
+            reports={trustData.reports}
+            nextReportsHref={
+              trustData.reports.nextCursor
+                ? `/requests/${encodeURIComponent(detail.requestId)}?reportCursor=${encodeURIComponent(encodeRequestReportCursor(trustData.reports.nextCursor))}#request-case-reporting`
+                : null
+            }
+            mutationNonce={randomUUID()}
+            reportAction={reportRequestAction}
+            notificationAction={setRequestNotificationPreferenceAction}
+            publicationAction={requestPublicationAction}
+            publishOutcomeAction={publishRequestOutcomeAction}
+          />
+        )
+      : (
+          <section
+            role="status"
+            className="mt-6 border border-surface-300 bg-surface-50 p-4"
+          >
+            <h3 className="font-black">Participant controls unavailable</h3>
+            <p className="mt-2 text-sm text-surface-600">
+              Reporting, notification preferences, and optional publication
+              controls could not be verified. No empty or enabled state is inferred.
+            </p>
+          </section>
+        )
   const deliveryWorkflowAvailable = deliveryModel?.visibility === 'full' && (
     deliveryModel.commands.canStageArtifact
     || deliveryModel.commands.canAbandonArtifact
@@ -120,6 +206,13 @@ export default async function RequestCasePage({
           title: 'This action is temporarily limited.',
           messages: ['Wait before trying again. No duplicate command was recorded.'],
         }
+      : query.actionError === 'publication_blocked'
+        ? {
+            title: 'Optional publication is currently blocked.',
+            messages: [
+              'The private case is unchanged. Review consent, moderation, delivery evidence, and airlock readiness.',
+            ],
+          }
       : query.actionError === 'confirmation_required'
         ? {
             title: 'Withdrawal was not confirmed.',
@@ -243,6 +336,7 @@ export default async function RequestCasePage({
         workflowNavigation={workflowNavigation}
         clarificationAction={clarificationAction}
         secondaryAction={secondaryAction}
+        recordTools={trustTools}
       />
     </>
   )

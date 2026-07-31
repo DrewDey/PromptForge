@@ -6,8 +6,12 @@ import {
   validateSubmitBuildRequestV1,
   type PathForgeRequestReference,
 } from '@/lib/request-lifecycle'
+import { createHmac, randomUUID } from 'node:crypto'
+import { isIP } from 'node:net'
+import { headers } from 'next/headers'
 import {
-  getRequestApplicationService,
+  getRequestPublicApplicationService,
+  getRequestPublicServerService,
   getRequestViewerState,
   requestAuthorityErrorCode,
 } from '@/lib/build-requests/server'
@@ -21,10 +25,68 @@ import type {
   RequestIntakeWorkflowAction,
   RequestIntakeWorkflowState,
 } from '@/components/requests/intake'
+import type {
+  RequestPublicPolicyVersionsV1,
+} from '@/lib/request-public-architecture'
 
 function text(formData: FormData, name: string) {
   const value = formData.get(name)
   return typeof value === 'string' ? value : ''
+}
+
+function exactAttestation(formData: FormData, name: string) {
+  const values = formData.getAll(name)
+  if (
+    values.length === 2 &&
+    values[0] === 'no' &&
+    values[1] === 'yes'
+  ) return true as const
+  throw new RequestContractError('Every Request intake acknowledgement is required.')
+}
+
+function canonicalNetworkAddress(value: string) {
+  const version = isIP(value)
+  if (version === 4) return value
+  if (version === 6) {
+    const hostname = new URL(`http://[${value}]/`).hostname
+    return hostname.slice(1, -1)
+  }
+  return null
+}
+
+async function trustedNetworkDigest() {
+  const secret = process.env.REQUEST_BUILD_RATE_LIMIT_SECRET
+  if (!secret || secret.length < 32 || /[\0\r\n]/.test(secret)) {
+    throw new Error('request_build_rate_limit_secret_unavailable')
+  }
+  const requestHeaders = await headers()
+  const vercelForwarded = requestHeaders
+    .get('x-vercel-forwarded-for')
+    ?.split(',')[0]
+    ?.trim()
+  let networkAddress = vercelForwarded
+    ? canonicalNetworkAddress(vercelForwarded)
+    : null
+  if (process.env.VERCEL === '1') {
+    if (!networkAddress) {
+      throw new Error('request_build_trusted_network_unavailable')
+    }
+  } else if (!networkAddress) {
+    const forwarded = requestHeaders
+      .get('x-forwarded-for')
+      ?.split(',')[0]
+      ?.trim()
+    networkAddress = forwarded ? canonicalNetworkAddress(forwarded) : null
+    if (!networkAddress && process.env.NODE_ENV !== 'production') {
+      networkAddress = '127.0.0.1'
+    }
+  }
+  if (!networkAddress) {
+    throw new Error('request_build_trusted_network_unavailable')
+  }
+  return createHmac('sha256', secret)
+    .update(`request-intake-network-v1\0${networkAddress}`)
+    .digest('hex')
 }
 
 function valuesFromForm(formData: FormData): RequestIntakeValues {
@@ -87,6 +149,7 @@ export const submitRequestAction: RequestIntakeWorkflowAction = async (
   }
   const idempotencyKey = text(formData, 'idempotencyKey')
   const analyticsAttempt = previousState.analyticsAttempt + 1
+  let currentPolicyVersions: RequestPublicPolicyVersionsV1 | undefined
   try {
     values = valuesFromForm(formData)
     const acceptanceChecks = readRequestIntakeAcceptanceChecks(formData)
@@ -120,8 +183,69 @@ export const submitRequestAction: RequestIntakeWorkflowAction = async (
         acceptanceChecks,
       },
     })
-    const service = await getRequestApplicationService()
-    const receipt = await service.createRequest(input)
+    const attestation = {
+      termsVersion: text(formData, 'termsVersion'),
+      privacyVersion: text(formData, 'privacyVersion'),
+      acceptableUseVersion: text(formData, 'acceptableUseVersion'),
+      requesterRightsVersion: text(formData, 'requesterRightsVersion'),
+      termsAccepted: exactAttestation(formData, 'termsAccepted'),
+      privacyAcknowledged: exactAttestation(formData, 'privacyAcknowledged'),
+      acceptableUseAccepted: exactAttestation(
+        formData,
+        'acceptableUseAccepted',
+      ),
+      requesterRightsAccepted: exactAttestation(
+        formData,
+        'requesterRightsAccepted',
+      ),
+    }
+    const service = await getRequestPublicApplicationService()
+    const availability = await service.getAvailability()
+    currentPolicyVersions = availability.policyVersions
+    if (
+      attestation.termsVersion !== availability.policyVersions.terms ||
+      attestation.privacyVersion !== availability.policyVersions.privacy ||
+      attestation.acceptableUseVersion !==
+        availability.policyVersions.acceptableUse ||
+      attestation.requesterRightsVersion !==
+        availability.policyVersions.requesterRights
+    ) {
+      return {
+        status: 'ready',
+        idempotencyKey,
+        analyticsAttempt,
+        values,
+        errors: [],
+        serviceError: 'stale_version',
+        policyVersions: currentPolicyVersions,
+      }
+    }
+    let riskGrantId: string | null = null
+    if (availability.intakeAudience === 'authenticated') {
+      const networkDigest = await trustedNetworkDigest()
+      const risk = await getRequestPublicServerService().issueRiskGrant({
+        actorId: viewer.user.id,
+        intakeIdempotencyKey: input.idempotencyKey,
+        networkDigest,
+        riskEngineVersion: 'request-intake-edge-v1',
+      })
+      if (risk.status === 'denied') {
+        return {
+          status: 'ready',
+          idempotencyKey,
+          analyticsAttempt,
+          values,
+          errors: [],
+          serviceError: 'rate_limited',
+        }
+      }
+      riskGrantId = risk.grantId
+    }
+    const receipt = await service.submitRequest({
+      request: input,
+      riskGrantId,
+      attestation,
+    })
     return {
       status: 'submitted',
       idempotencyKey,
@@ -147,7 +271,9 @@ export const submitRequestAction: RequestIntakeWorkflowAction = async (
       code === 'unavailable' ||
       code === 'rate_limited' ||
       code === 'duplicate' ||
-      code === 'stale_version'
+      code === 'stale_version' ||
+      code === 'readiness_incomplete' ||
+      code === 'risk_grant_required'
       ? code
       : error instanceof RequestContractError
         || error instanceof RequestIntakeEnvelopeError
@@ -155,11 +281,14 @@ export const submitRequestAction: RequestIntakeWorkflowAction = async (
         : 'unavailable'
     return {
       status: 'ready',
-      idempotencyKey,
+      idempotencyKey: code === 'risk_grant_required'
+        ? `request-intake-${randomUUID()}`
+        : idempotencyKey,
       analyticsAttempt,
       values,
       errors: serviceError ? [] : validationError(error),
       serviceError,
+      policyVersions: currentPolicyVersions,
     } satisfies RequestIntakeWorkflowState
   }
 }

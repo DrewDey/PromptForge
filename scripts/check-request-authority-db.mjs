@@ -497,6 +497,7 @@ function findAuthorityMigration() {
       return sql.includes('build_request_controls')
         && sql.includes('build_request_brief_revisions')
         && sql.includes('build_request_events')
+        && sql.includes('$request_authority_migration$')
     })
   if (matches.length !== 1) {
     throw new Error(

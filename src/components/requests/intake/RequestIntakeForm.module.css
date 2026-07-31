@@ -221,6 +221,46 @@
   padding: 0;
 }
 
+.attestations {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.attestations legend {
+  margin-bottom: 10px;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.attestations label {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  min-height: 44px;
+  border: 1px solid var(--request-line);
+  padding: 10px 12px;
+  color: var(--request-ink);
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.5;
+}
+
+.attestations input[type='checkbox'] {
+  width: 20px;
+  min-height: 20px;
+  margin: 1px 0 0;
+}
+
+.attestations a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .checkRow + .checkRow {
   margin-top: 12px;
 }

@@ -120,6 +120,10 @@ const adminControls = readFileSync(
   'src/components/requests/admin/RequestAdminServiceControls.tsx',
   'utf8',
 )
+const publicOperations = readFileSync(
+  'src/components/requests/admin/RequestPublicOperations.tsx',
+  'utf8',
+)
 const pilotExpirySource = readFileSync(
   'src/lib/build-requests/pilot-expiry.ts',
   'utf8',
@@ -232,13 +236,16 @@ assert.match(
   /Optional expiry \(UTC\)[\s\S]{0,180}data-request-expiry-time-zone="UTC"/,
   'Pilot admission must label datetime-local input as UTC.',
 )
+assert.match(
+  publicOperations,
+  /function flag\(name: string, checked: boolean\)[\s\S]*type="hidden" name=\{name\} value="no"[\s\S]{0,180}type="checkbox"[\s\S]{0,120}name=\{name\}[\s\S]{0,80}value="yes"/,
+  'Public-ready controls must use an unambiguous hidden no plus checkbox yes envelope.',
+)
 for (const name of ['acceptingRequests', 'assigningRequests']) {
   assert.match(
-    adminControls,
-    new RegExp(
-      `type="hidden" name="${name}" value="no"[\\s\\S]{0,180}type="checkbox"[\\s\\S]{0,120}name="${name}"[\\s\\S]{0,80}value="yes"`,
-    ),
-    `${name} must use an unambiguous hidden no plus checkbox yes envelope.`,
+    publicOperations,
+    new RegExp(`flag\\('${name}', operations\\.${name}\\)`),
+    `${name} must use the exact public-ready control envelope helper.`,
   )
 }
 assert.match(
@@ -403,10 +410,7 @@ for (const errorPath of [
     `${errorPath} must reuse the focused Request error boundary.`,
   )
 }
-for (const actionName of [
-  'updateRequestControlsAction',
-  'updatePilotAdmissionAction',
-]) {
+for (const actionName of ['updatePilotAdmissionAction']) {
   const start = adminActions.indexOf(`function ${actionName}`)
   const next = adminActions.indexOf('export async function', start + 20)
   const source = adminActions.slice(start, next === -1 ? undefined : next)

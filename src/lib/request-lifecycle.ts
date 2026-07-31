@@ -571,6 +571,13 @@ export type RequestEventKindV1 =
   | 'moderation_removed'
   | 'account_deidentified'
   | 'delivery_revision_retired'
+  | 'publication_proposed'
+  | 'publication_proposal_updated'
+  | 'publication_consent_recorded'
+  | 'publication_declined'
+  | 'publication_withdrawn'
+  | 'publication_airlock_submitted'
+  | 'publication_published'
 
 export type RequestEventV1 = {
   eventId: string

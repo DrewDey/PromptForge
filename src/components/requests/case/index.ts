@@ -15,3 +15,4 @@ export {
   type RequestModeration,
   type RequestPublication,
 } from './RequestCaseShell'
+export { RequestParticipantTrustTools } from './RequestParticipantTrustTools'

@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { RequestIntakeWorkflow } from '@/components/requests/intake'
 import {
-  getRequestApplicationService,
+  getRequestPublicApplicationService,
   getRequestViewerState,
 } from '@/lib/build-requests/server'
 import { submitRequestAction } from './actions'
@@ -21,19 +21,21 @@ export default async function NewRequestPage() {
     throw new Error('Request identity is temporarily unavailable.')
   }
 
-  const service = await getRequestApplicationService()
+  const service = await getRequestPublicApplicationService()
   const availability = await service.getAvailability()
   const serviceError = availability.intakeEligibility === 'not_admitted'
     ? 'not_admitted'
     : availability.intakeEligibility === 'already_active'
       ? 'already_active'
-      : availability.unavailableReason === 'capacity_full'
+      : availability.intakeEligibility === 'capacity_full' ||
+          availability.unavailableReason === 'capacity_full'
         ? 'capacity_full'
         : availability.unavailableReason === 'controls_off' ||
             availability.intakeEligibility === 'controls_off'
           ? 'controls_off'
-          : availability.unavailableReason === 'unavailable'
-            ? 'unavailable'
+          : availability.intakeEligibility === 'readiness_incomplete' ||
+              availability.unavailableReason === 'readiness_incomplete'
+            ? 'readiness_incomplete'
             : availability.intakeEligibility === 'available'
               ? null
               : 'auth_required'
@@ -41,6 +43,7 @@ export default async function NewRequestPage() {
   return (
     <RequestIntakeWorkflow
       action={submitRequestAction}
+      policyVersions={availability.policyVersions}
       initialState={{
         status: 'ready',
         idempotencyKey: `request-intake-${randomUUID()}`,

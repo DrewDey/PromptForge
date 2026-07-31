@@ -14,6 +14,7 @@ export type RequestServiceAvailability =
   | { status: 'loading' }
   | { status: 'unavailable'; retryHref?: string }
   | { status: 'closed'; activeCases?: number; maxActiveCases?: number }
+  | { status: 'not_ready'; activeCases: number; maxActiveCases: number }
   | { status: 'capacity_full'; activeCases: number; maxActiveCases: number }
   | { status: 'available'; activeCases: number; maxActiveCases: number }
   | { status: 'private'; activeCases?: number; maxActiveCases: number }
@@ -23,6 +24,8 @@ export type RequestIntakeEligibility =
   | 'not_admitted'
   | 'already_active'
   | 'controls_off'
+  | 'capacity_full'
+  | 'readiness_incomplete'
   | 'available'
 
 export type RequestServiceOverviewProps = {
@@ -32,9 +35,18 @@ export type RequestServiceOverviewProps = {
   loginHref?: string
   myForgeHref?: string
   searchHref?: string
+  intakeAudience?: 'invited' | 'authenticated'
+  fulfillmentCapacity?: {
+    activeCases: number
+    maxActiveCases: number
+  }
+  outcomesHref?: string
 }
 
-function availabilityCopy(availability: RequestServiceAvailability) {
+function availabilityCopy(
+  availability: RequestServiceAvailability,
+  intakeAudience: 'invited' | 'authenticated',
+) {
   switch (availability.status) {
     case 'loading':
       return {
@@ -57,11 +69,18 @@ function availabilityCopy(availability: RequestServiceAvailability) {
         body: 'The service control is off. Existing private cases remain available to their participants.',
         tone: 'closed',
       } as const
+    case 'not_ready':
+      return {
+        eyebrow: 'Intake readiness incomplete',
+        title: 'Private intake is temporarily unavailable.',
+        body: 'The queue switch is on, but one or more required operating safeguards have expired or are not yet confirmed.',
+        tone: 'closed',
+      } as const
     case 'capacity_full':
       return {
-        eyebrow: 'Assignment capacity full',
-        title: 'All managed build places are currently in use.',
-        body: 'The active-case limit is full. This does not reveal pilot admission and does not replace the authoritative intake or assignment decision.',
+        eyebrow: 'Intake queue full',
+        title: 'The private request queue is currently full.',
+        body: 'No new brief can be accepted until queue capacity returns. Fulfillment capacity is managed separately so intake never implies immediate assignment.',
         tone: 'closed',
       } as const
     case 'private':
@@ -73,8 +92,12 @@ function availabilityCopy(availability: RequestServiceAvailability) {
       } as const
     case 'available':
       return {
-        eyebrow: 'Pilot capacity',
-        title: 'A managed build place is currently available.',
+        eyebrow: intakeAudience === 'authenticated'
+          ? 'Private intake capacity'
+          : 'Pilot capacity',
+        title: intakeAudience === 'authenticated'
+          ? 'The private request queue currently has room.'
+          : 'A managed build place is currently available.',
         body: 'Submit a finite, testable outcome. PathForge will first look for an existing path, repair, fork, or model rerun.',
         tone: 'available',
       } as const
@@ -98,12 +121,17 @@ export function RequestServiceOverview({
   loginHref = '/auth/login?next=%2Frequests%2Fnew',
   myForgeHref = '/my-forge?tab=requests',
   searchHref = '/paths?panel=open',
+  intakeAudience = 'invited',
+  fulfillmentCapacity,
+  outcomesHref = '/requests/outcomes',
 }: RequestServiceOverviewProps) {
-  const copy = availabilityCopy(availability)
+  const copy = availabilityCopy(availability, intakeAudience)
   const capacity = capacityLabel(availability)
   const serviceCanOfferIntake = availability.status === 'available'
   const serviceHasParticipantState =
-    availability.status === 'available' || availability.status === 'capacity_full'
+    availability.status === 'available' ||
+    availability.status === 'capacity_full' ||
+    availability.status === 'not_ready'
   const canStart = serviceCanOfferIntake && intakeEligibility === 'available'
   const shouldSignIn =
     serviceCanOfferIntake && intakeEligibility === 'sign_in_required'
@@ -126,7 +154,9 @@ export function RequestServiceOverview({
               voting feed, or open-response marketplace.
             </p>
             <p className={styles.pilotNotice}>
-              Request a Build is in a small invited pilot.
+              {intakeAudience === 'authenticated'
+                ? 'Private intake is available to confirmed signed-in accounts while the queue is open.'
+                : 'Request a Build is in a small invited pilot.'}
             </p>
           </div>
           <Link href={searchHref} className={styles.searchAction}>
@@ -155,6 +185,12 @@ export function RequestServiceOverview({
             <h2>{copy.title}</h2>
             <p>{copy.body}</p>
             {capacity && <strong>{capacity}</strong>}
+            {fulfillmentCapacity ? (
+              <span>
+                {fulfillmentCapacity.activeCases} of{' '}
+                {fulfillmentCapacity.maxActiveCases} fulfillment places in use
+              </span>
+            ) : null}
             {serviceHasParticipantState && intakeEligibility === 'not_admitted' ? (
               <p
                 className={styles.eligibilityNotice}
@@ -172,6 +208,11 @@ export function RequestServiceOverview({
             {intakeEligibility === 'controls_off' && availability.status !== 'unavailable' ? (
               <p className={styles.eligibilityNotice} role="status">
                 Request intake controls are currently off.
+              </p>
+            ) : null}
+            {intakeEligibility === 'readiness_incomplete' ? (
+              <p className={styles.eligibilityNotice} role="status">
+                Public intake readiness is incomplete. No brief can be submitted.
               </p>
             ) : null}
           </div>
@@ -255,11 +296,24 @@ export function RequestServiceOverview({
               <li>The builder stays the credited author.</li>
               <li>The requester receives non-exclusive use and download rights.</li>
               <li>No confidential, exclusive, or work-for-hire cases.</li>
-              <li>No public attribution or publication transition is offered in V1.</li>
+              <li>
+                No case publishes automatically; any safe outcome summary
+                requires separate requester and builder consent.
+              </li>
             </ul>
             <p>
               The three-business-day target applies to triage or clarification,
               not to final delivery. It is an operating goal, not a contractual SLA.
+            </p>
+            <p>
+              Finished outcomes appear publicly only after separate requester
+              and builder consent plus the existing PathForge publication
+              review. <Link href={outcomesHref}>View published outcomes</Link>.
+            </p>
+            <p>
+              <Link href="/requests/policies">
+                Read the versioned Request a Build policy set
+              </Link>.
             </p>
           </aside>
         </div>

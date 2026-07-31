@@ -6,14 +6,22 @@ export default function PolicyPage({
   title,
   intro,
   children,
+  footerLinks,
 }: {
   eyebrow: string
   title: string
   intro: string
   children: ReactNode
+  footerLinks?: readonly { href: string; label: string }[]
 }) {
+  const links = footerLinks ?? [
+    { href: '/terms', label: 'Terms' },
+    { href: '/privacy', label: 'Privacy' },
+    { href: '/community-guidelines', label: 'Community Guidelines' },
+    { href: '/copyright', label: 'Copyright and reports' },
+  ]
   return (
-    <main className="bg-surface-50 py-14 sm:py-20">
+    <main className="bg-surface-50 py-14 sm:py-20" data-policy-page>
       <article className="mx-auto max-w-3xl border border-surface-200 bg-white px-5 py-8 sm:px-10 sm:py-12">
         <div className="font-mono text-[10px] font-black uppercase tracking-[0.16em] text-brand-orange-ink">{eyebrow}</div>
         <h1 className="mt-3 text-4xl font-black tracking-[-0.035em] text-surface-900">{title}</h1>
@@ -22,10 +30,15 @@ export default function PolicyPage({
           {children}
         </div>
         <div className="mt-12 flex flex-wrap gap-3 border-t border-surface-200 pt-6">
-          <Link href="/terms" className="text-sm font-bold text-surface-600 underline">Terms</Link>
-          <Link href="/privacy" className="text-sm font-bold text-surface-600 underline">Privacy</Link>
-          <Link href="/community-guidelines" className="text-sm font-bold text-surface-600 underline">Community Guidelines</Link>
-          <Link href="/copyright" className="text-sm font-bold text-surface-600 underline">Copyright and reports</Link>
+          {links.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="text-sm font-bold text-surface-600 underline"
+            >
+              {link.label}
+            </Link>
+          ))}
         </div>
       </article>
     </main>

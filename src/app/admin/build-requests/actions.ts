@@ -10,8 +10,17 @@ import {
 import { parsePilotExpiryUtc } from '@/lib/build-requests/pilot-expiry'
 import {
   getRequestApplicationService,
+  getRequestPublicApplicationService,
   requestAuthorityErrorCode,
 } from '@/lib/build-requests/server'
+import {
+  REQUEST_INTAKE_AUDIENCES,
+  REQUEST_READINESS_GATES,
+  type RequestOperatorMembershipStateV1,
+  type RequestOperatorRoleV1,
+  type RequestReadinessGate,
+  type RequestReportStatusV1,
+} from '@/lib/request-public-architecture'
 
 function text(formData: FormData, name: string) {
   const value = formData.get(name)
@@ -27,32 +36,228 @@ function controlFlag(formData: FormData, name: string) {
   throw new Error('Invalid Request service control envelope.')
 }
 
-export async function updateRequestControlsAction(formData: FormData) {
-  let acceptingRequests: boolean
-  let assigningRequests: boolean
+function redirectPublicActionError(error: unknown): never {
+  const code = requestAuthorityErrorCode(error)
+  const safeCode =
+    code === 'stale_version' ||
+    code === 'rate_limited' ||
+    code === 'capacity_full' ||
+    code === 'readiness_incomplete' ||
+    code === 'publication_blocked' ||
+    code === 'operator_unavailable'
+      ? code
+      : 'unavailable'
+  redirect(`/admin/build-requests?scope=admin&actionError=${safeCode}`)
+}
+
+export async function updateRequestPublicControlsAction(formData: FormData) {
+  const flagNames = [
+    'acceptingRequests',
+    'assigningRequests',
+    'operatorRosterRequired',
+    'publicIntakeRiskScreening',
+    'transactionalNotificationsEnabled',
+    'publicationConsentEnabled',
+    'publicationAirlockEnabled',
+    'publicOutcomesEnabled',
+  ] as const
+  let flags: Record<(typeof flagNames)[number], boolean>
   try {
-    acceptingRequests = controlFlag(formData, 'acceptingRequests')
-    assigningRequests = controlFlag(formData, 'assigningRequests')
+    if (!controlFlag(formData, 'controlConfirmation')) {
+      throw new Error('Request control update was not confirmed.')
+    }
+    flags = Object.fromEntries(
+      flagNames.map((name) => [name, controlFlag(formData, name)]),
+    ) as Record<(typeof flagNames)[number], boolean>
+  } catch {
+    redirect('/admin/build-requests?scope=admin&actionError=unavailable')
+  }
+  const intakeAudience = text(formData, 'intakeAudience')
+  if (!REQUEST_INTAKE_AUDIENCES.includes(
+    intakeAudience as (typeof REQUEST_INTAKE_AUDIENCES)[number],
+  )) {
+    redirect('/admin/build-requests?scope=admin&actionError=unavailable')
+  }
+  try {
+    await (await getRequestPublicApplicationService()).setControls({
+      expectedControlsVersion: Number(
+        text(formData, 'expectedControlsVersion'),
+      ),
+      idempotencyKey: text(formData, 'idempotencyKey'),
+      ...flags,
+      intakeAudience: intakeAudience as (typeof REQUEST_INTAKE_AUDIENCES)[number],
+      activeCaseCapacity: Number(text(formData, 'activeCaseCapacity')),
+      fulfillmentCaseCapacity: Number(
+        text(formData, 'fulfillmentCaseCapacity'),
+      ),
+      actorHourlyIntakeLimit: Number(
+        text(formData, 'actorHourlyIntakeLimit'),
+      ),
+      networkHourlyIntakeLimit: Number(
+        text(formData, 'networkHourlyIntakeLimit'),
+      ),
+      globalDailyIntakeLimit: Number(
+        text(formData, 'globalDailyIntakeLimit'),
+      ),
+      policyVersions: {
+        terms: text(formData, 'termsVersion'),
+        privacy: text(formData, 'privacyVersion'),
+        acceptableUse: text(formData, 'acceptableUseVersion'),
+        requesterRights: text(formData, 'requesterRightsVersion'),
+        publicationTerms: text(formData, 'publicationTermsVersion'),
+      },
+    })
+  } catch (error) {
+    redirectPublicActionError(error)
+  }
+  revalidatePath('/requests')
+  revalidatePath('/requests/new')
+  revalidatePath('/requests/outcomes')
+  revalidatePath('/admin/build-requests')
+}
+
+export async function updateRequestOperatorAction(formData: FormData) {
+  const target = /^([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}):(triager|builder|reviewer):(0|[1-9][0-9]{0,6})$/i
+    .exec(text(formData, 'membershipTarget'))
+  const state = text(formData, 'state')
+  if (
+    !target ||
+    !['active', 'paused', 'revoked'].includes(state)
+  ) {
+    redirect('/admin/build-requests?scope=admin&actionError=unavailable')
+  }
+  const [, accountId, role, rawExpectedVersion] = target
+  const expectedMembershipVersion = Number(rawExpectedVersion)
+  const operatorQuery = text(formData, 'operatorQuery')
+  if (operatorQuery.length > 80 || /[\0\r\n]/.test(operatorQuery)) {
+    redirect('/admin/build-requests?scope=admin&actionError=unavailable')
+  }
+  let availableFrom: string | null
+  let availableUntil: string | null
+  try {
+    availableFrom = parsePilotExpiryUtc(text(formData, 'availableFrom'))
+    availableUntil = parsePilotExpiryUtc(text(formData, 'availableUntil'))
+    if (
+      availableUntil !== null &&
+      (
+        availableFrom === null ||
+        Date.parse(availableUntil) <= Date.parse(availableFrom)
+      )
+    ) throw new Error('invalid_operator_availability')
+  } catch {
+    redirect('/admin/build-requests?scope=admin&actionError=unavailable')
+  }
+  let loaded
+  try {
+    const service = await getRequestPublicApplicationService()
+    const directory = await service.listOperators({
+      query: operatorQuery,
+      limit: 100,
+    })
+    const candidate = directory.items.find((item) => item.accountId === accountId)
+    loaded = { service, candidate }
+  } catch (error) {
+    redirectPublicActionError(error)
+  }
+  if (!loaded.candidate) {
+    redirect('/admin/build-requests?scope=admin&actionError=stale_version')
+  }
+  const membership = loaded.candidate.memberships.find(
+    (item) => item.role === role,
+  )
+  if ((membership?.version ?? 0) !== expectedMembershipVersion) {
+    redirect('/admin/build-requests?scope=admin&actionError=stale_version')
+  }
+  try {
+    await loaded.service.setOperatorMembership({
+      accountId,
+      role: role as RequestOperatorRoleV1,
+      expectedMembershipVersion,
+      state: state as RequestOperatorMembershipStateV1,
+      maxActiveCases: Number(text(formData, 'maxActiveCases')),
+      availableFrom,
+      availableUntil,
+      reason: text(formData, 'reason'),
+      idempotencyKey: text(formData, 'idempotencyKey'),
+    })
+  } catch (error) {
+    redirectPublicActionError(error)
+  }
+  revalidatePath('/admin/build-requests')
+}
+
+export async function updateRequestReadinessAction(formData: FormData) {
+  const gate = text(formData, 'gate')
+  const state = text(formData, 'state')
+  if (
+    !REQUEST_READINESS_GATES.includes(
+      gate as (typeof REQUEST_READINESS_GATES)[number],
+    ) ||
+    (state !== 'confirmed' && state !== 'revoked')
+  ) {
+    redirect('/admin/build-requests?scope=admin&actionError=unavailable')
+  }
+  const rawValidUntil = text(formData, 'validUntil')
+  if (state === 'revoked' && rawValidUntil !== '') {
+    redirect('/admin/build-requests?scope=admin&actionError=unavailable')
+  }
+  let validUntil: string | null
+  try {
+    validUntil = parsePilotExpiryUtc(rawValidUntil)
   } catch {
     redirect('/admin/build-requests?scope=admin&actionError=unavailable')
   }
   try {
-    const service = await getRequestApplicationService()
-    await service.updateControls({
-      expectedControlsVersion: Number(text(formData, 'expectedControlsVersion')),
+    await (await getRequestPublicApplicationService()).recordReadiness({
+      gate: gate as RequestReadinessGate,
+      expectedEvidenceVersion: Number(
+        text(formData, 'expectedEvidenceVersion'),
+      ),
+      state,
+      evidenceReference: text(formData, 'evidenceReference'),
+      validUntil,
+      note: text(formData, 'note'),
       idempotencyKey: text(formData, 'idempotencyKey'),
-      acceptingRequests,
-      assigningRequests,
-      activeCaseCapacity: Number(text(formData, 'activeCaseCapacity')),
     })
   } catch (error) {
-    const code = requestAuthorityErrorCode(error)
-    const safeCode = code === 'stale_version' || code === 'rate_limited'
-      ? code
-      : 'unavailable'
-    redirect(`/admin/build-requests?scope=admin&actionError=${safeCode}`)
+    redirectPublicActionError(error)
   }
-  revalidatePath('/requests')
+  revalidatePath('/admin/build-requests')
+}
+
+export async function updateRequestReportAction(formData: FormData) {
+  const expectedStatus = text(formData, 'expectedStatus')
+  const nextStatus = text(formData, 'nextStatus')
+  if (
+    !['open', 'reviewing'].includes(expectedStatus) ||
+    !['reviewing', 'resolved', 'dismissed'].includes(nextStatus) ||
+    (
+      expectedStatus === 'open'
+        ? nextStatus !== 'reviewing'
+        : !['resolved', 'dismissed'].includes(nextStatus)
+    )
+  ) {
+    redirect('/admin/build-requests?scope=admin&actionError=unavailable')
+  }
+  try {
+    await (await getRequestPublicApplicationService()).setReportStatus({
+      reportId: text(formData, 'reportId'),
+      expectedStatus: expectedStatus as Extract<
+        RequestReportStatusV1,
+        'open' | 'reviewing'
+      >,
+      nextStatus: nextStatus as Extract<
+        RequestReportStatusV1,
+        'reviewing' | 'resolved' | 'dismissed'
+      >,
+      resolutionNote: nextStatus === 'reviewing'
+        ? null
+        : text(formData, 'resolutionNote'),
+      idempotencyKey: text(formData, 'idempotencyKey'),
+    })
+  } catch (error) {
+    redirectPublicActionError(error)
+  }
   revalidatePath('/admin/build-requests')
 }
 
@@ -250,9 +455,13 @@ export async function adminRequestCommandAction(formData: FormData) {
     await service.executeCommand(command)
   } catch (error) {
     const code = requestAuthorityErrorCode(error)
-    const safeCode = code === 'stale_version' || code === 'rate_limited'
-      ? code
-      : 'unavailable'
+    const safeCode =
+      code === 'stale_version' ||
+      code === 'rate_limited' ||
+      code === 'capacity_full' ||
+      code === 'operator_unavailable'
+        ? code
+        : 'unavailable'
     redirect(
       `/admin/build-requests/${encodeURIComponent(requestId)}?actionError=${safeCode}`,
     )

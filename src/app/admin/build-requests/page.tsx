@@ -1,13 +1,16 @@
 import Link from 'next/link'
+import { randomUUID } from 'node:crypto'
 import type { Metadata } from 'next'
 import { RequestCaseErrorFocus } from '@/components/requests/case/RequestCaseErrorFocus'
 import {
   AdminRequestQueue,
   RequestAdminServiceControls,
+  RequestPublicOperations,
   type RequestQueueScope,
 } from '@/components/requests/admin'
 import {
   getRequestApplicationService,
+  getRequestPublicApplicationService,
   requestAuthorityErrorCode,
 } from '@/lib/build-requests/server'
 import {
@@ -16,7 +19,10 @@ import {
 import type { RequestCursor } from '@/lib/request-lifecycle'
 import {
   updatePilotAdmissionAction,
-  updateRequestControlsAction,
+  updateRequestOperatorAction,
+  updateRequestPublicControlsAction,
+  updateRequestReadinessAction,
+  updateRequestReportAction,
 } from './actions'
 
 export const dynamic = 'force-dynamic'
@@ -26,19 +32,50 @@ export const metadata: Metadata = {
 }
 
 const SCOPES = new Set<RequestQueueScope>(['admin', 'triager', 'builder', 'reviewer'])
+const PUBLICATION_STATUSES = new Set([
+  'active',
+  'consent_pending',
+  'fully_consented',
+  'in_airlock',
+  'published',
+] as const)
 
 export default async function BuildRequestsAdminPage({
   searchParams,
 }: {
-  searchParams: Promise<{ scope?: string; cursor?: string; actionError?: string }>
+  searchParams: Promise<{
+    scope?: string
+    cursor?: string
+    actionError?: string
+    operatorQuery?: string
+    publicationStatus?: string
+  }>
 }) {
   const query = await searchParams
   const scope = SCOPES.has(query.scope as RequestQueueScope)
     ? query.scope as RequestQueueScope
     : 'admin'
+  const publicationStatus = PUBLICATION_STATUSES.has(
+    query.publicationStatus as 'active',
+  )
+    ? query.publicationStatus as
+      | 'active'
+      | 'consent_pending'
+      | 'fully_consented'
+      | 'in_airlock'
+      | 'published'
+    : 'active'
+  const operatorQuery =
+    typeof query.operatorQuery === 'string' &&
+      query.operatorQuery.length <= 80
+      ? query.operatorQuery
+      : ''
   const service = await getRequestApplicationService()
+  const publicService = await getRequestPublicApplicationService()
   let loaded
+  let publicLoaded
   let loadError: unknown
+  let publicLoadError: unknown
   try {
     const [availability, queue] = await Promise.all([
       service.getAvailability(),
@@ -63,6 +100,30 @@ export default async function BuildRequestsAdminPage({
     }
   } catch (error) {
     loadError = error
+  }
+  if (loaded && scope === 'admin') {
+    try {
+      const [operations, operators, reports, publications] = await Promise.all([
+        publicService.getOperations(),
+        publicService.listOperators({
+          query: operatorQuery,
+          limit: 100,
+        }),
+        publicService.listReports({ scope: 'admin', limit: 50 }),
+        publicService.listPublicationQueue({
+          status: publicationStatus,
+          limit: 100,
+        }),
+      ])
+      publicLoaded = {
+        operations,
+        operators: operators.items,
+        reports,
+        publications,
+      }
+    } catch (error) {
+      publicLoadError = error
+    }
   }
   if (!loaded) {
     const code = requestAuthorityErrorCode(loadError)
@@ -134,12 +195,49 @@ export default async function BuildRequestsAdminPage({
         ) : null}
 
         {scope === 'admin' ? (
-          <RequestAdminServiceControls
-            availability={loaded.availability}
-            candidates={loaded.candidates.items}
-            updateControls={updateRequestControlsAction}
-            updateAdmission={updatePilotAdmissionAction}
-          />
+          <>
+            {publicLoaded ? (
+              <RequestPublicOperations
+                operations={publicLoaded.operations}
+                operators={publicLoaded.operators}
+                reports={publicLoaded.reports}
+                publications={publicLoaded.publications}
+                operatorQuery={operatorQuery}
+                publicationStatus={publicationStatus}
+                mutationNonce={randomUUID()}
+                updateControls={updateRequestPublicControlsAction}
+                updateOperator={updateRequestOperatorAction}
+                updateReadiness={updateRequestReadinessAction}
+                updateReport={updateRequestReportAction}
+              />
+            ) : (
+              <section
+                role="status"
+                className="max-w-3xl border border-surface-300 bg-surface-50 p-5 text-surface-900"
+                data-request-public-operations-unavailable
+              >
+                <h2 className="text-lg font-black">
+                  Public-ready controls unavailable
+                </h2>
+                <p className="mt-2 text-sm text-surface-600">
+                  The authority could not verify release gates, reports,
+                  operators, or publication proposals. No empty or enabled
+                  state is inferred.
+                </p>
+                {requestAuthorityErrorCode(publicLoadError) ===
+                'rate_limited' ? (
+                  <p className="mt-2 text-xs text-surface-600">
+                    This read is temporarily limited. Retry from the current
+                    operator session.
+                  </p>
+                ) : null}
+              </section>
+            )}
+            <RequestAdminServiceControls
+              candidates={loaded.candidates.items}
+              updateAdmission={updatePilotAdmissionAction}
+            />
+          </>
         ) : null}
         <AdminRequestQueue model={loaded.model} />
       </main>

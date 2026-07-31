@@ -2,11 +2,13 @@ import { notFound } from 'next/navigation'
 import {
   AdminRequestDetailOperations,
   AdminRequestQueue,
+  RequestPublicOperations,
   type RequestAdminActions,
   type RequestQueueScope,
 } from '@/components/requests/admin'
 import {
   RequestCaseShell,
+  RequestParticipantTrustTools,
   type RequestActorRole,
   type RequestCloseReason,
   type RequestLifecycle,
@@ -56,6 +58,21 @@ import {
   type RequestDeliveryReceiptActionState,
   type RequestDeliverySlotModel,
 } from '@/components/requests/delivery'
+import {
+  RequestPublicOutcomeCatalog,
+  RequestPublicOutcomeDetail,
+} from '@/components/requests/public'
+import { RequestPolicyPage } from '@/components/requests/RequestPolicyPage'
+import type {
+  RequestNotificationPreferenceV1,
+  RequestOperatorCandidateV1,
+  RequestPublicOperationsV1,
+  RequestPublicOutcomePageV1,
+  RequestPublicOutcomeV1,
+  RequestPublicationQueueV1,
+  RequestPublicationViewV1,
+  RequestReportPageV1,
+} from '@/lib/request-public-architecture'
 
 export const metadata = {
   robots: { index: false, follow: false },
@@ -70,6 +87,11 @@ type FixtureSurface =
   | 'my-forge-assigned'
   | 'admin-queue'
   | 'admin-detail'
+  | 'participant-trust'
+  | 'public-operations'
+  | 'public-outcomes'
+  | 'public-outcome'
+  | 'request-policy'
   | 'analytics-transition'
 
 type SearchParams = Record<string, string | string[] | undefined>
@@ -104,13 +126,16 @@ function FixtureFrame({
   surface,
   state,
   children,
+  containsMain = false,
 }: {
   surface: FixtureSurface
   state: string
   children: React.ReactNode
+  containsMain?: boolean
 }) {
+  const Tag = containsMain ? 'div' : 'main'
   return (
-    <main
+    <Tag
       className="min-w-0 px-4 py-8 sm:px-6 lg:px-8"
       data-request-build-fixture
       data-fixture-surface={surface}
@@ -127,8 +152,273 @@ function FixtureFrame({
         deployment, or publication.
       </div>
       {children}
-    </main>
+    </Tag>
   )
+}
+
+const PUBLIC_FIXTURE_TIME = '2026-07-30T16:00:00.000Z'
+const PUBLIC_FIXTURE_REQUEST_ID = '71000000-0000-4000-8000-000000000001'
+const PUBLIC_FIXTURE_PROPOSAL_ID = '71000000-0000-4000-8000-000000000002'
+const PUBLIC_FIXTURE_PROJECT_ID = '71000000-0000-4000-8000-000000000003'
+const PUBLIC_FIXTURE_REPORT_ID = '71000000-0000-4000-8000-000000000004'
+
+const publicPolicyVersions = {
+  terms: 'request-terms-v1',
+  privacy: 'request-privacy-v1',
+  acceptableUse: 'request-aup-v1',
+  requesterRights: 'request-rights-v1',
+  publicationTerms: 'request-publication-v1',
+} as const
+
+function publicOperationsFixture(
+  state: 'off' | 'ready' | 'report' | 'publication',
+): {
+  operations: RequestPublicOperationsV1
+  operators: RequestOperatorCandidateV1[]
+  reports: RequestReportPageV1
+  publications: RequestPublicationQueueV1
+} {
+  const ready = state !== 'off'
+  const hasReport = state === 'report'
+  const hasPublication = state === 'publication'
+  return {
+    operations: {
+      contractVersion: 1,
+      controlsVersion: 9,
+      acceptingRequests: false,
+      assigningRequests: false,
+      intakeAudience: 'invited',
+      activeCaseCount: 2,
+      activeCaseCapacity: 24,
+      remainingQueueCapacity: 22,
+      fulfillmentCaseCount: 2,
+      fulfillmentCaseCapacity: 4,
+      remainingFulfillmentCapacity: 2,
+      operatorRosterRequired: true,
+      operatorRosterReady: ready,
+      publicIntakeRiskScreening: false,
+      transactionalNotificationsEnabled: false,
+      publicationConsentEnabled: false,
+      publicationAirlockEnabled: false,
+      publicOutcomesEnabled: false,
+      actorHourlyIntakeLimit: 5,
+      networkHourlyIntakeLimit: 20,
+      globalDailyIntakeLimit: 100,
+      policyVersions: publicPolicyVersions,
+      readiness: {
+        legal: ready,
+        incidentOwner: ready,
+        waf: ready,
+        responsiveQa: ready,
+        attendedLifecycle: ready,
+        notificationTransport: ready,
+        communityAirlock: ready,
+      },
+      readinessVersions: {
+        legal: ready ? 2 : 1,
+        incident_owner: ready ? 2 : 1,
+        waf: ready ? 2 : 1,
+        responsive_qa: ready ? 2 : 1,
+        attended_lifecycle: ready ? 2 : 1,
+        notification_transport: ready ? 2 : 1,
+      },
+      operatorCounts: {
+        triager: ready ? 1 : 0,
+        builder: ready ? 2 : 0,
+        reviewer: ready ? 2 : 0,
+      },
+      reportCounts: {
+        open: hasReport ? 1 : 0,
+        reviewing: 0,
+        pendingAlerts: hasReport ? 1 : 0,
+      },
+      publicationCounts: {
+        consentPending: hasPublication ? 1 : 0,
+        airlockReady: hasPublication ? 1 : 0,
+        published: 0,
+      },
+    },
+    operators: ready
+      ? [{
+          accountId: '71000000-0000-4000-8000-000000000005',
+          displayName: 'Fixture operator',
+          isAdmin: true,
+          memberships: [{
+            membershipId: '71000000-0000-4000-8000-000000000006',
+            role: 'triager',
+            version: 3,
+            state: 'active',
+            maxActiveCases: 4,
+            availableFrom: null,
+            availableUntil: '2026-08-31T23:59:59.000Z',
+            currentlyAvailable: true,
+          }],
+        }]
+      : [],
+    reports: {
+      items: hasReport
+        ? [{
+            reportId: PUBLIC_FIXTURE_REPORT_ID,
+            requestId: PUBLIC_FIXTURE_REQUEST_ID,
+            category: 'privacy',
+            priority: 1,
+            details:
+              'Please verify that the private clarification is excluded from every public projection.',
+            status: 'open',
+            resolutionNote: null,
+            alertStatus: 'pending',
+            createdAt: PUBLIC_FIXTURE_TIME,
+            updatedAt: PUBLIC_FIXTURE_TIME,
+          }]
+        : [],
+      nextCursor: null,
+    },
+    publications: {
+      items: hasPublication
+        ? [{
+            proposalId: PUBLIC_FIXTURE_PROPOSAL_ID,
+            requestId: PUBLIC_FIXTURE_REQUEST_ID,
+            proposalVersion: 4,
+            status: 'fully_consented',
+            safeTitle: 'Offline neighborhood readiness checklist',
+            safeSummary:
+              'A separately consented summary of an independently reviewed offline checklist linked to an approved PathForge project.',
+            requesterConsented: true,
+            builderConsented: true,
+            requesterAttribution: 'anonymous',
+            reusePermission: 'adapt_with_credit',
+            updatedAt: PUBLIC_FIXTURE_TIME,
+            publishedAt: null,
+          }]
+        : [],
+      nextCursor: null,
+    },
+  }
+}
+
+function participantPublicationFixture(
+  state:
+    | 'proposal'
+    | 'requester_consent'
+    | 'builder_consent'
+    | 'withdraw'
+    | 'publish'
+    | 'restricted',
+): RequestPublicationViewV1 {
+  if (state === 'restricted') {
+    return {
+      visibility: 'restricted',
+      publicationState: 'private',
+      status: 'held',
+      capabilities: [],
+    }
+  }
+  const proposal = state === 'proposal'
+    ? null
+    : {
+        proposalId: PUBLIC_FIXTURE_PROPOSAL_ID,
+        proposalVersion: 4,
+        status: state === 'publish'
+          ? 'in_airlock' as const
+          : state === 'withdraw'
+            ? 'published' as const
+            : 'consent_pending' as const,
+        safeTitle: 'Offline neighborhood readiness checklist',
+        safeSummary:
+          'A separately written public-safe summary of the reviewed result, with no private brief, clarification, artifact, or case identifier.',
+        requesterAttribution: 'anonymous' as const,
+        reusePermission: 'adapt_with_credit' as const,
+        requesterConsented: state !== 'requester_consent',
+        builderConsented: state !== 'builder_consent',
+        publishedAt: state === 'withdraw' ? PUBLIC_FIXTURE_TIME : null,
+        updatedAt: PUBLIC_FIXTURE_TIME,
+      }
+  const capabilities = state === 'proposal'
+    ? ['propose'] as const
+    : state === 'requester_consent'
+      ? ['requester_consent'] as const
+      : state === 'builder_consent'
+        ? ['builder_consent'] as const
+        : state === 'withdraw'
+          ? ['withdraw'] as const
+          : ['publish_outcome'] as const
+  return {
+    visibility: 'full',
+    publicationState: state === 'withdraw' ? 'published' : 'consent_pending',
+    consentEnabled: true,
+    proposal,
+    capabilities: [...capabilities],
+  }
+}
+
+function participantReportsFixture(
+  state: 'proposal' | 'reports',
+): RequestReportPageV1 {
+  return {
+    items: state === 'reports'
+      ? [{
+          reportId: PUBLIC_FIXTURE_REPORT_ID,
+          requestId: PUBLIC_FIXTURE_REQUEST_ID,
+          category: 'service',
+          priority: 0,
+          details:
+            'The delivery status needs a participant-safe correction without exposing private evidence.',
+          status: 'resolved',
+          resolutionNote:
+            'The status projection was corrected. The private evidence remained unchanged.',
+          alertStatus: 'delivered',
+          createdAt: PUBLIC_FIXTURE_TIME,
+          updatedAt: PUBLIC_FIXTURE_TIME,
+        }]
+      : [],
+    nextCursor: state === 'reports'
+      ? {
+          priority: 0,
+          createdAt: PUBLIC_FIXTURE_TIME,
+          reportId: PUBLIC_FIXTURE_REPORT_ID,
+        }
+      : null,
+  }
+}
+
+const notificationPreferenceFixture: RequestNotificationPreferenceV1 = {
+  preferenceVersion: 2,
+  transactionalEmailEnabled: false,
+  changedAt: PUBLIC_FIXTURE_TIME,
+}
+
+const publicOutcomeFixture: RequestPublicOutcomeV1 = {
+  slug: 'offline-neighborhood-readiness-checklist-a1b2c3d4e5f6',
+  title: 'Offline neighborhood readiness checklist',
+  summary:
+    'A separately consented, independently reviewed checklist that remains useful without a network connection and links only to its approved PathForge project.',
+  builder: {
+    displayName: 'Fixture builder',
+    deidentified: false,
+  },
+  requester: null,
+  reusePermission: 'adapt_with_credit',
+  projectId: PUBLIC_FIXTURE_PROJECT_ID,
+  projectHref: `/prompt/${PUBLIC_FIXTURE_PROJECT_ID}`,
+  publishedAt: PUBLIC_FIXTURE_TIME,
+}
+
+function publicOutcomePageFixture(
+  state: 'unavailable' | 'off' | 'empty' | 'published' | 'paginated',
+): RequestPublicOutcomePageV1 | null {
+  if (state === 'unavailable') return null
+  return {
+    available: state !== 'off',
+    items: state === 'published' || state === 'paginated'
+      ? [publicOutcomeFixture]
+      : [],
+    nextCursor: state === 'paginated'
+      ? {
+          publishedAt: PUBLIC_FIXTURE_TIME,
+          slug: publicOutcomeFixture.slug,
+        }
+      : null,
+  }
 }
 
 function deliveryFixture(
@@ -332,6 +622,11 @@ export default async function RequestBuildFixturePage({
       'my-forge-assigned',
       'admin-queue',
       'admin-detail',
+      'participant-trust',
+      'public-operations',
+      'public-outcomes',
+      'public-outcome',
+      'request-policy',
       'analytics-transition',
     ] as const,
     'service',
@@ -756,6 +1051,128 @@ export default async function RequestBuildFixturePage({
         <div className="mx-auto max-w-[1180px]">
           <AdminRequestQueue model={adminQueueFixture(state, scope)} />
         </div>
+      </FixtureFrame>
+    )
+  }
+
+  if (surface === 'participant-trust') {
+    const state = oneOf(
+      firstValue(query.state),
+      [
+        'proposal',
+        'requester_consent',
+        'builder_consent',
+        'withdraw',
+        'publish',
+        'restricted',
+        'reports',
+      ] as const,
+      'proposal',
+    )
+    const publicationState = state === 'reports' ? 'proposal' : state
+    return (
+      <FixtureFrame surface={surface} state={state}>
+        <div className="mx-auto max-w-4xl border border-surface-300 bg-white p-5 sm:p-7">
+          <p className="font-mono text-[10px] font-black uppercase tracking-wide text-brand-orange-ink">
+            Participant-safe case continuation
+          </p>
+          <h1 className="mt-2 text-3xl font-black tracking-[-0.03em]">
+            Private trust and optional publication tools
+          </h1>
+          <RequestParticipantTrustTools
+            requestId={PUBLIC_FIXTURE_REQUEST_ID}
+            requestVersion={12}
+            publication={participantPublicationFixture(publicationState)}
+            publicationTermsVersion={publicPolicyVersions.publicationTerms}
+            notificationPreference={notificationPreferenceFixture}
+            reports={participantReportsFixture(
+              state === 'reports' ? 'reports' : 'proposal',
+            )}
+            nextReportsHref={state === 'reports'
+              ? '/qa/request-build?surface=participant-trust&state=reports&cursor=older'
+              : null}
+            mutationNonce="fixture-participant-trust"
+            reportAction={fixtureAction}
+            notificationAction={fixtureAction}
+            publicationAction={fixtureAction}
+            publishOutcomeAction={fixtureAction}
+          />
+        </div>
+      </FixtureFrame>
+    )
+  }
+
+  if (surface === 'public-operations') {
+    const state = oneOf(
+      firstValue(query.state),
+      ['off', 'ready', 'report', 'publication'] as const,
+      'off',
+    )
+    const fixture = publicOperationsFixture(state)
+    return (
+      <FixtureFrame surface={surface} state={state}>
+        <div className="mx-auto max-w-[1180px]">
+          <h1 className="mb-6 text-3xl font-black tracking-[-0.03em]">
+            Request public operations fixture
+          </h1>
+          <RequestPublicOperations
+            operations={fixture.operations}
+            operators={fixture.operators}
+            reports={fixture.reports}
+            publications={fixture.publications}
+            operatorQuery={state === 'ready' ? 'Fixture operator' : ''}
+            publicationStatus={state === 'publication'
+              ? 'fully_consented'
+              : 'active'}
+            mutationNonce="fixture-public-operations"
+            updateControls={fixtureAction}
+            updateOperator={fixtureAction}
+            updateReadiness={fixtureAction}
+            updateReport={fixtureAction}
+          />
+        </div>
+      </FixtureFrame>
+    )
+  }
+
+  if (surface === 'public-outcomes') {
+    const state = oneOf(
+      firstValue(query.state),
+      ['unavailable', 'off', 'empty', 'published', 'paginated'] as const,
+      'off',
+    )
+    return (
+      <FixtureFrame surface={surface} state={state} containsMain>
+        <RequestPublicOutcomeCatalog page={publicOutcomePageFixture(state)} />
+      </FixtureFrame>
+    )
+  }
+
+  if (surface === 'public-outcome') {
+    return (
+      <FixtureFrame surface={surface} state="published" containsMain>
+        <RequestPublicOutcomeDetail outcome={publicOutcomeFixture} />
+      </FixtureFrame>
+    )
+  }
+
+  if (surface === 'request-policy') {
+    return (
+      <FixtureFrame surface={surface} state="publication" containsMain>
+        <RequestPolicyPage
+          version={publicPolicyVersions.publicationTerms}
+          title="Optional publication terms"
+          intro="Private Request work does not become public without separate, attributable consent and the existing publication airlock."
+        >
+          <section>
+            <h2>Separate consent</h2>
+            <p>
+              The requester and builder approve the exact safe summary
+              independently. The private brief, clarification, evidence, and
+              delivery remain outside the public projection.
+            </p>
+          </section>
+        </RequestPolicyPage>
       </FixtureFrame>
     )
   }

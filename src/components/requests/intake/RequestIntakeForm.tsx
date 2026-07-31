@@ -21,6 +21,7 @@ import {
   Plus,
   Send,
 } from 'lucide-react'
+import type { RequestPublicPolicyVersionsV1 } from '@/lib/request-public-architecture'
 import styles from './RequestIntakeForm.module.css'
 
 export type RequestIntakeField =
@@ -64,11 +65,14 @@ export type RequestIntakeFormProps = {
     | 'rate_limited'
     | 'duplicate'
     | 'stale_version'
+    | 'readiness_incomplete'
+    | 'risk_grant_required'
     | 'forbidden_input'
     | 'invalid_reference'
     | 'unknown'
     | null
   backHref?: string
+  policyVersions?: RequestPublicPolicyVersionsV1
 }
 
 const fieldTargets: Record<RequestIntakeField, string> = {
@@ -87,11 +91,13 @@ const serviceErrorCopy: Record<Exclude<RequestIntakeFormProps['serviceError'], n
   not_admitted: 'This account is not in the current pilot. No private case was created.',
   already_active: 'This account already has an active private request. Continue it in My Forge before starting another.',
   controls_off: 'Request intake closed before this brief was recorded. Your text remains on this page.',
-  capacity_full: 'Assignment capacity changed before this brief was recorded. This does not reveal pilot eligibility; your text remains on this page.',
+  capacity_full: 'Request queue capacity changed before this brief was recorded. This does not reveal pilot eligibility; your text remains on this page.',
   unavailable: 'The service could not validate this brief. Your text remains on this page; try again when the secure connection recovers.',
   rate_limited: 'Too many intake attempts were received. Wait before trying again; another submit now will not create a case.',
   duplicate: 'This submission conflicts with an existing active request or prior submission attempt. Check My Forge before retrying.',
   stale_version: 'The service state changed while this brief was open. Review the current availability and submit again.',
+  readiness_incomplete: 'Public intake readiness changed before this brief was recorded. No private case was created.',
+  risk_grant_required: 'The secure intake check expired or could not be bound to this submission. Review and submit the preserved brief again.',
   forbidden_input: 'The service rejected prohibited or sensitive input. Remove secrets, private data, external links, or confidential terms and review the guidance.',
   invalid_reference: 'The PathForge reference could not be verified. Check the project, model variant, and response step identifiers.',
   unknown: 'PathForge could not verify whether this brief was recorded. Keep this page open and check your private request list before trying again.',
@@ -111,6 +117,13 @@ export function RequestIntakeForm({
   pending = false,
   serviceError = null,
   backHref = '/requests',
+  policyVersions = {
+    terms: 'unavailable',
+    privacy: 'unavailable',
+    acceptableUse: 'unavailable',
+    requesterRights: 'unavailable',
+    publicationTerms: 'unavailable',
+  },
 }: RequestIntakeFormProps) {
   const baseId = useId().replace(/:/g, '')
   const errorSummaryRef = useRef<HTMLDivElement>(null)
@@ -119,8 +132,8 @@ export function RequestIntakeForm({
     const supplied = defaultValues?.acceptanceChecks?.slice(0, 3)
     return supplied?.length ? supplied : ['']
   })
-  const [referenceKind, setReferenceKind] = useState<'none' | 'project' | 'response'>(
-    defaultValues?.pathforgeReference?.kind ?? 'none',
+  const [referenceKind, setReferenceKind] = useState<'' | 'project' | 'response'>(
+    defaultValues?.pathforgeReference?.kind ?? '',
   )
   const visibleErrors = serviceError
     ? [{ field: 'form' as const, message: serviceErrorCopy[serviceError] }, ...errors]
@@ -184,6 +197,18 @@ export function RequestIntakeForm({
           noValidate
         >
           <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
+          <input type="hidden" name="termsVersion" value={policyVersions.terms} />
+          <input type="hidden" name="privacyVersion" value={policyVersions.privacy} />
+          <input
+            type="hidden"
+            name="acceptableUseVersion"
+            value={policyVersions.acceptableUse}
+          />
+          <input
+            type="hidden"
+            name="requesterRightsVersion"
+            value={policyVersions.requesterRights}
+          />
           {visibleErrors.length > 0 && (
             <div
               ref={errorSummaryRef}
@@ -378,12 +403,12 @@ export function RequestIntakeForm({
                   value={referenceKind}
                   onChange={(event) => setReferenceKind(event.target.value as typeof referenceKind)}
                 >
-                  <option value="none">No PathForge reference</option>
+                  <option value="">No PathForge reference</option>
                   <option value="project">PathForge project</option>
                   <option value="response">PathForge response</option>
                 </select>
               </div>
-              {referenceKind !== 'none' ? (
+              {referenceKind !== '' ? (
                 <div className={styles.field}>
                   <label htmlFor="request-pathforge-identifier">Project identifier</label>
                   <p id="request-pathforge-identifier-hint">
@@ -448,6 +473,81 @@ export function RequestIntakeForm({
             </div>
           </section>
 
+          <section aria-labelledby={`${baseId}-attestation-heading`}>
+            <div className={styles.sectionHeading}>
+              <span>04</span>
+              <div>
+                <h2 id={`${baseId}-attestation-heading`}>Intake acknowledgements</h2>
+                <p>
+                  These acknowledgements apply only to the private request.
+                  Publication remains a separate, later consent.
+                </p>
+              </div>
+            </div>
+            <fieldset className={styles.attestations}>
+              <legend>Required before submission</legend>
+              <label>
+                <input type="hidden" name="termsAccepted" value="no" />
+                <input type="checkbox" name="termsAccepted" value="yes" required />
+                <span>
+                  I accept the{' '}
+                  <Link href="/requests/policies/terms" target="_blank">
+                    Request a Build service terms ({policyVersions.terms})
+                  </Link>.
+                </span>
+              </label>
+              <label>
+                <input type="hidden" name="privacyAcknowledged" value="no" />
+                <input
+                  type="checkbox"
+                  name="privacyAcknowledged"
+                  value="yes"
+                  required
+                />
+                <span>
+                  I understand the{' '}
+                  <Link href="/requests/policies/privacy" target="_blank">
+                    privacy and retention notice ({policyVersions.privacy})
+                  </Link>.
+                </span>
+              </label>
+              <label>
+                <input type="hidden" name="acceptableUseAccepted" value="no" />
+                <input
+                  type="checkbox"
+                  name="acceptableUseAccepted"
+                  value="yes"
+                  required
+                />
+                <span>
+                  I accept the{' '}
+                  <Link href="/requests/policies/acceptable-use" target="_blank">
+                    acceptable-use policy ({policyVersions.acceptableUse})
+                  </Link>{' '}
+                  and will not submit secrets, sensitive data, or prohibited
+                  work.
+                </span>
+              </label>
+              <label>
+                <input type="hidden" name="requesterRightsAccepted" value="no" />
+                <input
+                  type="checkbox"
+                  name="requesterRightsAccepted"
+                  value="yes"
+                  required
+                />
+                <span>
+                  I accept the{' '}
+                  <Link href="/requests/policies/requester-rights" target="_blank">
+                    requester-rights policy ({policyVersions.requesterRights})
+                  </Link>
+                  : non-exclusive use rights while the builder remains the
+                  credited author.
+                </span>
+              </label>
+            </fieldset>
+          </section>
+
           <div className={styles.submitArea}>
             <div>
               <FileCheck2 aria-hidden="true" />
@@ -485,8 +585,8 @@ export function RequestIntakeForm({
             <p>
               The assigned builder remains the credited author. If delivered,
               you receive non-exclusive use and download rights. Public
-              attribution and publication require separate future consent and
-              are not available here.
+              attribution and publication require separate later consent from
+              both requester and builder.
             </p>
           </div>
         </aside>

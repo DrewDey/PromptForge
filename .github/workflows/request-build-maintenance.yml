@@ -42,3 +42,10 @@ jobs:
             --max-time 70 \
             --header "Authorization: Bearer ${PATHFORGE_CRON_SECRET}" \
             "${production_origin}/api/cron/request-build-maintenance"
+          curl \
+            --silent \
+            --show-error \
+            --fail-with-body \
+            --max-time 70 \
+            --header "Authorization: Bearer ${PATHFORGE_CRON_SECRET}" \
+            "${production_origin}/api/cron/request-build-public-maintenance"

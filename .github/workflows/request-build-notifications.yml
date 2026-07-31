@@ -1,0 +1,42 @@
+name: Request a Build notifications
+
+on:
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: request-build-notifications
+  cancel-in-progress: false
+
+jobs:
+  deliver-private-request-notifications:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Run the bounded private notification worker
+        env:
+          PATHFORGE_PRODUCTION_URL: ${{ vars.PATHFORGE_PRODUCTION_URL }}
+          PATHFORGE_CRON_SECRET: ${{ secrets.PATHFORGE_CRON_SECRET }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${PATHFORGE_PRODUCTION_URL}" || "${PATHFORGE_PRODUCTION_URL}" != https://* ]]; then
+            echo "PATHFORGE_PRODUCTION_URL must be a production HTTPS origin." >&2
+            exit 1
+          fi
+          if [[ ${#PATHFORGE_CRON_SECRET} -lt 32 ]]; then
+            echo "PATHFORGE_CRON_SECRET is missing or too short." >&2
+            exit 1
+          fi
+          production_origin="${PATHFORGE_PRODUCTION_URL%/}"
+          curl \
+            --silent \
+            --show-error \
+            --fail-with-body \
+            --max-time 70 \
+            --header "Authorization: Bearer ${PATHFORGE_CRON_SECRET}" \
+            "${production_origin}/api/cron/request-build-notifications"

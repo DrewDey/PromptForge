@@ -334,6 +334,12 @@
   font-size: 11px;
 }
 
+.terms a {
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .receipt {
   width: min(100% - 32px, 900px);
   margin: 36px auto 72px;

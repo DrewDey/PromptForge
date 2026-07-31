@@ -108,6 +108,10 @@ export const REQUEST_AUTHORITY_ERROR_CODES = [
   'invalid_transition',
   'delivery_revision_limit',
   'artifact_staging_limit',
+  'operator_unavailable',
+  'readiness_incomplete',
+  'risk_grant_required',
+  'publication_blocked',
 ] as const
 export type RequestAuthorityErrorCode =
   | (typeof REQUEST_AUTHORITY_ERROR_CODES)[number]
@@ -169,6 +173,11 @@ export interface RequestApplicationService {
   resolveDeliveryArtifactReader(
     deliveryArtifactId: string,
   ): Promise<RequestDeliveryArtifactReaderResultV1>
+  /**
+   * @deprecated Public-ready control changes must use
+   * RequestPublicApplicationService.setControls so all independent release
+   * gates and readiness preconditions share one authority.
+   */
   updateControls(input: RequestControlsUpdateInputV1): Promise<RequestControlsReceiptV1>
   inviteRequestPilotParticipant(
     input: InviteRequestPilotParticipantInputV1,
@@ -186,6 +195,11 @@ export interface RequestApplicationService {
   deidentifyRequestAccount(
     input: DeidentifyRequestAccountInputV1,
   ): Promise<DeidentifyRequestAccountReceiptV1>
+  /**
+   * @deprecated Public-ready intake must use
+   * RequestPublicApplicationService.submitRequest so exact policy and risk
+   * authority are bound to the durable receipt.
+   */
   createRequest(input: SubmitBuildRequestV1): Promise<RequestCommandReceipt>
   executeCommand(command: RequestParticipantCommandV1): Promise<RequestCommandReceipt>
 }
@@ -773,6 +787,8 @@ const AUTHORITY_RESULT_KEYS = [
   'artifactId',
   'evidenceChecklistVersion',
   'rightsSnapshotVersion',
+  'proposalVersion',
+  'proposalStatus',
 ] as const
 
 function isOneOf<T extends readonly string[]>(value: unknown, values: T): value is T[number] {
@@ -834,6 +850,13 @@ const REQUEST_EVENT_KINDS = [
   'moderation_removed',
   'account_deidentified',
   'delivery_revision_retired',
+  'publication_proposed',
+  'publication_proposal_updated',
+  'publication_consent_recorded',
+  'publication_declined',
+  'publication_withdrawn',
+  'publication_airlock_submitted',
+  'publication_published',
 ] as const
 
 const REQUEST_EVENT_ACTOR_ROLES = [...REQUEST_ACTOR_ROLES, 'operator'] as const
@@ -2861,7 +2884,9 @@ export function parseRequestDeliveryArtifactReaderResultV1(
   return envelope as unknown as RequestDeliveryArtifactReaderResultV1
 }
 
-function parseReceipt(data: unknown): RequestCommandReceipt {
+export function parseRequestCommandReceiptV1(
+  data: unknown,
+): RequestCommandReceipt {
   const candidate = Array.isArray(data) ? data[0] : data
   const row = strictRecord(
     candidate,
@@ -2917,11 +2942,30 @@ function parseReceipt(data: unknown): RequestCommandReceipt {
           if (!AUTHORITY_RESULT_KEYS.includes(key as (typeof AUTHORITY_RESULT_KEYS)[number])) {
             return true
           }
-          if (key === 'evidenceChecklistVersion' || key === 'rightsSnapshotVersion') {
+          if (
+            key === 'evidenceChecklistVersion' ||
+            key === 'rightsSnapshotVersion' ||
+            key === 'proposalVersion'
+          ) {
             return (
               !Number.isSafeInteger(value) ||
               (value as number) < 1 ||
-              (value as number) > 10_000
+              (value as number) > 10_000_000
+            )
+          }
+          if (key === 'proposalStatus') {
+            return (
+              typeof value !== 'string' ||
+              ![
+                'draft',
+                'consent_pending',
+                'fully_consented',
+                'in_airlock',
+                'published',
+                'declined',
+                'withdrawn',
+                'removed',
+              ].includes(value)
             )
           }
           return (
@@ -3138,7 +3182,7 @@ async function invoke(
 ): Promise<RequestCommandReceipt> {
   const { data, error } = await client.rpc(functionName, parameters)
   if (error) throw new RequestAuthorityError(error)
-  return parseReceipt(data) as RequestCommandReceipt
+  return parseRequestCommandReceiptV1(data) as RequestCommandReceipt
 }
 
 function validateListQuery(query: RequestListQueryV1 = {}): Record<string, unknown> {

@@ -37,7 +37,12 @@ const pagePath = 'src/app/requests/page.tsx'
 const page = read(pagePath)
 const overviewPath = 'src/components/requests/service/RequestServiceOverview.tsx'
 const overview = read(overviewPath)
-requireText(pagePath, page, 'getRequestApplicationService()', 'the page must use the Request application service')
+requireText(
+  pagePath,
+  page,
+  'getRequestPublicApplicationService()',
+  'the page must use the public-ready Request application service',
+)
 requireText(pagePath, page, 'service.getAvailability()', 'the page must use the authority availability read')
 requireText(pagePath, page, 'toUnavailableServiceAvailability()', 'the page must distinguish unavailable reads')
 requireText(overviewPath, overview, 'Availability could not be confirmed.', 'the page must label read failure truthfully')
